@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { parseScreenplay, serializeScreenplay, FountainDocument, ParsedLine } from "../parser/FountainParser";
+import { parseScreenplay, serializeScreenplay, FountainDocument, ParsedLine, LineType } from "../parser/FountainParser";
 import { invoke } from "@tauri-apps/api/core";
 
 interface ScreenplayContextProps {
@@ -25,6 +25,8 @@ interface ScreenplayContextProps {
   editorView: any | null;
   setEditorView: (view: any | null) => void;
   scrollToLine: (lineIndex: number) => void;
+  autoAddSceneNumbers: () => void;
+  clearSceneNumbers: () => void;
 }
 
 const ScreenplayContext = createContext<ScreenplayContextProps | undefined>(undefined);
@@ -222,6 +224,37 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const autoAddSceneNumbers = () => {
+    let sceneIndex = 1;
+    const updatedLines = parsedDoc.lines.map((line) => {
+      if (line.type === LineType.heading) {
+        const cleanedText = line.text.replace(/\s*#([^#]+)#\s*$/, "");
+        return {
+          ...line,
+          text: `${cleanedText} #${sceneIndex++}#`
+        };
+      }
+      return line;
+    });
+    const serialized = serializeScreenplay(updatedLines, parsedDoc.settings);
+    setRawText(serialized);
+  };
+
+  const clearSceneNumbers = () => {
+    const updatedLines = parsedDoc.lines.map((line) => {
+      if (line.type === LineType.heading) {
+        const cleanedText = line.text.replace(/\s*#([^#]+)#\s*$/, "");
+        return {
+          ...line,
+          text: cleanedText
+        };
+      }
+      return line;
+    });
+    const serialized = serializeScreenplay(updatedLines, parsedDoc.settings);
+    setRawText(serialized);
+  };
+
   return (
     <ScreenplayContext.Provider
       value={{
@@ -247,6 +280,8 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         editorView,
         setEditorView,
         scrollToLine,
+        autoAddSceneNumbers,
+        clearSceneNumbers,
       }}
     >
       {children}

@@ -22,7 +22,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onExportPDF }) => {
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const menuBarRef = useRef<HTMLDivElement>(null);
-  const { openFile, saveFile } = useScreenplay();
+  const { openFile, saveFile, autoAddSceneNumbers, clearSceneNumbers } = useScreenplay();
 
   const handleClose = () => {
     try {
@@ -82,6 +82,28 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onExportPDF }) => {
         { label: 'Bold', shortcut: 'Ctrl+B' },
         { label: 'Italic', shortcut: 'Ctrl+I' },
         { label: 'Underline', shortcut: 'Ctrl+U' },
+        { divider: true },
+        {
+          label: 'Scene Numbers',
+          submenu: [
+            {
+              label: 'Reset',
+              action: () => {
+                if (window.confirm("All your scene numbers will be gone and this cannot be undone.")) {
+                  clearSceneNumbers();
+                }
+              }
+            },
+            {
+              label: 'Renumber',
+              action: () => {
+                if (window.confirm("This will add numbers to all your scene numbers. The old scene numbers will be deleted and will be replaced by new one.")) {
+                  autoAddSceneNumbers();
+                }
+              }
+            }
+          ]
+        }
       ]
     },
     {
