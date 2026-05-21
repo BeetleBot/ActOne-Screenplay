@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ScreenplayProvider, useScreenplay } from "./context/ScreenplayContext";
 import { FountainEditor } from "./components/FountainEditor";
@@ -115,47 +115,83 @@ const Titlebar: React.FC = () => {
 const Workspace: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(260);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const { paperSize, workspaceMode } = useScreenplay();
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const newWidth = Math.max(200, Math.min(e.clientX, 800));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.body.style.cursor = 'default';
+    };
+
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
+  const handleMouseDown = () => {
+    setIsDragging(true);
+  };
 
   return (
     <div className="app-workspace">
       {isSidebarOpen && (
-        <div className="sidebar">
-          <div className="sidebar-tabs">
-            <button
-              className={`sidebar-tab-btn ${activeTab === "outline" ? "active" : ""}`}
-              onClick={() => setActiveTab("outline")}
-              title="Outline"
-            >
-              <List size={16} />
-            </button>
-            <button
-              className={`sidebar-tab-btn ${activeTab === "notepad" ? "active" : ""}`}
-              onClick={() => setActiveTab("notepad")}
-              title="Notepad"
-            >
-              <FileText size={16} />
-            </button>
-            <button
-              className={`sidebar-tab-btn ${activeTab === "characters" ? "active" : ""}`}
-              onClick={() => setActiveTab("characters")}
-              title="Characters"
-            >
-              <User size={16} />
-            </button>
-            <button
-              className={`sidebar-tab-btn ${activeTab === "stats" ? "active" : ""}`}
-              onClick={() => setActiveTab("stats")}
-              title="Statistics"
-            >
-              <BarChart2 size={16} />
-            </button>
-          </div>
+        <>
+          <div className="sidebar" style={{ width: `${sidebarWidth}px`, flexShrink: 0 }}>
+            <div className="sidebar-tabs">
+              <button
+                className={`sidebar-tab-btn ${activeTab === "outline" ? "active" : ""}`}
+                onClick={() => setActiveTab("outline")}
+                title="Outline"
+              >
+                <List size={16} />
+              </button>
+              <button
+                className={`sidebar-tab-btn ${activeTab === "notepad" ? "active" : ""}`}
+                onClick={() => setActiveTab("notepad")}
+                title="Notepad"
+              >
+                <FileText size={16} />
+              </button>
+              <button
+                className={`sidebar-tab-btn ${activeTab === "characters" ? "active" : ""}`}
+                onClick={() => setActiveTab("characters")}
+                title="Characters"
+              >
+                <User size={16} />
+              </button>
+              <button
+                className={`sidebar-tab-btn ${activeTab === "stats" ? "active" : ""}`}
+                onClick={() => setActiveTab("stats")}
+                title="Statistics"
+              >
+                <BarChart2 size={16} />
+              </button>
+            </div>
 
-          <div className="sidebar-content">
-            <SidebarViews activeTab={activeTab} />
+            <div className="sidebar-content">
+              <SidebarViews activeTab={activeTab} />
+            </div>
           </div>
-        </div>
+          <div
+            className="sidebar-resizer"
+            onMouseDown={handleMouseDown}
+          />
+        </>
       )}
 
       <div className="editor-container">

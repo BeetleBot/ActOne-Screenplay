@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useScreenplay } from "../context/ScreenplayContext";
 import { LineType } from "../parser/FountainParser";
 
@@ -7,9 +7,28 @@ interface SidebarViewProps {
 }
 
 export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
-  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId } = useScreenplay();
+  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes } = useScreenplay();
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [characterFilter, setCharacterFilter] = useState("");
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSections, setShowSections] = useState(true);
+  const [showScenes, setShowScenes] = useState(true);
+  const [showSynopses, setShowSynopses] = useState(true);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [draggedItemIdx, setDraggedItemIdx] = useState<number | null>(null);
+  const [dragOverItemIdx, setDragOverItemIdx] = useState<number | null>(null);
+  
+  const activeItemRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeTab === "outline" && activeItemRef.current) {
+      activeItemRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedSceneId, activeLineId, activeTab]);
 
   const toggleSection = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -20,9 +39,31 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   };
 
   if (activeTab === "outline") {
-    const outlineItems = parsedDoc.lines
+    const rawOutlineItems = parsedDoc.lines
       .map((line, index) => ({ line, index }))
       .filter(({ line }) => line.isOutlineElement || line.type === LineType.synopse);
+
+    // Identify scene index among all scenes for drag and drop
+    const scenesItems = rawOutlineItems.filter(item => item.line.type === LineType.heading || (item.line.isOutlineElement && item.line.type !== LineType.section && item.line.type !== LineType.synopse));
+
+    const outlineItems = rawOutlineItems.filter((item) => {
+      const isSection = item.line.type === LineType.section;
+      const isSynopsis = item.line.type === LineType.synopse;
+      const isScene = !isSection && !isSynopsis;
+
+      if (!showSections && isSection) return false;
+      if (!showScenes && isScene) return false;
+      if (!showSynopses && isSynopsis) return false;
+
+      if (searchQuery) {
+        const textToSearch = item.line.text.replace(/^[.#= ]+/, "").trim().toLowerCase();
+        if (!textToSearch.includes(searchQuery.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    });
 
     const visibleItems: typeof outlineItems = [];
     let isCollapsed = false;
@@ -49,164 +90,342 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     });
 
     const currentDocLineIndex = parsedDoc.lines.findIndex((l) => l.id === activeLineId);
-    let closestOutlineItemIndex = -1;
-    for (let i = 0; i < visibleItems.length; i++) {
-      if (visibleItems[i].index <= currentDocLineIndex) {
-        closestOutlineItemIndex = i;
+    
+    interface GroupedItem {
+      main: { line: typeof parsedDoc.lines[0], index: number };
+      synopses: { line: typeof parsedDoc.lines[0], index: number }[];
+    }
+
+    const groupedItems: GroupedItem[] = [];
+    visibleItems.forEach((item) => {
+      if (item.line.type === LineType.synopse) {
+        if (groupedItems.length > 0 && groupedItems[groupedItems.length - 1].main.line.type !== LineType.synopse) {
+          groupedItems[groupedItems.length - 1].synopses.push(item);
+        } else {
+          groupedItems.push({ main: item, synopses: [] });
+        }
       } else {
-        break;
+        groupedItems.push({ main: item, synopses: [] });
+      }
+    });
+
+    const selectableGroups = groupedItems.filter(g => g.main.line.type !== LineType.synopse);
+
+    let activeSelectableIdx = -1;
+    if (selectedSceneId) {
+      activeSelectableIdx = selectableGroups.findIndex(g => g.main.line.id === selectedSceneId);
+    }
+    
+    // Fallback if no selectedSceneId or it wasn't found in the current filtered view
+    if (activeSelectableIdx === -1) {
+      for (let i = 0; i < selectableGroups.length; i++) {
+        if (selectableGroups[i].main.index <= currentDocLineIndex) {
+          activeSelectableIdx = i;
+        } else {
+          break;
+        }
       }
     }
-    const activeIdx = closestOutlineItemIndex !== -1 ? closestOutlineItemIndex : 0;
+    if (activeSelectableIdx === -1) activeSelectableIdx = 0;
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (visibleItems.length === 0) return;
+      if (selectableGroups.length === 0) return;
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        const nextIdx = Math.min(visibleItems.length - 1, activeIdx + 1);
-        scrollToLine(visibleItems[nextIdx].index);
-        if (setSelectedSceneId) {
-          setSelectedSceneId(visibleItems[nextIdx].line.id);
-        }
+        const nextIdx = Math.min(selectableGroups.length - 1, activeSelectableIdx + 1);
+        const targetItem = selectableGroups[nextIdx].main;
+        if (setSelectedSceneId) setSelectedSceneId(targetItem.line.id);
+        scrollToLine(targetItem.index);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        const nextIdx = Math.max(0, activeIdx - 1);
-        scrollToLine(visibleItems[nextIdx].index);
-        if (setSelectedSceneId) {
-          setSelectedSceneId(visibleItems[nextIdx].line.id);
-        }
+        const nextIdx = Math.max(0, activeSelectableIdx - 1);
+        const targetItem = selectableGroups[nextIdx].main;
+        if (setSelectedSceneId) setSelectedSceneId(targetItem.line.id);
+        scrollToLine(targetItem.index);
       }
     };
 
+    const handleDragStart = (e: React.DragEvent, id: string) => {
+      const sceneIndex = scenesItems.findIndex(s => s.line.id === id);
+      if (sceneIndex !== -1) {
+        e.dataTransfer.setData("text/plain", sceneIndex.toString());
+        setDraggedItemIdx(sceneIndex);
+      }
+    };
+
+    const handleDragOver = (e: React.DragEvent, id: string) => {
+      e.preventDefault();
+      const sceneIndex = scenesItems.findIndex(s => s.line.id === id);
+      if (sceneIndex !== -1) {
+        setDragOverItemIdx(sceneIndex);
+      }
+    };
+
+    const handleDrop = (e: React.DragEvent, id: string) => {
+      e.preventDefault();
+      const targetSceneIndex = scenesItems.findIndex(s => s.line.id === id);
+      const sourceSceneIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+      
+      if (sourceSceneIndex !== targetSceneIndex && !isNaN(sourceSceneIndex) && targetSceneIndex !== -1) {
+        reorderScenes(sourceSceneIndex, targetSceneIndex);
+      }
+      
+      setDraggedItemIdx(null);
+      setDragOverItemIdx(null);
+    };
+
     return (
-      <div className="outline-view">
-        <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", opacity: 0.8 }}>
-          Screenplay Outline
-        </h3>
-        {visibleItems.length === 0 ? (
-          <p style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic" }}>
-            No outline elements. Use # for sections and INT./EXT. for scenes.
-          </p>
-        ) : (
-          <div
-            tabIndex={0}
-            onKeyDown={handleKeyDown}
-            style={{ display: "flex", flexDirection: "column", gap: "4px", outline: "none" }}
-          >
-            {visibleItems.map(({ line, index }) => {
-              const depth = line.sectionDepth || 0;
-              const isSection = line.type === LineType.section;
-              const isSynopsis = line.type === LineType.synopse;
-              const isActive = index === visibleItems[activeIdx]?.index || line.id === selectedSceneId;
-
-              const hasMarker = !!line.marker;
-              const markerColor = hasMarker ? (line.marker!.color.startsWith("#") ? line.marker!.color : `var(--scene-color-${line.marker!.color})`) : undefined;
-
-              const style: React.CSSProperties = {
-                padding: "6px 8px",
-                borderRadius: "6px",
+      <div className="outline-view" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <div style={{ marginBottom: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8, margin: 0 }}>
+              Navigator
+            </h3>
+            <button 
+              onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+              style={{
+                background: "transparent",
+                border: "none",
                 cursor: "pointer",
-                fontSize: "13px",
+                color: "var(--text-muted)",
+                fontSize: "12px",
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
-                flexWrap: "wrap",
-                transition: "background 0.15s, color 0.15s",
-                paddingLeft: `${Math.max(8, depth * 12)}px`,
-                color: isActive
-                  ? "var(--text-main)"
-                  : isSection
-                  ? "var(--accent-color)"
-                  : isSynopsis
-                  ? "var(--text-muted)"
-                  : "var(--text-main)",
-                fontWeight: isActive ? 600 : isSection ? 600 : isSynopsis ? 400 : 500,
-                fontStyle: isSynopsis ? "italic" : "normal",
-                textTransform: isSection || isSynopsis ? "none" : "uppercase",
-                backgroundColor: isActive ? "rgba(128, 128, 128, 0.15)" : "transparent",
-              };
-
-              return (
-                <div
-                  key={line.id}
-                  style={style}
-                  onClick={() => {
-                    scrollToLine(index);
-                    if (setSelectedSceneId) {
-                      setSelectedSceneId(line.id);
-                    }
-                  }}
-                  className="sidebar-item"
-                >
-                  {isSection && (
-                    <span
-                      onClick={(e) => toggleSection(line.id, e)}
-                      style={{
-                        marginRight: "4px",
-                        fontSize: "10px",
-                        opacity: 0.7,
-                        cursor: "pointer",
-                        display: "inline-block",
-                        transform: collapsedSections[line.id] ? "rotate(-90deg)" : "none",
-                        transition: "transform 0.15s",
-                      }}
-                    >
-                      ▼
-                    </span>
-                  )}
-                  {line.color && !isSection && (
-                    <span
-                      style={{
-                        width: "8px",
-                        height: "8px",
-                        borderRadius: "50%",
-                        backgroundColor: line.color.startsWith("#")
-                          ? line.color
-                          : `var(--scene-color-${line.color})`,
-                        display: "inline-block",
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
-                  {hasMarker && (
-                    <span
-                      style={{
-                        width: "8px",
-                        height: "8px",
-                        borderRadius: "2px",
-                        backgroundColor: markerColor,
-                        display: "inline-block",
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-                    {hasMarker && !isSection && line.type !== LineType.heading
-                      ? (line.marker!.description || "Marker")
-                      : line.text.replace(/^[.#= ]+/, "").replace(/\[\[.*?\]\]/g, "").replace(/#[^#]+#\s*$/, "").trim()}
-                  </span>
-                  {line.storylines && line.storylines.length > 0 && (
-                    <span style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
-                      {line.storylines.map((sl) => (
-                        <span
-                          key={sl}
-                          className="storyline-badge"
-                        >
-                          {sl}
-                        </span>
-                      ))}
-                    </span>
-                  )}
-                  {line.sceneNumber && (
-                    <span style={{ marginLeft: "auto", fontSize: "11px", opacity: 0.5, fontWeight: "bold" }}>
-                      {line.sceneNumber}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+                gap: "4px"
+              }}
+            >
+              {isFilterPanelOpen ? "Hide Filters" : "Filters"}
+            </button>
           </div>
-        )}
+          
+          {isFilterPanelOpen && (
+            <div className="outline-filters" style={{
+              background: "var(--bg-editor)",
+              padding: "8px",
+              borderRadius: "6px",
+              border: "1px solid var(--border-color)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px"
+            }}>
+              <input
+                type="text"
+                placeholder="Search outline..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "4px 8px",
+                  fontSize: "12px",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "4px",
+                  background: "var(--bg-app)",
+                  color: "var(--text-main)",
+                  outline: "none"
+                }}
+              />
+              <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: "var(--text-muted)", flexWrap: "wrap" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+                  <input type="checkbox" checked={showSections} onChange={e => setShowSections(e.target.checked)} />
+                  Sections
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+                  <input type="checkbox" checked={showScenes} onChange={e => setShowScenes(e.target.checked)} />
+                  Scenes
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+                  <input type="checkbox" checked={showSynopses} onChange={e => setShowSynopses(e.target.checked)} />
+                  Synopses
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", minHeight: 0 }}>
+          {groupedItems.length === 0 ? (
+            <p style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic" }}>
+              No outline elements match your criteria.
+            </p>
+          ) : (
+            <div
+              tabIndex={0}
+              onKeyDown={handleKeyDown}
+              style={{ display: "flex", flexDirection: "column", gap: "0", outline: "none", paddingBottom: "20px" }}
+            >
+              {groupedItems.map((group) => {
+                const { main, synopses } = group;
+                const { line, index } = main;
+                const isSection = line.type === LineType.section;
+                const isSynopsis = line.type === LineType.synopse;
+                const isScene = !isSection && !isSynopsis;
+                
+                const isSelectable = isSection || isScene;
+                const isActive = isSelectable && (line.id === selectableGroups[activeSelectableIdx]?.main.line.id || line.id === selectedSceneId);
+
+                const hasMarker = !!line.marker;
+                const rawMarkerColor = hasMarker ? (line.marker!.color.startsWith("#") ? line.marker!.color : `var(--scene-color-${line.marker!.color})`) : undefined;
+                
+                let bgStyle = isActive ? "var(--bg-editor)" : "transparent";
+                let markerTextColor = "inherit";
+                if (isScene) {
+                  if (rawMarkerColor) {
+                    markerTextColor = rawMarkerColor;
+                  } else if (line.color) {
+                     markerTextColor = line.color.startsWith("#") ? line.color : `var(--scene-color-${line.color})`;
+                  }
+                }
+                
+                const sceneIndex = isScene ? scenesItems.findIndex(s => s.line.id === line.id) : -1;
+                const isDragging = isScene && draggedItemIdx === sceneIndex;
+                const isDragOver = isScene && dragOverItemIdx === sceneIndex;
+
+                const baseStyle: React.CSSProperties = {
+                  cursor: isScene ? "grab" : "pointer",
+                  transition: "none",
+                  marginLeft: "0px",
+                  backgroundColor: bgStyle,
+                  opacity: isDragging ? 0.5 : 1,
+                  borderRadius: "4px",
+                };
+
+                const handleItemClick = (e: React.MouseEvent) => {
+                  const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+                  if (container) container.focus();
+                  scrollToLine(index);
+                  if (setSelectedSceneId && isSelectable) {
+                    setSelectedSceneId(line.id);
+                  }
+                };
+
+                if (isSection) {
+                  return (
+                    <div
+                      key={line.id}
+                      ref={isActive ? activeItemRef : null}
+                      style={{ 
+                        ...baseStyle, 
+                        padding: "6px 8px", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        color: isActive ? "var(--text-main)" : "var(--accent-color)", 
+                        fontWeight: 700, 
+                        fontSize: "12px",
+                        marginTop: "4px",
+                        border: isActive ? "1px solid var(--border-color)" : "1px solid transparent",
+                      }}
+                      onClick={handleItemClick}
+                    >
+                      <div style={{ width: "20px", textAlign: "right", marginRight: "6px", flexShrink: 0 }}>
+                        <span
+                          onClick={(e) => toggleSection(line.id, e)}
+                          style={{
+                            fontSize: "10px",
+                            opacity: 0.8,
+                            cursor: "pointer",
+                            display: "inline-block",
+                            transform: collapsedSections[line.id] ? "rotate(-90deg)" : "none",
+                            transition: "transform 0.15s",
+                          }}
+                        >
+                          ▽
+                        </span>
+                      </div>
+                      <span>{line.text.replace(/^[.#= ]+/, "").trim()}</span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={line.id}
+                    ref={isActive ? activeItemRef : null}
+                    style={{
+                      ...baseStyle,
+                      padding: "4px 8px",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      color: "var(--text-main)",
+                      borderTop: isDragOver ? "2px solid var(--accent-color)" : "none",
+                      border: isActive && !isDragOver ? "1px solid var(--border-color)" : (isDragOver ? "none" : "1px solid transparent"),
+                    }}
+                    onClick={handleItemClick}
+                    draggable={isScene}
+                    onDragStart={isScene ? (e) => handleDragStart(e, line.id) : undefined}
+                    onDragOver={isScene ? (e) => handleDragOver(e, line.id) : undefined}
+                    onDragLeave={isScene ? () => setDragOverItemIdx(null) : undefined}
+                    onDrop={isScene ? (e) => handleDrop(e, line.id) : undefined}
+                    className={`sidebar-item`}
+                  >
+                      <div style={{ 
+                        width: "20px", 
+                        textAlign: "right", 
+                        marginRight: "6px", 
+                        flexShrink: 0,
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "var(--text-muted)"
+                      }}>
+                        {line.sceneNumber || ""}
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0px", flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", width: "100%" }}>
+                          <span style={{ 
+                            fontSize: "11px", 
+                            fontWeight: isActive ? 700 : 600, 
+                            whiteSpace: "nowrap", 
+                            overflow: "hidden", 
+                            textOverflow: "ellipsis",
+                            textTransform: "uppercase",
+                            color: markerTextColor !== "inherit" ? markerTextColor : undefined,
+                            opacity: isActive ? 1 : 0.85
+                          }}>
+                            {hasMarker && line.type !== LineType.heading
+                              ? (line.marker!.description || "Marker")
+                              : line.text.replace(/^[.#= ]+/, "").replace(/\[\[.*?\]\]/g, "").replace(/#[^#]+#\s*$/, "").trim()}
+                          </span>
+                          {line.storylines && line.storylines.length > 0 && (
+                            <span style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                              {line.storylines.map((sl) => (
+                                <span key={sl} className="storyline-badge" style={{ fontSize: "9px", padding: "1px 3px" }}>
+                                  {sl}
+                                </span>
+                              ))}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {synopses.length > 0 && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0px", marginTop: "2px", width: "100%" }}>
+                            {synopses.map((syn) => (
+                              <div
+                                key={syn.line.id}
+                                style={{ 
+                                  fontSize: "11px", 
+                                  color: "var(--text-muted)", 
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  opacity: isActive ? 0.9 : 0.7
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  scrollToLine(syn.index);
+                                }}
+                              >
+                                {syn.line.text.replace(/^=[ ]*/, "").trim()}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
