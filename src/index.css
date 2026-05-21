@@ -130,19 +130,24 @@ body {
   background: rgba(128, 128, 128, 0.15);
 }
 
+.editor-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 48px;
+  padding: 0 16px;
+  background: var(--bg-app);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
 .editor-toolbar {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   display: flex;
   gap: 8px;
   z-index: 100;
 }
 
 .editor-toolbar-left {
-  position: absolute;
-  top: 12px;
-  left: 12px;
   display: flex;
   gap: 8px;
   z-index: 100;
@@ -201,6 +206,11 @@ body {
 }
 
 
+
+.editor-toolbar-settings-container {
+  position: relative;
+  display: inline-block;
+}
 
 .editor-toolbar-dropdown {
   position: absolute;
@@ -1168,4 +1178,288 @@ body.dark-theme .floating-tab.active {
 .cm-typewriter-mode .cm-content {
   padding-top: 45vh !important;
   padding-bottom: 45vh !important;
+}
+
+/* Color Palette Variables for Scenes */
+:root {
+  --scene-color-red: rgb(239, 0, 73);
+  --scene-color-blue: rgb(0, 129, 239);
+  --scene-color-green: rgb(0, 223, 121);
+  --scene-color-pink: rgb(250, 111, 193);
+  --scene-color-magenta: rgb(236, 0, 140);
+  --scene-color-orange: rgb(255, 161, 13);
+  --scene-color-brown: rgb(169, 106, 7);
+  --scene-color-gray: rgb(150, 150, 150);
+  --scene-color-purple: rgb(181, 32, 218);
+  --scene-color-yellow: rgb(255, 162, 0);
+  --scene-color-cyan: rgb(7, 189, 236);
+  --scene-color-teal: rgb(12, 224, 227);
+}
+
+/* Timeline View Styles */
+.timeline-container {
+  height: 40px;
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border-color);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+.timeline-track {
+  display: flex;
+  width: 100%;
+  height: 14px;
+  background: rgba(128, 128, 128, 0.12);
+  border-radius: 7px;
+  overflow: hidden;
+  position: relative;
+}
+.timeline-segment {
+  height: 100%;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+  border-right: 1px solid var(--bg-sidebar);
+}
+.timeline-segment:last-child {
+  border-right: none;
+}
+.timeline-segment:hover {
+  opacity: 0.9;
+  transform: scaleY(1.15);
+}
+.timeline-segment.active {
+  box-shadow: inset 0 0 0 2px var(--accent-color), 0 0 4px var(--accent-color);
+  opacity: 1;
+}
+
+/* Index Cards Workspace Styles */
+.cards-workspace-container {
+  padding: 24px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+  background: var(--bg-app);
+}
+.no-cards-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted);
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 8px;
+}
+.index-card-item {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  height: 160px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-editor);
+  cursor: grab;
+  transition: transform 0.15s, border 0.15s, box-shadow 0.15s;
+}
+.index-card-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.index-card-item.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+.index-card-item.drag-over {
+  border: 2px dashed var(--accent-color) !important;
+  transform: scale(1.02);
+}
+.index-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 6px;
+}
+.index-card-scene-number {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(128, 128, 128, 0.15);
+  color: var(--text-main);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+.index-card-title {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-main);
+}
+.index-card-synopsis-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  resize: none;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-muted);
+  outline: none;
+  line-height: 1.4;
+}
+.index-card-synopsis-textarea:focus {
+  color: var(--text-main);
+}
+
+/* Screenplay Preview Styles */
+.preview-workspace-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  background: #525659;
+  min-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.preview-page {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  position: relative;
+  box-sizing: border-box;
+}
+.preview-page.paper-letter {
+  width: 816px; /* 8.5in */
+  height: 1056px; /* 11in */
+  padding: 96px; /* 1in */
+}
+.preview-page.paper-a4 {
+  width: 794px; /* 210mm */
+  height: 1123px; /* 297mm */
+  padding: 96px; /* Approx 1in */
+}
+.preview-page.font-courier-prime {
+  font-family: "Courier Prime", Courier, monospace;
+}
+.preview-page.font-courier-prime-sans {
+  font-family: "Courier Prime Sans", sans-serif;
+}
+.preview-page-header {
+  position: absolute;
+  top: 48px;
+  right: 96px;
+  font-size: 12pt;
+  line-height: 1;
+}
+.preview-page-number {
+  font-variant-numeric: tabular-nums;
+}
+.preview-page-content {
+  font-size: 12pt;
+  line-height: 20px;
+  height: 100%;
+}
+.preview-line {
+  white-space: pre-wrap;
+  min-height: 20px;
+}
+.preview-empty-line {
+  height: 20px;
+}
+.preview-heading {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.preview-action {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.preview-character {
+  margin-left: 192px; /* 2.0in */
+  margin-top: 20px;
+  text-transform: uppercase;
+}
+.preview-parenthetical {
+  margin-left: 144px; /* 1.5in */
+  margin-right: 144px;
+}
+.preview-dialogue {
+  margin-left: 96px; /* 1.0in */
+  margin-right: 96px;
+  margin-bottom: 10px;
+}
+.preview-transition {
+  text-align: right;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.preview-centered {
+  text-align: center;
+}
+.preview-lyrics {
+  font-style: italic;
+}
+.preview-shot {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* Title Page Preview */
+.title-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.title-page-center {
+  margin-top: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+.title-page-title {
+  font-size: 18pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-decoration: underline;
+  margin-bottom: 24px;
+}
+.title-page-credit, .title-page-author, .title-page-source {
+  font-size: 12pt;
+}
+.title-page-bottom {
+  margin-bottom: 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 11pt;
+}
+.title-page-contact {
+  text-align: right;
+  max-width: 300px;
+  white-space: pre-wrap;
+}
+
+/* Character search & gender tracking adjustments */
+.character-search-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
 }

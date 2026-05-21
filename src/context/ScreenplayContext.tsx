@@ -48,6 +48,8 @@ interface ScreenplayContextProps {
   triggerTemporaryTabBar: () => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
+  workspaceMode: 'editor' | 'preview' | 'cards';
+  setWorkspaceMode: (mode: 'editor' | 'preview' | 'cards') => void;
 }
 
 const ScreenplayContext = createContext<ScreenplayContextProps | undefined>(undefined);
@@ -70,6 +72,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
     return (localStorage.getItem("drafter-paper-size") as any) || "letter";
   });
+  const [workspaceMode, setWorkspaceMode] = useState<'editor' | 'preview' | 'cards'>("editor");
 
   const initialFileId = useRef(generateUUID());
   const defaultText = "TITLE: Drafter\nAUTHOR: Writer\n\nINT. HOME - DAY\n\nThis is a sample screenplay.";
@@ -97,7 +100,6 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   
   const workerRef = useRef<Worker | null>(null);
   const activeFileIdRef = useRef(activeFileId);
-
   const [showTabBar, setShowTabBar] = useState(false);
   const hideTimerRef = useRef<any>(null);
 
@@ -301,6 +303,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const reorderScenes = (startIndex: number, endIndex: number) => {
     const scenes: { lineIndex: number; lines: ParsedLine[] }[] = [];
+    const beforeFirstScene: ParsedLine[] = [];
     let currentScene: ParsedLine[] = [];
     let currentStart = -1;
 
@@ -315,17 +318,19 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       } else if (currentStart !== -1) {
         currentScene.push(line);
       } else {
-        parsedLinesBeforeFirstScene.push(line);
+        beforeFirstScene.push(line);
       }
     }
     if (currentScene.length > 0) {
       scenes.push({ lineIndex: currentStart, lines: currentScene });
     }
 
+    if (startIndex < 0 || startIndex >= scenes.length || endIndex < 0 || endIndex >= scenes.length) return;
+
     const [moved] = scenes.splice(startIndex, 1);
     scenes.splice(endIndex, 0, moved);
 
-    const newLines: ParsedLine[] = [...parsedLinesBeforeFirstScene];
+    const newLines: ParsedLine[] = [...beforeFirstScene];
     for (const scene of scenes) {
       newLines.push(...scene.lines);
     }
@@ -333,13 +338,6 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const serialized = serializeScreenplay(newLines, parsedDoc.settings);
     setRawText(serialized);
   };
-
-  const parsedLinesBeforeFirstScene: ParsedLine[] = [];
-  for (let i = 0; i < parsedDoc.lines.length; i++) {
-    const line = parsedDoc.lines[i];
-    if (line.type === 10) break;
-    parsedLinesBeforeFirstScene.push(line);
-  }
 
   const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
 
@@ -380,40 +378,43 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const isDefault = currentActive && !currentActive.filePath && 
                         (currentActive.rawText === "" || currentActive.rawText === defaultText);
 
+      const parsed = parseScreenplay(res.content, paperSize);
+      const cleanText = parsed.screenplayText;
+
       if (isDefault && currentActive) {
         const updatedFiles = files.map(f => f.id === activeFileId ? {
           ...f,
           filePath: res.path,
-          rawText: res.content,
-          savedText: res.content,
+          rawText: cleanText,
+          savedText: cleanText,
           isDirty: false,
-          parsedDoc: parseScreenplay(res.content, paperSize)
+          parsedDoc: parsed
         } : f);
         setFiles(updatedFiles);
         setFilePath(res.path);
-        setRawTextState(res.content);
-        setParsedDoc(parseScreenplay(res.content, paperSize));
+        setRawTextState(cleanText);
+        setParsedDoc(parsed);
         if (workerRef.current) {
-          workerRef.current.postMessage({ text: res.content, paperSize, fileId: activeFileId });
+          workerRef.current.postMessage({ text: cleanText, paperSize, fileId: activeFileId });
         }
       } else {
         const newId = generateUUID();
         const newFileObj: ScreenplayFile = {
           id: newId,
           filePath: res.path,
-          rawText: res.content,
-          savedText: res.content,
+          rawText: cleanText,
+          savedText: cleanText,
           isDirty: false,
-          parsedDoc: parseScreenplay(res.content, paperSize),
+          parsedDoc: parsed,
           isSaving: false,
         };
         setFiles(prev => [...prev, newFileObj]);
         setActiveFileIdState(newId);
         setFilePath(res.path);
-        setRawTextState(res.content);
-        setParsedDoc(newFileObj.parsedDoc);
+        setRawTextState(cleanText);
+        setParsedDoc(parsed);
         if (workerRef.current) {
-          workerRef.current.postMessage({ text: res.content, paperSize, fileId: newId });
+          workerRef.current.postMessage({ text: cleanText, paperSize, fileId: newId });
         }
       }
     }
@@ -426,11 +427,12 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       await saveFileAs();
       return;
     }
+    const fullSerializedContent = serializeScreenplay(currentActive.parsedDoc.lines, currentActive.parsedDoc.settings);
     if (isTauri) {
       setIsSaving(true);
       setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
       try {
-        await invoke("save_file_content", { path: currentActive.filePath, content: rawText });
+        await invoke("save_file_content", { path: currentActive.filePath, content: fullSerializedContent });
         setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
       } catch (e) {
         console.error(e);
@@ -439,7 +441,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
       }
     } else {
-      const blob = new Blob([rawText], { type: "text/plain;charset=utf-8" });
+      const blob = new Blob([fullSerializedContent], { type: "text/plain;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -451,9 +453,12 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const saveFileAs = async () => {
+    const currentActive = files.find(f => f.id === activeFileId);
+    if (!currentActive) return;
+    const fullSerializedContent = serializeScreenplay(currentActive.parsedDoc.lines, currentActive.parsedDoc.settings);
     if (isTauri) {
       try {
-        const path = await invoke<string | null>("save_file_dialog", { content: rawText });
+        const path = await invoke<string | null>("save_file_dialog", { content: fullSerializedContent });
         if (path) {
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: path, isDirty: false, savedText: rawText } : f));
           setFilePath(path);
@@ -465,7 +470,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const filename = window.prompt("Enter filename to save:", filePath || "Untitled.fountain");
       if (filename) {
         const finalName = filename.endsWith(".fountain") ? filename : `${filename}.fountain`;
-        const blob = new Blob([rawText], { type: "text/plain;charset=utf-8" });
+        const blob = new Blob([fullSerializedContent], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -599,6 +604,8 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         triggerTemporaryTabBar,
         typewriterMode,
         setTypewriterMode,
+        workspaceMode,
+        setWorkspaceMode,
       }}
     >
       {children}

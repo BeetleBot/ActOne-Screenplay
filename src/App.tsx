@@ -3,6 +3,9 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ScreenplayProvider, useScreenplay } from "./context/ScreenplayContext";
 import { FountainEditor } from "./components/FountainEditor";
 import { SidebarViews } from "./components/SidebarViews";
+import { ScreenplayPreview } from "./components/ScreenplayPreview";
+import { IndexCardsWorkspace } from "./components/IndexCardsWorkspace";
+import { TimelineView } from "./components/TimelineView";
 import {
   List,
   FileText,
@@ -111,7 +114,7 @@ const Titlebar: React.FC = () => {
 const Workspace: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
-  const { paperSize } = useScreenplay();
+  const { paperSize, workspaceMode } = useScreenplay();
 
   return (
     <div className="app-workspace">
@@ -155,13 +158,24 @@ const Workspace: React.FC = () => {
       )}
 
       <div className="editor-container">
-        <EditorToolbarLeft toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
-        <EditorToolbar />
-        <div className="editor-scroll-area">
-          <div className={`editor-paper paper-${paperSize}`}>
-            <FountainEditor />
-          </div>
+        <div className="editor-header-bar">
+          <EditorToolbarLeft toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
+          <EditorToolbar />
         </div>
+        <div className="editor-scroll-area">
+          {workspaceMode === "editor" && (
+            <div className={`editor-paper paper-${paperSize}`}>
+              <FountainEditor />
+            </div>
+          )}
+          {workspaceMode === "preview" && (
+            <ScreenplayPreview />
+          )}
+          {workspaceMode === "cards" && (
+            <IndexCardsWorkspace />
+          )}
+        </div>
+        <TimelineView />
       </div>
     </div>
   );
@@ -182,7 +196,7 @@ const EditorToolbarLeft: React.FC<{ toggleSidebar: () => void, isSidebarOpen: bo
 };
 
 const EditorToolbar: React.FC = () => {
-  const { fontFamily, setFontFamily, paperSize, setPaperSize, typewriterMode, setTypewriterMode } = useScreenplay();
+  const { fontFamily, setFontFamily, paperSize, setPaperSize, typewriterMode, setTypewriterMode, workspaceMode, setWorkspaceMode } = useScreenplay();
   const [isDark, setIsDark] = React.useState(() => document.body.classList.contains("dark-theme"));
   const [showSettings, setShowSettings] = React.useState(false);
   const settingsRef = React.useRef<HTMLDivElement>(null);
@@ -207,10 +221,18 @@ const EditorToolbar: React.FC = () => {
 
   return (
     <div className="editor-toolbar">
-      <button className="editor-toolbar-btn" title="Preview">
+      <button 
+        className={`editor-toolbar-btn ${workspaceMode === "preview" ? "active" : ""}`} 
+        title="Preview"
+        onClick={() => setWorkspaceMode(workspaceMode === "preview" ? "editor" : "preview")}
+      >
         <Eye size={18} strokeWidth={1.5} />
       </button>
-      <button className="editor-toolbar-btn" title="Index Cards">
+      <button 
+        className={`editor-toolbar-btn ${workspaceMode === "cards" ? "active" : ""}`} 
+        title="Index Cards"
+        onClick={() => setWorkspaceMode(workspaceMode === "cards" ? "editor" : "cards")}
+      >
         <LayoutGrid size={18} strokeWidth={1.5} />
       </button>
       <div className="editor-toolbar-settings-container" ref={settingsRef}>

@@ -56,11 +56,17 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
   let screenplayText = rawText;
   let settings: any = {};
 
-  const beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - BEAT:");
-  const beatEndIdx = rawText.indexOf("END_BEAT*/");
+  let beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - DRAFTER:");
+  let beatEndIdx = rawText.indexOf("END_DRAFTER*/");
+  let startStr = "/* If you're seeing this, you can remove the following stuff - DRAFTER:";
+
+  if (beatStartIdx === -1) {
+    beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - BEAT:");
+    beatEndIdx = rawText.indexOf("END_BEAT*/");
+    startStr = "/* If you're seeing this, you can remove the following stuff - BEAT:";
+  }
 
   if (beatStartIdx !== -1 && beatEndIdx !== -1 && beatEndIdx > beatStartIdx) {
-    const startStr = "/* If you're seeing this, you can remove the following stuff - BEAT:";
     const jsonStr = rawText.substring(beatStartIdx + startStr.length, beatEndIdx).trim();
     try {
       settings = JSON.parse(jsonStr);
@@ -416,6 +422,6 @@ export function serializeScreenplay(lines: ParsedLine[], settings: any): string 
   if (!settings || Object.keys(settings).length === 0) {
     return text;
   }
-  const settingsBlock = `\n\n/* If you're seeing this, you can remove the following stuff - BEAT:\n${JSON.stringify(settings, null, 2)}\nEND_BEAT*/`;
+  const settingsBlock = `\n\n/* If you're seeing this, you can remove the following stuff - DRAFTER:\n${JSON.stringify(settings, null, 2)}\nEND_DRAFTER*/`;
   return text + settingsBlock;
 }
