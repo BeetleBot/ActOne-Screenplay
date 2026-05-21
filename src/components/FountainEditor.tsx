@@ -516,12 +516,38 @@ function handleTab(view: EditorView): boolean {
 export const FountainEditor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, setActiveLineId, parsedDoc, setEditorView, fontFamily } = useScreenplay();
+  const { rawText, setRawText, setActiveLineId, parsedDoc, setEditorView, fontFamily, typewriterMode } = useScreenplay();
 
   const parsedDocRef = useRef(parsedDoc);
   useEffect(() => {
     parsedDocRef.current = parsedDoc;
   }, [parsedDoc]);
+
+  const setRawTextRef = useRef(setRawText);
+  useEffect(() => {
+    setRawTextRef.current = setRawText;
+  }, [setRawText]);
+
+  const setActiveLineIdRef = useRef(setActiveLineId);
+  useEffect(() => {
+    setActiveLineIdRef.current = setActiveLineId;
+  }, [setActiveLineId]);
+
+  const typewriterModeRef = useRef(typewriterMode);
+  useEffect(() => {
+    typewriterModeRef.current = typewriterMode;
+    if (viewRef.current) {
+      if (typewriterMode) {
+        viewRef.current.scrollDOM.classList.add("cm-typewriter-mode");
+        const pos = viewRef.current.state.selection.main.head;
+        viewRef.current.dispatch({
+          effects: EditorView.scrollIntoView(pos, { y: "center" })
+        });
+      } else {
+        viewRef.current.scrollDOM.classList.remove("cm-typewriter-mode");
+      }
+    }
+  }, [typewriterMode]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -554,14 +580,21 @@ export const FountainEditor: React.FC = () => {
         autocompletion({ override: [fountainCompletionSource] }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            setRawText(update.state.doc.toString());
+            setRawTextRef.current(update.state.doc.toString());
           }
           if (update.selectionSet || update.docChanged) {
             const pos = update.state.selection.main.head;
             const lineNum = update.state.doc.lineAt(pos).number;
             const idx = lineNum - 1;
             if (idx >= 0 && idx < parsedDocRef.current.lines.length) {
-              setActiveLineId(parsedDocRef.current.lines[idx].id);
+              setActiveLineIdRef.current(parsedDocRef.current.lines[idx].id);
+            }
+            if (typewriterModeRef.current && (update.docChanged || update.selectionSet)) {
+              setTimeout(() => {
+                update.view.dispatch({
+                  effects: EditorView.scrollIntoView(pos, { y: "center" })
+                });
+              }, 0);
             }
           }
         }),
@@ -572,6 +605,16 @@ export const FountainEditor: React.FC = () => {
       state: startState,
       parent: containerRef.current,
     });
+
+    if (typewriterModeRef.current) {
+      view.scrollDOM.classList.add("cm-typewriter-mode");
+      setTimeout(() => {
+        const pos = view.state.selection.main.head;
+        view.dispatch({
+          effects: EditorView.scrollIntoView(pos, { y: "center" })
+        });
+      }, 0);
+    }
 
     viewRef.current = view;
     setEditorView(view);

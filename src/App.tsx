@@ -15,7 +15,8 @@ import {
   LayoutGrid,
   Settings,
   PanelLeft,
-  Check
+  Check,
+  Plus
 } from "lucide-react";
 import { MenuBar } from "./components/MenuBar";
 import { ExportModal } from "./components/ExportModal";
@@ -28,7 +29,7 @@ const getTauriWindow = () => {
 };
 
 const Titlebar: React.FC = () => {
-  const { filePath, isSaving } = useScreenplay();
+  const { filePath, isSaving, showTabBar, setShowTabBar, openTabBarManually } = useScreenplay();
   const [showExportModal, setShowExportModal] = useState(false);
 
   const handleClose = () => {
@@ -71,9 +72,22 @@ const Titlebar: React.FC = () => {
       <div className="titlebar" data-tauri-drag-region>
         <MenuBar onExportPDF={() => setShowExportModal(true)} />
         
-        <div className="titlebar-title">
-          {displayPath} {isSaving && "(Saving...)"}
-        </div>
+        <button 
+          className="titlebar-title-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (showTabBar) {
+              setShowTabBar(false);
+            } else {
+              openTabBarManually();
+            }
+          }}
+          title="Click to show open files"
+        >
+          <span className="title-text">{displayPath}</span>
+          <span className="title-arrow">▾</span>
+          {isSaving && <span className="title-saving">(Saving...)</span>}
+        </button>
 
         <div className="titlebar-actions">
           <div className="window-controls-windows">
@@ -168,7 +182,7 @@ const EditorToolbarLeft: React.FC<{ toggleSidebar: () => void, isSidebarOpen: bo
 };
 
 const EditorToolbar: React.FC = () => {
-  const { fontFamily, setFontFamily, paperSize, setPaperSize } = useScreenplay();
+  const { fontFamily, setFontFamily, paperSize, setPaperSize, typewriterMode, setTypewriterMode } = useScreenplay();
   const [isDark, setIsDark] = React.useState(() => document.body.classList.contains("dark-theme"));
   const [showSettings, setShowSettings] = React.useState(false);
   const settingsRef = React.useRef<HTMLDivElement>(null);
@@ -220,6 +234,17 @@ const EditorToolbar: React.FC = () => {
 
             <div className="editor-toolbar-dropdown-divider" />
 
+            <div className="editor-toolbar-dropdown-section">Editor Mode</div>
+            <div 
+              className={`editor-toolbar-dropdown-option ${typewriterMode ? "active" : ""}`}
+              onClick={() => setTypewriterMode(!typewriterMode)}
+            >
+              <span>Typewriter Mode</span>
+              {typewriterMode && <Check size={14} />}
+            </div>
+
+            <div className="editor-toolbar-dropdown-divider" />
+
             <div className="editor-toolbar-dropdown-section">Font Family</div>
             <div 
               className={`editor-toolbar-dropdown-option ${fontFamily === "courier-prime" ? "active" : ""}`}
@@ -260,10 +285,78 @@ const EditorToolbar: React.FC = () => {
   );
 };
 
+const FloatingTabs: React.FC = () => {
+  const { 
+    files, 
+    activeFileId, 
+    selectFile, 
+    newFile, 
+    closeFile, 
+    showTabBar, 
+    setShowTabBar
+  } = useScreenplay();
+
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!showTabBar) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowTabBar(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showTabBar]);
+
+  if (!showTabBar) return null;
+
+  return (
+    <div className="floating-tabs-container" ref={containerRef}>
+      {files.map((file) => {
+        const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled.fountain";
+        const isActive = file.id === activeFileId;
+        return (
+          <div
+            key={file.id}
+            className={`floating-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
+            onClick={() => {
+              selectFile(file.id);
+            }}
+          >
+            <span className="floating-tab-name">{display}</span>
+            <span className="floating-tab-status-dot" />
+            <button
+              className="floating-tab-close"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeFile(file.id);
+              }}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        );
+      })}
+      <button
+        className="floating-tab-new"
+        onClick={(e) => {
+          e.stopPropagation();
+          newFile();
+        }}
+        title="New File"
+      >
+        <Plus size={14} />
+      </button>
+    </div>
+  );
+};
+
 function App() {
   return (
     <ScreenplayProvider>
       <Titlebar />
+      <FloatingTabs />
       <Workspace />
     </ScreenplayProvider>
   );

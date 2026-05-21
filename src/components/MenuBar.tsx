@@ -22,7 +22,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onExportPDF }) => {
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const menuBarRef = useRef<HTMLDivElement>(null);
-  const { openFile, saveFile, autoAddSceneNumbers, clearSceneNumbers } = useScreenplay();
+  const { openFile, saveFile, autoAddSceneNumbers, clearSceneNumbers, newFile, saveFileAs, closeFile, activeFileId } = useScreenplay();
 
   const handleClose = () => {
     try {
@@ -34,12 +34,12 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onExportPDF }) => {
     {
       label: 'File',
       items: [
-        { label: 'New', shortcut: 'Ctrl+N' },
+        { label: 'New', action: newFile, shortcut: 'Ctrl+N' },
         { label: 'Open...', action: openFile, shortcut: 'Ctrl+O' },
         { label: 'Open Recent >' },
         { divider: true },
         { label: 'Save', action: saveFile, shortcut: 'Ctrl+S' },
-        { label: 'Save As...', shortcut: 'Ctrl+Shift+S' },
+        { label: 'Save As...', action: saveFileAs, shortcut: 'Ctrl+Shift+S' },
         { divider: true },
         {
           label: 'Export',
@@ -50,7 +50,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onExportPDF }) => {
           ]
         },
         { divider: true },
-        { label: 'Close', shortcut: 'Ctrl+W' },
+        { label: 'Close', action: () => closeFile(activeFileId), shortcut: 'Ctrl+W' },
         { label: 'Quit', shortcut: 'Ctrl+Q', action: handleClose },
       ]
     },

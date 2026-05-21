@@ -7,12 +7,42 @@ interface SidebarViewProps {
 }
 
 export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
-  const { parsedDoc, scrollToLine, reorderScenes, updateSettings } = useScreenplay();
+  const { parsedDoc, scrollToLine, reorderScenes, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId } = useScreenplay();
 
   if (activeTab === "outline") {
     const outlineItems = parsedDoc.lines.map((line, index) => ({ line, index })).filter(
       ({ line }) => line.isOutlineElement || line.type === LineType.synopse
     );
+
+    const currentDocLineIndex = parsedDoc.lines.findIndex(l => l.id === activeLineId);
+    let closestOutlineItemIndex = -1;
+    for (let i = 0; i < outlineItems.length; i++) {
+      if (outlineItems[i].index <= currentDocLineIndex) {
+        closestOutlineItemIndex = i;
+      } else {
+        break;
+      }
+    }
+    const activeIdx = closestOutlineItemIndex !== -1 ? closestOutlineItemIndex : 0;
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (outlineItems.length === 0) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const nextIdx = Math.min(outlineItems.length - 1, activeIdx + 1);
+        scrollToLine(outlineItems[nextIdx].index);
+        if (setSelectedSceneId) {
+          setSelectedSceneId(outlineItems[nextIdx].line.id);
+        }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const nextIdx = Math.max(0, activeIdx - 1);
+        scrollToLine(outlineItems[nextIdx].index);
+        if (setSelectedSceneId) {
+          setSelectedSceneId(outlineItems[nextIdx].line.id);
+        }
+      }
+    };
 
     return (
       <div className="outline-view">
@@ -20,11 +50,16 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
         {outlineItems.length === 0 ? (
           <p style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic" }}>No outline elements. Use # for sections and INT./EXT. for scenes.</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <div 
+            tabIndex={0} 
+            onKeyDown={handleKeyDown}
+            style={{ display: "flex", flexDirection: "column", gap: "4px", outline: "none" }}
+          >
             {outlineItems.map(({ line, index }) => {
               const depth = line.sectionDepth || 0;
               const isSection = line.type === LineType.section;
               const isSynopsis = line.type === LineType.synopse;
+              const isActive = index === outlineItems[activeIdx]?.index || line.id === selectedSceneId;
 
               let style: React.CSSProperties = {
                 padding: "6px 8px",
@@ -34,19 +69,25 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                transition: "background 0.15s",
+                transition: "background 0.15s, color 0.15s",
                 paddingLeft: `${Math.max(8, depth * 12)}px`,
-                color: isSection ? "var(--accent-color)" : isSynopsis ? "var(--text-muted)" : "var(--text-main)",
-                fontWeight: isSection ? 600 : isSynopsis ? 400 : 500,
+                color: isActive ? "var(--text-main)" : isSection ? "var(--accent-color)" : isSynopsis ? "var(--text-muted)" : "var(--text-main)",
+                fontWeight: isActive ? 600 : isSection ? 600 : isSynopsis ? 400 : 500,
                 fontStyle: isSynopsis ? "italic" : "normal",
-                textTransform: isSection || isSynopsis ? "none" : "uppercase"
+                textTransform: isSection || isSynopsis ? "none" : "uppercase",
+                backgroundColor: isActive ? "rgba(128, 128, 128, 0.15)" : "transparent"
               };
 
               return (
                 <div
                   key={line.id}
                   style={style}
-                  onClick={() => scrollToLine(index)}
+                  onClick={() => {
+                    scrollToLine(index);
+                    if (setSelectedSceneId) {
+                      setSelectedSceneId(line.id);
+                    }
+                  }}
                   className="sidebar-item"
                 >
                   {line.color && (
