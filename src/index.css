@@ -1,9 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap");
 @import url('https://fonts.cdnfonts.com/css/courier-prime-sans');
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&family=Noto+Sans+Malayalam:wght@400;700&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&family=Noto+Sans+Gurmukhi:wght@400;700&family=Noto+Sans+Oriya:wght@400;700&display=swap");
 
 :root {
   --font-ui: "Atkinson Hyperlegible", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-editor: "Courier Prime", Courier, monospace;
+  --font-editor: "Courier Prime", "Noto Sans Devanagari", "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Kannada", "Noto Sans Malayalam", "Noto Sans Bengali", "Noto Sans Gujarati", "Noto Sans Gurmukhi", "Noto Sans Oriya", Courier, monospace;
 
   --bg-app: #ffffff;
   --bg-sidebar: #f5f5f5;
@@ -1194,6 +1195,32 @@ body.dark-theme .floating-tab.active {
   --scene-color-yellow: rgb(255, 162, 0);
   --scene-color-cyan: rgb(7, 189, 236);
   --scene-color-teal: rgb(12, 224, 227);
+}
+
+.cm-fountain-marker {
+  background: rgba(255, 161, 13, 0.18);
+  border-radius: 3px;
+  padding: 1px 2px;
+  color: var(--scene-color-orange);
+  font-style: italic;
+}
+
+.cm-fountain-note-tag {
+  opacity: 0.4;
+  font-size: 0.9em;
+}
+
+.storyline-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-color);
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-style: normal;
 }
 
 /* Timeline View Styles */

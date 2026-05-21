@@ -35,6 +35,8 @@ export interface ParsedLine {
   sectionDepth?: number;
   isOutlineElement: boolean;
   collapsed?: boolean;
+  marker?: { color: string; description: string };
+  storylines?: string[];
 }
 
 export interface FountainDocument {
@@ -137,6 +139,8 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
     let sectionDepth: number | undefined;
     let sceneNumber: string | undefined;
     let color: string | undefined;
+    let marker: { color: string; description: string } | undefined;
+    let storylines: string[] | undefined;
 
     if (trimmed === "") {
       type = LineType.empty;
@@ -223,35 +227,57 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
       }
     }
 
-    if (type === LineType.heading) {
-      let workingText = trimmed;
-      if (workingText.startsWith(".")) {
-        workingText = workingText.substring(1).trim();
-      }
+    const noteMatches = rawLine.match(/\[\[(.*?)\]\]/g);
+    if (noteMatches) {
+      for (const note of noteMatches) {
+        const content = note.substring(2, note.length - 2).trim();
+        const contentLower = content.toLowerCase();
 
-      const matchNum = workingText.match(/#([^#]+)#$/);
-      if (matchNum) {
-        sceneNumber = matchNum[1];
-        workingText = workingText.substring(0, matchNum.index).trim();
-      }
-
-      const noteMatches = rawLine.match(/\[\[(.*?)\]\]/g);
-      if (noteMatches) {
-        for (const note of noteMatches) {
-          const content = note.substring(2, note.length - 2).trim().toLowerCase();
-          if (content.startsWith("color ")) {
-            const possibleColor = content.substring(6).trim();
+        if (contentLower.startsWith("marker")) {
+          const markerBody = content.substring(6).trim();
+          let markerColor = "orange";
+          let description = markerBody;
+          const colonIdx = markerBody.indexOf(":");
+          if (colonIdx !== -1) {
+            const beforeColon = markerBody.substring(0, colonIdx).trim().toLowerCase();
+            if (SUPPORTED_COLORS.includes(beforeColon) || (beforeColon.startsWith("#") && beforeColon.length === 7)) {
+              markerColor = beforeColon;
+            }
+            description = markerBody.substring(colonIdx + 1).trim();
+          } else if (SUPPORTED_COLORS.includes(markerBody.toLowerCase())) {
+            markerColor = markerBody.toLowerCase();
+            description = "";
+          }
+          marker = { color: markerColor, description };
+          isOutlineElement = true;
+        } else if (contentLower.startsWith("storyline") && type === LineType.heading) {
+          const storylineBody = content.substring(9).trim();
+          storylines = storylineBody.split(",").map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
+        } else if (type === LineType.heading) {
+          if (contentLower.startsWith("color ")) {
+            const possibleColor = contentLower.substring(6).trim();
             if (SUPPORTED_COLORS.includes(possibleColor) || (possibleColor.startsWith("#") && possibleColor.length === 7)) {
               color = possibleColor;
             }
-          } else if (SUPPORTED_COLORS.includes(content) || (content.startsWith("#") && content.length === 7)) {
-            color = content;
+          } else if (SUPPORTED_COLORS.includes(contentLower) || (contentLower.startsWith("#") && contentLower.length === 7)) {
+            color = contentLower;
           }
         }
       }
     }
 
-    parsedLines.push({
+    if (type === LineType.heading) {
+      let workingText = trimmed;
+      if (workingText.startsWith(".")) {
+        workingText = workingText.substring(1).trim();
+      }
+      const matchNum = workingText.match(/#([^#]+)#$/);
+      if (matchNum) {
+        sceneNumber = matchNum[1];
+      }
+    }
+
+    const line: ParsedLine = {
       id: generateUUID(),
       text: rawLine,
       type,
@@ -259,7 +285,10 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
       color,
       sectionDepth,
       isOutlineElement
-    });
+    };
+    if (marker) line.marker = marker;
+    if (storylines && storylines.length > 0) line.storylines = storylines;
+    parsedLines.push(line);
   }
 
   const pageBreaks = paginateScreenplay(parsedLines, paperSize);

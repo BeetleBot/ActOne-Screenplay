@@ -10,6 +10,59 @@ interface TextSegment {
   underline: boolean;
 }
 
+type ScriptName = 'latin' | 'devanagari' | 'tamil' | 'telugu' | 'kannada' | 'malayalam' | 'bengali' | 'gujarati' | 'gurmukhi' | 'oriya';
+
+const SCRIPT_FONT_FILES: Record<ScriptName, string> = {
+  latin: '',
+  devanagari: '/fonts/NotoSansDevanagari.ttf',
+  tamil: '/fonts/NotoSansTamil.ttf',
+  telugu: '/fonts/NotoSansTelugu.ttf',
+  kannada: '/fonts/NotoSansKannada.ttf',
+  malayalam: '/fonts/NotoSansMalayalam.ttf',
+  bengali: '/fonts/NotoSansBengali.ttf',
+  gujarati: '/fonts/NotoSansGujarati.ttf',
+  gurmukhi: '/fonts/NotoSansGurmukhi.ttf',
+  oriya: '/fonts/NotoSansOriya.ttf',
+};
+
+function detectScript(char: string): ScriptName {
+  const code = char.codePointAt(0) || 0;
+  if (code >= 0x0900 && code <= 0x097F) return 'devanagari';
+  if (code >= 0x0B80 && code <= 0x0BFF) return 'tamil';
+  if (code >= 0x0C00 && code <= 0x0C7F) return 'telugu';
+  if (code >= 0x0C80 && code <= 0x0CFF) return 'kannada';
+  if (code >= 0x0D00 && code <= 0x0D7F) return 'malayalam';
+  if (code >= 0x0980 && code <= 0x09FF) return 'bengali';
+  if (code >= 0x0A80 && code <= 0x0AFF) return 'gujarati';
+  if (code >= 0x0A00 && code <= 0x0A7F) return 'gurmukhi';
+  if (code >= 0x0B00 && code <= 0x0B7F) return 'oriya';
+  return 'latin';
+}
+
+interface ScriptSegment {
+  text: string;
+  script: ScriptName;
+}
+
+function splitByScript(text: string): ScriptSegment[] {
+  if (text.length === 0) return [{ text: '', script: 'latin' }];
+  const segments: ScriptSegment[] = [];
+  let current = text[0];
+  let currentScript = detectScript(text[0]);
+  for (let i = 1; i < text.length; i++) {
+    const charScript = detectScript(text[i]);
+    if (charScript === currentScript || charScript === 'latin') {
+      current += text[i];
+    } else {
+      segments.push({ text: current, script: currentScript });
+      current = text[i];
+      currentScript = charScript;
+    }
+  }
+  segments.push({ text: current, script: currentScript });
+  return segments;
+}
+
 function parseInlineStyles(text: string): TextSegment[] {
   const segments: TextSegment[] = [];
   let i = 0;
@@ -134,41 +187,69 @@ function drawStyledLine(
   fontRegular: any,
   fontBold: any,
   fontItalic: any,
-  fontBoldItalic: any
+  fontBoldItalic: any,
+  fallbackFonts?: Map<ScriptName, any>
 ) {
   const segments = parseInlineStyles(text);
   let currentX = x;
 
   for (const seg of segments) {
-    let font = fontRegular;
-    if (seg.bold && seg.italic) {
-      font = fontBoldItalic;
-    } else if (seg.bold) {
-      font = fontBold;
-    } else if (seg.italic) {
-      font = fontItalic;
+    let baseFontRegular = fontRegular;
+    let baseFontBold = fontBold;
+    let baseFontItalic = fontItalic;
+    let baseFontBI = fontBoldItalic;
+
+    const scriptSegments = splitByScript(seg.text);
+    for (const ss of scriptSegments) {
+      let font: any;
+      if (ss.script !== 'latin' && fallbackFonts?.has(ss.script)) {
+        font = fallbackFonts.get(ss.script)!;
+      } else if (seg.bold && seg.italic) {
+        font = baseFontBI;
+      } else if (seg.bold) {
+        font = baseFontBold;
+      } else if (seg.italic) {
+        font = baseFontItalic;
+      } else {
+        font = baseFontRegular;
+      }
+
+      try {
+        page.drawText(ss.text, {
+          x: currentX,
+          y,
+          size: fontSize,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      } catch {
+        page.drawText(ss.text, {
+          x: currentX,
+          y,
+          size: fontSize,
+          font: baseFontRegular,
+          color: rgb(0, 0, 0),
+        });
+      }
+
+      let width: number;
+      try {
+        width = font.widthOfTextAtSize(ss.text, fontSize);
+      } catch {
+        width = baseFontRegular.widthOfTextAtSize(ss.text.replace(/[^\x00-\x7F]/g, '?'), fontSize);
+      }
+
+      if (seg.underline) {
+        page.drawLine({
+          start: { x: currentX, y: y - 1.5 },
+          end: { x: currentX + width, y: y - 1.5 },
+          thickness: 0.8,
+          color: rgb(0, 0, 0),
+        });
+      }
+
+      currentX += width;
     }
-
-    page.drawText(seg.text, {
-      x: currentX,
-      y,
-      size: fontSize,
-      font,
-      color: rgb(0, 0, 0),
-    });
-
-    const width = font.widthOfTextAtSize(seg.text, fontSize);
-
-    if (seg.underline) {
-      page.drawLine({
-        start: { x: currentX, y: y - 1.5 },
-        end: { x: currentX + width, y: y - 1.5 },
-        thickness: 0.8,
-        color: rgb(0, 0, 0),
-      });
-    }
-
-    currentX += width;
   }
 }
 
@@ -328,7 +409,8 @@ function renderContentPage(
   fontBoldItalic: any,
   paperSize: 'letter' | 'a4',
   nextPageLines: ParsedLine[] | null,
-  allLines: ParsedLine[]
+  allLines: ParsedLine[],
+  fallbackFonts?: Map<ScriptName, any>
 ) {
   let y = height - 84;
   const fontSize = 12;
@@ -398,7 +480,8 @@ function renderContentPage(
         fontRegular,
         fontBold,
         fontItalic,
-        fontBoldItalic
+        fontBoldItalic,
+        fallbackFonts
       );
 
       if (line.type === LineType.heading && line.sceneNumber) {
@@ -479,6 +562,28 @@ export async function exportToPDF(
   const fontItalic = await pdfDoc.embedFont(italBytes);
   const fontBoldItalic = await pdfDoc.embedFont(biBytes);
 
+  const usedScripts = new Set<ScriptName>();
+  for (const line of parsedDoc.lines) {
+    for (const char of line.text) {
+      const s = detectScript(char);
+      if (s !== 'latin') usedScripts.add(s);
+    }
+  }
+
+  const fallbackFonts = new Map<ScriptName, any>();
+  for (const script of usedScripts) {
+    const fontPath = SCRIPT_FONT_FILES[script];
+    if (fontPath) {
+      try {
+        const bytes = await fetchFont(fontPath);
+        const embedded = await pdfDoc.embedFont(bytes);
+        fallbackFonts.set(script, embedded);
+      } catch (e) {
+        console.warn(`Failed to load fallback font for ${script}:`, e);
+      }
+    }
+  }
+
   const pages: ParsedLine[][] = [];
   let prevIdx = 0;
   if (parsedDoc.pageBreaks && parsedDoc.pageBreaks.length > 0) {
@@ -523,7 +628,8 @@ export async function exportToPDF(
         fontBoldItalic,
         paperSize,
         p < pages.length - 1 ? pages[p + 1] : null,
-        parsedDoc.lines
+        parsedDoc.lines,
+        fallbackFonts
       );
 
       contentPageNum++;

@@ -99,6 +99,9 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
               const isSynopsis = line.type === LineType.synopse;
               const isActive = index === visibleItems[activeIdx]?.index || line.id === selectedSceneId;
 
+              const hasMarker = !!line.marker;
+              const markerColor = hasMarker ? (line.marker!.color.startsWith("#") ? line.marker!.color : `var(--scene-color-${line.marker!.color})`) : undefined;
+
               const style: React.CSSProperties = {
                 padding: "6px 8px",
                 borderRadius: "6px",
@@ -107,6 +110,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
+                flexWrap: "wrap",
                 transition: "background 0.15s, color 0.15s",
                 paddingLeft: `${Math.max(8, depth * 12)}px`,
                 color: isActive
@@ -164,9 +168,35 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                       }}
                     />
                   )}
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {line.text.replace(/^[.#= ]+/, "")}
+                  {hasMarker && (
+                    <span
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "2px",
+                        backgroundColor: markerColor,
+                        display: "inline-block",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                    {hasMarker && !isSection && line.type !== LineType.heading
+                      ? (line.marker!.description || "Marker")
+                      : line.text.replace(/^[.#= ]+/, "").replace(/\[\[.*?\]\]/g, "").replace(/#[^#]+#\s*$/, "").trim()}
                   </span>
+                  {line.storylines && line.storylines.length > 0 && (
+                    <span style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                      {line.storylines.map((sl) => (
+                        <span
+                          key={sl}
+                          className="storyline-badge"
+                        >
+                          {sl}
+                        </span>
+                      ))}
+                    </span>
+                  )}
                   {line.sceneNumber && (
                     <span style={{ marginLeft: "auto", fontSize: "11px", opacity: 0.5, fontWeight: "bold" }}>
                       {line.sceneNumber}

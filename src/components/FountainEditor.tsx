@@ -298,6 +298,20 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("@") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
     }
 
+    let noteTagRegex = /\[\[(.*?)\]\]/g;
+    let noteM;
+    while ((noteM = noteTagRegex.exec(line.text)) !== null) {
+      const noteContent = noteM[1].trim().toLowerCase();
+      const noteFrom = line.from + noteM.index;
+      const noteTo = noteFrom + noteM[0].length;
+      if (noteContent.startsWith("marker")) {
+        lineDecos.push({ from: noteFrom, to: noteTo, dec: Decoration.mark({ class: "cm-fountain-marker" }) });
+      } else if (noteContent.startsWith("color") || noteContent.startsWith("storyline") ||
+                 /^(red|blue|green|pink|magenta|gray|purple|cyan|teal|yellow|orange|brown)$/.test(noteContent)) {
+        lineDecos.push({ from: noteFrom, to: noteTo, dec: Decoration.mark({ class: "cm-fountain-note-tag" }) });
+      }
+    }
+
     // Markdown Parsing
     let text = line.text;
     

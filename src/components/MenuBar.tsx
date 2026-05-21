@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useScreenplay } from '../context/ScreenplayContext';
+import { usePlugins } from '../plugins/PluginManager';
 
 type MenuItem = {
   label?: string;
@@ -23,6 +24,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onExportPDF }) => {
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const menuBarRef = useRef<HTMLDivElement>(null);
   const { openFile, saveFile, autoAddSceneNumbers, clearSceneNumbers, newFile, saveFileAs, closeFile, activeFileId } = useScreenplay();
+  const { availablePlugins, activePlugins, runPlugin, stopPlugin, reloadPlugins } = usePlugins();
 
   const handleClose = () => {
     try {
@@ -115,6 +117,27 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onExportPDF }) => {
         { label: 'Zoom In', shortcut: 'Ctrl++' },
         { label: 'Zoom Out', shortcut: 'Ctrl+-' },
         { label: 'Actual Size', shortcut: 'Ctrl+0' },
+      ]
+    },
+    {
+      label: 'Plugins',
+      items: [
+        ...availablePlugins.map(p => ({
+          label: activePlugins.has(p.name) ? `■ ${p.name}` : `▷ ${p.name}`,
+          action: () => {
+            if (activePlugins.has(p.name)) {
+              stopPlugin(p.name);
+            } else {
+              runPlugin(p.name);
+            }
+          }
+        })),
+        ...(availablePlugins.length > 0 ? [{ divider: true } as MenuItem] : []),
+        { label: 'Reload Plugins', action: () => reloadPlugins() },
+        ...(availablePlugins.length === 0 ? [
+          { divider: true } as MenuItem,
+          { label: 'No plugins found' } as MenuItem,
+        ] : []),
       ]
     },
     {

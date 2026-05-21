@@ -6,6 +6,7 @@ import { SidebarViews } from "./components/SidebarViews";
 import { ScreenplayPreview } from "./components/ScreenplayPreview";
 import { IndexCardsWorkspace } from "./components/IndexCardsWorkspace";
 import { TimelineView } from "./components/TimelineView";
+import { PluginManagerProvider } from "./plugins/PluginManager";
 import {
   List,
   FileText,
@@ -377,9 +378,11 @@ const FloatingTabs: React.FC = () => {
 function App() {
   return (
     <ScreenplayProvider>
-      <Titlebar />
-      <FloatingTabs />
-      <Workspace />
+      <PluginManagerProvider>
+        <Titlebar />
+        <FloatingTabs />
+        <Workspace />
+      </PluginManagerProvider>
     </ScreenplayProvider>
   );
 }
