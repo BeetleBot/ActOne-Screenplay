@@ -1,4 +1,5 @@
 import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { invoke } from "@tauri-apps/api/core";
 import { FountainDocument, LineType, ParsedLine, getElementMaxWidth } from "../parser/FountainParser";
 
@@ -88,15 +89,15 @@ function cleanFountainSyntax(text: string, type: LineType): string {
   } else if (type === LineType.transitionLine && trimmed.startsWith(">")) {
     cleaned = text.replace(/^\s*>/, "");
   }
-  
+
   if ((type === LineType.character || type === LineType.dualDialogueCharacter) && cleaned.endsWith("^")) {
     cleaned = cleaned.substring(0, cleaned.length - 1).trimEnd();
   }
-  
+
   if (type === LineType.heading) {
     cleaned = cleaned.replace(/#[^#]+#\s*$/, "").trimEnd();
   }
-  
+
   return cleaned;
 }
 
@@ -373,7 +374,7 @@ function renderContentPage(
 
     for (const wrappedLine of wrappedLines) {
       let x = 108;
-      
+
       if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
         x = 266.4;
       } else if (line.type === LineType.parenthetical || line.type === LineType.dualDialogueParenthetical) {
@@ -403,7 +404,7 @@ function renderContentPage(
       if (line.type === LineType.heading && line.sceneNumber) {
         const leftSceneX = 92 - fontBold.widthOfTextAtSize(line.sceneNumber, fontSize);
         const rightSceneX = width - 56;
-        
+
         page.drawText(line.sceneNumber, {
           x: leftSceneX,
           y,
@@ -411,7 +412,7 @@ function renderContentPage(
           font: fontBold,
           color: rgb(0, 0, 0),
         });
-        
+
         page.drawText(line.sceneNumber, {
           x: rightSceneX,
           y,
@@ -460,11 +461,12 @@ export async function exportToPDF(
   const isA4 = paperSize === "a4";
   const width = isA4 ? 595 : 612;
   const height = isA4 ? 842 : 792;
-  
+
   const baseName = fontFamilyName === "courier-prime" ? "Courier Prime" : "Courier Prime Sans";
-  
+
   const pdfDoc = await PDFDocument.create();
-  
+  pdfDoc.registerFontkit(fontkit);
+
   const [regBytes, boldBytes, italBytes, biBytes] = await Promise.all([
     fetchFont(`/fonts/${encodeURIComponent(baseName)}.ttf`),
     fetchFont(`/fonts/${encodeURIComponent(baseName + " Bold")}.ttf`),
@@ -497,7 +499,7 @@ export async function exportToPDF(
       renderTitlePage(page, pageLines, width, height, fontRegular, fontBold, fontItalic);
     } else {
       const page = pdfDoc.addPage([width, height]);
-      
+
       if (contentPageNum > 1) {
         const pageNumText = `${contentPageNum}.`;
         const numWidth = fontRegular.widthOfTextAtSize(pageNumText, 12);
@@ -509,7 +511,7 @@ export async function exportToPDF(
           color: rgb(0, 0, 0),
         });
       }
-      
+
       renderContentPage(
         page,
         pageLines,
@@ -523,7 +525,7 @@ export async function exportToPDF(
         p < pages.length - 1 ? pages[p + 1] : null,
         parsedDoc.lines
       );
-      
+
       contentPageNum++;
     }
   }
@@ -545,7 +547,9 @@ export async function exportToPDF(
     link.download = "screenplay.pdf";
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
   }
 }

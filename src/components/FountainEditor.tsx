@@ -560,8 +560,8 @@ export const FountainEditor: React.FC = () => {
             const pos = update.state.selection.main.head;
             const lineNum = update.state.doc.lineAt(pos).number;
             const idx = lineNum - 1;
-            if (idx >= 0 && idx < parsedDoc.lines.length) {
-              setActiveLineId(parsedDoc.lines[idx].id);
+            if (idx >= 0 && idx < parsedDocRef.current.lines.length) {
+              setActiveLineId(parsedDocRef.current.lines[idx].id);
             }
           }
         }),

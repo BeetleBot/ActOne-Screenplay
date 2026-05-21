@@ -88,11 +88,12 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [paperSize]);
 
   const setRawText = (text: string) => {
-    setRawTextState(text);
+    const normalized = text.replace(/\r\n/g, "\n");
+    setRawTextState(normalized);
     if (workerRef.current) {
-      workerRef.current.postMessage({ text, paperSize });
+      workerRef.current.postMessage({ text: normalized, paperSize });
     } else {
-      setParsedDoc(parseScreenplay(text, paperSize));
+      setParsedDoc(parseScreenplay(normalized, paperSize));
     }
   };
 
