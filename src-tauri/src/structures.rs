@@ -46,10 +46,8 @@ fn parse_structures(content: &str) -> Vec<Structure> {
 
         if let Some(rest) = line.strip_prefix("##") {
             let rest = rest.trim_start();
-            if let Some(beat) = current_beat.take() {
-                if let Some(ref mut s) = current_struct {
-                    s.beats.push(beat);
-                }
+            if let (Some(beat), Some(s)) = (current_beat.take(), current_struct.as_mut()) {
+                s.beats.push(beat);
             }
             current_beat = Some(StructureBeat {
                 label: rest.to_string(),
@@ -57,10 +55,8 @@ fn parse_structures(content: &str) -> Vec<Structure> {
             });
         } else if let Some(rest) = line.strip_prefix('#') {
             let rest = rest.trim_start();
-            if let Some(beat) = current_beat.take() {
-                if let Some(ref mut s) = current_struct {
-                    s.beats.push(beat);
-                }
+            if let (Some(beat), Some(s)) = (current_beat.take(), current_struct.as_mut()) {
+                s.beats.push(beat);
             }
             if let Some(s) = current_struct.take() {
                 structures.push(s);
@@ -91,10 +87,8 @@ fn parse_structures(content: &str) -> Vec<Structure> {
         }
     }
 
-    if let Some(beat) = current_beat.take() {
-        if let Some(ref mut s) = current_struct {
-            s.beats.push(beat);
-        }
+    if let (Some(beat), Some(s)) = (current_beat.take(), current_struct.as_mut()) {
+        s.beats.push(beat);
     }
     if let Some(s) = current_struct.take() {
         structures.push(s);

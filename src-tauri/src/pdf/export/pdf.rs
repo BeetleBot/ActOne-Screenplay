@@ -568,7 +568,7 @@ impl PdfExporter {
                     }
                     Element::Shot(s) => {
                         let mut s_styled = s.clone();
-                        s_styled.to_uppercase();
+                        s_styled.make_uppercase();
                         if self.bold_scene_headings {
                             for element in &mut s_styled.elements {
                                 element.set_bold();
@@ -599,7 +599,7 @@ impl PdfExporter {
                     Element::Section(s) => {
                         if self.sections {
                             let mut s_styled = s.clone();
-                            s_styled.to_uppercase();
+                            s_styled.make_uppercase();
                             for element in &mut s_styled.elements {
                                 element.set_bold();
                                 if self.export_font == "courier_prime_sans" {

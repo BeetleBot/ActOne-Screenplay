@@ -186,7 +186,7 @@ impl RichString {
     }
 
     /// Converts all text elements to uppercase.
-    pub fn to_uppercase(&mut self) {
+    pub fn make_uppercase(&mut self) {
         for element in &mut self.elements {
             element.text = element.text.to_uppercase();
         }

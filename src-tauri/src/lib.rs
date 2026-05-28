@@ -43,17 +43,16 @@ fn save_file_dialog(content: String) -> Option<String> {
 fn save_pdf_dialog(bytes: Vec<u8>) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("PDF Document", &["pdf"])
-        .save_file();
+        .save_file()?;
         
-    if let Some(path) = file {
-        if let Ok(_) = fs::write(&path, bytes) {
-            return Some(path.to_string_lossy().to_string());
-        }
+    if fs::write(&file, bytes).is_ok() {
+        return Some(file.to_string_lossy().to_string());
     }
     None
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 fn export_pdf(
     fountain_text: String,
     paper_size: String,
@@ -66,37 +65,35 @@ fn export_pdf(
 ) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("PDF Document", &["pdf"])
-        .save_file();
+        .save_file()?;
         
-    if let Some(path) = file {
-        let paper = if paper_size == "letter" {
-            pdf::LETTER
-        } else {
-            pdf::A4
-        };
-        let export_font = if font_family == "courier-prime-sans" {
-            "courier_prime_sans".to_string()
-        } else {
-            "courier_prime".to_string()
-        };
-        let mirror = match mirror_scene_numbers.as_str() {
-            "always" => pdf::MirrorOption::Always,
-            "export_only" => pdf::MirrorOption::ExportOnly,
-            _ => pdf::MirrorOption::Off,
-        };
-        let config = pdf::PdfExportConfig {
-            paper_size: paper,
-            bold_scene_headings,
-            mirror_scene_numbers: mirror,
-            export_sections,
-            export_synopses,
-            export_font,
-            revised_lines: vec![],
-            export_title_page,
-        };
-        if let Ok(_) = pdf::export_to_pdf(&fountain_text, &path, config) {
-            return Some(path.to_string_lossy().to_string());
-        }
+    let paper = if paper_size == "letter" {
+        pdf::LETTER
+    } else {
+        pdf::A4
+    };
+    let export_font = if font_family == "courier-prime-sans" {
+        "courier_prime_sans".to_string()
+    } else {
+        "courier_prime".to_string()
+    };
+    let mirror = match mirror_scene_numbers.as_str() {
+        "always" => pdf::MirrorOption::Always,
+        "export_only" => pdf::MirrorOption::ExportOnly,
+        _ => pdf::MirrorOption::Off,
+    };
+    let config = pdf::PdfExportConfig {
+        paper_size: paper,
+        bold_scene_headings,
+        mirror_scene_numbers: mirror,
+        export_sections,
+        export_synopses,
+        export_font,
+        revised_lines: vec![],
+        export_title_page,
+    };
+    if pdf::export_to_pdf(&fountain_text, &file, config).is_ok() {
+        return Some(file.to_string_lossy().to_string());
     }
     None
 }
