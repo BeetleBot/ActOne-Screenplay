@@ -7,7 +7,7 @@ interface SidebarViewProps {
 }
 
 export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
-  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes } = useScreenplay();
+  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes, typewriterMode } = useScreenplay();
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [characterFilter, setCharacterFilter] = useState("");
   
@@ -25,10 +25,10 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     if (activeTab === "outline" && activeItemRef.current) {
       activeItemRef.current.scrollIntoView({
         behavior: "smooth",
-        block: "nearest",
+        block: typewriterMode ? "center" : "nearest",
       });
     }
-  }, [selectedSceneId, activeLineId, activeTab]);
+  }, [selectedSceneId, activeLineId, activeTab, typewriterMode]);
 
   const toggleSection = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();

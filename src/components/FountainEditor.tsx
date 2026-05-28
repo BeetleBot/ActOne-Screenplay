@@ -615,7 +615,7 @@ export const FountainEditor: React.FC = () => {
                 }
               }
             }
-            if (typewriterModeRef.current && (update.docChanged || update.selectionSet)) {
+            if (typewriterModeRef.current && update.docChanged) {
               setTimeout(() => {
                 update.view.dispatch({
                   effects: EditorView.scrollIntoView(pos, { y: "center" })
