@@ -431,7 +431,7 @@ body {
   max-width: 8.5in;
   min-height: 100%;
   background: transparent;
-  padding: 60px 1.0in 50vh 1.5in;
+  padding: 60px 1.0in 60px 1.5in;
   position: relative;
   cursor: text;
   box-shadow: none;
@@ -1249,6 +1249,7 @@ body.dark-theme .floating-tab.active {
   position: relative;
   box-sizing: border-box;
   align-items: center;
+  gap: 2px;
 }
 
 body.dark-theme .timeline-track {
@@ -1267,13 +1268,8 @@ body.dark-theme .timeline-track {
   container-type: inline-size;
   background: rgba(0, 0, 0, 0.06);
   border-radius: 2px;
-  margin-right: 2px;
-  flex-shrink: 0;
+  flex-shrink: 1;
   transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-}
-
-.timeline-segment:last-child {
-  margin-right: 0;
 }
 
 body.dark-theme .timeline-segment {
