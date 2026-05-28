@@ -47,7 +47,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
   const {
     newFile,
     openFile,
@@ -61,7 +60,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setTypewriterMode,
     showTimeline,
     setShowTimeline,
-    editorView
+    editorView,
+    setWorkspaceMode,
+    setActiveTab,
+    setFontFamily,
+    setPaperSize
   } = useScreenplay();
 
 
@@ -124,7 +127,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     onClose();
   };
 
-  // Compile full command list dynamically
   const commands: CommandItem[] = [
     // File
     { id: "file-new", name: "New Screenplay", category: "File", icon: <FilePlus size={16} />, shortcut: "Ctrl+N", action: () => { newFile(); onClose(); } },
@@ -132,23 +134,39 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "file-save", name: "Save Screenplay", category: "File", icon: <Save size={16} />, shortcut: "Ctrl+S", action: () => { saveFile(); onClose(); } },
     { id: "file-save-as", name: "Save Screenplay As...", category: "File", icon: <FileDown size={16} />, shortcut: "Ctrl+Shift+S", action: () => { saveFileAs(); onClose(); } },
     { id: "file-close", name: "Close Active File", category: "File", icon: <Trash2 size={16} />, shortcut: "Ctrl+W", action: () => { closeFile(activeFileId); onClose(); } },
-    // Export
-    { id: "export-pdf", name: "Export...", category: "Export", icon: <Sparkles size={16} />, shortcut: "Ctrl+P", action: () => { onExportPDF(); onClose(); } },
-    // Edit & Format
+    { id: "file-export", name: "Export...", category: "File", icon: <FileDown size={16} />, shortcut: "Ctrl+P", action: () => { onExportPDF(); onClose(); } },
+
+    // Edit
     { id: "edit-undo", name: "Undo", category: "Edit", icon: <Scissors size={16} />, shortcut: "Ctrl+Z", action: handleUndo },
     { id: "edit-redo", name: "Redo", category: "Edit", icon: <Scissors size={16} />, shortcut: "Ctrl+Shift+Z", action: handleRedo },
     { id: "edit-cut", name: "Cut Selected", category: "Edit", icon: <Scissors size={16} />, shortcut: "Ctrl+X", action: () => handleEditorAction("cut") },
     { id: "edit-copy", name: "Copy Selected", category: "Edit", icon: <Copy size={16} />, shortcut: "Ctrl+C", action: () => handleEditorAction("copy") },
     { id: "edit-paste", name: "Paste", category: "Edit", icon: <Clipboard size={16} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
-    { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <Sparkles size={16} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
-    { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <Trash2 size={16} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },
-    { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <Sparkles size={16} />, action: () => { onOpenStructureModal(); onClose(); } },
+
     // View
+    { id: "view-mode-editor", name: "Switch to Editor Mode", category: "View", icon: <Settings size={16} />, action: () => { setWorkspaceMode("editor"); onClose(); } },
+    { id: "view-mode-cards", name: "Switch to Index Cards Mode", category: "View", icon: <Settings size={16} />, action: () => { setWorkspaceMode("cards"); onClose(); } },
     { id: "view-sidebar", name: isSidebarOpen ? "Hide Sidebar Outline" : "Show Sidebar Outline", category: "View", icon: <Sidebar size={16} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } },
+    { id: "view-tab-outline", name: "Switch Sidebar Tab: Outline", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("outline"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-notepad", name: "Switch Sidebar Tab: Notepad", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("notepad"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-characters", name: "Switch Sidebar Tab: Characters", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("characters"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-stats", name: "Switch Sidebar Tab: Statistics", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("stats"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <Settings size={16} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-timeline", name: showTimeline ? "Hide Timeline" : "Show Timeline", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
-    // Themes
+
+    // Format
+    { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <Sparkles size={16} />, action: () => { onOpenStructureModal(); onClose(); } },
+    { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <Sparkles size={16} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
+    { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <Trash2 size={16} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },
+
+    // Theme
     { id: "view-theme-selector", name: "Change Theme...", category: "Theme", icon: <Settings size={16} />, action: () => { onOpenThemeModal(); onClose(); } },
+
+    // Settings
+    { id: "settings-font-prime", name: "Set Font: Courier Prime", category: "Settings", icon: <Settings size={16} />, action: () => { setFontFamily("courier-prime"); onClose(); } },
+    { id: "settings-font-sans", name: "Set Font: Courier Prime Sans", category: "Settings", icon: <Settings size={16} />, action: () => { setFontFamily("courier-prime-sans"); onClose(); } },
+    { id: "settings-paper-letter", name: "Set Paper Size: US Letter", category: "Settings", icon: <Settings size={16} />, action: () => { setPaperSize("letter"); onClose(); } },
+    { id: "settings-paper-a4", name: "Set Paper Size: A4", category: "Settings", icon: <Settings size={16} />, action: () => { setPaperSize("a4"); onClose(); } },
   ];
 
   // Filter commands by search string

@@ -49,10 +49,12 @@ interface ScreenplayContextProps {
   triggerTemporaryTabBar: () => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
-  workspaceMode: 'editor' | 'preview' | 'cards';
-  setWorkspaceMode: (mode: 'editor' | 'preview' | 'cards') => void;
+  workspaceMode: 'editor' | 'cards';
+  setWorkspaceMode: (mode: 'editor' | 'cards') => void;
   showTimeline: boolean;
   setShowTimeline: (show: boolean) => void;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
 }
 
 const ScreenplayContext = createContext<ScreenplayContextProps | undefined>(undefined);
@@ -75,7 +77,8 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
     return (localStorage.getItem("drafter-paper-size") as any) || "letter";
   });
-  const [workspaceMode, setWorkspaceMode] = useState<'editor' | 'preview' | 'cards'>("editor");
+  const [workspaceMode, setWorkspaceMode] = useState<'editor' | 'cards'>("editor");
+  const [activeTab, setActiveTab] = useState<string>("outline");
 
   const initialFileId = useRef(generateUUID());
   const defaultText = "";
@@ -623,6 +626,8 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setWorkspaceMode,
         showTimeline,
         setShowTimeline,
+        activeTab,
+        setActiveTab,
       }}
     >
       {children}

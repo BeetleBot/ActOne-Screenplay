@@ -6,7 +6,6 @@
 - [x] Figure our a consistent UI philosophy for writing app.
 - [x] Rework/improve the Timeline feature.
 - [x] Add more export options (PDF, etc.)
-- [ ] Rework the screenplay Preview feature.
 - [ ] Implement Marker's features.
 - [ ] Find a way to include all Indian languages(Figure out the fonts) for the editor and export options.
 - [ ] Fix keyboard scrolling in Navigator
@@ -18,6 +17,7 @@
 
 - [x] Import Strucutre.
 - [ ] Add zoom-in / zoom-out feature for editor. 
+- [ ] screenplay Preview feature.
 - [ ] Markers and tags.
 - [ ] X-Ray or Analysis stuffs.
 - [ ] AI integration(For Translations, Rephrasing and Better words)

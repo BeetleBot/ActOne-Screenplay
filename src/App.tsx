@@ -3,7 +3,6 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ScreenplayProvider, useScreenplay } from "./context/ScreenplayContext";
 import { FountainEditor } from "./components/FountainEditor";
 import { SidebarViews } from "./components/SidebarViews";
-import { ScreenplayPreview } from "./components/ScreenplayPreview";
 import { IndexCardsWorkspace } from "./components/IndexCardsWorkspace";
 import { TimelineView } from "./components/TimelineView";
 
@@ -15,7 +14,6 @@ import {
   Minus,
   Square,
   X,
-  Eye,
   LayoutGrid,
   Settings,
   PanelLeft,
@@ -201,10 +199,9 @@ function App() {
 }
 
 const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boolean) => void }> = ({ isSidebarOpen, setIsSidebarOpen }) => {
-  const [activeTab, setActiveTab] = useState<string>("outline");
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, workspaceMode, setWorkspaceMode, editorView, showTimeline } = useScreenplay();
+  const { paperSize, workspaceMode, setWorkspaceMode, editorView, showTimeline, activeTab, setActiveTab } = useScreenplay();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -344,9 +341,6 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
               <FountainEditor />
             </div>
           )}
-          {workspaceMode === "preview" && (
-            <ScreenplayPreview />
-          )}
           {workspaceMode === "cards" && (
             <IndexCardsWorkspace />
           )}
@@ -388,13 +382,6 @@ const EditorToolbar: React.FC = () => {
 
   return (
     <div className="editor-toolbar">
-      <button 
-        className={`editor-toolbar-btn ${workspaceMode === "preview" ? "active" : ""}`} 
-        title="Preview"
-        onClick={() => setWorkspaceMode(workspaceMode === "preview" ? "editor" : "preview")}
-      >
-        <Eye size={18} strokeWidth={1.5} />
-      </button>
       <button 
         className={`editor-toolbar-btn ${workspaceMode === "cards" ? "active" : ""}`} 
         title="Index Cards"
