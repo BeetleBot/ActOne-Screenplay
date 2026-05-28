@@ -17,12 +17,12 @@ export const useTheme = () => {
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeType>(() => {
-    return (localStorage.getItem("drafter-theme") as ThemeType) || "light";
+    return (localStorage.getItem("actone-theme") as ThemeType) || "light";
   });
 
   const setTheme = (t: ThemeType) => {
     setThemeState(t);
-    localStorage.setItem("drafter-theme", t);
+    localStorage.setItem("actone-theme", t);
   };
 
   useEffect(() => {

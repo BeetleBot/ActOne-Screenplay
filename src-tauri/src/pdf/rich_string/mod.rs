@@ -8,7 +8,7 @@
 //! # Examples
 //!
 //! ```
-//! use drafter_lib::pdf::rich_string::RichString;
+//! use actone_lib::pdf::rich_string::RichString;
 //!
 //! let rs: RichString = "_Hello_ **world!**".into();
 //!

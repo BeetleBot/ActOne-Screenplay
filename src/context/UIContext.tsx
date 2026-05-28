@@ -31,18 +31,18 @@ export const useUI = () => {
 
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [fontFamily, setFontFamilyState] = useState<'courier-prime' | 'courier-prime-sans'>(() => {
-    return (localStorage.getItem("drafter-font-family") as any) || "courier-prime";
+    return (localStorage.getItem("actone-font-family") as any) || "courier-prime";
   });
   const [typewriterMode, setTypewriterModeState] = useState<boolean>(() => {
-    return localStorage.getItem("drafter-typewriter-mode") === "true";
+    return localStorage.getItem("actone-typewriter-mode") === "true";
   });
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
-    return (localStorage.getItem("drafter-paper-size") as any) || "letter";
+    return (localStorage.getItem("actone-paper-size") as any) || "letter";
   });
   const [workspaceMode, setWorkspaceMode] = useState<'editor' | 'cards'>("editor");
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
-    const saved = localStorage.getItem("drafter-zoom-level");
+    const saved = localStorage.getItem("actone-zoom-level");
     const parsed = saved ? parseInt(saved, 10) : 100;
     return isNaN(parsed) ? 100 : parsed;
   });
@@ -51,18 +51,18 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const hideTimerRef = useRef<any>(null);
 
   const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
-    return localStorage.getItem("drafter-show-timeline") !== "false";
+    return localStorage.getItem("actone-show-timeline") !== "false";
   });
 
   const setZoomLevel = (zoom: number) => {
     const newZoom = Math.min(Math.max(zoom, 50), 300);
     setZoomLevelState(newZoom);
-    localStorage.setItem("drafter-zoom-level", String(newZoom));
+    localStorage.setItem("actone-zoom-level", String(newZoom));
   };
 
   const setShowTimeline = (show: boolean) => {
     setShowTimelineState(show);
-    localStorage.setItem("drafter-show-timeline", String(show));
+    localStorage.setItem("actone-show-timeline", String(show));
   };
 
   const triggerTemporaryTabBar = () => {
@@ -85,17 +85,17 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const setFontFamily = (font: 'courier-prime' | 'courier-prime-sans') => {
     setFontFamilyState(font);
-    localStorage.setItem("drafter-font-family", font);
+    localStorage.setItem("actone-font-family", font);
   };
 
   const setTypewriterMode = (enabled: boolean) => {
     setTypewriterModeState(enabled);
-    localStorage.setItem("drafter-typewriter-mode", String(enabled));
+    localStorage.setItem("actone-typewriter-mode", String(enabled));
   };
 
   const setPaperSize = (size: 'letter' | 'a4') => {
     setPaperSizeState(size);
-    localStorage.setItem("drafter-paper-size", size);
+    localStorage.setItem("actone-paper-size", size);
   };
 
   return (

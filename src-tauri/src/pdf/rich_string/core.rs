@@ -24,7 +24,7 @@ use super::tokenizer;
 /// # Examples
 ///
 /// ```
-/// use drafter_lib::pdf::rich_string::RichString;
+/// use actone_lib::pdf::rich_string::RichString;
 ///
 /// let mut rs = RichString::from("Hello **world!**");
 ///
@@ -61,7 +61,7 @@ impl RichString {
     /// # Examples
     ///
     /// ```
-    /// use drafter_lib::pdf::rich_string::RichString;
+    /// use actone_lib::pdf::rich_string::RichString;
     ///
     /// let mut rs = RichString::from("He**llo**");
     ///
@@ -89,7 +89,7 @@ impl RichString {
     /// # Examples
     ///
     /// ```
-    /// use drafter_lib::pdf::rich_string::RichString;
+    /// use actone_lib::pdf::rich_string::RichString;
     ///
     /// let mut rs = RichString::from("He**ll**o");
     ///
@@ -151,7 +151,7 @@ impl RichString {
     /// # Examples
     ///
     /// ```
-    /// use drafter_lib::pdf::rich_string::RichString;
+    /// use actone_lib::pdf::rich_string::RichString;
     ///
     /// let mut rs = RichString::from("He**ll**o");
     ///

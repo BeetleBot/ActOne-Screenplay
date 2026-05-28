@@ -301,7 +301,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               <span className="cp-kbd">Esc</span> to close
             </span>
           </div>
-          <div>Drafter Palette</div>
+          <div>ActOne Palette</div>
         </div>
       </div>
     </div>

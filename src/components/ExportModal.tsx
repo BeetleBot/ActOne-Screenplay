@@ -15,9 +15,9 @@ function stripFountainForExport(
 ): string {
   let text = rawText;
 
-  const drafterStart = text.indexOf("/* If you're seeing this, you can remove the following stuff - DRAFTER:");
+  const drafterStart = text.indexOf("/* If you're seeing this, you can remove the following stuff - ACTONE:");
   if (drafterStart !== -1) {
-    const drafterEnd = text.indexOf("END_DRAFTER*/");
+    const drafterEnd = text.indexOf("END_ACTONE*/");
     if (drafterEnd !== -1) {
       text = text.substring(0, drafterStart).trimEnd();
     }
@@ -215,10 +215,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
 
           {format === "fountain" && (
             <div className="export-modal-fountain-info">
-              <p>Exports a clean Fountain file without Drafter-specific data.</p>
+              <p>Exports a clean Fountain file without ActOne-specific data.</p>
               <ul>
                 <li>Markers and note tags will be removed</li>
-                <li>Drafter settings block will be stripped</li>
+                <li>ActOne settings block will be stripped</li>
                 <li>Color and storyline tags will be removed</li>
               </ul>
             </div>

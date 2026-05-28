@@ -451,6 +451,6 @@ export function serializeScreenplay(lines: ParsedLine[], settings: any): string 
   if (!settings || Object.keys(settings).length === 0) {
     return text;
   }
-  const settingsBlock = `\n\n/* If you're seeing this, you can remove the following stuff - DRAFTER:\n${JSON.stringify(settings, null, 2)}\nEND_DRAFTER*/`;
+  const settingsBlock = `\n\n/* If you're seeing this, you can remove the following stuff - ACTONE:\n${JSON.stringify(settings, null, 2)}\nEND_ACTONE*/`;
   return text + settingsBlock;
 }

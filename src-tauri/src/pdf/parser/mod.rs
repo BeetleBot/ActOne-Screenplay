@@ -31,7 +31,7 @@ use preprocessor::{Line, Preprocessor};
 /// # Examples
 ///
 /// ```
-/// use drafter_lib::pdf::parse;
+/// use actone_lib::pdf::parse;
 ///
 /// let input = r#"
 /// Title: Example Screenplay
