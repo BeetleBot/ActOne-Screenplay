@@ -8,7 +8,7 @@
 //! # Examples
 //!
 //! ```
-//! use fount::pdf::rich_string::RichString;
+//! use drafter_lib::pdf::rich_string::RichString;
 //!
 //! let rs: RichString = "_Hello_ **world!**".into();
 //!
@@ -43,7 +43,7 @@ use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
 /// # Examples
 ///
 /// ```
-/// use fount::pdf::rich_string::RichString;
+/// use drafter_lib::pdf::rich_string::RichString;
 ///
 /// let mut rs = RichString::from("Hello **world!**");
 ///
@@ -80,7 +80,7 @@ impl RichString {
     /// # Examples
     ///
     /// ```
-    /// use fount::pdf::rich_string::RichString;
+    /// use drafter_lib::pdf::rich_string::RichString;
     ///
     /// let mut rs = RichString::from("He**llo**");
     ///
@@ -108,7 +108,7 @@ impl RichString {
     /// # Examples
     ///
     /// ```
-    /// use fount::pdf::rich_string::RichString;
+    /// use drafter_lib::pdf::rich_string::RichString;
     ///
     /// let mut rs = RichString::from("He**ll**o");
     ///
@@ -170,7 +170,7 @@ impl RichString {
     /// # Examples
     ///
     /// ```
-    /// use fount::pdf::rich_string::RichString;
+    /// use drafter_lib::pdf::rich_string::RichString;
     ///
     /// let mut rs = RichString::from("He**ll**o");
     ///

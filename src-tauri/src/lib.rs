@@ -1,6 +1,6 @@
 use std::fs;
 
-mod pdf;
+pub mod pdf;
 mod structures;
 
 #[tauri::command]

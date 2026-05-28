@@ -8,7 +8,10 @@
 //! [`Exporter::export`] returns [`std::io::Result`] and is generally expected
 //! to only return Error when there is an issue with the writer.
 
+pub mod elements;
+pub mod layout;
 pub mod pdf;
+pub mod title_page;
 
 use std::{
     fs::File,
@@ -39,7 +42,7 @@ pub trait Exporter {
 /// # Usage
 /// This trait must be in scope to use its methods:
 /// ```
-/// use fount::pdf::ExporterExt;
+/// use drafter_lib::pdf::ExporterExt;
 /// ```
 pub trait ExporterExt: Exporter {
     /// Exports the screenplay to stdout.

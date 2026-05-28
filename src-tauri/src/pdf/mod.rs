@@ -9,9 +9,9 @@ pub use self::screenplay::Screenplay;
 
 pub use self::export::Exporter;
 pub use self::export::ExporterExt;
-pub use self::export::pdf::A4;
-pub use self::export::pdf::LETTER;
-pub use self::export::pdf::PaperSize;
+pub use self::export::layout::A4;
+pub use self::export::layout::LETTER;
+pub use self::export::layout::PaperSize;
 pub use self::export::pdf::PdfExporter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
