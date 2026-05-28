@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { AppProvider, useAppContext } from "./context/AppContext";
+import { AppProviders } from "./context/AppProviders";
+import { useFile } from "./context/FileContext";
+import { useUI } from "./context/UIContext";
+import { useEditor } from "./context/EditorContext";
 import { FountainEditor } from "./components/FountainEditor";
 import { SidebarViews } from "./components/SidebarViews";
 import { IndexCardsWorkspace } from "./components/IndexCardsWorkspace";
@@ -51,7 +54,8 @@ const Titlebar: React.FC<{
   onOpenStructureModal,
   onOpenThemeModal,
 }) => {
-  const { filePath, isSaving, showTabBar, setShowTabBar, openTabBarManually } = useAppContext();
+  const { filePath, isSaving } = useFile();
+  const { showTabBar, setShowTabBar, openTabBarManually } = useUI();
 
   const handleClose = () => {
     try {
@@ -155,13 +159,15 @@ function AppInner() {
     newFile, 
     openFile, 
     saveFile, 
-    saveFileAs, 
-    editorView, 
+    saveFileAs
+  } = useFile();
+  const { editorView } = useEditor();
+  const {
     showTimeline, 
     setShowTimeline,
     zoomLevel,
     setZoomLevel
-  } = useAppContext();
+  } = useUI();
 
   useKeyboardShortcuts({
     newFile,
@@ -205,9 +211,9 @@ function AppInner() {
 function App() {
   return (
     <ThemeProvider>
-      <AppProvider>
+      <AppProviders>
         <AppInner />
-      </AppProvider>
+      </AppProviders>
     </ThemeProvider>
   );
 }
@@ -215,7 +221,8 @@ function App() {
 const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boolean) => void; onOpenThemeModal: () => void }> = ({ isSidebarOpen, setIsSidebarOpen, onOpenThemeModal }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, workspaceMode, setWorkspaceMode, editorView, showTimeline, activeTab, setActiveTab, zoomLevel } = useAppContext();
+  const { paperSize, workspaceMode, setWorkspaceMode, showTimeline, activeTab, setActiveTab, zoomLevel } = useUI();
+  const { editorView } = useEditor();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -391,7 +398,7 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
     setWorkspaceMode,
     zoomLevel,
     setZoomLevel
-  } = useAppContext();
+  } = useUI();
   const [showSettings, setShowSettings] = React.useState(false);
   const settingsRef = React.useRef<HTMLDivElement>(null);
 
@@ -503,10 +510,9 @@ const FloatingTabs: React.FC = () => {
     activeFileId, 
     selectFile, 
     newFile, 
-    closeFile, 
-    showTabBar, 
-    setShowTabBar
-  } = useAppContext();
+    closeFile 
+  } = useFile();
+  const { showTabBar, setShowTabBar } = useUI();
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 

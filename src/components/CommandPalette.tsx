@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAppContext } from "../context/AppContext";
+import { useFile } from "../context/FileContext";
+import { useEditor } from "../context/EditorContext";
+import { useUI } from "../context/UIContext";
 
 import {
   FilePlus,
@@ -54,18 +56,24 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     saveFileAs,
     closeFile,
     activeFileId,
+  } = useFile();
+
+  const {
     autoAddSceneNumbers,
     clearSceneNumbers,
+    editorView,
+  } = useEditor();
+
+  const {
     typewriterMode,
     setTypewriterMode,
     showTimeline,
     setShowTimeline,
-    editorView,
     setWorkspaceMode,
     setActiveTab,
     setFontFamily,
     setPaperSize
-  } = useAppContext();
+  } = useUI();
 
 
 
