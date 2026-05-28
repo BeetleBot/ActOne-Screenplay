@@ -1515,3 +1515,83 @@ body.dark-theme .floating-tab.active {
 .sidebar-resizer:active {
   background-color: var(--accent-color);
 }
+
+.export-modal-option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.export-modal-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-main);
+  user-select: none;
+}
+
+.export-modal-option-label-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.export-modal-option-label {
+  font-weight: 500;
+}
+
+.export-modal-option-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+.export-modal-checkbox {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-app);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.export-modal-checkbox:checked {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.export-modal-checkbox:checked::after {
+  content: "";
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg) translate(0px, -1px);
+  position: absolute;
+}
+
+.export-modal-select {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.export-modal-select:focus {
+  border-color: var(--accent-color);
+}

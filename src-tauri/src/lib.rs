@@ -2,6 +2,8 @@ use std::fs;
 use serde::Serialize;
 use tauri::Manager;
 
+mod pdf;
+
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
     let file = rfd::FileDialog::new()
@@ -52,6 +54,54 @@ fn save_pdf_dialog(bytes: Vec<u8>) -> Option<String> {
     None
 }
 
+#[tauri::command]
+fn export_pdf(
+    fountain_text: String,
+    paper_size: String,
+    font_family: String,
+    bold_scene_headings: bool,
+    mirror_scene_numbers: String,
+    export_sections: bool,
+    export_synopses: bool,
+    export_title_page: bool,
+) -> Option<String> {
+    let file = rfd::FileDialog::new()
+        .add_filter("PDF Document", &["pdf"])
+        .save_file();
+        
+    if let Some(path) = file {
+        let paper = if paper_size == "letter" {
+            pdf::LETTER
+        } else {
+            pdf::A4
+        };
+        let export_font = if font_family == "courier-prime-sans" {
+            "courier_prime_sans".to_string()
+        } else {
+            "courier_prime".to_string()
+        };
+        let mirror = match mirror_scene_numbers.as_str() {
+            "always" => pdf::MirrorOption::Always,
+            "export_only" => pdf::MirrorOption::ExportOnly,
+            _ => pdf::MirrorOption::Off,
+        };
+        let config = pdf::PdfExportConfig {
+            paper_size: paper,
+            bold_scene_headings,
+            mirror_scene_numbers: mirror,
+            export_sections,
+            export_synopses,
+            export_font,
+            revised_lines: vec![],
+            export_title_page,
+        };
+        if let Ok(_) = pdf::export_to_pdf(&fountain_text, &path, config) {
+            return Some(path.to_string_lossy().to_string());
+        }
+    }
+    None
+}
+
 #[derive(Serialize)]
 struct PluginInfo {
     name: String,
@@ -96,6 +146,7 @@ pub fn run() {
             save_file_content,
             save_file_dialog,
             save_pdf_dialog,
+            export_pdf,
             list_plugins
         ])
         .run(tauri::generate_context!())
