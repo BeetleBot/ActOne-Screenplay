@@ -26,6 +26,8 @@ import { CommandPalette } from "./components/CommandPalette";
 import { ExportModal } from "./components/ExportModal";
 import { StructureImportModal } from "./components/StructureImportModal";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { ThemeProvider } from "./context/ThemeContext";
+import { ThemeSelectorModal } from "./components/ThemeSelectorModal";
 
 const getTauriWindow = () => {
   if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
@@ -41,6 +43,7 @@ const Titlebar: React.FC<{
   setIsPaletteOpen: (open: boolean) => void;
   onExportPDF: () => void;
   onOpenStructureModal: () => void;
+  onOpenThemeModal: () => void;
 }> = ({
   isSidebarOpen,
   toggleSidebar,
@@ -48,6 +51,7 @@ const Titlebar: React.FC<{
   setIsPaletteOpen,
   onExportPDF,
   onOpenStructureModal,
+  onOpenThemeModal,
 }) => {
   const { filePath, isSaving, showTabBar, setShowTabBar, openTabBarManually } = useScreenplay();
 
@@ -137,6 +141,7 @@ const Titlebar: React.FC<{
         toggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
         onOpenStructureModal={onOpenStructureModal}
+        onOpenThemeModal={onOpenThemeModal}
       />
     </>
   );
@@ -147,6 +152,7 @@ function AppInner() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
   const { newFile, openFile, saveFile, saveFileAs, editorView, showTimeline, setShowTimeline } = useScreenplay();
 
   useKeyboardShortcuts({
@@ -170,6 +176,7 @@ function AppInner() {
         setIsPaletteOpen={setIsPaletteOpen}
         onExportPDF={() => setShowExportModal(true)}
         onOpenStructureModal={() => setShowStructureModal(true)}
+        onOpenThemeModal={() => setShowThemeModal(true)}
       />
       <FloatingTabs />
       <Workspace 
@@ -178,15 +185,18 @@ function AppInner() {
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
+      {showThemeModal && <ThemeSelectorModal onClose={() => setShowThemeModal(false)} />}
     </>
   );
 }
 
 function App() {
   return (
-    <ScreenplayProvider>
-      <AppInner />
-    </ScreenplayProvider>
+    <ThemeProvider>
+      <ScreenplayProvider>
+        <AppInner />
+      </ScreenplayProvider>
+    </ThemeProvider>
   );
 }
 
@@ -260,7 +270,27 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
     <div className="app-workspace">
       {isSidebarOpen && (
         <>
-          <div className="sidebar" style={{ width: `${sidebarWidth}px`, flexShrink: 0 }}>
+          <div 
+            className="sidebar" 
+            tabIndex={-1}
+            style={{ width: `${sidebarWidth}px`, flexShrink: 0, outline: 'none' }}
+            onMouseDown={(e) => {
+              const target = e.target as HTMLElement;
+              if (
+                target.tagName !== "INPUT" &&
+                target.tagName !== "TEXTAREA" &&
+                target.tagName !== "SELECT" &&
+                target.tagName !== "BUTTON" &&
+                !target.closest("button") &&
+                !target.closest("input") &&
+                !target.closest("textarea") &&
+                !target.closest("select") &&
+                target.contentEditable !== "true"
+              ) {
+                e.currentTarget.focus();
+              }
+            }}
+          >
             <div className="sidebar-tabs">
               <button
                 className={`sidebar-tab-btn ${activeTab === "outline" ? "active" : ""}`}
@@ -343,17 +373,8 @@ const EditorToolbarLeft: React.FC<{ toggleSidebar: () => void, isSidebarOpen: bo
 
 const EditorToolbar: React.FC = () => {
   const { fontFamily, setFontFamily, paperSize, setPaperSize, typewriterMode, setTypewriterMode, workspaceMode, setWorkspaceMode } = useScreenplay();
-  const [isDark, setIsDark] = React.useState(() => document.body.classList.contains("dark-theme"));
   const [showSettings, setShowSettings] = React.useState(false);
   const settingsRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (isDark) {
-      document.body.classList.add("dark-theme");
-    } else {
-      document.body.classList.remove("dark-theme");
-    }
-  }, [isDark]);
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -391,17 +412,6 @@ const EditorToolbar: React.FC = () => {
         </button>
         {showSettings && (
           <div className="editor-toolbar-dropdown">
-            <div className="editor-toolbar-dropdown-section">Theme</div>
-            <div 
-              className={`editor-toolbar-dropdown-option ${isDark ? "active" : ""}`}
-              onClick={() => setIsDark(!isDark)}
-            >
-              <span>Dark Mode</span>
-              {isDark && <Check size={14} />}
-            </div>
-
-            <div className="editor-toolbar-dropdown-divider" />
-
             <div className="editor-toolbar-dropdown-section">Editor Mode</div>
             <div 
               className={`editor-toolbar-dropdown-option ${typewriterMode ? "active" : ""}`}

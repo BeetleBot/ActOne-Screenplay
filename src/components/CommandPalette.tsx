@@ -9,8 +9,6 @@ import {
   Trash2,
   Sparkles,
   Sidebar,
-  Moon,
-  Sun,
   Settings,
   Scissors,
   Copy,
@@ -33,6 +31,7 @@ interface CommandPaletteProps {
   toggleSidebar: () => void;
   isSidebarOpen: boolean;
   onOpenStructureModal: () => void;
+  onOpenThemeModal: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -41,7 +40,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onExportPDF,
   toggleSidebar,
   isSidebarOpen,
-  onOpenStructureModal
+  onOpenStructureModal,
+  onOpenThemeModal
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -61,10 +61,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setTypewriterMode,
     showTimeline,
     setShowTimeline,
-    editorView,
-    theme,
-    setTheme
+    editorView
   } = useScreenplay();
+
+
 
   useEffect(() => {
     if (isOpen) {
@@ -148,12 +148,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <Settings size={16} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-timeline", name: showTimeline ? "Hide Timeline" : "Show Timeline", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
     // Themes
-    { id: "theme-light", name: "Switch to Light Theme", category: "Theme", icon: <Sun size={16} />, action: () => { setTheme("light"); onClose(); } },
-    { id: "theme-dark", name: "Switch to Dark Theme", category: "Theme", icon: <Moon size={16} />, action: () => { setTheme("dark"); onClose(); } },
-    { id: "theme-sepia", name: "Switch to Sepia (Retro) Theme", category: "Theme", icon: <Sun size={16} />, action: () => { setTheme("sepia"); onClose(); } },
-    { id: "theme-frost", name: "Switch to Nordic Frost Theme", category: "Theme", icon: <Sun size={16} />, action: () => { setTheme("frost"); onClose(); } },
-    { id: "theme-solarized", name: "Switch to Solarized Dark Theme", category: "Theme", icon: <Moon size={16} />, action: () => { setTheme("solarized"); onClose(); } },
-    { id: "theme-midnight", name: "Switch to Midnight Theme", category: "Theme", icon: <Moon size={16} />, action: () => { setTheme("midnight"); onClose(); } },
+    { id: "view-theme-selector", name: "Change Theme...", category: "Theme", icon: <Settings size={16} />, action: () => { onOpenThemeModal(); onClose(); } },
   ];
 
   // Filter commands by search string

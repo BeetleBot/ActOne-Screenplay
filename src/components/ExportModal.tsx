@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FileText, X, Download } from "lucide-react";
 import { useScreenplay } from "../context/ScreenplayContext";
 import { invoke } from "@tauri-apps/api/core";
@@ -158,8 +158,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     }
   };
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
   return (
-    <div className="export-modal-overlay" onClick={handleClose}>
+    <div 
+      className="export-modal-overlay" 
+      onClick={handleClose}
+      ref={containerRef}
+      tabIndex={-1}
+      style={{ outline: "none" }}
+    >
       <div className="export-modal" onClick={(e) => e.stopPropagation()}>
         <div className="export-modal-header">
           <div className="export-modal-title">

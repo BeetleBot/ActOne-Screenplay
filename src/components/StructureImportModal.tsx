@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Search, PlusCircle, RotateCcw, ArrowDownCircle } from "lucide-react";
 import { useScreenplay } from "../context/ScreenplayContext";
 import { invoke } from "@tauri-apps/api/core";
@@ -24,6 +24,11 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const fetchStructures = async () => {
@@ -100,7 +105,13 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   };
 
   return (
-    <div className="struct-modal-overlay" onClick={onClose}>
+    <div 
+      className="struct-modal-overlay" 
+      onClick={onClose}
+      ref={containerRef}
+      tabIndex={-1}
+      style={{ outline: "none" }}
+    >
       <div className="struct-modal" onClick={(e) => e.stopPropagation()}>
         <div className="struct-modal-header">
           <h2 className="struct-modal-title">Screenplay Structure Outlines</h2>

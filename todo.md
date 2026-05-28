@@ -16,9 +16,10 @@
 
 ## Features to Implement
 
+- [x] Import Strucutre.
+- [ ] Add zoom-in / zoom-out feature for editor. 
 - [ ] Markers and tags.
 - [ ] X-Ray or Analysis stuffs.
-- [ ] Import Strucutre.
 - [ ] AI integration(For Translations, Rephrasing and Better words)
 - [ ] Cloud integration(Google Drive, Dropbox, etc.,)
 - [ ] Revision Mode.
