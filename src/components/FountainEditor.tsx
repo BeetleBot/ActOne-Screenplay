@@ -530,7 +530,7 @@ function handleTab(view: EditorView): boolean {
 export const FountainEditor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, setActiveLineId, parsedDoc, setEditorView, fontFamily, typewriterMode } = useScreenplay();
+  const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, fontFamily, typewriterMode } = useScreenplay();
 
   const parsedDocRef = useRef(parsedDoc);
   useEffect(() => {
@@ -546,6 +546,11 @@ export const FountainEditor: React.FC = () => {
   useEffect(() => {
     setActiveLineIdRef.current = setActiveLineId;
   }, [setActiveLineId]);
+
+  const setSelectedSceneIdRef = useRef(setSelectedSceneId);
+  useEffect(() => {
+    setSelectedSceneIdRef.current = setSelectedSceneId;
+  }, [setSelectedSceneId]);
 
   const typewriterModeRef = useRef(typewriterMode);
   useEffect(() => {
@@ -602,6 +607,13 @@ export const FountainEditor: React.FC = () => {
             const idx = lineNum - 1;
             if (idx >= 0 && idx < parsedDocRef.current.lines.length) {
               setActiveLineIdRef.current(parsedDocRef.current.lines[idx].id);
+              const lines = parsedDocRef.current.lines;
+              for (let i = idx; i >= 0; i--) {
+                if (lines[i].isOutlineElement && lines[i].type !== LineType.synopse) {
+                  setSelectedSceneIdRef.current(lines[i].id);
+                  break;
+                }
+              }
             }
             if (typewriterModeRef.current && (update.docChanged || update.selectionSet)) {
               setTimeout(() => {

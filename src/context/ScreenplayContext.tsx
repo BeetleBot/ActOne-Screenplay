@@ -34,7 +34,7 @@ interface ScreenplayContextProps {
   isSaving: boolean;
   editorView: any | null;
   setEditorView: (view: any | null) => void;
-  scrollToLine: (lineIndex: number) => void;
+  scrollToLine: (lineIndex: number, noFocus?: boolean) => void;
   autoAddSceneNumbers: () => void;
   clearSceneNumbers: () => void;
   files: ScreenplayFile[];
@@ -75,7 +75,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [workspaceMode, setWorkspaceMode] = useState<'editor' | 'preview' | 'cards'>("editor");
 
   const initialFileId = useRef(generateUUID());
-  const defaultText = "TITLE: Drafter\nAUTHOR: Writer\n\nINT. HOME - DAY\n\nThis is a sample screenplay.";
+  const defaultText = "";
 
   const [files, setFiles] = useState<ScreenplayFile[]>(() => [
     {
@@ -199,7 +199,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const newFile = () => {
     const newId = generateUUID();
-    const newDefaultText = "TITLE: Untitled\nAUTHOR: Writer\n\nINT. HOME - DAY\n\nStart typing your screenplay here.";
+    const newDefaultText = "";
     const newFileObj: ScreenplayFile = {
       id: newId,
       filePath: null,
@@ -376,7 +376,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       const currentActive = files.find(f => f.id === activeFileId);
       const isDefault = currentActive && !currentActive.filePath && 
-                        (currentActive.rawText === "" || currentActive.rawText === defaultText);
+                        (currentActive.rawText === "" || !currentActive.isDirty);
 
       const parsed = parseScreenplay(res.content, paperSize);
       const cleanText = parsed.screenplayText;
@@ -488,14 +488,14 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setEditorViewState(view);
   };
 
-  const scrollToLine = (lineIndex: number) => {
+  const scrollToLine = (lineIndex: number, noFocus?: boolean) => {
     if (editorView) {
       const line = editorView.state.doc.line(lineIndex + 1);
       editorView.dispatch({
         selection: { anchor: line.from },
         scrollIntoView: true,
       });
-      editorView.focus();
+      if (!noFocus) editorView.focus();
     }
   };
 

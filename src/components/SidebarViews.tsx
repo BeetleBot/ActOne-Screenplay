@@ -89,7 +89,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
       }
     });
 
-    const currentDocLineIndex = parsedDoc.lines.findIndex((l) => l.id === activeLineId);
+
     
     interface GroupedItem {
       main: { line: typeof parsedDoc.lines[0], index: number };
@@ -115,18 +115,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     if (selectedSceneId) {
       activeSelectableIdx = selectableGroups.findIndex(g => g.main.line.id === selectedSceneId);
     }
-    
-    // Fallback if no selectedSceneId or it wasn't found in the current filtered view
-    if (activeSelectableIdx === -1) {
-      for (let i = 0; i < selectableGroups.length; i++) {
-        if (selectableGroups[i].main.index <= currentDocLineIndex) {
-          activeSelectableIdx = i;
-        } else {
-          break;
-        }
-      }
-    }
-    if (activeSelectableIdx === -1) activeSelectableIdx = 0;
+    if (activeSelectableIdx === -1 && selectableGroups.length > 0) activeSelectableIdx = 0;
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (selectableGroups.length === 0) return;
@@ -135,13 +124,19 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
         const nextIdx = Math.min(selectableGroups.length - 1, activeSelectableIdx + 1);
         const targetItem = selectableGroups[nextIdx].main;
         if (setSelectedSceneId) setSelectedSceneId(targetItem.line.id);
-        scrollToLine(targetItem.index);
+        scrollToLine(targetItem.index, true);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         const nextIdx = Math.max(0, activeSelectableIdx - 1);
         const targetItem = selectableGroups[nextIdx].main;
         if (setSelectedSceneId) setSelectedSceneId(targetItem.line.id);
-        scrollToLine(targetItem.index);
+        scrollToLine(targetItem.index, true);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (activeSelectableIdx >= 0 && activeSelectableIdx < selectableGroups.length) {
+          const targetItem = selectableGroups[activeSelectableIdx].main;
+          scrollToLine(targetItem.index);
+        }
       }
     };
 
