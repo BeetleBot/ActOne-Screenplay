@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useScreenplay } from "../context/ScreenplayContext";
+import { useAppContext } from "../context/AppContext";
 
 import {
   FilePlus,
@@ -65,7 +65,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setActiveTab,
     setFontFamily,
     setPaperSize
-  } = useScreenplay();
+  } = useAppContext();
 
 
 

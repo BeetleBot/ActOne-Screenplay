@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-export type ThemeType = 'light' | 'dark' | 'sepia' | 'frost' | 'solarized' | 'midnight' | 'lilac';
+export type ThemeType = 'light' | 'dark' | 'sepia' | 'frost' | 'solarized' | 'midnight' | 'lilac' | 'mocha' | 'latte' | 'everforest-dark' | 'everforest-light' | 'tokyo-night';
 
 interface ThemeContextProps {
   theme: ThemeType;
@@ -26,12 +26,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
-    const classes = ['theme-light', 'theme-dark', 'theme-sepia', 'theme-frost', 'theme-solarized', 'theme-midnight', 'theme-lilac'];
+    const classes = [
+      'theme-light', 'theme-dark', 'theme-sepia', 'theme-frost', 
+      'theme-solarized', 'theme-midnight', 'theme-lilac',
+      'theme-mocha', 'theme-latte', 'theme-everforest-dark', 
+      'theme-everforest-light', 'theme-tokyo-night'
+    ];
     document.body.classList.remove(...classes);
     document.body.classList.add(`theme-${theme}`);
     
-    // Maintain dark-theme class for backwards compatibility
-    if (theme === 'dark' || theme === 'solarized' || theme === 'midnight') {
+    // Maintain dark-theme class for backwards compatibility or high-level styling
+    const darkThemes = ['dark', 'solarized', 'midnight', 'mocha', 'everforest-dark', 'tokyo-night'];
+    if (darkThemes.includes(theme)) {
       document.body.classList.add('dark-theme');
     } else {
       document.body.classList.remove('dark-theme');

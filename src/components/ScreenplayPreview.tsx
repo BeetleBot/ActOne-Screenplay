@@ -1,9 +1,9 @@
 import React from "react";
-import { useScreenplay } from "../context/ScreenplayContext";
+import { useAppContext } from "../context/AppContext";
 import { LineType, ParsedLine } from "../parser/FountainParser";
 
 export const ScreenplayPreview: React.FC = () => {
-  const { parsedDoc, paperSize, fontFamily } = useScreenplay();
+  const { parsedDoc, paperSize, fontFamily } = useAppContext();
 
   const titlePageLines = parsedDoc.lines.filter(
     (l) => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useScreenplay } from "../context/ScreenplayContext";
+import { useAppContext } from "../context/AppContext";
 import { LineType, serializeScreenplay } from "../parser/FountainParser";
 
 interface CardItemProps {
@@ -81,7 +81,7 @@ const IndexCardItem: React.FC<CardItemProps> = ({
 };
 
 export const IndexCardsWorkspace: React.FC = () => {
-  const { parsedDoc, setRawText, reorderScenes, scrollToLine } = useScreenplay();
+  const { parsedDoc, setRawText, reorderScenes, scrollToLine } = useAppContext();
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 

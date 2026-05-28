@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ScreenplayProvider, useScreenplay } from "./context/ScreenplayContext";
+import { AppProvider, useAppContext } from "./context/AppContext";
 import { FountainEditor } from "./components/FountainEditor";
 import { SidebarViews } from "./components/SidebarViews";
 import { IndexCardsWorkspace } from "./components/IndexCardsWorkspace";
@@ -51,7 +51,7 @@ const Titlebar: React.FC<{
   onOpenStructureModal,
   onOpenThemeModal,
 }) => {
-  const { filePath, isSaving, showTabBar, setShowTabBar, openTabBarManually } = useScreenplay();
+  const { filePath, isSaving, showTabBar, setShowTabBar, openTabBarManually } = useAppContext();
 
   const handleClose = () => {
     try {
@@ -151,7 +151,17 @@ function AppInner() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
-  const { newFile, openFile, saveFile, saveFileAs, editorView, showTimeline, setShowTimeline } = useScreenplay();
+  const { 
+    newFile, 
+    openFile, 
+    saveFile, 
+    saveFileAs, 
+    editorView, 
+    showTimeline, 
+    setShowTimeline,
+    zoomLevel,
+    setZoomLevel
+  } = useAppContext();
 
   useKeyboardShortcuts({
     newFile,
@@ -163,6 +173,9 @@ function AppInner() {
     toggleSidebar: useCallback(() => setIsSidebarOpen(prev => !prev), []),
     toggleTimeline: useCallback(() => setShowTimeline(!showTimeline), [showTimeline, setShowTimeline]),
     getEditorView: useCallback(() => editorView, [editorView]),
+    zoomIn: useCallback(() => setZoomLevel(zoomLevel + 10), [zoomLevel, setZoomLevel]),
+    zoomOut: useCallback(() => setZoomLevel(zoomLevel - 10), [zoomLevel, setZoomLevel]),
+    resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
   });
 
   return (
@@ -180,6 +193,7 @@ function AppInner() {
       <Workspace 
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
+        onOpenThemeModal={() => setShowThemeModal(true)}
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
@@ -191,17 +205,17 @@ function AppInner() {
 function App() {
   return (
     <ThemeProvider>
-      <ScreenplayProvider>
+      <AppProvider>
         <AppInner />
-      </ScreenplayProvider>
+      </AppProvider>
     </ThemeProvider>
   );
 }
 
-const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boolean) => void }> = ({ isSidebarOpen, setIsSidebarOpen }) => {
+const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boolean) => void; onOpenThemeModal: () => void }> = ({ isSidebarOpen, setIsSidebarOpen, onOpenThemeModal }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, workspaceMode, setWorkspaceMode, editorView, showTimeline, activeTab, setActiveTab } = useScreenplay();
+  const { paperSize, workspaceMode, setWorkspaceMode, editorView, showTimeline, activeTab, setActiveTab, zoomLevel } = useAppContext();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -333,11 +347,11 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
       <div className="editor-container">
         <div className="editor-header-bar">
           <EditorToolbarLeft toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
-          <EditorToolbar />
+          <EditorToolbar onOpenThemeModal={onOpenThemeModal} />
         </div>
         <div className="editor-scroll-area">
           {workspaceMode === "editor" && (
-            <div className={`editor-paper paper-${paperSize}`}>
+            <div className={`editor-paper paper-${paperSize}`} style={{ zoom: zoomLevel / 100 }}>
               <FountainEditor />
             </div>
           )}
@@ -365,8 +379,19 @@ const EditorToolbarLeft: React.FC<{ toggleSidebar: () => void, isSidebarOpen: bo
   );
 };
 
-const EditorToolbar: React.FC = () => {
-  const { fontFamily, setFontFamily, paperSize, setPaperSize, typewriterMode, setTypewriterMode, workspaceMode, setWorkspaceMode } = useScreenplay();
+const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenThemeModal }) => {
+  const { 
+    fontFamily, 
+    setFontFamily, 
+    paperSize, 
+    setPaperSize, 
+    typewriterMode, 
+    setTypewriterMode, 
+    workspaceMode, 
+    setWorkspaceMode,
+    zoomLevel,
+    setZoomLevel
+  } = useAppContext();
   const [showSettings, setShowSettings] = React.useState(false);
   const settingsRef = React.useRef<HTMLDivElement>(null);
 
@@ -443,6 +468,28 @@ const EditorToolbar: React.FC = () => {
               <span>A4</span>
               {paperSize === "a4" && <Check size={14} />}
             </div>
+            <div className="editor-toolbar-dropdown-divider" />
+
+            <div className="editor-toolbar-dropdown-section">Appearance</div>
+            <div 
+              className="editor-toolbar-dropdown-option"
+              onClick={() => {
+                setShowSettings(false);
+                onOpenThemeModal();
+              }}
+            >
+              <span>Theme</span>
+            </div>
+
+            <div className="editor-toolbar-dropdown-divider" />
+
+            <div className="editor-toolbar-dropdown-section">Zoom</div>
+            <div 
+              className="editor-toolbar-dropdown-option"
+              onClick={() => setZoomLevel(100)}
+            >
+              <span>Reset Zoom ({zoomLevel}%)</span>
+            </div>
           </div>
         )}
       </div>
@@ -459,7 +506,7 @@ const FloatingTabs: React.FC = () => {
     closeFile, 
     showTabBar, 
     setShowTabBar
-  } = useScreenplay();
+  } = useAppContext();
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 

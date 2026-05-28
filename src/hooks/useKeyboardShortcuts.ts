@@ -10,6 +10,9 @@ interface ShortcutActions {
   toggleSidebar: () => void;
   toggleTimeline?: () => void;
   getEditorView: () => any | null;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
 }
 
 function toggleInlineMarker(view: any, marker: string) {
@@ -116,6 +119,24 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "u" && !shift) {
         e.preventDefault();
         toggleInlineMarker(actionsRef.current.getEditorView(), "_");
+        return;
+      }
+
+      if (key === "=" || key === "+") {
+        e.preventDefault();
+        actionsRef.current.zoomIn();
+        return;
+      }
+
+      if (key === "-") {
+        e.preventDefault();
+        actionsRef.current.zoomOut();
+        return;
+      }
+
+      if (key === "0") {
+        e.preventDefault();
+        actionsRef.current.resetZoom();
         return;
       }
     };

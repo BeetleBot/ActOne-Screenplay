@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Search, PlusCircle, RotateCcw, ArrowDownCircle } from "lucide-react";
-import { useScreenplay } from "../context/ScreenplayContext";
+import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
 
 interface StructureBeat {
@@ -19,7 +19,7 @@ interface StructureImportModalProps {
 }
 
 export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onClose }) => {
-  const { rawText, setRawText, editorView } = useScreenplay();
+  const { rawText, setRawText, editorView } = useAppContext();
   const [structures, setStructures] = useState<Structure[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);

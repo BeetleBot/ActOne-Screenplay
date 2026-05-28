@@ -25,14 +25,14 @@ const themes: ThemeConfig[] = [
     name: "Classic White",
     desc: "Clean paper workspace",
     isDark: false,
-    colors: { bg: "#faf9f6", text: "#2b2b2b", accent: "#007aff", sidebar: "#f2efe9" }
+    colors: { bg: "#ffffff", text: "#1a1a1a", accent: "#007aff", sidebar: "#f8f9fa" }
   },
   {
-    id: "dark",
-    name: "Charcoal Slate",
-    desc: "Low-fatigue dark workspace",
-    isDark: true,
-    colors: { bg: "#18191c", text: "#d4d4d8", accent: "#0a84ff", sidebar: "#121315" }
+    id: "latte",
+    name: "Catppuccin Latte",
+    desc: "Soothing light palette",
+    isDark: false,
+    colors: { bg: "#eff1f5", text: "#4c4f69", accent: "#1e66f5", sidebar: "#e6e9ef" }
   },
   {
     id: "sepia",
@@ -49,6 +49,48 @@ const themes: ThemeConfig[] = [
     colors: { bg: "#f0f4f8", text: "#2d3748", accent: "#3182ce", sidebar: "#e1e8f0" }
   },
   {
+    id: "everforest-light",
+    name: "Everforest Light",
+    desc: "Nature-inspired light",
+    isDark: false,
+    colors: { bg: "#fdf6e3", text: "#5c6a72", accent: "#859900", sidebar: "#f3ead3" }
+  },
+  {
+    id: "lilac",
+    name: "Lilac Violet",
+    desc: "Premium lavender pastel style",
+    isDark: false,
+    colors: { bg: "#f3e5f5", text: "#4a148c", accent: "#7b1fa2", sidebar: "#f8f0fb" }
+  },
+  {
+    id: "dark",
+    name: "Charcoal Slate",
+    desc: "Low-fatigue dark workspace",
+    isDark: true,
+    colors: { bg: "#18191c", text: "#d4d4d8", accent: "#0a84ff", sidebar: "#121315" }
+  },
+  {
+    id: "mocha",
+    name: "Catppuccin Mocha",
+    desc: "Soothing dark palette",
+    isDark: true,
+    colors: { bg: "#1e1e2e", text: "#cdd6f4", accent: "#89b4fa", sidebar: "#181825" }
+  },
+  {
+    id: "everforest-dark",
+    name: "Everforest Dark",
+    desc: "Nature-inspired dark",
+    isDark: true,
+    colors: { bg: "#2d353b", text: "#d3c6aa", accent: "#a7c080", sidebar: "#232a2e" }
+  },
+  {
+    id: "tokyo-night",
+    name: "Tokyo Night",
+    desc: "Stormy neon dark",
+    isDark: true,
+    colors: { bg: "#1a1b26", text: "#a9b1d6", accent: "#bb9af7", sidebar: "#16161e" }
+  },
+  {
     id: "solarized",
     name: "Solarized Dark",
     desc: "Classic developer dark mode",
@@ -61,18 +103,17 @@ const themes: ThemeConfig[] = [
     desc: "Neon violet cyberpunk glow",
     isDark: true,
     colors: { bg: "#0b0813", text: "#e1ddec", accent: "#ba68c8", sidebar: "#130f22" }
-  },
-  {
-    id: "lilac",
-    name: "Lilac Violet",
-    desc: "Premium lavender pastel style",
-    isDark: false,
-    colors: { bg: "#f3e5f5", text: "#4a148c", accent: "#7b1fa2", sidebar: "#f8f0fb" }
   }
 ];
 
 export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({ onClose }) => {
   const { theme, setTheme } = useTheme();
+  const [activeTab, setActiveTab] = React.useState<'light' | 'dark'>(() => {
+    const currentTheme = themes.find(t => t.id === theme);
+    return currentTheme?.isDark ? 'dark' : 'light';
+  });
+
+  const filteredThemes = themes.filter(t => t.isDark === (activeTab === 'dark'));
 
   return (
     <div className="theme-modal-overlay" onClick={onClose}>
@@ -84,9 +125,24 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({ onClose 
           </button>
         </div>
 
+        <div className="theme-tabs">
+          <button 
+            className={`theme-tab-btn ${activeTab === 'light' ? 'active' : ''}`}
+            onClick={() => setActiveTab('light')}
+          >
+            Light Themes
+          </button>
+          <button 
+            className={`theme-tab-btn ${activeTab === 'dark' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dark')}
+          >
+            Dark Themes
+          </button>
+        </div>
+
         <div className="theme-modal-body">
           <div className="theme-grid">
-            {themes.map((t) => {
+            {filteredThemes.map((t) => {
               const isActive = theme === t.id;
               return (
                 <button

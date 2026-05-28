@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useScreenplay } from "../context/ScreenplayContext";
+import { useAppContext } from "../context/AppContext";
 import { LineType } from "../parser/FountainParser";
 
 interface SidebarViewProps {
@@ -7,7 +7,7 @@ interface SidebarViewProps {
 }
 
 export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
-  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes, typewriterMode } = useScreenplay();
+  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes, typewriterMode } = useAppContext();
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [characterFilter, setCharacterFilter] = useState("");
   

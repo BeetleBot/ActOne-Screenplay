@@ -28,7 +28,7 @@ This document details the step-by-step phases for porting the Beat screenplay ed
 ### Tasks
 - Import `FountainParser.ts` for line-by-line classification (Scene headings, action, character, dialogue, parenthetical, transition, centered, lyrics, page break, section, synopsis, title page).
 - Set up a Web Worker (`FountainParser.worker.ts`) to handle screenplay parsing asynchronously on document updates.
-- Create a React state context (`ScreenplayContext`) managing:
+- Create a React state context (`AppContext`) managing:
   - Document text and parsed line arrays.
   - Document settings parsed from the trailing JSON comment block.
   - Cursor position and current scene indexing.

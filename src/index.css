@@ -2347,6 +2347,37 @@ body.dark-theme .cp-container {
   background: var(--bg-sidebar);
 }
 
+.theme-tabs {
+  display: flex;
+  padding: 8px 16px;
+  background: rgba(128, 128, 128, 0.05);
+  border-bottom: 1px solid var(--border-color);
+  gap: 8px;
+}
+
+.theme-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.theme-tab-btn:hover {
+  background: rgba(128, 128, 128, 0.1);
+  color: var(--text-main);
+}
+
+.theme-tab-btn.active {
+  background: var(--accent-color);
+  color: white;
+}
+
 .theme-modal-title {
   margin: 0;
   font-size: 15px;
@@ -2374,7 +2405,7 @@ body.dark-theme .cp-container {
 
 .theme-modal-body {
   padding: 16px;
-  max-height: 400px;
+  max-height: 480px;
   overflow-y: auto;
 }
 

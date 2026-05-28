@@ -3,7 +3,7 @@ import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirr
 import { EditorView, Decoration, DecorationSet, WidgetType, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { autocompletion, CompletionContext, CompletionResult } from "@codemirror/autocomplete";
-import { useScreenplay } from "../context/ScreenplayContext";
+import { useAppContext } from "../context/AppContext";
 import { LineType, FountainDocument } from "../parser/FountainParser";
 
 const updateParsedDocEffect = StateEffect.define<FountainDocument>();
@@ -526,7 +526,7 @@ function handleTab(view: EditorView): boolean {
 export const FountainEditor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, fontFamily, typewriterMode } = useScreenplay();
+  const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, fontFamily, typewriterMode } = useAppContext();
 
   const parsedDocRef = useRef(parsedDoc);
   useEffect(() => {

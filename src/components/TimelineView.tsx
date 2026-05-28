@@ -1,5 +1,5 @@
 import React from "react";
-import { useScreenplay } from "../context/ScreenplayContext";
+import { useAppContext } from "../context/AppContext";
 import { LineType } from "../parser/FountainParser";
 
 const getPageNumber = (lineIndex: number, pageBreaks: number[] = []) => {
@@ -15,7 +15,7 @@ const getPageNumber = (lineIndex: number, pageBreaks: number[] = []) => {
 };
 
 export const TimelineView: React.FC = () => {
-  const { parsedDoc, scrollToLine, selectedSceneId, activeLineId } = useScreenplay();
+  const { parsedDoc, scrollToLine, selectedSceneId, activeLineId } = useAppContext();
 
   const scenes = parsedDoc.lines
     .map((line, index) => ({ line, index }))

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FileText, X, Download } from "lucide-react";
-import { useScreenplay } from "../context/ScreenplayContext";
+import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
 
 type ExportFormat = "pdf" | "fountain";
@@ -76,7 +76,7 @@ function stripFountainForExport(
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
-  const { rawText, fontFamily, paperSize, editorView } = useScreenplay();
+  const { rawText, fontFamily, paperSize, editorView } = useAppContext();
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);

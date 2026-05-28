@@ -13,7 +13,7 @@ export interface ScreenplayFile {
   savedText: string;
 }
 
-interface ScreenplayContextProps {
+interface AppContextProps {
   rawText: string;
   parsedDoc: FountainDocument;
   filePath: string | null;
@@ -55,17 +55,19 @@ interface ScreenplayContextProps {
   setShowTimeline: (show: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  zoomLevel: number;
+  setZoomLevel: (zoom: number) => void;
 }
 
-const ScreenplayContext = createContext<ScreenplayContextProps | undefined>(undefined);
+const AppContext = createContext<AppContextProps | undefined>(undefined);
 
-export const useScreenplay = () => {
-  const context = useContext(ScreenplayContext);
-  if (!context) throw new Error("useScreenplay must be used within a ScreenplayProvider");
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) throw new Error("useAppContext must be used within an AppProvider");
   return context;
 };
 
-export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const generateUUID = () => "file-" + Math.random().toString(36).substring(2, 15);
 
   const [fontFamily, setFontFamilyState] = useState<'courier-prime' | 'courier-prime-sans'>(() => {
@@ -79,6 +81,17 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
   const [workspaceMode, setWorkspaceMode] = useState<'editor' | 'cards'>("editor");
   const [activeTab, setActiveTab] = useState<string>("outline");
+  const [zoomLevel, setZoomLevelState] = useState<number>(() => {
+    const saved = localStorage.getItem("drafter-zoom-level");
+    const parsed = saved ? parseInt(saved, 10) : 100;
+    return isNaN(parsed) ? 100 : parsed;
+  });
+
+  const setZoomLevel = (zoom: number) => {
+    const newZoom = Math.min(Math.max(zoom, 50), 300);
+    setZoomLevelState(newZoom);
+    localStorage.setItem("drafter-zoom-level", String(newZoom));
+  };
 
   const initialFileId = useRef(generateUUID());
   const defaultText = "";
@@ -585,7 +598,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   return (
-    <ScreenplayContext.Provider
+    <AppContext.Provider
       value={{
         rawText,
         parsedDoc,
@@ -628,9 +641,11 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setShowTimeline,
         activeTab,
         setActiveTab,
+        zoomLevel,
+        setZoomLevel,
       }}
     >
       {children}
-    </ScreenplayContext.Provider>
+    </AppContext.Provider>
   );
 };
