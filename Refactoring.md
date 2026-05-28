@@ -13,5 +13,5 @@
 
 ## Phase 3: Frontend (React) - Break down monolithic files
 - [x] Refactor `src/context/AppContext.tsx` (split into `FileContext`, `EditorContext`, `SettingsContext`)
-- [ ] Refactor `src/components/FountainEditor.tsx` (extract CodeMirror setup to custom hooks)
-- [ ] Refactor `src/App.tsx` (extract `MainLayout` and `ModalManager`)
+- [x] Refactor `src/components/FountainEditor.tsx` (extract CodeMirror setup to custom hooks)
+- [x] Refactor `src/App.tsx` (extract `MainLayout` and `ModalManager`)
