@@ -7,17 +7,13 @@ mod structures;
 fn open_file_dialog() -> Option<serde_json::Value> {
     let file = rfd::FileDialog::new()
         .add_filter("Fountain Screenplays", &["fountain", "txt"])
-        .pick_file();
+        .pick_file()?;
         
-    if let Some(path) = file {
-        if let Ok(content) = fs::read_to_string(&path) {
-            return Some(serde_json::json!({
-                "path": path.to_string_lossy(),
-                "content": content
-            }));
-        }
-    }
-    None
+    let content = fs::read_to_string(&file).ok()?;
+    Some(serde_json::json!({
+        "path": file.to_string_lossy(),
+        "content": content
+    }))
 }
 
 #[tauri::command]
@@ -29,12 +25,10 @@ fn save_file_content(path: String, content: String) -> Result<(), String> {
 fn save_file_dialog(content: String) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("Fountain Screenplays", &["fountain"])
-        .save_file();
+        .save_file()?;
         
-    if let Some(path) = file {
-        if let Ok(_) = fs::write(&path, content) {
-            return Some(path.to_string_lossy().to_string());
-        }
+    if fs::write(&file, content).is_ok() {
+        return Some(file.to_string_lossy().to_string());
     }
     None
 }
@@ -102,12 +96,10 @@ fn export_pdf(
 fn export_fountain(content: String) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("Fountain Screenplay", &["fountain"])
-        .save_file();
+        .save_file()?;
 
-    if let Some(path) = file {
-        if let Ok(_) = fs::write(&path, &content) {
-            return Some(path.to_string_lossy().to_string());
-        }
+    if fs::write(&file, &content).is_ok() {
+        return Some(file.to_string_lossy().to_string());
     }
     None
 }
@@ -128,4 +120,3 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-

@@ -294,11 +294,9 @@ impl PdfExporter {
         let mut outline = Outline::new();
 
         let has_title_page = self.title_page && screenplay.titlepage.is_some();
-        if has_title_page {
-            if let Some(t) = &screenplay.titlepage {
-                page_idx += 1;
-                write_titlepage(t, layout_info, max_lines_per_page, document)?;
-            }
+        if let (true, Some(t)) = (has_title_page, &screenplay.titlepage) {
+            page_idx += 1;
+            write_titlepage(t, layout_info, max_lines_per_page, document)?;
         }
 
         // Page loop, creates a new page and writes everything it can on it.
