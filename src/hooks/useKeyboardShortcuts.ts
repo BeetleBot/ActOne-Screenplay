@@ -1,0 +1,126 @@
+import { useEffect, useRef } from "react";
+
+interface ShortcutActions {
+  newFile: () => void;
+  openFile: () => void;
+  saveFile: () => void;
+  saveFileAs: () => void;
+  togglePalette: () => void;
+  exportPDF: () => void;
+  toggleSidebar: () => void;
+  toggleTimeline?: () => void;
+  getEditorView: () => any | null;
+}
+
+function toggleInlineMarker(view: any, marker: string) {
+  if (!view) return;
+
+  const { from, to } = view.state.selection.main;
+
+  if (from === to) return;
+
+  const selectedText = view.state.sliceDoc(from, to);
+
+  const isWrapped =
+    selectedText.startsWith(marker) && selectedText.endsWith(marker) && selectedText.length > marker.length * 2;
+
+  if (isWrapped) {
+    const unwrapped = selectedText.slice(marker.length, -marker.length);
+    view.dispatch({
+      changes: { from, to, insert: unwrapped },
+      selection: { anchor: from, head: from + unwrapped.length },
+    });
+  } else {
+    const wrapped = marker + selectedText + marker;
+    view.dispatch({
+      changes: { from, to, insert: wrapped },
+      selection: { anchor: from, head: from + wrapped.length },
+    });
+  }
+}
+
+export function useKeyboardShortcuts(actions: ShortcutActions) {
+  const actionsRef = useRef(actions);
+  useEffect(() => {
+    actionsRef.current = actions;
+  }, [actions]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (!ctrl) return;
+
+      const key = e.key.toLowerCase();
+      const shift = e.shiftKey;
+
+      if (key === "k") {
+        e.preventDefault();
+        actionsRef.current.togglePalette();
+        return;
+      }
+
+      if (key === "t" && shift) {
+        e.preventDefault();
+        actionsRef.current.toggleTimeline?.();
+        return;
+      }
+
+      if (key === "n" && !shift) {
+        e.preventDefault();
+        actionsRef.current.newFile();
+        return;
+      }
+
+      if (key === "o" && !shift) {
+        e.preventDefault();
+        actionsRef.current.openFile();
+        return;
+      }
+
+      if (key === "s" && shift) {
+        e.preventDefault();
+        actionsRef.current.saveFileAs();
+        return;
+      }
+
+      if (key === "s" && !shift) {
+        e.preventDefault();
+        actionsRef.current.saveFile();
+        return;
+      }
+
+      if (key === "p" && !shift) {
+        e.preventDefault();
+        actionsRef.current.exportPDF();
+        return;
+      }
+
+      if (key === "\\" && !shift) {
+        e.preventDefault();
+        actionsRef.current.toggleSidebar();
+        return;
+      }
+
+      if (key === "b" && !shift) {
+        e.preventDefault();
+        toggleInlineMarker(actionsRef.current.getEditorView(), "**");
+        return;
+      }
+
+      if (key === "i" && !shift) {
+        e.preventDefault();
+        toggleInlineMarker(actionsRef.current.getEditorView(), "*");
+        return;
+      }
+
+      if (key === "u" && !shift) {
+        e.preventDefault();
+        toggleInlineMarker(actionsRef.current.getEditorView(), "_");
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+}

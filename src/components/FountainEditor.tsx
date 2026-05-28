@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
-import { EditorView, Decoration, DecorationSet, WidgetType, keymap, drawSelection } from "@codemirror/view";
+import { EditorView, Decoration, DecorationSet, WidgetType, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { autocompletion, CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 import { useScreenplay } from "../context/ScreenplayContext";
@@ -16,19 +16,15 @@ class PageBreakWidget extends WidgetType {
     const div = document.createElement("div");
     div.className = "cm-fountain-pagebreak-widget";
     
-    const lineLeft = document.createElement("div");
-    lineLeft.className = "cm-fountain-pagebreak-line";
+    const line = document.createElement("div");
+    line.className = "cm-fountain-pagebreak-line";
     
     const label = document.createElement("span");
     label.className = "cm-fountain-pagebreak-label";
-    label.textContent = `PAGE ${this.pageNum}`;
+    label.textContent = `${this.pageNum}`;
     
-    const lineRight = document.createElement("div");
-    lineRight.className = "cm-fountain-pagebreak-line";
-    
-    div.appendChild(lineLeft);
+    div.appendChild(line);
     div.appendChild(label);
-    div.appendChild(lineRight);
     
     return div;
   }
@@ -591,7 +587,7 @@ export const FountainEditor: React.FC = () => {
       doc: rawText,
       extensions: [
         history(),
-        drawSelection(),
+
         fountainKeymap,
         keymap.of([...defaultKeymap, ...historyKeymap]),
         editorTheme,

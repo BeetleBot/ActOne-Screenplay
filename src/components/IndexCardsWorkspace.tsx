@@ -81,20 +81,9 @@ const IndexCardItem: React.FC<CardItemProps> = ({
 };
 
 export const IndexCardsWorkspace: React.FC = () => {
-  const { parsedDoc, setRawText, reorderScenes, scrollToLine, setWorkspaceMode } = useScreenplay();
+  const { parsedDoc, setRawText, reorderScenes, scrollToLine } = useScreenplay();
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setWorkspaceMode("editor");
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setWorkspaceMode]);
 
   const scenes = parsedDoc.lines
     .map((line, index) => ({ line, index }))

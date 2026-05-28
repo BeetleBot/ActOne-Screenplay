@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ScreenplayProvider, useScreenplay } from "./context/ScreenplayContext";
 import { FountainEditor } from "./components/FountainEditor";
@@ -22,8 +22,9 @@ import {
   Check,
   Plus
 } from "lucide-react";
-import { MenuBar } from "./components/MenuBar";
+import { CommandPalette } from "./components/CommandPalette";
 import { ExportModal } from "./components/ExportModal";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 const getTauriWindow = () => {
   if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
@@ -32,9 +33,20 @@ const getTauriWindow = () => {
   return null;
 };
 
-const Titlebar: React.FC = () => {
+const Titlebar: React.FC<{
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+  isPaletteOpen: boolean;
+  setIsPaletteOpen: (open: boolean) => void;
+  onExportPDF: () => void;
+}> = ({
+  isSidebarOpen,
+  toggleSidebar,
+  isPaletteOpen,
+  setIsPaletteOpen,
+  onExportPDF,
+}) => {
   const { filePath, isSaving, showTabBar, setShowTabBar, openTabBarManually } = useScreenplay();
-  const [showExportModal, setShowExportModal] = useState(false);
 
   const handleClose = () => {
     try {
@@ -74,7 +86,17 @@ const Titlebar: React.FC = () => {
   return (
     <>
       <div className="titlebar" data-tauri-drag-region>
-        <MenuBar onExportPDF={() => setShowExportModal(true)} />
+        <div className="window-controls-windows">
+          <button className="window-btn-windows minimize" onClick={handleMinimize} title="Minimize">
+            <Minus size={10} strokeWidth={2.5} />
+          </button>
+          <button className="window-btn-windows maximize" onClick={handleMaximize} title="Maximize">
+            <Square size={8} strokeWidth={2.5} />
+          </button>
+          <button className="window-btn-windows close" onClick={handleClose} title="Close">
+            <X size={10} strokeWidth={2.5} />
+          </button>
+        </div>
         
         <button 
           className="titlebar-title-button"
@@ -93,31 +115,113 @@ const Titlebar: React.FC = () => {
           {isSaving && <span className="title-saving">(Saving...)</span>}
         </button>
 
-        <div className="titlebar-actions">
-          <div className="window-controls-windows">
-            <button className="window-btn-windows minimize" onClick={handleMinimize} title="Minimize">
-              <Minus size={16} strokeWidth={2} />
-            </button>
-            <button className="window-btn-windows maximize" onClick={handleMaximize} title="Maximize">
-              <Square size={13} strokeWidth={2} />
-            </button>
-            <button className="window-btn-windows close" onClick={handleClose} title="Close">
-              <X size={16} strokeWidth={2} />
-            </button>
-          </div>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button
+            className="titlebar-command-badge"
+            onClick={() => setIsPaletteOpen(!isPaletteOpen)}
+            title="Open Command Palette"
+          >
+            <span>⌘K</span>
+            <span style={{ opacity: 0.6 }}>or</span>
+            <span>Ctrl+K</span>
+          </button>
         </div>
       </div>
-      {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
+      <CommandPalette
+        isOpen={isPaletteOpen}
+        onClose={() => setIsPaletteOpen(false)}
+        onExportPDF={onExportPDF}
+        toggleSidebar={toggleSidebar}
+        isSidebarOpen={isSidebarOpen}
+      />
     </>
   );
 };
 
-const Workspace: React.FC = () => {
+function AppInner() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const { newFile, openFile, saveFile, saveFileAs, editorView, showTimeline, setShowTimeline } = useScreenplay();
+
+  useKeyboardShortcuts({
+    newFile,
+    openFile,
+    saveFile,
+    saveFileAs,
+    togglePalette: useCallback(() => setIsPaletteOpen(prev => !prev), []),
+    exportPDF: useCallback(() => setShowExportModal(true), []),
+    toggleSidebar: useCallback(() => setIsSidebarOpen(prev => !prev), []),
+    toggleTimeline: useCallback(() => setShowTimeline(!showTimeline), [showTimeline, setShowTimeline]),
+    getEditorView: useCallback(() => editorView, [editorView]),
+  });
+
+  return (
+    <>
+      <Titlebar 
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        isPaletteOpen={isPaletteOpen}
+        setIsPaletteOpen={setIsPaletteOpen}
+        onExportPDF={() => setShowExportModal(true)}
+      />
+      <FloatingTabs />
+      <Workspace 
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
+      {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <ScreenplayProvider>
+      <PluginManagerProvider>
+        <AppInner />
+      </PluginManagerProvider>
+    </ScreenplayProvider>
+  );
+}
+
+const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boolean) => void }> = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [activeTab, setActiveTab] = useState<string>("outline");
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, workspaceMode } = useScreenplay();
+  const { paperSize, workspaceMode, setWorkspaceMode, editorView, showTimeline } = useScreenplay();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (workspaceMode !== "editor") {
+          e.preventDefault();
+          setWorkspaceMode("editor");
+          setTimeout(() => {
+            editorView?.focus();
+          }, 50);
+        } else {
+          const activeEl = document.activeElement;
+          const isEditorFocused = activeEl && (
+            activeEl.classList.contains("cm-content") || 
+            activeEl.closest(".cm-editor") !== null
+          );
+          if (!isEditorFocused) {
+            const isModalOpen = document.querySelector(".cp-overlay") || document.querySelector(".export-modal-overlay");
+            if (!isModalOpen) {
+              e.preventDefault();
+              if (activeEl instanceof HTMLElement) {
+                activeEl.blur();
+              }
+              editorView?.focus();
+            }
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [workspaceMode, setWorkspaceMode, editorView]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -212,7 +316,7 @@ const Workspace: React.FC = () => {
             <IndexCardsWorkspace />
           )}
         </div>
-        <TimelineView />
+        {showTimeline && <TimelineView />}
       </div>
     </div>
   );
@@ -410,17 +514,5 @@ const FloatingTabs: React.FC = () => {
     </div>
   );
 };
-
-function App() {
-  return (
-    <ScreenplayProvider>
-      <PluginManagerProvider>
-        <Titlebar />
-        <FloatingTabs />
-        <Workspace />
-      </PluginManagerProvider>
-    </ScreenplayProvider>
-  );
-}
 
 export default App;

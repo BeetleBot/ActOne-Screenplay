@@ -102,6 +102,20 @@ fn export_pdf(
     None
 }
 
+#[tauri::command]
+fn export_fountain(content: String) -> Option<String> {
+    let file = rfd::FileDialog::new()
+        .add_filter("Fountain Screenplay", &["fountain"])
+        .save_file();
+
+    if let Some(path) = file {
+        if let Ok(_) = fs::write(&path, &content) {
+            return Some(path.to_string_lossy().to_string());
+        }
+    }
+    None
+}
+
 #[derive(Serialize)]
 struct PluginInfo {
     name: String,
@@ -147,6 +161,7 @@ pub fn run() {
             save_file_dialog,
             save_pdf_dialog,
             export_pdf,
+            export_fountain,
             list_plugins
         ])
         .run(tauri::generate_context!())

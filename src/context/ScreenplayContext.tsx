@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { parseScreenplay, serializeScreenplay, FountainDocument, ParsedLine, LineType } from "../parser/FountainParser";
 import { invoke } from "@tauri-apps/api/core";
+import { EditorView } from "@codemirror/view";
 
 export interface ScreenplayFile {
   id: string;
@@ -50,6 +51,8 @@ interface ScreenplayContextProps {
   setTypewriterMode: (enabled: boolean) => void;
   workspaceMode: 'editor' | 'preview' | 'cards';
   setWorkspaceMode: (mode: 'editor' | 'preview' | 'cards') => void;
+  showTimeline: boolean;
+  setShowTimeline: (show: boolean) => void;
 }
 
 const ScreenplayContext = createContext<ScreenplayContextProps | undefined>(undefined);
@@ -102,6 +105,15 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const activeFileIdRef = useRef(activeFileId);
   const [showTabBar, setShowTabBar] = useState(false);
   const hideTimerRef = useRef<any>(null);
+
+  const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
+    return localStorage.getItem("drafter-show-timeline") !== "false";
+  });
+
+  const setShowTimeline = (show: boolean) => {
+    setShowTimelineState(show);
+    localStorage.setItem("drafter-show-timeline", String(show));
+  };
 
   const triggerTemporaryTabBar = () => {
     setShowTabBar(true);
@@ -493,7 +505,7 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const line = editorView.state.doc.line(lineIndex + 1);
       editorView.dispatch({
         selection: { anchor: line.from },
-        scrollIntoView: true,
+        effects: EditorView.scrollIntoView(line.from, { y: "center" })
       });
       if (!noFocus) editorView.focus();
     }
@@ -543,8 +555,11 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === "Tab" && e.ctrlKey) || (e.key === "PageDown" && e.ctrlKey) || (e.key === "PageUp" && e.ctrlKey)) {
+      if (((e.key === "Tab" || e.keyCode === 9) && e.ctrlKey) || (e.key === "PageDown" && e.ctrlKey) || (e.key === "PageUp" && e.ctrlKey)) {
         e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
         const currentFiles = filesRef.current;
         const currentActiveId = activeFileIdRef.current;
         if (currentFiles.length <= 1) return;
@@ -606,6 +621,8 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setTypewriterMode,
         workspaceMode,
         setWorkspaceMode,
+        showTimeline,
+        setShowTimeline,
       }}
     >
       {children}
