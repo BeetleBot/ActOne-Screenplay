@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useScreenplay } from "../context/ScreenplayContext";
-import { usePlugins } from "../plugins/PluginManager";
+
 import {
   FilePlus,
   FolderOpen,
@@ -14,8 +14,7 @@ import {
   Settings,
   Scissors,
   Copy,
-  Clipboard,
-  Terminal
+  Clipboard
 } from "lucide-react";
 
 interface CommandItem {
@@ -63,7 +62,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     editorView
   } = useScreenplay();
 
-  const { availablePlugins, activePlugins, runPlugin, stopPlugin } = usePlugins();
+
 
   const [isDark, setIsDark] = useState(() => document.body.classList.contains("dark-theme"));
 
@@ -156,24 +155,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-theme", name: isDark ? "Switch to Light Mode" : "Switch to Dark Mode", category: "View", icon: isDark ? <Sun size={16} /> : <Moon size={16} />, action: () => { setIsDark(!isDark); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <Settings size={16} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-timeline", name: showTimeline ? "Hide Timeline" : "Show Timeline", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
-    // Plugins
-    ...availablePlugins.map((plugin) => {
-      const isActive = activePlugins.has(plugin.name);
-      return {
-        id: `plugin-${plugin.name}`,
-        name: `${isActive ? "Disable" : "Enable"} Plugin: ${plugin.name}`,
-        category: "Plugins",
-        icon: <Terminal size={16} />,
-        action: () => {
-          if (isActive) {
-            stopPlugin(plugin.name);
-          } else {
-            runPlugin(plugin.name);
-          }
-          onClose();
-        }
-      };
-    })
   ];
 
   // Filter commands by search string

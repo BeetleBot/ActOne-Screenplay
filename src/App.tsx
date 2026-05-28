@@ -6,7 +6,7 @@ import { SidebarViews } from "./components/SidebarViews";
 import { ScreenplayPreview } from "./components/ScreenplayPreview";
 import { IndexCardsWorkspace } from "./components/IndexCardsWorkspace";
 import { TimelineView } from "./components/TimelineView";
-import { PluginManagerProvider } from "./plugins/PluginManager";
+
 import {
   List,
   FileText,
@@ -178,9 +178,7 @@ function AppInner() {
 function App() {
   return (
     <ScreenplayProvider>
-      <PluginManagerProvider>
-        <AppInner />
-      </PluginManagerProvider>
+      <AppInner />
     </ScreenplayProvider>
   );
 }
