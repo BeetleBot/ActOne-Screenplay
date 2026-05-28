@@ -23,3 +23,5 @@
 - [ ] Cloud integration(Google Drive, Dropbox, etc.,)
 - [ ] Revision Mode.
 - [ ] Add a seperate title page customisation modal, with Image support, if possible.
+- [ ] Rewrite the whole theming stuff. Remove all hardcoded colors, add a lot of themes. 
+

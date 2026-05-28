@@ -32,6 +32,7 @@ interface CommandPaletteProps {
   onExportPDF: () => void;
   toggleSidebar: () => void;
   isSidebarOpen: boolean;
+  onOpenStructureModal: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -39,7 +40,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onClose,
   onExportPDF,
   toggleSidebar,
-  isSidebarOpen
+  isSidebarOpen,
+  onOpenStructureModal
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -59,20 +61,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setTypewriterMode,
     showTimeline,
     setShowTimeline,
-    editorView
+    editorView,
+    theme,
+    setTheme
   } = useScreenplay();
-
-
-
-  const [isDark, setIsDark] = useState(() => document.body.classList.contains("dark-theme"));
-
-  useEffect(() => {
-    if (isDark) {
-      document.body.classList.add("dark-theme");
-    } else {
-      document.body.classList.remove("dark-theme");
-    }
-  }, [isDark]);
 
   useEffect(() => {
     if (isOpen) {
@@ -150,11 +142,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "edit-paste", name: "Paste", category: "Edit", icon: <Clipboard size={16} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
     { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <Sparkles size={16} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
     { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <Trash2 size={16} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },
+    { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <Sparkles size={16} />, action: () => { onOpenStructureModal(); onClose(); } },
     // View
     { id: "view-sidebar", name: isSidebarOpen ? "Hide Sidebar Outline" : "Show Sidebar Outline", category: "View", icon: <Sidebar size={16} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } },
-    { id: "view-theme", name: isDark ? "Switch to Light Mode" : "Switch to Dark Mode", category: "View", icon: isDark ? <Sun size={16} /> : <Moon size={16} />, action: () => { setIsDark(!isDark); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <Settings size={16} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-timeline", name: showTimeline ? "Hide Timeline" : "Show Timeline", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
+    // Themes
+    { id: "theme-light", name: "Switch to Light Theme", category: "Theme", icon: <Sun size={16} />, action: () => { setTheme("light"); onClose(); } },
+    { id: "theme-dark", name: "Switch to Dark Theme", category: "Theme", icon: <Moon size={16} />, action: () => { setTheme("dark"); onClose(); } },
+    { id: "theme-sepia", name: "Switch to Sepia (Retro) Theme", category: "Theme", icon: <Sun size={16} />, action: () => { setTheme("sepia"); onClose(); } },
+    { id: "theme-frost", name: "Switch to Nordic Frost Theme", category: "Theme", icon: <Sun size={16} />, action: () => { setTheme("frost"); onClose(); } },
+    { id: "theme-solarized", name: "Switch to Solarized Dark Theme", category: "Theme", icon: <Moon size={16} />, action: () => { setTheme("solarized"); onClose(); } },
+    { id: "theme-midnight", name: "Switch to Midnight Theme", category: "Theme", icon: <Moon size={16} />, action: () => { setTheme("midnight"); onClose(); } },
   ];
 
   // Filter commands by search string

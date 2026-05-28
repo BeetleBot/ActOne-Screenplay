@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { CommandPalette } from "./components/CommandPalette";
 import { ExportModal } from "./components/ExportModal";
+import { StructureImportModal } from "./components/StructureImportModal";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 const getTauriWindow = () => {
@@ -39,12 +40,14 @@ const Titlebar: React.FC<{
   isPaletteOpen: boolean;
   setIsPaletteOpen: (open: boolean) => void;
   onExportPDF: () => void;
+  onOpenStructureModal: () => void;
 }> = ({
   isSidebarOpen,
   toggleSidebar,
   isPaletteOpen,
   setIsPaletteOpen,
   onExportPDF,
+  onOpenStructureModal,
 }) => {
   const { filePath, isSaving, showTabBar, setShowTabBar, openTabBarManually } = useScreenplay();
 
@@ -133,6 +136,7 @@ const Titlebar: React.FC<{
         onExportPDF={onExportPDF}
         toggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
+        onOpenStructureModal={onOpenStructureModal}
       />
     </>
   );
@@ -142,6 +146,7 @@ function AppInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showStructureModal, setShowStructureModal] = useState(false);
   const { newFile, openFile, saveFile, saveFileAs, editorView, showTimeline, setShowTimeline } = useScreenplay();
 
   useKeyboardShortcuts({
@@ -164,6 +169,7 @@ function AppInner() {
         isPaletteOpen={isPaletteOpen}
         setIsPaletteOpen={setIsPaletteOpen}
         onExportPDF={() => setShowExportModal(true)}
+        onOpenStructureModal={() => setShowStructureModal(true)}
       />
       <FloatingTabs />
       <Workspace 
@@ -171,6 +177,7 @@ function AppInner() {
         setIsSidebarOpen={setIsSidebarOpen}
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
+      {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
     </>
   );
 }

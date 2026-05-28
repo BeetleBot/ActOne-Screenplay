@@ -1,6 +1,7 @@
 use std::fs;
 
 mod pdf;
+mod structures;
 
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
@@ -124,7 +125,8 @@ pub fn run() {
             save_file_dialog,
             save_pdf_dialog,
             export_pdf,
-            export_fountain
+            export_fountain,
+            structures::get_structures
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

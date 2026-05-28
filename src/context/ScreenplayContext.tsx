@@ -53,6 +53,8 @@ interface ScreenplayContextProps {
   setWorkspaceMode: (mode: 'editor' | 'preview' | 'cards') => void;
   showTimeline: boolean;
   setShowTimeline: (show: boolean) => void;
+  theme: 'light' | 'dark' | 'sepia' | 'frost' | 'solarized' | 'midnight';
+  setTheme: (theme: 'light' | 'dark' | 'sepia' | 'frost' | 'solarized' | 'midnight') => void;
 }
 
 const ScreenplayContext = createContext<ScreenplayContextProps | undefined>(undefined);
@@ -76,6 +78,28 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return (localStorage.getItem("drafter-paper-size") as any) || "letter";
   });
   const [workspaceMode, setWorkspaceMode] = useState<'editor' | 'preview' | 'cards'>("editor");
+
+  const [theme, setThemeState] = useState<'light' | 'dark' | 'sepia' | 'frost' | 'solarized' | 'midnight'>(() => {
+    return (localStorage.getItem("drafter-theme") as any) || "light";
+  });
+
+  const setTheme = (t: 'light' | 'dark' | 'sepia' | 'frost' | 'solarized' | 'midnight') => {
+    setThemeState(t);
+    localStorage.setItem("drafter-theme", t);
+  };
+
+  useEffect(() => {
+    const classes = ['theme-light', 'theme-dark', 'theme-sepia', 'theme-frost', 'theme-solarized', 'theme-midnight'];
+    document.body.classList.remove(...classes);
+    document.body.classList.add(`theme-${theme}`);
+    
+    // Maintain dark-theme class for backwards compatibility
+    if (theme === 'dark' || theme === 'solarized' || theme === 'midnight') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }, [theme]);
 
   const initialFileId = useRef(generateUUID());
   const defaultText = "";
@@ -623,6 +647,8 @@ export const ScreenplayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setWorkspaceMode,
         showTimeline,
         setShowTimeline,
+        theme,
+        setTheme,
       }}
     >
       {children}

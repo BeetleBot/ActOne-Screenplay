@@ -6,6 +6,12 @@
   --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-editor: "Courier Prime", "Noto Sans Devanagari", "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Kannada", "Noto Sans Malayalam", "Noto Sans Bengali", "Noto Sans Gujarati", "Noto Sans Gurmukhi", "Noto Sans Oriya", Courier, monospace;
 
+  --page-width: 816px;
+  --margin-left: 144px;
+  --margin-right: 96px;
+  --line-height: 16px;
+
+  /* Default theme color fallbacks */
   --bg-app: #faf9f6;
   --bg-sidebar: #f2efe9;
   --bg-editor-wrapper: #faf9f6;
@@ -16,17 +22,26 @@
   --accent-color: #007aff;
   --accent-rgb: 0, 122, 255;
   --titlebar-bg: #f2efe9;
-
   --shadow-editor: 0 8px 30px rgba(0, 0, 0, 0.03);
   --shadow-sidebar: none;
-
-  --page-width: 816px;
-  --margin-left: 144px;
-  --margin-right: 96px;
-  --line-height: 16px;
 }
 
-body.dark-theme {
+body.theme-light {
+  --bg-app: #faf9f6;
+  --bg-sidebar: #f2efe9;
+  --bg-editor-wrapper: #faf9f6;
+  --bg-editor: transparent;
+  --border-color: rgba(0, 0, 0, 0.06);
+  --text-main: #2b2b2b;
+  --text-muted: #7c7c7c;
+  --accent-color: #007aff;
+  --accent-rgb: 0, 122, 255;
+  --titlebar-bg: #f2efe9;
+  --shadow-editor: 0 8px 30px rgba(0, 0, 0, 0.03);
+  --shadow-sidebar: none;
+}
+
+body.theme-dark {
   --bg-app: #18191c;
   --bg-sidebar: #121315;
   --bg-editor-wrapper: #18191c;
@@ -37,7 +52,66 @@ body.dark-theme {
   --accent-color: #0a84ff;
   --accent-rgb: 10, 132, 255;
   --titlebar-bg: #121315;
+  --shadow-editor: none;
+  --shadow-sidebar: none;
+}
 
+body.theme-sepia {
+  --bg-app: #f4ecd8;
+  --bg-sidebar: #e4d7ba;
+  --bg-editor-wrapper: #f4ecd8;
+  --bg-editor: transparent;
+  --border-color: rgba(90, 70, 30, 0.12);
+  --text-main: #433422;
+  --text-muted: #8c765c;
+  --accent-color: #a0522d;
+  --accent-rgb: 160, 82, 45;
+  --titlebar-bg: #e4d7ba;
+  --shadow-editor: 0 8px 30px rgba(90, 70, 30, 0.02);
+  --shadow-sidebar: none;
+}
+
+body.theme-frost {
+  --bg-app: #f0f4f8;
+  --bg-sidebar: #e1e8f0;
+  --bg-editor-wrapper: #f0f4f8;
+  --bg-editor: transparent;
+  --border-color: rgba(40, 80, 120, 0.08);
+  --text-main: #2d3748;
+  --text-muted: #718096;
+  --accent-color: #3182ce;
+  --accent-rgb: 49, 130, 206;
+  --titlebar-bg: #e1e8f0;
+  --shadow-editor: 0 8px 30px rgba(40, 80, 120, 0.02);
+  --shadow-sidebar: none;
+}
+
+body.theme-solarized {
+  --bg-app: #002b36;
+  --bg-sidebar: #073642;
+  --bg-editor-wrapper: #002b36;
+  --bg-editor: transparent;
+  --border-color: rgba(147, 161, 161, 0.12);
+  --text-main: #93a1a1;
+  --text-muted: #586e75;
+  --accent-color: #2aa198;
+  --accent-rgb: 42, 161, 152;
+  --titlebar-bg: #073642;
+  --shadow-editor: none;
+  --shadow-sidebar: none;
+}
+
+body.theme-midnight {
+  --bg-app: #0b0813;
+  --bg-sidebar: #130f22;
+  --bg-editor-wrapper: #0b0813;
+  --bg-editor: transparent;
+  --border-color: rgba(186, 104, 200, 0.12);
+  --text-main: #e1ddec;
+  --text-muted: #8b80a5;
+  --accent-color: #ba68c8;
+  --accent-rgb: 186, 104, 200;
+  --titlebar-bg: #130f22;
   --shadow-editor: none;
   --shadow-sidebar: none;
 }
@@ -1936,3 +2010,394 @@ body.dark-theme .cp-container {
   border: 1px solid var(--border-color);
   font-family: monospace;
 }
+
+/* Screenplay Structure Outlines Modal */
+.struct-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.struct-modal {
+  width: 90vw;
+  max-width: 950px;
+  height: 80vh;
+  max-height: 680px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.struct-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-sidebar);
+}
+
+.struct-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.struct-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.struct-modal-close:hover {
+  background: rgba(128, 128, 128, 0.1);
+  color: var(--text-main);
+}
+
+.struct-modal-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Left side - Search and List */
+.struct-modal-left {
+  width: 320px;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-sidebar);
+}
+
+.struct-search-wrapper {
+  padding: 12px 16px;
+  position: relative;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.struct-search-icon {
+  position: absolute;
+  left: 26px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.struct-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.struct-search-input:focus {
+  border-color: var(--accent-color);
+}
+
+.struct-search-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.struct-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.struct-status-msg {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.struct-list-item {
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.struct-list-item:hover {
+  background: rgba(var(--accent-rgb), 0.04);
+}
+
+.struct-list-item.active {
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.2);
+}
+
+.struct-item-name {
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--text-main);
+}
+
+.struct-list-item.active .struct-item-name {
+  color: var(--accent-color);
+}
+
+.struct-item-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.struct-list-item.active .struct-item-desc {
+  color: var(--text-main);
+  opacity: 0.8;
+}
+
+/* Right side - Preview Details */
+.struct-modal-right {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+}
+
+.struct-no-selection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.struct-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.struct-preview-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 14px;
+}
+
+.struct-preview-header h3 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.struct-preview-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-main);
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+/* Timeline/Beats styling */
+.struct-beats-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 36px;
+}
+
+.struct-timeline-line {
+  position: absolute;
+  left: 14px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--border-color);
+}
+
+.struct-beat-card {
+  position: relative;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  transition: border-color 0.15s ease;
+}
+
+.struct-beat-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.3);
+}
+
+.struct-beat-badge {
+  position: absolute;
+  left: -36px;
+  top: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-app);
+  border: 2px solid var(--accent-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.struct-beat-badge span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.struct-beat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.struct-beat-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.struct-beat-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-main);
+  opacity: 0.75;
+  line-height: 1.4;
+}
+
+/* Footer & Buttons */
+.struct-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-sidebar);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.struct-footer-info {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.struct-footer-info code {
+  background: rgba(128, 128, 128, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: var(--text-main);
+}
+
+.struct-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.struct-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.struct-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.struct-btn.cancel {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.struct-btn.cancel:hover {
+  background: rgba(128, 128, 128, 0.05);
+  color: var(--text-main);
+}
+
+.struct-btn.secondary {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.struct-btn.secondary:hover:not(:disabled) {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: rgba(var(--accent-rgb), 0.02);
+}
+
+.struct-btn.primary {
+  background: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  color: #fff;
+}
+
+.struct-btn.primary:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: 0 4px 6px -1px rgba(var(--accent-rgb), 0.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.97); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
