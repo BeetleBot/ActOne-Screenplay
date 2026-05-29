@@ -104,6 +104,11 @@ fn export_fountain(content: String) -> Option<String> {
     None
 }
 
+#[tauri::command]
+fn read_file_content(path: String) -> Result<String, String> {
+    fs::read_to_string(path).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -115,7 +120,9 @@ pub fn run() {
             save_pdf_dialog,
             export_pdf,
             export_fountain,
-            structures::get_structures
+            read_file_content,
+            structures::get_structures,
+            structures::get_structure_template
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -33,6 +33,21 @@ pub fn get_structures() -> Vec<Structure> {
     structures
 }
 
+#[tauri::command]
+pub fn get_structure_template(name: String) -> String {
+    match name.as_str() {
+        "Three-Act Structure" => include_str!("../assets/structures/three-act_structure.fountain"),
+        "Save the Cat" => include_str!("../assets/structures/save_the_cat.fountain"),
+        "The Hero’s Journey" => include_str!("../assets/structures/the_hero’s_journey.fountain"),
+        "The Story Circle" => include_str!("../assets/structures/the_story_circle.fountain"),
+        "Freytag's Pyramid" => include_str!("../assets/structures/freytags_pyramid.fountain"),
+        "John Truby's 7 Key Steps" => include_str!("../assets/structures/john_trubys_7_key_steps.fountain"),
+        "Michael Hauge's 6 Stage Journey" => include_str!("../assets/structures/michael_hauges_6_stage_journey.fountain"),
+        "The Sequence Approach" => include_str!("../assets/structures/the_sequence_approach.fountain"),
+        _ => ""
+    }.to_string()
+}
+
 fn parse_structures(content: &str) -> Vec<Structure> {
     let mut structures = Vec::new();
     let mut current_struct: Option<Structure> = None;

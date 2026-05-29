@@ -13,6 +13,12 @@ export interface ScreenplayFile {
   savedText: string;
 }
 
+export interface RecentFile {
+  path: string;
+  name: string;
+  lastOpened: number;
+}
+
 export interface FileContextProps {
   files: ScreenplayFile[];
   activeFileId: string;
@@ -25,8 +31,11 @@ export interface FileContextProps {
   saveFile: () => Promise<void>;
   saveFileAs: () => Promise<void>;
   selectFile: (id: string) => void;
-  newFile: () => void;
+  newFile: (initialContent?: string) => void;
   closeFile: (id: string) => void;
+  recentFiles: RecentFile[];
+  openFilePath: (path: string) => Promise<void>;
+  removeFromRecent: (path: string) => void;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -57,6 +66,28 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   ]);
   const [activeFileId, setActiveFileIdState] = useState<string>(initialFileId.current);
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>(() => {
+    const saved = localStorage.getItem("actone-recent-files");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const addToRecent = (path: string) => {
+    setRecentFiles(prev => {
+      const name = path.split(/[/\\]/).pop() || "Untitled";
+      const filtered = prev.filter(f => f.path !== path);
+      const updated = [{ path, name, lastOpened: Date.now() }, ...filtered].slice(0, 10);
+      localStorage.setItem("actone-recent-files", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const removeFromRecent = (path: string) => {
+    setRecentFiles(prev => {
+      const updated = prev.filter(f => f.path !== path);
+      localStorage.setItem("actone-recent-files", JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const [rawText, setRawTextState] = useState<string>(defaultText);
   const [parsedDoc, setParsedDoc] = useState<FountainDocument>(() => parseScreenplay(defaultText, paperSize));
@@ -123,25 +154,24 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const newFile = () => {
+  const newFile = (initialContent: string = "") => {
     const newId = generateUUID();
-    const newDefaultText = "";
     const newFileObj: ScreenplayFile = {
       id: newId,
       filePath: null,
-      rawText: newDefaultText,
-      parsedDoc: parseScreenplay(newDefaultText, paperSize),
+      rawText: initialContent,
+      parsedDoc: parseScreenplay(initialContent, paperSize),
       isSaving: false,
-      isDirty: false,
-      savedText: newDefaultText,
+      isDirty: initialContent !== "",
+      savedText: "",
     };
     setFiles(prev => [...prev, newFileObj]);
     setActiveFileIdState(newId);
-    setRawTextState(newDefaultText);
+    setRawTextState(initialContent);
     setFilePath(null);
     setParsedDoc(newFileObj.parsedDoc);
     if (workerRef.current) {
-      workerRef.current.postMessage({ text: newDefaultText, paperSize, fileId: newId });
+      workerRef.current.postMessage({ text: initialContent, paperSize, fileId: newId });
     }
   };
 
@@ -215,6 +245,73 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
 
+  const openFilePath = async (path: string) => {
+    const existing = files.find(f => f.filePath === path);
+    if (existing) {
+      selectFile(existing.id);
+      return;
+    }
+
+    let content: string;
+    try {
+      if (isTauri) {
+        content = await invoke<string>("read_file_content", { path });
+      } else {
+        throw new Error("Cannot open direct path in web mode");
+      }
+    } catch (e) {
+      console.error(e);
+      removeFromRecent(path);
+      alert("Could not open file: " + path);
+      return;
+    }
+
+    const parsed = parseScreenplay(content, paperSize);
+    const cleanText = parsed.screenplayText;
+    
+    const currentActive = files.find(f => f.id === activeFileId);
+    const isDefault = currentActive && !currentActive.filePath && 
+                      (currentActive.rawText === "" || !currentActive.isDirty);
+
+    if (isDefault && currentActive) {
+      setFiles(prev => prev.map(f => f.id === activeFileId ? {
+        ...f,
+        filePath: path,
+        rawText: cleanText,
+        savedText: cleanText,
+        isDirty: false,
+        parsedDoc: parsed
+      } : f));
+      setFilePath(path);
+      setRawTextState(cleanText);
+      setParsedDoc(parsed);
+      addToRecent(path);
+      if (workerRef.current) {
+        workerRef.current.postMessage({ text: cleanText, paperSize, fileId: activeFileId });
+      }
+    } else {
+      const newId = generateUUID();
+      const newFileObj: ScreenplayFile = {
+        id: newId,
+        filePath: path,
+        rawText: cleanText,
+        savedText: cleanText,
+        isDirty: false,
+        parsedDoc: parsed,
+        isSaving: false,
+      };
+      setFiles(prev => [...prev, newFileObj]);
+      setActiveFileIdState(newId);
+      setFilePath(path);
+      setRawTextState(cleanText);
+      setParsedDoc(parsed);
+      addToRecent(path);
+      if (workerRef.current) {
+        workerRef.current.postMessage({ text: cleanText, paperSize, fileId: newId });
+      }
+    }
+  };
+
   const openFile = async () => {
     let res: { path: string; content: string } | null = null;
     if (isTauri) {
@@ -242,6 +339,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (res) {
+      if (isTauri) addToRecent(res.path);
       const existing = files.find(f => f.filePath === res.path);
       if (existing) {
         selectFile(existing.id);
@@ -336,6 +434,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (path) {
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: path, isDirty: false, savedText: rawText } : f));
           setFilePath(path);
+          addToRecent(path);
         }
       } catch (e) {
         console.error(e);
@@ -413,6 +512,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectFile,
         newFile,
         closeFile,
+        recentFiles,
+        openFilePath,
+        removeFromRecent,
       }}
     >
       {children}

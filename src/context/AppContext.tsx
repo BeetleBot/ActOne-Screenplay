@@ -34,8 +34,13 @@ interface AppContextProps {
   files: ScreenplayFile[];
   activeFileId: string;
   selectFile: (id: string) => void;
-  newFile: () => void;
+  newFile: (initialContent?: string) => void;
   closeFile: (id: string) => void;
+  recentFiles: any[];
+  openFilePath: (path: string) => Promise<void>;
+  removeFromRecent: (path: string) => void;
+  showWelcome: boolean;
+  setShowWelcome: (show: boolean) => void;
   showTabBar: boolean;
   setShowTabBar: (show: boolean) => void;
   openTabBarManually: () => void;

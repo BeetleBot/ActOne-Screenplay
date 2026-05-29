@@ -38,7 +38,7 @@ const Titlebar: React.FC<{
   setIsPaletteOpen,
 }) => {
   const { filePath, isSaving } = useFile();
-  const { showTabBar, setShowTabBar, openTabBarManually } = useUI();
+  const { showTabBar, setShowTabBar, openTabBarManually, showWelcome } = useUI();
 
   const handleClose = () => {
     try {
@@ -89,22 +89,28 @@ const Titlebar: React.FC<{
         </button>
       </div>
       
-      <button 
-        className="titlebar-title-button"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (showTabBar) {
-            setShowTabBar(false);
-          } else {
-            openTabBarManually();
-          }
-        }}
-        title="Click to show open files"
-      >
-        <span className="title-text">{displayPath}</span>
-        <span className="title-arrow">▾</span>
-        {isSaving && <span className="title-saving">(Saving...)</span>}
-      </button>
+      {!showWelcome && (
+        <button 
+          className="titlebar-title-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (showTabBar) {
+              setShowTabBar(false);
+            } else {
+              openTabBarManually();
+            }
+          }}
+          title="Click to show open files"
+        >
+          <span className="title-text">{displayPath}</span>
+          <span className="title-arrow">▾</span>
+          {isSaving && <span className="title-saving">(Saving...)</span>}
+        </button>
+      )}
+
+      {showWelcome && (
+        <div className="titlebar-title-text" style={{ fontSize: '12px', fontWeight: 600, opacity: 0.5 }}>ActOne</div>
+      )}
 
       <div style={{ display: "flex", alignItems: "center" }}>
         <button

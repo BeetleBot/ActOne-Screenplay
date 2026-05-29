@@ -19,6 +19,8 @@ export interface UIContextProps {
   setActiveTab: (tab: string) => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
+  showWelcome: boolean;
+  setShowWelcome: (show: boolean) => void;
   autocompleteEnabled: boolean;
   setAutocompleteEnabled: (enabled: boolean) => void;
   smartQuotesEnabled: boolean;
@@ -69,6 +71,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   });
 
   const [showTabBar, setShowTabBar] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const hideTimerRef = useRef<any>(null);
 
   const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
@@ -160,6 +163,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setActiveTab,
         zoomLevel,
         setZoomLevel,
+        showWelcome,
+        setShowWelcome,
         autocompleteEnabled,
         setAutocompleteEnabled,
         smartQuotesEnabled,

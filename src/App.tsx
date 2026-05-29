@@ -7,6 +7,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { MainLayout } from "./components/layout/MainLayout";
 import { ModalManager } from "./components/ModalManager";
+import { WelcomeModal } from "./components/WelcomeModal";
 
 function AppInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -18,9 +19,9 @@ function AppInner() {
   
   const { newFile, openFile, saveFile, saveFileAs } = useFile();
   const { editorView } = useEditor();
-  const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel } = useUI();
+  const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel, showWelcome, setShowWelcome } = useUI();
 
-  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal;
+  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal || showWelcome;
 
   useKeyboardShortcuts({
     newFile,
@@ -39,8 +40,16 @@ function AppInner() {
     isDisabled: isModalActive,
   });
 
+  if (showWelcome) {
+    return (
+      <div className="welcome-screen-root" style={{ height: "100vh", width: "100vw", background: "var(--bg-app)" }}>
+        <WelcomeModal isOpen={true} onClose={() => setShowWelcome(false)} />
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <MainLayout 
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
@@ -59,10 +68,12 @@ function AppInner() {
         setShowThemeModal={setShowThemeModal}
         showSettingsModal={showSettingsModal}
         setShowSettingsModal={setShowSettingsModal}
+        showWelcome={showWelcome}
+        setShowWelcome={setShowWelcome}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
-    </>
+    </div>
   );
 }
 
