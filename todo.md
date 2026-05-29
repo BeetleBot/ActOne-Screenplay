@@ -17,7 +17,9 @@
 ## Features to Implement
 
 - [x] Import Strucutre.
-- [x] Add zoom-in / zoom-out feature for editor. 
+- [x] Add zoom-in / zoom-out feature for editor.
+- [x] Rewrite the whole theming stuff. Remove all hardcoded colors, add a lot of themes. 
+- [ ] Search / Replace / Replace All
 - [ ] screenplay Preview feature.
 - [ ] Markers and tags.
 - [ ] X-Ray or Analysis stuffs.
@@ -25,5 +27,5 @@
 - [ ] Cloud integration(Google Drive, Dropbox, etc.,)
 - [ ] Revision Mode.
 - [ ] Add a seperate title page customisation modal, with Image support, if possible.
-- [ ] Rewrite the whole theming stuff. Remove all hardcoded colors, add a lot of themes. 
+
 

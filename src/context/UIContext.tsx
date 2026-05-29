@@ -75,6 +75,22 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem("actone-use-native-titlebar") === "true";
   });
 
+  const [isZenMode, setIsZenModeState] = useState(false);
+
+  useEffect(() => {
+    const applyZenMode = async () => {
+      try {
+        const win = getCurrentWindow();
+        if (win) {
+          await win.setFullscreen(isZenMode);
+        }
+      } catch (e) {
+        console.error("Failed to set fullscreen:", e);
+      }
+    };
+    applyZenMode();
+  }, [isZenMode]);
+
   useEffect(() => {
     const applyDecorations = async () => {
       try {
@@ -109,6 +125,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const setUseNativeTitleBar = (enabled: boolean) => {
     setUseNativeTitleBarState(enabled);
     localStorage.setItem("actone-use-native-titlebar", String(enabled));
+  };
+
+  const setIsZenMode = (enabled: boolean) => {
+    setIsZenModeState(enabled);
   };
 
   const setFontFamily = (font: 'courier-prime' | 'courier-prime-sans') => {
@@ -155,6 +175,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setPaperSize,
         useNativeTitleBar,
         setUseNativeTitleBar,
+        isZenMode,
+        setIsZenMode,
         typewriterMode,
         setTypewriterMode,
         workspaceMode,

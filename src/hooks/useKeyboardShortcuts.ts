@@ -9,6 +9,7 @@ interface ShortcutActions {
   exportPDF: () => void;
   toggleSidebar: () => void;
   toggleTimeline?: () => void;
+  toggleZenMode: () => void;
   getEditorView: () => any | null;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -70,6 +71,13 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
 
       const key = e.key.toLowerCase();
       const shift = e.shiftKey;
+      const alt = e.altKey;
+
+      if (key === "enter" && alt) {
+        e.preventDefault();
+        actionsRef.current.toggleZenMode();
+        return;
+      }
 
       if (key === "k") {
         e.preventDefault();

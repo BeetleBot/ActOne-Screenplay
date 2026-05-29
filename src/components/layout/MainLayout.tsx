@@ -150,7 +150,7 @@ const HeaderBar: React.FC<{
 const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boolean) => void; onOpenThemeModal: () => void }> = ({ isSidebarOpen, setIsSidebarOpen, onOpenThemeModal }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, workspaceMode, setWorkspaceMode, showTimeline, activeTab, setActiveTab, zoomLevel } = useUI();
+  const { paperSize, workspaceMode, setWorkspaceMode, showTimeline, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
@@ -281,10 +281,12 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
       )}
 
       <div className="editor-container">
-        <div className="editor-header-bar">
-          <EditorToolbarLeft toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
-          <EditorToolbar onOpenThemeModal={onOpenThemeModal} />
-        </div>
+        {!isZenMode && (
+          <div className="editor-header-bar">
+            <EditorToolbarLeft toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
+            <EditorToolbar onOpenThemeModal={onOpenThemeModal} />
+          </div>
+        )}
         <div className="editor-scroll-area">
           {workspaceMode === "editor" && (
             <div className={`editor-paper paper-${paperSize}`} style={{ zoom: zoomLevel / 100 }}>
@@ -295,7 +297,7 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
             <IndexCardsWorkspace />
           )}
         </div>
-        {showTimeline && <TimelineView />}
+        {(showTimeline && !isZenMode) && <TimelineView />}
       </div>
     </div>
   );
@@ -448,12 +450,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   setIsPaletteOpen,
   onOpenThemeModal,
 }) => {
+  const { isZenMode } = useUI();
+
   return (
     <>
-      <HeaderBar 
-        isPaletteOpen={isPaletteOpen}
-        setIsPaletteOpen={setIsPaletteOpen}
-      />
+      {!isZenMode && (
+        <HeaderBar 
+          isPaletteOpen={isPaletteOpen}
+          setIsPaletteOpen={setIsPaletteOpen}
+        />
+      )}
       <Workspace 
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}

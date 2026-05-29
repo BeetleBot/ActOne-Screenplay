@@ -18,6 +18,8 @@ interface AppContextProps {
   setPaperSize: (size: 'letter' | 'a4') => void;
   useNativeTitleBar: boolean;
   setUseNativeTitleBar: (enabled: boolean) => void;
+  isZenMode: boolean;
+  setIsZenMode: (enabled: boolean) => void;
   setRawText: (text: string) => void;
   openFile: () => Promise<void>;
   saveFile: () => Promise<void>;

@@ -19,7 +19,7 @@ function AppInner() {
   
   const { newFile, openFile, saveFile, saveFileAs } = useFile();
   const { editorView } = useEditor();
-  const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel, showWelcome, setShowWelcome } = useUI();
+  const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel, showWelcome, setShowWelcome, isZenMode, setIsZenMode } = useUI();
 
   const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal || showWelcome;
 
@@ -32,6 +32,7 @@ function AppInner() {
     exportPDF: useCallback(() => setShowExportModal(true), []),
     toggleSidebar: useCallback(() => setIsSidebarOpen(prev => !prev), []),
     toggleTimeline: useCallback(() => setShowTimeline(!showTimeline), [showTimeline, setShowTimeline]),
+    toggleZenMode: useCallback(() => setIsZenMode(!isZenMode), [isZenMode, setIsZenMode]),
     getEditorView: useCallback(() => editorView, [editorView]),
     zoomIn: useCallback(() => setZoomLevel(zoomLevel + 10), [zoomLevel, setZoomLevel]),
     zoomOut: useCallback(() => setZoomLevel(zoomLevel - 10), [zoomLevel, setZoomLevel]),
