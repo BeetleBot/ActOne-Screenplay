@@ -127,7 +127,7 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
         return;
       }
 
-      if (key === "\\" && !shift) {
+      if ((key === "\\" || e.code === "Backslash") && !shift) {
         e.preventDefault();
         actionsRef.current.toggleSidebar();
         return;

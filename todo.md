@@ -25,7 +25,7 @@
 - [ ] X-Ray or Analysis stuffs.
 - [ ] AI integration(For Translations, Rephrasing and Better words)
 - [ ] Cloud integration(Google Drive, Dropbox, etc.,)
-- [ ] Revision Mode.
+- [ ] Revision mode.
 - [ ] Add a seperate title page customisation modal, with Image support, if possible.
 
 

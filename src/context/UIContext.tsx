@@ -71,13 +71,31 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   useEffect(() => {
     const applyZenMode = async () => {
+      let tauriSuccess = false;
       try {
         const win = getCurrentWindow();
         if (win) {
           await win.setFullscreen(isZenMode);
+          tauriSuccess = true;
         }
       } catch (e) {
-        console.error("Failed to set fullscreen:", e);
+        console.error("Failed to set Tauri fullscreen:", e);
+      }
+
+      if (!tauriSuccess) {
+        try {
+          if (isZenMode) {
+            if (!document.fullscreenElement) {
+              await document.documentElement.requestFullscreen().catch(() => {});
+            }
+          } else {
+            if (document.fullscreenElement) {
+              await document.exitFullscreen().catch(() => {});
+            }
+          }
+        } catch (err) {
+          console.error("HTML5 fullscreen toggle failed:", err);
+        }
       }
     };
     applyZenMode();

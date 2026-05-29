@@ -11,6 +11,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "ActOne",
         "width": 1000,
         "height": 700,
