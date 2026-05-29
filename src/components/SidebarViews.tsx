@@ -293,15 +293,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                         value={outlineFontSize}
                         onChange={e => setOutlineFontSize(e.target.value as any)}
                         tabIndex={0}
-                        style={{
-                          fontSize: "11px",
-                          padding: "2px 4px",
-                          background: "var(--bg-app)",
-                          color: "var(--text-main)",
-                          border: "1px solid var(--border-color)",
-                          borderRadius: "4px",
-                          cursor: "pointer"
-                        }}
+                        className="outline-size-select"
                       >
                         <option value="small">Small</option>
                         <option value="normal">Normal</option>
@@ -694,15 +686,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                   <select
                     value={gender}
                     onChange={(e) => handleGenderChange(name, e.target.value)}
-                    style={{
-                      fontSize: "11px",
-                      padding: "4px",
-                      borderRadius: "4px",
-                      border: "1px solid var(--border-color)",
-                      backgroundColor: "var(--bg-app)",
-                      color: "var(--text-main)",
-                      outline: "none",
-                    }}
+                    className={`character-gender-select gender-${gender}`}
                   >
                     <option value="unknown">Gender: Unknown</option>
                     <option value="male">Male</option>

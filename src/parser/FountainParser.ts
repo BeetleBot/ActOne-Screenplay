@@ -58,15 +58,9 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
   let screenplayText = rawText;
   let settings: any = {};
 
-  let beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - DRAFTER:");
-  let beatEndIdx = rawText.indexOf("END_DRAFTER*/");
-  let startStr = "/* If you're seeing this, you can remove the following stuff - DRAFTER:";
-
-  if (beatStartIdx === -1) {
-    beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - BEAT:");
-    beatEndIdx = rawText.indexOf("END_BEAT*/");
-    startStr = "/* If you're seeing this, you can remove the following stuff - BEAT:";
-  }
+  let beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - ACTONE:");
+  let beatEndIdx = rawText.indexOf("END_ACTONE*/");
+  let startStr = "/* If you're seeing this, you can remove the following stuff - ACTONE:";
 
   if (beatStartIdx !== -1 && beatEndIdx !== -1 && beatEndIdx > beatStartIdx) {
     const jsonStr = rawText.substring(beatStartIdx + startStr.length, beatEndIdx).trim();

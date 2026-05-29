@@ -2699,5 +2699,99 @@ body.dark-theme .theme-dot {
   border-radius: 1px;
 }
 
+/* Custom Styled Dropdowns for Character Tracking and Outline Size */
+.character-gender-select,
+.outline-size-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 5px 8px;
+  padding-right: 28px !important;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c7c7c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.character-gender-select:hover,
+.outline-size-select:hover {
+  border-color: var(--accent-color);
+  background-color: rgba(var(--accent-rgb), 0.03);
+}
+
+.character-gender-select:focus,
+.outline-size-select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+}
+
+/* Dark mode chevrons */
+body.dark-theme .character-gender-select,
+body.theme-dark .character-gender-select,
+body.theme-everforest-dark .character-gender-select,
+body.theme-tokyo-night .character-gender-select,
+body.theme-mocha .character-gender-select,
+body.theme-solarized .character-gender-select,
+body.theme-midnight .character-gender-select,
+body.dark-theme .outline-size-select,
+body.theme-dark .outline-size-select,
+body.theme-everforest-dark .outline-size-select,
+body.theme-tokyo-night .outline-size-select,
+body.theme-mocha .outline-size-select,
+body.theme-solarized .outline-size-select,
+body.theme-midnight .outline-size-select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4d4d8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Gender-specific premium select colors */
+.character-gender-select option {
+  background-color: var(--bg-editor);
+  color: var(--text-main);
+}
+
+.character-gender-select.gender-male {
+  background-color: rgba(0, 129, 239, 0.08);
+  border-color: rgba(0, 129, 239, 0.35);
+  color: #0081ef;
+  font-weight: 600;
+}
+.character-gender-select.gender-male:hover {
+  background-color: rgba(0, 129, 239, 0.14);
+  border-color: rgba(0, 129, 239, 0.6);
+}
+
+.character-gender-select.gender-female {
+  background-color: rgba(250, 111, 193, 0.08);
+  border-color: rgba(250, 111, 193, 0.35);
+  color: #fa6fc1;
+  font-weight: 600;
+}
+.character-gender-select.gender-female:hover {
+  background-color: rgba(250, 111, 193, 0.14);
+  border-color: rgba(250, 111, 193, 0.6);
+}
+
+.character-gender-select.gender-nonbinary {
+  background-color: rgba(181, 32, 218, 0.08);
+  border-color: rgba(181, 32, 218, 0.35);
+  color: #b520da;
+  font-weight: 600;
+}
+.character-gender-select.gender-nonbinary:hover {
+  background-color: rgba(181, 32, 218, 0.14);
+  border-color: rgba(181, 32, 218, 0.6);
+}
+
+
 
 
