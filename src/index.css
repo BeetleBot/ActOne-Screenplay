@@ -26,6 +26,7 @@
   --titlebar-bg: #f2efe9;
   --shadow-editor: 0 8px 30px rgba(0, 0, 0, 0.03);
   --shadow-sidebar: none;
+  --editor-cursor: var(--accent-color);
 }
 
 * {
@@ -640,6 +641,7 @@ body.dark-theme .header-tab.active {
   line-height: 1.2 !important;
   outline: none !important;
   background: transparent !important;
+  caret-color: var(--editor-cursor) !important;
 }
 
 .cm-editor.cm-focused {
@@ -655,6 +657,7 @@ body.dark-theme .header-tab.active {
   padding: 0 !important;
   max-width: 100%;
   user-select: text !important;
+  caret-color: var(--editor-cursor) !important;
 }
 
 .cm-line {
@@ -664,13 +667,11 @@ body.dark-theme .header-tab.active {
   white-space: pre-wrap !important;
 }
 
-.cm-cursor {
-  border-left: 2px solid var(--accent-color) !important;
-}
-
-body.dark-theme .cm-cursor,
-body.dark-theme .cm-dropCursor {
-  border-left: 2px solid rgba(255, 255, 255, 0.8) !important;
+.cm-cursor,
+.cm-cursor-primary,
+.cm-dropCursor {
+  border-left: 2px solid var(--editor-cursor) !important;
+  border-left-color: var(--editor-cursor) !important;
 }
 
 .cm-editor ::selection {

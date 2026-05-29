@@ -23,6 +23,7 @@ body.theme-light {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #888888;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-dark {
@@ -48,6 +49,7 @@ body.theme-dark {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #71717a;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-sepia {
@@ -73,6 +75,7 @@ body.theme-sepia {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #8c765c;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-frost {
@@ -98,6 +101,7 @@ body.theme-frost {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #718096;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-solarized {
@@ -123,6 +127,7 @@ body.theme-solarized {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #586e75;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-midnight {
@@ -148,6 +153,7 @@ body.theme-midnight {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #8b80a5;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-lilac {
@@ -173,6 +179,7 @@ body.theme-lilac {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #9c27b0;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-mocha {
@@ -198,6 +205,7 @@ body.theme-mocha {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #7f849c;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-latte {
@@ -223,6 +231,7 @@ body.theme-latte {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #9ca0b0;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-everforest-dark {
@@ -248,6 +257,7 @@ body.theme-everforest-dark {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #859289;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-everforest-light {
@@ -273,6 +283,7 @@ body.theme-everforest-light {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #939f91;
+  --editor-cursor: var(--text-main);
 }
 
 body.theme-tokyo-night {
@@ -298,4 +309,5 @@ body.theme-tokyo-night {
   --text-editor-transition: var(--accent-color);
   --text-editor-shot: var(--accent-color);
   --text-editor-meta: #565f89;
+  --editor-cursor: var(--text-main);
 }

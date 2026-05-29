@@ -19,7 +19,6 @@ import {
   X,
   LayoutGrid,
   Settings,
-  PanelLeft,
   Check,
   Plus,
 } from "lucide-react";
@@ -550,7 +549,6 @@ const Workspace: React.FC<{
         {!isZenMode && <EditorTabs />}
         {!isZenMode && (
           <div className="editor-header-bar">
-            <EditorToolbarLeft toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
             <EditorToolbar onOpenThemeModal={onOpenThemeModal} />
           </div>
         )}
@@ -566,20 +564,6 @@ const Workspace: React.FC<{
         </div>
         {(showTimeline && !isZenMode) && <TimelineView />}
       </div>
-    </div>
-  );
-};
-
-const EditorToolbarLeft: React.FC<{ toggleSidebar: () => void, isSidebarOpen: boolean }> = ({ toggleSidebar, isSidebarOpen }) => {
-  return (
-    <div className="editor-toolbar-left">
-      <button
-        className={`editor-toolbar-btn ${isSidebarOpen ? 'active' : ''}`}
-        title="Toggle Sidebar"
-        onClick={toggleSidebar}
-      >
-        <PanelLeft size={18} strokeWidth={1.5} />
-      </button>
     </div>
   );
 };
