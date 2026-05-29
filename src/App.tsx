@@ -21,7 +21,7 @@ function AppInner() {
 
   const { newFile, openFile, saveFile, saveFileAs } = useFile();
   const { editorView } = useEditor();
-  const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel, isZenMode, setIsZenMode } = useUI();
+  const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel, isZenMode, setIsZenMode, showSearchPanel, setShowSearchPanel } = useUI();
 
   const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal;
 
@@ -40,6 +40,7 @@ function AppInner() {
     zoomOut: useCallback(() => setZoomLevel(zoomLevel - 10), [zoomLevel, setZoomLevel]),
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
     openSettings: useCallback(() => setShowSettingsModal(true), []),
+    toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
     isDisabled: isModalActive,
   });
 

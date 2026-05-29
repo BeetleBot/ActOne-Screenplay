@@ -8,6 +8,7 @@ import { FountainEditor } from "../FountainEditor";
 import { SidebarViews } from "../SidebarViews";
 import { IndexCardsWorkspace } from "../IndexCardsWorkspace";
 import { TimelineView } from "../TimelineView";
+import { SearchPanel } from "../SearchPanel";
 
 import {
   List,
@@ -546,6 +547,7 @@ const Workspace: React.FC<{
       )}
 
       <div className="editor-container">
+        <SearchPanel />
         {!isZenMode && <EditorTabs />}
         {!isZenMode && (
           <div className="editor-header-bar">

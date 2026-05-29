@@ -3,6 +3,7 @@ import { EditorState, Transaction } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { autocompletion } from "@codemirror/autocomplete";
+import { search } from "@codemirror/search";
 import { useAppContext } from "../context/AppContext";
 import { LineType } from "../parser/FountainParser";
 import { fountainCompletionSource } from "./autocomplete";
@@ -268,6 +269,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         fountainHighlightField,
         smartQuotesExtension,
         autocompletion({ override: [fountainCompletionSource] }),
+        search(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setRawTextRef.current(update.state.doc.toString());

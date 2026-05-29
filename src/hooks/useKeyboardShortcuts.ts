@@ -15,6 +15,7 @@ interface ShortcutActions {
   zoomOut: () => void;
   resetZoom: () => void;
   openSettings?: () => void;
+  toggleSearch: () => void;
   isDisabled?: boolean;
 }
 
@@ -124,6 +125,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "p" && !shift) {
         e.preventDefault();
         actionsRef.current.exportPDF();
+        return;
+      }
+
+      if (key === "f" && !shift) {
+        e.preventDefault();
+        actionsRef.current.toggleSearch();
         return;
       }
 

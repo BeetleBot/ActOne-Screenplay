@@ -26,6 +26,10 @@ export interface UIContextProps {
   setMatchParenthesesEnabled: (enabled: boolean) => void;
   hideFountainMarkupEnabled: boolean;
   setHideFountainMarkupEnabled: (enabled: boolean) => void;
+  showSearchPanel: boolean;
+  setShowSearchPanel: (show: boolean) => void;
+  showReplacePanel: boolean;
+  setShowReplacePanel: (show: boolean) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -66,6 +70,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [hideFountainMarkupEnabled, setHideFountainMarkupEnabledState] = useState<boolean>(() => {
     return localStorage.getItem("actone-hide-fountain-markup-enabled") === "true";
   });
+
+  const [showSearchPanel, setShowSearchPanel] = useState<boolean>(false);
+  const [showReplacePanel, setShowReplacePanel] = useState<boolean>(false);
 
   const [isZenMode, setIsZenModeState] = useState(false);
 
@@ -182,6 +189,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setMatchParenthesesEnabled,
         hideFountainMarkupEnabled,
         setHideFountainMarkupEnabled,
+        showSearchPanel,
+        setShowSearchPanel,
+        showReplacePanel,
+        setShowReplacePanel,
       }}
     >
       {children}
