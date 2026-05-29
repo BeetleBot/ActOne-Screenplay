@@ -5,17 +5,20 @@ import { useUI } from "./context/UIContext";
 import { useEditor } from "./context/EditorContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useNativeAppBehavior } from "./hooks/useNativeAppBehavior";
 import { MainLayout } from "./components/layout/MainLayout";
 import { ModalManager } from "./components/ModalManager";
 
 function AppInner() {
+  useNativeAppBehavior();
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  
+
   const { newFile, openFile, saveFile, saveFileAs } = useFile();
   const { editorView } = useEditor();
   const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel, isZenMode, setIsZenMode } = useUI();
@@ -42,7 +45,7 @@ function AppInner() {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <MainLayout 
+      <MainLayout
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         isPaletteOpen={isPaletteOpen}

@@ -277,6 +277,20 @@ const HeaderBar: React.FC<{
     }
   };
 
+  const handleDoubleClick = async (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName !== "BUTTON" &&
+      !target.closest("button") &&
+      target.tagName !== "INPUT" &&
+      !target.closest("input") &&
+      !target.closest(".menu-bar") &&
+      !target.closest(".menu-dropdown")
+    ) {
+      handleMaximize();
+    }
+  };
+
   const activeFile = files.find(f => f.id === activeFileId);
   const activeFileName = activeFile?.filePath ? activeFile.filePath.split(/[/\\]/).pop() : "Untitled";
 
@@ -285,6 +299,7 @@ const HeaderBar: React.FC<{
       className="header-bar"
       data-tauri-drag-region
       onMouseDown={handleStartDrag}
+      onDoubleClick={handleDoubleClick}
     >
       <div className="header-left">
         <MenuBar
