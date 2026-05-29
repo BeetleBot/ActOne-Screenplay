@@ -6,8 +6,6 @@ export interface UIContextProps {
   paperSize: 'letter' | 'a4';
   setFontFamily: (font: 'courier-prime' | 'courier-prime-sans') => void;
   setPaperSize: (size: 'letter' | 'a4') => void;
-  useNativeTitleBar: boolean;
-  setUseNativeTitleBar: (enabled: boolean) => void;
   isZenMode: boolean;
   setIsZenMode: (enabled: boolean) => void;
   typewriterMode: boolean;
@@ -20,8 +18,6 @@ export interface UIContextProps {
   setActiveTab: (tab: string) => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
-  showWelcome: boolean;
-  setShowWelcome: (show: boolean) => void;
   autocompleteEnabled: boolean;
   setAutocompleteEnabled: (enabled: boolean) => void;
   smartQuotesEnabled: boolean;
@@ -71,10 +67,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem("actone-hide-fountain-markup-enabled") === "true";
   });
 
-  const [useNativeTitleBar, setUseNativeTitleBarState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-use-native-titlebar") === "true";
-  });
-
   const [isZenMode, setIsZenModeState] = useState(false);
 
   useEffect(() => {
@@ -91,22 +83,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     applyZenMode();
   }, [isZenMode]);
 
-  useEffect(() => {
-    const applyDecorations = async () => {
-      try {
-        const win = getCurrentWindow();
-        if (win) {
-          await win.setDecorations(useNativeTitleBar);
-        }
-      } catch (e) {
-        console.error("Failed to set window decorations:", e);
-      }
-    };
-    applyDecorations();
-  }, [useNativeTitleBar]);
-
-  const [showWelcome, setShowWelcome] = useState(true);
-
   const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
     return localStorage.getItem("actone-show-timeline") !== "false";
   });
@@ -120,11 +96,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const setShowTimeline = (show: boolean) => {
     setShowTimelineState(show);
     localStorage.setItem("actone-show-timeline", String(show));
-  };
-
-  const setUseNativeTitleBar = (enabled: boolean) => {
-    setUseNativeTitleBarState(enabled);
-    localStorage.setItem("actone-use-native-titlebar", String(enabled));
   };
 
   const setIsZenMode = (enabled: boolean) => {
@@ -173,8 +144,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         paperSize,
         setFontFamily,
         setPaperSize,
-        useNativeTitleBar,
-        setUseNativeTitleBar,
         isZenMode,
         setIsZenMode,
         typewriterMode,
@@ -187,8 +156,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setActiveTab,
         zoomLevel,
         setZoomLevel,
-        showWelcome,
-        setShowWelcome,
         autocompleteEnabled,
         setAutocompleteEnabled,
         smartQuotesEnabled,

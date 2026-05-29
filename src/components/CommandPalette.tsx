@@ -35,7 +35,6 @@ interface CommandPaletteProps {
   onOpenStructureModal: () => void;
   onOpenThemeModal: () => void;
   onOpenSettingsModal: () => void;
-  onOpenWelcome: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -46,8 +45,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isSidebarOpen,
   onOpenStructureModal,
   onOpenThemeModal,
-  onOpenSettingsModal,
-  onOpenWelcome
+  onOpenSettingsModal
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -134,7 +132,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "file-save-as", name: "Save Screenplay As...", category: "File", icon: <FileDown size={16} />, shortcut: "Ctrl+Shift+S", action: () => { saveFileAs(); onClose(); } },
     { id: "file-close", name: "Close Active File", category: "File", icon: <Trash2 size={16} />, shortcut: "Ctrl+W", action: () => { closeFile(activeFileId); onClose(); } },
     { id: "file-export", name: "Export...", category: "File", icon: <FileDown size={16} />, shortcut: "Ctrl+P", action: () => { onExportPDF(); onClose(); } },
-    { id: "file-welcome", name: "Go to Home Screen", category: "File", icon: <FilePlus size={16} />, action: () => { onOpenWelcome(); onClose(); } },
 
     // Edit
     { id: "edit-undo", name: "Undo", category: "Edit", icon: <Scissors size={16} />, shortcut: "Ctrl+Z", action: handleUndo },

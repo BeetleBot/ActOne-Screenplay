@@ -16,8 +16,6 @@ interface AppContextProps {
   paperSize: 'letter' | 'a4';
   setFontFamily: (font: 'courier-prime' | 'courier-prime-sans') => void;
   setPaperSize: (size: 'letter' | 'a4') => void;
-  useNativeTitleBar: boolean;
-  setUseNativeTitleBar: (enabled: boolean) => void;
   isZenMode: boolean;
   setIsZenMode: (enabled: boolean) => void;
   setRawText: (text: string) => void;
@@ -43,8 +41,6 @@ interface AppContextProps {
   recentFiles: any[];
   openFilePath: (path: string) => Promise<void>;
   removeFromRecent: (path: string) => void;
-  showWelcome: boolean;
-  setShowWelcome: (show: boolean) => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
   workspaceMode: 'editor' | 'cards';

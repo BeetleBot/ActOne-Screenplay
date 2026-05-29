@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { undo, redo } from "@codemirror/commands";
 import { useFile } from "../../context/FileContext";
 import { useUI } from "../../context/UIContext";
 import { useEditor } from "../../context/EditorContext";
@@ -21,26 +22,204 @@ import {
   PanelLeft,
   Check,
   Plus,
-  Search
 } from "lucide-react";
 
 const getTauriWindow = () => {
-  if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
+  try {
     return getCurrentWindow();
+  } catch (e) {
+    return null;
   }
-  return null;
+};
+
+const MenuBar: React.FC<{
+  onNewFile: () => void;
+  onOpenFile: () => void;
+  onSaveFile: () => void;
+  onSaveFileAs: () => void;
+  onExportPDF: () => void;
+  onOpenStructureModal: () => void;
+  onOpenThemeModal: () => void;
+  onOpenSettingsModal: () => void;
+  onOpenPalette: () => void;
+  toggleSidebar: () => void;
+  isSidebarOpen: boolean;
+}> = ({
+  onNewFile,
+  onOpenFile,
+  onSaveFile,
+  onSaveFileAs,
+  onExportPDF,
+  onOpenStructureModal,
+  onOpenThemeModal,
+  onOpenSettingsModal,
+  onOpenPalette,
+  toggleSidebar,
+  isSidebarOpen,
+}) => {
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const menuBarRef = useRef<HTMLDivElement>(null);
+  const {
+    typewriterMode,
+    setTypewriterMode,
+    showTimeline,
+    setShowTimeline,
+    workspaceMode,
+    setWorkspaceMode,
+    isZenMode,
+    setIsZenMode,
+    zoomLevel,
+    setZoomLevel,
+  } = useUI();
+  const { autoAddSceneNumbers, clearSceneNumbers, editorView } = useEditor();
+  const { closeFile, activeFileId } = useFile();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuBarRef.current && !menuBarRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleMenuClick = (menu: string) => {
+    setOpenMenu(openMenu === menu ? null : menu);
+  };
+
+  const runAction = (action: () => void) => {
+    action();
+    setOpenMenu(null);
+  };
+
+  const menuOrder = ["File", "Edit", "View", "Format", "Help"] as const;
+
+  const menus: Record<string, { label: string; shortcut?: string; action: () => void; dividerAfter?: boolean; disabled?: boolean }[]> = {
+    File: [
+      { label: "New Screenplay", shortcut: "Ctrl+N", action: onNewFile },
+      { label: "Open...", shortcut: "Ctrl+O", action: onOpenFile, dividerAfter: true },
+      { label: "Save", shortcut: "Ctrl+S", action: onSaveFile },
+      { label: "Save As...", shortcut: "Ctrl+Shift+S", action: onSaveFileAs, dividerAfter: true },
+      { label: "Export...", shortcut: "Ctrl+P", action: onExportPDF, dividerAfter: true },
+      { label: "Close File", shortcut: "Ctrl+W", action: () => closeFile(activeFileId) },
+    ],
+    Edit: [
+      { label: "Undo", shortcut: "Ctrl+Z", action: () => { if (editorView) undo(editorView); } },
+      { label: "Redo", shortcut: "Ctrl+Y", action: () => { if (editorView) redo(editorView); }, dividerAfter: true },
+      { label: "Command Palette", shortcut: "Ctrl+K", action: onOpenPalette, dividerAfter: true },
+      { label: "Bold", shortcut: "Ctrl+B", action: () => {} },
+      { label: "Italic", shortcut: "Ctrl+I", action: () => {} },
+      { label: "Underline", shortcut: "Ctrl+U", action: () => {}, dividerAfter: true },
+      { label: "Settings...", shortcut: "Ctrl+,", action: onOpenSettingsModal },
+    ],
+    View: [
+      { label: isSidebarOpen ? "Hide Sidebar" : "Show Sidebar", shortcut: "Ctrl+\\", action: toggleSidebar },
+      { label: showTimeline ? "Hide Timeline" : "Show Timeline", shortcut: "Ctrl+Shift+T", action: () => setShowTimeline(!showTimeline), dividerAfter: true },
+      { label: workspaceMode === "cards" ? "Switch to Editor" : "Switch to Index Cards", action: () => setWorkspaceMode(workspaceMode === "cards" ? "editor" : "cards") },
+      { label: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", action: () => setTypewriterMode(!typewriterMode), dividerAfter: true },
+      { label: "Zen Mode", shortcut: "Ctrl+Alt+Enter", action: () => setIsZenMode(!isZenMode), dividerAfter: true },
+      { label: "Zoom In", shortcut: "Ctrl+=", action: () => setZoomLevel(zoomLevel + 10) },
+      { label: "Zoom Out", shortcut: "Ctrl+-", action: () => setZoomLevel(zoomLevel - 10) },
+      { label: `Reset Zoom (${zoomLevel}%)`, shortcut: "Ctrl+0", action: () => setZoomLevel(100), dividerAfter: true },
+      { label: "Change Theme...", action: onOpenThemeModal },
+    ],
+    Format: [
+      { label: "Import Structure Template...", action: onOpenStructureModal, dividerAfter: true },
+      { label: "Renumber Scenes", action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); } },
+      { label: "Clear Scene Numbers", action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); } },
+    ],
+    Help: [
+      { label: "Keyboard Shortcuts", action: () => {}, disabled: true },
+      { label: "Fountain Syntax Guide", action: () => {}, disabled: true, dividerAfter: true },
+      { label: "Report a Bug", action: () => {}, disabled: true },
+      { label: "About ActOne", action: () => {}, disabled: true },
+    ],
+  };
+
+  return (
+    <div className="menu-bar" ref={menuBarRef}>
+      {menuOrder.map((name) => {
+        const items = menus[name];
+        return (
+          <div key={name} className="menu-bar-item-wrapper">
+            <button
+              className={`menu-bar-btn ${openMenu === name ? "active" : ""}`}
+              onClick={() => handleMenuClick(name)}
+              onMouseEnter={() => openMenu && setOpenMenu(name)}
+            >
+              {name}
+            </button>
+            {openMenu === name && (
+              <div className="menu-dropdown">
+                {items.map((item, idx) => (
+                  <React.Fragment key={idx}>
+                    <div
+                      className={`menu-item ${item.disabled ? "disabled" : ""}`}
+                      onClick={() => !item.disabled && runAction(item.action)}
+                    >
+                      <span>{item.label}</span>
+                      {item.shortcut && <span className="menu-item-shortcut">{item.shortcut}</span>}
+                    </div>
+                    {item.dividerAfter && <div className="menu-divider" />}
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 const HeaderBar: React.FC<{
   isPaletteOpen: boolean;
   setIsPaletteOpen: (open: boolean) => void;
+  onOpenThemeModal: () => void;
+  onOpenSettingsModal: () => void;
+  onOpenStructureModal: () => void;
+  onOpenExportModal: () => void;
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
 }> = ({
   isPaletteOpen,
   setIsPaletteOpen,
+  onOpenThemeModal,
+  onOpenSettingsModal,
+  onOpenStructureModal,
+  onOpenExportModal,
+  isSidebarOpen,
+  toggleSidebar,
 }) => {
-  const { files, activeFileId, selectFile, newFile, closeFile } = useFile();
-  const { useNativeTitleBar } = useUI();
-  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const { files, activeFileId, newFile, openFile, saveFile, saveFileAs } = useFile();
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  useEffect(() => {
+    const checkMaximized = async () => {
+      const win = getTauriWindow();
+      if (win) {
+        setIsMaximized(await win.isMaximized());
+      }
+    };
+
+    checkMaximized();
+
+    let unlisten: any;
+    const setupListener = async () => {
+      const win = getTauriWindow();
+      if (win) {
+        unlisten = await win.onResized(() => {
+          checkMaximized();
+        });
+      }
+    };
+    setupListener();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   const handleClose = () => {
     try {
@@ -65,9 +244,11 @@ const HeaderBar: React.FC<{
       const win = getTauriWindow();
       if (win) {
         if (await win.isMaximized()) {
-          win.unmaximize();
+          await win.unmaximize();
+          setIsMaximized(false);
         } else {
-          win.maximize();
+          await win.maximize();
+          setIsMaximized(true);
         }
       }
     } catch (e) {
@@ -75,7 +256,118 @@ const HeaderBar: React.FC<{
     }
   };
 
-  // Scroll active tab into view
+  const handleStartDrag = async (e: React.MouseEvent) => {
+    if (e.button === 0) {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName !== "BUTTON" &&
+        !target.closest("button") &&
+        target.tagName !== "INPUT" &&
+        !target.closest("input") &&
+        !target.closest(".menu-bar") &&
+        !target.closest(".menu-dropdown")
+      ) {
+        try {
+          const win = getTauriWindow();
+          if (win) await win.startDragging();
+        } catch (err) {
+          console.error("Failed to start dragging:", err);
+        }
+      }
+    }
+  };
+
+  const activeFile = files.find(f => f.id === activeFileId);
+  const activeFileName = activeFile?.filePath ? activeFile.filePath.split(/[/\\]/).pop() : "Untitled";
+
+  return (
+    <div
+      className="header-bar"
+      data-tauri-drag-region
+      onMouseDown={handleStartDrag}
+    >
+      <div className="header-left">
+        <MenuBar
+          onNewFile={newFile}
+          onOpenFile={openFile}
+          onSaveFile={saveFile}
+          onSaveFileAs={saveFileAs}
+          onExportPDF={onOpenExportModal}
+          onOpenStructureModal={onOpenStructureModal}
+          onOpenThemeModal={onOpenThemeModal}
+          onOpenSettingsModal={onOpenSettingsModal}
+          onOpenPalette={() => setIsPaletteOpen(!isPaletteOpen)}
+          toggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+        />
+      </div>
+
+      <span className="titlebar-title">ActOne - {activeFileName}</span>
+
+      <div className="header-right window-controls-windows">
+        <button className="window-btn-windows minimize" onClick={handleMinimize} title="Minimize">
+          <Minus size={10} strokeWidth={2.5} />
+        </button>
+        <button className="window-btn-windows maximize" onClick={handleMaximize} title={isMaximized ? "Restore" : "Maximize"}>
+          {isMaximized ? (
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 1H9V7" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M1 3H7V9H1V3Z" stroke="currentColor" strokeWidth="1.2" />
+            </svg>
+          ) : (
+            <Square size={8} strokeWidth={2.5} />
+          )}
+        </button>
+        <button className="window-btn-windows close" onClick={handleClose} title="Close">
+          <X size={10} strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ActivityBar: React.FC<{
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (open: boolean) => void;
+}> = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen }) => {
+  const handleClick = (tab: string) => {
+    if (isSidebarOpen && activeTab === tab) {
+      setIsSidebarOpen(false);
+    } else {
+      setActiveTab(tab);
+      setIsSidebarOpen(true);
+    }
+  };
+
+  const tabs = [
+    { id: "outline", icon: <List size={22} />, title: "Outline" },
+    { id: "notepad", icon: <FileText size={22} />, title: "Notepad" },
+    { id: "characters", icon: <User size={22} />, title: "Characters" },
+    { id: "stats", icon: <BarChart2 size={22} />, title: "Statistics" },
+  ];
+
+  return (
+    <div className="activity-bar">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          className={`activity-bar-btn ${isSidebarOpen && activeTab === tab.id ? "active" : ""}`}
+          onClick={() => handleClick(tab.id)}
+          title={tab.title}
+        >
+          {tab.icon}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+const EditorTabs: React.FC = () => {
+  const { files, activeFileId, selectFile, newFile, closeFile } = useFile();
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const activeTab = tabsContainerRef.current?.querySelector(".header-tab.active");
     if (activeTab) {
@@ -84,17 +376,7 @@ const HeaderBar: React.FC<{
   }, [activeFileId]);
 
   return (
-    <div className={`header-bar ${useNativeTitleBar ? 'native-decorations' : ''}`} data-tauri-drag-region>
-      <div className="header-left">
-        <button 
-          className="header-icon-btn" 
-          onClick={() => setIsPaletteOpen(!isPaletteOpen)}
-          title="Command Palette (Ctrl+K)"
-        >
-          <Search size={18} strokeWidth={2} />
-        </button>
-      </div>
-
+    <div className="editor-tabs-bar">
       <div className="header-tabs-container" ref={tabsContainerRef}>
         {files.map((file) => {
           const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled";
@@ -129,25 +411,15 @@ const HeaderBar: React.FC<{
           <Plus size={14} />
         </button>
       </div>
-
-      {!useNativeTitleBar && (
-        <div className="header-right window-controls-windows">
-          <button className="window-btn-windows minimize" onClick={handleMinimize} title="Minimize">
-            <Minus size={10} strokeWidth={2.5} />
-          </button>
-          <button className="window-btn-windows maximize" onClick={handleMaximize} title="Maximize">
-            <Square size={8} strokeWidth={2.5} />
-          </button>
-          <button className="window-btn-windows close" onClick={handleClose} title="Close">
-            <X size={10} strokeWidth={2.5} />
-          </button>
-        </div>
-      )}
     </div>
   );
 };
 
-const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boolean) => void; onOpenThemeModal: () => void }> = ({ isSidebarOpen, setIsSidebarOpen, onOpenThemeModal }) => {
+const Workspace: React.FC<{
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (open: boolean) => void;
+  onOpenThemeModal: () => void;
+}> = ({ isSidebarOpen, setIsSidebarOpen, onOpenThemeModal }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const { paperSize, workspaceMode, setWorkspaceMode, showTimeline, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
@@ -165,7 +437,7 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
         } else {
           const activeEl = document.activeElement;
           const isEditorFocused = activeEl && (
-            activeEl.classList.contains("cm-content") || 
+            activeEl.classList.contains("cm-content") ||
             activeEl.closest(".cm-editor") !== null
           );
           if (!isEditorFocused) {
@@ -188,7 +460,8 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
-      const newWidth = Math.max(200, Math.min(e.clientX, 800));
+      const activityBarWidth = 48;
+      const newWidth = Math.max(200, Math.min(e.clientX - activityBarWidth, 800));
       setSidebarWidth(newWidth);
     };
 
@@ -215,10 +488,19 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
 
   return (
     <div className="app-workspace">
-      {isSidebarOpen && (
+      {!isZenMode && (
+        <ActivityBar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+        />
+      )}
+
+      {isSidebarOpen && !isZenMode && (
         <>
-          <div 
-            className="sidebar" 
+          <div
+            className="sidebar"
             tabIndex={-1}
             style={{ width: `${sidebarWidth}px`, flexShrink: 0, outline: 'none' }}
             onMouseDown={(e) => {
@@ -238,37 +520,6 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
               }
             }}
           >
-            <div className="sidebar-tabs">
-              <button
-                className={`sidebar-tab-btn ${activeTab === "outline" ? "active" : ""}`}
-                onClick={() => setActiveTab("outline")}
-                title="Outline"
-              >
-                <List size={16} />
-              </button>
-              <button
-                className={`sidebar-tab-btn ${activeTab === "notepad" ? "active" : ""}`}
-                onClick={() => setActiveTab("notepad")}
-                title="Notepad"
-              >
-                <FileText size={16} />
-              </button>
-              <button
-                className={`sidebar-tab-btn ${activeTab === "characters" ? "active" : ""}`}
-                onClick={() => setActiveTab("characters")}
-                title="Characters"
-              >
-                <User size={16} />
-              </button>
-              <button
-                className={`sidebar-tab-btn ${activeTab === "stats" ? "active" : ""}`}
-                onClick={() => setActiveTab("stats")}
-                title="Statistics"
-              >
-                <BarChart2 size={16} />
-              </button>
-            </div>
-
             <div className="sidebar-content">
               <SidebarViews activeTab={activeTab} />
             </div>
@@ -281,6 +532,7 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
       )}
 
       <div className="editor-container">
+        {!isZenMode && <EditorTabs />}
         {!isZenMode && (
           <div className="editor-header-bar">
             <EditorToolbarLeft toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
@@ -306,8 +558,8 @@ const Workspace: React.FC<{ isSidebarOpen: boolean; setIsSidebarOpen: (open: boo
 const EditorToolbarLeft: React.FC<{ toggleSidebar: () => void, isSidebarOpen: boolean }> = ({ toggleSidebar, isSidebarOpen }) => {
   return (
     <div className="editor-toolbar-left">
-      <button 
-        className={`editor-toolbar-btn ${isSidebarOpen ? 'active' : ''}`} 
+      <button
+        className={`editor-toolbar-btn ${isSidebarOpen ? 'active' : ''}`}
         title="Toggle Sidebar"
         onClick={toggleSidebar}
       >
@@ -318,14 +570,14 @@ const EditorToolbarLeft: React.FC<{ toggleSidebar: () => void, isSidebarOpen: bo
 };
 
 const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenThemeModal }) => {
-  const { 
-    fontFamily, 
-    setFontFamily, 
-    paperSize, 
-    setPaperSize, 
-    typewriterMode, 
-    setTypewriterMode, 
-    workspaceMode, 
+  const {
+    fontFamily,
+    setFontFamily,
+    paperSize,
+    setPaperSize,
+    typewriterMode,
+    setTypewriterMode,
+    workspaceMode,
     setWorkspaceMode,
     zoomLevel,
     setZoomLevel
@@ -345,16 +597,16 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
 
   return (
     <div className="editor-toolbar">
-      <button 
-        className={`editor-toolbar-btn ${workspaceMode === "cards" ? "active" : ""}`} 
+      <button
+        className={`editor-toolbar-btn ${workspaceMode === "cards" ? "active" : ""}`}
         title="Index Cards"
         onClick={() => setWorkspaceMode(workspaceMode === "cards" ? "editor" : "cards")}
       >
         <LayoutGrid size={18} strokeWidth={1.5} />
       </button>
       <div className="editor-toolbar-settings-container" ref={settingsRef}>
-        <button 
-          className="editor-toolbar-btn" 
+        <button
+          className="editor-toolbar-btn"
           title="Settings"
           onClick={() => setShowSettings(!showSettings)}
         >
@@ -363,7 +615,7 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
         {showSettings && (
           <div className="editor-toolbar-dropdown">
             <div className="editor-toolbar-dropdown-section">Editor Mode</div>
-            <div 
+            <div
               className={`editor-toolbar-dropdown-option ${typewriterMode ? "active" : ""}`}
               onClick={() => setTypewriterMode(!typewriterMode)}
             >
@@ -374,14 +626,14 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
             <div className="editor-toolbar-dropdown-divider" />
 
             <div className="editor-toolbar-dropdown-section">Font Family</div>
-            <div 
+            <div
               className={`editor-toolbar-dropdown-option ${fontFamily === "courier-prime" ? "active" : ""}`}
               onClick={() => setFontFamily("courier-prime")}
             >
               <span>Courier Prime</span>
               {fontFamily === "courier-prime" && <Check size={14} />}
             </div>
-            <div 
+            <div
               className={`editor-toolbar-dropdown-option ${fontFamily === "courier-prime-sans" ? "active" : ""}`}
               onClick={() => setFontFamily("courier-prime-sans")}
             >
@@ -392,14 +644,14 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
             <div className="editor-toolbar-dropdown-divider" />
 
             <div className="editor-toolbar-dropdown-section">Paper Size</div>
-            <div 
+            <div
               className={`editor-toolbar-dropdown-option ${paperSize === "letter" ? "active" : ""}`}
               onClick={() => setPaperSize("letter")}
             >
               <span>US Letter</span>
               {paperSize === "letter" && <Check size={14} />}
             </div>
-            <div 
+            <div
               className={`editor-toolbar-dropdown-option ${paperSize === "a4" ? "active" : ""}`}
               onClick={() => setPaperSize("a4")}
             >
@@ -409,7 +661,7 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
             <div className="editor-toolbar-dropdown-divider" />
 
             <div className="editor-toolbar-dropdown-section">Appearance</div>
-            <div 
+            <div
               className="editor-toolbar-dropdown-option"
               onClick={() => {
                 setShowSettings(false);
@@ -422,7 +674,7 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
             <div className="editor-toolbar-dropdown-divider" />
 
             <div className="editor-toolbar-dropdown-section">Zoom</div>
-            <div 
+            <div
               className="editor-toolbar-dropdown-option"
               onClick={() => setZoomLevel(100)}
             >
@@ -441,6 +693,9 @@ export interface MainLayoutProps {
   isPaletteOpen: boolean;
   setIsPaletteOpen: (open: boolean) => void;
   onOpenThemeModal: () => void;
+  onOpenSettingsModal: () => void;
+  onOpenStructureModal: () => void;
+  onOpenExportModal: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -449,18 +704,27 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   isPaletteOpen,
   setIsPaletteOpen,
   onOpenThemeModal,
+  onOpenSettingsModal,
+  onOpenStructureModal,
+  onOpenExportModal,
 }) => {
   const { isZenMode } = useUI();
 
   return (
     <>
       {!isZenMode && (
-        <HeaderBar 
+        <HeaderBar
           isPaletteOpen={isPaletteOpen}
           setIsPaletteOpen={setIsPaletteOpen}
+          onOpenThemeModal={onOpenThemeModal}
+          onOpenSettingsModal={onOpenSettingsModal}
+          onOpenStructureModal={onOpenStructureModal}
+          onOpenExportModal={onOpenExportModal}
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
       )}
-      <Workspace 
+      <Workspace
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         onOpenThemeModal={onOpenThemeModal}
