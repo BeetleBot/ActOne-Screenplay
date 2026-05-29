@@ -1,14 +1,15 @@
-import React, { createContext, useContext, useState, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export interface UIContextProps {
   fontFamily: 'courier-prime' | 'courier-prime-sans';
   paperSize: 'letter' | 'a4';
   setFontFamily: (font: 'courier-prime' | 'courier-prime-sans') => void;
   setPaperSize: (size: 'letter' | 'a4') => void;
-  showTabBar: boolean;
-  setShowTabBar: (show: boolean) => void;
-  openTabBarManually: () => void;
-  triggerTemporaryTabBar: () => void;
+  useNativeTitleBar: boolean;
+  setUseNativeTitleBar: (enabled: boolean) => void;
+  isZenMode: boolean;
+  setIsZenMode: (enabled: boolean) => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
   workspaceMode: 'editor' | 'cards';
@@ -70,9 +71,25 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem("actone-hide-fountain-markup-enabled") === "true";
   });
 
-  const [showTabBar, setShowTabBar] = useState(false);
+  const [useNativeTitleBar, setUseNativeTitleBarState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-use-native-titlebar") === "true";
+  });
+
+  useEffect(() => {
+    const applyDecorations = async () => {
+      try {
+        const win = getCurrentWindow();
+        if (win) {
+          await win.setDecorations(useNativeTitleBar);
+        }
+      } catch (e) {
+        console.error("Failed to set window decorations:", e);
+      }
+    };
+    applyDecorations();
+  }, [useNativeTitleBar]);
+
   const [showWelcome, setShowWelcome] = useState(true);
-  const hideTimerRef = useRef<any>(null);
 
   const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
     return localStorage.getItem("actone-show-timeline") !== "false";
@@ -89,22 +106,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem("actone-show-timeline", String(show));
   };
 
-  const triggerTemporaryTabBar = () => {
-    setShowTabBar(true);
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-    }
-    hideTimerRef.current = setTimeout(() => {
-      setShowTabBar(false);
-    }, 1500);
-  };
-
-  const openTabBarManually = () => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-    setShowTabBar(true);
+  const setUseNativeTitleBar = (enabled: boolean) => {
+    setUseNativeTitleBarState(enabled);
+    localStorage.setItem("actone-use-native-titlebar", String(enabled));
   };
 
   const setFontFamily = (font: 'courier-prime' | 'courier-prime-sans') => {
@@ -149,10 +153,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         paperSize,
         setFontFamily,
         setPaperSize,
-        showTabBar,
-        setShowTabBar,
-        openTabBarManually,
-        triggerTemporaryTabBar,
+        useNativeTitleBar,
+        setUseNativeTitleBar,
         typewriterMode,
         setTypewriterMode,
         workspaceMode,

@@ -16,6 +16,8 @@ interface AppContextProps {
   paperSize: 'letter' | 'a4';
   setFontFamily: (font: 'courier-prime' | 'courier-prime-sans') => void;
   setPaperSize: (size: 'letter' | 'a4') => void;
+  useNativeTitleBar: boolean;
+  setUseNativeTitleBar: (enabled: boolean) => void;
   setRawText: (text: string) => void;
   openFile: () => Promise<void>;
   saveFile: () => Promise<void>;
@@ -41,10 +43,6 @@ interface AppContextProps {
   removeFromRecent: (path: string) => void;
   showWelcome: boolean;
   setShowWelcome: (show: boolean) => void;
-  showTabBar: boolean;
-  setShowTabBar: (show: boolean) => void;
-  openTabBarManually: () => void;
-  triggerTemporaryTabBar: () => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
   workspaceMode: 'editor' | 'cards';

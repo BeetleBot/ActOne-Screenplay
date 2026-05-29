@@ -170,6 +170,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setFontFamily,
     paperSize,
     setPaperSize,
+    useNativeTitleBar,
+    setUseNativeTitleBar,
     showTimeline,
     setShowTimeline,
     workspaceMode,
@@ -315,6 +317,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   type="checkbox" 
                   checked={showTimeline}
                   onChange={(e) => setShowTimeline(e.target.checked)}
+                  tabIndex={0}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderTop: "1px solid var(--border-color)", paddingTop: "12px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 600, opacity: 0.9 }}>Use Native Title Bar</span>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Use the operating system's window decorations</span>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={useNativeTitleBar}
+                  onChange={(e) => setUseNativeTitleBar(e.target.checked)}
                   tabIndex={0}
                   style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />

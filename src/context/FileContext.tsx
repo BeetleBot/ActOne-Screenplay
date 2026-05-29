@@ -47,7 +47,7 @@ export const useFile = () => {
 };
 
 export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { paperSize, triggerTemporaryTabBar } = useUI();
+  const { paperSize } = useUI();
 
   const generateUUID = () => "file-" + Math.random().toString(36).substring(2, 15);
 
@@ -489,12 +489,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         const nextFile = currentFiles[nextIndex];
         selectFileRef.current(nextFile.id);
-        triggerTemporaryTabBar();
       }
     };
     window.addEventListener("keydown", handleKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [triggerTemporaryTabBar]);
+  }, []);
 
   return (
     <FileContext.Provider

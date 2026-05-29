@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useFile } from "../../context/FileContext";
 import { useUI } from "../../context/UIContext";
@@ -20,7 +20,8 @@ import {
   Settings,
   PanelLeft,
   Check,
-  Plus
+  Plus,
+  Search
 } from "lucide-react";
 
 const getTauriWindow = () => {
@@ -30,15 +31,16 @@ const getTauriWindow = () => {
   return null;
 };
 
-const Titlebar: React.FC<{
+const HeaderBar: React.FC<{
   isPaletteOpen: boolean;
   setIsPaletteOpen: (open: boolean) => void;
 }> = ({
   isPaletteOpen,
   setIsPaletteOpen,
 }) => {
-  const { filePath, isSaving } = useFile();
-  const { showTabBar, setShowTabBar, openTabBarManually, showWelcome } = useUI();
+  const { files, activeFileId, selectFile, newFile, closeFile } = useFile();
+  const { useNativeTitleBar } = useUI();
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
 
   const handleClose = () => {
     try {
@@ -73,56 +75,74 @@ const Titlebar: React.FC<{
     }
   };
 
-  const displayPath = filePath ? filePath.split(/[/\\]/).pop() : "Untitled.fountain";
+  // Scroll active tab into view
+  useEffect(() => {
+    const activeTab = tabsContainerRef.current?.querySelector(".header-tab.active");
+    if (activeTab) {
+      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [activeFileId]);
 
   return (
-    <div className="titlebar" data-tauri-drag-region>
-      <div className="window-controls-windows">
-        <button className="window-btn-windows minimize" onClick={handleMinimize} title="Minimize">
-          <Minus size={10} strokeWidth={2.5} />
-        </button>
-        <button className="window-btn-windows maximize" onClick={handleMaximize} title="Maximize">
-          <Square size={8} strokeWidth={2.5} />
-        </button>
-        <button className="window-btn-windows close" onClick={handleClose} title="Close">
-          <X size={10} strokeWidth={2.5} />
+    <div className={`header-bar ${useNativeTitleBar ? 'native-decorations' : ''}`} data-tauri-drag-region>
+      <div className="header-left">
+        <button 
+          className="header-icon-btn" 
+          onClick={() => setIsPaletteOpen(!isPaletteOpen)}
+          title="Command Palette (Ctrl+K)"
+        >
+          <Search size={18} strokeWidth={2} />
         </button>
       </div>
-      
-      {!showWelcome && (
-        <button 
-          className="titlebar-title-button"
+
+      <div className="header-tabs-container" ref={tabsContainerRef}>
+        {files.map((file) => {
+          const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled";
+          const isActive = file.id === activeFileId;
+          return (
+            <div
+              key={file.id}
+              className={`header-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
+              onClick={() => selectFile(file.id)}
+            >
+              <span className="tab-name">{display}</span>
+              <button
+                className="tab-close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeFile(file.id);
+                }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          );
+        })}
+        <button
+          className="header-new-tab-btn"
           onClick={(e) => {
             e.stopPropagation();
-            if (showTabBar) {
-              setShowTabBar(false);
-            } else {
-              openTabBarManually();
-            }
+            newFile();
           }}
-          title="Click to show open files"
+          title="New File"
         >
-          <span className="title-text">{displayPath}</span>
-          <span className="title-arrow">▾</span>
-          {isSaving && <span className="title-saving">(Saving...)</span>}
-        </button>
-      )}
-
-      {showWelcome && (
-        <div className="titlebar-title-text" style={{ fontSize: '12px', fontWeight: 600, opacity: 0.5 }}>ActOne</div>
-      )}
-
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <button
-          className="titlebar-command-badge"
-          onClick={() => setIsPaletteOpen(!isPaletteOpen)}
-          title="Open Command Palette"
-        >
-          <span>⌘K</span>
-          <span style={{ opacity: 0.6 }}>or</span>
-          <span>Ctrl+K</span>
+          <Plus size={14} />
         </button>
       </div>
+
+      {!useNativeTitleBar && (
+        <div className="header-right window-controls-windows">
+          <button className="window-btn-windows minimize" onClick={handleMinimize} title="Minimize">
+            <Minus size={10} strokeWidth={2.5} />
+          </button>
+          <button className="window-btn-windows maximize" onClick={handleMaximize} title="Maximize">
+            <Square size={8} strokeWidth={2.5} />
+          </button>
+          <button className="window-btn-windows close" onClick={handleClose} title="Close">
+            <X size={10} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -413,72 +433,6 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
   );
 };
 
-const FloatingTabs: React.FC = () => {
-  const { 
-    files, 
-    activeFileId, 
-    selectFile, 
-    newFile, 
-    closeFile 
-  } = useFile();
-  const { showTabBar, setShowTabBar } = useUI();
-
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!showTabBar) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowTabBar(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showTabBar]);
-
-  if (!showTabBar) return null;
-
-  return (
-    <div className="floating-tabs-container" ref={containerRef}>
-      {files.map((file) => {
-        const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled.fountain";
-        const isActive = file.id === activeFileId;
-        return (
-          <div
-            key={file.id}
-            className={`floating-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
-            onClick={() => {
-              selectFile(file.id);
-            }}
-          >
-            <span className="floating-tab-name">{display}</span>
-            <span className="floating-tab-status-dot" />
-            <button
-              className="floating-tab-close"
-              onClick={(e) => {
-                e.stopPropagation();
-                closeFile(file.id);
-              }}
-            >
-              <X size={12} />
-            </button>
-          </div>
-        );
-      })}
-      <button
-        className="floating-tab-new"
-        onClick={(e) => {
-          e.stopPropagation();
-          newFile();
-        }}
-        title="New File"
-      >
-        <Plus size={14} />
-      </button>
-    </div>
-  );
-};
-
 export interface MainLayoutProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
@@ -496,11 +450,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 }) => {
   return (
     <>
-      <Titlebar 
+      <HeaderBar 
         isPaletteOpen={isPaletteOpen}
         setIsPaletteOpen={setIsPaletteOpen}
       />
-      <FloatingTabs />
       <Workspace 
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}

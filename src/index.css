@@ -50,29 +50,167 @@ body {
   flex-direction: column;
 }
 
-.titlebar {
-  height: 48px;
-  -webkit-app-region: drag;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
+/* --- Header Bar Styles --- */
+.header-bar {
+  height: 42px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
   z-index: 1000;
-  user-select: none;
+  -webkit-app-region: drag;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  -webkit-app-region: no-drag;
+}
+
+.header-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.header-icon-btn:hover {
+  background: rgba(128, 128, 128, 0.15);
+  color: var(--text-main);
+}
+
+.header-tabs-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 100%;
+  -webkit-app-region: no-drag;
+  padding: 0 4px;
+}
+
+.header-tabs-container::-webkit-scrollbar {
+  display: none;
+}
+
+.header-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  max-width: 180px;
+  position: relative;
+}
+
+.header-tab:hover {
+  background: rgba(128, 128, 128, 0.08);
+  color: var(--text-main);
+}
+
+.header-tab.active {
+  background: var(--bg-app);
+  color: var(--text-main);
+  border-color: var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-theme .header-tab.active {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: all 0.15s;
+}
+
+.tab-close:hover {
+  background: rgba(128, 128, 128, 0.2);
+  color: var(--text-main);
+}
+
+.header-tab.dirty .tab-name::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  margin-left: 6px;
+}
+
+.header-new-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.header-new-tab-btn:hover {
+  background: rgba(128, 128, 128, 0.15);
+  color: var(--text-main);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  -webkit-app-region: no-drag;
+  margin-left: auto;
 }
 
 .window-controls-windows {
   display: flex;
   align-items: center;
   gap: 4px;
-  -webkit-app-region: no-drag;
 }
 
 .window-btn-windows {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
   border: none;
   background: transparent;
@@ -85,41 +223,14 @@ body {
   transition: all 0.15s ease;
 }
 
-.window-btn-windows svg {
-  width: 12px;
-  height: 12px;
-}
-
 .window-btn-windows:hover {
-  background: rgba(128, 128, 128, 0.1);
+  background: rgba(128, 128, 128, 0.15);
   opacity: 1;
 }
 
 .window-btn-windows.close:hover {
   background: #e81123;
   color: white;
-  opacity: 1;
-}
-
-.titlebar-command-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  background: rgba(128, 128, 128, 0.05);
-  border: 1px solid var(--border-color);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  -webkit-app-region: no-drag;
-}
-
-.titlebar-command-badge:hover {
-  background: rgba(128, 128, 128, 0.1);
-  color: var(--text-main);
 }
 
 .editor-header-bar {
@@ -990,189 +1101,6 @@ body.dark-theme .export-modal-preview-line {
 
 .export-modal-btn.primary:hover {
   filter: brightness(1.1);
-}
-
-.titlebar-title-button {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  transition: background 0.15s, color 0.15s;
-  -webkit-app-region: no-drag;
-}
-
-.titlebar-title-button:hover {
-  background: rgba(128, 128, 128, 0.12);
-}
-
-body.dark-theme .titlebar-title-button:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.title-arrow {
-  font-size: 10px;
-  opacity: 0.6;
-}
-
-.title-saving {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-weight: normal;
-}
-
-.floating-tabs-container {
-  position: absolute;
-  top: 38px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 99px;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
-  animation: floatingTabsIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  -webkit-app-region: no-drag;
-}
-
-body.dark-theme .floating-tabs-container {
-  background: rgba(26, 26, 26, 0.75);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-@keyframes floatingTabsIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -8px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0) scale(1);
-  }
-}
-
-.floating-tab {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 99px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: 1px solid transparent;
-}
-
-.floating-tab:hover {
-  background: rgba(128, 128, 128, 0.08);
-  color: var(--text-main);
-}
-
-.floating-tab.active {
-  background: var(--bg-app);
-  color: var(--text-main);
-  border-color: var(--border-color);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-body.dark-theme .floating-tab.active {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.floating-tab-name {
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.floating-tab-close {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.15s, background 0.15s;
-}
-
-.floating-tab:hover .floating-tab-close,
-.floating-tab.active .floating-tab-close {
-  opacity: 0.6;
-}
-
-.floating-tab-close:hover {
-  background: rgba(128, 128, 128, 0.2);
-  color: var(--text-main);
-  opacity: 1 !important;
-}
-
-.floating-tab-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent-color);
-  display: none;
-}
-
-.floating-tab.dirty .floating-tab-status-dot {
-  display: block;
-}
-
-.floating-tab.dirty .floating-tab-close {
-  display: none;
-}
-
-.floating-tab.dirty:hover .floating-tab-status-dot {
-  display: none;
-}
-
-.floating-tab.dirty:hover .floating-tab-close {
-  display: flex;
-}
-
-.floating-tab-new {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-  margin-right: 4px;
-}
-
-.floating-tab-new:hover {
-  background: rgba(128, 128, 128, 0.12);
-  color: var(--text-main);
 }
 
 .cm-typewriter-mode .cm-content {
