@@ -14,7 +14,9 @@ import {
   Settings,
   Scissors,
   Copy,
-  Clipboard
+  Clipboard,
+  Search,
+  Replace,
 } from "lucide-react";
 
 interface CommandItem {
@@ -74,7 +76,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setWorkspaceMode,
     setActiveTab,
     setFontFamily,
-    setPaperSize
+    setPaperSize,
+    setShowSearchPanel,
+    setShowReplacePanel,
   } = useUI();
 
 
@@ -139,6 +143,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "edit-cut", name: "Cut Selected", category: "Edit", icon: <Scissors size={16} />, shortcut: "Ctrl+X", action: () => handleEditorAction("cut") },
     { id: "edit-copy", name: "Copy Selected", category: "Edit", icon: <Copy size={16} />, shortcut: "Ctrl+C", action: () => handleEditorAction("copy") },
     { id: "edit-paste", name: "Paste", category: "Edit", icon: <Clipboard size={16} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
+    { id: "edit-search", name: "Find / Search Screenplay...", category: "Edit", icon: <Search size={16} />, shortcut: "Ctrl+F", action: () => { setShowSearchPanel(true); setShowReplacePanel(false); onClose(); } },
+    { id: "edit-replace", name: "Replace Text...", category: "Edit", icon: <Replace size={16} />, action: () => { setShowSearchPanel(true); setShowReplacePanel(true); onClose(); } },
 
     // View
     { id: "view-mode-editor", name: "Switch to Editor Mode", category: "View", icon: <Settings size={16} />, action: () => { setWorkspaceMode("editor"); onClose(); } },
