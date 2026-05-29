@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { FileText, X, Download } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 type ExportFormat = "pdf" | "fountain";
 
@@ -76,7 +77,7 @@ function stripFountainForExport(
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
-  const { rawText, fontFamily, paperSize, editorView } = useAppContext();
+  const { rawText, fontFamily, paperSize } = useAppContext();
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
@@ -87,19 +88,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
 
   const handleClose = () => {
     onClose();
-    editorView?.focus();
   };
 
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        handleClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, editorView]);
+  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, handleClose);
 
   const handleExportPDF = async () => {
     try {
@@ -158,19 +149,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     }
   };
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
-
   return (
     <div 
       className="export-modal-overlay" 
       onClick={handleClose}
       ref={containerRef}
+      onKeyDown={trapKeyDown}
       tabIndex={-1}
       style={{ outline: "none" }}
+      role="dialog"
+      aria-modal="true"
     >
       <div className="export-modal" onClick={(e) => e.stopPropagation()}>
         <div className="export-modal-header">

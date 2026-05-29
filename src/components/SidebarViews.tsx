@@ -31,15 +31,22 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   const [dragOverItemIdx, setDragOverItemIdx] = useState<number | null>(null);
   
   const activeItemRef = useRef<HTMLDivElement>(null);
+  const outlineListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (activeTab === "outline" && activeItemRef.current) {
       activeItemRef.current.scrollIntoView({
         behavior: "smooth",
-        block: typewriterMode ? "center" : "nearest",
+        block: "center",
       });
     }
-  }, [selectedSceneId, activeLineId, activeTab, typewriterMode]);
+  }, [selectedSceneId, activeLineId, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "outline" && outlineListRef.current) {
+      outlineListRef.current.focus();
+    }
+  }, [activeTab]);
 
   const toggleSection = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -140,12 +147,20 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
         const targetItem = selectableGroups[nextIdx].main;
         if (setSelectedSceneId) setSelectedSceneId(targetItem.line.id);
         scrollToLine(targetItem.index, true);
+        requestAnimationFrame(() => {
+          const el = outlineListRef.current?.querySelector(`[data-scene-id="${targetItem.line.id}"]`) as HTMLElement;
+          el?.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         const nextIdx = Math.max(0, activeSelectableIdx - 1);
         const targetItem = selectableGroups[nextIdx].main;
         if (setSelectedSceneId) setSelectedSceneId(targetItem.line.id);
         scrollToLine(targetItem.index, true);
+        requestAnimationFrame(() => {
+          const el = outlineListRef.current?.querySelector(`[data-scene-id="${targetItem.line.id}"]`) as HTMLElement;
+          el?.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (activeSelectableIdx >= 0 && activeSelectableIdx < selectableGroups.length) {
@@ -209,6 +224,8 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
               </button>
               <button
                 onClick={() => setIsGearPanelOpen(!isGearPanelOpen)}
+                tabIndex={0}
+                aria-label="Outline options"
                 style={{
                   background: "transparent",
                   border: "none",
@@ -223,58 +240,76 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
               </button>
 
               {isGearPanelOpen && (
-                <div style={{
-                  position: "absolute",
-                  top: "24px",
-                  right: 0,
-                  width: "180px",
-                  background: "var(--bg-sidebar)",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "6px",
-                  padding: "8px",
-                  zIndex: 10,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px"
-                }}>
-                  <div style={{ fontSize: "11px", fontWeight: 600, borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                    Outline Options
+                <>
+                  <div
+                    style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9 }}
+                    onClick={() => setIsGearPanelOpen(false)}
+                  />
+                  <div
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsGearPanelOpen(false);
+                      }
+                    }}
+                    ref={(el) => { if (el && isGearPanelOpen) setTimeout(() => el.focus(), 30); }}
+                    style={{
+                      position: "absolute",
+                      top: "24px",
+                      right: 0,
+                      width: "180px",
+                      background: "var(--bg-sidebar)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "6px",
+                      padding: "8px",
+                      zIndex: 10,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      outline: "none"
+                    }}>
+                    <div style={{ fontSize: "11px", fontWeight: 600, borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
+                      Outline Options
+                    </div>
+                    <label tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowSections(!showSections); }}} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", outline: "none", borderRadius: "4px" }}>
+                      <input type="checkbox" checked={showSections} onChange={e => setShowSections(e.target.checked)} tabIndex={-1} />
+                      Show Sections
+                    </label>
+                    <label tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowScenes(!showScenes); }}} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", outline: "none", borderRadius: "4px" }}>
+                      <input type="checkbox" checked={showScenes} onChange={e => setShowScenes(e.target.checked)} tabIndex={-1} />
+                      Show Scenes
+                    </label>
+                    <label tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowSynopses(!showSynopses); }}} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", outline: "none", borderRadius: "4px" }}>
+                      <input type="checkbox" checked={showSynopses} onChange={e => setShowSynopses(e.target.checked)} tabIndex={-1} />
+                      Show Synopses
+                    </label>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 600 }}>Outline Size</span>
+                      <select
+                        value={outlineFontSize}
+                        onChange={e => setOutlineFontSize(e.target.value as any)}
+                        tabIndex={0}
+                        style={{
+                          fontSize: "11px",
+                          padding: "2px 4px",
+                          background: "var(--bg-app)",
+                          color: "var(--text-main)",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "4px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        <option value="small">Small</option>
+                        <option value="normal">Normal</option>
+                        <option value="large">Large</option>
+                      </select>
+                    </div>
                   </div>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer" }}>
-                    <input type="checkbox" checked={showSections} onChange={e => setShowSections(e.target.checked)} />
-                    Show Sections
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer" }}>
-                    <input type="checkbox" checked={showScenes} onChange={e => setShowScenes(e.target.checked)} />
-                    Show Scenes
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer" }}>
-                    <input type="checkbox" checked={showSynopses} onChange={e => setShowSynopses(e.target.checked)} />
-                    Show Synopses
-                  </label>
-                  
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 600 }}>Outline Size</span>
-                    <select
-                      value={outlineFontSize}
-                      onChange={e => setOutlineFontSize(e.target.value as any)}
-                      style={{
-                        fontSize: "11px",
-                        padding: "2px 4px",
-                        background: "var(--bg-app)",
-                        color: "var(--text-main)",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "4px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      <option value="small">Small</option>
-                      <option value="normal">Normal</option>
-                      <option value="large">Large</option>
-                    </select>
-                  </div>
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -316,8 +351,11 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             </p>
           ) : (
             <div
+              ref={outlineListRef}
               tabIndex={0}
               onKeyDown={handleKeyDown}
+              role="listbox"
+              aria-label="Scene navigator"
               style={{ display: "flex", flexDirection: "column", gap: "0", outline: "none", paddingBottom: "20px" }}
             >
               {groupedItems.map((group) => {
@@ -349,26 +387,28 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
 
                 const baseStyle: React.CSSProperties = {
                   cursor: isScene ? "grab" : "pointer",
-                  transition: "none",
+                  transition: "all 0.15s ease",
                   marginLeft: "0px",
                   backgroundColor: bgStyle,
                   opacity: isDragging ? 0.5 : 1,
-                  borderRadius: "4px",
+                  borderRadius: "6px",
+                  boxShadow: isActive && !isDragOver ? "0 2px 8px rgba(0, 0, 0, 0.15), inset 0 0 0 1px var(--accent-color)" : "none",
                 };
 
                 const handleItemClick = (e: React.MouseEvent) => {
-                  const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
-                  if (container) container.focus();
-                  scrollToLine(index);
+                  scrollToLine(index, true);
                   if (setSelectedSceneId && isSelectable) {
                     setSelectedSceneId(line.id);
                   }
+                  const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+                  if (container) container.focus();
                 };
 
                 if (isSection) {
                   return (
                     <div
                       key={line.id}
+                      data-scene-id={line.id}
                       ref={isActive ? activeItemRef : null}
                       style={{ 
                         ...baseStyle, 
@@ -379,7 +419,6 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                         fontWeight: 700, 
                         fontSize: sectionFontSize,
                         marginTop: "4px",
-                        border: isActive ? "1px solid var(--border-color)" : "1px solid transparent",
                       }}
                       onClick={handleItemClick}
                     >
@@ -406,6 +445,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                 return (
                   <div
                     key={line.id}
+                    data-scene-id={line.id}
                     ref={isActive ? activeItemRef : null}
                     style={{
                       ...baseStyle,
@@ -413,8 +453,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                       display: "flex",
                       alignItems: "flex-start",
                       color: "var(--text-main)",
-                      borderTop: isDragOver ? "2px solid var(--accent-color)" : "none",
-                      border: isActive && !isDragOver ? "1px solid var(--border-color)" : (isDragOver ? "none" : "1px solid transparent"),
+                      borderTop: isDragOver ? "2px solid var(--accent-color)" : "1px solid transparent",
                     }}
                     onClick={handleItemClick}
                     draggable={isScene}
@@ -478,7 +517,9 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  scrollToLine(syn.index);
+                                  scrollToLine(syn.index, true);
+                                  const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+                                  if (container) container.focus();
                                 }}
                               >
                                 {syn.line.text.replace(/^=[ ]*/, "").trim()}

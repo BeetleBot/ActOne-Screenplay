@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAppContext } from "../context/AppContext";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -17,12 +18,62 @@ const CustomSelect = <T extends string>({
   onChange: (val: T) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
   const activeLabel = options.find(o => o.value === value)?.label || value;
+  const optionsRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const currentIdx = options.findIndex(o => o.value === value);
+      setHighlightIdx(currentIdx >= 0 ? currentIdx : 0);
+    }
+  }, [isOpen, options, value]);
+
+  useEffect(() => {
+    if (isOpen && optionsRef.current) {
+      const highlighted = optionsRef.current.querySelector(`[data-idx="${highlightIdx}"]`) as HTMLElement;
+      highlighted?.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIdx, isOpen]);
+
+  const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsOpen(true);
+    }
+  };
+
+  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
+    e.stopPropagation();
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIdx(prev => Math.min(options.length - 1, prev + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIdx(prev => Math.max(0, prev - 1));
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (highlightIdx >= 0) {
+        onChange(options[highlightIdx].value);
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    }
+  };
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
       <button
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={handleTriggerKeyDown}
+        tabIndex={0}
         style={{
           width: "100%",
           padding: "10px 14px",
@@ -50,45 +101,55 @@ const CustomSelect = <T extends string>({
             style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} 
             onClick={() => setIsOpen(false)} 
           />
-          <div style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            marginTop: "4px",
-            backgroundColor: "var(--bg-sidebar)",
-            border: "1px solid var(--border-color)",
-            borderRadius: "8px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-            zIndex: 1000,
-            maxHeight: "180px",
-            overflowY: "auto",
-            padding: "4px"
-          }}>
-            {options.map((opt) => {
+          <div
+            ref={optionsRef}
+            tabIndex={0}
+            onKeyDown={handleDropdownKeyDown}
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              marginTop: "4px",
+              backgroundColor: "var(--bg-sidebar)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "8px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              zIndex: 1000,
+              maxHeight: "180px",
+              overflowY: "auto",
+              padding: "4px",
+              outline: "none"
+            }}
+          >
+            {options.map((opt, idx) => {
               const isActive = opt.value === value;
+              const isHighlighted = idx === highlightIdx;
               return (
                 <div
                   key={opt.value}
+                  data-idx={idx}
+                  role="option"
+                  aria-selected={isActive}
                   onClick={() => {
                     onChange(opt.value);
                     setIsOpen(false);
+                    triggerRef.current?.focus();
                   }}
+                  onMouseEnter={() => setHighlightIdx(idx)}
                   style={{
                     padding: "8px 12px",
                     borderRadius: "6px",
                     fontSize: "12px",
                     cursor: "pointer",
-                    backgroundColor: isActive ? "rgba(var(--accent-rgb), 0.15)" : "transparent",
+                    backgroundColor: isHighlighted
+                      ? (isActive ? "rgba(var(--accent-rgb), 0.2)" : "rgba(128, 128, 128, 0.1)")
+                      : (isActive ? "rgba(var(--accent-rgb), 0.15)" : "transparent"),
                     color: isActive ? "var(--accent-color)" : "var(--text-main)",
                     fontWeight: isActive ? 600 : 400,
-                    transition: "all 0.1s ease"
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.backgroundColor = "rgba(128, 128, 128, 0.08)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+                    transition: "all 0.1s ease",
+                    outline: isHighlighted ? "1px solid var(--accent-color)" : "none",
+                    outlineOffset: "-1px"
                   }}
                 >
                   {opt.label}
@@ -128,6 +189,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   } = useAppContext();
 
   const [activeTab, setActiveTab] = useState<"general" | "editor">("general");
+  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
 
   const themesList = [
     { value: "light", label: "Classic White" },
@@ -159,36 +221,61 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     { value: "courier-prime-sans", label: "Courier Prime Sans" }
   ];
 
+  const handleTabKeyDown = (e: React.KeyboardEvent, tab: "general" | "editor") => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+      setActiveTab(tab === "general" ? "editor" : "general");
+    }
+  };
+
   return (
-    <div className="theme-modal-overlay" onClick={onClose}>
+    <div
+      className="theme-modal-overlay"
+      onClick={onClose}
+      ref={containerRef}
+      onKeyDown={trapKeyDown}
+      tabIndex={-1}
+      style={{ outline: "none" }}
+    >
       <div 
         className="theme-modal" 
         style={{ maxWidth: "560px", width: "90%" }} 
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings"
       >
         <div className="theme-modal-header">
           <h2 className="theme-modal-title">Settings</h2>
-          <button className="theme-modal-close" onClick={onClose}>
+          <button className="theme-modal-close" onClick={onClose} tabIndex={0}>
             <X size={18} />
           </button>
         </div>
 
-        <div className="theme-tabs">
+        <div className="theme-tabs" role="tablist">
           <button 
             className={`theme-tab-btn ${activeTab === "general" ? "active" : ""}`}
             onClick={() => setActiveTab("general")}
+            onKeyDown={(e) => handleTabKeyDown(e, "general")}
+            role="tab"
+            aria-selected={activeTab === "general"}
+            tabIndex={0}
           >
             General Settings
           </button>
           <button 
             className={`theme-tab-btn ${activeTab === "editor" ? "active" : ""}`}
             onClick={() => setActiveTab("editor")}
+            onKeyDown={(e) => handleTabKeyDown(e, "editor")}
+            role="tab"
+            aria-selected={activeTab === "editor"}
+            tabIndex={0}
           >
             Editor Settings
           </button>
         </div>
 
-        <div className="theme-modal-body" style={{ maxHeight: "420px", overflowY: "auto" }}>
+        <div className="theme-modal-body" style={{ maxHeight: "420px", overflowY: "auto" }} role="tabpanel">
           {activeTab === "general" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px", padding: "4px" }}>
               
@@ -228,6 +315,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   type="checkbox" 
                   checked={showTimeline}
                   onChange={(e) => setShowTimeline(e.target.checked)}
+                  tabIndex={0}
                   style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
@@ -259,6 +347,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   step="10"
                   value={zoomLevel}
                   onChange={(e) => setZoomLevel(parseInt(e.target.value, 10))}
+                  tabIndex={0}
                   style={{
                     width: "100%",
                     accentColor: "var(--accent-color)",
@@ -279,6 +368,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   type="checkbox" 
                   checked={typewriterMode}
                   onChange={(e) => setTypewriterMode(e.target.checked)}
+                  tabIndex={0}
                   style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
@@ -292,6 +382,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   type="checkbox" 
                   checked={autocompleteEnabled}
                   onChange={(e) => setAutocompleteEnabled(e.target.checked)}
+                  tabIndex={0}
                   style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
@@ -305,6 +396,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   type="checkbox" 
                   checked={smartQuotesEnabled}
                   onChange={(e) => setSmartQuotesEnabled(e.target.checked)}
+                  tabIndex={0}
                   style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
@@ -318,6 +410,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   type="checkbox" 
                   checked={matchParenthesesEnabled}
                   onChange={(e) => setMatchParenthesesEnabled(e.target.checked)}
+                  tabIndex={0}
                   style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
@@ -331,6 +424,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   type="checkbox" 
                   checked={hideFountainMarkupEnabled}
                   onChange={(e) => setHideFountainMarkupEnabled(e.target.checked)}
+                  tabIndex={0}
                   style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>

@@ -14,6 +14,7 @@ interface ShortcutActions {
   zoomOut: () => void;
   resetZoom: () => void;
   openSettings?: () => void;
+  isDisabled?: boolean;
 }
 
 function toggleInlineMarker(view: any, marker: string) {
@@ -53,6 +54,19 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
     const handleKeyDown = (e: KeyboardEvent) => {
       const ctrl = e.ctrlKey || e.metaKey;
       if (!ctrl) return;
+
+      if (actionsRef.current.isDisabled) {
+        const key = e.key.toLowerCase();
+        if (key === "k") {
+          e.preventDefault();
+          actionsRef.current.togglePalette();
+        }
+        if (key === ",") {
+          e.preventDefault();
+          actionsRef.current.openSettings?.();
+        }
+        return;
+      }
 
       const key = e.key.toLowerCase();
       const shift = e.shiftKey;
@@ -148,7 +162,7 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, []);
 }

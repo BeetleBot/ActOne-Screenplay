@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Search, PlusCircle, RotateCcw, ArrowDownCircle } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 interface StructureBeat {
   label: string;
@@ -24,11 +25,8 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
   const [loading, setLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
+  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
 
   useEffect(() => {
     const fetchStructures = async () => {
@@ -109,8 +107,11 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
       className="struct-modal-overlay" 
       onClick={onClose}
       ref={containerRef}
+      onKeyDown={trapKeyDown}
       tabIndex={-1}
       style={{ outline: "none" }}
+      role="dialog"
+      aria-modal="true"
     >
       <div className="struct-modal" onClick={(e) => e.stopPropagation()}>
         <div className="struct-modal-header">

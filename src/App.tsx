@@ -20,6 +20,8 @@ function AppInner() {
   const { editorView } = useEditor();
   const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel } = useUI();
 
+  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal;
+
   useKeyboardShortcuts({
     newFile,
     openFile,
@@ -34,6 +36,7 @@ function AppInner() {
     zoomOut: useCallback(() => setZoomLevel(zoomLevel - 10), [zoomLevel, setZoomLevel]),
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
     openSettings: useCallback(() => setShowSettingsModal(true), []),
+    isDisabled: isModalActive,
   });
 
   return (
