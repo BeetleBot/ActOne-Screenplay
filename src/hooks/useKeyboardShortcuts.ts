@@ -13,6 +13,7 @@ interface ShortcutActions {
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
+  openSettings?: () => void;
 }
 
 function toggleInlineMarker(view: any, marker: string) {
@@ -59,6 +60,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "k") {
         e.preventDefault();
         actionsRef.current.togglePalette();
+        return;
+      }
+
+      if (key === "," && !shift) {
+        e.preventDefault();
+        actionsRef.current.openSettings?.();
         return;
       }
 

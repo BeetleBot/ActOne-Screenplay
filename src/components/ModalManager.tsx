@@ -2,6 +2,7 @@ import React from 'react';
 import { ExportModal } from './ExportModal';
 import { StructureImportModal } from './StructureImportModal';
 import { ThemeSelectorModal } from './ThemeSelectorModal';
+import { SettingsModal } from './SettingsModal';
 import { CommandPalette } from './CommandPalette';
 
 export interface ModalManagerProps {
@@ -13,6 +14,8 @@ export interface ModalManagerProps {
   setShowStructureModal: (open: boolean) => void;
   showThemeModal: boolean;
   setShowThemeModal: (open: boolean) => void;
+  showSettingsModal: boolean;
+  setShowSettingsModal: (open: boolean) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }
@@ -26,6 +29,8 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   setShowStructureModal,
   showThemeModal,
   setShowThemeModal,
+  showSettingsModal,
+  setShowSettingsModal,
   isSidebarOpen,
   toggleSidebar,
 }) => {
@@ -39,10 +44,13 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
         isSidebarOpen={isSidebarOpen}
         onOpenStructureModal={() => setShowStructureModal(true)}
         onOpenThemeModal={() => setShowThemeModal(true)}
+        onOpenSettingsModal={() => setShowSettingsModal(true)}
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
       {showThemeModal && <ThemeSelectorModal onClose={() => setShowThemeModal(false)} />}
+      {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}
     </>
   );
 };
+

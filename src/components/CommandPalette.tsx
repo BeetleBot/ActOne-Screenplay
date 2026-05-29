@@ -34,6 +34,7 @@ interface CommandPaletteProps {
   isSidebarOpen: boolean;
   onOpenStructureModal: () => void;
   onOpenThemeModal: () => void;
+  onOpenSettingsModal: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -43,7 +44,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   toggleSidebar,
   isSidebarOpen,
   onOpenStructureModal,
-  onOpenThemeModal
+  onOpenThemeModal,
+  onOpenSettingsModal
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -171,6 +173,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-theme-selector", name: "Change Theme...", category: "Theme", icon: <Settings size={16} />, action: () => { onOpenThemeModal(); onClose(); } },
 
     // Settings
+    { id: "settings-modal", name: "Open Settings...", category: "Settings", icon: <Settings size={16} />, shortcut: "Ctrl+,", action: () => { onOpenSettingsModal(); onClose(); } },
     { id: "settings-font-prime", name: "Set Font: Courier Prime", category: "Settings", icon: <Settings size={16} />, action: () => { setFontFamily("courier-prime"); onClose(); } },
     { id: "settings-font-sans", name: "Set Font: Courier Prime Sans", category: "Settings", icon: <Settings size={16} />, action: () => { setFontFamily("courier-prime-sans"); onClose(); } },
     { id: "settings-paper-letter", name: "Set Paper Size: US Letter", category: "Settings", icon: <Settings size={16} />, action: () => { setPaperSize("letter"); onClose(); } },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppContext } from "../context/AppContext";
 import { LineType } from "../parser/FountainParser";
+import { Settings } from "lucide-react";
 
 interface SidebarViewProps {
   activeTab: string;
@@ -16,6 +17,16 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   const [showScenes, setShowScenes] = useState(true);
   const [showSynopses, setShowSynopses] = useState(true);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isGearPanelOpen, setIsGearPanelOpen] = useState(false);
+  const [outlineFontSize, setOutlineFontSizeState] = useState<"small" | "normal" | "large">(
+    () => (localStorage.getItem("actone-outline-font-size") as any) || "normal"
+  );
+
+  const setOutlineFontSize = (size: "small" | "normal" | "large") => {
+    setOutlineFontSizeState(size);
+    localStorage.setItem("actone-outline-font-size", size);
+  };
+
   const [draggedItemIdx, setDraggedItemIdx] = useState<number | null>(null);
   const [dragOverItemIdx, setDragOverItemIdx] = useState<number | null>(null);
   
@@ -39,6 +50,10 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   };
 
   if (activeTab === "outline") {
+    const sectionFontSize = outlineFontSize === "small" ? "11px" : outlineFontSize === "large" ? "14px" : "12px";
+    const itemFontSize = outlineFontSize === "small" ? "10px" : outlineFontSize === "large" ? "13px" : "11px";
+    const badgeFontSize = outlineFontSize === "small" ? "8px" : outlineFontSize === "large" ? "11px" : "9px";
+
     const rawOutlineItems = parsedDoc.lines
       .map((line, index) => ({ line, index }))
       .filter(({ line }) => line.isOutlineElement || line.type === LineType.synopse);
@@ -176,21 +191,92 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8, margin: 0 }}>
               Navigator
             </h3>
-            <button 
-              onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--text-muted)",
-                fontSize: "12px",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px"
-              }}
-            >
-              {isFilterPanelOpen ? "Hide Filters" : "Filters"}
-            </button>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", position: "relative" }}>
+              <button 
+                onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px"
+                }}
+              >
+                {isFilterPanelOpen ? "Hide Search" : "Search"}
+              </button>
+              <button
+                onClick={() => setIsGearPanelOpen(!isGearPanelOpen)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "4px"
+                }}
+              >
+                <Settings size={14} />
+              </button>
+
+              {isGearPanelOpen && (
+                <div style={{
+                  position: "absolute",
+                  top: "24px",
+                  right: 0,
+                  width: "180px",
+                  background: "var(--bg-sidebar)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "6px",
+                  padding: "8px",
+                  zIndex: 10,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px"
+                }}>
+                  <div style={{ fontSize: "11px", fontWeight: 600, borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
+                    Outline Options
+                  </div>
+                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer" }}>
+                    <input type="checkbox" checked={showSections} onChange={e => setShowSections(e.target.checked)} />
+                    Show Sections
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer" }}>
+                    <input type="checkbox" checked={showScenes} onChange={e => setShowScenes(e.target.checked)} />
+                    Show Scenes
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer" }}>
+                    <input type="checkbox" checked={showSynopses} onChange={e => setShowSynopses(e.target.checked)} />
+                    Show Synopses
+                  </label>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 600 }}>Outline Size</span>
+                    <select
+                      value={outlineFontSize}
+                      onChange={e => setOutlineFontSize(e.target.value as any)}
+                      style={{
+                        fontSize: "11px",
+                        padding: "2px 4px",
+                        background: "var(--bg-app)",
+                        color: "var(--text-main)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "4px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      <option value="small">Small</option>
+                      <option value="normal">Normal</option>
+                      <option value="large">Large</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
           {isFilterPanelOpen && (
@@ -219,20 +305,6 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                   outline: "none"
                 }}
               />
-              <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: "var(--text-muted)", flexWrap: "wrap" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
-                  <input type="checkbox" checked={showSections} onChange={e => setShowSections(e.target.checked)} />
-                  Sections
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
-                  <input type="checkbox" checked={showScenes} onChange={e => setShowScenes(e.target.checked)} />
-                  Scenes
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
-                  <input type="checkbox" checked={showSynopses} onChange={e => setShowSynopses(e.target.checked)} />
-                  Synopses
-                </label>
-              </div>
             </div>
           )}
         </div>
@@ -305,7 +377,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                         alignItems: "center", 
                         color: isActive ? "var(--text-main)" : "var(--accent-color)", 
                         fontWeight: 700, 
-                        fontSize: "12px",
+                        fontSize: sectionFontSize,
                         marginTop: "4px",
                         border: isActive ? "1px solid var(--border-color)" : "1px solid transparent",
                       }}
@@ -357,7 +429,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                         textAlign: "right", 
                         marginRight: "6px", 
                         flexShrink: 0,
-                        fontSize: "11px",
+                        fontSize: itemFontSize,
                         fontWeight: 600,
                         color: "var(--text-muted)"
                       }}>
@@ -367,7 +439,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                       <div style={{ display: "flex", flexDirection: "column", gap: "0px", flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", width: "100%" }}>
                           <span style={{ 
-                            fontSize: "11px", 
+                            fontSize: itemFontSize, 
                             fontWeight: isActive ? 700 : 600, 
                             whiteSpace: "nowrap", 
                             overflow: "hidden", 
@@ -383,7 +455,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                           {line.storylines && line.storylines.length > 0 && (
                             <span style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
                               {line.storylines.map((sl) => (
-                                <span key={sl} className="storyline-badge" style={{ fontSize: "9px", padding: "1px 3px" }}>
+                                <span key={sl} className="storyline-badge" style={{ fontSize: badgeFontSize, padding: "1px 3px" }}>
                                   {sl}
                                 </span>
                               ))}
@@ -397,7 +469,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                               <div
                                 key={syn.line.id}
                                 style={{ 
-                                  fontSize: "11px", 
+                                  fontSize: itemFontSize, 
                                   color: "var(--text-muted)", 
                                   whiteSpace: "nowrap",
                                   overflow: "hidden",

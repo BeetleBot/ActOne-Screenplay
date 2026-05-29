@@ -19,6 +19,14 @@ export interface UIContextProps {
   setActiveTab: (tab: string) => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
+  autocompleteEnabled: boolean;
+  setAutocompleteEnabled: (enabled: boolean) => void;
+  smartQuotesEnabled: boolean;
+  setSmartQuotesEnabled: (enabled: boolean) => void;
+  matchParenthesesEnabled: boolean;
+  setMatchParenthesesEnabled: (enabled: boolean) => void;
+  hideFountainMarkupEnabled: boolean;
+  setHideFountainMarkupEnabled: (enabled: boolean) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -45,6 +53,19 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const saved = localStorage.getItem("actone-zoom-level");
     const parsed = saved ? parseInt(saved, 10) : 100;
     return isNaN(parsed) ? 100 : parsed;
+  });
+
+  const [autocompleteEnabled, setAutocompleteEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-autocomplete-enabled") !== "false";
+  });
+  const [smartQuotesEnabled, setSmartQuotesEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-smart-quotes-enabled") === "true";
+  });
+  const [matchParenthesesEnabled, setMatchParenthesesEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-match-parentheses-enabled") === "true";
+  });
+  const [hideFountainMarkupEnabled, setHideFountainMarkupEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-hide-fountain-markup-enabled") === "true";
   });
 
   const [showTabBar, setShowTabBar] = useState(false);
@@ -98,6 +119,26 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem("actone-paper-size", size);
   };
 
+  const setAutocompleteEnabled = (enabled: boolean) => {
+    setAutocompleteEnabledState(enabled);
+    localStorage.setItem("actone-autocomplete-enabled", String(enabled));
+  };
+
+  const setSmartQuotesEnabled = (enabled: boolean) => {
+    setSmartQuotesEnabledState(enabled);
+    localStorage.setItem("actone-smart-quotes-enabled", String(enabled));
+  };
+
+  const setMatchParenthesesEnabled = (enabled: boolean) => {
+    setMatchParenthesesEnabledState(enabled);
+    localStorage.setItem("actone-match-parentheses-enabled", String(enabled));
+  };
+
+  const setHideFountainMarkupEnabled = (enabled: boolean) => {
+    setHideFountainMarkupEnabledState(enabled);
+    localStorage.setItem("actone-hide-fountain-markup-enabled", String(enabled));
+  };
+
   return (
     <UIContext.Provider
       value={{
@@ -119,9 +160,18 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setActiveTab,
         zoomLevel,
         setZoomLevel,
+        autocompleteEnabled,
+        setAutocompleteEnabled,
+        smartQuotesEnabled,
+        setSmartQuotesEnabled,
+        matchParenthesesEnabled,
+        setMatchParenthesesEnabled,
+        hideFountainMarkupEnabled,
+        setHideFountainMarkupEnabled,
       }}
     >
       {children}
     </UIContext.Provider>
   );
 };
+

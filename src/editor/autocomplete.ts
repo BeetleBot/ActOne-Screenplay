@@ -12,6 +12,8 @@ import {
 } from "./fountainSyntax";
 
 export const fountainCompletionSource = (context: CompletionContext): CompletionResult | null => {
+  if (localStorage.getItem("actone-autocomplete-enabled") === "false") return null;
+
   const word = context.matchBefore(/[\w\.\/]*/);
   if (!word || (word.from === word.to && !context.explicit)) return null;
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { EditorState } from "@codemirror/state";
+import { EditorState, Transaction } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { autocompletion } from "@codemirror/autocomplete";
@@ -18,6 +18,42 @@ import {
   LINE_PARENTHETICAL,
   LINE_DUAL_PARENTHETICAL
 } from "./fountainSyntax";
+
+const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
+  if (localStorage.getItem("actone-smart-quotes-enabled") !== "true") return tr;
+  if (!tr.docChanged || tr.annotation(Transaction.userEvent) !== "input.type") return tr;
+  
+  const changes: any[] = [];
+  tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    const text = inserted.toString();
+    if (text === '"') {
+      const beforePos = fromA - 1;
+      let isOpening = true;
+      if (beforePos >= 0) {
+        const charBefore = tr.startState.doc.sliceString(beforePos, fromA);
+        if (charBefore && !/\s/.test(charBefore)) {
+          isOpening = false;
+        }
+      }
+      changes.push({ from: fromA, to: toA, insert: isOpening ? "“" : "”" });
+    } else if (text === "'") {
+      const beforePos = fromA - 1;
+      let isOpening = true;
+      if (beforePos >= 0) {
+        const charBefore = tr.startState.doc.sliceString(beforePos, fromA);
+        if (charBefore && !/\s/.test(charBefore)) {
+          isOpening = false;
+        }
+      }
+      changes.push({ from: fromA, to: toA, insert: isOpening ? "‘" : "’" });
+    }
+  });
+  
+  if (changes.length > 0) {
+    return [tr, { changes }];
+  }
+  return tr;
+});
 
 const editorTheme = EditorView.theme({
   "&": {
@@ -201,7 +237,18 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       },
       {
         key: "(",
-        run: fountainParenHandler
+        run: (view) => {
+          if (fountainParenHandler(view)) return true;
+          if (localStorage.getItem("actone-match-parentheses-enabled") === "true") {
+            const { head } = view.state.selection.main;
+            view.dispatch({
+              changes: { from: head, insert: "()" },
+              selection: { anchor: head + 1 }
+            });
+            return true;
+          }
+          return false;
+        }
       },
       {
         key: "Tab",
@@ -219,6 +266,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         keymap.of([...defaultKeymap, ...historyKeymap]),
         editorTheme,
         fountainHighlightField,
+        smartQuotesExtension,
         autocompletion({ override: [fountainCompletionSource] }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {

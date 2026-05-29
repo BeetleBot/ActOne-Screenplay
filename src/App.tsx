@@ -14,6 +14,7 @@ function AppInner() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   
   const { newFile, openFile, saveFile, saveFileAs } = useFile();
   const { editorView } = useEditor();
@@ -32,6 +33,7 @@ function AppInner() {
     zoomIn: useCallback(() => setZoomLevel(zoomLevel + 10), [zoomLevel, setZoomLevel]),
     zoomOut: useCallback(() => setZoomLevel(zoomLevel - 10), [zoomLevel, setZoomLevel]),
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
+    openSettings: useCallback(() => setShowSettingsModal(true), []),
   });
 
   return (
@@ -52,6 +54,8 @@ function AppInner() {
         setShowStructureModal={setShowStructureModal}
         showThemeModal={showThemeModal}
         setShowThemeModal={setShowThemeModal}
+        showSettingsModal={showSettingsModal}
+        setShowSettingsModal={setShowSettingsModal}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />

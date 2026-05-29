@@ -12,6 +12,7 @@
 - [ ] Underline shortcut works for just one letter.
 - [ ] Improve the Index cards, redesign it completely with Sections and Synopsis Visible.
 - [ ] Make sure that the pagination is right.
+- [ ] Hide fountain markup.
 
 ## Features to Implement
 
