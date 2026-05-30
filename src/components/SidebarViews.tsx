@@ -8,7 +8,7 @@ interface SidebarViewProps {
 }
 
 export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
-  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes } = useAppContext();
+  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes, filePath, saveFileAs } = useAppContext();
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [characterFilter, setCharacterFilter] = useState("");
   
@@ -625,17 +625,62 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
       }
     };
 
+    const isLegacy = filePath !== null && !filePath.toLowerCase().endsWith(".actone");
+
     return (
       <div className="characters-view" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px", opacity: 0.8 }}>
           Character Tracking
         </h3>
+        
+        {isLegacy && (
+          <div style={{
+            padding: "10px",
+            backgroundColor: "rgba(229, 62, 62, 0.08)",
+            border: "1px solid rgba(229, 62, 62, 0.3)",
+            borderRadius: "8px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            fontSize: "12px",
+            color: "var(--text-main)",
+            marginBottom: "8px"
+          }}>
+            <p style={{ margin: 0, fontWeight: 500, color: "#e53e3e" }}>
+              Only available on .actone
+            </p>
+            <p style={{ margin: 0, fontSize: "11px", opacity: 0.8 }}>
+              Workspace settings and character tracking require saving the screenplay as an ActOne Bundle (.actone).
+            </p>
+            <button
+              onClick={() => saveFileAs()}
+              style={{
+                backgroundColor: "#e53e3e",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "4px",
+                padding: "6px 12px",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+                alignSelf: "flex-start",
+                transition: "background-color 0.2s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#c53030"}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#e53e3e"}
+            >
+              Save as .actone
+            </button>
+          </div>
+        )}
+
         <input
           type="text"
           className="character-search-input"
           value={characterFilter}
+          disabled={isLegacy}
           onChange={(e) => setCharacterFilter(e.target.value)}
-          placeholder="Filter characters..."
+          placeholder={isLegacy ? "Tracking disabled..." : "Filter characters..."}
           style={{
             width: "100%",
             padding: "6px 10px",
@@ -645,6 +690,8 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             backgroundColor: "var(--bg-editor)",
             color: "var(--text-main)",
             outline: "none",
+            opacity: isLegacy ? 0.5 : 1,
+            cursor: isLegacy ? "not-allowed" : "text",
           }}
         />
         {filteredCharacters.length === 0 ? (
@@ -652,7 +699,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             No characters found matching search.
           </p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", opacity: isLegacy ? 0.6 : 1 }}>
             {filteredCharacters.map(([name, count]) => {
               const gender = genders[name] || "unknown";
               return (
@@ -663,7 +710,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                     flexDirection: "column",
                     padding: "8px",
                     border: `1px solid var(--border-color)`,
-                    borderLeft: `4px solid ${getGenderColor(gender)}`,
+                    borderLeft: isLegacy ? `4px solid var(--border-color)` : `4px solid ${getGenderColor(gender)}`,
                     borderRadius: "8px",
                     backgroundColor: "var(--bg-editor)",
                     gap: "4px",
@@ -685,8 +732,10 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                   </div>
                   <select
                     value={gender}
+                    disabled={isLegacy}
                     onChange={(e) => handleGenderChange(name, e.target.value)}
                     className={`character-gender-select gender-${gender}`}
+                    style={isLegacy ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                   >
                     <option value="unknown">Gender: Unknown</option>
                     <option value="male">Male</option>

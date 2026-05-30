@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { parseScreenplay, serializeScreenplay, FountainDocument } from "../parser/FountainParser";
+import { parseScreenplay, FountainDocument } from "../parser/FountainParser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
+import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 
 export interface ScreenplayFile {
   id: string;
@@ -36,6 +37,7 @@ export interface FileContextProps {
   recentFiles: RecentFile[];
   openFilePath: (path: string) => Promise<void>;
   removeFromRecent: (path: string) => void;
+  updateSettings: (updater: (prev: any) => any) => void;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -111,12 +113,30 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = e.data;
       const targetId = data.fileId;
       if (targetId) {
-        setFiles(prev => prev.map(f => f.id === targetId ? { ...f, parsedDoc: data } : f));
+        setFiles(prev => prev.map(f => {
+          if (f.id === targetId) {
+            const mergedSettings = (data.settings && Object.keys(data.settings).length > 0)
+              ? data.settings
+              : f.parsedDoc.settings;
+            return { ...f, parsedDoc: { ...data, settings: mergedSettings } };
+          }
+          return f;
+        }));
         if (targetId === activeFileIdRef.current) {
-          setParsedDoc(data);
+          setParsedDoc(prevDoc => {
+            const mergedSettings = (data.settings && Object.keys(data.settings).length > 0)
+              ? data.settings
+              : prevDoc.settings;
+            return { ...data, settings: mergedSettings };
+          });
         }
       } else {
-        setParsedDoc(data);
+        setParsedDoc(prevDoc => {
+          const mergedSettings = (data.settings && Object.keys(data.settings).length > 0)
+            ? data.settings
+            : prevDoc.settings;
+          return { ...data, settings: mergedSettings };
+        });
       }
     };
 
@@ -133,9 +153,22 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         workerRef.current.postMessage({ text: f.rawText, paperSize, fileId: f.id });
       } else {
         const doc = parseScreenplay(f.rawText, paperSize);
-        setFiles(prev => prev.map(file => file.id === f.id ? { ...file, parsedDoc: doc } : file));
+        setFiles(prev => prev.map(file => {
+          if (file.id === f.id) {
+            const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+              ? doc.settings
+              : file.parsedDoc.settings;
+            return { ...file, parsedDoc: { ...doc, settings: mergedSettings } };
+          }
+          return file;
+        }));
         if (f.id === activeFileId) {
-          setParsedDoc(doc);
+          setParsedDoc(prevDoc => {
+            const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+              ? doc.settings
+              : prevDoc.settings;
+            return { ...doc, settings: mergedSettings };
+          });
         }
       }
     });
@@ -238,9 +271,46 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       workerRef.current.postMessage({ text: normalized, paperSize, fileId: activeFileId });
     } else {
       const doc = parseScreenplay(normalized, paperSize);
-      setParsedDoc(doc);
-      setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, parsedDoc: doc } : f));
+      setFiles(prev => prev.map(f => {
+        if (f.id === activeFileId) {
+          const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+            ? doc.settings
+            : f.parsedDoc.settings;
+          return { ...f, parsedDoc: { ...doc, settings: mergedSettings } };
+        }
+        return f;
+      }));
+      setParsedDoc(prevDoc => {
+        const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+          ? doc.settings
+          : prevDoc.settings;
+        return { ...doc, settings: mergedSettings };
+      });
     }
+  };
+
+  const updateSettings = (updater: (prev: any) => any) => {
+    setFiles(prev => prev.map(f => {
+      if (f.id === activeFileId) {
+        const nextSettings = updater(f.parsedDoc.settings || {});
+        return {
+          ...f,
+          isDirty: true,
+          parsedDoc: {
+            ...f.parsedDoc,
+            settings: nextSettings
+          }
+        };
+      }
+      return f;
+    }));
+    setParsedDoc(prevDoc => {
+      const nextSettings = updater(prevDoc.settings || {});
+      return {
+        ...prevDoc,
+        settings: nextSettings
+      };
+    });
   };
 
   const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
@@ -252,10 +322,29 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    let content: string;
+    let content = "";
+    let settings = {};
+    const isActone = path.toLowerCase().endsWith(".actone");
+
     try {
       if (isTauri) {
-        content = await invoke<string>("read_file_content", { path });
+        if (isActone) {
+          const bytes = await invoke<number[]>("read_file_binary", { path });
+          const u8 = new Uint8Array(bytes);
+          const unzipped = unzipSync(u8);
+          if (unzipped["document.fountain"]) {
+            content = strFromU8(unzipped["document.fountain"]);
+          }
+          if (unzipped["settings.json"]) {
+            try {
+              settings = JSON.parse(strFromU8(unzipped["settings.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        } else {
+          content = await invoke<string>("read_file_content", { path });
+        }
       } else {
         throw new Error("Cannot open direct path in web mode");
       }
@@ -267,6 +356,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const parsed = parseScreenplay(content, paperSize);
+    if (isActone) {
+      parsed.settings = settings;
+    }
     const cleanText = parsed.screenplayText;
     
     const currentActive = files.find(f => f.id === activeFileId);
@@ -313,7 +405,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const openFile = async () => {
-    let res: { path: string; content: string } | null = null;
+    let res: { path: string; content: string; settings?: any } | null = null;
     if (isTauri) {
       try {
         res = await invoke<{ path: string; content: string } | null>("open_file_dialog");
@@ -321,18 +413,37 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error(e);
       }
     } else {
-      res = await new Promise<{ path: string; content: string } | null>((resolve) => {
+      res = await new Promise<{ path: string; content: string; settings?: any } | null>((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".fountain,.txt,.fdx";
+        input.accept = ".fountain,.txt,.actone";
         input.onchange = async () => {
           const file = input.files?.[0];
           if (!file) {
             resolve(null);
             return;
           }
-          const content = await file.text();
-          resolve({ path: file.name, content });
+          if (file.name.toLowerCase().endsWith(".actone")) {
+            const arrayBuffer = await file.arrayBuffer();
+            const u8 = new Uint8Array(arrayBuffer);
+            const unzipped = unzipSync(u8);
+            let content = "";
+            let settings = {};
+            if (unzipped["document.fountain"]) {
+              content = strFromU8(unzipped["document.fountain"]);
+            }
+            if (unzipped["settings.json"]) {
+              try {
+                settings = JSON.parse(strFromU8(unzipped["settings.json"]));
+              } catch (e) {
+                console.error(e);
+              }
+            }
+            resolve({ path: file.name, content, settings });
+          } else {
+            const content = await file.text();
+            resolve({ path: file.name, content });
+          }
         };
         input.click();
       });
@@ -350,7 +461,36 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isDefault = currentActive && !currentActive.filePath && 
                         (currentActive.rawText === "" || !currentActive.isDirty);
 
-      const parsed = parseScreenplay(res.content, paperSize);
+      let content = res.content;
+      let settings = res.settings || {};
+      const isActone = res.path.toLowerCase().endsWith(".actone");
+
+      if (isActone && isTauri) {
+        try {
+          const bytes = await invoke<number[]>("read_file_binary", { path: res.path });
+          const u8 = new Uint8Array(bytes);
+          const unzipped = unzipSync(u8);
+          if (unzipped["document.fountain"]) {
+            content = strFromU8(unzipped["document.fountain"]);
+          }
+          if (unzipped["settings.json"]) {
+            try {
+              settings = JSON.parse(strFromU8(unzipped["settings.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+          alert("Could not read actone bundle binary");
+          return;
+        }
+      }
+
+      const parsed = parseScreenplay(content, paperSize);
+      if (isActone) {
+        parsed.settings = settings;
+      }
       const cleanText = parsed.screenplayText;
 
       if (isDefault && currentActive) {
@@ -392,6 +532,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const saveActoneFile = async (path: string, text: string, settings: any) => {
+    const zipped = zipSync({
+      "document.fountain": strToU8(text),
+      "settings.json": strToU8(JSON.stringify(settings || {}, null, 2)),
+    });
+    await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
+  };
+
   const saveFile = async () => {
     const currentActive = files.find(f => f.id === activeFileId);
     if (!currentActive) return;
@@ -399,39 +547,76 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await saveFileAs();
       return;
     }
-    const fullSerializedContent = serializeScreenplay(currentActive.parsedDoc.lines, currentActive.parsedDoc.settings);
-    if (isTauri) {
-      setIsSaving(true);
-      setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
-      try {
-        await invoke("save_file_content", { path: currentActive.filePath, content: fullSerializedContent });
+
+    const cleanFountainText = currentActive.parsedDoc.lines.map(l => l.text).join("\n");
+    const isActone = currentActive.filePath.toLowerCase().endsWith(".actone");
+
+    if (isActone) {
+      if (isTauri) {
+        setIsSaving(true);
+        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
+        try {
+          await saveActoneFile(currentActive.filePath, cleanFountainText, currentActive.parsedDoc.settings);
+          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsSaving(false);
+          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
+        }
+      } else {
+        const zipped = zipSync({
+          "document.fountain": strToU8(cleanFountainText),
+          "settings.json": strToU8(JSON.stringify(currentActive.parsedDoc.settings || {}, null, 2)),
+        });
+        const blob = new Blob([zipped], { type: "application/zip" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = currentActive.filePath;
+        link.click();
+        URL.revokeObjectURL(url);
         setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsSaving(false);
-        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
       }
     } else {
-      const blob = new Blob([fullSerializedContent], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = currentActive.filePath.endsWith(".fountain") ? currentActive.filePath : `${currentActive.filePath}.fountain`;
-      link.click();
-      URL.revokeObjectURL(url);
-      setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+      if (isTauri) {
+        setIsSaving(true);
+        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
+        try {
+          await invoke("save_file_content", { path: currentActive.filePath, content: cleanFountainText });
+          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsSaving(false);
+          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
+        }
+      } else {
+        const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = currentActive.filePath.endsWith(".fountain") ? currentActive.filePath : `${currentActive.filePath}.fountain`;
+        link.click();
+        URL.revokeObjectURL(url);
+        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+      }
     }
   };
 
   const saveFileAs = async () => {
     const currentActive = files.find(f => f.id === activeFileId);
     if (!currentActive) return;
-    const fullSerializedContent = serializeScreenplay(currentActive.parsedDoc.lines, currentActive.parsedDoc.settings);
+    const cleanFountainText = currentActive.parsedDoc.lines.map(l => l.text).join("\n");
+
     if (isTauri) {
       try {
-        const path = await invoke<string | null>("save_file_dialog", { content: fullSerializedContent });
+        const path = await invoke<string | null>("save_file_dialog", { content: cleanFountainText });
         if (path) {
+          const isActone = path.toLowerCase().endsWith(".actone");
+          if (isActone) {
+            await saveActoneFile(path, cleanFountainText, currentActive.parsedDoc.settings);
+          }
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: path, isDirty: false, savedText: rawText } : f));
           setFilePath(path);
           addToRecent(path);
@@ -440,10 +625,28 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error(e);
       }
     } else {
-      const filename = window.prompt("Enter filename to save:", filePath || "Untitled.fountain");
+      const filename = window.prompt("Enter filename to save:", filePath || "Untitled.actone");
       if (filename) {
-        const finalName = filename.endsWith(".fountain") ? filename : `${filename}.fountain`;
-        const blob = new Blob([fullSerializedContent], { type: "text/plain;charset=utf-8" });
+        let isActone = filename.toLowerCase().endsWith(".actone");
+        let finalName = filename;
+        if (!filename.includes(".")) {
+          finalName = filename + ".actone";
+          isActone = true;
+        } else {
+          finalName = isActone ? filename : (filename.endsWith(".fountain") ? filename : `${filename}.fountain`);
+        }
+        let blob: Blob;
+
+        if (isActone) {
+          const zipped = zipSync({
+            "document.fountain": strToU8(cleanFountainText),
+            "settings.json": strToU8(JSON.stringify(currentActive.parsedDoc.settings || {}, null, 2)),
+          });
+          blob = new Blob([zipped], { type: "application/zip" });
+        } else {
+          blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
+        }
+
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -514,6 +717,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         recentFiles,
         openFilePath,
         removeFromRecent,
+        updateSettings,
       }}
     >
       {children}

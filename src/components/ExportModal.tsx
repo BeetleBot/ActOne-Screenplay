@@ -16,7 +16,10 @@ function stripFountainForExport(
 ): string {
   let text = rawText;
 
-  const drafterStart = text.indexOf("/* If you're seeing this, you can remove the following stuff - ACTONE:");
+  let drafterStart = text.indexOf("/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:");
+  if (drafterStart === -1) {
+    drafterStart = text.indexOf("/* If you're seeing this, you can remove the following stuff - ACTONE:");
+  }
   if (drafterStart !== -1) {
     const drafterEnd = text.indexOf("END_ACTONE*/");
     if (drafterEnd !== -1) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
-import { LineType, serializeScreenplay } from "../parser/FountainParser";
+import { LineType } from "../parser/FountainParser";
 
 interface CardItemProps {
   line: any;
@@ -120,7 +120,7 @@ export const IndexCardsWorkspace: React.FC = () => {
       lines.splice(index + 1, 0, newLine);
     }
 
-    const serialized = serializeScreenplay(lines, parsedDoc.settings);
+    const serialized = lines.map((l) => l.text).join("\n");
     setRawText(serialized);
   };
 

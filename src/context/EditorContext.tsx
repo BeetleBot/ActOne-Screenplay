@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import { useFile } from "./FileContext";
-import { serializeScreenplay, ParsedLine, LineType } from "../parser/FountainParser";
+import { ParsedLine, LineType } from "../parser/FountainParser";
 
 export interface EditorContextProps {
   activeLineId: string | null;
@@ -27,7 +27,7 @@ export const useEditor = () => {
 };
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { parsedDoc, setRawText } = useFile();
+  const { parsedDoc, setRawText, updateSettings } = useFile();
   
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
@@ -52,13 +52,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const updatedLines = parsedDoc.lines.map((line) =>
       line.id === lineId ? { ...line, text: newText } : line
     );
-    const serialized = serializeScreenplay(updatedLines, parsedDoc.settings);
-    setRawText(serialized);
-  };
-
-  const updateSettings = (updater: (prev: any) => any) => {
-    const newSettings = updater(parsedDoc.settings);
-    const serialized = serializeScreenplay(parsedDoc.lines, newSettings);
+    const serialized = updatedLines.map(l => l.text).join("\n");
     setRawText(serialized);
   };
 
@@ -96,7 +90,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       newLines.push(...scene.lines);
     }
 
-    const serialized = serializeScreenplay(newLines, parsedDoc.settings);
+    const serialized = newLines.map(l => l.text).join("\n");
     setRawText(serialized);
   };
 
@@ -112,7 +106,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       return line;
     });
-    const serialized = serializeScreenplay(updatedLines, parsedDoc.settings);
+    const serialized = updatedLines.map(l => l.text).join("\n");
     setRawText(serialized);
   };
 
@@ -127,7 +121,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       return line;
     });
-    const serialized = serializeScreenplay(updatedLines, parsedDoc.settings);
+    const serialized = updatedLines.map(l => l.text).join("\n");
     setRawText(serialized);
   };
 

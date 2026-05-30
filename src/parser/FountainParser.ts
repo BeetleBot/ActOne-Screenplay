@@ -58,9 +58,14 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
   let screenplayText = rawText;
   let settings: any = {};
 
-  let beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - ACTONE:");
+  let beatStartIdx = rawText.indexOf("/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:");
   let beatEndIdx = rawText.indexOf("END_ACTONE*/");
-  let startStr = "/* If you're seeing this, you can remove the following stuff - ACTONE:";
+  let startStr = "/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:";
+
+  if (beatStartIdx === -1) {
+    beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - ACTONE:");
+    startStr = "/* If you're seeing this, you can remove the following stuff - ACTONE:";
+  }
 
   if (beatStartIdx !== -1 && beatEndIdx !== -1 && beatEndIdx > beatStartIdx) {
     const jsonStr = rawText.substring(beatStartIdx + startStr.length, beatEndIdx).trim();
@@ -445,6 +450,6 @@ export function serializeScreenplay(lines: ParsedLine[], settings: any): string 
   if (!settings || Object.keys(settings).length === 0) {
     return text;
   }
-  const settingsBlock = `\n\n/* If you're seeing this, you can remove the following stuff - ACTONE:\n${JSON.stringify(settings, null, 2)}\nEND_ACTONE*/`;
+  const settingsBlock = `\n\n/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:\n${JSON.stringify(settings, null, 2)}\nEND_ACTONE*/`;
   return text + settingsBlock;
 }

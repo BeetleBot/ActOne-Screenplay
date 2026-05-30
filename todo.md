@@ -27,5 +27,4 @@
 - [ ] Cloud integration(Google Drive, Dropbox, etc.,)
 - [ ] Revision mode.
 - [ ] Add a seperate title page customisation modal, with Image support, if possible.
-
-
+c

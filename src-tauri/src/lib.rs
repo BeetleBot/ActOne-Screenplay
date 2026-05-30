@@ -6,12 +6,21 @@ mod structures;
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
     let file = rfd::FileDialog::new()
+        .add_filter("ActOne Bundle", &["actone"])
         .add_filter("Fountain Screenplays", &["fountain", "txt"])
         .pick_file()?;
         
+    let path_str = file.to_string_lossy().to_string();
+    if path_str.ends_with(".actone") {
+        return Some(serde_json::json!({
+            "path": path_str,
+            "content": ""
+        }));
+    }
+
     let content = fs::read_to_string(&file).ok()?;
     Some(serde_json::json!({
-        "path": file.to_string_lossy(),
+        "path": path_str,
         "content": content
     }))
 }
@@ -24,13 +33,34 @@ fn save_file_content(path: String, content: String) -> Result<(), String> {
 #[tauri::command]
 fn save_file_dialog(content: String) -> Option<String> {
     let file = rfd::FileDialog::new()
+        .add_filter("ActOne Bundle", &["actone"])
         .add_filter("Fountain Screenplays", &["fountain"])
         .save_file()?;
         
-    if fs::write(&file, content).is_ok() {
-        return Some(file.to_string_lossy().to_string());
+    let mut file_path = file;
+    if file_path.extension().is_none() {
+        file_path.set_extension("actone");
+    }
+
+    let path = file_path.to_string_lossy().to_string();
+    if path.ends_with(".actone") {
+        return Some(path);
+    }
+
+    if fs::write(&file_path, content).is_ok() {
+        return Some(path);
     }
     None
+}
+
+#[tauri::command]
+fn read_file_binary(path: String) -> Result<Vec<u8>, String> {
+    fs::read(path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn save_file_binary(path: String, bytes: Vec<u8>) -> Result<(), String> {
+    fs::write(path, bytes).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -121,6 +151,8 @@ pub fn run() {
             export_pdf,
             export_fountain,
             read_file_content,
+            read_file_binary,
+            save_file_binary,
             structures::get_structures,
             structures::get_structure_template
         ])
