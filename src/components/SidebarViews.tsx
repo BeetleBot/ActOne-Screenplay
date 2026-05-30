@@ -587,6 +587,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
         const name = line.text
           .replace(/^@[ ]*/, "")
           .replace(/[ ]*\^[ ]*$/, "")
+          .replace(/\s*\([^)]*\)/g, "")
           .trim()
           .toUpperCase();
         if (name) {
@@ -783,6 +784,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
         currentSpeaker = line.text
           .replace(/^@[ ]*/, "")
           .replace(/[ ]*\^[ ]*$/, "")
+          .replace(/\s*\([^)]*\)/g, "")
           .trim()
           .toUpperCase();
       } else if (line.type === LineType.dialogue || line.type === LineType.dualDialogue) {
