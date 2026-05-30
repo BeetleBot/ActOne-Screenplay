@@ -9,6 +9,7 @@ import { SidebarViews } from "../SidebarViews";
 import { IndexCardsWorkspace } from "../IndexCardsWorkspace";
 import { TimelineView } from "../TimelineView";
 import { SearchPanel } from "../SearchPanel";
+import { startRevisionMode, mergeRevisions, discardRevisions } from "../../utils/revision";
 
 import {
   List,
@@ -36,7 +37,7 @@ const MenuBar: React.FC<{
   onNewFile: () => void;
   onOpenFile: () => void;
   onSaveFile: () => void;
-  onSaveFileAs: () => void;
+  onSaveFileAs: () => Promise<string | null>;
   onExportPDF: () => void;
   onOpenStructureModal: () => void;
   onOpenThemeModal: () => void;
@@ -72,7 +73,13 @@ const MenuBar: React.FC<{
     setZoomLevel,
   } = useUI();
   const { autoAddSceneNumbers, clearSceneNumbers, editorView } = useEditor();
-  const { closeFile, activeFileId } = useFile();
+  const { closeFile, activeFileId, files, updateSettings, setRawText } = useFile();
+
+  const activeFile = files.find(f => f.id === activeFileId);
+  const revisionModeEnabled = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
+  const revisionBaseText = activeFile?.parsedDoc?.settings?.revisionBaseText;
+  const filePath = activeFile?.filePath || null;
+  const rawText = activeFile?.rawText || "";
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -93,7 +100,7 @@ const MenuBar: React.FC<{
     setOpenMenu(null);
   };
 
-  const menuOrder = ["File", "Edit", "View", "Format", "Help"] as const;
+  const menuOrder = ["File", "Edit", "View", "Revisions", "Format", "Help"] as const;
 
   const menus: Record<string, { label: string; shortcut?: string; action: () => void; dividerAfter?: boolean; disabled?: boolean }[]> = {
     File: [
@@ -123,6 +130,11 @@ const MenuBar: React.FC<{
       { label: "Zoom Out", shortcut: "Ctrl+-", action: () => setZoomLevel(zoomLevel - 10) },
       { label: `Reset Zoom (${zoomLevel}%)`, shortcut: "Ctrl+0", action: () => setZoomLevel(100), dividerAfter: true },
       { label: "Change Theme...", action: onOpenThemeModal },
+    ],
+    Revisions: [
+      { label: "Start Revision Mode", action: () => startRevisionMode(filePath, rawText, updateSettings, onSaveFileAs), disabled: !!revisionModeEnabled },
+      { label: "Merge Revisions", action: () => mergeRevisions(updateSettings), disabled: !revisionModeEnabled },
+      { label: "Discard Revisions", action: () => discardRevisions(updateSettings, setRawText, revisionBaseText), disabled: !revisionModeEnabled },
     ],
     Format: [
       { label: "Import Structure Template...", action: onOpenStructureModal, dividerAfter: true },
@@ -293,6 +305,7 @@ const HeaderBar: React.FC<{
 
   const activeFile = files.find(f => f.id === activeFileId);
   const activeFileName = activeFile?.filePath ? activeFile.filePath.split(/[/\\]/).pop() : "Untitled";
+  const isRevisionMode = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
 
   return (
     <div
@@ -317,7 +330,25 @@ const HeaderBar: React.FC<{
         />
       </div>
 
-      <span className="titlebar-title">ActOne - {activeFileName}</span>
+      <span className="titlebar-title" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        ActOne - {activeFileName}
+        {isRevisionMode && (
+          <span style={{
+            backgroundColor: "rgba(229, 62, 62, 0.15)",
+            border: "1px solid rgba(229, 62, 62, 0.3)",
+            color: "#e53e3e",
+            padding: "1px 6px",
+            borderRadius: "4px",
+            fontSize: "9px",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            userSelect: "none"
+          }}>
+            Revision Mode
+          </span>
+        )}
+      </span>
 
       <div className="header-right window-controls-windows">
         <button className="window-btn-windows minimize" onClick={handleMinimize} title="Minimize">

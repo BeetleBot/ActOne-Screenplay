@@ -30,7 +30,7 @@ export interface FileContextProps {
   setRawText: (text: string) => void;
   openFile: () => Promise<void>;
   saveFile: () => Promise<void>;
-  saveFileAs: () => Promise<void>;
+  saveFileAs: () => Promise<string | null>;
   selectFile: (id: string) => void;
   newFile: (initialContent?: string) => void;
   closeFile: (id: string) => void;
@@ -604,9 +604,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const saveFileAs = async () => {
+  const saveFileAs = async (): Promise<string | null> => {
     const currentActive = files.find(f => f.id === activeFileId);
-    if (!currentActive) return;
+    if (!currentActive) return null;
     const cleanFountainText = currentActive.parsedDoc.lines.map(l => l.text).join("\n");
 
     if (isTauri) {
@@ -620,6 +620,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: path, isDirty: false, savedText: rawText } : f));
           setFilePath(path);
           addToRecent(path);
+          return path;
         }
       } catch (e) {
         console.error(e);
@@ -656,8 +657,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: finalName, isDirty: false, savedText: rawText } : f));
         setFilePath(finalName);
+        return finalName;
       }
     }
+    return null;
   };
 
   const filesRef = useRef(files);

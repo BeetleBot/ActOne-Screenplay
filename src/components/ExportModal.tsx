@@ -3,6 +3,7 @@ import { FileText, X, Download } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { computeRevisedLines } from "../utils/diff";
 
 type ExportFormat = "pdf" | "fountain";
 
@@ -80,7 +81,7 @@ function stripFountainForExport(
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
-  const { rawText, fontFamily, paperSize } = useAppContext();
+  const { rawText, fontFamily, paperSize, parsedDoc } = useAppContext();
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
@@ -99,6 +100,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     try {
       const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
       if (isTauri) {
+        let revisedLines: boolean[] = [];
+        const revisionModeEnabled = parsedDoc?.settings?.revisionModeEnabled;
+        const revisionBaseText = parsedDoc?.settings?.revisionBaseText;
+        if (revisionModeEnabled && typeof revisionBaseText === "string") {
+          revisedLines = computeRevisedLines(revisionBaseText, rawText);
+        }
+
         await invoke("export_pdf", {
           fountainText: rawText,
           paperSize,
@@ -108,6 +116,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           exportSections,
           exportSynopses,
           exportTitlePage,
+          revisedLines,
         });
       } else {
         alert("PDF export is only supported in the desktop app.");

@@ -2911,3 +2911,17 @@ body.theme-midnight .outline-size-select {
   letter-spacing: 0.15em;
   color: var(--text-muted);
 }
+
+.cm-fountain-revised {
+  background-color: rgba(var(--accent-rgb, 0, 122, 255), 0.05) !important;
+  position: relative;
+}
+
+.cm-fountain-revised::after {
+  content: "*";
+  position: absolute;
+  right: 20px;
+  color: var(--accent-color, #007aff);
+  font-weight: 700;
+  font-size: 14px;
+}

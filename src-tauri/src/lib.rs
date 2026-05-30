@@ -86,6 +86,7 @@ fn export_pdf(
     export_sections: bool,
     export_synopses: bool,
     export_title_page: bool,
+    revised_lines: Vec<bool>,
 ) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("PDF Document", &["pdf"])
@@ -113,7 +114,7 @@ fn export_pdf(
         export_sections,
         export_synopses,
         export_font,
-        revised_lines: vec![],
+        revised_lines,
         export_title_page,
     };
     if pdf::export_to_pdf(&fountain_text, &file, config).is_ok() {

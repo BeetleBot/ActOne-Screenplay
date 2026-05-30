@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFile } from "../context/FileContext";
 import { useEditor } from "../context/EditorContext";
 import { useUI } from "../context/UIContext";
+import { startRevisionMode, mergeRevisions, discardRevisions } from "../utils/revision";
 
 import {
   FilePlus,
@@ -60,7 +61,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     saveFileAs,
     closeFile,
     activeFileId,
+    files,
+    updateSettings,
+    setRawText,
   } = useFile();
+
+  const activeFile = files.find(f => f.id === activeFileId);
+  const revisionModeEnabled = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
+  const revisionBaseText = activeFile?.parsedDoc?.settings?.revisionBaseText;
+  const filePath = activeFile?.filePath || null;
+  const rawText = activeFile?.rawText || "";
 
   const {
     autoAddSceneNumbers,
@@ -171,6 +181,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "settings-font-sans", name: "Set Font: Courier Prime Sans", category: "Settings", icon: <Settings size={16} />, action: () => { setFontFamily("courier-prime-sans"); onClose(); } },
     { id: "settings-paper-letter", name: "Set Paper Size: US Letter", category: "Settings", icon: <Settings size={16} />, action: () => { setPaperSize("letter"); onClose(); } },
     { id: "settings-paper-a4", name: "Set Paper Size: A4", category: "Settings", icon: <Settings size={16} />, action: () => { setPaperSize("a4"); onClose(); } },
+
+    // Revisions
+    ...(!revisionModeEnabled ? [
+      { id: "revision-start", name: "Start Revision Mode", category: "Revisions", icon: <Sparkles size={16} />, action: () => { startRevisionMode(filePath, rawText, updateSettings, saveFileAs); onClose(); } }
+    ] : [
+      { id: "revision-merge", name: "Merge Revisions", category: "Revisions", icon: <Sparkles size={16} />, action: () => { mergeRevisions(updateSettings); onClose(); } },
+      { id: "revision-discard", name: "Discard Revisions", category: "Revisions", icon: <Trash2 size={16} />, action: () => { discardRevisions(updateSettings, setRawText, revisionBaseText); onClose(); } }
+    ]),
   ];
 
   // Filter commands by search string

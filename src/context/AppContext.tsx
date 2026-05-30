@@ -21,7 +21,7 @@ interface AppContextProps {
   setRawText: (text: string) => void;
   openFile: () => Promise<void>;
   saveFile: () => Promise<void>;
-  saveFileAs: () => Promise<void>;
+  saveFileAs: () => Promise<string | null>;
   updateLineText: (lineId: string, newText: string) => void;
   setActiveLineId: (id: string | null) => void;
   setSelectedSceneId: (id: string | null) => void;
