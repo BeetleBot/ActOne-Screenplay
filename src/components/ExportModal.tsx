@@ -100,12 +100,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     try {
       const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
       if (isTauri) {
-        let revisedLines: boolean[] = [];
-        const revisionModeEnabled = parsedDoc?.settings?.revisionModeEnabled;
-        const revisionBaseText = parsedDoc?.settings?.revisionBaseText;
-        if (revisionModeEnabled && typeof revisionBaseText === "string") {
-          revisedLines = computeRevisedLines(revisionBaseText, rawText);
-        }
+        const revisedLines: boolean[] = [];
 
         await invoke("export_pdf", {
           fountainText: rawText,
@@ -283,8 +278,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                     onChange={(e) => setMirrorSceneNumbers(e.target.value)}
                   >
                     <option value="off">Disabled</option>
-                    <option value="export_only">Right Side Only</option>
-                    <option value="always">Mirror on Both Sides</option>
+                    <option value="left_side">Left Side Only</option>
+                    <option value="mirror">Mirror on Both Sides</option>
                   </select>
                 </div>
               </>

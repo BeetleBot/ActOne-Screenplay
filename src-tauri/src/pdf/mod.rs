@@ -16,10 +16,10 @@ pub use self::export::pdf::PdfExporter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum MirrorOption {
-    Always,
-    ExportOnly,
     #[default]
     Off,
+    LeftSide,
+    Mirror,
 }
 
 pub struct PdfExportConfig {

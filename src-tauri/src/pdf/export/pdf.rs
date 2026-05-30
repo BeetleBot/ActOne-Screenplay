@@ -242,7 +242,7 @@ impl PdfExporter {
                             break;
                         }
 
-                        if number.is_some() {
+                        if number.is_some() && self.mirror_scene_numbers != MirrorOption::Off {
                             let mut initial_line_index = *ctx.line_index;
                             let mut ctx_number = DrawContext {
                                 layout_info,
@@ -275,7 +275,7 @@ impl PdfExporter {
                                 Alignment::LeftToRight,
                             )?;
 
-                            if self.mirror_scene_numbers != MirrorOption::Off {
+                            if self.mirror_scene_numbers == MirrorOption::Mirror {
                                 let mut initial_line_index_right = *ctx.line_index;
                                 let mut ctx_number_right = DrawContext {
                                     layout_info,

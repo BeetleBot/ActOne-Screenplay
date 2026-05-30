@@ -20,11 +20,11 @@
 - [x] Add zoom-in / zoom-out feature for editor.
 - [x] Rewrite the whole theming stuff. Remove all hardcoded colors, add a lot of themes. 
 - [x] Search / Replace / Replace All
+- [x] Revision mode.
 - [ ] screenplay Preview feature.
 - [ ] Markers and tags.
 - [ ] X-Ray or Analysis stuffs.
 - [ ] AI integration(For Translations, Rephrasing and Better words)
 - [ ] Cloud integration(Google Drive, Dropbox, etc.,)
-- [ ] Revision mode.
 - [ ] Add a seperate title page customisation modal, with Image support, if possible.
 c

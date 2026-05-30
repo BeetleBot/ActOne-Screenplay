@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { X, Check, Undo, CheckSquare, AlertCircle } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { useFile } from "../context/FileContext";
@@ -44,7 +44,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
 
       const currentEdit = diffs[i];
 
-      // If we have a removed line immediately followed by an added line, group them as a modification
+      // Group removed + added as modified
       if (
         i + 1 < diffs.length &&
         keep[i + 1] &&
@@ -82,8 +82,8 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
     const currentLines = rawText.split("\n");
 
     const firstIndex = group.indices[0];
-    let countB = 0; // index in baseLines
-    let countC = 0; // index in currentLines
+    let countB = 0; 
+    let countC = 0; 
 
     for (let k = 0; k < firstIndex; k++) {
       const e = diffs[k];
@@ -97,34 +97,42 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
       }
     }
 
+    let nextBaseText = revisionBaseText;
+    let nextCurrentText = rawText;
+
     if (group.type === "added") {
       if (action === "accept") {
         baseLines.splice(countB, 0, group.text);
+        nextBaseText = baseLines.join("\n");
       } else {
         currentLines.splice(countC, 1);
+        nextCurrentText = currentLines.join("\n");
       }
     } else if (group.type === "removed") {
       if (action === "accept") {
         baseLines.splice(countB, 1);
+        nextBaseText = baseLines.join("\n");
       } else {
         currentLines.splice(countC, 0, group.text);
+        nextCurrentText = currentLines.join("\n");
       }
     } else if (group.type === "modified") {
       if (action === "accept") {
         baseLines.splice(countB, 1, group.text);
+        nextBaseText = baseLines.join("\n");
       } else {
         currentLines.splice(countC, 1, group.oldText || "");
+        nextCurrentText = currentLines.join("\n");
       }
     }
 
-    const nextBase = baseLines.join("\n");
-    const nextCurrent = currentLines.join("\n");
-
-    setRawText(nextCurrent);
     updateSettings((prev: any) => ({
       ...prev,
-      revisionBaseText: nextBase,
+      revisionBaseText: nextBaseText,
     }));
+    if (nextCurrentText !== rawText) {
+      setRawText(nextCurrentText);
+    }
   };
 
   const handleMergeAll = () => {
@@ -150,7 +158,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
     }
   };
 
-  const getSceneInfo = (currentLineNum?: number) => {
+  const getSceneInfo = useCallback((currentLineNum?: number) => {
     if (!currentLineNum || !parsedDoc || !parsedDoc.lines) return null;
     const lines = parsedDoc.lines;
     const idx = Math.min(currentLineNum - 1, lines.length - 1);
@@ -160,7 +168,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
     
     for (let k = idx; k >= 0; k--) {
       const line = lines[k];
-      if (line.type === 10) { // LineType.heading
+      if (line && line.type === 10) { 
         sceneHeading = line.text.trim();
         if (sceneHeading.startsWith(".")) {
           sceneHeading = sceneHeading.substring(1).trim();
@@ -185,7 +193,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
       };
     }
     return null;
-  };
+  }, [parsedDoc]);
 
   return (
     <div 
@@ -198,7 +206,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
       role="dialog"
       aria-modal="true"
     >
-      <div className="struct-modal" style={{ maxWidth: "700px" }} onClick={(e) => e.stopPropagation()}>
+      <div className="struct-modal" style={{ maxWidth: "850px" }} onClick={(e) => e.stopPropagation()}>
         <div className="struct-modal-header">
           <h2 className="struct-modal-title">Review Revisions</h2>
           <button className="struct-modal-close" onClick={onClose}>
@@ -206,7 +214,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
           </button>
         </div>
 
-        <div className="struct-modal-body" style={{ flexDirection: "column", height: "450px" }}>
+        <div className="struct-modal-body" style={{ flexDirection: "column", height: "550px" }}>
           {changedLines.length === 0 ? (
             <div style={{ display: "flex", flex: 1, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", color: "var(--text-muted)" }}>
               <AlertCircle size={48} style={{ color: "var(--accent-color)" }} />
@@ -227,7 +235,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
               </button>
             </div>
           ) : (
-            <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", padding: "4px" }}>
+            <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "8px" }}>
               {changedLines.map((group, index) => {
                 const sceneInfo = getSceneInfo(group.currentLineNum || group.originalLineNum);
                 return (
@@ -235,10 +243,10 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
                     key={index}
                     style={{
                       display: "flex",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       justifyContent: "space-between",
-                      padding: "12px",
-                      borderRadius: "8px",
+                      padding: "16px",
+                      borderRadius: "10px",
                       border: "1px solid var(--border-color)",
                       background: group.type === "added" 
                         ? "rgba(46, 213, 115, 0.08)" 
@@ -247,141 +255,162 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
                           : "rgba(255, 170, 0, 0.08)",
                     }}
                   >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1, marginRight: "16px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, marginRight: "24px" }}>
                       <div style={{ 
-                        fontSize: "11px", 
-                        fontWeight: "bold", 
-                        textTransform: "uppercase", 
-                        color: group.type === "added" 
-                          ? "var(--accent-color)" 
-                          : group.type === "removed" 
-                            ? "#ff4757" 
-                            : "#ffa500" 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "12px",
+                        flexWrap: "wrap"
                       }}>
-                        {group.type === "added" && `Added Line (Current: ${group.currentLineNum})`}
-                        {group.type === "removed" && `Deleted Line (Base: ${group.originalLineNum})`}
-                        {group.type === "modified" && `Modified Line (Line: ${group.currentLineNum})`}
-                      </div>
-                      {sceneInfo && (
-                        <div style={{ fontSize: "11px", color: "var(--text-muted)", display: "flex", gap: "6px", alignItems: "center" }}>
-                          <span>🎬</span>
-                          <span style={{ fontStyle: "italic", opacity: 0.85 }}>
-                            {sceneInfo.number ? `Scene ${sceneInfo.number}: ` : ""}
-                            {sceneInfo.heading}
-                          </span>
+                        <div style={{ 
+                          fontSize: "12px", 
+                          fontWeight: "bold", 
+                          textTransform: "uppercase", 
+                          color: group.type === "added" 
+                            ? "var(--accent-color)" 
+                            : group.type === "removed" 
+                              ? "#ff4757" 
+                              : "#ffa500" 
+                        }}>
+                          {group.type === "added" && `Added Line (Current: ${group.currentLineNum})`}
+                          {group.type === "removed" && `Deleted Line (Base: ${group.originalLineNum})`}
+                          {group.type === "modified" && `Modified Line (Line: ${group.currentLineNum})`}
                         </div>
+                        {sceneInfo && (
+                          <div style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", gap: "6px", alignItems: "center" }}>
+                            <span style={{ fontStyle: "italic", opacity: 0.85 }}>
+                              {sceneInfo.number ? `Scene ${sceneInfo.number}: ` : ""}
+                              {sceneInfo.heading}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div style={{ 
+                        fontFamily: "var(--font-editor)", 
+                        fontSize: "15px", 
+                        lineHeight: "1.5",
+                        whiteSpace: "pre-wrap",
+                        color: "var(--text-main)"
+                      }}>
+                        {group.type === "modified" ? (
+                          getInlineDiff(group.oldText || "", group.text).map((seg, sIdx) => {
+                            if (seg.type === "removed") {
+                              return (
+                                <span 
+                                  key={sIdx} 
+                                  style={{ 
+                                    textDecoration: "line-through", 
+                                    color: "#ff4757", 
+                                    backgroundColor: "rgba(255, 71, 87, 0.12)",
+                                    padding: "2px 4px",
+                                    borderRadius: "3px",
+                                    margin: "0 1px"
+                                  }}
+                                >
+                                  {seg.text}
+                                </span>
+                              );
+                            } else if (seg.type === "added") {
+                              return (
+                                <span 
+                                  key={sIdx} 
+                                  style={{ 
+                                    color: "var(--accent-color)", 
+                                    backgroundColor: "rgba(46, 213, 115, 0.12)",
+                                    padding: "2px 4px",
+                                    borderRadius: "3px",
+                                    margin: "0 1px"
+                                  }}
+                                >
+                                  {seg.text}
+                                </span>
+                              );
+                            } else {
+                              return <span key={sIdx}>{seg.text}</span>;
+                            }
+                          })
+                        ) : (
+                          <span 
+                            style={{ 
+                              textDecoration: group.type === "removed" ? "line-through" : "none",
+                              color: group.type === "removed" ? "#ff4757" : (group.type === "added" ? "var(--accent-color)" : "inherit"),
+                              backgroundColor: group.type === "removed" ? "rgba(255, 71, 87, 0.12)" : (group.type === "added" ? "rgba(46, 213, 115, 0.12)" : "transparent"),
+                              padding: group.type !== "unchanged" ? "2px 4px" : "0",
+                              borderRadius: "3px"
+                            }}
+                          >
+                            {group.text || " "}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                      {group.type === "added" && (
+                        <>
+                          <button 
+                            className="struct-btn secondary" 
+                            style={{ padding: "8px 16px", gap: "6px" }}
+                            onClick={() => handleAction(group, "accept")}
+                            title="Accept Addition"
+                          >
+                            <Check size={16} /> Accept
+                          </button>
+                          <button 
+                            className="struct-btn cancel" 
+                            style={{ padding: "8px 16px", gap: "6px" }}
+                            onClick={() => handleAction(group, "reject")}
+                            title="Reject Addition"
+                          >
+                            <X size={16} /> Reject
+                          </button>
+                        </>
                       )}
-                      <div style={{ fontFamily: "var(--font-editor)", fontSize: "13px", whiteSpace: "pre-wrap" }}>
-
-                      {group.type === "modified" ? (
-                        getInlineDiff(group.oldText || "", group.text).map((seg, sIdx) => {
-                          if (seg.type === "removed") {
-                            return (
-                              <span 
-                                key={sIdx} 
-                                style={{ 
-                                  textDecoration: "line-through", 
-                                  color: "#ff4757", 
-                                  backgroundColor: "rgba(255, 71, 87, 0.12)",
-                                  padding: "1px 3px",
-                                  borderRadius: "3px",
-                                  margin: "0 1px"
-                                }}
-                              >
-                                {seg.text}
-                              </span>
-                            );
-                          } else if (seg.type === "added") {
-                            return (
-                              <span 
-                                key={sIdx} 
-                                style={{ 
-                                  color: "var(--accent-color)", 
-                                  backgroundColor: "rgba(46, 213, 115, 0.12)",
-                                  padding: "1px 3px",
-                                  borderRadius: "3px",
-                                  margin: "0 1px"
-                                }}
-                              >
-                                {seg.text}
-                              </span>
-                            );
-                          } else {
-                            return <span key={sIdx}>{seg.text}</span>;
-                          }
-                        })
-                      ) : (
-                        <span style={{ textDecoration: group.type === "removed" ? "line-through" : "none" }}>
-                          {group.text || " "}
-                        </span>
+                      {group.type === "removed" && (
+                        <>
+                          <button 
+                            className="struct-btn secondary" 
+                            style={{ padding: "8px 16px", gap: "6px" }}
+                            onClick={() => handleAction(group, "accept")}
+                            title="Confirm Deletion"
+                          >
+                            <Check size={16} /> Delete
+                          </button>
+                          <button 
+                            className="struct-btn primary" 
+                            style={{ padding: "8px 16px", gap: "6px" }}
+                            onClick={() => handleAction(group, "reject")}
+                            title="Restore Line"
+                          >
+                            <Undo size={16} /> Restore
+                          </button>
+                        </>
+                      )}
+                      {group.type === "modified" && (
+                        <>
+                          <button 
+                            className="struct-btn secondary" 
+                            style={{ padding: "8px 16px", gap: "6px" }}
+                            onClick={() => handleAction(group, "accept")}
+                            title="Accept Modification"
+                          >
+                            <Check size={16} /> Accept
+                          </button>
+                          <button 
+                            className="struct-btn cancel" 
+                            style={{ padding: "8px 16px", gap: "6px" }}
+                            onClick={() => handleAction(group, "reject")}
+                            title="Reject Modification"
+                          >
+                            <X size={16} /> Reject
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    {group.type === "added" && (
-                      <>
-                        <button 
-                          className="struct-btn secondary" 
-                          style={{ padding: "6px 12px", gap: "4px" }}
-                          onClick={() => handleAction(group, "accept")}
-                          title="Accept Addition"
-                        >
-                          <Check size={14} /> Accept
-                        </button>
-                        <button 
-                          className="struct-btn cancel" 
-                          style={{ padding: "6px 12px", gap: "4px" }}
-                          onClick={() => handleAction(group, "reject")}
-                          title="Reject Addition"
-                        >
-                          <X size={14} /> Reject
-                        </button>
-                      </>
-                    )}
-                    {group.type === "removed" && (
-                      <>
-                        <button 
-                          className="struct-btn secondary" 
-                          style={{ padding: "6px 12px", gap: "4px" }}
-                          onClick={() => handleAction(group, "accept")}
-                          title="Confirm Deletion"
-                        >
-                          <Check size={14} /> Delete
-                        </button>
-                        <button 
-                          className="struct-btn primary" 
-                          style={{ padding: "6px 12px", gap: "4px" }}
-                          onClick={() => handleAction(group, "reject")}
-                          title="Restore Line"
-                        >
-                          <Undo size={14} /> Restore
-                        </button>
-                      </>
-                    )}
-                    {group.type === "modified" && (
-                      <>
-                        <button 
-                          className="struct-btn secondary" 
-                          style={{ padding: "6px 12px", gap: "4px" }}
-                          onClick={() => handleAction(group, "accept")}
-                          title="Accept Modification"
-                        >
-                          <Check size={14} /> Accept
-                        </button>
-                        <button 
-                          className="struct-btn cancel" 
-                          style={{ padding: "6px 12px", gap: "4px" }}
-                          onClick={() => handleAction(group, "reject")}
-                          title="Reject Modification"
-                        >
-                          <X size={14} /> Reject
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           )}
         </div>

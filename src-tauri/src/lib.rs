@@ -103,8 +103,8 @@ fn export_pdf(
         "courier_prime".to_string()
     };
     let mirror = match mirror_scene_numbers.as_str() {
-        "always" => pdf::MirrorOption::Always,
-        "export_only" => pdf::MirrorOption::ExportOnly,
+        "left_side" => pdf::MirrorOption::LeftSide,
+        "mirror" => pdf::MirrorOption::Mirror,
         _ => pdf::MirrorOption::Off,
     };
     let config = pdf::PdfExportConfig {

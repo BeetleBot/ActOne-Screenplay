@@ -1739,20 +1739,45 @@ body.dark-theme .timeline-segment-number {
   position: absolute;
 }
 
-.export-modal-select {
-  background: var(--bg-app);
+/* Modern Premium Select for Modals */
+.export-modal-select,
+.modal-premium-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 5px 10px;
+  padding-right: 32px !important;
+  border-radius: 8px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 12px;
+  background-color: var(--bg-app);
   color: var(--text-main);
   outline: none;
   cursor: pointer;
-  transition: border-color 0.15s;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c7c7c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-.export-modal-select:focus {
+.export-modal-select:hover,
+.modal-premium-select:hover {
   border-color: var(--accent-color);
+  background-color: rgba(var(--accent-rgb), 0.03);
+}
+
+.export-modal-select:focus,
+.modal-premium-select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+}
+
+body.dark-theme .export-modal-select,
+body.dark-theme .modal-premium-select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4d4d8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .export-modal-format-selector {
