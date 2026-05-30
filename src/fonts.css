@@ -1,0 +1,119 @@
+@font-face {
+  font-family: "Courier Prime";
+  src: url("/fonts/Courier Prime.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  src: url("/fonts/Courier Prime Italic.ttf") format("truetype");
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  src: url("/fonts/Courier Prime Bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  src: url("/fonts/Courier Prime Bold Italic.ttf") format("truetype");
+  font-weight: bold;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Courier Prime Sans";
+  src: url("/fonts/Courier Prime Sans.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Courier Prime Sans";
+  src: url("/fonts/Courier Prime Sans Italic.ttf") format("truetype");
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Courier Prime Sans";
+  src: url("/fonts/Courier Prime Sans Bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Courier Prime Sans";
+  src: url("/fonts/Courier Prime Sans Bold Italic.ttf") format("truetype");
+  font-weight: bold;
+  font-style: italic;
+}
+
+/* Atkinson Hyperlegible & Inter local styles */
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("/fonts/atkinson_hyperlegible_italic_400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("/fonts/atkinson_hyperlegible_italic_700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("/fonts/atkinson_hyperlegible_normal_400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("/fonts/atkinson_hyperlegible_normal_700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter_normal_300.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter_normal_400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter_normal_500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter_normal_600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter_normal_700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}

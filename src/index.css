@@ -1,4 +1,5 @@
 @import "./themes.css";
+@import "./fonts.css";
 
 :root {
   --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
