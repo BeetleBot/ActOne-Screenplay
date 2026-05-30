@@ -335,13 +335,32 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (unzipped["document.fountain"]) {
             content = strFromU8(unzipped["document.fountain"]);
           }
+          let parsedSettings = {};
+          let genders = {};
+          let revisionData = {};
           if (unzipped["settings.json"]) {
             try {
-              settings = JSON.parse(strFromU8(unzipped["settings.json"]));
+              parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
             } catch (e) {
               console.error(e);
             }
           }
+          if (unzipped["characters.json"]) {
+            try {
+              const chars = JSON.parse(strFromU8(unzipped["characters.json"]));
+              genders = chars.genders || {};
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["revision.json"]) {
+            try {
+              revisionData = JSON.parse(strFromU8(unzipped["revision.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData };
         } else {
           content = await invoke<string>("read_file_content", { path });
         }
@@ -429,16 +448,35 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const unzipped = unzipSync(u8);
             let content = "";
             let settings = {};
+            let parsedSettings = {};
+            let genders = {};
+            let revisionData = {};
             if (unzipped["document.fountain"]) {
               content = strFromU8(unzipped["document.fountain"]);
             }
             if (unzipped["settings.json"]) {
               try {
-                settings = JSON.parse(strFromU8(unzipped["settings.json"]));
+                parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
               } catch (e) {
                 console.error(e);
               }
             }
+            if (unzipped["characters.json"]) {
+              try {
+                const chars = JSON.parse(strFromU8(unzipped["characters.json"]));
+                genders = chars.genders || {};
+              } catch (e) {
+                console.error(e);
+              }
+            }
+            if (unzipped["revision.json"]) {
+              try {
+                revisionData = JSON.parse(strFromU8(unzipped["revision.json"]));
+              } catch (e) {
+                console.error(e);
+              }
+            }
+            settings = { ...parsedSettings, genders, ...revisionData };
             resolve({ path: file.name, content, settings });
           } else {
             const content = await file.text();
@@ -473,13 +511,32 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (unzipped["document.fountain"]) {
             content = strFromU8(unzipped["document.fountain"]);
           }
+          let parsedSettings = {};
+          let genders = {};
+          let revisionData = {};
           if (unzipped["settings.json"]) {
             try {
-              settings = JSON.parse(strFromU8(unzipped["settings.json"]));
+              parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
             } catch (e) {
               console.error(e);
             }
           }
+          if (unzipped["characters.json"]) {
+            try {
+              const chars = JSON.parse(strFromU8(unzipped["characters.json"]));
+              genders = chars.genders || {};
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["revision.json"]) {
+            try {
+              revisionData = JSON.parse(strFromU8(unzipped["revision.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData };
         } catch (e) {
           console.error(e);
           alert("Could not read actone bundle binary");
@@ -533,9 +590,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveActoneFile = async (path: string, text: string, settings: any) => {
+    const { genders, revisionModeEnabled, revisionBaseText, ...restSettings } = settings || {};
+    const characters = genders ? { genders } : {};
+    const revision = { revisionModeEnabled, revisionBaseText };
     const zipped = zipSync({
       "document.fountain": strToU8(text),
-      "settings.json": strToU8(JSON.stringify(settings || {}, null, 2)),
+      "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
+      "characters.json": strToU8(JSON.stringify(characters, null, 2)),
+      "revision.json": strToU8(JSON.stringify(revision, null, 2)),
     });
     await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
   };
@@ -565,9 +627,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
         }
       } else {
+        const { genders, revisionModeEnabled, revisionBaseText, ...restSettings } = currentActive.parsedDoc.settings || {};
+        const characters = genders ? { genders } : {};
+        const revision = { revisionModeEnabled, revisionBaseText };
         const zipped = zipSync({
           "document.fountain": strToU8(cleanFountainText),
-          "settings.json": strToU8(JSON.stringify(currentActive.parsedDoc.settings || {}, null, 2)),
+          "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
+          "characters.json": strToU8(JSON.stringify(characters, null, 2)),
+          "revision.json": strToU8(JSON.stringify(revision, null, 2)),
         });
         const blob = new Blob([zipped], { type: "application/zip" });
         const url = URL.createObjectURL(blob);
@@ -639,9 +706,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let blob: Blob;
 
         if (isActone) {
+          const { genders, revisionModeEnabled, revisionBaseText, ...restSettings } = currentActive.parsedDoc.settings || {};
+          const characters = genders ? { genders } : {};
+          const revision = { revisionModeEnabled, revisionBaseText };
           const zipped = zipSync({
             "document.fountain": strToU8(cleanFountainText),
-            "settings.json": strToU8(JSON.stringify(currentActive.parsedDoc.settings || {}, null, 2)),
+            "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
+            "characters.json": strToU8(JSON.stringify(characters, null, 2)),
+            "revision.json": strToU8(JSON.stringify(revision, null, 2)),
           });
           blob = new Blob([zipped], { type: "application/zip" });
         } else {

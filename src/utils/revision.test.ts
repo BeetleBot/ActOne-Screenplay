@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
-import { startRevisionMode, mergeRevisions, discardRevisions } from "./revision";
+import { startRevisionMode } from "./revision";
 
 beforeAll(() => {
   (globalThis as any).window = {
@@ -60,50 +60,6 @@ describe("Revision lifecycle commands", () => {
 
       expect(result).toBe(false);
       expect(saveFileAs).not.toHaveBeenCalled();
-      expect(updateSettings).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("mergeRevisions", () => {
-    it("should disable revision mode and clear base text if confirmed", () => {
-      vi.spyOn(window, "confirm").mockReturnValue(true);
-      const updateSettings = vi.fn();
-
-      mergeRevisions(updateSettings);
-
-      expect(updateSettings).toHaveBeenCalled();
-    });
-
-    it("should do nothing if merge confirmation is cancelled", () => {
-      vi.spyOn(window, "confirm").mockReturnValue(false);
-      const updateSettings = vi.fn();
-
-      mergeRevisions(updateSettings);
-
-      expect(updateSettings).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("discardRevisions", () => {
-    it("should revert text, disable revision mode, and clear base text if confirmed", () => {
-      vi.spyOn(window, "confirm").mockReturnValue(true);
-      const updateSettings = vi.fn();
-      const setRawText = vi.fn();
-
-      discardRevisions(updateSettings, setRawText, "base draft text");
-
-      expect(setRawText).toHaveBeenCalledWith("base draft text");
-      expect(updateSettings).toHaveBeenCalled();
-    });
-
-    it("should do nothing if discard confirmation is cancelled", () => {
-      vi.spyOn(window, "confirm").mockReturnValue(false);
-      const updateSettings = vi.fn();
-      const setRawText = vi.fn();
-
-      discardRevisions(updateSettings, setRawText, "base draft text");
-
-      expect(setRawText).not.toHaveBeenCalled();
       expect(updateSettings).not.toHaveBeenCalled();
     });
   });

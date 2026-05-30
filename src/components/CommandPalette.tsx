@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFile } from "../context/FileContext";
 import { useEditor } from "../context/EditorContext";
 import { useUI } from "../context/UIContext";
-import { startRevisionMode, mergeRevisions, discardRevisions } from "../utils/revision";
+import { startRevisionMode } from "../utils/revision";
 
 import {
   FilePlus,
@@ -38,6 +38,7 @@ interface CommandPaletteProps {
   onOpenStructureModal: () => void;
   onOpenThemeModal: () => void;
   onOpenSettingsModal: () => void;
+  onOpenRevisionModal: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -48,7 +49,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isSidebarOpen,
   onOpenStructureModal,
   onOpenThemeModal,
-  onOpenSettingsModal
+  onOpenSettingsModal,
+  onOpenRevisionModal,
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -63,12 +65,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     activeFileId,
     files,
     updateSettings,
-    setRawText,
   } = useFile();
 
   const activeFile = files.find(f => f.id === activeFileId);
   const revisionModeEnabled = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
-  const revisionBaseText = activeFile?.parsedDoc?.settings?.revisionBaseText;
   const filePath = activeFile?.filePath || null;
   const rawText = activeFile?.rawText || "";
 
@@ -186,8 +186,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     ...(!revisionModeEnabled ? [
       { id: "revision-start", name: "Start Revision Mode", category: "Revisions", icon: <Sparkles size={16} />, action: () => { startRevisionMode(filePath, rawText, updateSettings, saveFileAs); onClose(); } }
     ] : [
-      { id: "revision-merge", name: "Merge Revisions", category: "Revisions", icon: <Sparkles size={16} />, action: () => { mergeRevisions(updateSettings); onClose(); } },
-      { id: "revision-discard", name: "Discard Revisions", category: "Revisions", icon: <Trash2 size={16} />, action: () => { discardRevisions(updateSettings, setRawText, revisionBaseText); onClose(); } }
+      { id: "revision-review", name: "Review Revisions...", category: "Revisions", icon: <Sparkles size={16} />, action: () => { onOpenRevisionModal(); onClose(); } }
     ]),
   ];
 

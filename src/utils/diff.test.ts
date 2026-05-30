@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeRevisedLines } from "./diff";
+import { computeRevisedLines, getInlineDiff, filterDiffs, LineEdit } from "./diff";
 
 describe("computeRevisedLines", () => {
   it("should return all false if base and current are identical", () => {
@@ -43,3 +43,32 @@ describe("computeRevisedLines", () => {
     expect(result).toEqual([false, false, true, false, true, false, false]);
   });
 });
+
+describe("getInlineDiff", () => {
+  it("should compute inline word edits correctly", () => {
+    const oldLine = "We're underwater, watching a fat catfish swim along.";
+    const newLine = "We're underwater, watchin a fat catfish swim along.";
+    const diff = getInlineDiff(oldLine, newLine);
+    expect(diff).toEqual([
+      { type: "unchanged", text: "We're underwater, " },
+      { type: "removed", text: "watching" },
+      { type: "added", text: "watchin" },
+      { type: "unchanged", text: " a fat catfish swim along." }
+    ]);
+  });
+});
+
+describe("filterDiffs", () => {
+  it("should filter out single empty line changes but keep double empty lines", () => {
+    const diffs: LineEdit[] = [
+      { type: "added", text: "Some text" },
+      { type: "added", text: "" }, // single empty line, should be kept as false
+      { type: "unchanged", text: "Other text" },
+      { type: "removed", text: "" }, // consecutive empty lines? Let's check 2 removals
+      { type: "removed", text: "" },
+    ];
+    const keep = filterDiffs(diffs);
+    expect(keep).toEqual([true, false, true, true, true]);
+  });
+});
+

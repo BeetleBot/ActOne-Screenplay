@@ -9,7 +9,7 @@ import { SidebarViews } from "../SidebarViews";
 import { IndexCardsWorkspace } from "../IndexCardsWorkspace";
 import { TimelineView } from "../TimelineView";
 import { SearchPanel } from "../SearchPanel";
-import { startRevisionMode, mergeRevisions, discardRevisions } from "../../utils/revision";
+import { startRevisionMode } from "../../utils/revision";
 
 import {
   List,
@@ -43,6 +43,7 @@ const MenuBar: React.FC<{
   onOpenThemeModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
+  onOpenRevisionModal: () => void;
   toggleSidebar: () => void;
   isSidebarOpen: boolean;
 }> = ({
@@ -55,6 +56,7 @@ const MenuBar: React.FC<{
   onOpenThemeModal,
   onOpenSettingsModal,
   onOpenPalette,
+  onOpenRevisionModal,
   toggleSidebar,
   isSidebarOpen,
 }) => {
@@ -73,11 +75,10 @@ const MenuBar: React.FC<{
     setZoomLevel,
   } = useUI();
   const { autoAddSceneNumbers, clearSceneNumbers, editorView } = useEditor();
-  const { closeFile, activeFileId, files, updateSettings, setRawText } = useFile();
+  const { closeFile, activeFileId, files, updateSettings } = useFile();
 
   const activeFile = files.find(f => f.id === activeFileId);
   const revisionModeEnabled = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
-  const revisionBaseText = activeFile?.parsedDoc?.settings?.revisionBaseText;
   const filePath = activeFile?.filePath || null;
   const rawText = activeFile?.rawText || "";
 
@@ -133,8 +134,7 @@ const MenuBar: React.FC<{
     ],
     Revisions: [
       { label: "Start Revision Mode", action: () => startRevisionMode(filePath, rawText, updateSettings, onSaveFileAs), disabled: !!revisionModeEnabled },
-      { label: "Merge Revisions", action: () => mergeRevisions(updateSettings), disabled: !revisionModeEnabled },
-      { label: "Discard Revisions", action: () => discardRevisions(updateSettings, setRawText, revisionBaseText), disabled: !revisionModeEnabled },
+      { label: "Review Revisions...", action: onOpenRevisionModal, disabled: !revisionModeEnabled },
     ],
     Format: [
       { label: "Import Structure Template...", action: onOpenStructureModal, dividerAfter: true },
@@ -192,6 +192,7 @@ const HeaderBar: React.FC<{
   onOpenSettingsModal: () => void;
   onOpenStructureModal: () => void;
   onOpenExportModal: () => void;
+  onOpenRevisionModal: () => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }> = ({
@@ -201,6 +202,7 @@ const HeaderBar: React.FC<{
   onOpenSettingsModal,
   onOpenStructureModal,
   onOpenExportModal,
+  onOpenRevisionModal,
   isSidebarOpen,
   toggleSidebar,
 }) => {
@@ -325,6 +327,7 @@ const HeaderBar: React.FC<{
           onOpenThemeModal={onOpenThemeModal}
           onOpenSettingsModal={onOpenSettingsModal}
           onOpenPalette={() => setIsPaletteOpen(!isPaletteOpen)}
+          onOpenRevisionModal={onOpenRevisionModal}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
@@ -743,6 +746,7 @@ export interface MainLayoutProps {
   onOpenSettingsModal: () => void;
   onOpenStructureModal: () => void;
   onOpenExportModal: () => void;
+  onOpenRevisionModal: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -754,9 +758,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onOpenSettingsModal,
   onOpenStructureModal,
   onOpenExportModal,
+  onOpenRevisionModal,
 }) => {
   const { isZenMode } = useUI();
-
+ 
   return (
     <>
       {!isZenMode && (
@@ -767,6 +772,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onOpenSettingsModal={onOpenSettingsModal}
           onOpenStructureModal={onOpenStructureModal}
           onOpenExportModal={onOpenExportModal}
+          onOpenRevisionModal={onOpenRevisionModal}
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
