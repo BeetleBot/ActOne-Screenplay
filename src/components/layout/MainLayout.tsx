@@ -379,7 +379,7 @@ const ActivityBar: React.FC<{
   );
 };
 
-const EditorTabs: React.FC = () => {
+const EditorTabs: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenThemeModal }) => {
   const { files, activeFileId, selectFile, newFile, closeFile } = useFile();
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -391,7 +391,7 @@ const EditorTabs: React.FC = () => {
   }, [activeFileId]);
 
   return (
-    <div className="editor-tabs-bar">
+    <div className="editor-tabs-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingRight: "8px" }}>
       <div className="header-tabs-container" ref={tabsContainerRef}>
         {files.map((file) => {
           const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled";
@@ -426,6 +426,7 @@ const EditorTabs: React.FC = () => {
           <Plus size={14} />
         </button>
       </div>
+      <EditorToolbar onOpenThemeModal={onOpenThemeModal} />
     </div>
   );
 };
@@ -535,6 +536,25 @@ const Workspace: React.FC<{
               }
             }}
           >
+            <div className="sidebar-header" style={{
+              height: "36px",
+              display: "flex",
+              alignItems: "center",
+              padding: "0 12px",
+              borderBottom: "1px solid var(--border-color)",
+              backgroundColor: "var(--bg-sidebar)",
+              fontWeight: 600,
+              fontSize: "12px",
+              color: "var(--text-muted)",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              flexShrink: 0
+            }}>
+              {activeTab === "outline" && "Navigator"}
+              {activeTab === "notepad" && "Notepad"}
+              {activeTab === "characters" && "Characters"}
+              {activeTab === "stats" && "Statistics"}
+            </div>
             <div className="sidebar-content">
               <SidebarViews activeTab={activeTab} />
             </div>
@@ -548,12 +568,7 @@ const Workspace: React.FC<{
 
       <div className="editor-container">
         <SearchPanel />
-        {!isZenMode && <EditorTabs />}
-        {!isZenMode && (
-          <div className="editor-header-bar">
-            <EditorToolbar onOpenThemeModal={onOpenThemeModal} />
-          </div>
-        )}
+        {!isZenMode && <EditorTabs onOpenThemeModal={onOpenThemeModal} />}
         <div className="editor-scroll-area">
           {workspaceMode === "editor" && (
             <div className={`editor-paper paper-${paperSize}`} style={{ zoom: zoomLevel / 100 }}>

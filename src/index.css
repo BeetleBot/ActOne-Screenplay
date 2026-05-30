@@ -580,7 +580,7 @@ body.dark-theme .header-tab.active {
 .sidebar {
   width: 260px;
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
+  border-right: none;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1606,11 +1606,23 @@ body.dark-theme .timeline-segment-number {
 }
 
 .sidebar-resizer {
-  width: 4px;
-  background-color: transparent;
-  cursor: col-resize;
+  width: 1px;
+  background-color: var(--border-color);
+  position: relative;
   z-index: 10;
+  cursor: col-resize;
   transition: background-color 0.2s;
+}
+
+.sidebar-resizer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  right: -4px;
+  background: transparent;
+  z-index: 11;
 }
 
 .sidebar-resizer:hover,
