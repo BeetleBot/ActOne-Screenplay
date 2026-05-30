@@ -8,9 +8,9 @@
 - [x] Add more export options (PDF, etc.)
 - [x] Fix keyboard scrolling in Navigator
 - [x] Underline shortcut works for just one letter.
+- [ ] Improve the Index cards, redesign it completely with Sections and Synopsis Visible.
 - [ ] Implement Marker's features.
 - [ ] Find a way to include all Indian languages(Figure out the fonts) for the editor and export options.
-- [ ] Improve the Index cards, redesign it completely with Sections and Synopsis Visible.
 - [ ] Make sure that the pagination is right.
 - [ ] Hide fountain markup.
 
@@ -19,7 +19,7 @@
 - [x] Import Strucutre.
 - [x] Add zoom-in / zoom-out feature for editor.
 - [x] Rewrite the whole theming stuff. Remove all hardcoded colors, add a lot of themes. 
-- [ ] Search / Replace / Replace All
+- [x] Search / Replace / Replace All
 - [ ] screenplay Preview feature.
 - [ ] Markers and tags.
 - [ ] X-Ray or Analysis stuffs.
