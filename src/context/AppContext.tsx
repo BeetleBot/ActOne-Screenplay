@@ -59,6 +59,10 @@ interface AppContextProps {
   setMatchParenthesesEnabled: (enabled: boolean) => void;
   hideFountainMarkupEnabled: boolean;
   setHideFountainMarkupEnabled: (enabled: boolean) => void;
+  autoSaveEnabled: boolean;
+  setAutoSaveEnabled: (enabled: boolean) => void;
+  autoSaveInterval: number;
+  setAutoSaveInterval: (interval: number) => void;
 }
 
 export const useAppContext = (): AppContextProps => {

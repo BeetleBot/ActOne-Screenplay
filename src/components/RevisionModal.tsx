@@ -10,7 +10,7 @@ interface RevisionModalProps {
 }
 
 interface GroupedEdit {
-  type: "added" | "removed" | "modified";
+  type: "added" | "removed" | "modified" | "unchanged";
   indices: number[];
   text: string;
   oldText?: string;

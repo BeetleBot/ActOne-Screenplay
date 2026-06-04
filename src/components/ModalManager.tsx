@@ -5,6 +5,7 @@ import { ThemeSelectorModal } from './ThemeSelectorModal';
 import { SettingsModal } from './SettingsModal';
 import { CommandPalette } from './CommandPalette';
 import { RevisionModal } from './RevisionModal';
+import { TitlePageEditorModal } from './TitlePageEditorModal';
 
 export interface ModalManagerProps {
   isPaletteOpen: boolean;
@@ -19,6 +20,8 @@ export interface ModalManagerProps {
   setShowSettingsModal: (open: boolean) => void;
   showRevisionModal: boolean;
   setShowRevisionModal: (open: boolean) => void;
+  showTitlePageModal: boolean;
+  setShowTitlePageModal: (open: boolean) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }
@@ -36,6 +39,8 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   setShowSettingsModal,
   showRevisionModal,
   setShowRevisionModal,
+  showTitlePageModal,
+  setShowTitlePageModal,
   isSidebarOpen,
   toggleSidebar,
 }) => {
@@ -51,12 +56,14 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
         onOpenThemeModal={() => setShowThemeModal(true)}
         onOpenSettingsModal={() => setShowSettingsModal(true)}
         onOpenRevisionModal={() => setShowRevisionModal(true)}
+        onOpenTitlePageModal={() => setShowTitlePageModal(true)}
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
       {showThemeModal && <ThemeSelectorModal onClose={() => setShowThemeModal(false)} />}
       {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}
       {showRevisionModal && <RevisionModal onClose={() => setShowRevisionModal(false)} />}
+      {showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}
     </>
   );
 };

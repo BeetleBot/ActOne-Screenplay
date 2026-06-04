@@ -737,6 +737,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const filesRef = useRef(files);
   const selectFileRef = useRef(selectFile);
+  const saveFileRef = useRef(saveFile);
 
   useEffect(() => {
     filesRef.current = files;
@@ -745,6 +746,25 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     selectFileRef.current = selectFile;
   }, [selectFile]);
+
+  useEffect(() => {
+    saveFileRef.current = saveFile;
+  });
+
+  const { autoSaveEnabled, autoSaveInterval } = useUI();
+
+  useEffect(() => {
+    if (!autoSaveEnabled) return;
+    const timer = setInterval(() => {
+      const currentFiles = filesRef.current;
+      const currentId = activeFileIdRef.current;
+      const file = currentFiles.find(f => f.id === currentId);
+      if (file && file.isDirty && file.filePath) {
+        saveFileRef.current();
+      }
+    }, autoSaveInterval);
+    return () => clearInterval(timer);
+  }, [autoSaveEnabled, autoSaveInterval]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

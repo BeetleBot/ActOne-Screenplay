@@ -1459,7 +1459,7 @@ body.dark-theme .timeline-segment-number {
   color: var(--text-main);
 }
 
-/* Screenplay Preview Styles */
+/* Screenplay Preview Styles — matches PDF export formatting exactly */
 .preview-workspace-container {
   display: flex;
   flex-direction: column;
@@ -1478,24 +1478,19 @@ body.dark-theme .timeline-segment-number {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   position: relative;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .preview-page.paper-letter {
   width: 816px;
-  /* 8.5in */
   height: 1056px;
-  /* 11in */
-  padding: 96px;
-  /* 1in */
+  padding: 96px 96px 96px 144px;
 }
 
 .preview-page.paper-a4 {
   width: 794px;
-  /* 210mm */
   height: 1123px;
-  /* 297mm */
-  padding: 96px;
-  /* Approx 1in */
+  padding: 96px 73px 96px 144px;
 }
 
 .preview-page.font-courier-prime {
@@ -1514,101 +1509,123 @@ body.dark-theme .timeline-segment-number {
   line-height: 1;
 }
 
+.preview-page.paper-a4 .preview-page-header {
+  right: 73px;
+}
+
 .preview-page-number {
   font-variant-numeric: tabular-nums;
 }
 
 .preview-page-content {
   font-size: 12pt;
-  line-height: 20px;
+  line-height: 1;
   height: 100%;
+  overflow: hidden;
 }
 
 .preview-line {
   white-space: pre-wrap;
-  min-height: 20px;
+  min-height: 1em;
+  line-height: 1;
 }
 
 .preview-empty-line {
-  height: 20px;
+  height: 1em;
 }
 
 .preview-heading {
   font-weight: bold;
   text-transform: uppercase;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 16px;
+  margin-bottom: 0;
 }
 
 .preview-action {
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
 .preview-character {
-  margin-left: 192px;
-  /* 2.0in */
-  margin-top: 20px;
+  margin-left: 211px;
+  margin-top: 16px;
   text-transform: uppercase;
+  max-width: 192px;
 }
 
 .preview-parenthetical {
-  margin-left: 144px;
-  /* 1.5in */
-  margin-right: 144px;
+  margin-left: 154px;
+  max-width: 230px;
 }
 
 .preview-dialogue {
   margin-left: 96px;
-  /* 1.0in */
-  margin-right: 96px;
-  margin-bottom: 10px;
+  max-width: 336px;
+  margin-bottom: 0;
+}
+
+.preview-more {
+  margin-left: 211px;
+  max-width: 192px;
 }
 
 .preview-transition {
   text-align: right;
   text-transform: uppercase;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 16px;
+  margin-bottom: 0;
 }
 
 .preview-centered {
   text-align: center;
+  margin: 0 auto;
+  max-width: 336px;
 }
 
 .preview-lyrics {
   font-style: italic;
+  text-align: center;
+  margin: 0 auto;
+  max-width: 336px;
 }
 
 .preview-shot {
   font-weight: bold;
   text-transform: uppercase;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 16px;
+  margin-bottom: 0;
 }
 
-/* Title Page Preview */
+.preview-synopsis {
+  font-style: italic;
+}
+
+.preview-section {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* Title Page Preview — matches PDF export formatting */
 .title-page {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  padding: 96px;
 }
 
 .title-page-center {
-  margin-top: 250px;
+  margin-top: 240px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 16px;
 }
 
 .title-page-title {
-  font-size: 18pt;
+  font-size: 12pt;
   font-weight: bold;
   text-transform: uppercase;
-  text-decoration: underline;
-  margin-bottom: 24px;
+  margin-bottom: 12pt;
 }
 
 .title-page-credit,
@@ -1618,16 +1635,20 @@ body.dark-theme .timeline-segment-number {
 }
 
 .title-page-bottom {
-  margin-bottom: 48px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  font-size: 11pt;
+  font-size: 12pt;
 }
 
 .title-page-contact {
+  text-align: left;
+  max-width: 350px;
+  white-space: pre-wrap;
+}
+
+.title-page-date {
   text-align: right;
-  max-width: 300px;
   white-space: pre-wrap;
 }
 

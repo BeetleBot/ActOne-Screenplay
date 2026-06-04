@@ -3,7 +3,6 @@ import { FileText, X, Download } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
 import { useFocusTrap } from "../hooks/useFocusTrap";
-import { computeRevisedLines } from "../utils/diff";
 
 type ExportFormat = "pdf" | "fountain";
 
@@ -81,7 +80,7 @@ function stripFountainForExport(
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
-  const { rawText, fontFamily, paperSize, parsedDoc } = useAppContext();
+  const { rawText, fontFamily, paperSize } = useAppContext();
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);

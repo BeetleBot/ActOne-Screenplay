@@ -44,6 +44,7 @@ const MenuBar: React.FC<{
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
   onOpenRevisionModal: () => void;
+  onOpenTitlePageModal: () => void;
   toggleSidebar: () => void;
   isSidebarOpen: boolean;
 }> = ({
@@ -57,6 +58,7 @@ const MenuBar: React.FC<{
   onOpenSettingsModal,
   onOpenPalette,
   onOpenRevisionModal,
+  onOpenTitlePageModal,
   toggleSidebar,
   isSidebarOpen,
 }) => {
@@ -137,6 +139,7 @@ const MenuBar: React.FC<{
       { label: "Review Revisions...", action: onOpenRevisionModal, disabled: !revisionModeEnabled },
     ],
     Format: [
+      { label: "Edit Title Page...", action: onOpenTitlePageModal, dividerAfter: true },
       { label: "Import Structure Template...", action: onOpenStructureModal, dividerAfter: true },
       { label: "Renumber Scenes", action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); } },
       { label: "Clear Scene Numbers", action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); } },
@@ -193,6 +196,7 @@ const HeaderBar: React.FC<{
   onOpenStructureModal: () => void;
   onOpenExportModal: () => void;
   onOpenRevisionModal: () => void;
+  onOpenTitlePageModal: () => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }> = ({
@@ -203,6 +207,7 @@ const HeaderBar: React.FC<{
   onOpenStructureModal,
   onOpenExportModal,
   onOpenRevisionModal,
+  onOpenTitlePageModal,
   isSidebarOpen,
   toggleSidebar,
 }) => {
@@ -328,6 +333,7 @@ const HeaderBar: React.FC<{
           onOpenSettingsModal={onOpenSettingsModal}
           onOpenPalette={() => setIsPaletteOpen(!isPaletteOpen)}
           onOpenRevisionModal={onOpenRevisionModal}
+          onOpenTitlePageModal={onOpenTitlePageModal}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
@@ -747,6 +753,7 @@ export interface MainLayoutProps {
   onOpenStructureModal: () => void;
   onOpenExportModal: () => void;
   onOpenRevisionModal: () => void;
+  onOpenTitlePageModal: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -759,6 +766,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onOpenStructureModal,
   onOpenExportModal,
   onOpenRevisionModal,
+  onOpenTitlePageModal,
 }) => {
   const { isZenMode } = useUI();
  
@@ -773,6 +781,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onOpenStructureModal={onOpenStructureModal}
           onOpenExportModal={onOpenExportModal}
           onOpenRevisionModal={onOpenRevisionModal}
+          onOpenTitlePageModal={onOpenTitlePageModal}
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />

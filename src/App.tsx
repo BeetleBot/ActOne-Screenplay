@@ -19,12 +19,13 @@ function AppInner() {
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [showTitlePageModal, setShowTitlePageModal] = useState(false);
 
   const { newFile, openFile, saveFile, saveFileAs } = useFile();
   const { editorView } = useEditor();
   const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel, isZenMode, setIsZenMode, showSearchPanel, setShowSearchPanel } = useUI();
 
-  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal || showRevisionModal;
+  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal || showRevisionModal || showTitlePageModal;
 
   useKeyboardShortcuts({
     newFile,
@@ -57,6 +58,7 @@ function AppInner() {
         onOpenStructureModal={() => setShowStructureModal(true)}
         onOpenExportModal={() => setShowExportModal(true)}
         onOpenRevisionModal={() => setShowRevisionModal(true)}
+        onOpenTitlePageModal={() => setShowTitlePageModal(true)}
       />
       <ModalManager
         isPaletteOpen={isPaletteOpen}
@@ -71,6 +73,8 @@ function AppInner() {
         setShowSettingsModal={setShowSettingsModal}
         showRevisionModal={showRevisionModal}
         setShowRevisionModal={setShowRevisionModal}
+        showTitlePageModal={showTitlePageModal}
+        setShowTitlePageModal={setShowTitlePageModal}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />

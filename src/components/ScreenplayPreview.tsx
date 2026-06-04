@@ -1,9 +1,21 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
 import { LineType, ParsedLine } from "../parser/FountainParser";
 
+interface PageBlock {
+  lines: ParsedLine[];
+  moreDialogue: boolean;
+}
+
+const MAX_LINES: Record<string, number> = {
+  letter: 50,
+  a4: 54,
+};
+
 export const ScreenplayPreview: React.FC = () => {
   const { parsedDoc, paperSize, fontFamily } = useAppContext();
+
+  const maxLines = MAX_LINES[paperSize] || 53;
 
   const titlePageLines = parsedDoc.lines.filter(
     (l) => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown
@@ -13,37 +25,92 @@ export const ScreenplayPreview: React.FC = () => {
     (l) => !(l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown)
   );
 
-  const pages: ParsedLine[][] = [];
-  let currentPage: ParsedLine[] = [];
-  let lineCount = 0;
+  const pages = useMemo(() => {
+    const result: PageBlock[] = [];
+    let currentPage: ParsedLine[] = [];
+    let lineCount = 0;
 
-  scriptLines.forEach((line) => {
-    if (line.type === LineType.synopse || line.type === LineType.section) {
-      return;
-    }
+    const isHeading = (line: ParsedLine) => line.type === LineType.heading || line.type === LineType.shot;
 
-    if (line.type === LineType.pageBreak) {
+    const startNewPage = () => {
       if (currentPage.length > 0) {
-        pages.push(currentPage);
+        result.push({ lines: currentPage, moreDialogue: false });
         currentPage = [];
         lineCount = 0;
       }
-      return;
+    };
+
+    for (let i = 0; i < scriptLines.length; i++) {
+      const line = scriptLines[i];
+
+      if (line.type === LineType.synopse || line.type === LineType.section) {
+        continue;
+      }
+
+      if (line.type === LineType.pageBreak) {
+        startNewPage();
+        continue;
+      }
+
+      const isCharacterLine = line.type === LineType.character || line.type === LineType.dualDialogueCharacter;
+
+      if (isHeading(line) && lineCount > 0) {
+        const linesNeeded = 4;
+        if (lineCount + linesNeeded >= maxLines) {
+          startNewPage();
+        }
+      }
+
+      if (isCharacterLine && lineCount > 0) {
+        if (lineCount + 3 >= maxLines) {
+          startNewPage();
+        }
+      }
+
+      if (lineCount >= maxLines) {
+        if (isCharacterLine) {
+          startNewPage();
+        } else if (line.type === LineType.parenthetical || line.type === LineType.dualDialogueParenthetical) {
+          startNewPage();
+        } else if (line.type === LineType.dialogue || line.type === LineType.dualDialogue) {
+          if (currentPage.length > 0) {
+            result.push({ lines: currentPage, moreDialogue: false });
+            currentPage = [];
+            lineCount = 0;
+
+            const moreLine: ParsedLine = {
+              id: "more",
+              text: "(MORE)",
+              type: LineType.character,
+              isOutlineElement: false,
+            };
+            result[result.length - 1].moreDialogue = true;
+            result[result.length - 1].lines.push(moreLine);
+
+            const prevLine = scriptLines[i - 1];
+            if (prevLine && (prevLine.type === LineType.character || prevLine.type === LineType.dualDialogueCharacter)) {
+              currentPage.push({
+                ...prevLine,
+                text: prevLine.text + " (CONT'D)",
+              });
+              lineCount++;
+            }
+          }
+        } else {
+          startNewPage();
+        }
+      }
+
+      currentPage.push(line);
+      lineCount++;
     }
 
-    currentPage.push(line);
-    lineCount++;
-
-    if (lineCount >= 54) {
-      pages.push(currentPage);
-      currentPage = [];
-      lineCount = 0;
+    if (currentPage.length > 0) {
+      result.push({ lines: currentPage, moreDialogue: false });
     }
-  });
 
-  if (currentPage.length > 0) {
-    pages.push(currentPage);
-  }
+    return result;
+  }, [scriptLines, maxLines]);
 
   const getLineClassName = (type: LineType) => {
     switch (type) {
@@ -106,29 +173,41 @@ export const ScreenplayPreview: React.FC = () => {
           {source && <p className="title-page-source">{source}</p>}
         </div>
         <div className="title-page-bottom">
-          {date && <p className="title-page-date">{date}</p>}
           {contact && <p className="title-page-contact">{contact}</p>}
+          {date && <p className="title-page-date">{date}</p>}
         </div>
       </div>
     );
   };
+
+  const hasTitlePage = titlePageLines.length > 0;
 
   return (
     <div className="preview-workspace-container">
       {renderTitlePage()}
       {pages.map((page, pageIdx) => (
         <div key={pageIdx} className={`preview-page paper-${paperSize} font-${fontFamily}`}>
-          <div className="preview-page-header">
-            <span className="preview-page-number">{pageIdx + 1}.</span>
-          </div>
+          {page.lines.some(l => l.id === "more") ? null : (
+            <div className="preview-page-header">
+              <span className="preview-page-number">
+                {hasTitlePage ? pageIdx + 2 : pageIdx + 1}.
+              </span>
+            </div>
+          )}
           <div className="preview-page-content">
-            {page.map((line) => {
-              if (line.type === LineType.empty) {
-                return <div key={line.id} className="preview-empty-line">&nbsp;</div>;
+            {page.lines.map((line, li) => {
+              if (line.id === "more") {
+                return (
+                  <div key={li} className="preview-line preview-character">
+                    (MORE)
+                  </div>
+                );
               }
-
+              if (line.type === LineType.empty) {
+                return <div key={line.id || li} className="preview-empty-line">&nbsp;</div>;
+              }
               return (
-                <div key={line.id} className={`preview-line ${getLineClassName(line.type)}`}>
+                <div key={line.id || li} className={`preview-line ${getLineClassName(line.type)}`}>
                   {line.text}
                 </div>
               );

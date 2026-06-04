@@ -39,6 +39,7 @@ interface CommandPaletteProps {
   onOpenThemeModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenRevisionModal: () => void;
+  onOpenTitlePageModal: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -51,6 +52,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenThemeModal,
   onOpenSettingsModal,
   onOpenRevisionModal,
+  onOpenTitlePageModal,
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -168,6 +170,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-timeline", name: showTimeline ? "Hide Timeline" : "Show Timeline", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
 
     // Format
+    { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <Settings size={16} />, action: () => { onOpenTitlePageModal(); onClose(); } },
     { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <Sparkles size={16} />, action: () => { onOpenStructureModal(); onClose(); } },
     { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <Sparkles size={16} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
     { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <Trash2 size={16} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },

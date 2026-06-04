@@ -185,7 +185,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     matchParenthesesEnabled,
     setMatchParenthesesEnabled,
     hideFountainMarkupEnabled,
-    setHideFountainMarkupEnabled
+    setHideFountainMarkupEnabled,
+    autoSaveEnabled,
+    setAutoSaveEnabled,
+    autoSaveInterval,
+    setAutoSaveInterval
   } = useAppContext();
 
   const [activeTab, setActiveTab] = useState<"general" | "editor">("general");
@@ -320,6 +324,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 />
               </div>
 
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid var(--border-color)", paddingTop: "12px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 600, opacity: 0.9 }}>Auto-save</span>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Automatically save changes periodically</span>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={autoSaveEnabled}
+                  onChange={(e) => setAutoSaveEnabled(e.target.checked)}
+                  tabIndex={0}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+              </div>
+
+              {autoSaveEnabled && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", paddingLeft: "4px" }}>
+                  <label style={{ fontSize: "13px", fontWeight: 600, opacity: 0.9 }}>Auto-save Interval</label>
+                  <CustomSelect
+                    options={[
+                      { value: "30000", label: "30 seconds" },
+                      { value: "60000", label: "1 minute" },
+                      { value: "120000", label: "2 minutes" },
+                      { value: "300000", label: "5 minutes" },
+                    ]}
+                    value={String(autoSaveInterval)}
+                    onChange={(val) => setAutoSaveInterval(parseInt(val, 10))}
+                  />
+                </div>
+              )}
 
             </div>
           )}

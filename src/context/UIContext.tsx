@@ -30,6 +30,10 @@ export interface UIContextProps {
   setShowSearchPanel: (show: boolean) => void;
   showReplacePanel: boolean;
   setShowReplacePanel: (show: boolean) => void;
+  autoSaveEnabled: boolean;
+  setAutoSaveEnabled: (enabled: boolean) => void;
+  autoSaveInterval: number;
+  setAutoSaveInterval: (interval: number) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -69,6 +73,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   });
   const [hideFountainMarkupEnabled, setHideFountainMarkupEnabledState] = useState<boolean>(() => {
     return localStorage.getItem("actone-hide-fountain-markup-enabled") === "true";
+  });
+
+  const [autoSaveEnabled, setAutoSaveEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-auto-save-enabled") === "true";
+  });
+  const [autoSaveInterval, setAutoSaveIntervalState] = useState<number>(() => {
+    const saved = localStorage.getItem("actone-auto-save-interval");
+    return saved ? parseInt(saved, 10) : 60000;
   });
 
   const [showSearchPanel, setShowSearchPanel] = useState<boolean>(false);
@@ -162,6 +174,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem("actone-hide-fountain-markup-enabled", String(enabled));
   };
 
+  const setAutoSaveEnabled = (enabled: boolean) => {
+    setAutoSaveEnabledState(enabled);
+    localStorage.setItem("actone-auto-save-enabled", String(enabled));
+  };
+
+  const setAutoSaveInterval = (interval: number) => {
+    setAutoSaveIntervalState(interval);
+    localStorage.setItem("actone-auto-save-interval", String(interval));
+  };
+
   return (
     <UIContext.Provider
       value={{
@@ -193,6 +215,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setShowSearchPanel,
         showReplacePanel,
         setShowReplacePanel,
+        autoSaveEnabled,
+        setAutoSaveEnabled,
+        autoSaveInterval,
+        setAutoSaveInterval,
       }}
     >
       {children}
