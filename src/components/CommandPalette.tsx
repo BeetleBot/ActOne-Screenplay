@@ -18,6 +18,13 @@ import {
   Clipboard,
   Search,
   Replace,
+  Maximize,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  HelpCircle,
+  BookOpen,
+  Bug,
 } from "lucide-react";
 
 interface CommandItem {
@@ -40,6 +47,7 @@ interface CommandPaletteProps {
   onOpenSettingsModal: () => void;
   onOpenRevisionModal: () => void;
   onOpenTitlePageModal: () => void;
+  onOpenHelpModal: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -53,6 +61,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenSettingsModal,
   onOpenRevisionModal,
   onOpenTitlePageModal,
+  onOpenHelpModal,
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -93,7 +102,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setShowReplacePanel,
     hideFountainMarkupEnabled,
     setHideFountainMarkupEnabled,
+    isZenMode,
+    setIsZenMode,
+    zoomLevel,
+    setZoomLevel,
   } = useUI();
+
+  const openUrl = (url: string) => {
+    try {
+      import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url));
+    } catch {
+      window.open(url, "_blank");
+    }
+  };
 
 
 
@@ -171,6 +192,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <Settings size={16} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-hide-markup", name: hideFountainMarkupEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+H", action: () => { setHideFountainMarkupEnabled(!hideFountainMarkupEnabled); onClose(); } },
     { id: "view-timeline", name: showTimeline ? "Hide Timeline" : "Show Timeline", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
+    { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <Maximize size={16} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },
+    { id: "view-zoom-in", name: "Zoom In", category: "View", icon: <ZoomIn size={16} />, shortcut: "Ctrl+=", action: () => { setZoomLevel(zoomLevel + 10); onClose(); } },
+    { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOut size={16} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
+    { id: "view-zoom-reset", name: `Reset Zoom (${zoomLevel}%)`, category: "View", icon: <RotateCcw size={16} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
 
     // Format
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <Settings size={16} />, action: () => { onOpenTitlePageModal(); onClose(); } },
@@ -194,6 +219,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     ] : [
       { id: "revision-review", name: "Review Revisions...", category: "Revisions", icon: <Sparkles size={16} />, action: () => { onOpenRevisionModal(); onClose(); } }
     ]),
+
+    // Help
+    { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpCircle size={16} />, action: () => { onOpenHelpModal(); onClose(); } },
+    { id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <BookOpen size={16} />, action: () => { openUrl("https://fountain.io"); onClose(); } },
+    { id: "help-bug", name: "Report a Bug", category: "Help", icon: <Bug size={16} />, action: () => { openUrl("https://github.com/BeetleBot/ActOne/issues"); onClose(); } },
   ];
 
   // Filter commands by search string

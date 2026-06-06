@@ -76,18 +76,10 @@ function AppInner() {
       <WindowResizeHandles />
       <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
         <MainLayout
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
-        isPaletteOpen={isPaletteOpen}
-        setIsPaletteOpen={setIsPaletteOpen}
-        onOpenThemeModal={() => setShowThemeModal(true)}
-        onOpenSettingsModal={() => setShowSettingsModal(true)}
-        onOpenStructureModal={() => setShowStructureModal(true)}
-        onOpenExportModal={() => setShowExportModal(true)}
-        onOpenRevisionModal={() => setShowRevisionModal(true)}
-        onOpenTitlePageModal={() => setShowTitlePageModal(true)}
-        onOpenHelpModal={() => setShowHelpModal(true)}
-      />
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          onOpenThemeModal={() => setShowThemeModal(true)}
+        />
       <ModalManager
         isPaletteOpen={isPaletteOpen}
         setIsPaletteOpen={setIsPaletteOpen}

@@ -62,6 +62,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
         onOpenSettingsModal={() => setShowSettingsModal(true)}
         onOpenRevisionModal={() => setShowRevisionModal(true)}
         onOpenTitlePageModal={() => setShowTitlePageModal(true)}
+        onOpenHelpModal={() => setShowHelpModal(true)}
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}

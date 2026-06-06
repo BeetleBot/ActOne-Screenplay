@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { undo, redo } from "@codemirror/commands";
 import { useFile } from "../../context/FileContext";
 import { useUI } from "../../context/UIContext";
 import { useEditor } from "../../context/EditorContext";
@@ -9,7 +8,6 @@ import { SidebarViews } from "../SidebarViews";
 import { IndexCardsWorkspace } from "../IndexCardsWorkspace";
 import { TimelineView } from "../TimelineView";
 import { SearchPanel } from "../SearchPanel";
-import { startRevisionMode } from "../../utils/revision";
 
 import {
   List,
@@ -25,14 +23,6 @@ import {
   Plus,
 } from "lucide-react";
 
-const openUrl = (url: string) => {
-  try {
-    import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url));
-  } catch {
-    window.open(url, "_blank");
-  }
-};
-
 const getTauriWindow = () => {
   try {
     return getCurrentWindow();
@@ -41,191 +31,8 @@ const getTauriWindow = () => {
   }
 };
 
-const MenuBar: React.FC<{
-  onNewFile: () => void;
-  onOpenFile: () => void;
-  onSaveFile: () => void;
-  onSaveFileAs: () => Promise<string | null>;
-  onExportPDF: () => void;
-  onOpenStructureModal: () => void;
-  onOpenThemeModal: () => void;
-  onOpenSettingsModal: () => void;
-  onOpenPalette: () => void;
-  onOpenRevisionModal: () => void;
-  onOpenTitlePageModal: () => void;
-  onOpenHelpModal: () => void;
-  toggleSidebar: () => void;
-  isSidebarOpen: boolean;
-}> = ({
-  onNewFile,
-  onOpenFile,
-  onSaveFile,
-  onSaveFileAs,
-  onExportPDF,
-  onOpenStructureModal,
-  onOpenThemeModal,
-  onOpenSettingsModal,
-  onOpenPalette,
-  onOpenRevisionModal,
-  onOpenTitlePageModal,
-  onOpenHelpModal,
-  toggleSidebar,
-  isSidebarOpen,
-}) => {
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const menuBarRef = useRef<HTMLDivElement>(null);
-  const {
-    typewriterMode,
-    setTypewriterMode,
-    showTimeline,
-    setShowTimeline,
-    workspaceMode,
-    setWorkspaceMode,
-    isZenMode,
-    setIsZenMode,
-    zoomLevel,
-    setZoomLevel,
-    hideFountainMarkupEnabled,
-    setHideFountainMarkupEnabled,
-  } = useUI();
-  const { autoAddSceneNumbers, clearSceneNumbers, editorView } = useEditor();
-  const { closeFile, activeFileId, files, updateSettings } = useFile();
-
-  const activeFile = files.find(f => f.id === activeFileId);
-  const revisionModeEnabled = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
-  const filePath = activeFile?.filePath || null;
-  const rawText = activeFile?.rawText || "";
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuBarRef.current && !menuBarRef.current.contains(e.target as Node)) {
-        setOpenMenu(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleMenuClick = (menu: string) => {
-    setOpenMenu(openMenu === menu ? null : menu);
-  };
-
-  const runAction = (action: () => void) => {
-    action();
-    setOpenMenu(null);
-  };
-
-  const menuOrder = ["File", "Edit", "View", "Revisions", "Format", "Help"] as const;
-
-  const menus: Record<string, { label: string; shortcut?: string; action: () => void; dividerAfter?: boolean; disabled?: boolean }[]> = {
-    File: [
-      { label: "New Screenplay", shortcut: "Ctrl+N", action: onNewFile },
-      { label: "Open...", shortcut: "Ctrl+O", action: onOpenFile, dividerAfter: true },
-      { label: "Save", shortcut: "Ctrl+S", action: onSaveFile },
-      { label: "Save As...", shortcut: "Ctrl+Shift+S", action: onSaveFileAs, dividerAfter: true },
-      { label: "Export...", shortcut: "Ctrl+P", action: onExportPDF, dividerAfter: true },
-      { label: "Close File", shortcut: "Ctrl+W", action: () => closeFile(activeFileId) },
-    ],
-    Edit: [
-      { label: "Undo", shortcut: "Ctrl+Z", action: () => { if (editorView) undo(editorView); } },
-      { label: "Redo", shortcut: "Ctrl+Y", action: () => { if (editorView) redo(editorView); }, dividerAfter: true },
-      { label: "Command Palette", shortcut: "Ctrl+K", action: onOpenPalette, dividerAfter: true },
-      { label: "Bold", shortcut: "Ctrl+B", action: () => {} },
-      { label: "Italic", shortcut: "Ctrl+I", action: () => {} },
-      { label: "Underline", shortcut: "Ctrl+U", action: () => {}, dividerAfter: true },
-      { label: "Settings...", shortcut: "Ctrl+,", action: onOpenSettingsModal },
-    ],
-    View: [
-      { label: isSidebarOpen ? "Hide Sidebar" : "Show Sidebar", shortcut: "Ctrl+\\", action: toggleSidebar },
-      { label: showTimeline ? "Hide Timeline" : "Show Timeline", shortcut: "Ctrl+Shift+T", action: () => setShowTimeline(!showTimeline), dividerAfter: true },
-      { label: workspaceMode === "cards" ? "Switch to Editor" : "Switch to Index Cards", action: () => setWorkspaceMode(workspaceMode === "cards" ? "editor" : "cards") },
-      { label: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", action: () => setTypewriterMode(!typewriterMode) },
-      { label: hideFountainMarkupEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", shortcut: "Ctrl+Shift+H", action: () => setHideFountainMarkupEnabled(!hideFountainMarkupEnabled), dividerAfter: true },
-      { label: "Zen Mode", shortcut: "Ctrl+Alt+Enter", action: () => setIsZenMode(!isZenMode), dividerAfter: true },
-      { label: "Zoom In", shortcut: "Ctrl+=", action: () => setZoomLevel(zoomLevel + 10) },
-      { label: "Zoom Out", shortcut: "Ctrl+-", action: () => setZoomLevel(zoomLevel - 10) },
-      { label: `Reset Zoom (${zoomLevel}%)`, shortcut: "Ctrl+0", action: () => setZoomLevel(100), dividerAfter: true },
-      { label: "Change Theme...", action: onOpenThemeModal },
-    ],
-    Revisions: [
-      { label: "Start Revision Mode", action: () => startRevisionMode(filePath, rawText, updateSettings, onSaveFileAs), disabled: !!revisionModeEnabled },
-      { label: "Review Revisions...", action: onOpenRevisionModal, disabled: !revisionModeEnabled },
-    ],
-    Format: [
-      { label: "Edit Title Page...", action: onOpenTitlePageModal, dividerAfter: true },
-      { label: "Import Structure Template...", action: onOpenStructureModal, dividerAfter: true },
-      { label: "Renumber Scenes", action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); } },
-      { label: "Clear Scene Numbers", action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); } },
-    ],
-    Help: [
-      { label: "Help Guide", action: onOpenHelpModal, dividerAfter: true },
-      { label: "Fountain Syntax Guide", action: () => openUrl("https://fountain.io") },
-      { label: "Report a Bug", action: () => openUrl("https://github.com/BeetleBot/ActOne/issues") },
-    ],
-  };
-
-  return (
-    <div className="menu-bar" ref={menuBarRef}>
-      {menuOrder.map((name) => {
-        const items = menus[name];
-        return (
-          <div key={name} className="menu-bar-item-wrapper">
-            <button
-              className={`menu-bar-btn ${openMenu === name ? "active" : ""}`}
-              onClick={() => handleMenuClick(name)}
-              onMouseEnter={() => openMenu && setOpenMenu(name)}
-            >
-              {name}
-            </button>
-            {openMenu === name && (
-              <div className="menu-dropdown">
-                {items.map((item, idx) => (
-                  <React.Fragment key={idx}>
-                    <div
-                      className={`menu-item ${item.disabled ? "disabled" : ""}`}
-                      onClick={() => !item.disabled && runAction(item.action)}
-                    >
-                      <span>{item.label}</span>
-                      {item.shortcut && <span className="menu-item-shortcut">{item.shortcut}</span>}
-                    </div>
-                    {item.dividerAfter && <div className="menu-divider" />}
-                  </React.Fragment>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const HeaderBar: React.FC<{
-  isPaletteOpen: boolean;
-  setIsPaletteOpen: (open: boolean) => void;
-  onOpenThemeModal: () => void;
-  onOpenSettingsModal: () => void;
-  onOpenStructureModal: () => void;
-  onOpenExportModal: () => void;
-  onOpenRevisionModal: () => void;
-  onOpenTitlePageModal: () => void;
-  onOpenHelpModal: () => void;
-  isSidebarOpen: boolean;
-  toggleSidebar: () => void;
-}> = ({
-  isPaletteOpen,
-  setIsPaletteOpen,
-  onOpenThemeModal,
-  onOpenSettingsModal,
-  onOpenStructureModal,
-  onOpenExportModal,
-  onOpenRevisionModal,
-  onOpenTitlePageModal,
-  onOpenHelpModal,
-  isSidebarOpen,
-  toggleSidebar,
-}) => {
-  const { files, activeFileId, newFile, openFile, saveFile, saveFileAs } = useFile();
+const HeaderBar: React.FC = () => {
+  const { files, activeFileId } = useFile();
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
@@ -298,9 +105,7 @@ const HeaderBar: React.FC<{
         target.tagName !== "BUTTON" &&
         !target.closest("button") &&
         target.tagName !== "INPUT" &&
-        !target.closest("input") &&
-        !target.closest(".menu-bar") &&
-        !target.closest(".menu-dropdown")
+        !target.closest("input")
       ) {
         const now = Date.now();
         if (now - lastClickTimeRef.current < 400) {
@@ -329,25 +134,6 @@ const HeaderBar: React.FC<{
       className="header-bar"
       onMouseDown={handleStartDrag}
     >
-      <div className="header-left">
-        <MenuBar
-          onNewFile={newFile}
-          onOpenFile={openFile}
-          onSaveFile={saveFile}
-          onSaveFileAs={saveFileAs}
-          onExportPDF={onOpenExportModal}
-          onOpenStructureModal={onOpenStructureModal}
-          onOpenThemeModal={onOpenThemeModal}
-          onOpenSettingsModal={onOpenSettingsModal}
-          onOpenPalette={() => setIsPaletteOpen(!isPaletteOpen)}
-          onOpenRevisionModal={onOpenRevisionModal}
-          onOpenTitlePageModal={onOpenTitlePageModal}
-          onOpenHelpModal={onOpenHelpModal}
-          toggleSidebar={toggleSidebar}
-          isSidebarOpen={isSidebarOpen}
-        />
-      </div>
-
       <span className="titlebar-title" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
         ActOne - {activeFileName}
         {isRevisionMode && (
@@ -765,29 +551,13 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
 export interface MainLayoutProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
-  isPaletteOpen: boolean;
-  setIsPaletteOpen: (open: boolean) => void;
   onOpenThemeModal: () => void;
-  onOpenSettingsModal: () => void;
-  onOpenStructureModal: () => void;
-  onOpenExportModal: () => void;
-  onOpenRevisionModal: () => void;
-  onOpenTitlePageModal: () => void;
-  onOpenHelpModal: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
-  isPaletteOpen,
-  setIsPaletteOpen,
   onOpenThemeModal,
-  onOpenSettingsModal,
-  onOpenStructureModal,
-  onOpenExportModal,
-  onOpenRevisionModal,
-  onOpenTitlePageModal,
-  onOpenHelpModal,
 }) => {
   const { isZenMode } = useUI();
  
@@ -807,21 +577,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   return (
     <>
-      {!isZenMode && (
-        <HeaderBar
-          isPaletteOpen={isPaletteOpen}
-          setIsPaletteOpen={setIsPaletteOpen}
-          onOpenThemeModal={onOpenThemeModal}
-          onOpenSettingsModal={onOpenSettingsModal}
-          onOpenStructureModal={onOpenStructureModal}
-          onOpenExportModal={onOpenExportModal}
-          onOpenRevisionModal={onOpenRevisionModal}
-          onOpenTitlePageModal={onOpenTitlePageModal}
-          onOpenHelpModal={onOpenHelpModal}
-          isSidebarOpen={isSidebarOpen}
-          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
-      )}
+      {!isZenMode && <HeaderBar />}
       <Workspace
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
