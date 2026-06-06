@@ -1,5 +1,7 @@
 use std::io::Write;
+use std::collections::HashMap;
 
+use cosmic_text::FontSystem;
 use krilla::{
     Document,
     destination::XyzDestination,
@@ -15,12 +17,10 @@ use crate::pdf::{
     screenplay::{Element, Span},
 };
 
-use super::layout::{PaperSize, FontFamily, LayoutInfo, Margin, get_margins, FONT_SIZE};
-use super::elements::{Alignment, DrawContext, write_dialogue, write_element, write_element_custom_top_margin, glyph_span, break_points};
+use super::layout::{PaperSize, CourierFonts, NotoFonts, AllFonts, LayoutInfo, Margin, get_margins, LINE_HEIGHT};
+use super::elements::{Alignment, DrawContext, write_dialogue, write_element, measure_element_height};
 use super::title_page::write_titlepage;
 
-/// Courier Prime font files compiled directly into the application for screenplay rendering.
-/// Variants: Regular, Bold, Italic, BoldItalic, and their Sans equivalents.
 const FONTS: [&[u8]; 8] = [
     include_bytes!("fonts/CourierPrime-Regular.ttf"),
     include_bytes!("fonts/CourierPrime-Bold.ttf"),
@@ -30,6 +30,25 @@ const FONTS: [&[u8]; 8] = [
     include_bytes!("fonts/CourierPrimeSans-Bold.ttf"),
     include_bytes!("fonts/CourierPrimeSans-Italic.ttf"),
     include_bytes!("fonts/CourierPrimeSans-BoldItalic.ttf"),
+];
+
+const NOTO_FONTS: [&[u8]; 16] = [
+    include_bytes!("fonts/MuktaMalar-Regular.ttf"),
+    include_bytes!("fonts/MuktaMalar-Bold.ttf"),
+    include_bytes!("fonts/Mukta-Regular.ttf"),
+    include_bytes!("fonts/Mukta-Bold.ttf"),
+    include_bytes!("fonts/NotoSansTelugu-Regular.ttf"),
+    include_bytes!("fonts/NotoSansTelugu-Bold.ttf"),
+    include_bytes!("fonts/NotoSansMalayalam-Regular.ttf"),
+    include_bytes!("fonts/NotoSansMalayalam-Bold.ttf"),
+    include_bytes!("fonts/NotoSansKannada-Regular.ttf"),
+    include_bytes!("fonts/NotoSansKannada-Bold.ttf"),
+    include_bytes!("fonts/NotoSansBengali-Regular.ttf"),
+    include_bytes!("fonts/NotoSansBengali-Bold.ttf"),
+    include_bytes!("fonts/MuktaVaani-Regular.ttf"),
+    include_bytes!("fonts/MuktaVaani-Bold.ttf"),
+    include_bytes!("fonts/MuktaMahee-Regular.ttf"),
+    include_bytes!("fonts/MuktaMahee-Bold.ttf"),
 ];
 
 pub struct PdfExporter {
@@ -58,6 +77,17 @@ impl Default for PdfExporter {
     }
 }
 
+fn build_font_system() -> FontSystem {
+    let mut db = cosmic_text::fontdb::Database::new();
+    for data in FONTS {
+        db.load_font_data(data.to_vec());
+    }
+    for data in NOTO_FONTS {
+        db.load_font_data(data.to_vec());
+    }
+    FontSystem::new_with_locale_and_db("en-US".to_string(), db)
+}
+
 impl Exporter for PdfExporter {
     fn file_extension(&self) -> &'static str {
         "pdf"
@@ -65,8 +95,9 @@ impl Exporter for PdfExporter {
 
     fn export(&self, screenplay: &Screenplay, writer: &mut dyn Write) -> std::io::Result<()> {
         let mut document = Document::new();
+        let mut font_system = build_font_system();
 
-        let fonts = FontFamily {
+        let courier = CourierFonts {
             regular: Font::new(FONTS[0].into(), 0)
                 .ok_or_else(|| std::io::Error::other("failed to load regular font"))?,
             bold: Font::new(FONTS[1].into(), 0)
@@ -85,15 +116,52 @@ impl Exporter for PdfExporter {
                 .ok_or_else(|| std::io::Error::other("failed to load sans bold-italic font"))?,
         };
 
+        let noto = NotoFonts {
+            tamil_regular: Font::new(NOTO_FONTS[0].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load tamil regular font"))?,
+            tamil_bold: Font::new(NOTO_FONTS[1].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load tamil bold font"))?,
+            devanagari_regular: Font::new(NOTO_FONTS[2].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load devanagari regular font"))?,
+            devanagari_bold: Font::new(NOTO_FONTS[3].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load devanagari bold font"))?,
+            telugu_regular: Font::new(NOTO_FONTS[4].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load telugu regular font"))?,
+            telugu_bold: Font::new(NOTO_FONTS[5].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load telugu bold font"))?,
+            malayalam_regular: Font::new(NOTO_FONTS[6].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load malayalam regular font"))?,
+            malayalam_bold: Font::new(NOTO_FONTS[7].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load malayalam bold font"))?,
+            kannada_regular: Font::new(NOTO_FONTS[8].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load kannada regular font"))?,
+            kannada_bold: Font::new(NOTO_FONTS[9].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load kannada bold font"))?,
+            bengali_regular: Font::new(NOTO_FONTS[10].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load bengali regular font"))?,
+            bengali_bold: Font::new(NOTO_FONTS[11].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load bengali bold font"))?,
+            gujarati_regular: Font::new(NOTO_FONTS[12].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load gujarati regular font"))?,
+            gujarati_bold: Font::new(NOTO_FONTS[13].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load gujarati bold font"))?,
+            gurmukhi_regular: Font::new(NOTO_FONTS[14].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load gurmukhi regular font"))?,
+            gurmukhi_bold: Font::new(NOTO_FONTS[15].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load gurmukhi bold font"))?,
+        };
+
+        let all_fonts = AllFonts { courier, noto };
+
         let layout_info = LayoutInfo {
             size: &self.paper_size,
-            fonts: &fonts,
+            fonts: &all_fonts,
             export_font: &self.export_font,
             revised_lines: &self.revised_lines,
             margins: get_margins(&self.paper_size),
         };
 
-        self.generate_pdf(&mut document, &layout_info, screenplay)?;
+        self.generate_pdf(&mut document, &layout_info, screenplay, &mut font_system)?;
 
         let pdf = document
             .finish()
@@ -108,47 +176,35 @@ impl PdfExporter {
         document: &mut Document,
         layout_info: &LayoutInfo,
         screenplay: &Screenplay,
+        font_system: &mut FontSystem,
     ) -> std::io::Result<()> {
         let mut element_iter = screenplay.elements.iter().peekable();
         let mut page_idx = 0;
 
         let top = layout_info.size.top_margin();
-        let bottom = layout_info.size.bottom_margin();
-        let max_lines_per_page = (layout_info.size.y - (top + bottom)) / FONT_SIZE - 1;
-        // If an element does not fit within a page this will be Some(index), where index is pointing
-        // to the breakpoint in the breakpoint list which should be on the start of the next page.
-        let mut residual_breakpoint_idx = None;
-        let mut residual_dialogue_idx = None;
+        let max_y = layout_info.size.y - layout_info.size.bottom_margin();
 
+        let mut residual_dialogue_idx = None;
         let mut residual_dual_dialogue_idx = (None, None);
-        let mut residual_dual_breakpoint_idx = (None, None);
 
         let mut outline = Outline::new();
+        let mut font_cache = HashMap::new();
 
         let has_title_page = self.title_page && screenplay.titlepage.is_some();
         if let (true, Some(t)) = (has_title_page, &screenplay.titlepage) {
             page_idx += 1;
-            write_titlepage(t, layout_info, max_lines_per_page, document)?;
+            write_titlepage(t, layout_info, document, font_system, &mut font_cache)?;
         }
 
-        // Page loop, creates a new page and writes everything it can on it.
         while element_iter.peek().is_some() {
             let mut page = document.start_page_with(
                 PageSettings::from_wh(layout_info.size.x as f32, layout_info.size.y as f32)
                     .ok_or_else(|| std::io::Error::other("invalid page dimensions"))?,
             );
             let mut surface = page.surface();
-            let mut line_idx = 0;
+            let mut y_pos = top;
 
             if (has_title_page && page_idx > 1) || (!has_title_page && page_idx > 0) {
-                let mut p_line_idx = 0;
-                let mut ctx = DrawContext {
-                    layout_info,
-                    surface: &mut surface,
-                    line_index: &mut p_line_idx,
-                    max_lines: 36,
-                    is_revised: false,
-                };
                 let page_num_text: RichString = format!(
                     "{}.",
                     if has_title_page {
@@ -158,22 +214,22 @@ impl PdfExporter {
                     }
                 )
                 .into();
-                let residual_page_number = write_element_custom_top_margin(
-                    &mut ctx,
+                let mut pn_y = top - LINE_HEIGHT;
+                let mut pn_ctx = DrawContext {
+                    layout_info,
+                    surface: &mut surface,
+                    y_position: &mut pn_y,
+                    max_y: top,
+                    is_revised: false,
+                    font_system,
+                    font_cache: &mut font_cache,
+                };
+                write_element(
+                    &mut pn_ctx,
                     &page_num_text,
                     &layout_info.margins.page_number,
-                    &mut 0,
                     Alignment::RightToLeft,
-                    36,
-                    36,
                 )?;
-
-                if residual_page_number.is_some() {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        "Page number exceeds available space.",
-                    ));
-                }
             }
 
             while let Some(Span {
@@ -182,19 +238,9 @@ impl PdfExporter {
                 inner: element,
             }) = element_iter.peek()
             {
-                if line_idx >= max_lines_per_page {
+                if y_pos >= max_y {
                     break;
                 }
-
-                let mut breakpoint_idx = match residual_breakpoint_idx {
-                    Some(i) => {
-                        if !matches!(element, Element::Dialogue(_)) {
-                            residual_breakpoint_idx = std::option::Option::None;
-                        }
-                        i
-                    }
-                    std::option::Option::None => 0,
-                };
 
                 let is_revised = match element_iter.peek() {
                     Some(span) => (span.start_line..=span.end_line).any(|i| {
@@ -210,121 +256,104 @@ impl PdfExporter {
                 let mut ctx = DrawContext {
                     layout_info,
                     surface: &mut surface,
-                    line_index: &mut line_idx,
-                    max_lines: max_lines_per_page,
+                    y_position: &mut y_pos,
+                    max_y,
                     is_revised,
+                    font_system,
+                    font_cache: &mut font_cache,
                 };
-
-                macro_rules! write_element {
-                    ($content:expr, $margin:expr, $text_direction:expr) => {
-                        residual_breakpoint_idx = write_element(
-                            &mut ctx,
-                            $content,
-                            $margin,
-                            &mut breakpoint_idx,
-                            $text_direction,
-                        )?
-                    };
-                }
 
                 match &element {
                     Element::Heading { slug, number } => {
-                        let heading_lines = {
-                            let span = glyph_span(
-                                layout_info.size,
-                                layout_info.margins.heading.left,
-                                layout_info.margins.heading.right,
-                            );
-                            break_points(slug, span).len() + 1
-                        };
-                        let lines_remaining = max_lines_per_page.saturating_sub(*ctx.line_index);
-                        if lines_remaining < heading_lines + 3 {
+                        let heading_height = measure_element_height(
+                            ctx.font_system,
+                            slug,
+                            &layout_info.margins.heading,
+                            layout_info.size,
+                            layout_info.export_font,
+                        );
+                        let remaining = max_y - *ctx.y_position;
+                        if remaining < heading_height + 3.0 * LINE_HEIGHT {
                             break;
                         }
 
                         if number.is_some() && self.mirror_scene_numbers != MirrorOption::Off {
-                            let mut initial_line_index = *ctx.line_index;
-                            let mut ctx_number = DrawContext {
-                                layout_info,
-                                surface: ctx.surface,
-                                line_index: &mut initial_line_index,
-                                max_lines: max_lines_per_page,
-                                is_revised: ctx.is_revised,
-                            };
-
+                            let rich_number: RichString = number.as_ref().unwrap().into();
                             let left_number_margin = Margin {
                                 left: 54.0,
-                                right: layout_info.size.x as f32
+                                right: layout_info.size.x
                                     - layout_info.margins.heading.left
                                     + 18.0,
                             };
                             let right_number_margin = Margin {
-                                left: layout_info.size.x as f32
+                                left: layout_info.size.x
                                     - layout_info.size.page_right_margin()
                                     - 54.0,
                                 right: layout_info.size.page_right_margin(),
                             };
 
-                            let rich_number = &number.as_ref().unwrap().into();
-
+                            let saved_y = *ctx.y_position;
                             write_element(
-                                &mut ctx_number,
-                                rich_number,
+                                &mut ctx,
+                                &rich_number,
                                 &left_number_margin,
-                                &mut 0,
                                 Alignment::LeftToRight,
                             )?;
+                            *ctx.y_position = saved_y;
 
                             if self.mirror_scene_numbers == MirrorOption::Mirror {
-                                let mut initial_line_index_right = *ctx.line_index;
-                                let mut ctx_number_right = DrawContext {
-                                    layout_info,
-                                    surface: ctx.surface,
-                                    line_index: &mut initial_line_index_right,
-                                    max_lines: max_lines_per_page,
-                                    is_revised: ctx.is_revised,
-                                };
                                 write_element(
-                                    &mut ctx_number_right,
-                                    rich_number,
+                                    &mut ctx,
+                                    &rich_number,
                                     &right_number_margin,
-                                    &mut 0,
                                     Alignment::RightToLeft,
                                 )?;
+                                *ctx.y_position = saved_y;
                             }
                         }
+
                         outline.push_child(OutlineNode::new(
-                            slug.to_plain_string(),
+                            slug.to_plain_string().to_uppercase(),
                             XyzDestination::new(
                                 page_idx,
                                 Point {
                                     x: layout_info.margins.heading.left,
-                                    y: (top + ((*ctx.line_index) * FONT_SIZE) - FONT_SIZE) as f32,
+                                    y: *ctx.y_position,
                                 },
                             ),
                         ));
+
                         let mut slug_to_print = slug.clone();
+                        slug_to_print.make_uppercase();
                         if self.bold_scene_headings {
                             for element in &mut slug_to_print.elements {
                                 element.set_bold();
                             }
                         }
 
-                        write_element!(
+                        write_element(
+                            &mut ctx,
                             &slug_to_print,
                             &layout_info.margins.heading,
-                            Alignment::LeftToRight
-                        );
+                            Alignment::LeftToRight,
+                        )?;
                     }
                     Element::Action(s) => {
-                        write_element!(s, &layout_info.margins.action, Alignment::LeftToRight);
+                        let overflowed = write_element(
+                            &mut ctx,
+                            s,
+                            &layout_info.margins.action,
+                            Alignment::LeftToRight,
+                        )?;
+                        if overflowed {
+                            break;
+                        }
                     }
                     Element::Dialogue(dialogue) => {
                         let premature_exit = write_dialogue(
                             &mut ctx,
                             dialogue,
                             &mut residual_dialogue_idx,
-                            &mut residual_breakpoint_idx,
                             &layout_info.margins.dialogue,
                         )?;
                         if residual_dialogue_idx.is_some() || premature_exit {
@@ -332,8 +361,9 @@ impl PdfExporter {
                         }
                     }
                     Element::DualDialogue(dialogue0, dialogue1) => {
-                        let mut initial_line_index = *ctx.line_index;
+                        let saved_y = *ctx.y_position;
                         let mut premature_exit = false;
+
                         if (residual_dual_dialogue_idx.0.is_none()
                             && residual_dual_dialogue_idx.1.is_none())
                             || residual_dual_dialogue_idx.0.is_some()
@@ -343,31 +373,26 @@ impl PdfExporter {
                                     &mut ctx,
                                     dialogue0,
                                     &mut residual_dual_dialogue_idx.0,
-                                    &mut residual_dual_breakpoint_idx.0,
                                     &layout_info.margins.dual_dialogue.left,
                                 )?;
                         }
+                        let left_end_y = *ctx.y_position;
+
                         if (residual_dual_dialogue_idx.1.is_none()
                             && residual_dual_dialogue_idx.0.is_none())
                             || residual_dual_dialogue_idx.1.is_some()
                         {
-                            let mut ctx_dual = DrawContext {
-                                layout_info,
-                                surface: ctx.surface,
-                                line_index: &mut initial_line_index,
-                                max_lines: max_lines_per_page,
-                                is_revised: ctx.is_revised,
-                            };
+                            *ctx.y_position = saved_y;
                             premature_exit = premature_exit
                                 || write_dialogue(
-                                    &mut ctx_dual,
+                                    &mut ctx,
                                     dialogue1,
                                     &mut residual_dual_dialogue_idx.1,
-                                    &mut residual_dual_breakpoint_idx.1,
                                     &layout_info.margins.dual_dialogue.right,
                                 )?;
-                            *ctx.line_index = (*ctx.line_index).max(initial_line_index);
                         }
+                        *ctx.y_position = (*ctx.y_position).max(left_end_y);
+
                         if residual_dual_dialogue_idx.0.is_some()
                             || residual_dual_dialogue_idx.1.is_some()
                             || premature_exit
@@ -380,21 +405,37 @@ impl PdfExporter {
                         for element in &mut s_styled.elements {
                             element.set_italic();
                         }
-                        write_element!(
+                        let overflowed = write_element(
+                            &mut ctx,
                             &s_styled,
                             &layout_info.margins.lyrics,
-                            Alignment::Centered
-                        );
+                            Alignment::Centered,
+                        )?;
+                        if overflowed {
+                            break;
+                        }
                     }
                     Element::Transition(s) => {
-                        write_element!(
+                        let overflowed = write_element(
+                            &mut ctx,
                             s,
                             &layout_info.margins.transition,
-                            Alignment::RightToLeft
-                        );
+                            Alignment::RightToLeft,
+                        )?;
+                        if overflowed {
+                            break;
+                        }
                     }
                     Element::CenteredText(s) => {
-                        write_element!(s, &layout_info.margins.centered, Alignment::Centered);
+                        let overflowed = write_element(
+                            &mut ctx,
+                            s,
+                            &layout_info.margins.centered,
+                            Alignment::Centered,
+                        )?;
+                        if overflowed {
+                            break;
+                        }
                     }
                     Element::Shot(s) => {
                         let mut s_styled = s.clone();
@@ -404,11 +445,15 @@ impl PdfExporter {
                                 element.set_bold();
                             }
                         }
-                        write_element!(
+                        let overflowed = write_element(
+                            &mut ctx,
                             &s_styled,
                             &layout_info.margins.action,
-                            Alignment::LeftToRight
-                        );
+                            Alignment::LeftToRight,
+                        )?;
+                        if overflowed {
+                            break;
+                        }
                     }
                     Element::Synopsis(s) => {
                         if self.synopses {
@@ -419,11 +464,15 @@ impl PdfExporter {
                                     element.set_sans();
                                 }
                             }
-                            write_element!(
+                            let overflowed = write_element(
+                                &mut ctx,
                                 &s_styled,
                                 &layout_info.margins.synopsis,
-                                Alignment::LeftToRight
-                            );
+                                Alignment::LeftToRight,
+                            )?;
+                            if overflowed {
+                                break;
+                            }
                         }
                     }
                     Element::Section(s) => {
@@ -436,11 +485,15 @@ impl PdfExporter {
                                     element.set_sans();
                                 }
                             }
-                            write_element!(
+                            let overflowed = write_element(
+                                &mut ctx,
                                 &s_styled,
                                 &layout_info.margins.action,
-                                Alignment::LeftToRight
-                            );
+                                Alignment::LeftToRight,
+                            )?;
+                            if overflowed {
+                                break;
+                            }
                         }
                     }
                     Element::PageBreak => {
@@ -449,9 +502,9 @@ impl PdfExporter {
                     }
                 }
 
-                line_idx += 1;
+                y_pos += LINE_HEIGHT;
 
-                if residual_breakpoint_idx.is_some() {
+                if residual_dialogue_idx.is_some() {
                     continue;
                 }
 
@@ -467,3 +520,31 @@ impl PdfExporter {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_indic_pdf_export() {
+        let fountain_text = r#"
+.SCENE 1 (TAMIL)
+
+CHARACTER
+தமிழ் தட்டச்சு சோதனை.
+
+CHARACTER (CONT'D)
+This is a test of parenthetical and normal text:
+(parenthetical text here)
+"#;
+        let screenplay = crate::pdf::parse(fountain_text);
+        let exporter = PdfExporter {
+            title_page: false,
+            ..Default::default()
+        };
+        let mut out = Vec::new();
+        let res = exporter.export(&screenplay, &mut out);
+        assert!(res.is_ok());
+    }
+}
+

@@ -99,8 +99,10 @@ fn export_pdf(
     };
     let export_font = if font_family == "courier-prime-sans" {
         "courier_prime_sans".to_string()
-    } else {
+    } else if font_family == "courier-prime" {
         "courier_prime".to_string()
+    } else {
+        font_family
     };
     let mirror = match mirror_scene_numbers.as_str() {
         "left_side" => pdf::MirrorOption::LeftSide,
@@ -140,6 +142,19 @@ fn read_file_content(path: String) -> Result<String, String> {
     fs::read_to_string(path).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn get_system_fonts() -> Result<Vec<String>, String> {
+    use font_kit::source::SystemSource;
+    let source = SystemSource::new();
+    match source.all_families() {
+        Ok(mut families) => {
+            families.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+            Ok(families)
+        }
+        Err(e) => Err(e.to_string()),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -155,7 +170,8 @@ pub fn run() {
             read_file_binary,
             save_file_binary,
             structures::get_structures,
-            structures::get_structure_template
+            structures::get_structure_template,
+            get_system_fonts
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

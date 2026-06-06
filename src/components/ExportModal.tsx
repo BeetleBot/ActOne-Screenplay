@@ -89,6 +89,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   const [exportSynopses, setExportSynopses] = useState(false);
   const [exportTitlePage, setExportTitlePage] = useState(true);
 
+  const [selectedFont, setSelectedFont] = useState<string>(fontFamily);
+
   const handleClose = () => {
     onClose();
   };
@@ -104,7 +106,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         await invoke("export_pdf", {
           fountainText: rawText,
           paperSize,
-          fontFamily,
+          fontFamily: selectedFont,
           boldSceneHeadings,
           mirrorSceneNumbers,
           exportSections,
@@ -231,7 +233,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 </div>
                 <div className="export-modal-info-row">
                   <span className="export-modal-info-label">Font</span>
-                  <span className="export-modal-info-value">{fontFamily === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}</span>
+                  <span className="export-modal-info-value">
+                    {selectedFont === "courier-prime"
+                      ? "Courier Prime"
+                      : selectedFont === "courier-prime-sans"
+                      ? "Courier Prime Sans"
+                      : selectedFont}
+                  </span>
                 </div>
               </>
             )}
@@ -279,6 +287,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                     <option value="off">Disabled</option>
                     <option value="left_side">Left Side Only</option>
                     <option value="mirror">Mirror on Both Sides</option>
+                  </select>
+                </div>
+
+                <div className="export-modal-option-row">
+                  <div className="export-modal-option-label-wrapper">
+                    <span className="export-modal-option-label">Export Font</span>
+                    <span className="export-modal-option-desc">Font used for PDF rendering</span>
+                  </div>
+                  <select
+                    className="export-modal-select"
+                    value={selectedFont}
+                    onChange={(e) => setSelectedFont(e.target.value)}
+                  >
+                    <option value="courier-prime">Courier Prime</option>
+                    <option value="courier-prime-sans">Courier Prime Sans</option>
                   </select>
                 </div>
               </>

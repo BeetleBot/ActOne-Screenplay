@@ -1,26 +1,21 @@
 use krilla::text::Font;
 
-pub const FONT_SIZE: usize = 12;
-pub const FONT_WIDTH: f32 = 7.2;
-
-pub struct FontFamily {
-    pub regular: Font,
-    pub bold: Font,
-    pub italic: Font,
-    pub bold_italic: Font,
-    pub sans_regular: Font,
-    pub sans_bold: Font,
-    pub sans_italic: Font,
-    pub sans_bold_italic: Font,
-}
+pub const FONT_SIZE: f32 = 12.0;
+pub const LINE_HEIGHT: f32 = 12.0;
 
 pub struct PaperSize {
-    pub x: usize,
-    pub y: usize,
+    pub x: f32,
+    pub y: f32,
 }
 
-pub const A4: PaperSize = PaperSize { x: 595, y: 842 };
-pub const LETTER: PaperSize = PaperSize { x: 612, y: 792 };
+pub const A4: PaperSize = PaperSize {
+    x: 595.0,
+    y: 842.0,
+};
+pub const LETTER: PaperSize = PaperSize {
+    x: 612.0,
+    y: 792.0,
+};
 
 impl Default for PaperSize {
     fn default() -> Self {
@@ -29,12 +24,12 @@ impl Default for PaperSize {
 }
 
 impl PaperSize {
-    pub fn top_margin(&self) -> usize {
-        72
+    pub fn top_margin(&self) -> f32 {
+        72.0
     }
 
-    pub fn bottom_margin(&self) -> usize {
-        72
+    pub fn bottom_margin(&self) -> f32 {
+        72.0
     }
 
     pub fn page_left_margin(&self) -> f32 {
@@ -42,13 +37,23 @@ impl PaperSize {
     }
 
     pub fn page_right_margin(&self) -> f32 {
-        self.x as f32 - 540.0
+        self.x - 540.0
+    }
+
+    pub fn printable_height(&self) -> f32 {
+        self.y - self.top_margin() - self.bottom_margin()
     }
 }
 
 pub struct Margin {
     pub left: f32,
     pub right: f32,
+}
+
+impl Margin {
+    pub fn content_width(&self, page: &PaperSize) -> f32 {
+        page.x - self.left - self.right
+    }
 }
 
 pub struct DialogueMargins {
@@ -77,7 +82,7 @@ pub struct Margins {
 pub fn get_margins(size: &PaperSize) -> Margins {
     let page_left = size.page_left_margin();
     let page_right = size.page_right_margin();
-    let page_w = size.x as f32;
+    let page_w = size.x;
     let half_page = page_w / 2.0;
 
     Margins {
@@ -156,9 +161,44 @@ pub fn get_margins(size: &PaperSize) -> Margins {
     }
 }
 
+pub struct CourierFonts {
+    pub regular: Font,
+    pub bold: Font,
+    pub italic: Font,
+    pub bold_italic: Font,
+    pub sans_regular: Font,
+    pub sans_bold: Font,
+    pub sans_italic: Font,
+    pub sans_bold_italic: Font,
+}
+
+pub struct NotoFonts {
+    pub tamil_regular: Font,
+    pub tamil_bold: Font,
+    pub devanagari_regular: Font,
+    pub devanagari_bold: Font,
+    pub telugu_regular: Font,
+    pub telugu_bold: Font,
+    pub malayalam_regular: Font,
+    pub malayalam_bold: Font,
+    pub kannada_regular: Font,
+    pub kannada_bold: Font,
+    pub bengali_regular: Font,
+    pub bengali_bold: Font,
+    pub gujarati_regular: Font,
+    pub gujarati_bold: Font,
+    pub gurmukhi_regular: Font,
+    pub gurmukhi_bold: Font,
+}
+
+pub struct AllFonts {
+    pub courier: CourierFonts,
+    pub noto: NotoFonts,
+}
+
 pub struct LayoutInfo<'a> {
     pub size: &'a PaperSize,
-    pub fonts: &'a FontFamily,
+    pub fonts: &'a AllFonts,
     pub export_font: &'a str,
     pub revised_lines: &'a [bool],
     pub margins: Margins,
