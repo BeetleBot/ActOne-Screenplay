@@ -1,0 +1,103 @@
+name: MSIX Distribution
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - release
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-msix:
+    name: Build MSIX Package
+    runs-on: windows-latest
+    env:
+      RUSTFLAGS: -C target-feature=+crt-static
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release --manifest-path src-tauri/Cargo.toml
+
+      - name: Extract version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $ver = "${{ github.ref_name }}" -replace '^v',''
+          } else {
+            $ver = (Select-String -Path "src-tauri/Cargo.toml" -Pattern '^version = "([^"]+)"').Matches.Groups[1].Value
+          }
+          echo "SEMVER=$ver" >> $env:GITHUB_OUTPUT
+          echo "MSIX_VER=$ver.0" >> $env:GITHUB_OUTPUT
+
+      - name: Stamp version into manifest
+        shell: pwsh
+        run: |
+          $xml = [xml](Get-Content packaging/msix/AppxManifest.xml)
+          $xml.Package.Identity.Version = "${{ steps.version.outputs.MSIX_VER }}"
+          $xml.Save("packaging/msix/AppxManifest.xml")
+
+      - name: Prepare package layout
+        shell: pwsh
+        run: |
+          $layout = "target/msix/layout"
+          New-Item -ItemType Directory -Path "$layout/Assets" -Force | Out-Null
+
+          Copy-Item src-tauri/target/release/actone.exe $layout/
+          Copy-Item packaging/msix/AppxManifest.xml $layout/
+
+          $sizes = @{
+            "StoreLogo" = "50x50"
+            "Square44x44Logo" = "44x44"
+            "Square150x150Logo" = "150x150"
+            "Wide310x150Logo" = "310x150"
+            "LargeSquareLogo" = "310x310"
+          }
+
+          foreach ($entry in $sizes.GetEnumerator()) {
+            magick src-tauri/icons/icon.png `
+              -resize $entry.Value `
+              -gravity center `
+              -background "#1a1b26" `
+              -extent $entry.Value `
+              "$layout/Assets/$($entry.Key).png"
+          }
+
+      - name: Create MSIX
+        shell: pwsh
+        run: |
+          $sdkDir = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\10.*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $makeappx = Join-Path $sdkDir.FullName "x64\MakeAppx.exe"
+          $filename = if ("${{ github.ref_type }}" -eq "tag") { "ActOne-${{ steps.version.outputs.SEMVER }}.msix" } else { "ActOne-TEST-BUILD.msix" }
+          & $makeappx pack /d target/msix/layout /p "target/msix/$filename" /o
+          echo "FILENAME=$filename" >> $env:GITHUB_ENV
+
+      - name: Upload Artifact (Manual/Test)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ActOne-MSIX-${{ steps.version.outputs.SEMVER }}
+          path: target/msix/${{ env.FILENAME }}
+          retention-days: 5
+
+      - name: Upload to Release (Tag)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/msix/${{ env.FILENAME }}
+          token: ${{ secrets.GITHUB_TOKEN }}
