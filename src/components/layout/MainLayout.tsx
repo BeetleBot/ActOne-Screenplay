@@ -25,6 +25,14 @@ import {
   Plus,
 } from "lucide-react";
 
+const openUrl = (url: string) => {
+  try {
+    import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url));
+  } catch {
+    window.open(url, "_blank");
+  }
+};
+
 const getTauriWindow = () => {
   try {
     return getCurrentWindow();
@@ -45,6 +53,7 @@ const MenuBar: React.FC<{
   onOpenPalette: () => void;
   onOpenRevisionModal: () => void;
   onOpenTitlePageModal: () => void;
+  onOpenHelpModal: () => void;
   toggleSidebar: () => void;
   isSidebarOpen: boolean;
 }> = ({
@@ -59,6 +68,7 @@ const MenuBar: React.FC<{
   onOpenPalette,
   onOpenRevisionModal,
   onOpenTitlePageModal,
+  onOpenHelpModal,
   toggleSidebar,
   isSidebarOpen,
 }) => {
@@ -148,10 +158,9 @@ const MenuBar: React.FC<{
       { label: "Clear Scene Numbers", action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); } },
     ],
     Help: [
-      { label: "Keyboard Shortcuts", action: () => {}, disabled: true },
-      { label: "Fountain Syntax Guide", action: () => {}, disabled: true, dividerAfter: true },
-      { label: "Report a Bug", action: () => {}, disabled: true },
-      { label: "About ActOne", action: () => {}, disabled: true },
+      { label: "Help Guide", action: onOpenHelpModal, dividerAfter: true },
+      { label: "Fountain Syntax Guide", action: () => openUrl("https://fountain.io") },
+      { label: "Report a Bug", action: () => openUrl("https://github.com/BeetleBot/ActOne/issues") },
     ],
   };
 
@@ -200,6 +209,7 @@ const HeaderBar: React.FC<{
   onOpenExportModal: () => void;
   onOpenRevisionModal: () => void;
   onOpenTitlePageModal: () => void;
+  onOpenHelpModal: () => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }> = ({
@@ -211,6 +221,7 @@ const HeaderBar: React.FC<{
   onOpenExportModal,
   onOpenRevisionModal,
   onOpenTitlePageModal,
+  onOpenHelpModal,
   isSidebarOpen,
   toggleSidebar,
 }) => {
@@ -331,6 +342,7 @@ const HeaderBar: React.FC<{
           onOpenPalette={() => setIsPaletteOpen(!isPaletteOpen)}
           onOpenRevisionModal={onOpenRevisionModal}
           onOpenTitlePageModal={onOpenTitlePageModal}
+          onOpenHelpModal={onOpenHelpModal}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
@@ -438,6 +450,7 @@ const EditorTabs: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenThemeMod
               key={file.id}
               className={`header-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
               onClick={() => selectFile(file.id)}
+              onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); closeFile(file.id); } }}
             >
               <span className="tab-name">{display}</span>
               <button
@@ -760,6 +773,7 @@ export interface MainLayoutProps {
   onOpenExportModal: () => void;
   onOpenRevisionModal: () => void;
   onOpenTitlePageModal: () => void;
+  onOpenHelpModal: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -773,6 +787,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onOpenExportModal,
   onOpenRevisionModal,
   onOpenTitlePageModal,
+  onOpenHelpModal,
 }) => {
   const { isZenMode } = useUI();
  
@@ -802,6 +817,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onOpenExportModal={onOpenExportModal}
           onOpenRevisionModal={onOpenRevisionModal}
           onOpenTitlePageModal={onOpenTitlePageModal}
+          onOpenHelpModal={onOpenHelpModal}
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />

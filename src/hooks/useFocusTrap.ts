@@ -13,7 +13,7 @@ const FOCUSABLE_SELECTOR = [
   '[role="radio"]',
 ].join(", ");
 
-export function useFocusTrap(isActive: boolean, onEscape?: () => void) {
+export function useFocusTrap(isActive: boolean, onEscape?: () => void, initialFocusSelector?: string) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -30,7 +30,8 @@ export function useFocusTrap(isActive: boolean, onEscape?: () => void) {
         cmContent.setAttribute("contenteditable", "false");
       }
 
-      const first = containerRef.current.querySelector(FOCUSABLE_SELECTOR) as HTMLElement;
+      const selector = initialFocusSelector || FOCUSABLE_SELECTOR;
+      const first = containerRef.current.querySelector(selector) as HTMLElement;
       if (first) {
         first.focus();
       } else {

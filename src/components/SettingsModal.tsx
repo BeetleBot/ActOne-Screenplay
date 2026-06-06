@@ -193,7 +193,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   } = useAppContext();
 
   const [activeTab, setActiveTab] = useState<"general" | "editor">("general");
-  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
+  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose, '[role="tab"]');
 
   const themesList = [
     { value: "light", label: "Classic White" },
@@ -317,10 +317,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
                 <input 
                   type="checkbox" 
+                  className="native-checkbox"
                   checked={showTimeline}
                   onChange={(e) => setShowTimeline(e.target.checked)}
                   tabIndex={0}
-                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
 
@@ -331,10 +331,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
                 <input 
                   type="checkbox" 
+                  className="native-checkbox"
                   checked={autoSaveEnabled}
                   onChange={(e) => setAutoSaveEnabled(e.target.checked)}
                   tabIndex={0}
-                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
 
@@ -376,20 +376,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
                 <input
                   type="range"
+                  className="native-range"
                   min="50"
                   max="200"
                   step="10"
                   value={zoomLevel}
                   onChange={(e) => setZoomLevel(parseInt(e.target.value, 10))}
                   tabIndex={0}
-                  style={{
-                    width: "100%",
-                    accentColor: "var(--accent-color)",
-                    cursor: "pointer",
-                    height: "6px",
-                    borderRadius: "4px",
-                    background: "var(--border-color)"
-                  }}
                 />
               </div>
 
@@ -400,10 +393,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
                 <input 
                   type="checkbox" 
+                  className="native-checkbox"
                   checked={typewriterMode}
                   onChange={(e) => setTypewriterMode(e.target.checked)}
                   tabIndex={0}
-                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
 
@@ -414,10 +407,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
                 <input 
                   type="checkbox" 
+                  className="native-checkbox"
                   checked={autocompleteEnabled}
                   onChange={(e) => setAutocompleteEnabled(e.target.checked)}
                   tabIndex={0}
-                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
 
@@ -428,10 +421,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
                 <input 
                   type="checkbox" 
+                  className="native-checkbox"
                   checked={smartQuotesEnabled}
                   onChange={(e) => setSmartQuotesEnabled(e.target.checked)}
                   tabIndex={0}
-                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
 
@@ -442,10 +435,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
                 <input 
                   type="checkbox" 
+                  className="native-checkbox"
                   checked={matchParenthesesEnabled}
                   onChange={(e) => setMatchParenthesesEnabled(e.target.checked)}
                   tabIndex={0}
-                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
 
@@ -456,10 +449,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
                 <input 
                   type="checkbox" 
+                  className="native-checkbox"
                   checked={hideFountainMarkupEnabled}
                   onChange={(e) => setHideFountainMarkupEnabled(e.target.checked)}
                   tabIndex={0}
-                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
                 />
               </div>
 

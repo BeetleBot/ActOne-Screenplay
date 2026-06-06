@@ -117,7 +117,7 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({ onClose 
   const filteredThemes = themes.filter(t => t.isDark === (activeTab === 'dark'));
   const [focusedIdx, setFocusedIdx] = useState(0);
 
-  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
+  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose, '[role="tab"]');
 
   const handleGridKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {

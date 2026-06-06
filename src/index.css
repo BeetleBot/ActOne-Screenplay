@@ -33,6 +33,21 @@
   user-select: none;
 }
 
+::selection {
+  background: rgba(var(--accent-rgb), 0.3);
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 1px;
+}
+
+/* Remove default focus outline for mouse clicks, keep for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 body {
   font-family: var(--font-ui);
   color: var(--text-main);
@@ -371,13 +386,26 @@ body.dark-theme .header-tab.active {
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 200px;
+  min-width: 280px;
   background: var(--bg-sidebar);
   border: 1px solid var(--border-color);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 4px 0;
   z-index: 1000;
-  border-radius: 4px;
+  border-radius: 6px;
+  animation: menuFadeIn 0.1s ease-out;
+  transform-origin: top left;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .menu-item {
@@ -642,6 +670,9 @@ body.dark-theme .header-tab.active {
   outline: none !important;
   background: transparent !important;
   caret-color: var(--editor-cursor) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeSpeed;
+  font-kerning: none;
 }
 
 .cm-editor.cm-focused {
@@ -792,6 +823,7 @@ body.dark-theme .header-tab.active {
   font-style: italic !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
+  opacity: 0.75;
 }
 
 .cm-fountain-pagebreak {
@@ -1737,6 +1769,8 @@ body.dark-theme .timeline-segment-number {
   font-weight: normal;
 }
 
+/* --- Native-style Checkbox --- */
+.native-checkbox,
 .export-modal-checkbox {
   appearance: none;
   width: 16px;
@@ -1749,14 +1783,17 @@ body.dark-theme .timeline-segment-number {
   align-items: center;
   justify-content: center;
   position: relative;
+  flex-shrink: 0;
   transition: background-color 0.15s, border-color 0.15s;
 }
 
+.native-checkbox:checked,
 .export-modal-checkbox:checked {
   background-color: var(--accent-color);
   border-color: var(--accent-color);
 }
 
+.native-checkbox:checked::after,
 .export-modal-checkbox:checked::after {
   content: "";
   width: 8px;
@@ -1765,6 +1802,42 @@ body.dark-theme .timeline-segment-number {
   border-bottom: 2px solid white;
   transform: rotate(-45deg) translate(0px, -1px);
   position: absolute;
+}
+
+.native-checkbox:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* --- Native-style Range Slider --- */
+.native-range {
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--border-color);
+  cursor: pointer;
+  outline: none;
+}
+
+.native-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  border: 2px solid var(--bg-app);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.1s;
+}
+
+.native-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.native-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.3);
 }
 
 /* Modern Premium Select for Modals */

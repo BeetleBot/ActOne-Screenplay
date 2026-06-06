@@ -53,21 +53,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const generateUUID = () => "file-" + Math.random().toString(36).substring(2, 15);
 
-  const initialFileId = useRef(generateUUID());
   const defaultText = "";
 
-  const [files, setFiles] = useState<ScreenplayFile[]>(() => [
-    {
-      id: initialFileId.current,
-      filePath: null,
-      rawText: defaultText,
-      parsedDoc: parseScreenplay(defaultText, paperSize),
-      isSaving: false,
-      isDirty: false,
-      savedText: defaultText,
-    }
-  ]);
-  const [activeFileId, setActiveFileIdState] = useState<string>(initialFileId.current);
+  const [files, setFiles] = useState<ScreenplayFile[]>([]);
+  const [activeFileId, setActiveFileIdState] = useState<string>("");
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>(() => {
     const saved = localStorage.getItem("actone-recent-files");
     return saved ? JSON.parse(saved) : [];
@@ -221,24 +210,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newFiles = files.filter(f => f.id !== id);
 
     if (newFiles.length === 0) {
-      const newId = generateUUID();
-      const newFileObj: ScreenplayFile = {
-        id: newId,
-        filePath: null,
-        rawText: defaultText,
-        parsedDoc: parseScreenplay(defaultText, paperSize),
-        isSaving: false,
-        isDirty: false,
-        savedText: defaultText,
-      };
-      setFiles([newFileObj]);
-      setActiveFileIdState(newId);
-      setRawTextState(defaultText);
+      setFiles([]);
+      setActiveFileIdState("");
+      setRawTextState("");
       setFilePath(null);
-      setParsedDoc(newFileObj.parsedDoc);
-      if (workerRef.current) {
-        workerRef.current.postMessage({ text: defaultText, paperSize, fileId: newId });
-      }
+      setParsedDoc(parseScreenplay("", paperSize));
     } else {
       setFiles(newFiles);
       if (activeFileId === id) {

@@ -275,15 +275,15 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                       Outline Options
                     </div>
                     <label tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowSections(!showSections); }}} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", outline: "none", borderRadius: "4px" }}>
-                      <input type="checkbox" checked={showSections} onChange={e => setShowSections(e.target.checked)} tabIndex={-1} />
+                      <input type="checkbox" className="native-checkbox" checked={showSections} onChange={e => setShowSections(e.target.checked)} tabIndex={-1} />
                       Show Sections
                     </label>
                     <label tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowScenes(!showScenes); }}} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", outline: "none", borderRadius: "4px" }}>
-                      <input type="checkbox" checked={showScenes} onChange={e => setShowScenes(e.target.checked)} tabIndex={-1} />
+                      <input type="checkbox" className="native-checkbox" checked={showScenes} onChange={e => setShowScenes(e.target.checked)} tabIndex={-1} />
                       Show Scenes
                     </label>
                     <label tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowSynopses(!showSynopses); }}} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", outline: "none", borderRadius: "4px" }}>
-                      <input type="checkbox" checked={showSynopses} onChange={e => setShowSynopses(e.target.checked)} tabIndex={-1} />
+                      <input type="checkbox" className="native-checkbox" checked={showSynopses} onChange={e => setShowSynopses(e.target.checked)} tabIndex={-1} />
                       Show Synopses
                     </label>
                     

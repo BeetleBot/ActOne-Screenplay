@@ -14,6 +14,7 @@ interface ShortcutActions {
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
+  closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
   toggleHideMarkup?: () => void;
@@ -55,6 +56,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === "q") {
+        e.preventDefault();
+        actionsRef.current.closeFile();
+        return;
+      }
+
       const ctrl = e.ctrlKey || e.metaKey;
       if (!ctrl) return;
 
