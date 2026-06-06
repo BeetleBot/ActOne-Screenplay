@@ -91,6 +91,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setPaperSize,
     setShowSearchPanel,
     setShowReplacePanel,
+    hideFountainMarkupEnabled,
+    setHideFountainMarkupEnabled,
   } = useUI();
 
 
@@ -167,6 +169,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-tab-characters", name: "Switch Sidebar Tab: Characters", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("characters"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-stats", name: "Switch Sidebar Tab: Statistics", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("stats"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <Settings size={16} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
+    { id: "view-hide-markup", name: hideFountainMarkupEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+H", action: () => { setHideFountainMarkupEnabled(!hideFountainMarkupEnabled); onClose(); } },
     { id: "view-timeline", name: showTimeline ? "Hide Timeline" : "Show Timeline", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
 
     // Format

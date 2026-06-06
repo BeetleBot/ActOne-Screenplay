@@ -40,6 +40,9 @@ body {
   overflow: hidden;
   height: 100vh;
   width: 100vw;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 #root {
@@ -839,6 +842,10 @@ body.dark-theme .header-tab.active {
 }
 
 .cm-fountain-markup-hidden {
+  display: none !important;
+}
+
+.hide-fountain-markup .cm-fountain-syntax {
   display: none !important;
 }
 

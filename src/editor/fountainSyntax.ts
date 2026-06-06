@@ -240,6 +240,16 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       }
     }
 
+    if (trimmed.startsWith("#") && type === LINE_SECTION) {
+      const match = trimmed.match(/^#+/);
+      if (match) {
+        lineDecos.push({ from: line.from + line.text.indexOf("#"), to: line.from + line.text.indexOf("#") + match[0].length, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      }
+    }
+    if (trimmed.startsWith("=") && type === LINE_SYNOPSE) {
+      lineDecos.push({ from: line.from + line.text.indexOf("="), to: line.from + line.text.indexOf("=") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+    }
+
     if (trimmed.startsWith(".") && !trimmed.startsWith("..") && type === LINE_HEADING) {
       lineDecos.push({ from: line.from, to: line.from + line.text.indexOf(".") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
     }

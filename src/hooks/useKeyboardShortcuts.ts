@@ -16,6 +16,7 @@ interface ShortcutActions {
   resetZoom: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
+  toggleHideMarkup?: () => void;
   isDisabled?: boolean;
 }
 
@@ -95,6 +96,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "t" && shift) {
         e.preventDefault();
         actionsRef.current.toggleTimeline?.();
+        return;
+      }
+
+      if (key === "h" && shift) {
+        e.preventDefault();
+        actionsRef.current.toggleHideMarkup?.();
         return;
       }
 

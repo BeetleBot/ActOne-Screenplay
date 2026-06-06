@@ -449,9 +449,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 />
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid var(--border-color)", paddingTop: "12px", opacity: 0.6 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid var(--border-color)", paddingTop: "12px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <span style={{ fontSize: "13px", fontWeight: 600, opacity: 0.9 }}>Hide Fountain Markup <span style={{ fontSize: "10px", fontStyle: "italic", color: "var(--text-muted)" }}>(Yet to be implemented)</span></span>
+                  <span style={{ fontSize: "13px", fontWeight: 600, opacity: 0.9 }}>Hide Fountain Markup</span>
                   <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Hide formatting markup tags inside the editor</span>
                 </div>
                 <input 

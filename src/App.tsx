@@ -23,7 +23,18 @@ function AppInner() {
 
   const { newFile, openFile, saveFile, saveFileAs } = useFile();
   const { editorView } = useEditor();
-  const { showTimeline, setShowTimeline, zoomLevel, setZoomLevel, isZenMode, setIsZenMode, showSearchPanel, setShowSearchPanel } = useUI();
+  const {
+    showTimeline,
+    setShowTimeline,
+    zoomLevel,
+    setZoomLevel,
+    isZenMode,
+    setIsZenMode,
+    showSearchPanel,
+    setShowSearchPanel,
+    hideFountainMarkupEnabled,
+    setHideFountainMarkupEnabled
+  } = useUI();
 
   const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal || showRevisionModal || showTitlePageModal;
 
@@ -43,6 +54,7 @@ function AppInner() {
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
     openSettings: useCallback(() => setShowSettingsModal(true), []),
     toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
+    toggleHideMarkup: useCallback(() => setHideFountainMarkupEnabled(!hideFountainMarkupEnabled), [hideFountainMarkupEnabled, setHideFountainMarkupEnabled]),
     isDisabled: isModalActive,
   });
 

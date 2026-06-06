@@ -75,6 +75,8 @@ const MenuBar: React.FC<{
     setIsZenMode,
     zoomLevel,
     setZoomLevel,
+    hideFountainMarkupEnabled,
+    setHideFountainMarkupEnabled,
   } = useUI();
   const { autoAddSceneNumbers, clearSceneNumbers, editorView } = useEditor();
   const { closeFile, activeFileId, files, updateSettings } = useFile();
@@ -127,7 +129,8 @@ const MenuBar: React.FC<{
       { label: isSidebarOpen ? "Hide Sidebar" : "Show Sidebar", shortcut: "Ctrl+\\", action: toggleSidebar },
       { label: showTimeline ? "Hide Timeline" : "Show Timeline", shortcut: "Ctrl+Shift+T", action: () => setShowTimeline(!showTimeline), dividerAfter: true },
       { label: workspaceMode === "cards" ? "Switch to Editor" : "Switch to Index Cards", action: () => setWorkspaceMode(workspaceMode === "cards" ? "editor" : "cards") },
-      { label: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", action: () => setTypewriterMode(!typewriterMode), dividerAfter: true },
+      { label: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", action: () => setTypewriterMode(!typewriterMode) },
+      { label: hideFountainMarkupEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", shortcut: "Ctrl+Shift+H", action: () => setHideFountainMarkupEnabled(!hideFountainMarkupEnabled), dividerAfter: true },
       { label: "Zen Mode", shortcut: "Ctrl+Alt+Enter", action: () => setIsZenMode(!isZenMode), dividerAfter: true },
       { label: "Zoom In", shortcut: "Ctrl+=", action: () => setZoomLevel(zoomLevel + 10) },
       { label: "Zoom Out", shortcut: "Ctrl+-", action: () => setZoomLevel(zoomLevel - 10) },
@@ -275,6 +278,8 @@ const HeaderBar: React.FC<{
     }
   };
 
+  const lastClickTimeRef = useRef<number>(0);
+
   const handleStartDrag = async (e: React.MouseEvent) => {
     if (e.button === 0) {
       const target = e.target as HTMLElement;
@@ -286,6 +291,14 @@ const HeaderBar: React.FC<{
         !target.closest(".menu-bar") &&
         !target.closest(".menu-dropdown")
       ) {
+        const now = Date.now();
+        if (now - lastClickTimeRef.current < 400) {
+          handleMaximize();
+          lastClickTimeRef.current = 0;
+          return;
+        }
+        lastClickTimeRef.current = now;
+
         try {
           const win = getTauriWindow();
           if (win) await win.startDragging();
@@ -296,20 +309,6 @@ const HeaderBar: React.FC<{
     }
   };
 
-  const handleDoubleClick = async (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (
-      target.tagName !== "BUTTON" &&
-      !target.closest("button") &&
-      target.tagName !== "INPUT" &&
-      !target.closest("input") &&
-      !target.closest(".menu-bar") &&
-      !target.closest(".menu-dropdown")
-    ) {
-      handleMaximize();
-    }
-  };
-
   const activeFile = files.find(f => f.id === activeFileId);
   const activeFileName = activeFile?.filePath ? activeFile.filePath.split(/[/\\]/).pop() : "Untitled";
   const isRevisionMode = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
@@ -317,9 +316,7 @@ const HeaderBar: React.FC<{
   return (
     <div
       className="header-bar"
-      data-tauri-drag-region
       onMouseDown={handleStartDrag}
-      onDoubleClick={handleDoubleClick}
     >
       <div className="header-left">
         <MenuBar
@@ -636,7 +633,9 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
     workspaceMode,
     setWorkspaceMode,
     zoomLevel,
-    setZoomLevel
+    setZoomLevel,
+    hideFountainMarkupEnabled,
+    setHideFountainMarkupEnabled,
   } = useUI();
   const [showSettings, setShowSettings] = React.useState(false);
   const settingsRef = React.useRef<HTMLDivElement>(null);
@@ -677,6 +676,13 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
             >
               <span>Typewriter Mode</span>
               {typewriterMode && <Check size={14} />}
+            </div>
+            <div
+              className={`editor-toolbar-dropdown-option ${hideFountainMarkupEnabled ? "active" : ""}`}
+              onClick={() => setHideFountainMarkupEnabled(!hideFountainMarkupEnabled)}
+            >
+              <span>Hide Fountain Markup</span>
+              {hideFountainMarkupEnabled && <Check size={14} />}
             </div>
 
             <div className="editor-toolbar-dropdown-divider" />
@@ -770,6 +776,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 }) => {
   const { isZenMode } = useUI();
  
+  useEffect(() => {
+    const toggleFullscreen = async () => {
+      try {
+        const win = getTauriWindow();
+        if (win) {
+          await win.setFullscreen(isZenMode);
+        }
+      } catch (e) {
+        console.error("Failed to toggle fullscreen:", e);
+      }
+    };
+    toggleFullscreen();
+  }, [isZenMode]);
+
   return (
     <>
       {!isZenMode && (
