@@ -45,8 +45,6 @@ interface AppContextProps {
   setTypewriterMode: (enabled: boolean) => void;
   workspaceMode: 'editor' | 'cards';
   setWorkspaceMode: (mode: 'editor' | 'cards') => void;
-  showTimeline: boolean;
-  setShowTimeline: (show: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   zoomLevel: number;

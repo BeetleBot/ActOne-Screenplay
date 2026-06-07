@@ -70,7 +70,6 @@ const shortcutGroups = [
       { keys: "Ctrl + \\", action: "Toggle sidebar visibility" },
       { keys: "Ctrl + K", action: "Open command palette" },
       { keys: "Ctrl + ,", action: "Open settings" },
-      { keys: "Ctrl + Shift + T", action: "Toggle timeline view" },
       { keys: "Ctrl + Shift + H", action: "Toggle hide Fountain markup" },
       { keys: "Alt + Enter", action: "Toggle zen mode (fullscreen)" },
       { keys: "Ctrl + =", action: "Zoom in" },
@@ -235,12 +234,6 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                 <Feature name="Zoom" desc="Adjust the editor zoom from 50% to 200%. Use Ctrl+= / Ctrl+- / Ctrl+0 or the settings slider." />
               </Section>
 
-              <Section title="Timeline">
-                <Feature name="Timeline Strip" desc="A horizontal strip at the bottom of the editor showing all scenes as proportional segments." />
-                <Feature name="Scene Navigation" desc="Click any segment to jump to that scene. Hover to see scene details." />
-                <Feature name="Color Coding" desc="If your scenes have assigned colors, they're reflected in the timeline segments." />
-                <Feature name="Playhead" desc="A vertical line shows your current cursor position within the script." />
-              </Section>
             </div>
           )}
 

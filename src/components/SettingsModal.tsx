@@ -170,8 +170,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setFontFamily,
     paperSize,
     setPaperSize,
-    showTimeline,
-    setShowTimeline,
     workspaceMode,
     setWorkspaceMode,
     typewriterMode,
@@ -305,20 +303,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   options={paperSizesList}
                   value={paperSize}
                   onChange={(val) => setPaperSize(val as any)}
-                />
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <span style={{ fontSize: "13px", fontWeight: 600, opacity: 0.9 }}>Show Timeline</span>
-                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Display outline progress at the bottom</span>
-                </div>
-                <input 
-                  type="checkbox" 
-                  className="native-checkbox"
-                  checked={showTimeline}
-                  onChange={(e) => setShowTimeline(e.target.checked)}
-                  tabIndex={0}
                 />
               </div>
 

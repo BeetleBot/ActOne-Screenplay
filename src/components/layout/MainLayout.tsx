@@ -6,7 +6,6 @@ import { useEditor } from "../../context/EditorContext";
 import { FountainEditor } from "../FountainEditor";
 import { SidebarViews } from "../SidebarViews";
 import { IndexCardsWorkspace } from "../IndexCardsWorkspace";
-import { TimelineView } from "../TimelineView";
 import { SearchPanel } from "../SearchPanel";
 
 import {
@@ -276,7 +275,7 @@ const Workspace: React.FC<{
 }> = ({ isSidebarOpen, setIsSidebarOpen, onOpenThemeModal }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, workspaceMode, setWorkspaceMode, showTimeline, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
+  const { paperSize, workspaceMode, setWorkspaceMode, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
@@ -398,7 +397,6 @@ const Workspace: React.FC<{
             <IndexCardsWorkspace />
           )}
         </div>
-        {(showTimeline && !isZenMode) && <TimelineView />}
       </div>
     </div>
   );

@@ -12,8 +12,6 @@ export interface UIContextProps {
   setTypewriterMode: (enabled: boolean) => void;
   workspaceMode: 'editor' | 'cards';
   setWorkspaceMode: (mode: 'editor' | 'cards') => void;
-  showTimeline: boolean;
-  setShowTimeline: (show: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   zoomLevel: number;
@@ -120,19 +118,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     applyZenMode();
   }, [isZenMode]);
 
-  const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-show-timeline") !== "false";
-  });
-
   const setZoomLevel = (zoom: number) => {
     const newZoom = Math.min(Math.max(zoom, 50), 300);
     setZoomLevelState(newZoom);
     localStorage.setItem("actone-zoom-level", String(newZoom));
-  };
-
-  const setShowTimeline = (show: boolean) => {
-    setShowTimelineState(show);
-    localStorage.setItem("actone-show-timeline", String(show));
   };
 
   const setIsZenMode = (enabled: boolean) => {
@@ -197,8 +186,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setTypewriterMode,
         workspaceMode,
         setWorkspaceMode,
-        showTimeline,
-        setShowTimeline,
         activeTab,
         setActiveTab,
         zoomLevel,

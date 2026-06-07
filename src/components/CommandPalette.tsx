@@ -92,8 +92,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const {
     typewriterMode,
     setTypewriterMode,
-    showTimeline,
-    setShowTimeline,
     setWorkspaceMode,
     setActiveTab,
     setFontFamily,
@@ -191,7 +189,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-tab-stats", name: "Switch Sidebar Tab: Statistics", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("stats"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <Settings size={16} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-hide-markup", name: hideFountainMarkupEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+H", action: () => { setHideFountainMarkupEnabled(!hideFountainMarkupEnabled); onClose(); } },
-    { id: "view-timeline", name: showTimeline ? "Hide Timeline" : "Show Timeline", category: "View", icon: <Settings size={16} />, shortcut: "Ctrl+Shift+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
     { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <Maximize size={16} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },
     { id: "view-zoom-in", name: "Zoom In", category: "View", icon: <ZoomIn size={16} />, shortcut: "Ctrl+=", action: () => { setZoomLevel(zoomLevel + 10); onClose(); } },
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOut size={16} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
