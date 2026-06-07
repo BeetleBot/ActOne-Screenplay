@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
 import { LineType, ParsedLine } from "../parser/FountainParser";
-import { Settings, Search, X } from "lucide-react";
+import { MoreVertical, Search, X } from "lucide-react";
 
 interface OutlineItem {
   line: ParsedLine;
@@ -283,6 +283,51 @@ export const OutlineView: React.FC = () => {
     if (container) container.focus();
   };
 
+  const renderOutlineSynopses = (synopses: OutlineItem[]) => {
+    if (synopses.length === 0) return null;
+
+    if (synopses.length === 1) {
+      const syn = synopses[0];
+      return (
+        <div className="outline-synopses-list">
+          <span
+            className="outline-synopsis-single"
+            onClick={(e) => {
+              e.stopPropagation();
+              scrollToLine(syn.index, true);
+              const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+              if (container) container.focus();
+            }}
+          >
+            {syn.line.text.replace(/^=[ ]*/, "").trim()}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="outline-synopses-list multiple">
+        {synopses.map((syn) => (
+          <span
+            key={syn.line.id}
+            className="outline-synopsis-bullet-item"
+            onClick={(e) => {
+              e.stopPropagation();
+              scrollToLine(syn.index, true);
+              const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+              if (container) container.focus();
+            }}
+          >
+            <span className="bullet-dot">•</span>
+            <span className="bullet-text">
+              {syn.line.text.replace(/^=[ ]*/, "").trim()}
+            </span>
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   const renderTreeNode = (node: TreeNode): React.ReactNode => {
     const { item, depth, children, synopses } = node;
     const { line } = item;
@@ -304,17 +349,15 @@ export const OutlineView: React.FC = () => {
         <div
           key={line.id}
           className={`outline-section${isCollapsed ? " collapsed" : ""}`}
-          style={{ "--depth": depth } as React.CSSProperties}
         >
           <div
-            className={`outline-section-card${isActive ? " active" : ""}`}
+            className={`outline-scene-card outline-section-card${isActive ? " active" : ""}`}
             data-scene-id={line.id}
             ref={isActive ? activeItemRef : null}
             onClick={(e) => handleItemClick(item, true, e)}
           >
-            <div className="outline-section-accent" />
-            <div className="outline-section-body">
-              <div className="outline-section-top">
+            <div className="outline-scene-body">
+              <div className="outline-scene-top">
                 <span
                   className="outline-section-chevron"
                   onClick={(e) => toggleSection(line.id, e)}
@@ -324,15 +367,11 @@ export const OutlineView: React.FC = () => {
                     <path d="M3 2L7 5L3 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <span className="outline-section-title">
+                <span className={`outline-section-title depth-${line.sectionDepth || 1}`}>
                   {line.text.replace(/^[.#= ]+/, "").trim()}
                 </span>
               </div>
-              {synopses.length > 0 && !isCollapsed && (
-                <span className="outline-section-synopsis" data-depth={depth}>
-                  {synopses.map((s) => s.line.text.replace(/^=[ ]*/, "").trim()).join(" • ")}
-                </span>
-              )}
+              {showSynopses && renderOutlineSynopses(synopses)}
             </div>
           </div>
           {children.length > 0 && (
@@ -394,24 +433,7 @@ export const OutlineView: React.FC = () => {
               </span>
             )}
           </div>
-          {synopses.length > 0 && (
-            <div className="outline-scene-synopses">
-              {synopses.map((syn) => (
-                <span
-                  key={syn.line.id}
-                  className="outline-scene-synopsis-line"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    scrollToLine(syn.index, true);
-                    const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
-                    if (container) container.focus();
-                  }}
-                >
-                  {syn.line.text.replace(/^=[ ]*/, "").trim()}
-                </span>
-              ))}
-            </div>
-          )}
+          {showSynopses && renderOutlineSynopses(synopses)}
         </div>
       </div>
     );
@@ -430,7 +452,7 @@ export const OutlineView: React.FC = () => {
           tabIndex={0}
           aria-label="Outline options"
         >
-          <Settings size={14} />
+          <MoreVertical size={14} />
         </button>
         {isGearPanelOpen && (
           <>

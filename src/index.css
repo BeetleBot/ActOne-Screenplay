@@ -1667,46 +1667,16 @@ body.dark-theme .export-modal-preview-line {
 }
 
 .outline-section-card {
-  display: flex;
-  align-items: stretch;
-  padding: 3px 8px;
-  padding-left: calc(var(--outline-base-pad) + var(--outline-indent) * var(--depth, 0));
-  cursor: pointer;
-  border-radius: var(--radius-xs);
-  border-left: 2px solid var(--accent-color);
-  transition: background var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
-}
-
-.outline-section-card.active {
-  background: var(--bg-editor);
-  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border-color);
-}
-
-.outline-section-card:hover {
-  background: rgba(var(--accent-rgb), 0.04);
-}
-
-.outline-section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  flex: 1;
-  min-width: 0;
-}
-
-.outline-section-top {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
+  padding-left: var(--outline-base-pad) !important;
+  cursor: pointer !important;
 }
 
 .outline-section-chevron {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
   cursor: pointer;
   opacity: 0.55;
@@ -1728,27 +1698,25 @@ body.dark-theme .export-modal-preview-line {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 800;
+  line-height: 1.3;
+}
+
+.outline-section-title.depth-1 {
+  font-weight: 700;
+  text-transform: uppercase;
   color: var(--accent-color);
-  line-height: 1.3;
+  letter-spacing: 0.02em;
 }
 
-.outline-section-card.active .outline-section-title {
+.outline-section-title.depth-2 {
+  font-weight: 600;
+  text-transform: none;
   color: var(--text-main);
+  opacity: 0.9;
 }
 
-.outline-section-synopsis {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 9px;
-  font-weight: 400;
-  opacity: 0.5;
-  color: var(--text-muted);
-  margin-left: 20px;
-  margin-top: -1px;
-  line-height: 1.3;
+.outline-section-card.active .outline-section-title.depth-2 {
+  color: var(--text-main);
 }
 
 .outline-section-children {
@@ -1761,7 +1729,7 @@ body.dark-theme .export-modal-preview-line {
   display: flex;
   align-items: stretch;
   padding: 3px 8px;
-  padding-left: calc(var(--outline-base-pad) + var(--outline-indent) * var(--depth, 0));
+  padding-left: var(--outline-base-pad);
   cursor: grab;
   border-radius: var(--radius-xs);
   border-left: 3px solid transparent;
@@ -1832,48 +1800,84 @@ body.dark-theme .export-modal-preview-line {
   flex-shrink: 0;
 }
 
-.outline-scene-synopses {
+/* ── Synopsis Improvements ── */
+
+.outline-synopses-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  margin-top: 1px;
+  gap: 3px;
+  margin-top: 2px;
 }
 
-.outline-scene-synopsis-line {
+.outline-synopses-list.multiple {
+  padding-left: 4px;
+}
+
+.outline-synopsis-single {
+  display: block;
   color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-style: italic;
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.75;
   transition: opacity var(--duration-fast) ease;
   line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
 }
 
-.outline-scene-synopsis-line:hover {
+.outline-synopsis-single:hover {
   opacity: 1;
 }
 
-/* ── Standalone synopsis ── */
+.outline-synopsis-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--text-muted);
+  font-style: italic;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity var(--duration-fast) ease;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.outline-synopsis-bullet-item:hover {
+  opacity: 1;
+}
+
+.outline-synopsis-bullet-item .bullet-dot {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.outline-synopsis-bullet-item .bullet-text {
+  flex: 1;
+}
 
 .outline-synopsis {
   padding: 2px 8px;
-  padding-left: calc(var(--outline-base-pad) + var(--outline-indent) * var(--depth, 0));
+  padding-left: var(--outline-base-pad);
 }
 
 .outline-synopsis-text {
   color: var(--text-muted);
   font-style: italic;
   font-size: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* ── Font sizes ── */
 
-.outline-size-small .outline-section-title {
+.outline-size-small .outline-section-title.depth-1 {
   font-size: 11px;
+}
+
+.outline-size-small .outline-section-title.depth-2 {
+  font-size: 10px;
 }
 
 .outline-size-small .outline-scene-title {
@@ -1884,16 +1888,21 @@ body.dark-theme .export-modal-preview-line {
   font-size: 8px;
 }
 
-.outline-size-small .outline-scene-synopsis-line {
-  font-size: 10px;
+.outline-size-small .outline-synopsis-single,
+.outline-size-small .outline-synopsis-bullet-item {
+  font-size: 9px;
 }
 
 .outline-size-small .outline-synopsis-text {
-  font-size: 10px;
+  font-size: 9px;
 }
 
-.outline-size-normal .outline-section-title {
-  font-size: 12px;
+.outline-size-normal .outline-section-title.depth-1 {
+  font-size: 13px;
+}
+
+.outline-size-normal .outline-section-title.depth-2 {
+  font-size: 11.5px;
 }
 
 .outline-size-normal .outline-scene-title {
@@ -1904,16 +1913,21 @@ body.dark-theme .export-modal-preview-line {
   font-size: 10px;
 }
 
-.outline-size-normal .outline-scene-synopsis-line {
-  font-size: 11px;
+.outline-size-normal .outline-synopsis-single,
+.outline-size-normal .outline-synopsis-bullet-item {
+  font-size: 10.5px;
 }
 
 .outline-size-normal .outline-synopsis-text {
-  font-size: 11px;
+  font-size: 10.5px;
 }
 
-.outline-size-large .outline-section-title {
-  font-size: 14px;
+.outline-size-large .outline-section-title.depth-1 {
+  font-size: 15px;
+}
+
+.outline-size-large .outline-section-title.depth-2 {
+  font-size: 13px;
 }
 
 .outline-size-large .outline-scene-title {
@@ -1924,12 +1938,13 @@ body.dark-theme .export-modal-preview-line {
   font-size: 11px;
 }
 
-.outline-size-large .outline-scene-synopsis-line {
-  font-size: 13px;
+.outline-size-large .outline-synopsis-single,
+.outline-size-large .outline-synopsis-bullet-item {
+  font-size: 12px;
 }
 
 .outline-size-large .outline-synopsis-text {
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* Dark theme adjustments */
