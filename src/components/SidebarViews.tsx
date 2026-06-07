@@ -1,15 +1,62 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppContext } from "../context/AppContext";
+import { useParking } from "../context/ParkingContext";
 import { LineType } from "../parser/FountainParser";
-import { Settings } from "lucide-react";
+import { Settings, Plus, X } from "lucide-react";
 import { TodoView } from "./TodoView";
+
+const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({ saveFileAs }) => (
+  <div style={{
+    padding: "10px",
+    backgroundColor: "rgba(229, 62, 62, 0.08)",
+    border: "1px solid rgba(229, 62, 62, 0.3)",
+    borderRadius: "8px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    fontSize: "12px",
+    color: "var(--text-main)",
+    marginBottom: "8px"
+  }}>
+    <p style={{ margin: 0, fontWeight: 500, color: "#e53e3e" }}>
+      Only available on .actone
+    </p>
+    <p style={{ margin: 0, fontSize: "11px", opacity: 0.8 }}>
+      Workspace features require saving the screenplay as an ActOne Bundle (.actone).
+    </p>
+    {saveFileAs && (
+      <button
+        onClick={() => saveFileAs()}
+        style={{
+          backgroundColor: "#e53e3e",
+          color: "#ffffff",
+          border: "none",
+          borderRadius: "4px",
+          padding: "6px 12px",
+          fontSize: "11px",
+          fontWeight: 600,
+          cursor: "pointer",
+          alignSelf: "flex-start",
+          transition: "background-color 0.2s"
+        }}
+        onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#c53030"}
+        onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#e53e3e"}
+      >
+        Save as .actone
+      </button>
+    )}
+  </div>
+);
 
 interface SidebarViewProps {
   activeTab: string;
 }
 
 export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
-  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes, filePath, saveFileAs } = useAppContext();
+  const app = useAppContext();
+  const { parsedDoc, scrollToLine, updateSettings, selectedSceneId, activeLineId, setSelectedSceneId, reorderScenes, filePath, saveFileAs } = app;
+  const parking = useParking();
+  const supportsExtended = !filePath || filePath.toLowerCase().endsWith(".actone");
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [characterFilter, setCharacterFilter] = useState("");
   
@@ -545,9 +592,13 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     return (
       <div className="notepad-view" style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px" }}>
         <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8 }}>Document Notepad</h3>
+        {!supportsExtended && (
+          <ActoneBanner saveFileAs={saveFileAs} />
+        )}
         <textarea
           value={notepadText}
           onChange={handleChange}
+          disabled={!supportsExtended}
           style={{
             flex: 1,
             width: "100%",
@@ -561,8 +612,10 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             fontFamily: "var(--font-ui)",
             fontSize: "13px",
             outline: "none",
+            opacity: !supportsExtended ? 0.5 : 1,
+            cursor: !supportsExtended ? "not-allowed" : "text",
           }}
-          placeholder="Type your outline notes, beats, or draft goals here..."
+          placeholder={supportsExtended ? "Type your outline notes, beats, or draft goals here..." : "Save as .actone to use the notepad"}
         />
       </div>
     );
@@ -614,62 +667,21 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
       }
     };
 
-    const isLegacy = filePath !== null && !filePath.toLowerCase().endsWith(".actone");
-
     return (
       <div className="characters-view" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px", opacity: 0.8 }}>
           Character Tracking
         </h3>
         
-        {isLegacy && (
-          <div style={{
-            padding: "10px",
-            backgroundColor: "rgba(229, 62, 62, 0.08)",
-            border: "1px solid rgba(229, 62, 62, 0.3)",
-            borderRadius: "8px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            fontSize: "12px",
-            color: "var(--text-main)",
-            marginBottom: "8px"
-          }}>
-            <p style={{ margin: 0, fontWeight: 500, color: "#e53e3e" }}>
-              Only available on .actone
-            </p>
-            <p style={{ margin: 0, fontSize: "11px", opacity: 0.8 }}>
-              Workspace settings and character tracking require saving the screenplay as an ActOne Bundle (.actone).
-            </p>
-            <button
-              onClick={() => saveFileAs()}
-              style={{
-                backgroundColor: "#e53e3e",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "4px",
-                padding: "6px 12px",
-                fontSize: "11px",
-                fontWeight: 600,
-                cursor: "pointer",
-                alignSelf: "flex-start",
-                transition: "background-color 0.2s"
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#c53030"}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#e53e3e"}
-            >
-              Save as .actone
-            </button>
-          </div>
-        )}
+        {!supportsExtended && <ActoneBanner saveFileAs={saveFileAs} />}
 
         <input
           type="text"
           className="character-search-input"
           value={characterFilter}
-          disabled={isLegacy}
+          disabled={!supportsExtended}
           onChange={(e) => setCharacterFilter(e.target.value)}
-          placeholder={isLegacy ? "Tracking disabled..." : "Filter characters..."}
+          placeholder={!supportsExtended ? "Tracking disabled..." : "Filter characters..."}
           style={{
             width: "100%",
             padding: "6px 10px",
@@ -679,8 +691,8 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             backgroundColor: "var(--bg-editor)",
             color: "var(--text-main)",
             outline: "none",
-            opacity: isLegacy ? 0.5 : 1,
-            cursor: isLegacy ? "not-allowed" : "text",
+            opacity: !supportsExtended ? 0.5 : 1,
+            cursor: !supportsExtended ? "not-allowed" : "text",
           }}
         />
         {filteredCharacters.length === 0 ? (
@@ -688,7 +700,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             No characters found matching search.
           </p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", opacity: isLegacy ? 0.6 : 1 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", opacity: !supportsExtended ? 0.6 : 1 }}>
             {filteredCharacters.map(([name, count]) => {
               const gender = genders[name] || "unknown";
               return (
@@ -699,7 +711,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                     flexDirection: "column",
                     padding: "8px",
                     border: `1px solid var(--border-color)`,
-                    borderLeft: isLegacy ? `4px solid var(--border-color)` : `4px solid ${getGenderColor(gender)}`,
+                    borderLeft: !supportsExtended ? `4px solid var(--border-color)` : `4px solid ${getGenderColor(gender)}`,
                     borderRadius: "8px",
                     backgroundColor: "var(--bg-editor)",
                     gap: "4px",
@@ -721,10 +733,10 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                   </div>
                   <select
                     value={gender}
-                    disabled={isLegacy}
+                    disabled={!supportsExtended}
                     onChange={(e) => handleGenderChange(name, e.target.value)}
                     className={`character-gender-select gender-${gender}`}
-                    style={isLegacy ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                    style={!supportsExtended ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                   >
                     <option value="unknown">Gender: Unknown</option>
                     <option value="male">Male</option>
@@ -958,7 +970,134 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   }
 
   if (activeTab === "todo") {
-    return <TodoView />;
+    return <TodoView disabled={!supportsExtended} saveFileAs={saveFileAs} />;
+  }
+
+  if (activeTab === "parking") {
+    const { items, addItem, removeItem } = parking;
+    const { editorView } = app;
+
+    const handleParkSelection = () => {
+      const view = editorView;
+      if (!view) return;
+      const selection = view.state.selection.main;
+      if (selection.empty) return;
+      const text = view.state.sliceDoc(selection.from, selection.to);
+      if (!text.trim()) return;
+      addItem(text);
+      view.dispatch({
+        changes: { from: selection.from, to: selection.to, insert: "" },
+      });
+      view.focus();
+    };
+
+    const handleCardClick = (item: { id: string; text: string }) => {
+      const view = editorView;
+      if (!view) return;
+      const pos = view.state.selection.main.from;
+      view.dispatch({
+        changes: { from: pos, insert: item.text + "\n" },
+        selection: { anchor: pos + item.text.length + 1 },
+      });
+      removeItem(item.id);
+      view.focus();
+    };
+
+    if (!supportsExtended) {
+      return (
+        <div className="parking-view" style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px" }}>
+          <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8, margin: 0 }}>Parking</h3>
+          <ActoneBanner saveFileAs={saveFileAs} />
+        </div>
+      );
+    }
+
+    return (
+      <div className="parking-view" style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8, margin: 0 }}>
+            Parking
+          </h3>
+          <button
+            onClick={handleParkSelection}
+            title="Park selected text"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "var(--accent-color)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "var(--radius-sm)",
+              padding: "4px 10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              opacity: editorView?.state.selection.main.empty ? 0.5 : 1,
+            }}
+          >
+            <Plus size={12} />
+            Park Selection
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px", minHeight: 0 }}>
+          {items.length === 0 ? (
+            <p style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic" }}>
+              Select text in the editor and click "Park Selection" to store it here.
+            </p>
+          ) : (
+            items.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => handleCardClick(item)}
+                style={{
+                  background: "var(--bg-editor)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "var(--radius-sm)",
+                  padding: "8px 10px",
+                  cursor: "pointer",
+                  position: "relative",
+                  fontSize: "12px",
+                  lineHeight: 1.5,
+                  color: "var(--text-main)",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  maxHeight: "120px",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeItem(item.id);
+                  }}
+                  title="Remove"
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "4px",
+                    width: "18px",
+                    height: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "var(--radius-xs)",
+                    cursor: "pointer",
+                    color: "var(--text-muted)",
+                    opacity: 0.3,
+                  }}
+                  className="parking-card-remove"
+                >
+                  <X size={12} />
+                </div>
+                {item.text}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
   }
 
   return null;

@@ -76,6 +76,8 @@ function AppInner() {
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
           onOpenThemeModal={() => setShowThemeModal(true)}
+          onOpenSettingsModal={() => setShowSettingsModal(true)}
+          onOpenPalette={() => setIsPaletteOpen(true)}
         />
       <ModalManager
         isPaletteOpen={isPaletteOpen}

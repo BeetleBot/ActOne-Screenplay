@@ -62,8 +62,6 @@
 .sidebar-content,
 .activity-bar,
 .activity-bar-btn,
-.editor-toolbar,
-.editor-tabs-bar,
 .header-tabs-container,
 .header-tab,
 .export-modal,
@@ -329,38 +327,6 @@ body.dark-theme .header-tab.active {
   flex-shrink: 0;
 }
 
-.editor-toolbar {
-  display: flex;
-  gap: 12px;
-  z-index: 100;
-}
-
-.editor-toolbar-left {
-  display: flex;
-  gap: 12px;
-  z-index: 100;
-}
-
-.editor-toolbar-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--duration-normal);
-  outline: none;
-}
-
-.editor-toolbar-btn:hover,
-.editor-toolbar-btn.active {
-  background: rgba(128, 128, 128, 0.15);
-  color: var(--text-main);
-}
-
 /* CodeMirror Autocomplete Theming */
 .cm-tooltip.cm-tooltip-autocomplete {
   border: 1px solid var(--border-color) !important;
@@ -395,11 +361,6 @@ body.dark-theme .header-tab.active {
 
 
 
-.editor-toolbar-settings-container {
-  position: relative;
-  display: inline-block;
-}
-
 .editor-toolbar-dropdown {
   position: absolute;
   top: 100%;
@@ -429,23 +390,16 @@ body.dark-theme .header-tab.active {
   }
 }
 
-.editor-toolbar-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--text-main);
-  font-size: 13px;
-  font-weight: 500;
-  transition: all var(--duration-normal) ease;
-}
+@keyframes dropdownFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
 
-.editor-toolbar-dropdown-item:hover {
-  background: var(--accent-color);
-  color: white;
-  transform: translateX(2px);
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .menu-dropdown {
@@ -627,17 +581,6 @@ body.dark-theme .header-tab.active {
   width: 2px;
   background: var(--accent-color);
   border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
-}
-
-/* --- Editor Tabs Bar --- */
-.editor-tabs-bar {
-  height: 36px;
-  background: var(--bg-sidebar);
-  box-shadow: 0 1px 0 var(--border-color), 0 1px 3px rgba(0,0,0,0.04);
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  padding: 0;
 }
 
 /* --- Menu Bar --- */

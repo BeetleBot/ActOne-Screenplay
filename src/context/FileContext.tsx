@@ -314,6 +314,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let parsedSettings = {};
           let genders = {};
           let revisionData = {};
+          let todosData: any[] = [];
+          let parkingData: any[] = [];
+          let notepadData = "";
           if (unzipped["settings.json"]) {
             try {
               parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
@@ -336,7 +339,28 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData };
+          if (unzipped["todos.json"]) {
+            try {
+              todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["parking.json"]) {
+            try {
+              parkingData = JSON.parse(strFromU8(unzipped["parking.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["notepad.json"]) {
+            try {
+              notepadData = JSON.parse(strFromU8(unzipped["notepad.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData };
         } else {
           content = await invoke<string>("read_file_content", { path });
         }
@@ -453,6 +477,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
           let todosData: any[] = [];
+          let parkingData: any[] = [];
+          let notepadData = "";
           if (unzipped["todos.json"]) {
             try {
               todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
@@ -460,7 +486,21 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData };
+          if (unzipped["parking.json"]) {
+            try {
+              parkingData = JSON.parse(strFromU8(unzipped["parking.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["notepad.json"]) {
+            try {
+              notepadData = JSON.parse(strFromU8(unzipped["notepad.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData };
             resolve({ path: file.name, content, settings });
           } else {
             const content = await file.text();
@@ -498,6 +538,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let parsedSettings = {};
           let genders = {};
           let revisionData = {};
+          let todosData: any[] = [];
+          let parkingData: any[] = [];
+          let notepadData = "";
           if (unzipped["settings.json"]) {
             try {
               parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
@@ -520,7 +563,28 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData };
+          if (unzipped["todos.json"]) {
+            try {
+              todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["parking.json"]) {
+            try {
+              parkingData = JSON.parse(strFromU8(unzipped["parking.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["notepad.json"]) {
+            try {
+              notepadData = JSON.parse(strFromU8(unzipped["notepad.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData };
         } catch (e) {
           console.error(e);
           alert("Could not read actone bundle binary");
@@ -574,7 +638,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveActoneFile = async (path: string, text: string, settings: any) => {
-    const { genders, revisionModeEnabled, revisionBaseText, todos, ...restSettings } = settings || {};
+    const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, ...restSettings } = settings || {};
     const characters = genders ? { genders } : {};
     const revision = { revisionModeEnabled, revisionBaseText };
     const zipped = zipSync({
@@ -583,6 +647,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       "characters.json": strToU8(JSON.stringify(characters, null, 2)),
       "revision.json": strToU8(JSON.stringify(revision, null, 2)),
       "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
+      "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
+      "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
     });
     await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
   };
@@ -612,7 +678,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
         }
       } else {
-        const { genders, revisionModeEnabled, revisionBaseText, ...restSettings } = currentActive.parsedDoc.settings || {};
+        const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, ...restSettings } = currentActive.parsedDoc.settings || {};
         const characters = genders ? { genders } : {};
         const revision = { revisionModeEnabled, revisionBaseText };
         const zipped = zipSync({
@@ -620,6 +686,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
           "characters.json": strToU8(JSON.stringify(characters, null, 2)),
           "revision.json": strToU8(JSON.stringify(revision, null, 2)),
+          "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
+          "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
+          "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
         });
         const blob = new Blob([zipped], { type: "application/zip" });
         const url = URL.createObjectURL(blob);
@@ -691,7 +760,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let blob: Blob;
 
         if (isActone) {
-          const { genders, revisionModeEnabled, revisionBaseText, todos, ...restSettings } = currentActive.parsedDoc.settings || {};
+          const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, ...restSettings } = currentActive.parsedDoc.settings || {};
           const characters = genders ? { genders } : {};
           const revision = { revisionModeEnabled, revisionBaseText };
           const zipped = zipSync({
@@ -700,6 +769,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             "characters.json": strToU8(JSON.stringify(characters, null, 2)),
             "revision.json": strToU8(JSON.stringify(revision, null, 2)),
             "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
+            "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
+            "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
           });
           blob = new Blob([zipped], { type: "application/zip" });
         } else {
