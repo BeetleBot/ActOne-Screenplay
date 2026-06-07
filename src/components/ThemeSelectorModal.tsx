@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { X, Check } from "lucide-react";
 import { useTheme, ThemeType } from "../context/ThemeContext";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -29,32 +29,11 @@ const themes: ThemeConfig[] = [
     colors: { bg: "#ffffff", text: "#1a1a1a", accent: "#007aff", sidebar: "#f8f9fa" }
   },
   {
-    id: "latte",
-    name: "Catppuccin Latte",
-    desc: "Soothing light palette",
+    id: "warm-paper",
+    name: "Warm Paper",
+    desc: "Creamy paper-like warmth",
     isDark: false,
-    colors: { bg: "#eff1f5", text: "#4c4f69", accent: "#1e66f5", sidebar: "#e6e9ef" }
-  },
-  {
-    id: "sepia",
-    name: "Warm Sepia",
-    desc: "Typewriter parchment style",
-    isDark: false,
-    colors: { bg: "#f4ecd8", text: "#433422", accent: "#a0522d", sidebar: "#e4d7ba" }
-  },
-  {
-    id: "frost",
-    name: "Nordic Frost",
-    desc: "Cool blueprint hues",
-    isDark: false,
-    colors: { bg: "#f0f4f8", text: "#2d3748", accent: "#3182ce", sidebar: "#e1e8f0" }
-  },
-  {
-    id: "everforest-light",
-    name: "Everforest Light",
-    desc: "Nature-inspired light",
-    isDark: false,
-    colors: { bg: "#fdf6e3", text: "#5c6a72", accent: "#859900", sidebar: "#f3ead3" }
+    colors: { bg: "#f5eed7", text: "#2c1810", accent: "#a0522d", sidebar: "#ede3c8" }
   },
   {
     id: "lilac",
@@ -64,83 +43,95 @@ const themes: ThemeConfig[] = [
     colors: { bg: "#f3e5f5", text: "#4a148c", accent: "#7b1fa2", sidebar: "#f8f0fb" }
   },
   {
+    id: "honey",
+    name: "Honey",
+    desc: "Warm golden sunlight glow",
+    isDark: false,
+    colors: { bg: "#faf3e0", text: "#3d2c1a", accent: "#d4943a", sidebar: "#f5ecd0" }
+  },
+  {
+    id: "sage",
+    name: "Sage",
+    desc: "Calming muted green",
+    isDark: false,
+    colors: { bg: "#f0f5f0", text: "#2c3a2e", accent: "#6a9a6a", sidebar: "#e6efe4" }
+  },
+  {
     id: "dark",
-    name: "Charcoal Slate",
+    name: "Classic Dark",
     desc: "Low-fatigue dark workspace",
     isDark: true,
     colors: { bg: "#18191c", text: "#d4d4d8", accent: "#0a84ff", sidebar: "#121315" }
   },
   {
-    id: "mocha",
-    name: "Catppuccin Mocha",
-    desc: "Soothing dark palette",
+    id: "pitch-black",
+    name: "Pitch Black",
+    desc: "True black OLED-friendly dark",
     isDark: true,
-    colors: { bg: "#1e1e2e", text: "#cdd6f4", accent: "#89b4fa", sidebar: "#181825" }
+    colors: { bg: "#000000", text: "#e0e0e0", accent: "#0a84ff", sidebar: "#0a0a0a" }
   },
   {
-    id: "everforest-dark",
-    name: "Everforest Dark",
-    desc: "Nature-inspired dark",
+    id: "forest",
+    name: "Forest",
+    desc: "Deep nature-inspired green",
     isDark: true,
-    colors: { bg: "#2d353b", text: "#d3c6aa", accent: "#a7c080", sidebar: "#232a2e" }
+    colors: { bg: "#1a241a", text: "#c4d0c4", accent: "#6a9e6a", sidebar: "#141e14" }
   },
   {
-    id: "tokyo-night",
-    name: "Tokyo Night",
-    desc: "Stormy neon dark",
+    id: "plum",
+    name: "Plum",
+    desc: "Rich dark purple warmth",
     isDark: true,
-    colors: { bg: "#1a1b26", text: "#a9b1d6", accent: "#bb9af7", sidebar: "#16161e" }
+    colors: { bg: "#1a1428", text: "#d0c8e0", accent: "#9b6ab0", sidebar: "#141020" }
   },
   {
-    id: "solarized",
-    name: "Solarized Dark",
-    desc: "Classic developer dark mode",
+    id: "ayu-mirage",
+    name: "Ayu Mirage",
+    desc: "Warm amber dusk palette",
     isDark: true,
-    colors: { bg: "#002b36", text: "#93a1a1", accent: "#2aa198", sidebar: "#073642" }
-  },
-  {
-    id: "midnight",
-    name: "Midnight Neon",
-    desc: "Neon violet cyberpunk glow",
-    isDark: true,
-    colors: { bg: "#0b0813", text: "#e1ddec", accent: "#ba68c8", sidebar: "#130f22" }
+    colors: { bg: "#1f2430", text: "#ccbfae", accent: "#ffcc66", sidebar: "#171b24" }
   }
 ];
 
 export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({ onClose }) => {
   const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = React.useState<'light' | 'dark'>(() => {
-    const currentTheme = themes.find(t => t.id === theme);
-    return currentTheme?.isDark ? 'dark' : 'light';
+  const [focusedIdx, setFocusedIdx] = useState(() => {
+    const idx = themes.findIndex(t => t.id === theme);
+    return idx >= 0 ? idx : 0;
   });
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  const filteredThemes = themes.filter(t => t.isDark === (activeTab === 'dark'));
-  const [focusedIdx, setFocusedIdx] = useState(0);
+  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
 
-  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose, '[role="tab"]');
+  const scrollIntoView = useCallback((idx: number) => {
+    const el = gridRef.current?.querySelector(`[data-theme-idx="${idx}"]`) as HTMLElement;
+    el?.scrollIntoView({ block: "nearest" });
+  }, []);
+
+  useEffect(() => {
+    scrollIntoView(focusedIdx);
+  }, [focusedIdx, scrollIntoView]);
 
   const handleGridKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setFocusedIdx(prev => Math.min(filteredThemes.length - 1, prev + 1));
+      setFocusedIdx(prev => Math.min(themes.length - 1, prev + 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setFocusedIdx(prev => Math.max(0, prev - 1));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setFocusedIdx(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setFocusedIdx(themes.length - 1);
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (focusedIdx >= 0 && focusedIdx < filteredThemes.length) {
-        setTheme(filteredThemes[focusedIdx].id);
+      if (focusedIdx >= 0 && focusedIdx < themes.length) {
+        setTheme(themes[focusedIdx].id);
       }
     }
-  }, [filteredThemes, focusedIdx, setTheme]);
-
-  const handleTabKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-      e.preventDefault();
-      setActiveTab(prev => prev === "light" ? "dark" : "light");
-      setFocusedIdx(0);
-    }
-  };
+  }, [focusedIdx, setTheme]);
 
   return (
     <div
@@ -165,46 +156,26 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({ onClose 
           </button>
         </div>
 
-        <div className="theme-tabs" role="tablist">
-          <button 
-            className={`theme-tab-btn ${activeTab === 'light' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('light'); setFocusedIdx(0); }}
-            onKeyDown={handleTabKeyDown}
-            role="tab"
-            aria-selected={activeTab === "light"}
-            tabIndex={0}
-          >
-            Light Themes
-          </button>
-          <button 
-            className={`theme-tab-btn ${activeTab === 'dark' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('dark'); setFocusedIdx(0); }}
-            onKeyDown={handleTabKeyDown}
-            role="tab"
-            aria-selected={activeTab === "dark"}
-            tabIndex={0}
-          >
-            Dark Themes
-          </button>
-        </div>
-
-        <div className="theme-modal-body" role="tabpanel">
+        <div className="theme-modal-body">
           <div
+            ref={gridRef}
             className="theme-grid"
             role="listbox"
             tabIndex={0}
             onKeyDown={handleGridKeyDown}
             style={{ outline: "none" }}
           >
-            {filteredThemes.map((t, idx) => {
+            {themes.map((t, idx) => {
               const isActive = theme === t.id;
               const isFocused = idx === focusedIdx;
               return (
                 <button
                   key={t.id}
+                  data-theme-idx={idx}
                   className={`theme-card ${isActive ? "active" : ""}`}
                   onClick={() => setTheme(t.id)}
                   onFocus={() => setFocusedIdx(idx)}
+                  onMouseEnter={() => setFocusedIdx(idx)}
                   role="option"
                   aria-selected={isActive}
                   tabIndex={-1}

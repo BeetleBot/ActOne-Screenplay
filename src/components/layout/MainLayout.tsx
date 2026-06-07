@@ -14,6 +14,7 @@ import {
   FileText,
   User,
   BarChart2,
+  ClipboardList,
   Minus,
   Square,
   X,
@@ -196,6 +197,7 @@ const ActivityBar: React.FC<{
     { id: "notepad", icon: <FileText size={22} />, title: "Notepad" },
     { id: "characters", icon: <User size={22} />, title: "Characters" },
     { id: "stats", icon: <BarChart2 size={22} />, title: "Statistics" },
+    { id: "todo", icon: <ClipboardList size={22} />, title: "Tasks" },
   ];
 
   return (
@@ -372,25 +374,6 @@ const Workspace: React.FC<{
               }
             }}
           >
-            <div className="sidebar-header" style={{
-              height: "36px",
-              display: "flex",
-              alignItems: "center",
-              padding: "0 12px",
-              borderBottom: "1px solid var(--border-color)",
-              backgroundColor: "var(--bg-sidebar)",
-              fontWeight: 600,
-              fontSize: "12px",
-              color: "var(--text-muted)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              flexShrink: 0
-            }}>
-              {activeTab === "outline" && "Navigator"}
-              {activeTab === "notepad" && "Notepad"}
-              {activeTab === "characters" && "Characters"}
-              {activeTab === "stats" && "Statistics"}
-            </div>
             <div className="sidebar-content">
               <SidebarViews activeTab={activeTab} />
             </div>

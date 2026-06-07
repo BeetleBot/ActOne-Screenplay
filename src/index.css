@@ -30,7 +30,53 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Block text selection on all UI chrome for native app feel */
+.app-workspace,
+.header-bar,
+.titlebar-drag-region,
+.sidebar,
+.sidebar-content,
+.activity-bar,
+.activity-bar-btn,
+.editor-toolbar,
+.editor-tabs-bar,
+.header-tabs-container,
+.header-tab,
+.export-modal,
+.export-modal-overlay,
+.theme-modal,
+.theme-modal-overlay,
+.settings-modal,
+.cp-overlay,
+.help-modal,
+.timeline-view,
+.modal-overlay,
+.preview-modal,
+.title-page-editor-modal,
+.todo-view,
+.todo-input-wrapper,
+.character-card,
+.outline-card,
+.editor-paper,
+.editor-scroll-area {
   user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Allow text selection only in editor content and form fields */
+.cm-content {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 ::selection {
@@ -2945,18 +2991,16 @@ body.dark-theme .theme-dot {
 /* Dark mode chevrons */
 body.dark-theme .character-gender-select,
 body.theme-dark .character-gender-select,
-body.theme-everforest-dark .character-gender-select,
-body.theme-tokyo-night .character-gender-select,
-body.theme-mocha .character-gender-select,
-body.theme-solarized .character-gender-select,
-body.theme-midnight .character-gender-select,
+body.theme-pitch-black .character-gender-select,
+body.theme-forest .character-gender-select,
+body.theme-plum .character-gender-select,
+body.theme-ayu-mirage .character-gender-select,
 body.dark-theme .outline-size-select,
 body.theme-dark .outline-size-select,
-body.theme-everforest-dark .outline-size-select,
-body.theme-tokyo-night .outline-size-select,
-body.theme-mocha .outline-size-select,
-body.theme-solarized .outline-size-select,
-body.theme-midnight .outline-size-select {
+body.theme-pitch-black .outline-size-select,
+body.theme-forest .outline-size-select,
+body.theme-plum .outline-size-select,
+body.theme-ayu-mirage .outline-size-select {
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4d4d8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
@@ -3047,4 +3091,227 @@ body.theme-midnight .outline-size-select {
   color: var(--accent-color, #007aff);
   font-weight: 700;
   font-size: 14px;
+}
+
+/* Todo View */
+.todo-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+}
+
+.todo-title {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.8;
+  padding: 0 4px;
+}
+
+.todo-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.todo-input {
+  flex: 1;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--text-main);
+  outline: none;
+  font-family: inherit;
+}
+
+.todo-input:focus {
+  border-color: var(--accent-color);
+}
+
+.todo-add-btn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.todo-add-btn:hover {
+  opacity: 0.9;
+}
+
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+
+.todo-item:hover {
+  background: rgba(128, 128, 128, 0.06);
+}
+
+.todo-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.todo-toggle:hover {
+  color: var(--accent-color);
+}
+
+.todo-text {
+  font-size: 12px;
+  color: var(--text-main);
+  flex: 1;
+  line-height: 1.4;
+}
+
+.todo-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 12px 4px;
+}
+
+.todo-done {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.todo-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.1s;
+  flex-shrink: 0;
+}
+
+.todo-completed-item:hover .todo-delete {
+  opacity: 1;
+}
+
+.todo-delete:hover {
+  color: #ef4444;
+}
+
+.todo-completed-section {
+  border-top: 1px solid var(--border-color);
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+.todo-completed-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: 6px 4px;
+  border-radius: 4px;
+}
+
+.todo-completed-header:hover {
+  color: var(--text-main);
+  background: rgba(128, 128, 128, 0.05);
+}
+
+.todo-completed-count {
+  margin-left: auto;
+  background: rgba(128, 128, 128, 0.1);
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.todo-completed-list {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 0 2px 4px;
+}
+
+.todo-completed-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  border-radius: 6px;
+  position: relative;
+}
+
+.todo-completed-item:hover {
+  background: rgba(128, 128, 128, 0.06);
+}
+
+.todo-graph-line {
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.todo-graph-connector {
+  position: absolute;
+  top: 0;
+  bottom: 50%;
+  width: 2px;
+  background: var(--border-color);
+}
+
+.todo-graph-dot {
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-color);
+  transform: translateY(-50%);
+}
+
+.todo-completed-item .todo-toggle {
+  margin-left: 16px;
 }

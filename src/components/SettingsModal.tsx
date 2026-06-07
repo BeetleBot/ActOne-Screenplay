@@ -197,17 +197,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
   const themesList = [
     { value: "light", label: "Classic White" },
-    { value: "latte", label: "Catppuccin Latte" },
-    { value: "sepia", label: "Warm Sepia" },
-    { value: "frost", label: "Nordic Frost" },
-    { value: "everforest-light", label: "Everforest Light" },
+    { value: "warm-paper", label: "Warm Paper" },
     { value: "lilac", label: "Lilac Violet" },
-    { value: "dark", label: "Charcoal Slate" },
-    { value: "mocha", label: "Catppuccin Mocha" },
-    { value: "everforest-dark", label: "Everforest Dark" },
-    { value: "tokyo-night", label: "Tokyo Night" },
-    { value: "solarized", label: "Solarized Dark" },
-    { value: "midnight", label: "Midnight Neon" }
+    { value: "honey", label: "Honey" },
+    { value: "sage", label: "Sage" },
+    { value: "dark", label: "Classic Dark" },
+    { value: "pitch-black", label: "Pitch Black" },
+    { value: "forest", label: "Forest" },
+    { value: "plum", label: "Plum" },
+    { value: "ayu-mirage", label: "Ayu Mirage" }
   ];
 
   const workspacesList = [

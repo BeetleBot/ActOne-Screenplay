@@ -445,14 +445,22 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error(e);
               }
             }
-            if (unzipped["revision.json"]) {
-              try {
-                revisionData = JSON.parse(strFromU8(unzipped["revision.json"]));
-              } catch (e) {
-                console.error(e);
-              }
+          if (unzipped["revision.json"]) {
+            try {
+              revisionData = JSON.parse(strFromU8(unzipped["revision.json"]));
+            } catch (e) {
+              console.error(e);
             }
-            settings = { ...parsedSettings, genders, ...revisionData };
+          }
+          let todosData: any[] = [];
+          if (unzipped["todos.json"]) {
+            try {
+              todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData };
             resolve({ path: file.name, content, settings });
           } else {
             const content = await file.text();
@@ -566,7 +574,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveActoneFile = async (path: string, text: string, settings: any) => {
-    const { genders, revisionModeEnabled, revisionBaseText, ...restSettings } = settings || {};
+    const { genders, revisionModeEnabled, revisionBaseText, todos, ...restSettings } = settings || {};
     const characters = genders ? { genders } : {};
     const revision = { revisionModeEnabled, revisionBaseText };
     const zipped = zipSync({
@@ -574,6 +582,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
       "characters.json": strToU8(JSON.stringify(characters, null, 2)),
       "revision.json": strToU8(JSON.stringify(revision, null, 2)),
+      "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
     });
     await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
   };
@@ -682,7 +691,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let blob: Blob;
 
         if (isActone) {
-          const { genders, revisionModeEnabled, revisionBaseText, ...restSettings } = currentActive.parsedDoc.settings || {};
+          const { genders, revisionModeEnabled, revisionBaseText, todos, ...restSettings } = currentActive.parsedDoc.settings || {};
           const characters = genders ? { genders } : {};
           const revision = { revisionModeEnabled, revisionBaseText };
           const zipped = zipSync({
@@ -690,6 +699,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
             "characters.json": strToU8(JSON.stringify(characters, null, 2)),
             "revision.json": strToU8(JSON.stringify(revision, null, 2)),
+            "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
           });
           blob = new Blob([zipped], { type: "application/zip" });
         } else {

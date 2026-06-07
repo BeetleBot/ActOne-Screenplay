@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAppContext } from "../context/AppContext";
 import { LineType } from "../parser/FountainParser";
 import { Settings } from "lucide-react";
+import { TodoView } from "./TodoView";
 
 interface SidebarViewProps {
   activeTab: string;
@@ -967,6 +968,10 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
         </div>
       </div>
     );
+  }
+
+  if (activeTab === "todo") {
+    return <TodoView />;
   }
 
   return null;
