@@ -52,7 +52,6 @@
 .settings-modal,
 .cp-overlay,
 .help-modal,
-.timeline-view,
 .modal-overlay,
 .preview-modal,
 .title-page-editor-modal,
@@ -1312,105 +1311,6 @@ body.dark-theme .export-modal-preview-line {
   text-transform: uppercase;
   white-space: nowrap;
   font-style: normal;
-}
-
-/* Index Cards Workspace Styles */
-.cards-workspace-container {
-  padding: 24px;
-  overflow-y: auto;
-  height: 100%;
-  box-sizing: border-box;
-  background: var(--bg-app);
-}
-
-.no-cards-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: var(--text-muted);
-}
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  padding: 8px;
-}
-
-.index-card-item {
-  background: var(--bg-sidebar);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  height: 160px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-shadow: var(--shadow-editor);
-  cursor: grab;
-  transition: transform 0.15s, border 0.15s, box-shadow 0.15s;
-}
-
-.index-card-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.index-card-item.dragging {
-  opacity: 0.4;
-  cursor: grabbing;
-}
-
-.index-card-item.drag-over {
-  border: 2px dashed var(--accent-color) !important;
-  transform: scale(1.02);
-}
-
-.index-card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 6px;
-}
-
-.index-card-scene-number {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 700;
-  background: rgba(128, 128, 128, 0.15);
-  color: var(--text-main);
-  padding: 2px 6px;
-  border-radius: 10px;
-}
-
-.index-card-title {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-main);
-}
-
-.index-card-synopsis-textarea {
-  flex: 1;
-  background: transparent;
-  border: none;
-  resize: none;
-  font-family: var(--font-ui);
-  font-size: 12px;
-  color: var(--text-muted);
-  outline: none;
-  line-height: 1.4;
-}
-
-.index-card-synopsis-textarea:focus {
-  color: var(--text-main);
 }
 
 /* Screenplay Preview Styles — matches PDF export formatting exactly */

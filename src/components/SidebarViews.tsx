@@ -531,19 +531,6 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     );
   }
 
-  if (activeTab === "cards") {
-    return (
-      <div className="cards-view" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px", opacity: 0.8 }}>
-          Index Cards View
-        </h3>
-        <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-          Switch to "Index Cards" workspace in the toolbar for drag-and-drop.
-        </p>
-      </div>
-    );
-  }
-
   if (activeTab === "notepad") {
     const notepadText = parsedDoc.settings.notepad || "";
 

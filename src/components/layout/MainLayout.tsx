@@ -5,7 +5,6 @@ import { useUI } from "../../context/UIContext";
 import { useEditor } from "../../context/EditorContext";
 import { FountainEditor } from "../FountainEditor";
 import { SidebarViews } from "../SidebarViews";
-import { IndexCardsWorkspace } from "../IndexCardsWorkspace";
 import { SearchPanel } from "../SearchPanel";
 
 import {
@@ -17,7 +16,6 @@ import {
   Minus,
   Square,
   X,
-  LayoutGrid,
   Settings,
   Check,
   Plus,
@@ -275,40 +273,32 @@ const Workspace: React.FC<{
 }> = ({ isSidebarOpen, setIsSidebarOpen, onOpenThemeModal }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, workspaceMode, setWorkspaceMode, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
+  const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (workspaceMode !== "editor") {
-          e.preventDefault();
-          setWorkspaceMode("editor");
-          setTimeout(() => {
-            editorView?.focus();
-          }, 50);
-        } else {
-          const activeEl = document.activeElement;
-          const isEditorFocused = activeEl && (
-            activeEl.classList.contains("cm-content") ||
-            activeEl.closest(".cm-editor") !== null
-          );
-          if (!isEditorFocused) {
-            const isModalOpen = document.querySelector(".cp-overlay") || document.querySelector(".export-modal-overlay");
-            if (!isModalOpen) {
-              e.preventDefault();
-              if (activeEl instanceof HTMLElement) {
-                activeEl.blur();
-              }
-              editorView?.focus();
+        const activeEl = document.activeElement;
+        const isEditorFocused = activeEl && (
+          activeEl.classList.contains("cm-content") ||
+          activeEl.closest(".cm-editor") !== null
+        );
+        if (!isEditorFocused) {
+          const isModalOpen = document.querySelector(".cp-overlay") || document.querySelector(".export-modal-overlay");
+          if (!isModalOpen) {
+            e.preventDefault();
+            if (activeEl instanceof HTMLElement) {
+              activeEl.blur();
             }
+            editorView?.focus();
           }
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [workspaceMode, setWorkspaceMode, editorView]);
+  }, [editorView]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -388,14 +378,9 @@ const Workspace: React.FC<{
         <SearchPanel />
         {!isZenMode && <EditorTabs onOpenThemeModal={onOpenThemeModal} />}
         <div className="editor-scroll-area">
-          {workspaceMode === "editor" && (
-            <div className={`editor-paper paper-${paperSize}`} style={{ zoom: zoomLevel / 100 }}>
-              <FountainEditor />
-            </div>
-          )}
-          {workspaceMode === "cards" && (
-            <IndexCardsWorkspace />
-          )}
+          <div className={`editor-paper paper-${paperSize}`} style={{ zoom: zoomLevel / 100 }}>
+            <FountainEditor />
+          </div>
         </div>
       </div>
     </div>
@@ -410,8 +395,6 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
     setPaperSize,
     typewriterMode,
     setTypewriterMode,
-    workspaceMode,
-    setWorkspaceMode,
     zoomLevel,
     setZoomLevel,
     hideFountainMarkupEnabled,
@@ -432,13 +415,6 @@ const EditorToolbar: React.FC<{ onOpenThemeModal: () => void }> = ({ onOpenTheme
 
   return (
     <div className="editor-toolbar">
-      <button
-        className={`editor-toolbar-btn ${workspaceMode === "cards" ? "active" : ""}`}
-        title="Index Cards"
-        onClick={() => setWorkspaceMode(workspaceMode === "cards" ? "editor" : "cards")}
-      >
-        <LayoutGrid size={18} strokeWidth={1.5} />
-      </button>
       <div className="editor-toolbar-settings-container" ref={settingsRef}>
         <button
           className="editor-toolbar-btn"

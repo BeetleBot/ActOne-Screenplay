@@ -170,8 +170,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setFontFamily,
     paperSize,
     setPaperSize,
-    workspaceMode,
-    setWorkspaceMode,
     typewriterMode,
     setTypewriterMode,
     zoomLevel,
@@ -204,11 +202,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     { value: "forest", label: "Forest" },
     { value: "plum", label: "Plum" },
     { value: "ayu-mirage", label: "Ayu Mirage" }
-  ];
-
-  const workspacesList = [
-    { value: "editor", label: "Editor View" },
-    { value: "cards", label: "Index Cards View" }
   ];
 
   const paperSizesList = [
@@ -285,15 +278,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   options={themesList}
                   value={theme}
                   onChange={(val) => setTheme(val as any)}
-                />
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "13px", fontWeight: 600, opacity: 0.9 }}>Default Workspace</label>
-                <CustomSelect
-                  options={workspacesList}
-                  value={workspaceMode}
-                  onChange={(val) => setWorkspaceMode(val as any)}
                 />
               </div>
 

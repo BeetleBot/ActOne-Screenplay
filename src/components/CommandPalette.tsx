@@ -92,7 +92,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const {
     typewriterMode,
     setTypewriterMode,
-    setWorkspaceMode,
     setActiveTab,
     setFontFamily,
     setPaperSize,
@@ -180,8 +179,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "edit-replace", name: "Replace Text...", category: "Edit", icon: <Replace size={16} />, action: () => { setShowSearchPanel(true); setShowReplacePanel(true); onClose(); } },
 
     // View
-    { id: "view-mode-editor", name: "Switch to Editor Mode", category: "View", icon: <Settings size={16} />, action: () => { setWorkspaceMode("editor"); onClose(); } },
-    { id: "view-mode-cards", name: "Switch to Index Cards Mode", category: "View", icon: <Settings size={16} />, action: () => { setWorkspaceMode("cards"); onClose(); } },
     { id: "view-sidebar", name: isSidebarOpen ? "Hide Sidebar Outline" : "Show Sidebar Outline", category: "View", icon: <Sidebar size={16} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } },
     { id: "view-tab-outline", name: "Switch Sidebar Tab: Outline", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("outline"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-notepad", name: "Switch Sidebar Tab: Notepad", category: "View", icon: <Sidebar size={16} />, action: () => { setActiveTab("notepad"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
