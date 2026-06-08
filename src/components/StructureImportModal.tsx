@@ -1,8 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { X, Search, PlusCircle, RotateCcw, ArrowDownCircle } from "lucide-react";
+import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ArrowCircleDownIcon from "@mui/icons-material/ArrowCircleDown";
 import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Box,
+  Typography,
+  Button,
+  TextField,
+  List,
+  ListItemButton,
+  ListItemText,
+  InputAdornment,
+  Grid,
+  Divider,
+} from "@mui/material";
 
 interface StructureBeat {
   label: string;
@@ -25,8 +45,6 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
 
   useEffect(() => {
     const fetchStructures = async () => {
@@ -103,124 +121,133 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   };
 
   return (
-    <div 
-      className="struct-modal-overlay" 
-      onClick={onClose}
-      ref={containerRef}
-      onKeyDown={trapKeyDown}
-      tabIndex={-1}
-      style={{ outline: "none" }}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="struct-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="struct-modal-header">
-          <h2 className="struct-modal-title">Screenplay Structure Outlines</h2>
-          <button className="struct-modal-close" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
+    <Dialog open onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Screenplay Structure Outlines</Typography>
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
+          <CloseIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </DialogTitle>
 
-        <div className="struct-modal-body">
-          {/* Left Panel: List & Search */}
-          <div className="struct-modal-left">
-            <div className="struct-search-wrapper">
-              <Search size={16} className="struct-search-icon" />
-              <input
-                type="text"
+      <DialogContent dividers sx={{ p: 0, height: 460 }}>
+        <Grid container sx={{ height: "100%" }}>
+          {/* Left Panel: Search & List */}
+          <Grid size={{ xs: 5 }} sx={{ borderRight: 1, borderColor: "divider", display: "flex", flexDirection: "column", height: "100%" }}>
+            <Box sx={{ p: 2 }}>
+              <TextField
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="struct-search-input"
+                size="small"
+                fullWidth
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ fontSize: 16 }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
               />
-            </div>
-
-            <div className="struct-list">
+            </Box>
+            <Box sx={{ flex: 1, overflowY: "auto", px: 1 }}>
               {loading ? (
-                <div className="struct-status-msg">Loading structures...</div>
+                <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 13 }}>Loading structures...</Typography>
               ) : filteredStructures.length === 0 ? (
-                <div className="struct-status-msg">No structures found</div>
+                <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 13 }}>No structures found</Typography>
               ) : (
-                filteredStructures.map((s) => (
-                  <button
-                    key={s.name}
-                    onClick={() => setSelectedStructure(s)}
-                    className={`struct-list-item ${selectedStructure?.name === s.name ? "active" : ""}`}
-                  >
-                    <div className="struct-item-name">{s.name}</div>
-                    <div className="struct-item-desc">{s.description}</div>
-                  </button>
-                ))
+                <List disablePadding>
+                  {filteredStructures.map((s) => (
+                    <ListItemButton
+                      key={s.name}
+                      onClick={() => setSelectedStructure(s)}
+                      selected={selectedStructure?.name === s.name}
+                      sx={{ borderRadius: 1, mb: 0.5 }}
+                    >
+                      <ListItemText
+                        primary={<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{s.name}</Typography>}
+                        secondary={<Typography variant="caption" color="text.secondary" sx={{ display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{s.description}</Typography>}
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
               )}
-            </div>
-          </div>
+            </Box>
+          </Grid>
 
           {/* Right Panel: Detail Preview */}
-          <div className="struct-modal-right">
+          <Grid size={{ xs: 7 }} sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
             {selectedStructure ? (
-              <div className="struct-preview-container">
-                <div className="struct-preview-header">
-                  <h3>{selectedStructure.name}</h3>
-                  <p className="struct-preview-desc">{selectedStructure.description}</p>
-                </div>
-                <div className="struct-beats-timeline">
-                  <div className="struct-timeline-line" />
+              <Box sx={{ p: 3, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{selectedStructure.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{selectedStructure.description}</Typography>
+                </Box>
+                <Divider />
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pl: 1, position: "relative" }}>
                   {selectedStructure.beats.map((beat, idx) => (
-                    <div key={idx} className="struct-beat-card">
-                      <div className="struct-beat-badge">
-                        <span>{idx + 1}</span>
-                      </div>
-                      <div className="struct-beat-content">
-                        <h4 className="struct-beat-label">{beat.label}</h4>
-                        {beat.description && <p className="struct-beat-desc">{beat.description}</p>}
-                      </div>
-                    </div>
+                    <Box key={idx} sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+                      <Box sx={{ width: 22, height: 22, borderRadius: "50%", bgcolor: "primary.main", color: "primary.contrastText", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                        {idx + 1}
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: 13.5 }}>{beat.label}</Typography>
+                        {beat.description && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                            {beat.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
                   ))}
-                </div>
-              </div>
+                </Box>
+              </Box>
             ) : (
-              <div className="struct-no-selection">
-                Select a structure template to view details
-              </div>
+              <Box sx={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", color: "text.secondary" }}>
+                <Typography variant="body2">Select a structure template to view details</Typography>
+              </Box>
             )}
-          </div>
-        </div>
+          </Grid>
+        </Grid>
+      </DialogContent>
 
-        <div className="struct-modal-footer">
-          <div className="struct-footer-info">
-            Importing inserts Section headers <code>##</code> and Synopsis <code>=</code>.
-          </div>
-          <div className="struct-footer-actions">
-            <button className="struct-btn cancel" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              className="struct-btn secondary"
-              onClick={handleOverwrite}
-              disabled={!selectedStructure}
-            >
-              <RotateCcw size={16} />
-              Overwrite Screenplay
-            </button>
-            <button
-              className="struct-btn secondary"
-              onClick={handleAppendToEnd}
-              disabled={!selectedStructure}
-            >
-              <ArrowDownCircle size={16} />
-              Append to End
-            </button>
-            <button
-              className="struct-btn primary"
-              onClick={handleInsertAtCursor}
-              disabled={!selectedStructure}
-            >
-              <PlusCircle size={16} />
-              Insert at Cursor
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
+        <Typography variant="caption" color="text.secondary" sx={{ maxWidth: "40%" }}>
+          Importing inserts Section headers (##) and Synopsis (=).
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button onClick={onClose} variant="outlined" size="small" color="inherit">Cancel</Button>
+          <Button
+            variant="outlined"
+            onClick={handleOverwrite}
+            disabled={!selectedStructure}
+            startIcon={<RestartAltIcon sx={{ fontSize: 14 }} />}
+            size="small"
+            color="error"
+          >
+            Overwrite
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleAppendToEnd}
+            disabled={!selectedStructure}
+            startIcon={<ArrowCircleDownIcon sx={{ fontSize: 14 }} />}
+            size="small"
+          >
+            Append
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleInsertAtCursor}
+            disabled={!selectedStructure}
+            startIcon={<AddCircleIcon sx={{ fontSize: 14 }} />}
+            size="small"
+          >
+            Insert
+          </Button>
+        </Box>
+      </DialogActions>
+    </Dialog>
   );
 };

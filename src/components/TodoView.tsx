@@ -1,6 +1,25 @@
 import React, { useState, useCallback } from "react";
-import { Circle, CheckCircle, ChevronDown, Plus, X } from "lucide-react";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import { useAppContext } from "../context/AppContext";
+import {
+  Box,
+  Typography,
+  IconButton,
+  TextField,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Alert,
+  AlertTitle,
+  Button,
+  Collapse,
+} from "@mui/material";
 
 interface Todo {
   id: string;
@@ -16,46 +35,26 @@ interface TodoViewProps {
 }
 
 const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({ saveFileAs }) => (
-  <div style={{
-    padding: "10px",
-    backgroundColor: "rgba(229, 62, 62, 0.08)",
-    border: "1px solid rgba(229, 62, 62, 0.3)",
-    borderRadius: "8px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    fontSize: "12px",
-    color: "var(--text-main)",
-    marginBottom: "8px"
-  }}>
-    <p style={{ margin: 0, fontWeight: 500, color: "#e53e3e" }}>
-      Only available on .actone
-    </p>
-    <p style={{ margin: 0, fontSize: "11px", opacity: 0.8 }}>
-      Tasks require saving the screenplay as an ActOne Bundle (.actone).
-    </p>
-    {saveFileAs && (
-      <button
-        onClick={() => saveFileAs()}
-        style={{
-          backgroundColor: "#e53e3e",
-          color: "#ffffff",
-          border: "none",
-          borderRadius: "4px",
-          padding: "6px 12px",
-          fontSize: "11px",
-          fontWeight: 600,
-          cursor: "pointer",
-          alignSelf: "flex-start",
-          transition: "background-color 0.2s"
-        }}
-        onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#c53030"}
-        onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#e53e3e"}
-      >
-        Save as .actone
-      </button>
-    )}
-  </div>
+  <Alert
+    severity="warning"
+    sx={{ mb: 2, borderRadius: 0 }}
+    action={
+      saveFileAs && (
+        <Button
+          color="warning"
+          size="small"
+          variant="contained"
+          onClick={() => saveFileAs()}
+          sx={{ fontWeight: 600, textTransform: "none" }}
+        >
+          Save as .actone
+        </Button>
+      )
+    }
+  >
+    <AlertTitle sx={{ fontWeight: 700 }}>Only available on .actone</AlertTitle>
+    Tasks require saving the screenplay as an ActOne Bundle (.actone).
+  </Alert>
 );
 
 export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
@@ -104,72 +103,147 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
   const completedTodos = todos.filter(t => t.completed);
 
   return (
-    <div className="todo-view">
-      <h3 className="todo-title">Tasks</h3>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, gap: 1.5 }}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
+        Tasks
+      </Typography>
 
       {disabled && <ActoneBanner saveFileAs={saveFileAs} />}
 
-      <div className="todo-input-wrapper" style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? "none" : "auto" }}>
-        <input
-          className="todo-input"
+      <Box sx={{ display: "flex", gap: 1, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? "none" : "auto" }}>
+        <TextField
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") addTodo(); }}
           placeholder={disabled ? "Save as .actone to use tasks" : "Add a task..."}
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              endAdornment: (
+                <IconButton size="small" onClick={addTodo} sx={{ p: 0.5 }}>
+                  <AddIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              )
+            }
+          }}
         />
-        <button className="todo-add-btn" onClick={addTodo} tabIndex={-1}>
-          <Plus size={16} />
-        </button>
-      </div>
+      </Box>
 
-      <div className="todo-list" style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? "none" : "auto" }}>
+      <List
+        disablePadding
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 0.5,
+          opacity: disabled ? 0.5 : 1,
+          pointerEvents: disabled ? "none" : "auto"
+        }}
+      >
         {activeTodos.map(todo => (
-          <div key={todo.id} className="todo-item">
-            <button className="todo-toggle" onClick={() => toggleTodo(todo.id)} tabIndex={-1}>
-              <Circle size={16} />
-            </button>
-            <span className="todo-text">{todo.text}</span>
-          </div>
+          <ListItem
+            key={todo.id}
+            disablePadding
+            secondaryAction={
+              <IconButton edge="end" size="small" onClick={() => deleteTodo(todo.id)}>
+                <CloseIcon sx={{ fontSize: 12 }} />
+              </IconButton>
+            }
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 0,
+              mb: 0.5,
+              "&:hover": {
+                bgcolor: "action.hover",
+              }
+            }}
+          >
+            <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 1, px: 1.5 }}>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <RadioButtonUncheckedIcon sx={{ fontSize: 16 }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={<Typography variant="body2" sx={{ fontSize: 13 }}>{todo.text}</Typography>}
+              />
+            </ListItemButton>
+          </ListItem>
         ))}
         {activeTodos.length === 0 && (
-          <div className="todo-empty">{disabled ? "" : "No tasks yet"}</div>
+          <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center", fontStyle: "italic" }}>
+            {disabled ? "" : "No tasks yet"}
+          </Typography>
         )}
-      </div>
+      </List>
 
       {completedTodos.length > 0 && (
-        <div className="todo-completed-section" style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? "none" : "auto" }}>
-          <button
-            className="todo-completed-header"
+        <Box sx={{ display: "flex", flexDirection: "column", mt: "auto", opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? "none" : "auto" }}>
+          <Button
             onClick={() => setShowCompleted(!showCompleted)}
+            variant="text"
+            color="inherit"
+            startIcon={
+              <KeyboardArrowDownIcon
+                sx={{
+                  fontSize: 14,
+                  transform: showCompleted ? "rotate(0deg)" : "rotate(-90deg)",
+                  transition: "transform 0.15s"
+                }}
+              />
+            }
+            sx={{
+              justifyContent: "flex-start",
+              textTransform: "none",
+              fontSize: 12,
+              fontWeight: 700,
+              color: "text.secondary",
+              py: 0.5,
+            }}
           >
-            <ChevronDown
-              size={14}
-              style={{ transform: showCompleted ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }}
-            />
-            <span>Completed</span>
-            <span className="todo-completed-count">{completedTodos.length}</span>
-          </button>
-          {showCompleted && (
-            <div className="todo-completed-list">
-              {completedTodos.map((todo, idx) => (
-                <div key={todo.id} className="todo-completed-item">
-                  <div className="todo-graph-line">
-                    {idx < completedTodos.length - 1 && <div className="todo-graph-connector" />}
-                    <div className="todo-graph-dot" />
-                  </div>
-                  <button className="todo-toggle" onClick={() => toggleTodo(todo.id)} tabIndex={-1}>
-                    <CheckCircle size={16} />
-                  </button>
-                  <span className="todo-text todo-done">{todo.text}</span>
-                  <button className="todo-delete" onClick={() => deleteTodo(todo.id)} tabIndex={-1}>
-                    <X size={12} />
-                  </button>
-                </div>
+            Completed ({completedTodos.length})
+          </Button>
+
+          <Collapse in={showCompleted}>
+            <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5, pl: 1, mt: 0.5 }}>
+              {completedTodos.map((todo) => (
+                <ListItem
+                  key={todo.id}
+                  disablePadding
+                  secondaryAction={
+                    <IconButton edge="end" size="small" onClick={() => deleteTodo(todo.id)}>
+                      <CloseIcon sx={{ fontSize: 12 }} />
+                    </IconButton>
+                  }
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 0,
+                    mb: 0.5,
+                    bgcolor: "action.selected",
+                    opacity: 0.8,
+                  }}
+                >
+                  <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 0.8, px: 1.5 }}>
+                    <ListItemIcon sx={{ minWidth: 32, color: "text.secondary" }}>
+                      <CheckCircleIcon sx={{ fontSize: 16 }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography variant="body2" sx={{ fontSize: 13, textDecoration: "line-through", color: "text.secondary" }}>
+                          {todo.text}
+                        </Typography>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
               ))}
-            </div>
-          )}
-        </div>
+            </List>
+          </Collapse>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
+

@@ -1,8 +1,27 @@
 import React, { useState } from "react";
-import { FileText, X, Download } from "lucide-react";
+import DescriptionIcon from "@mui/icons-material/Description";
+import CloseIcon from "@mui/icons-material/Close";
+import DownloadIcon from "@mui/icons-material/Download";
 import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  IconButton,
+  Box,
+  Typography,
+  Switch,
+  FormControlLabel,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  ToggleButtonGroup,
+  ToggleButton,
+} from "@mui/material";
 
 type ExportFormat = "pdf" | "fountain";
 
@@ -91,12 +110,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
 
   const [selectedFont, setSelectedFont] = useState<string>(fontFamily);
 
-  const handleClose = () => {
-    onClose();
-  };
-
-  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, handleClose);
-
   const handleExportPDF = async () => {
     try {
       const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
@@ -117,7 +130,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       } else {
         alert("PDF export is only supported in the desktop app.");
       }
-      handleClose();
+      onClose();
     } catch (e) {
       console.error(e);
     }
@@ -143,7 +156,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         a.click();
         URL.revokeObjectURL(url);
       }
-      handleClose();
+      onClose();
     } catch (e) {
       console.error(e);
     }
@@ -158,194 +171,169 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div 
-      className="export-modal-overlay" 
-      onClick={handleClose}
-      ref={containerRef}
-      onKeyDown={trapKeyDown}
-      tabIndex={-1}
-      style={{ outline: "none" }}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="export-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="export-modal-header">
-          <div className="export-modal-title">
-            <Download size={20} strokeWidth={1.5} />
-            <span>Export</span>
-          </div>
-          <button className="export-modal-close" onClick={handleClose}>
-            <X size={18} strokeWidth={1.5} />
-          </button>
-        </div>
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <DownloadIcon sx={{ fontSize: 20 }} />
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Export Screenplay</Typography>
+        </Box>
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
+          <CloseIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </DialogTitle>
 
-        <div className="export-modal-body">
-          <div className="export-modal-format-selector">
-            <button
-              className={`export-format-btn ${format === "pdf" ? "active" : ""}`}
-              onClick={() => setFormat("pdf")}
-            >
-              <FileText size={16} strokeWidth={1.5} />
-              <span>PDF</span>
-            </button>
-            <button
-              className={`export-format-btn ${format === "fountain" ? "active" : ""}`}
-              onClick={() => setFormat("fountain")}
-            >
-              <FileText size={16} strokeWidth={1.5} />
-              <span>Fountain</span>
-            </button>
-          </div>
+      <DialogContent dividers sx={{ p: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+          <ToggleButtonGroup
+            value={format}
+            exclusive
+            onChange={(_, val) => val && setFormat(val)}
+            aria-label="export format"
+            fullWidth
+            size="small"
+          >
+            <ToggleButton value="pdf" aria-label="export as pdf" sx={{ gap: 1 }}>
+              <DescriptionIcon sx={{ fontSize: 16 }} />
+              PDF
+            </ToggleButton>
+            <ToggleButton value="fountain" aria-label="export as fountain" sx={{ gap: 1 }}>
+              <DescriptionIcon sx={{ fontSize: 16 }} />
+              Fountain
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
 
-          {format === "pdf" && (
-            <div className="export-modal-preview">
-              <div className="export-modal-preview-page">
-                <div className="export-modal-preview-line wide" />
-                <div className="export-modal-preview-line medium" />
-                <div className="export-modal-preview-line wide" />
-                <div className="export-modal-preview-line narrow" />
-                <div className="export-modal-preview-line medium" />
-              </div>
-            </div>
-          )}
+        {format === "pdf" ? (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5, bgcolor: "action.hover", borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>Summary Settings</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {paperSize === "letter" ? "US Letter" : "A4"} • {selectedFont === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}
+              </Typography>
+            </Box>
 
-          {format === "fountain" && (
-            <div className="export-modal-fountain-info">
-              <p>Exports a clean Fountain file without ActOne-specific data.</p>
-              <ul>
-                <li>Markers and note tags will be removed</li>
-                <li>ActOne settings block will be stripped</li>
-                <li>Color and storyline tags will be removed</li>
-              </ul>
-            </div>
-          )}
+            <FormControlLabel
+              control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Title Page</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Export the title page if it is defined</Typography>
+                </Box>
+              }
+            />
 
-          <div className="export-modal-info">
-            <div className="export-modal-info-row">
-              <span className="export-modal-info-label">Format</span>
-              <span className="export-modal-info-value">{format === "pdf" ? "PDF" : "Fountain (.fountain)"}</span>
-            </div>
-            {format === "pdf" && (
-              <>
-                <div className="export-modal-info-row">
-                  <span className="export-modal-info-label">Paper Size</span>
-                  <span className="export-modal-info-value">{paperSize === "letter" ? "US Letter" : "A4"}</span>
-                </div>
-                <div className="export-modal-info-row">
-                  <span className="export-modal-info-label">Font</span>
-                  <span className="export-modal-info-value">
-                    {selectedFont === "courier-prime"
-                      ? "Courier Prime"
-                      : selectedFont === "courier-prime-sans"
-                      ? "Courier Prime Sans"
-                      : selectedFont}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
+            <FormControlLabel
+              control={<Switch checked={boldSceneHeadings} onChange={(e) => setBoldSceneHeadings(e.target.checked)} />}
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Bold Scene Headings</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Make scene headings bold in the PDF</Typography>
+                </Box>
+              }
+            />
 
-          <div className="export-modal-option-group">
-            <div className="export-modal-option-row">
-              <div className="export-modal-option-label-wrapper">
-                <span className="export-modal-option-label">Include Title Page</span>
-                <span className="export-modal-option-desc">Export the title page if it is defined</span>
-              </div>
-              <input
-                type="checkbox"
-                className="export-modal-checkbox"
-                checked={exportTitlePage}
-                onChange={(e) => setExportTitlePage(e.target.checked)}
-              />
-            </div>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="scene-numbers-label">Scene Numbers</InputLabel>
+                <Select
+                  labelId="scene-numbers-label"
+                  value={mirrorSceneNumbers}
+                  label="Scene Numbers"
+                  onChange={(e) => setMirrorSceneNumbers(e.target.value)}
+                >
+                  <MenuItem value="off">Disabled</MenuItem>
+                  <MenuItem value="left_side">Left Side Only</MenuItem>
+                  <MenuItem value="mirror">Mirror on Both Sides</MenuItem>
+                </Select>
+              </FormControl>
 
-            {format === "pdf" && (
-              <>
-                <div className="export-modal-option-row">
-                  <div className="export-modal-option-label-wrapper">
-                    <span className="export-modal-option-label">Bold Scene Headings</span>
-                    <span className="export-modal-option-desc">Make scene headings bold in the PDF</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    className="export-modal-checkbox"
-                    checked={boldSceneHeadings}
-                    onChange={(e) => setBoldSceneHeadings(e.target.checked)}
-                  />
-                </div>
+              <FormControl fullWidth size="small">
+                <InputLabel id="export-font-label">Export Font</InputLabel>
+                <Select
+                  labelId="export-font-label"
+                  value={selectedFont}
+                  label="Export Font"
+                  onChange={(e) => setSelectedFont(e.target.value)}
+                >
+                  <MenuItem value="courier-prime">Courier Prime</MenuItem>
+                  <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
 
-                <div className="export-modal-option-row">
-                  <div className="export-modal-option-label-wrapper">
-                    <span className="export-modal-option-label">Scene Numbers</span>
-                    <span className="export-modal-option-desc">Scene numbers positioning option</span>
-                  </div>
-                  <select
-                    className="export-modal-select"
-                    value={mirrorSceneNumbers}
-                    onChange={(e) => setMirrorSceneNumbers(e.target.value)}
-                  >
-                    <option value="off">Disabled</option>
-                    <option value="left_side">Left Side Only</option>
-                    <option value="mirror">Mirror on Both Sides</option>
-                  </select>
-                </div>
+            <FormControlLabel
+              control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Sections</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Render section headings (#) in export</Typography>
+                </Box>
+              }
+            />
 
-                <div className="export-modal-option-row">
-                  <div className="export-modal-option-label-wrapper">
-                    <span className="export-modal-option-label">Export Font</span>
-                    <span className="export-modal-option-desc">Font used for PDF rendering</span>
-                  </div>
-                  <select
-                    className="export-modal-select"
-                    value={selectedFont}
-                    onChange={(e) => setSelectedFont(e.target.value)}
-                  >
-                    <option value="courier-prime">Courier Prime</option>
-                    <option value="courier-prime-sans">Courier Prime Sans</option>
-                  </select>
-                </div>
-              </>
-            )}
+            <FormControlLabel
+              control={<Switch checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Synopsis</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Render synopses (=) in export</Typography>
+                </Box>
+              }
+            />
+          </Box>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>Clean Fountain File Export</Typography>
+              <Typography variant="caption" color="text.secondary" component="div">
+                Exports a standard Fountain file without ActOne-specific metadata or draft variables.
+                <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
+                  <li>Markers and note tags will be removed</li>
+                  <li>ActOne settings block will be stripped</li>
+                  <li>Color and storyline tags will be removed</li>
+                </Box>
+              </Typography>
+            </Box>
 
-            <div className="export-modal-option-row">
-              <div className="export-modal-option-label-wrapper">
-                <span className="export-modal-option-label">Include Sections</span>
-                <span className="export-modal-option-desc">
-                  {format === "pdf" ? "Render section headings (#) in export" : "Keep section lines (#) in the exported file"}
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                className="export-modal-checkbox"
-                checked={exportSections}
-                onChange={(e) => setExportSections(e.target.checked)}
-              />
-            </div>
+            <FormControlLabel
+              control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Title Page</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Export the title page if it is defined</Typography>
+                </Box>
+              }
+            />
 
-            <div className="export-modal-option-row">
-              <div className="export-modal-option-label-wrapper">
-                <span className="export-modal-option-label">Include Synopsis</span>
-                <span className="export-modal-option-desc">
-                  {format === "pdf" ? "Render synopses (=) in export" : "Keep synopsis lines (=) in the exported file"}
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                className="export-modal-checkbox"
-                checked={exportSynopses}
-                onChange={(e) => setExportSynopses(e.target.checked)}
-              />
-            </div>
-          </div>
-        </div>
+            <FormControlLabel
+              control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Sections</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Keep section lines (#) in the exported file</Typography>
+                </Box>
+              }
+            />
 
-        <div className="export-modal-footer">
-          <button className="export-modal-btn cancel" onClick={handleClose}>Cancel</button>
-          <button className="export-modal-btn primary" onClick={handleExport}>
-            Export to {format === "pdf" ? "PDF" : "Fountain"}
-          </button>
-        </div>
-      </div>
-    </div>
+            <FormControlLabel
+              control={<Switch checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Synopsis</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Keep synopsis lines (=) in the exported file</Typography>
+                </Box>
+              }
+            />
+          </Box>
+        )}
+      </DialogContent>
+
+      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
+        <Button onClick={onClose} color="inherit" variant="outlined">Cancel</Button>
+        <Button onClick={handleExport} variant="contained" color="primary">
+          Export to {format === "pdf" ? "PDF" : "Fountain"}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };

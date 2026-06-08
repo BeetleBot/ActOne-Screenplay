@@ -1,97 +1,21 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { X, Check } from "lucide-react";
-import { useTheme, ThemeType } from "../context/ThemeContext";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import CloseIcon from "@mui/icons-material/Close";
+import CheckIcon from "@mui/icons-material/Check";
+import { useTheme } from "../context/ThemeContext";
+import { themes } from "../theme/muiTheme";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+  Box,
+  Typography,
+  ButtonBase,
+} from "@mui/material";
 
 interface ThemeSelectorModalProps {
   onClose: () => void;
 }
-
-interface ThemeConfig {
-  id: ThemeType;
-  name: string;
-  desc: string;
-  isDark: boolean;
-  colors: {
-    bg: string;
-    text: string;
-    accent: string;
-    sidebar: string;
-  };
-}
-
-const themes: ThemeConfig[] = [
-  {
-    id: "light",
-    name: "Classic White",
-    desc: "Clean paper workspace",
-    isDark: false,
-    colors: { bg: "#ffffff", text: "#1a1a1a", accent: "#007aff", sidebar: "#f8f9fa" }
-  },
-  {
-    id: "warm-paper",
-    name: "Warm Paper",
-    desc: "Creamy paper-like warmth",
-    isDark: false,
-    colors: { bg: "#f5eed7", text: "#2c1810", accent: "#a0522d", sidebar: "#ede3c8" }
-  },
-  {
-    id: "lilac",
-    name: "Lilac Violet",
-    desc: "Premium lavender pastel style",
-    isDark: false,
-    colors: { bg: "#f3e5f5", text: "#4a148c", accent: "#7b1fa2", sidebar: "#f8f0fb" }
-  },
-  {
-    id: "honey",
-    name: "Honey",
-    desc: "Warm golden sunlight glow",
-    isDark: false,
-    colors: { bg: "#faf3e0", text: "#3d2c1a", accent: "#d4943a", sidebar: "#f5ecd0" }
-  },
-  {
-    id: "sage",
-    name: "Sage",
-    desc: "Calming muted green",
-    isDark: false,
-    colors: { bg: "#f0f5f0", text: "#2c3a2e", accent: "#6a9a6a", sidebar: "#e6efe4" }
-  },
-  {
-    id: "dark",
-    name: "Classic Dark",
-    desc: "Low-fatigue dark workspace",
-    isDark: true,
-    colors: { bg: "#18191c", text: "#d4d4d8", accent: "#0a84ff", sidebar: "#121315" }
-  },
-  {
-    id: "pitch-black",
-    name: "Pitch Black",
-    desc: "True black OLED-friendly dark",
-    isDark: true,
-    colors: { bg: "#000000", text: "#e0e0e0", accent: "#0a84ff", sidebar: "#0a0a0a" }
-  },
-  {
-    id: "forest",
-    name: "Forest",
-    desc: "Deep nature-inspired green",
-    isDark: true,
-    colors: { bg: "#1a241a", text: "#c4d0c4", accent: "#6a9e6a", sidebar: "#141e14" }
-  },
-  {
-    id: "plum",
-    name: "Plum",
-    desc: "Rich dark purple warmth",
-    isDark: true,
-    colors: { bg: "#1a1428", text: "#d0c8e0", accent: "#9b6ab0", sidebar: "#141020" }
-  },
-  {
-    id: "ayu-mirage",
-    name: "Ayu Mirage",
-    desc: "Warm amber dusk palette",
-    isDark: true,
-    colors: { bg: "#1f2430", text: "#ccbfae", accent: "#ffcc66", sidebar: "#171b24" }
-  }
-];
 
 export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({ onClose }) => {
   const { theme, setTheme } = useTheme();
@@ -100,8 +24,6 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({ onClose 
     return idx >= 0 ? idx : 0;
   });
   const gridRef = useRef<HTMLDivElement>(null);
-
-  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
 
   const scrollIntoView = useCallback((idx: number) => {
     const el = gridRef.current?.querySelector(`[data-theme-idx="${idx}"]`) as HTMLElement;
@@ -134,99 +56,78 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({ onClose 
   }, [focusedIdx, setTheme]);
 
   return (
-    <div
-      className="theme-modal-overlay"
-      onClick={onClose}
-      ref={containerRef}
-      onKeyDown={trapKeyDown}
-      tabIndex={-1}
-      style={{ outline: "none" }}
-    >
-      <div
-        className="theme-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Select Theme"
-      >
-        <div className="theme-modal-header">
-          <h2 className="theme-modal-title">Select Theme</h2>
-          <button className="theme-modal-close" onClick={onClose} tabIndex={0}>
-            <X size={18} />
-          </button>
-        </div>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Select Theme</Typography>
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
+          <CloseIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </DialogTitle>
 
-        <div className="theme-modal-body">
-          <div
-            ref={gridRef}
-            className="theme-grid"
-            role="listbox"
-            tabIndex={0}
-            onKeyDown={handleGridKeyDown}
-            style={{ outline: "none" }}
-          >
-            {themes.map((t, idx) => {
-              const isActive = theme === t.id;
-              const isFocused = idx === focusedIdx;
-              return (
-                <button
-                  key={t.id}
-                  data-theme-idx={idx}
-                  className={`theme-card ${isActive ? "active" : ""}`}
-                  onClick={() => setTheme(t.id)}
-                  onFocus={() => setFocusedIdx(idx)}
-                  onMouseEnter={() => setFocusedIdx(idx)}
-                  role="option"
-                  aria-selected={isActive}
-                  tabIndex={-1}
-                  style={{
-                    outline: isFocused ? "2px solid var(--accent-color)" : "none",
-                    outlineOffset: "-2px",
-                  }}
-                >
-                  <div className="theme-card-left">
-                    <div className="theme-card-info">
-                      <span className="theme-card-name">{t.name}</span>
-                      <span className="theme-card-desc">{t.desc}</span>
-                    </div>
-                    <div className="theme-palette">
-                      <span
-                        className="theme-dot"
-                        style={{ backgroundColor: t.colors.bg }}
-                        title="Canvas Background"
-                      />
-                      <span
-                        className="theme-dot"
-                        style={{ backgroundColor: t.colors.sidebar }}
-                        title="Sidebar Background"
-                      />
-                      <span
-                        className="theme-dot"
-                        style={{ backgroundColor: t.colors.text }}
-                        title="Text Color"
-                      />
-                      <span
-                        className="theme-dot"
-                        style={{ backgroundColor: t.colors.accent }}
-                        title="Accent Color"
-                      />
-                    </div>
-                  </div>
-                  <div className="theme-card-right">
-                    {isActive ? (
-                      <span className="theme-active-check">
-                        <Check size={16} />
-                      </span>
-                    ) : (
-                      <span className="theme-badge">{t.isDark ? "Dark" : "Light"}</span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
+      <DialogContent dividers sx={{ p: 2, maxHeight: 400, overflowY: "auto" }}>
+        <Box
+          ref={gridRef}
+          role="listbox"
+          tabIndex={0}
+          onKeyDown={handleGridKeyDown}
+          sx={{ outline: "none", display: "flex", flexDirection: "column", gap: 1 }}
+        >
+          {themes.map((t, idx) => {
+            const isActive = theme === t.id;
+            const isFocused = idx === focusedIdx;
+            return (
+              <ButtonBase
+                key={t.id}
+                data-theme-idx={idx}
+                onClick={() => setTheme(t.id)}
+                onFocus={() => setFocusedIdx(idx)}
+                onMouseEnter={() => setFocusedIdx(idx)}
+                role="option"
+                aria-selected={isActive}
+                sx={{
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  p: 1.5,
+                  borderRadius: 0,
+                  textAlign: "left",
+                  bgcolor: isActive ? "action.selected" : "transparent",
+                  border: "1px solid",
+                  borderColor: isFocused ? "primary.main" : "divider",
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                  },
+                }}
+              >
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, flex: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                    {t.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                    {t.desc}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 0.5, mt: 0.5 }}>
+                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: t.colors.bg, border: "1px solid", borderColor: "divider" }} title="Canvas BG" />
+                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: t.colors.sidebar, border: "1px solid", borderColor: "divider" }} title="Sidebar BG" />
+                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: t.colors.text, border: "1px solid", borderColor: "divider" }} title="Text color" />
+                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: t.colors.accent, border: "1px solid", borderColor: "divider" }} title="Accent color" />
+                  </Box>
+                </Box>
+                <Box sx={{ ml: 2, flexShrink: 0 }}>
+                  {isActive && (
+                    <Box sx={{ color: "primary.main", display: "flex" }}>
+                      <CheckIcon sx={{ fontSize: 18, fontWeight: 700 }} />
+                    </Box>
+                  )}
+                </Box>
+              </ButtonBase>
+            );
+          })}
+        </Box>
+      </DialogContent>
+    </Dialog>
   );
 };
+export default ThemeSelectorModal;

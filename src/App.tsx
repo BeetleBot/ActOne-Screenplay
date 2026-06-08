@@ -11,6 +11,8 @@ import { ModalManager } from "./components/ModalManager";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { WindowResizeHandles } from "./components/WindowResizeHandles";
 
+import { SprintProvider } from "./context/SprintContext";
+
 function AppInner() {
   useNativeAppBehavior();
 
@@ -108,7 +110,9 @@ function App() {
   return (
     <ThemeProvider>
       <AppProviders>
-        <AppInner />
+        <SprintProvider>
+          <AppInner />
+        </SprintProvider>
       </AppProviders>
     </ThemeProvider>
   );

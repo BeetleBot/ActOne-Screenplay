@@ -2,51 +2,53 @@ import React, { useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import { useParking } from "../context/ParkingContext";
 import { LineType } from "../parser/FountainParser";
-import { Plus, X } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
 import { TodoView } from "./TodoView";
 import { OutlineView } from "./OutlineView";
+import { SprintView } from "./SprintView";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Grid,
+  Paper,
+  IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  LinearProgress,
+  List,
+  ListItem,
+  Alert,
+  AlertTitle,
+} from "@mui/material";
 
 const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({ saveFileAs }) => (
-  <div style={{
-    padding: "10px",
-    backgroundColor: "rgba(229, 62, 62, 0.08)",
-    border: "1px solid rgba(229, 62, 62, 0.3)",
-    borderRadius: "8px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    fontSize: "12px",
-    color: "var(--text-main)",
-    marginBottom: "8px"
-  }}>
-    <p style={{ margin: 0, fontWeight: 500, color: "#e53e3e" }}>
-      Only available on .actone
-    </p>
-    <p style={{ margin: 0, fontSize: "11px", opacity: 0.8 }}>
-      Workspace features require saving the screenplay as an ActOne Bundle (.actone).
-    </p>
-    {saveFileAs && (
-      <button
-        onClick={() => saveFileAs()}
-        style={{
-          backgroundColor: "#e53e3e",
-          color: "#ffffff",
-          border: "none",
-          borderRadius: "4px",
-          padding: "6px 12px",
-          fontSize: "11px",
-          fontWeight: 600,
-          cursor: "pointer",
-          alignSelf: "flex-start",
-          transition: "background-color 0.2s"
-        }}
-        onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#c53030"}
-        onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#e53e3e"}
-      >
-        Save as .actone
-      </button>
-    )}
-  </div>
+  <Alert
+    severity="warning"
+    sx={{ mb: 2, borderRadius: 0 }}
+    action={
+      saveFileAs && (
+        <Button
+          color="warning"
+          size="small"
+          variant="contained"
+          onClick={() => saveFileAs()}
+          sx={{ fontWeight: 600, textTransform: "none" }}
+        >
+          Save as .actone
+        </Button>
+      )
+    }
+  >
+    <AlertTitle sx={{ fontWeight: 700 }}>Only available on .actone</AlertTitle>
+    Workspace features require saving the screenplay as an ActOne Bundle (.actone).
+  </Alert>
 );
 
 interface SidebarViewProps {
@@ -76,34 +78,41 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     };
 
     return (
-      <div className="notepad-view" style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px" }}>
-        <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8 }}>Document Notepad</h3>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 1.5, p: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
+          Document Notepad
+        </Typography>
         {!supportsExtended && (
           <ActoneBanner saveFileAs={saveFileAs} />
         )}
-        <textarea
+        <TextField
           value={notepadText}
           onChange={handleChange}
           disabled={!supportsExtended}
-          style={{
-            flex: 1,
-            width: "100%",
-            minHeight: "300px",
-            resize: "none",
-            backgroundColor: "var(--bg-editor)",
-            color: "var(--text-main)",
-            border: "1px solid var(--border-color)",
-            borderRadius: "8px",
-            padding: "10px",
-            fontFamily: "var(--font-ui)",
-            fontSize: "13px",
-            outline: "none",
-            opacity: !supportsExtended ? 0.5 : 1,
-            cursor: !supportsExtended ? "not-allowed" : "text",
-          }}
+          multiline
           placeholder={supportsExtended ? "Type your outline notes, beats, or draft goals here..." : "Save as .actone to use the notepad"}
+          variant="outlined"
+          fullWidth
+          slotProps={{
+            input: {
+              sx: {
+                fontFamily: "var(--font-ui)",
+                fontSize: "13px",
+                flex: 1,
+                alignItems: "flex-start",
+                minHeight: "300px",
+              }
+            }
+          }}
+          sx={{
+            flex: 1,
+            display: "flex",
+            "& .MuiInputBase-root": {
+              height: "100%",
+            }
+          }}
         />
-      </div>
+      </Box>
     );
   }
 
@@ -154,87 +163,74 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     };
 
     return (
-      <div className="characters-view" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px", opacity: 0.8 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
           Character Tracking
-        </h3>
+        </Typography>
         
         {!supportsExtended && <ActoneBanner saveFileAs={saveFileAs} />}
 
-        <input
-          type="text"
-          className="character-search-input"
+        <TextField
           value={characterFilter}
           disabled={!supportsExtended}
           onChange={(e) => setCharacterFilter(e.target.value)}
           placeholder={!supportsExtended ? "Tracking disabled..." : "Filter characters..."}
-          style={{
-            width: "100%",
-            padding: "6px 10px",
-            fontSize: "12px",
-            border: "1px solid var(--border-color)",
-            borderRadius: "6px",
-            backgroundColor: "var(--bg-editor)",
-            color: "var(--text-main)",
-            outline: "none",
-            opacity: !supportsExtended ? 0.5 : 1,
-            cursor: !supportsExtended ? "not-allowed" : "text",
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              startAdornment: (
+                <Box sx={{ display: "flex", color: "text.secondary", mr: 1 }}>
+                  <SearchIcon sx={{ fontSize: 16 }} />
+                </Box>
+              ),
+            }
           }}
         />
         {filteredCharacters.length === 0 ? (
-          <p style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic" }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
             No characters found matching search.
-          </p>
+          </Typography>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", opacity: !supportsExtended ? 0.6 : 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, opacity: !supportsExtended ? 0.6 : 1 }}>
             {filteredCharacters.map(([name, count]) => {
               const gender = genders[name] || "unknown";
               return (
-                <div
+                <Card
                   key={name}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    padding: "8px",
-                    border: `1px solid var(--border-color)`,
-                    borderLeft: !supportsExtended ? `4px solid var(--border-color)` : `4px solid ${getGenderColor(gender)}`,
-                    borderRadius: "8px",
-                    backgroundColor: "var(--bg-editor)",
-                    gap: "4px",
+                  variant="outlined"
+                  sx={{
+                    borderLeft: `4px solid ${getGenderColor(gender)}`,
+                    borderRadius: 0,
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "12px", fontWeight: 700 }}>{name}</span>
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        backgroundColor: "var(--border-color)",
-                        padding: "2px 6px",
-                        borderRadius: "10px",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {count} lines
-                    </span>
-                  </div>
-                  <select
-                    value={gender}
-                    disabled={!supportsExtended}
-                    onChange={(e) => handleGenderChange(name, e.target.value)}
-                    className={`character-gender-select gender-${gender}`}
-                    style={!supportsExtended ? { opacity: 0.5, cursor: "not-allowed" } : {}}
-                  >
-                    <option value="unknown">Gender: Unknown</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="nonbinary">Non-Binary</option>
-                  </select>
-                </div>
+                  <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{name}</Typography>
+                      <Typography variant="caption" sx={{ bgcolor: "action.selected", px: 1, py: 0.2, borderRadius: 0, fontWeight: 600 }}>
+                        {count} lines
+                      </Typography>
+                    </Box>
+                    <FormControl fullWidth size="small">
+                      <Select
+                        value={gender}
+                        disabled={!supportsExtended}
+                        onChange={(e) => handleGenderChange(name, e.target.value)}
+                        sx={{ fontSize: 12, height: 28 }}
+                      >
+                        <MenuItem value="unknown">Gender: Unknown</MenuItem>
+                        <MenuItem value="male">Male</MenuItem>
+                        <MenuItem value="female">Female</MenuItem>
+                        <MenuItem value="nonbinary">Non-Binary</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </CardContent>
+                </Card>
               );
             })}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 
@@ -290,173 +286,102 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     const totalDialogueLines = Object.values(genderDialogueLines).reduce((a, b) => a + b, 0);
 
     return (
-      <div className="stats-view" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8 }}>Screenplay Stats</h3>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
+          Screenplay Stats
+        </Typography>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-          <div
-            style={{
-              padding: "10px",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              backgroundColor: "var(--bg-editor)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600 }}>
-              Est. Pages
-            </span>
-            <span style={{ fontSize: "20px", fontWeight: 700, marginTop: "4px" }}>{pageEstimate}</span>
-          </div>
-          <div
-            style={{
-              padding: "10px",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              backgroundColor: "var(--bg-editor)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600 }}>
-              Total Words
-            </span>
-            <span style={{ fontSize: "20px", fontWeight: 700, marginTop: "4px" }}>{totalWords}</span>
-          </div>
-          <div
-            style={{
-              padding: "10px",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              backgroundColor: "var(--bg-editor)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600 }}>
-              Total Scenes
-            </span>
-            <span style={{ fontSize: "20px", fontWeight: 700, marginTop: "4px" }}>{headingCount}</span>
-          </div>
-          <div
-            style={{
-              padding: "10px",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              backgroundColor: "var(--bg-editor)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600 }}>
-              Total Lines
-            </span>
-            <span style={{ fontSize: "20px", fontWeight: 700, marginTop: "4px" }}>{totalLines}</span>
-          </div>
-        </div>
+        <Grid container spacing={1}>
+          {[
+            { label: "Est. Pages", value: pageEstimate },
+            { label: "Total Words", value: totalWords },
+            { label: "Total Scenes", value: headingCount },
+            { label: "Total Lines", value: totalLines },
+          ].map((stat) => (
+            <Grid size={{ xs: 6 }} key={stat.label}>
+              <Paper variant="outlined" sx={{ p: 1.5, textAlign: "left", borderRadius: 2 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600, display: "block" }}>
+                  {stat.label}
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
+                  {stat.value}
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
 
-        <div
-          style={{
-            padding: "12px",
-            border: "1px solid var(--border-color)",
-            borderRadius: "8px",
-            backgroundColor: "var(--bg-editor)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
-          <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600 }}>
             Dialogue vs Action Balance
-          </span>
+          </Typography>
 
-          <div style={{ display: "flex", height: "16px", borderRadius: "8px", overflow: "hidden", marginTop: "4px" }}>
-            <div style={{ width: `${dialoguePct}%`, backgroundColor: "var(--accent-color)" }} />
-            <div style={{ width: `${actionPct}%`, backgroundColor: "var(--text-muted)", opacity: 0.3 }} />
-          </div>
+          <Box sx={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", mt: 1, bgcolor: "action.disabledBackground" }}>
+            <Box sx={{ width: `${dialoguePct}%`, bgcolor: "primary.main" }} />
+            <Box sx={{ width: `${actionPct}%`, bgcolor: "text.disabled" }} />
+          </Box>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "11px",
-              fontWeight: 500,
-              marginTop: "2px",
-            }}
-          >
-            <span style={{ color: "var(--accent-color)" }}>Dialogue: {dialoguePct}%</span>
-            <span style={{ color: "var(--text-muted)" }}>Action: {actionPct}%</span>
-          </div>
-        </div>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
+            <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>Dialogue: {dialoguePct}%</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Action: {actionPct}%</Typography>
+          </Box>
+        </Paper>
 
-        <div
-          style={{
-            padding: "12px",
-            border: "1px solid var(--border-color)",
-            borderRadius: "8px",
-            backgroundColor: "var(--bg-editor)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
-          <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600 }}>
             Dialogue Gender Split
-          </span>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "4px" }}>
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {["male", "female", "nonbinary", "unknown"].map((g) => {
               const count = genderDialogueLines[g];
               const pct = totalDialogueLines > 0 ? Math.round((count / totalDialogueLines) * 100) : 0;
               const color = g === "male" ? "#0081ef" : g === "female" ? "#fa6fc1" : g === "nonbinary" ? "#b520da" : "#969696";
               return (
-                <div key={g} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px" }}>
-                    <span style={{ textTransform: "capitalize" }}>{g}</span>
-                    <span>{pct}%</span>
-                  </div>
-                  <div style={{ height: "6px", backgroundColor: "rgba(128,128,128,0.15)", borderRadius: "3px", overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", backgroundColor: color }} />
-                  </div>
-                </div>
+                <Box key={g} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="caption" sx={{ textTransform: "capitalize", fontWeight: 500 }}>{g}</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>{pct}%</Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={pct} sx={{ height: 6, borderRadius: 3, "& .MuiLinearProgress-bar": { bgcolor: color }, bgcolor: "action.disabledBackground" }} />
+                </Box>
               );
             })}
-          </div>
-        </div>
+          </Box>
+        </Paper>
 
-        <div
-          style={{
-            padding: "12px",
-            border: "1px solid var(--border-color)",
-            borderRadius: "8px",
-            backgroundColor: "var(--bg-editor)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
-          <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600 }}>
             Top Locations
-          </span>
+          </Typography>
           {locations.length === 0 ? (
-            <p style={{ fontSize: "12px", fontStyle: "italic", color: "var(--text-muted)" }}>No locations parsed.</p>
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+              No locations parsed.
+            </Typography>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
               {locations.map(([loc, count]) => (
-                <div key={loc} style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{loc}</span>
-                  <span style={{ fontWeight: 600, color: "var(--accent-color)" }}>{count}</span>
-                </div>
+                <ListItem key={loc} disableGutters sx={{ py: 0.2, display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {loc}
+                  </Typography>
+                  <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
+                    {count}
+                  </Typography>
+                </ListItem>
               ))}
-            </div>
+            </List>
           )}
-        </div>
-      </div>
+        </Paper>
+      </Box>
     );
   }
 
   if (activeTab === "todo") {
     return <TodoView disabled={!supportsExtended} saveFileAs={saveFileAs} />;
+  }
+
+  if (activeTab === "sprint") {
+    return <SprintView />;
   }
 
   if (activeTab === "parking") {
@@ -491,100 +416,89 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
 
     if (!supportsExtended) {
       return (
-        <div className="parking-view" style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px" }}>
-          <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8, margin: 0 }}>Parking</h3>
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 1.5, p: 2 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
+            Parking
+          </Typography>
           <ActoneBanner saveFileAs={saveFileAs} />
-        </div>
+        </Box>
       );
     }
 
     return (
-      <div className="parking-view" style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h3 style={{ fontSize: "14px", fontWeight: 600, opacity: 0.8, margin: 0 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2, p: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
             Parking
-          </h3>
-          <button
+          </Typography>
+          <Button
+            variant="contained"
+            size="small"
             onClick={handleParkSelection}
-            title="Park selected text"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              background: "var(--accent-color)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "var(--radius-sm)",
-              padding: "4px 10px",
-              fontSize: "11px",
-              fontWeight: 600,
-              cursor: "pointer",
-              opacity: editorView?.state.selection.main.empty ? 0.5 : 1,
-            }}
+            disabled={editorView?.state.selection.main.empty}
+            startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+            sx={{ textTransform: "none", fontSize: 11, fontWeight: 600 }}
           >
-            <Plus size={12} />
             Park Selection
-          </button>
-        </div>
+          </Button>
+        </Box>
 
-        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px", minHeight: 0 }}>
+        <Box sx={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 1, minHeight: 0 }}>
           {items.length === 0 ? (
-            <p style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic" }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
               Select text in the editor and click "Park Selection" to store it here.
-            </p>
+            </Typography>
           ) : (
             items.map((item) => (
-              <div
+              <Card
                 key={item.id}
                 onClick={() => handleCardClick(item)}
-                style={{
-                  background: "var(--bg-editor)",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: "8px 10px",
+                variant="outlined"
+                sx={{
                   cursor: "pointer",
                   position: "relative",
-                  fontSize: "12px",
-                  lineHeight: 1.5,
-                  color: "var(--text-main)",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  maxHeight: "120px",
-                  overflow: "hidden",
+                  borderRadius: 0,
+                  maxHeight: "140px",
+                  display: "flex",
+                  flexDirection: "column",
+                  flexShrink: 0,
+                  transition: "border-color 0.15s ease",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                  },
                 }}
               >
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeItem(item.id);
-                  }}
-                  title="Remove"
-                  style={{
-                    position: "absolute",
-                    top: "4px",
-                    right: "4px",
-                    width: "18px",
-                    height: "18px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "var(--radius-xs)",
-                    cursor: "pointer",
-                    color: "var(--text-muted)",
-                    opacity: 0.3,
-                  }}
-                  className="parking-card-remove"
-                >
-                  <X size={12} />
-                </div>
-                {item.text}
-              </div>
+                <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, pr: 4, overflowY: "auto", overscrollBehavior: "contain", flex: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeItem(item.id);
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      opacity: 0.5,
+                      borderRadius: 0,
+                      "&:hover": { opacity: 1 },
+                      zIndex: 2,
+                    }}
+                  >
+                    <CloseIcon sx={{ fontSize: 12 }} />
+                  </IconButton>
+                  <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 12, lineHeight: 1.4 }}>
+                    {item.text}
+                  </Typography>
+                </CardContent>
+              </Card>
             ))
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 
   return null;
 };
+

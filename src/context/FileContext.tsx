@@ -34,6 +34,8 @@ export interface FileContextProps {
   selectFile: (id: string) => void;
   newFile: (initialContent?: string) => void;
   closeFile: (id: string) => void;
+  closeOthers: (id: string) => void;
+  closeAll: () => void;
   recentFiles: RecentFile[];
   openFilePath: (path: string) => Promise<void>;
   removeFromRecent: (path: string) => void;
@@ -231,6 +233,34 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const closeOthers = (id: string) => {
+    const dirtyOthers = files.filter(f => f.id !== id && f.isDirty);
+    if (dirtyOthers.length > 0) {
+      if (!window.confirm(`There are ${dirtyOthers.length} unsaved files. Are you sure you want to close them?`)) {
+        return;
+      }
+    }
+    const fileToKeep = files.find(f => f.id === id);
+    if (fileToKeep) {
+      setFiles([fileToKeep]);
+      selectFile(id);
+    }
+  };
+
+  const closeAll = () => {
+    const dirtyFiles = files.filter(f => f.isDirty);
+    if (dirtyFiles.length > 0) {
+      if (!window.confirm(`There are ${dirtyFiles.length} unsaved files. Are you sure you want to close them?`)) {
+        return;
+      }
+    }
+    setFiles([]);
+    setActiveFileIdState("");
+    setRawTextState("");
+    setFilePath(null);
+    setParsedDoc(parseScreenplay("", paperSize));
+  };
+
   const setRawText = (text: string) => {
     const normalized = text.replace(/\r\n/g, "\n");
     setRawTextState(normalized);
@@ -317,6 +347,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let todosData: any[] = [];
           let parkingData: any[] = [];
           let notepadData = "";
+          let sprintData: any[] = [];
           if (unzipped["settings.json"]) {
             try {
               parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
@@ -360,7 +391,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData };
+          if (unzipped["sprint_data.json"]) {
+            try {
+              sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData };
         } else {
           content = await invoke<string>("read_file_content", { path });
         }
@@ -479,7 +517,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let todosData: any[] = [];
           let parkingData: any[] = [];
           let notepadData = "";
-          if (unzipped["todos.json"]) {
+          let sprintData: any[] = [];
+          if (unzipped["settings.json"]) {
             try {
               todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
             } catch (e) {
@@ -500,7 +539,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData };
+          if (unzipped["sprint_data.json"]) {
+            try {
+              sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData };
             resolve({ path: file.name, content, settings });
           } else {
             const content = await file.text();
@@ -541,6 +587,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let todosData: any[] = [];
           let parkingData: any[] = [];
           let notepadData = "";
+          let sprintData: any[] = [];
           if (unzipped["settings.json"]) {
             try {
               parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
@@ -584,7 +631,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData };
+          if (unzipped["sprint_data.json"]) {
+            try {
+              sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData };
         } catch (e) {
           console.error(e);
           alert("Could not read actone bundle binary");
@@ -638,7 +692,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveActoneFile = async (path: string, text: string, settings: any) => {
-    const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, ...restSettings } = settings || {};
+    const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, ...restSettings } = settings || {};
     const characters = genders ? { genders } : {};
     const revision = { revisionModeEnabled, revisionBaseText };
     const zipped = zipSync({
@@ -649,6 +703,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
       "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
       "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
+      "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
     });
     await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
   };
@@ -678,7 +733,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
         }
       } else {
-        const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, ...restSettings } = currentActive.parsedDoc.settings || {};
+        const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, ...restSettings } = currentActive.parsedDoc.settings || {};
         const characters = genders ? { genders } : {};
         const revision = { revisionModeEnabled, revisionBaseText };
         const zipped = zipSync({
@@ -689,6 +744,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
           "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
           "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
+          "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
         });
         const blob = new Blob([zipped], { type: "application/zip" });
         const url = URL.createObjectURL(blob);
@@ -760,7 +816,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let blob: Blob;
 
         if (isActone) {
-          const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, ...restSettings } = currentActive.parsedDoc.settings || {};
+          const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, ...restSettings } = currentActive.parsedDoc.settings || {};
           const characters = genders ? { genders } : {};
           const revision = { revisionModeEnabled, revisionBaseText };
           const zipped = zipSync({
@@ -771,6 +827,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
             "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
             "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
+            "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
           });
           blob = new Blob([zipped], { type: "application/zip" });
         } else {
@@ -866,6 +923,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectFile,
         newFile,
         closeFile,
+        closeOthers,
+        closeAll,
         recentFiles,
         openFilePath,
         removeFromRecent,

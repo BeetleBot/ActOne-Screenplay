@@ -1,21 +1,24 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
 import { LineType, ParsedLine } from "../parser/FountainParser";
-import { MoreVertical, Search, X } from "lucide-react";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import {
+  Box,
+  Typography,
+  IconButton,
+  TextField,
+  Chip,
+  Menu,
+  MenuItem,
+  List,
+  ListItemButton,
+  ListItemText,
+} from "@mui/material";
 
-interface OutlineItem {
-  line: ParsedLine;
-  index: number;
-}
-
-interface TreeNode {
-  item: OutlineItem;
-  depth: number;
-  children: TreeNode[];
-  synopses: OutlineItem[];
-}
-
-function getSceneColor(line: ParsedLine): string | undefined {
+export function getSceneColor(line: ParsedLine): string | undefined {
   if (line.marker) {
     return line.marker.color.startsWith("#")
       ? line.marker.color
@@ -27,7 +30,7 @@ function getSceneColor(line: ParsedLine): string | undefined {
   return undefined;
 }
 
-function getSceneTitle(line: ParsedLine): string {
+export function getSceneTitle(line: ParsedLine): string {
   if (line.marker && line.type !== LineType.heading) {
     return line.marker.description || "Marker";
   }
@@ -38,7 +41,19 @@ function getSceneTitle(line: ParsedLine): string {
     .trim();
 }
 
-function buildTree(items: OutlineItem[], collapsed: { [id: string]: boolean }): TreeNode[] {
+export interface OutlineItem {
+  line: ParsedLine;
+  index: number;
+}
+
+export interface TreeNode {
+  item: OutlineItem;
+  depth: number;
+  children: TreeNode[];
+  synopses: OutlineItem[];
+}
+
+export function buildTree(items: OutlineItem[], collapsed: { [id: string]: boolean }): TreeNode[] {
   const root: TreeNode[] = [];
   const stack: { node: TreeNode; sectionDepth: number }[] = [];
 
@@ -90,7 +105,7 @@ function buildTree(items: OutlineItem[], collapsed: { [id: string]: boolean }): 
   return root;
 }
 
-function flattenSelectable(tree: TreeNode[]): TreeNode[] {
+export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
   const result: TreeNode[] = [];
   const walk = (nodes: TreeNode[]) => {
     for (const node of nodes) {
@@ -116,7 +131,7 @@ export const OutlineView: React.FC = () => {
   const [showSections, setShowSections] = useState(true);
   const [showScenes, setShowScenes] = useState(true);
   const [showSynopses, setShowSynopses] = useState(true);
-  const [isGearPanelOpen, setIsGearPanelOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [outlineFontSize, setOutlineFontSizeState] = useState<"small" | "normal" | "large">(
     () => (localStorage.getItem("actone-outline-font-size") as any) || "normal"
   );
@@ -283,53 +298,80 @@ export const OutlineView: React.FC = () => {
     if (container) container.focus();
   };
 
+  const fontSizes = useMemo(() => {
+    return {
+      small: {
+        section: "0.75rem",
+        scene: "0.725rem",
+        synopsis: "0.675rem",
+        number: "8px",
+        chip: "7px",
+      },
+      normal: {
+        section: "0.825rem",
+        scene: "0.8rem",
+        synopsis: "0.75rem",
+        number: "8.5px",
+        chip: "7.5px",
+      },
+      large: {
+        section: "0.9rem",
+        scene: "0.875rem",
+        synopsis: "0.825rem",
+        number: "9px",
+        chip: "8px",
+      },
+    }[outlineFontSize];
+  }, [outlineFontSize]);
+
   const renderOutlineSynopses = (synopses: OutlineItem[]) => {
     if (synopses.length === 0) return null;
 
     if (synopses.length === 1) {
       const syn = synopses[0];
       return (
-        <div className="outline-synopses-list">
-          <span
-            className="outline-synopsis-single"
+        <Box sx={{ mt: 0.5, pl: 0.5 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
             onClick={(e) => {
               e.stopPropagation();
               scrollToLine(syn.index, true);
               const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
               if (container) container.focus();
             }}
+            sx={{ display: "block", cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, "&:hover": { color: "primary.main" } }}
           >
             {syn.line.text.replace(/^=[ ]*/, "").trim()}
-          </span>
-        </div>
+          </Typography>
+        </Box>
       );
     }
 
     return (
-      <div className="outline-synopses-list multiple">
+      <Box sx={{ mt: 0.5, pl: 0.5, display: "flex", flexDirection: "column", gap: 0.2 }}>
         {synopses.map((syn) => (
-          <span
+          <Typography
             key={syn.line.id}
-            className="outline-synopsis-bullet-item"
+            variant="caption"
+            color="text.secondary"
             onClick={(e) => {
               e.stopPropagation();
               scrollToLine(syn.index, true);
               const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
               if (container) container.focus();
             }}
+            sx={{ cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, "&:hover": { color: "primary.main" }, display: "flex", alignItems: "center", gap: 0.5 }}
           >
-            <span className="bullet-dot">•</span>
-            <span className="bullet-text">
-              {syn.line.text.replace(/^=[ ]*/, "").trim()}
-            </span>
-          </span>
+            • {syn.line.text.replace(/^=[ ]*/, "").trim()}
+          </Typography>
         ))}
-      </div>
+      </Box>
     );
   };
 
   const renderTreeNode = (node: TreeNode): React.ReactNode => {
-    const { item, depth, children, synopses } = node;
+    const { item, children, synopses } = node;
     const { line } = item;
     const isSection = line.type === LineType.section;
     const isSynopsis = line.type === LineType.synopse;
@@ -346,193 +388,330 @@ export const OutlineView: React.FC = () => {
 
     if (isSection) {
       return (
-        <div
-          key={line.id}
-          className={`outline-section${isCollapsed ? " collapsed" : ""}`}
-        >
-          <div
-            className={`outline-scene-card outline-section-card${isActive ? " active" : ""}`}
+        <Box key={line.id} sx={{ display: "flex", flexDirection: "column" }}>
+          <ListItemButton
             data-scene-id={line.id}
             ref={isActive ? activeItemRef : null}
             onClick={(e) => handleItemClick(item, true, e)}
+            onDoubleClick={(e) => toggleSection(line.id, e)}
+            selected={isActive}
+            sx={{
+              pl: 0,
+              py: 0.25,
+              borderRadius: 0,
+              mb: 0.1,
+              transition: "background-color 0.12s ease",
+            }}
           >
-            <div className="outline-scene-body">
-              <div className="outline-scene-top">
-                <span
-                  className="outline-section-chevron"
-                  onClick={(e) => toggleSection(line.id, e)}
-                  data-collapsed={isCollapsed}
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M3 2L7 5L3 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span className={`outline-section-title depth-${line.sectionDepth || 1}`}>
+            <IconButton
+              size="small"
+              onClick={(e) => toggleSection(line.id, e)}
+              sx={{
+                p: 0.1,
+                mr: 0.4,
+                borderRadius: 0,
+                transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                transition: "transform 0.15s ease",
+              }}
+            >
+              <KeyboardArrowDownIcon sx={{ fontSize: 12 }} />
+            </IconButton>
+            <ListItemText
+              primary={
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main", fontSize: fontSizes.section }}>
                   {line.text.replace(/^[.#= ]+/, "").trim()}
-                </span>
-              </div>
-              {showSynopses && renderOutlineSynopses(synopses)}
-            </div>
-          </div>
-          {children.length > 0 && (
-            <div className="outline-section-children" data-collapsed={isCollapsed}>
-              {isCollapsed ? null : children.map(renderTreeNode)}
-            </div>
+                </Typography>
+              }
+              secondary={showSynopses && renderOutlineSynopses(synopses)}
+            />
+          </ListItemButton>
+          {!isCollapsed && children.length > 0 && (
+            <Box sx={{
+              display: "flex",
+              flexDirection: "column",
+              borderLeft: "1px solid",
+              borderColor: "divider",
+              ml: 1.1,
+              pl: 0,
+            }}>
+              {children.map(renderTreeNode)}
+            </Box>
           )}
-        </div>
+        </Box>
       );
     }
 
     if (isSynopsis) {
       return (
-        <div
-          key={line.id}
-          className="outline-synopsis"
-          style={{ "--depth": depth } as React.CSSProperties}
-        >
-          <span className="outline-synopsis-text">
+        <Box key={line.id} sx={{ pl: 1.5, py: 0.1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: fontSizes.synopsis }}>
             {line.text.replace(/^=[ ]*/, "").trim()}
-          </span>
-        </div>
+          </Typography>
+        </Box>
       );
     }
 
-    // Scene card
     const showDragOver = isDragOver && !isDragging;
     return (
-      <div
+      <ListItemButton
         key={line.id}
-        className={`outline-scene-card${isActive ? " active" : ""}${isDragging ? " dragging" : ""}${showDragOver ? " drag-over" : ""}`}
         data-scene-id={line.id}
         ref={isActive ? activeItemRef : null}
-        style={{ "--depth": depth } as React.CSSProperties}
+        selected={isActive}
         onClick={(e) => handleItemClick(item, true, e)}
         draggable={isScene}
         onDragStart={isScene ? (e) => handleDragStart(e, line.id) : undefined}
         onDragOver={isScene ? (e) => handleDragOver(e, line.id) : undefined}
         onDragLeave={isScene ? () => setDragOverItemIdx(null) : undefined}
         onDrop={isScene ? (e) => handleDrop(e, line.id) : undefined}
+        sx={{
+          pl: 1.5,
+          py: 0.25,
+          borderRadius: 0,
+          mb: 0.1,
+          opacity: isDragging ? 0.4 : 1,
+          bgcolor: showDragOver
+            ? "action.hover"
+            : sceneColor
+              ? (sceneColor.startsWith("var")
+                  ? `color-mix(in srgb, ${sceneColor} 8%, transparent)`
+                  : `${sceneColor}12`)
+              : "transparent",
+          transition: "background-color 0.12s ease",
+          position: "relative",
+          "&:hover": {
+            bgcolor: sceneColor
+              ? (sceneColor.startsWith("var")
+                  ? `color-mix(in srgb, ${sceneColor} 15%, transparent)`
+                  : `${sceneColor}22`)
+              : "action.hover",
+          },
+          "&.Mui-selected": {
+            bgcolor: sceneColor
+              ? (sceneColor.startsWith("var")
+                  ? `color-mix(in srgb, ${sceneColor} 20%, transparent)`
+                  : `${sceneColor}30`)
+              : "action.selected",
+            "&:hover": {
+              bgcolor: sceneColor
+                ? (sceneColor.startsWith("var")
+                    ? `color-mix(in srgb, ${sceneColor} 25%, transparent)`
+                    : `${sceneColor}38`)
+                : "action.hover",
+            }
+          },
+          "&::after": showDragOver ? {
+            content: '""',
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "2px",
+            bgcolor: "primary.main",
+          } : undefined,
+        }}
       >
-        {sceneColor && <div className="outline-scene-accent" style={{ backgroundColor: sceneColor }} />}
-        <div className="outline-scene-body">
-          <div className="outline-scene-top">
-            {line.sceneNumber && (
-              <span className="outline-scene-number">{line.sceneNumber}</span>
-            )}
-            <span
-              className="outline-scene-title"
-              style={sceneColor ? { color: sceneColor } : undefined}
-            >
-              {getSceneTitle(line)}
-            </span>
-            {line.storylines && line.storylines.length > 0 && (
-              <span className="outline-scene-tags">
-                {line.storylines.map((sl) => (
-                  <span key={sl} className="storyline-badge">{sl}</span>
-                ))}
-              </span>
-            )}
-          </div>
-          {showSynopses && renderOutlineSynopses(synopses)}
-        </div>
-      </div>
+        <ListItemText
+          primary={
+            <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
+              <Box
+                sx={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  bgcolor: sceneColor || "transparent",
+                  flexShrink: 0,
+                }}
+              />
+              {line.sceneNumber && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    bgcolor: "action.selected",
+                    px: 0.4,
+                    borderRadius: 0,
+                    fontSize: fontSizes.number,
+                    fontWeight: 700,
+                    color: "text.secondary",
+                  }}
+                >
+                  {line.sceneNumber}
+                </Typography>
+              )}
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? "primary.main" : "text.primary",
+                  fontSize: fontSizes.scene,
+                }}
+              >
+                {getSceneTitle(line)}
+              </Typography>
+              {line.storylines && line.storylines.length > 0 && (
+                <Box sx={{ display: "flex", gap: 0.4 }}>
+                  {line.storylines.map((sl) => (
+                    <Chip
+                      key={sl}
+                      label={sl}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        height: 12,
+                        fontSize: fontSizes.chip,
+                        p: 0,
+                        borderRadius: 0,
+                        textTransform: "lowercase",
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          }
+          secondary={showSynopses && renderOutlineSynopses(synopses)}
+        />
+      </ListItemButton>
     );
   };
 
   const renderTree = (nodes: TreeNode[]): React.ReactNode[] =>
     nodes.map(renderTreeNode);
 
+  const fontSizeMap = {
+    small: "11px",
+    normal: "12.5px",
+    large: "14px",
+  };
+
   return (
-    <div className={`outline-view outline-size-${outlineFontSize}`}>
-      <div className="outline-header">
-        <h3 className="outline-title">Navigator</h3>
-        <button
-          className="outline-gear-btn"
-          onClick={() => setIsGearPanelOpen((p) => !p)}
-          tabIndex={0}
-          aria-label="Outline options"
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 1, gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+          Navigator
+        </Typography>
+        <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ borderRadius: 0, opacity: 0.6, "&:hover": { opacity: 1 } }}>
+          <MoreVertIcon sx={{ fontSize: 14 }} />
+        </IconButton>
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={() => setMenuAnchor(null)}
+          slotProps={{
+            paper: {
+              sx: { borderRadius: 0 }
+            }
+          }}
         >
-          <MoreVertical size={14} />
-        </button>
-        {isGearPanelOpen && (
-          <>
-            <div className="outline-backdrop" onClick={() => setIsGearPanelOpen(false)} />
-            <div
-              className="outline-gear-panel"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setIsGearPanelOpen(false); }
+          <Box sx={{ px: 1.5, py: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
+              Outline Size
+            </Typography>
+          </Box>
+          {["small", "normal", "large"].map((size) => (
+            <MenuItem
+              key={size}
+              selected={outlineFontSize === size}
+              onClick={() => {
+                setOutlineFontSize(size as any);
+                setMenuAnchor(null);
               }}
-              ref={(el) => { if (el) setTimeout(() => el.focus(), 30); }}
+              sx={{ textTransform: "capitalize", fontSize: 12, borderRadius: 0 }}
             >
-              <div className="outline-gear-header">Outline Size</div>
-              <select
-                value={outlineFontSize}
-                onChange={(e) => setOutlineFontSize(e.target.value as any)}
-                tabIndex={0}
-                className="outline-size-select"
+              {size}
+            </MenuItem>
+          ))}
+        </Menu>
+      </Box>
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+        <TextField
+          placeholder="Search outline..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              sx: {
+                borderRadius: 0,
+                bgcolor: "background.paper",
+                fontSize: "0.75rem",
+                "& fieldset": { borderColor: "divider" },
+                "&:hover fieldset": { borderColor: "text.secondary" },
+                "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+              },
+              startAdornment: (
+                <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
+                  <SearchIcon sx={{ fontSize: 12 }} />
+                </Box>
+              ),
+              endAdornment: searchQuery && (
+                <IconButton size="small" onClick={() => setSearchQuery("")} sx={{ borderRadius: 0 }}>
+                  <CloseIcon sx={{ fontSize: 12 }} />
+                </IconButton>
+              )
+            }
+          }}
+        />
+
+        <Box sx={{ display: "flex", border: "1px solid", borderColor: "divider", borderRadius: 0, overflow: "hidden" }}>
+          {(["Sections", "Scenes", "Synopses"] as const).map((label) => {
+            const active = label === "Sections" ? showSections : label === "Scenes" ? showScenes : showSynopses;
+            const toggle = label === "Sections" ? () => setShowSections(p => !p) : label === "Scenes" ? () => setShowScenes(p => !p) : () => setShowSynopses(p => !p);
+            return (
+              <Box
+                key={label}
+                onClick={toggle}
+                sx={{
+                  flex: 1,
+                  textAlign: "center",
+                  py: 0.3,
+                  fontSize: "0.65rem",
+                  textTransform: "uppercase",
+                  fontWeight: active ? 700 : 500,
+                  cursor: "pointer",
+                  bgcolor: active ? "primary.main" : "transparent",
+                  color: active ? "primary.contrastText" : "text.secondary",
+                  borderRight: label !== "Synopses" ? "1px solid" : "none",
+                  borderColor: "divider",
+                  transition: "all 0.15s ease-in-out",
+                  "&:hover": {
+                    bgcolor: active ? "primary.dark" : "action.hover",
+                  }
+                }}
               >
-                <option value="small">Small</option>
-                <option value="normal">Normal</option>
-                <option value="large">Large</option>
-              </select>
-            </div>
-          </>
-        )}
-      </div>
+                {label}
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
 
-      <div className="outline-search-row">
-        <div className="outline-search-input-wrap">
-          <Search size={12} className="outline-search-icon" />
-          <input
-            type="text"
-            className="outline-search-input"
-            placeholder="Search outline..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button className="outline-search-clear" onClick={() => setSearchQuery("")} tabIndex={-1}>
-              <X size={12} />
-            </button>
-          )}
-        </div>
-        <div className="outline-chips">
-          <button
-            className={`outline-chip${showSections ? " active" : ""}`}
-            onClick={() => setShowSections((p) => !p)}
-          >
-            Sections
-          </button>
-          <button
-            className={`outline-chip${showScenes ? " active" : ""}`}
-            onClick={() => setShowScenes((p) => !p)}
-          >
-            Scenes
-          </button>
-          <button
-            className={`outline-chip${showSynopses ? " active" : ""}`}
-            onClick={() => setShowSynopses((p) => !p)}
-          >
-            Synopses
-          </button>
-        </div>
-      </div>
-
-      <div
-        className="outline-tree"
+      <Box
         ref={listRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
         role="listbox"
         aria-label="Scene navigator"
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          outline: "none",
+          fontSize: fontSizeMap[outlineFontSize],
+        }}
       >
         {tree.length === 0 ? (
-          <p className="outline-empty">No outline elements match your criteria.</p>
+          <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center", fontStyle: "italic" }}>
+            No outline elements match your criteria.
+          </Typography>
         ) : (
-          renderTree(tree)
+          <List disablePadding sx={{ display: "flex", flexDirection: "column" }}>
+            {renderTree(tree)}
+          </List>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
+

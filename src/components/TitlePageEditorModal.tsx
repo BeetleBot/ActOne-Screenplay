@@ -1,7 +1,20 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { X } from "lucide-react";
+import CloseIcon from "@mui/icons-material/Close";
 import { useAppContext } from "../context/AppContext";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Tabs,
+  Tab,
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Alert,
+} from "@mui/material";
 
 interface TitlePageEditorModalProps {
   onClose: () => void;
@@ -99,10 +112,9 @@ function buildTitlePage(fields: Record<string, string>): string {
 
 export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onClose }) => {
   const { rawText, setRawText } = useAppContext();
-  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
 
   const initial = useMemo(() => extractTitlePage(rawText), [rawText]);
-  const [activeTab, setActiveTab] = useState<"form" | "fountain">("form");
+  const [activeTab, setActiveTab] = useState<number>(0);
   const [fields, setFields] = useState<Record<string, string>>(initial.fields);
   const [fountainText, setFountainText] = useState(initial.header);
 
@@ -133,157 +145,69 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
   const hasTitlePage = Object.values(fields).some(v => v.trim().length > 0);
 
   return (
-    <div
-      className="theme-modal-overlay"
-      onClick={onClose}
-      ref={containerRef}
-      onKeyDown={trapKeyDown}
-      tabIndex={-1}
-      style={{ outline: "none" }}
-    >
-      <div
-        className="theme-modal"
-        style={{ maxWidth: "600px", width: "90%" }}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Title Page Editor"
-      >
-        <div className="theme-modal-header">
-          <h2 className="theme-modal-title">Title Page Editor</h2>
-          <button className="theme-modal-close" onClick={onClose} tabIndex={0}>
-            <X size={18} />
-          </button>
-        </div>
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Title Page Editor</Typography>
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
+          <CloseIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </DialogTitle>
 
-        <div className="theme-tabs" role="tablist">
-          <button
-            className={`theme-tab-btn ${activeTab === "form" ? "active" : ""}`}
-            onClick={() => setActiveTab("form")}
-            role="tab"
-            aria-selected={activeTab === "form"}
-            tabIndex={0}
-          >
-            Form View
-          </button>
-          <button
-            className={`theme-tab-btn ${activeTab === "fountain" ? "active" : ""}`}
-            onClick={() => setActiveTab("fountain")}
-            role="tab"
-            aria-selected={activeTab === "fountain"}
-            tabIndex={0}
-          >
-            Fountain View
-          </button>
-        </div>
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)} variant="fullWidth">
+          <Tab label="Form View" />
+          <Tab label="Fountain View" />
+        </Tabs>
+      </Box>
 
-        <div className="theme-modal-body" style={{ maxHeight: "420px", overflowY: "auto" }} role="tabpanel">
-          {activeTab === "form" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "4px" }}>
-              {!hasTitlePage && (
-                <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(255, 193, 7, 0.1)", border: "1px solid rgba(255, 193, 7, 0.3)", fontSize: "12px", color: "var(--text-main)" }}>
-                  No title page found. Fill in the fields below to create one.
-                </div>
-              )}
-              <FormField label="Title" value={fields["title"] || ""} onChange={(v) => handleFieldChange("title", v)} />
-              <FormField label="Author" value={fields["author"] || ""} onChange={(v) => handleFieldChange("author", v)} />
-              <FormField label="Credit" value={fields["credit"] || ""} onChange={(v) => handleFieldChange("credit", v)} />
-              <FormField label="Source" value={fields["source"] || ""} onChange={(v) => handleFieldChange("source", v)} />
-              <FormField label="Contact" value={fields["contact"] || ""} onChange={(v) => handleFieldChange("contact", v)} multiline />
-              <FormField label="Draft Date" value={fields["draft date"] || ""} onChange={(v) => handleFieldChange("draft date", v)} />
-            </div>
-          )}
+      <DialogContent sx={{ p: 3, maxHeight: 420, overflowY: "auto" }}>
+        {activeTab === 0 && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            {!hasTitlePage && (
+              <Alert severity="warning">
+                No title page found. Fill in the fields below to create one.
+              </Alert>
+            )}
+            <TextField label="Title" value={fields["title"] || ""} onChange={(e) => handleFieldChange("title", e.target.value)} size="small" fullWidth />
+            <TextField label="Author" value={fields["author"] || ""} onChange={(e) => handleFieldChange("author", e.target.value)} size="small" fullWidth />
+            <TextField label="Credit" value={fields["credit"] || ""} onChange={(e) => handleFieldChange("credit", e.target.value)} size="small" fullWidth />
+            <TextField label="Source" value={fields["source"] || ""} onChange={(e) => handleFieldChange("source", e.target.value)} size="small" fullWidth />
+            <TextField label="Contact" value={fields["contact"] || ""} onChange={(e) => handleFieldChange("contact", e.target.value)} size="small" multiline rows={3} fullWidth />
+            <TextField label="Draft Date" value={fields["draft date"] || ""} onChange={(e) => handleFieldChange("draft date", e.target.value)} size="small" fullWidth />
+          </Box>
+        )}
 
-          {activeTab === "fountain" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "4px" }}>
-              <label style={{ fontSize: "12px", fontWeight: 600, opacity: 0.8, color: "var(--text-muted)" }}>
-                Edit the raw Fountain title page syntax below. Changes sync with the Form view.
-              </label>
-              <textarea
-                value={fountainText}
-                onChange={(e) => handleFountainChange(e.target.value)}
-                style={{
-                  width: "100%",
-                  minHeight: "280px",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "1px solid var(--border-color)",
-                  background: "var(--bg-editor-wrapper)",
-                  color: "var(--text-main)",
-                  fontFamily: '"Courier Prime", Courier, monospace',
-                  fontSize: "13px",
-                  lineHeight: "1.5",
-                  resize: "vertical",
-                  outline: "none",
-                  tabSize: 2,
-                }}
-                spellCheck={false}
-              />
-            </div>
-          )}
-        </div>
+        {activeTab === 1 && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Typography variant="caption" color="text.secondary">
+              Edit the raw Fountain title page syntax below. Changes sync with the Form view.
+            </Typography>
+            <TextField
+              value={fountainText}
+              onChange={(e) => handleFountainChange(e.target.value)}
+              multiline
+              rows={12}
+              fullWidth
+              slotProps={{
+                input: {
+                  sx: {
+                    fontFamily: "monospace",
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                  }
+                }
+              }}
+            />
+          </Box>
+        )}
+      </DialogContent>
 
-        <div className="export-modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "8px", padding: "16px 20px", borderTop: "1px solid var(--border-color)" }}>
-          <button className="export-modal-btn cancel" onClick={onClose}>Cancel</button>
-          <button className="export-modal-btn primary" onClick={handleApply}>
-            Apply to Document
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const FormField: React.FC<{
-  label: string;
-  value: string;
-  onChange: (val: string) => void;
-  multiline?: boolean;
-}> = ({ label, value, onChange, multiline }) => {
-  const id = `title-field-${label.toLowerCase().replace(/\s+/g, "-")}`;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-      <label htmlFor={id} style={{ fontSize: "12px", fontWeight: 600, opacity: 0.85 }}>
-        {label}
-      </label>
-      {multiline ? (
-        <textarea
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={3}
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            borderRadius: "6px",
-            border: "1px solid var(--border-color)",
-            background: "var(--bg-sidebar)",
-            color: "var(--text-main)",
-            fontSize: "13px",
-            fontFamily: "var(--font-ui)",
-            resize: "vertical",
-            outline: "none",
-          }}
-        />
-      ) : (
-        <input
-          id={id}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            borderRadius: "6px",
-            border: "1px solid var(--border-color)",
-            background: "var(--bg-sidebar)",
-            color: "var(--text-main)",
-            fontSize: "13px",
-            fontFamily: "var(--font-ui)",
-            outline: "none",
-          }}
-        />
-      )}
-    </div>
+      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
+        <Button onClick={onClose} variant="outlined" color="inherit">Cancel</Button>
+        <Button onClick={handleApply} variant="contained" color="primary">
+          Apply to Document
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
