@@ -1,6 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useFile } from "../context/FileContext";
-import { Plus, FolderOpen, FileText, Trash2 } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import DescriptionIcon from "@mui/icons-material/Description";
+import DeleteIcon from "@mui/icons-material/Delete";
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
+} from "@mui/material";
 
 interface Quote {
   text: string;
@@ -42,154 +57,6 @@ function getDynamicQuote(): Quote {
   }
 }
 
-const welcomeStyles = `
-  .welcome-container {
-    display: grid;
-    grid-template-columns: 1.2fr 1.3fr;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-app);
-    overflow: hidden;
-  }
-  @media (max-width: 768px) {
-    .welcome-container {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr;
-      overflow-y: auto;
-    }
-  }
-  .welcome-left {
-    padding: 64px 80px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: var(--bg-sidebar);
-    border-right: 1px solid var(--border-color);
-    position: relative;
-    overflow: hidden;
-    height: 100%;
-  }
-  @media (max-width: 768px) {
-    .welcome-left {
-      border-right: none;
-      border-bottom: 1px solid var(--border-color);
-      padding: 40px;
-      height: auto;
-    }
-  }
-  .welcome-right {
-    padding: 64px 80px;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-  }
-  @media (max-width: 768px) {
-    .welcome-right {
-      padding: 40px;
-      height: auto;
-    }
-  }
-  .welcome-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    max-width: 320px;
-    padding: 14px 18px;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-app);
-    color: var(--text-main);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .welcome-btn:hover {
-    border-color: var(--accent-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.15);
-  }
-  .recent-list {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 24px;
-    padding-right: 4px;
-  }
-  .recent-list::-webkit-scrollbar {
-    width: 6px;
-  }
-  .recent-list::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .recent-list::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
-  }
-  .recent-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    border: 1px solid transparent;
-    background: rgba(var(--accent-rgb), 0.01);
-  }
-  .recent-item:hover {
-    background: var(--bg-sidebar);
-    border-color: var(--border-color);
-    transform: translateX(4px);
-  }
-  .recent-delete {
-    opacity: 0;
-    transition: all 0.2s ease;
-    border-radius: 6px;
-    padding: 6px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .recent-item:hover .recent-delete {
-    opacity: 0.6;
-  }
-  .recent-delete:hover {
-    opacity: 1 !important;
-    background: rgba(239, 68, 68, 0.1) !important;
-    color: #ef4444 !important;
-  }
-  .glowing-bg {
-    position: absolute;
-    top: -80px;
-    left: -80px;
-    width: 320px;
-    height: 320px;
-    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.08) 0%, rgba(var(--accent-rgb), 0) 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .shortcut-pill {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    font-size: 10px;
-    font-weight: 500;
-    background: var(--bg-app);
-    color: var(--text-muted);
-  }
-`;
-
 export const WelcomeScreen: React.FC = () => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
@@ -199,181 +66,249 @@ export const WelcomeScreen: React.FC = () => {
   }, []);
 
   return (
-    <div style={{
-      position: "fixed",
-      inset: 0,
-      backgroundColor: "var(--bg-app)",
-      fontFamily: "var(--font-ui)",
-      color: "var(--text-main)",
-      overflow: "hidden"
-    }}>
-      <style>{welcomeStyles}</style>
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        bgcolor: "background.default",
+        color: "text.primary",
+        overflow: "hidden",
+      }}
+    >
+      <Grid container sx={{ height: "100%" }}>
+        {/* Left Side: Branding, Quote, and Main Actions */}
+        <Grid
+          size={{ xs: 12, md: 5 }}
+          sx={{
+            p: { xs: 4, sm: 6, md: 8 },
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            bgcolor: "background.paper",
+            borderRight: { md: 1 },
+            borderBottom: { xs: 1, md: 0 },
+            borderColor: "divider",
+            height: "100%",
+            overflowY: "auto",
+          }}
+        >
+          {/* Brand header */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 2,
+                bgcolor: "primary.main",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: (theme) => `0 4px 12px ${theme.palette.mode === 'light' ? 'rgba(25, 118, 210, 0.2)' : 'rgba(144, 202, 249, 0.2)'}`,
+              }}
+            >
+              <DescriptionIcon sx={{ fontSize: 18, color: "white" }} />
+            </Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
+              Act One
+            </Typography>
+          </Box>
 
-      <div className="welcome-container">
-        <div className="welcome-left">
-          <div className="glowing-bg" />
-          
-          <div style={{ display: "flex", alignItems: "center", gap: 10, zIndex: 1 }}>
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: "var(--accent-color)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(var(--accent-rgb), 0.2)"
-            }}>
-              <FileText size={16} color="white" />
-            </div>
-            <div>
-              <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>Act One</span>
-            </div>
-          </div>
-
-          <div style={{ zIndex: 1, margin: "auto 0" }}>
+          {/* Quote & Buttons */}
+          <Box sx={{ my: "auto", py: 4 }}>
             {quote.text && (
-              <>
-                <h1 style={{
-                  fontSize: 26,
-                  fontWeight: 700,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1.25,
-                  color: "var(--text-main)",
-                  textTransform: "uppercase",
-                  fontFamily: "var(--font-editor), Courier, monospace",
-                  maxWidth: 480
-                }}>
-                  {quote.text}
-                </h1>
-                <p style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "var(--text-muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  marginTop: 16,
-                  fontFamily: "var(--font-ui)"
-                }}>
+              <Box sx={{ mb: 5 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.3,
+                    fontFamily: "monospace",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  "{quote.text}"
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: "block",
+                    mt: 2,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                  }}
+                >
                   — {quote.author}
-                </p>
-              </>
+                </Typography>
+              </Box>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 32 }}>
-              <button className="welcome-btn" onClick={() => newFile()}>
-                <Plus size={16} color="var(--accent-color)" />
-                <span>New Screenplay</span>
-              </button>
-              <button className="welcome-btn" onClick={openFile}>
-                <FolderOpen size={16} color="var(--accent-color)" />
-                <span>Open Screenplay</span>
-              </button>
-            </div>
-          </div>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxWidth: 320 }}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<AddIcon sx={{ fontSize: 18 }} />}
+                onClick={() => newFile()}
+                sx={{
+                  justifyContent: "flex-start",
+                  py: 1.5,
+                  px: 2.5,
+                  borderRadius: 2.5,
+                  fontWeight: 600,
+                  textTransform: "none",
+                }}
+              >
+                New Screenplay
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<FolderOpenIcon sx={{ fontSize: 18 }} />}
+                onClick={openFile}
+                sx={{
+                  justifyContent: "flex-start",
+                  py: 1.5,
+                  px: 2.5,
+                  borderRadius: 2.5,
+                  fontWeight: 600,
+                  textTransform: "none",
+                }}
+              >
+                Open Screenplay
+              </Button>
+            </Box>
+          </Box>
 
-          <div style={{
+          {/* Footer keyboard shortcuts */}
+          <Box sx={{ display: "flex", gap: 3 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
+                Ctrl+N
+              </Typography>
+              <Typography variant="caption" color="text.secondary">New</Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
+                Ctrl+O
+              </Typography>
+              <Typography variant="caption" color="text.secondary">Open</Typography>
+            </Box>
+          </Box>
+        </Grid>
+
+        {/* Right Side: Recents */}
+        <Grid
+          size={{ xs: 12, md: 7 }}
+          sx={{
+            p: { xs: 4, sm: 6, md: 8 },
             display: "flex",
-            gap: 16,
-            fontSize: 11,
-            color: "var(--text-muted)",
-            opacity: 0.8,
-            zIndex: 1
-          }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <kbd className="shortcut-pill">Ctrl+N</kbd> New
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <kbd className="shortcut-pill">Ctrl+O</kbd> Open
-            </span>
-          </div>
-        </div>
-
-        <div className="welcome-right">
-          <div style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            opacity: 0.7
-          }}>
+            flexDirection: "column",
+            height: "100%",
+            overflow: "hidden",
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 700,
+              color: "text.secondary",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              mb: 3,
+            }}
+          >
             Recent Projects
-          </div>
+          </Typography>
 
           {recentFiles.length > 0 ? (
-            <div className="recent-list">
+            <List
+              disablePadding
+              sx={{
+                flex: 1,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+                pr: 1,
+              }}
+            >
               {recentFiles.map((item: any) => (
-                <div
+                <ListItem
                   key={item.path}
-                  className="recent-item"
-                  onClick={() => openFilePath(item.path)}
+                  disablePadding
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromRecent(item.path);
+                      }}
+                      sx={{
+                        opacity: 0.6,
+                        "&:hover": { opacity: 1, color: "error.main", bgcolor: "error.lighter" },
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  }
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2.5,
+                    bgcolor: "background.paper",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      transform: "translateX(4px)",
+                    },
+                  }}
                 >
-                  <div style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 6,
-                    background: "rgba(128, 128, 128, 0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0
-                  }}>
-                    <FileText size={14} style={{ opacity: 0.6 }} />
-                  </div>
-                  <div style={{ flex: 1, overflow: "hidden" }}>
-                    <div style={{
-                      fontSize: 13,
-                      fontWeight: 500,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {item.name}
-                    </div>
-                    <div style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      marginTop: 2
-                    }}>
-                      {item.path}
-                    </div>
-                  </div>
-                  <button
-                    className="recent-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFromRecent(item.path);
-                    }}
-                    title="Remove from recent"
+                  <ListItemButton
+                    onClick={() => openFilePath(item.path)}
+                    sx={{ py: 1.5, px: 2, borderRadius: 2.5 }}
                   >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      <DescriptionIcon sx={{ fontSize: 18, opacity: 0.7 }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          {item.name}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.path}
+                        </Typography>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
               ))}
-            </div>
+            </List>
           ) : (
-            <div style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--text-muted)",
-              opacity: 0.4,
-              gap: 8,
-              textAlign: "center",
-              padding: "40px 0"
-            }}>
-              <FileText size={32} strokeWidth={1.5} />
-              <span style={{ fontSize: 13 }}>No recent projects</span>
-            </div>
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "text.secondary",
+                opacity: 0.5,
+                gap: 1.5,
+                textAlign: "center",
+              }}
+            >
+              <DescriptionIcon sx={{ fontSize: 36, strokeWidth: 1.5, opacity: 0.5 }} />
+              <Typography variant="body2">No recent projects</Typography>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
+

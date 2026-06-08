@@ -8,7 +8,6 @@ interface ShortcutActions {
   togglePalette: () => void;
   exportPDF: () => void;
   toggleSidebar: () => void;
-  toggleTimeline?: () => void;
   toggleZenMode: () => void;
   getEditorView: () => any | null;
   zoomIn: () => void;
@@ -97,12 +96,6 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "," && !shift) {
         e.preventDefault();
         actionsRef.current.openSettings?.();
-        return;
-      }
-
-      if (key === "t" && shift) {
-        e.preventDefault();
-        actionsRef.current.toggleTimeline?.();
         return;
       }
 

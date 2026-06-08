@@ -1,9 +1,24 @@
 import React, { useMemo, useCallback } from "react";
-import { X, Check, Undo, CheckSquare, AlertCircle } from "lucide-react";
+import CloseIcon from "@mui/icons-material/Close";
+import CheckIcon from "@mui/icons-material/Check";
+import UndoIcon from "@mui/icons-material/Undo";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import ErrorOutlinedIcon from "@mui/icons-material/ErrorOutlined";
 import { useAppContext } from "../context/AppContext";
 import { useFile } from "../context/FileContext";
 import { computeDetailedDiff, getInlineDiff, filterDiffs } from "../utils/diff";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Divider,
+} from "@mui/material";
 
 interface RevisionModalProps {
   onClose: () => void;
@@ -21,7 +36,6 @@ interface GroupedEdit {
 export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
   const { rawText, setRawText, parsedDoc } = useAppContext();
   const { updateSettings } = useFile();
-  const { containerRef, handleKeyDown: trapKeyDown } = useFocusTrap(true, onClose);
 
   const revisionBaseText = parsedDoc?.settings?.revisionBaseText || "";
 
@@ -196,250 +210,251 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
   }, [parsedDoc]);
 
   return (
-    <div 
-      className="struct-modal-overlay" 
-      onClick={onClose}
-      ref={containerRef}
-      onKeyDown={trapKeyDown}
-      tabIndex={-1}
-      style={{ outline: "none" }}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="struct-modal" style={{ maxWidth: "850px" }} onClick={(e) => e.stopPropagation()}>
-        <div className="struct-modal-header">
-          <h2 className="struct-modal-title">Review Revisions</h2>
-          <button className="struct-modal-close" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
+    <Dialog open onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Review Revisions</Typography>
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
+          <CloseIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </DialogTitle>
 
-        <div className="struct-modal-body" style={{ flexDirection: "column", height: "550px" }}>
-          {changedLines.length === 0 ? (
-            <div style={{ display: "flex", flex: 1, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", color: "var(--text-muted)" }}>
-              <AlertCircle size={48} style={{ color: "var(--accent-color)" }} />
-              <h3>All Revisions Reviewed</h3>
-              <p>No remaining additions or deletions found in this draft.</p>
-              <button 
-                className="struct-btn primary" 
-                onClick={() => {
-                  updateSettings((prev: any) => ({
-                    ...prev,
-                    revisionModeEnabled: false,
-                    revisionBaseText: undefined,
-                  }));
-                  onClose();
-                }}
-              >
-                Exit Revision Mode
-              </button>
-            </div>
-          ) : (
-            <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "8px" }}>
-              {changedLines.map((group, index) => {
-                const sceneInfo = getSceneInfo(group.currentLineNum || group.originalLineNum);
-                return (
-                  <div 
-                    key={index}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      padding: "16px",
-                      borderRadius: "10px",
-                      border: "1px solid var(--border-color)",
-                      background: group.type === "added" 
-                        ? "rgba(46, 213, 115, 0.08)" 
-                        : group.type === "removed" 
-                          ? "rgba(255, 71, 87, 0.08)" 
-                          : "rgba(255, 170, 0, 0.08)",
-                    }}
-                  >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, marginRight: "24px" }}>
-                      <div style={{ 
-                        display: "flex", 
-                        alignItems: "center", 
-                        gap: "12px",
-                        flexWrap: "wrap"
-                      }}>
-                        <div style={{ 
-                          fontSize: "12px", 
-                          fontWeight: "bold", 
+      <DialogContent dividers sx={{ p: 3, height: 480, overflowY: "auto" }}>
+        {changedLines.length === 0 ? (
+          <Box sx={{ display: "flex", height: "100%", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, textAlign: "center" }}>
+            <ErrorOutlinedIcon sx={{ fontSize: 48, color: "#1976d2" }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>All Revisions Reviewed</Typography>
+            <Typography variant="body2" color="text.secondary">No remaining additions or deletions found in this draft.</Typography>
+            <Button 
+              variant="contained" 
+              onClick={() => {
+                updateSettings((prev: any) => ({
+                  ...prev,
+                  revisionModeEnabled: false,
+                  revisionBaseText: undefined,
+                }));
+                onClose();
+              }}
+            >
+              Exit Revision Mode
+            </Button>
+          </Box>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {changedLines.map((group, index) => {
+              const sceneInfo = getSceneInfo(group.currentLineNum || group.originalLineNum);
+              const isAdded = group.type === "added";
+              const isRemoved = group.type === "removed";
+              const colorTheme = isAdded ? "success" : isRemoved ? "error" : "warning";
+
+              return (
+                <Paper 
+                  key={index}
+                  variant="outlined"
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    p: 2.5,
+                    borderRadius: 2,
+                    borderColor: `${colorTheme}.light`,
+                    bgcolor: isAdded ? "success.lighter" : isRemoved ? "error.lighter" : "warning.lighter",
+                  }}
+                >
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, mr: 3 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          fontWeight: 700, 
                           textTransform: "uppercase", 
-                          color: group.type === "added" 
-                            ? "var(--accent-color)" 
-                            : group.type === "removed" 
-                              ? "#ff4757" 
-                              : "#ffa500" 
-                        }}>
-                          {group.type === "added" && `Added Line (Current: ${group.currentLineNum})`}
-                          {group.type === "removed" && `Deleted Line (Base: ${group.originalLineNum})`}
-                          {group.type === "modified" && `Modified Line (Line: ${group.currentLineNum})`}
-                        </div>
-                        {sceneInfo && (
-                          <div style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", gap: "6px", alignItems: "center" }}>
-                            <span style={{ fontStyle: "italic", opacity: 0.85 }}>
-                              {sceneInfo.number ? `Scene ${sceneInfo.number}: ` : ""}
-                              {sceneInfo.heading}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div style={{ 
-                        fontFamily: "var(--font-editor)", 
-                        fontSize: "15px", 
-                        lineHeight: "1.5",
-                        whiteSpace: "pre-wrap",
-                        color: "var(--text-main)"
-                      }}>
-                        {group.type === "modified" ? (
-                          getInlineDiff(group.oldText || "", group.text).map((seg, sIdx) => {
-                            if (seg.type === "removed") {
-                              return (
-                                <span 
-                                  key={sIdx} 
-                                  style={{ 
-                                    textDecoration: "line-through", 
-                                    color: "#ff4757", 
-                                    backgroundColor: "rgba(255, 71, 87, 0.12)",
-                                    padding: "2px 4px",
-                                    borderRadius: "3px",
-                                    margin: "0 1px"
-                                  }}
-                                >
-                                  {seg.text}
-                                </span>
-                              );
-                            } else if (seg.type === "added") {
-                              return (
-                                <span 
-                                  key={sIdx} 
-                                  style={{ 
-                                    color: "var(--accent-color)", 
-                                    backgroundColor: "rgba(46, 213, 115, 0.12)",
-                                    padding: "2px 4px",
-                                    borderRadius: "3px",
-                                    margin: "0 1px"
-                                  }}
-                                >
-                                  {seg.text}
-                                </span>
-                              );
-                            } else {
-                              return <span key={sIdx}>{seg.text}</span>;
-                            }
-                          })
-                        ) : (
-                          <span 
-                            style={{ 
-                              textDecoration: group.type === "removed" ? "line-through" : "none",
-                              color: group.type === "removed" ? "#ff4757" : (group.type === "added" ? "var(--accent-color)" : "inherit"),
-                              backgroundColor: group.type === "removed" ? "rgba(255, 71, 87, 0.12)" : (group.type === "added" ? "rgba(46, 213, 115, 0.12)" : "transparent"),
-                              padding: group.type !== "unchanged" ? "2px 4px" : "0",
-                              borderRadius: "3px"
-                            }}
-                          >
-                            {group.text || " "}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                          color: isAdded ? "success.main" : isRemoved ? "error.main" : "warning.main" 
+                        }}
+                      >
+                        {group.type === "added" && `Added Line (Current: ${group.currentLineNum})`}
+                        {group.type === "removed" && `Deleted Line (Base: ${group.originalLineNum})`}
+                        {group.type === "modified" && `Modified Line (Line: ${group.currentLineNum})`}
+                      </Typography>
+                      {sceneInfo && (
+                        <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                          {sceneInfo.number ? `Scene ${sceneInfo.number}: ` : ""}
+                          {sceneInfo.heading}
+                        </Typography>
+                      )}
+                    </Box>
                     
-                    <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                      {group.type === "added" && (
-                        <>
-                          <button 
-                            className="struct-btn secondary" 
-                            style={{ padding: "8px 16px", gap: "6px" }}
-                            onClick={() => handleAction(group, "accept")}
-                            title="Accept Addition"
-                          >
-                            <Check size={16} /> Accept
-                          </button>
-                          <button 
-                            className="struct-btn cancel" 
-                            style={{ padding: "8px 16px", gap: "6px" }}
-                            onClick={() => handleAction(group, "reject")}
-                            title="Reject Addition"
-                          >
-                            <X size={16} /> Reject
-                          </button>
-                        </>
+                    <Typography 
+                      component="div" 
+                      sx={{ 
+                        fontFamily: "monospace", 
+                        fontSize: 14, 
+                        lineHeight: 1.5,
+                        whiteSpace: "pre-wrap",
+                        color: "text.primary"
+                      }}
+                    >
+                      {group.type === "modified" ? (
+                        getInlineDiff(group.oldText || "", group.text).map((seg, sIdx) => {
+                          if (seg.type === "removed") {
+                            return (
+                              <Box 
+                                key={sIdx} 
+                                component="span"
+                                sx={{ 
+                                  textDecoration: "line-through", 
+                                  color: "error.main", 
+                                  bgcolor: "error.lighter",
+                                  px: 0.5,
+                                  borderRadius: 0.5,
+                                  mx: 0.2,
+                                }}
+                              >
+                                {seg.text}
+                              </Box>
+                            );
+                          } else if (seg.type === "added") {
+                            return (
+                              <Box 
+                                key={sIdx} 
+                                component="span"
+                                sx={{ 
+                                  color: "success.main", 
+                                  bgcolor: "success.lighter",
+                                  px: 0.5,
+                                  borderRadius: 0.5,
+                                  mx: 0.2,
+                                }}
+                              >
+                                {seg.text}
+                              </Box>
+                            );
+                          } else {
+                            return <span key={sIdx}>{seg.text}</span>;
+                          }
+                        })
+                      ) : (
+                        <Box 
+                          component="span"
+                          sx={{ 
+                            textDecoration: group.type === "removed" ? "line-through" : "none",
+                            color: group.type === "removed" ? "error.main" : (group.type === "added" ? "success.main" : "inherit"),
+                            bgcolor: group.type === "removed" ? "error.lighter" : (group.type === "added" ? "success.lighter" : "transparent"),
+                            px: group.type !== "unchanged" ? 0.5 : 0,
+                            borderRadius: 0.5
+                          }}
+                        >
+                          {group.text || " "}
+                        </Box>
                       )}
-                      {group.type === "removed" && (
-                        <>
-                          <button 
-                            className="struct-btn secondary" 
-                            style={{ padding: "8px 16px", gap: "6px" }}
-                            onClick={() => handleAction(group, "accept")}
-                            title="Confirm Deletion"
-                          >
-                            <Check size={16} /> Delete
-                          </button>
-                          <button 
-                            className="struct-btn primary" 
-                            style={{ padding: "8px 16px", gap: "6px" }}
-                            onClick={() => handleAction(group, "reject")}
-                            title="Restore Line"
-                          >
-                            <Undo size={16} /> Restore
-                          </button>
-                        </>
-                      )}
-                      {group.type === "modified" && (
-                        <>
-                          <button 
-                            className="struct-btn secondary" 
-                            style={{ padding: "8px 16px", gap: "6px" }}
-                            onClick={() => handleAction(group, "accept")}
-                            title="Accept Modification"
-                          >
-                            <Check size={16} /> Accept
-                          </button>
-                          <button 
-                            className="struct-btn cancel" 
-                            style={{ padding: "8px 16px", gap: "6px" }}
-                            onClick={() => handleAction(group, "reject")}
-                            title="Reject Modification"
-                          >
-                            <X size={16} /> Reject
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
+                    {group.type === "added" && (
+                      <>
+                        <Button 
+                          variant="outlined" 
+                          color="success"
+                          size="small"
+                          onClick={() => handleAction(group, "accept")}
+                          startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
+                        >
+                          Accept
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          color="error"
+                          size="small"
+                          onClick={() => handleAction(group, "reject")}
+                          startIcon={<CloseIcon sx={{ fontSize: 14 }} />}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                    {group.type === "removed" && (
+                      <>
+                        <Button 
+                          variant="outlined" 
+                          color="error"
+                          size="small"
+                          onClick={() => handleAction(group, "accept")}
+                          startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
+                        >
+                          Delete
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          color="primary"
+                          size="small"
+                          onClick={() => handleAction(group, "reject")}
+                          startIcon={<UndoIcon sx={{ fontSize: 14 }} />}
+                        >
+                          Restore
+                        </Button>
+                      </>
+                    )}
+                    {group.type === "modified" && (
+                      <>
+                        <Button 
+                          variant="outlined" 
+                          color="warning"
+                          size="small"
+                          onClick={() => handleAction(group, "accept")}
+                          startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
+                        >
+                          Accept
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          color="error"
+                          size="small"
+                          onClick={() => handleAction(group, "reject")}
+                          startIcon={<CloseIcon sx={{ fontSize: 14 }} />}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                  </Box>
+                </Paper>
+              );
+            })}
+          </Box>
+        )}
+      </DialogContent>
 
-        <div className="struct-modal-footer" style={{ justifyContent: "space-between" }}>
-          <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-            {changedLines.length} revision {changedLines.length === 1 ? "item" : "items"} remaining.
-          </div>
-          <div className="struct-footer-actions">
-            <button className="struct-btn cancel" onClick={onClose}>
-              Close
-            </button>
-            <button 
-              className="struct-btn secondary" 
-              onClick={handleRejectAll}
-              disabled={changedLines.length === 0}
-            >
-              <Undo size={16} /> Discard All
-            </button>
-            <button 
-              className="struct-btn primary" 
-              onClick={handleMergeAll}
-              disabled={changedLines.length === 0}
-            >
-              <CheckSquare size={16} /> Merge All
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      <Divider />
+
+      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
+        <Typography variant="caption" color="text.secondary">
+          {changedLines.length} revision {changedLines.length === 1 ? "item" : "items"} remaining.
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button variant="outlined" onClick={onClose} size="small">
+            Close
+          </Button>
+          <Button 
+            variant="outlined" 
+            color="error"
+            onClick={handleRejectAll}
+            disabled={changedLines.length === 0}
+            startIcon={<UndoIcon sx={{ fontSize: 14 }} />}
+            size="small"
+          >
+            Discard All
+          </Button>
+          <Button 
+            variant="contained" 
+            color="primary"
+            onClick={handleMergeAll}
+            disabled={changedLines.length === 0}
+            startIcon={<CheckBoxIcon sx={{ fontSize: 14 }} />}
+            size="small"
+          >
+            Merge All
+          </Button>
+        </Box>
+      </DialogActions>
+    </Dialog>
   );
 };

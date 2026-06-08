@@ -1,0 +1,719 @@
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useAppContext } from "../context/AppContext";
+import { LineType, ParsedLine } from "../parser/FountainParser";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import {
+  Box,
+  Typography,
+  IconButton,
+  TextField,
+  Chip,
+  Menu,
+  MenuItem,
+  List,
+  ListItemButton,
+  ListItemText,
+} from "@mui/material";
+
+export function getSceneColor(line: ParsedLine): string | undefined {
+  if (line.marker) {
+    return line.marker.color.startsWith("#")
+      ? line.marker.color
+      : `var(--scene-color-${line.marker.color})`;
+  }
+  if (line.color) {
+    return line.color.startsWith("#") ? line.color : `var(--scene-color-${line.color})`;
+  }
+  return undefined;
+}
+
+export function getSceneTitle(line: ParsedLine): string {
+  if (line.marker && line.type !== LineType.heading) {
+    return line.marker.description || "Marker";
+  }
+  return line.text
+    .replace(/^[.#= ]+/, "")
+    .replace(/\[\[.*?\]\]/g, "")
+    .replace(/#[^#]+#\s*$/, "")
+    .trim();
+}
+
+export interface OutlineItem {
+  line: ParsedLine;
+  index: number;
+}
+
+export interface TreeNode {
+  item: OutlineItem;
+  depth: number;
+  children: TreeNode[];
+  synopses: OutlineItem[];
+}
+
+export function buildTree(items: OutlineItem[], collapsed: { [id: string]: boolean }): TreeNode[] {
+  const root: TreeNode[] = [];
+  const stack: { node: TreeNode; sectionDepth: number }[] = [];
+
+  for (const item of items) {
+    const isSection = item.line.type === LineType.section;
+    const sDepth = item.line.sectionDepth || 0;
+
+    if (isSection) {
+      while (stack.length > 0 && stack[stack.length - 1].sectionDepth >= sDepth) {
+        stack.pop();
+      }
+      const node: TreeNode = {
+        item,
+        depth: stack.length,
+        children: [],
+        synopses: [],
+      };
+      if (stack.length > 0) {
+        stack[stack.length - 1].node.children.push(node);
+      } else {
+        root.push(node);
+      }
+      if (!collapsed[item.line.id]) {
+        stack.push({ node, sectionDepth: sDepth });
+      }
+    } else if (item.line.type === LineType.synopse) {
+      const parent = stack.length > 0
+        ? stack[stack.length - 1].node
+        : (root.length > 0 ? root[root.length - 1] : null);
+      if (parent) {
+        parent.synopses.push(item);
+      } else {
+        root.push({ item, depth: 0, children: [], synopses: [] });
+      }
+    } else {
+      const node: TreeNode = {
+        item,
+        depth: stack.length,
+        children: [],
+        synopses: [],
+      };
+      if (stack.length > 0) {
+        stack[stack.length - 1].node.children.push(node);
+      } else {
+        root.push(node);
+      }
+    }
+  }
+  return root;
+}
+
+export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
+  const result: TreeNode[] = [];
+  const walk = (nodes: TreeNode[]) => {
+    for (const node of nodes) {
+      if (node.item.line.type !== LineType.synopse) {
+        result.push(node);
+      }
+      walk(node.children);
+    }
+  };
+  walk(tree);
+  return result;
+}
+
+export const OutlineView: React.FC = () => {
+  const app = useAppContext();
+  const {
+    parsedDoc, scrollToLine, selectedSceneId,
+    setSelectedSceneId, reorderScenes,
+  } = app;
+
+  const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSections, setShowSections] = useState(true);
+  const [showScenes, setShowScenes] = useState(true);
+  const [showSynopses, setShowSynopses] = useState(true);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [outlineFontSize, setOutlineFontSizeState] = useState<"small" | "normal" | "large">(
+    () => (localStorage.getItem("actone-outline-font-size") as any) || "normal"
+  );
+  const [draggedItemIdx, setDraggedItemIdx] = useState<number | null>(null);
+  const [dragOverItemIdx, setDragOverItemIdx] = useState<number | null>(null);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const activeItemRef = useRef<HTMLDivElement>(null);
+
+  const setOutlineFontSize = (size: "small" | "normal" | "large") => {
+    setOutlineFontSizeState(size);
+    localStorage.setItem("actone-outline-font-size", size);
+  };
+
+  const toggleSection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCollapsedSections((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Build raw items
+  const rawOutlineItems: OutlineItem[] = useMemo(
+    () => parsedDoc.lines
+      .map((line, index) => ({ line, index }))
+      .filter(({ line }) => line.isOutlineElement || line.type === LineType.synopse),
+    [parsedDoc.lines]
+  );
+
+  // Scenes-only list for drag-and-drop indexing
+  const scenesItems = useMemo(
+    () => rawOutlineItems.filter(
+      (item) => item.line.type === LineType.heading ||
+        (item.line.isOutlineElement && item.line.type !== LineType.section && item.line.type !== LineType.synopse)
+    ),
+    [rawOutlineItems]
+  );
+
+  // Filter + collapse
+  const visibleItems: OutlineItem[] = useMemo(() => {
+    const filtered = rawOutlineItems.filter((item) => {
+      const isSection = item.line.type === LineType.section;
+      const isSynopsis = item.line.type === LineType.synopse;
+      const isScene = !isSection && !isSynopsis;
+      if (!showSections && isSection) return false;
+      if (!showScenes && isScene) return false;
+      if (!showSynopses && isSynopsis) return false;
+      if (searchQuery) {
+        const textToSearch = item.line.text.replace(/^[.#= ]+/, "").trim().toLowerCase();
+        if (!textToSearch.includes(searchQuery.toLowerCase())) return false;
+      }
+      return true;
+    });
+
+    const result: OutlineItem[] = [];
+    let isCollapsed = false;
+    let collapseDepth = 0;
+    for (const item of filtered) {
+      const isSection = item.line.type === LineType.section;
+      const depth = item.line.sectionDepth || 0;
+      if (isCollapsed) {
+        if (isSection && depth <= collapseDepth) {
+          isCollapsed = false;
+        } else {
+          continue;
+        }
+      }
+      result.push(item);
+      if (isSection && collapsedSections[item.line.id]) {
+        isCollapsed = true;
+        collapseDepth = depth;
+      }
+    }
+    return result;
+  }, [rawOutlineItems, showSections, showScenes, showSynopses, searchQuery, collapsedSections]);
+
+  const tree = useMemo(() => buildTree(visibleItems, collapsedSections), [visibleItems, collapsedSections]);
+  const selectable = useMemo(() => flattenSelectable(tree), [tree]);
+
+  let activeSelectableIdx = -1;
+  if (selectedSceneId) {
+    activeSelectableIdx = selectable.findIndex((g) => g.item.line.id === selectedSceneId);
+  }
+  if (activeSelectableIdx === -1 && selectable.length > 0) activeSelectableIdx = 0;
+
+  // Scroll active into view
+  useEffect(() => {
+    if (activeItemRef.current) {
+      activeItemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [selectedSceneId]);
+
+  // Auto-focus on mount
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.focus();
+    }
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (selectable.length === 0) return;
+
+    const move = (dir: -1 | 1) => {
+      e.preventDefault();
+      const nextIdx = dir === 1
+        ? Math.min(selectable.length - 1, activeSelectableIdx + 1)
+        : Math.max(0, activeSelectableIdx - 1);
+      const target = selectable[nextIdx].item;
+      if (setSelectedSceneId) setSelectedSceneId(target.line.id);
+      scrollToLine(target.index, true);
+      requestAnimationFrame(() => {
+        const el = listRef.current?.querySelector(`[data-scene-id="${target.line.id}"]`) as HTMLElement;
+        el?.scrollIntoView({ block: "center", behavior: "smooth" });
+      });
+    };
+
+    if (e.key === "ArrowDown") move(1);
+    else if (e.key === "ArrowUp") move(-1);
+    else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      const active = selectable[activeSelectableIdx];
+      if (active && active.item.line.type === LineType.section) {
+        e.preventDefault();
+        const id = active.item.line.id;
+        const isCollapsed = collapsedSections[id];
+        if ((e.key === "ArrowRight" && isCollapsed) || (e.key === "ArrowLeft" && !isCollapsed)) {
+          setCollapsedSections((prev) => ({ ...prev, [id]: !isCollapsed }));
+        }
+      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeSelectableIdx >= 0 && activeSelectableIdx < selectable.length) {
+        scrollToLine(selectable[activeSelectableIdx].item.index);
+      }
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    const sceneIndex = scenesItems.findIndex((s) => s.line.id === id);
+    if (sceneIndex !== -1) {
+      e.dataTransfer.setData("text/plain", sceneIndex.toString());
+      setDraggedItemIdx(sceneIndex);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    const sceneIndex = scenesItems.findIndex((s) => s.line.id === id);
+    if (sceneIndex !== -1) setDragOverItemIdx(sceneIndex);
+  };
+
+  const handleDrop = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    const targetSceneIndex = scenesItems.findIndex((s) => s.line.id === id);
+    const sourceSceneIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+    if (sourceSceneIndex !== targetSceneIndex && !isNaN(sourceSceneIndex) && targetSceneIndex !== -1) {
+      reorderScenes(sourceSceneIndex, targetSceneIndex);
+    }
+    setDraggedItemIdx(null);
+    setDragOverItemIdx(null);
+  };
+
+  const handleItemClick = (item: OutlineItem, isSelectable: boolean, e: React.MouseEvent) => {
+    scrollToLine(item.index, true);
+    if (setSelectedSceneId && isSelectable) setSelectedSceneId(item.line.id);
+    const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+    if (container) container.focus();
+  };
+
+  const fontSizes = useMemo(() => {
+    return {
+      small: {
+        section: "0.75rem",
+        scene: "0.725rem",
+        synopsis: "0.675rem",
+        number: "8px",
+        chip: "7px",
+      },
+      normal: {
+        section: "0.825rem",
+        scene: "0.8rem",
+        synopsis: "0.75rem",
+        number: "8.5px",
+        chip: "7.5px",
+      },
+      large: {
+        section: "0.9rem",
+        scene: "0.875rem",
+        synopsis: "0.825rem",
+        number: "9px",
+        chip: "8px",
+      },
+    }[outlineFontSize];
+  }, [outlineFontSize]);
+
+  const renderOutlineSynopses = (synopses: OutlineItem[]) => {
+    if (synopses.length === 0) return null;
+
+    if (synopses.length === 1) {
+      const syn = synopses[0];
+      return (
+        <Box sx={{ mt: 0.5, pl: 0.5 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              scrollToLine(syn.index, true);
+              const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+              if (container) container.focus();
+            }}
+            sx={{ display: "block", cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "primary.main" } }}
+          >
+            {syn.line.text.replace(/^=[ ]*/, "").trim()}
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Box sx={{ mt: 0.5, pl: 0.5, display: "flex", flexDirection: "column", gap: 0.2 }}>
+        {synopses.map((syn) => (
+          <Typography
+            key={syn.line.id}
+            variant="caption"
+            color="text.secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              scrollToLine(syn.index, true);
+              const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+              if (container) container.focus();
+            }}
+            sx={{ cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "primary.main" }, display: "flex", alignItems: "center", gap: 0.5 }}
+          >
+            • {syn.line.text.replace(/^=[ ]*/, "").trim()}
+          </Typography>
+        ))}
+      </Box>
+    );
+  };
+
+  const renderTreeNode = (node: TreeNode): React.ReactNode => {
+    const { item, children, synopses } = node;
+    const { line } = item;
+    const isSection = line.type === LineType.section;
+    const isSynopsis = line.type === LineType.synopse;
+    const isScene = !isSection && !isSynopsis;
+    const isSelectable = isSection || isScene;
+    const isActive = isSelectable && (
+      line.id === selectable[activeSelectableIdx]?.item.line.id || line.id === selectedSceneId
+    );
+    const sceneColor = getSceneColor(line);
+    const sceneIndex = isScene ? scenesItems.findIndex((s) => s.line.id === line.id) : -1;
+    const isDragging = isScene && draggedItemIdx === sceneIndex;
+    const isDragOver = isScene && dragOverItemIdx === sceneIndex;
+    const isCollapsed = !!collapsedSections[line.id];
+
+    if (isSection) {
+      return (
+        <Box key={line.id} sx={{ display: "flex", flexDirection: "column" }}>
+          <ListItemButton
+            data-scene-id={line.id}
+            ref={isActive ? activeItemRef : null}
+            onClick={(e) => handleItemClick(item, true, e)}
+            onDoubleClick={(e) => toggleSection(line.id, e)}
+            selected={isActive}
+            sx={{
+              pl: 0,
+              py: 0.25,
+              borderRadius: 0,
+              mb: 0.1,
+              transition: "background-color 0.12s ease",
+            }}
+          >
+            <IconButton
+              size="small"
+              onClick={(e) => toggleSection(line.id, e)}
+              sx={{
+                p: 0.1,
+                mr: 0.4,
+                borderRadius: 0,
+                transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                transition: "transform 0.15s ease",
+              }}
+            >
+              <KeyboardArrowDownIcon sx={{ fontSize: 12 }} />
+            </IconButton>
+            <ListItemText
+              primary={
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main", fontSize: fontSizes.section, fontFamily: "var(--font-ui)", letterSpacing: "0.02em" }}>
+                  {line.text.replace(/^[.#= ]+/, "").trim()}
+                </Typography>
+              }
+              secondary={showSynopses && renderOutlineSynopses(synopses)}
+            />
+          </ListItemButton>
+          {!isCollapsed && children.length > 0 && (
+            <Box sx={{
+              display: "flex",
+              flexDirection: "column",
+              borderLeft: "1px solid",
+              borderColor: "divider",
+              ml: 1.1,
+              pl: 0,
+            }}>
+              {children.map(renderTreeNode)}
+            </Box>
+          )}
+        </Box>
+      );
+    }
+
+    if (isSynopsis) {
+      return (
+        <Box key={line.id} sx={{ pl: 1.5, py: 0.1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em" }}>
+            {line.text.replace(/^=[ ]*/, "").trim()}
+          </Typography>
+        </Box>
+      );
+    }
+
+    const showDragOver = isDragOver && !isDragging;
+    return (
+      <ListItemButton
+        key={line.id}
+        data-scene-id={line.id}
+        ref={isActive ? activeItemRef : null}
+        selected={isActive}
+        onClick={(e) => handleItemClick(item, true, e)}
+        draggable={isScene}
+        onDragStart={isScene ? (e) => handleDragStart(e, line.id) : undefined}
+        onDragOver={isScene ? (e) => handleDragOver(e, line.id) : undefined}
+        onDragLeave={isScene ? () => setDragOverItemIdx(null) : undefined}
+        onDrop={isScene ? (e) => handleDrop(e, line.id) : undefined}
+        sx={{
+          pl: 1.5,
+          py: 0.25,
+          borderRadius: 0,
+          mb: 0.1,
+          opacity: isDragging ? 0.4 : 1,
+          bgcolor: showDragOver
+            ? "action.hover"
+            : sceneColor
+              ? (sceneColor.startsWith("var")
+                  ? `color-mix(in srgb, ${sceneColor} 8%, transparent)`
+                  : `${sceneColor}12`)
+              : "transparent",
+          transition: "background-color 0.12s ease",
+          position: "relative",
+          "&:hover": {
+            bgcolor: sceneColor
+              ? (sceneColor.startsWith("var")
+                  ? `color-mix(in srgb, ${sceneColor} 15%, transparent)`
+                  : `${sceneColor}22`)
+              : "action.hover",
+          },
+          "&.Mui-selected": {
+            bgcolor: sceneColor
+              ? (sceneColor.startsWith("var")
+                  ? `color-mix(in srgb, ${sceneColor} 20%, transparent)`
+                  : `${sceneColor}30`)
+              : "action.selected",
+            "&:hover": {
+              bgcolor: sceneColor
+                ? (sceneColor.startsWith("var")
+                    ? `color-mix(in srgb, ${sceneColor} 25%, transparent)`
+                    : `${sceneColor}38`)
+                : "action.hover",
+            }
+          },
+          "&::after": showDragOver ? {
+            content: '""',
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "2px",
+            bgcolor: "primary.main",
+          } : undefined,
+        }}
+      >
+        <ListItemText
+          primary={
+            <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
+              <Box
+                sx={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  bgcolor: sceneColor || "transparent",
+                  flexShrink: 0,
+                }}
+              />
+              {line.sceneNumber && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    bgcolor: "action.selected",
+                    px: 0.4,
+                    borderRadius: 0,
+                    fontSize: fontSizes.number,
+                    fontWeight: 700,
+                    color: "text.secondary",
+                  }}
+                >
+                  {line.sceneNumber}
+                </Typography>
+              )}
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? "primary.main" : "text.primary",
+                  fontSize: fontSizes.scene,
+                  fontFamily: "var(--font-ui)",
+                  letterSpacing: "0.01em",
+                }}
+              >
+                {getSceneTitle(line)}
+              </Typography>
+              {line.storylines && line.storylines.length > 0 && (
+                <Box sx={{ display: "flex", gap: 0.4 }}>
+                  {line.storylines.map((sl) => (
+                    <Chip
+                      key={sl}
+                      label={sl}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        height: 12,
+                        fontSize: fontSizes.chip,
+                        p: 0,
+                        borderRadius: 0,
+                        textTransform: "lowercase",
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          }
+          secondary={showSynopses && renderOutlineSynopses(synopses)}
+        />
+      </ListItemButton>
+    );
+  };
+
+  const renderTree = (nodes: TreeNode[]): React.ReactNode[] =>
+    nodes.map(renderTreeNode);
+
+  const fontSizeMap = {
+    small: "11px",
+    normal: "12.5px",
+    large: "14px",
+  };
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 1, gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+          Navigator
+        </Typography>
+        <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ borderRadius: 0, opacity: 0.6, "&:hover": { opacity: 1 } }}>
+          <MoreVertIcon sx={{ fontSize: 14 }} />
+        </IconButton>
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={() => setMenuAnchor(null)}
+          slotProps={{
+            paper: {
+              sx: { borderRadius: 0 }
+            }
+          }}
+        >
+          <Box sx={{ px: 1.5, py: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
+              Outline Size
+            </Typography>
+          </Box>
+          {["small", "normal", "large"].map((size) => (
+            <MenuItem
+              key={size}
+              selected={outlineFontSize === size}
+              onClick={() => {
+                setOutlineFontSize(size as any);
+                setMenuAnchor(null);
+              }}
+              sx={{ textTransform: "capitalize", fontSize: 12, borderRadius: 0 }}
+            >
+              {size}
+            </MenuItem>
+          ))}
+        </Menu>
+      </Box>
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+        <TextField
+          placeholder="Search outline..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              sx: {
+                borderRadius: 0,
+                bgcolor: "background.paper",
+                fontSize: "0.75rem",
+                "& fieldset": { borderColor: "divider" },
+                "&:hover fieldset": { borderColor: "text.secondary" },
+                "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+              },
+              startAdornment: (
+                <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
+                  <SearchIcon sx={{ fontSize: 12 }} />
+                </Box>
+              ),
+              endAdornment: searchQuery && (
+                <IconButton size="small" onClick={() => setSearchQuery("")} sx={{ borderRadius: 0 }}>
+                  <CloseIcon sx={{ fontSize: 12 }} />
+                </IconButton>
+              )
+            }
+          }}
+        />
+
+        <Box sx={{ display: "flex", border: "1px solid", borderColor: "divider", borderRadius: 0, overflow: "hidden" }}>
+          {(["Sections", "Scenes", "Synopses"] as const).map((label) => {
+            const active = label === "Sections" ? showSections : label === "Scenes" ? showScenes : showSynopses;
+            const toggle = label === "Sections" ? () => setShowSections(p => !p) : label === "Scenes" ? () => setShowScenes(p => !p) : () => setShowSynopses(p => !p);
+            return (
+              <Box
+                key={label}
+                onClick={toggle}
+                sx={{
+                  flex: 1,
+                  textAlign: "center",
+                  py: 0.3,
+                  fontSize: "0.65rem",
+                  textTransform: "uppercase",
+                  fontWeight: active ? 700 : 500,
+                  cursor: "pointer",
+                  bgcolor: active ? "primary.main" : "transparent",
+                  color: active ? "primary.contrastText" : "text.secondary",
+                  borderRight: label !== "Synopses" ? "1px solid" : "none",
+                  borderColor: "divider",
+                  transition: "all 0.15s ease-in-out",
+                  "&:hover": {
+                    bgcolor: active ? "primary.dark" : "action.hover",
+                  }
+                }}
+              >
+                {label}
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
+
+      <Box
+        ref={listRef}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        role="listbox"
+        aria-label="Scene navigator"
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          outline: "none",
+          fontSize: fontSizeMap[outlineFontSize],
+        }}
+      >
+        {tree.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center", fontStyle: "italic" }}>
+            No outline elements match your criteria.
+          </Typography>
+        ) : (
+          <List disablePadding sx={{ display: "flex", flexDirection: "column" }}>
+            {renderTree(tree)}
+          </List>
+        )}
+      </Box>
+    </Box>
+  );
+};
+

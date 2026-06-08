@@ -9,15 +9,20 @@ import {
   findPrevious,
   replaceNext,
 } from "@codemirror/search";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import CloseIcon from "@mui/icons-material/Close";
+import FindReplaceIcon from "@mui/icons-material/FindReplace";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
 import {
-  ChevronRight,
-  ChevronDown,
-  ArrowUp,
-  ArrowDown,
-  X,
-  Replace,
-  ReplaceAll,
-} from "lucide-react";
+  Box,
+  Paper,
+  IconButton,
+  InputBase,
+  Typography,
+} from "@mui/material";
 
 export const SearchPanel: React.FC = () => {
   const { showSearchPanel, setShowSearchPanel, showReplacePanel, setShowReplacePanel } = useUI();
@@ -325,113 +330,138 @@ export const SearchPanel: React.FC = () => {
   if (!showSearchPanel) return null;
 
   return (
-    <div
-      className="vsc-search-widget"
+    <Paper
+      elevation={8}
       ref={containerRef}
       onMouseDown={handleDragStart}
-      style={{
+      sx={{
+        position: "fixed",
+        top: 80,
+        right: 40,
+        zIndex: 1000,
+        p: 1.5,
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
+        width: 380,
+        borderRadius: 2,
+        border: "1px solid",
+        borderColor: "divider",
         transform: `translate(${position.x}px, ${position.y}px)`,
         cursor: isDragging ? "grabbing" : "grab",
       }}
     >
-      <div className="vsc-search-row">
-        <button
-          className="vsc-toggle-replace-btn"
+      {/* Search Row */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <IconButton
+          size="small"
           onClick={() => setShowReplacePanel(!showReplacePanel)}
           title="Toggle Replace"
         >
-          {showReplacePanel ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </button>
+          {showReplacePanel ? <KeyboardArrowDownIcon sx={{ fontSize: 16 }} /> : <ChevronRightIcon sx={{ fontSize: 16 }} />}
+        </IconButton>
 
-        <div className="vsc-input-container">
-          <input
-            ref={searchInputRef}
-            type="text"
-            className="vsc-input"
+        <Box sx={{ display: "flex", flex: 1, alignItems: "center", border: "1px solid", borderColor: "divider", borderRadius: 1.5, px: 1, bgcolor: "background.paper" }}>
+          <InputBase
+            inputRef={searchInputRef}
             placeholder="Find"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={handleSearchKeyDown}
+            sx={{ flex: 1, fontSize: 13, py: 0.2 }}
           />
-          <div className="vsc-input-actions">
-            <button
-              className={`vsc-action-btn ${isCaseSensitive ? "active" : ""}`}
-              onClick={() => setIsCaseSensitive(!isCaseSensitive)}
-              title="Match Case (Aa)"
-            >
-              Aa
-            </button>
-            <button
-              className={`vsc-action-btn ${isWholeWord ? "active" : ""}`}
-              onClick={() => setIsWholeWord(!isWholeWord)}
-              title="Match Whole Word (ab)"
-            >
-              ab
-            </button>
-            <button
-              className={`vsc-action-btn ${isRegex ? "active" : ""}`}
-              onClick={() => setIsRegex(!isRegex)}
-              title="Use Regular Expression (.*)"
-            >
-              .*
-            </button>
-          </div>
-        </div>
+          <Box sx={{ display: "flex", gap: 0.2 }}>
+            {[
+              { label: "Aa", active: isCaseSensitive, onClick: () => setIsCaseSensitive(!isCaseSensitive), title: "Match Case (Aa)" },
+              { label: "ab", active: isWholeWord, onClick: () => setIsWholeWord(!isWholeWord), title: "Match Whole Word (ab)" },
+              { label: ".*", active: isRegex, onClick: () => setIsRegex(!isRegex), title: "Use Regular Expression (.*)" },
+            ].map((btn) => (
+              <IconButton
+                key={btn.label}
+                size="small"
+                onClick={btn.onClick}
+                title={btn.title}
+                sx={{
+                  width: 22,
+                  height: 22,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  borderRadius: 1,
+                  bgcolor: btn.active ? "primary.main" : "transparent",
+                  color: btn.active ? "primary.contrastText" : "text.secondary",
+                  "&:hover": {
+                    bgcolor: btn.active ? "primary.dark" : "action.hover",
+                  }
+                }}
+              >
+                {btn.label}
+              </IconButton>
+            ))}
+          </Box>
+        </Box>
 
-        <div className="vsc-results-counter">
-          {matches.length > 0 ? `${activeIndex + 1} of ${matches.length}` : "No results"}
-        </div>
+        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 45, textAlign: "center", fontSize: 11 }}>
+          {matches.length > 0 ? `${activeIndex + 1}/${matches.length}` : "0/0"}
+        </Typography>
 
-        <div className="vsc-nav-actions">
-          <button className="vsc-nav-btn" onClick={handlePrev} title="Previous Match (Shift+Enter)">
-            <ArrowUp size={16} />
-          </button>
-          <button className="vsc-nav-btn" onClick={handleNext} title="Next Match (Enter)">
-            <ArrowDown size={16} />
-          </button>
-          <button className="vsc-nav-btn" title="Selection Search">
-            <span style={{ fontSize: "16px", fontWeight: "bold", lineHeight: "1" }}>≡</span>
-          </button>
-          <button className="vsc-nav-btn close" onClick={handleClose} title="Close (Escape)">
-            <X size={16} />
-          </button>
-        </div>
-      </div>
+        <Box sx={{ display: "flex", gap: 0.2 }}>
+          <IconButton size="small" onClick={handlePrev} title="Previous Match (Shift+Enter)">
+            <ArrowUpwardIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+          <IconButton size="small" onClick={handleNext} title="Next Match (Enter)">
+            <ArrowDownwardIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+          <IconButton size="small" onClick={handleClose} title="Close (Escape)">
+            <CloseIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
+      </Box>
 
+      {/* Replace Row */}
       {showReplacePanel && (
-        <div className="vsc-search-row replace-row">
-          <div style={{ width: "24px" }} /> {/* Spacer matching replace toggle icon */}
-
-          <div className="vsc-input-container">
-            <input
-              type="text"
-              className="vsc-input"
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ width: 28 }} /> {/* Spacer */}
+          <Box sx={{ display: "flex", flex: 1, alignItems: "center", border: "1px solid", borderColor: "divider", borderRadius: 1.5, px: 1, bgcolor: "background.paper" }}>
+            <InputBase
               placeholder="Replace"
               value={replaceText}
               onChange={(e) => setReplaceText(e.target.value)}
               onKeyDown={handleReplaceKeyDown}
+              sx={{ flex: 1, fontSize: 13, py: 0.2 }}
             />
-            <div className="vsc-input-actions">
-              <button
-                className={`vsc-action-btn ${preserveCase ? "active" : ""}`}
-                onClick={() => setPreserveCase(!preserveCase)}
-                title="Preserve Case (AB)"
-              >
-                AB
-              </button>
-            </div>
-          </div>
+            <IconButton
+              size="small"
+              onClick={() => setPreserveCase(!preserveCase)}
+              title="Preserve Case (AB)"
+              sx={{
+                width: 22,
+                height: 22,
+                fontSize: 10,
+                fontWeight: 700,
+                borderRadius: 1,
+                bgcolor: preserveCase ? "primary.main" : "transparent",
+                color: preserveCase ? "primary.contrastText" : "text.secondary",
+                "&:hover": {
+                  bgcolor: preserveCase ? "primary.dark" : "action.hover",
+                }
+              }}
+            >
+              AB
+            </IconButton>
+          </Box>
 
-          <div className="vsc-replace-actions">
-            <button className="vsc-replace-btn" onClick={handleReplace} title="Replace">
-              <Replace size={16} />
-            </button>
-            <button className="vsc-replace-btn" onClick={handleReplaceAll} title="Replace All">
-              <ReplaceAll size={16} />
-            </button>
-          </div>
-        </div>
+          <Box sx={{ display: "flex", gap: 0.2 }}>
+            <IconButton size="small" onClick={handleReplace} title="Replace">
+              <FindReplaceIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+            <IconButton size="small" onClick={handleReplaceAll} title="Replace All">
+              <DoneAllIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+            <Box sx={{ width: 28 }} /> {/* Balance space with close btn */}
+          </Box>
+        </Box>
       )}
-    </div>
+    </Paper>
   );
 };
+

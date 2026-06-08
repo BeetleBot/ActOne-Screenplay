@@ -10,14 +10,14 @@ export interface UIContextProps {
   setIsZenMode: (enabled: boolean) => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
-  workspaceMode: 'editor' | 'cards';
-  setWorkspaceMode: (mode: 'editor' | 'cards') => void;
-  showTimeline: boolean;
-  setShowTimeline: (show: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  mainView: 'editor' | 'board';
+  setMainView: (view: 'editor' | 'board') => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
+  appScale: number;
+  setAppScale: (scale: number) => void;
   autocompleteEnabled: boolean;
   setAutocompleteEnabled: (enabled: boolean) => void;
   smartQuotesEnabled: boolean;
@@ -54,10 +54,15 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
     return (localStorage.getItem("actone-paper-size") as any) || "letter";
   });
-  const [workspaceMode, setWorkspaceMode] = useState<'editor' | 'cards'>("editor");
   const [activeTab, setActiveTab] = useState<string>("outline");
+  const [mainView, setMainView] = useState<'editor' | 'board'>("editor");
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
     const saved = localStorage.getItem("actone-zoom-level");
+    const parsed = saved ? parseInt(saved, 10) : 100;
+    return isNaN(parsed) ? 100 : parsed;
+  });
+  const [appScale, setAppScaleState] = useState<number>(() => {
+    const saved = localStorage.getItem("actone-app-scale");
     const parsed = saved ? parseInt(saved, 10) : 100;
     return isNaN(parsed) ? 100 : parsed;
   });
@@ -120,19 +125,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     applyZenMode();
   }, [isZenMode]);
 
-  const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-show-timeline") !== "false";
-  });
-
   const setZoomLevel = (zoom: number) => {
     const newZoom = Math.min(Math.max(zoom, 50), 300);
     setZoomLevelState(newZoom);
     localStorage.setItem("actone-zoom-level", String(newZoom));
   };
 
-  const setShowTimeline = (show: boolean) => {
-    setShowTimelineState(show);
-    localStorage.setItem("actone-show-timeline", String(show));
+  const setAppScale = (scale: number) => {
+    const newScale = Math.min(Math.max(scale, 50), 200);
+    setAppScaleState(newScale);
+    localStorage.setItem("actone-app-scale", String(newScale));
   };
 
   const setIsZenMode = (enabled: boolean) => {
@@ -195,14 +197,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setIsZenMode,
         typewriterMode,
         setTypewriterMode,
-        workspaceMode,
-        setWorkspaceMode,
-        showTimeline,
-        setShowTimeline,
         activeTab,
         setActiveTab,
+        mainView,
+        setMainView,
         zoomLevel,
         setZoomLevel,
+        appScale,
+        setAppScale,
         autocompleteEnabled,
         setAutocompleteEnabled,
         smartQuotesEnabled,

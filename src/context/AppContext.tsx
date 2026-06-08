@@ -1,4 +1,3 @@
-import React from "react";
 import { FountainDocument } from "../parser/FountainParser";
 import { useFile, ScreenplayFile } from "./FileContext";
 import { useUI } from "./UIContext";
@@ -43,14 +42,14 @@ interface AppContextProps {
   removeFromRecent: (path: string) => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
-  workspaceMode: 'editor' | 'cards';
-  setWorkspaceMode: (mode: 'editor' | 'cards') => void;
-  showTimeline: boolean;
-  setShowTimeline: (show: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  mainView: 'editor' | 'board';
+  setMainView: (view: 'editor' | 'board') => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
+  appScale: number;
+  setAppScale: (scale: number) => void;
   autocompleteEnabled: boolean;
   setAutocompleteEnabled: (enabled: boolean) => void;
   smartQuotesEnabled: boolean;
@@ -77,8 +76,5 @@ export const useAppContext = (): AppContextProps => {
   } as AppContextProps;
 };
 
-// Kept as a dummy for backwards compatibility, though child providers are now handled by AppProviders
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <>{children}</>;
-};
+
 

@@ -11,6 +11,8 @@ import { ModalManager } from "./components/ModalManager";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { WindowResizeHandles } from "./components/WindowResizeHandles";
 
+import { SprintProvider } from "./context/SprintContext";
+
 function AppInner() {
   useNativeAppBehavior();
 
@@ -18,7 +20,6 @@ function AppInner() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
-  const [showThemeModal, setShowThemeModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [showTitlePageModal, setShowTitlePageModal] = useState(false);
@@ -27,10 +28,9 @@ function AppInner() {
   const { newFile, openFile, saveFile, saveFileAs, closeFile, activeFileId, files } = useFile();
   const { editorView } = useEditor();
   const {
-    showTimeline,
-    setShowTimeline,
     zoomLevel,
     setZoomLevel,
+    appScale,
     isZenMode,
     setIsZenMode,
     showSearchPanel,
@@ -39,7 +39,7 @@ function AppInner() {
     setHideFountainMarkupEnabled
   } = useUI();
 
-  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal || showRevisionModal || showTitlePageModal || showHelpModal;
+  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showSettingsModal || showRevisionModal || showTitlePageModal || showHelpModal;
 
   useKeyboardShortcuts({
     newFile,
@@ -50,7 +50,6 @@ function AppInner() {
     togglePalette: useCallback(() => setIsPaletteOpen(prev => !prev), []),
     exportPDF: useCallback(() => setShowExportModal(true), []),
     toggleSidebar: useCallback(() => setIsSidebarOpen(prev => !prev), []),
-    toggleTimeline: useCallback(() => setShowTimeline(!showTimeline), [showTimeline, setShowTimeline]),
     toggleZenMode: useCallback(() => setIsZenMode(!isZenMode), [isZenMode, setIsZenMode]),
     getEditorView: useCallback(() => editorView, [editorView]),
     zoomIn: useCallback(() => setZoomLevel(zoomLevel + 10), [zoomLevel, setZoomLevel]),
@@ -74,11 +73,12 @@ function AppInner() {
   return (
     <>
       <WindowResizeHandles />
-      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{ height: "100%", display: "flex", flexDirection: "column", zoom: `${appScale}%` }}>
         <MainLayout
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
-          onOpenThemeModal={() => setShowThemeModal(true)}
+          onOpenSettingsModal={() => setShowSettingsModal(true)}
+          onOpenPalette={() => setIsPaletteOpen(true)}
         />
       <ModalManager
         isPaletteOpen={isPaletteOpen}
@@ -87,8 +87,6 @@ function AppInner() {
         setShowExportModal={setShowExportModal}
         showStructureModal={showStructureModal}
         setShowStructureModal={setShowStructureModal}
-        showThemeModal={showThemeModal}
-        setShowThemeModal={setShowThemeModal}
         showSettingsModal={showSettingsModal}
         setShowSettingsModal={setShowSettingsModal}
         showRevisionModal={showRevisionModal}
@@ -109,7 +107,9 @@ function App() {
   return (
     <ThemeProvider>
       <AppProviders>
-        <AppInner />
+        <SprintProvider>
+          <AppInner />
+        </SprintProvider>
       </AppProviders>
     </ThemeProvider>
   );
