@@ -560,8 +560,6 @@ const ActivityBar: React.FC<{
   );
 };
 
-import { StructureBoard } from "../../features/board";
-
 const Workspace: React.FC<{
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
@@ -570,12 +568,8 @@ const Workspace: React.FC<{
 }> = ({ isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode, mainView } = useUI();
+  const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
   const { editorView } = useEditor();
-  const { filePath } = useFile();
-
-  const isActOneBundle = filePath?.toLowerCase().endsWith(".actone");
-  const showBoard = mainView === 'board' && isActOneBundle;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -665,17 +659,11 @@ const Workspace: React.FC<{
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <SearchPanel />
-        {showBoard ? (
-          <Box sx={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}>
-            <StructureBoard />
+        <Box className="editor-scroll-area" sx={{ flex: 1, overflow: 'auto' }}>
+          <Box className={`editor-paper paper-${paperSize}`} sx={{ zoom: zoomLevel / 100 }}>
+            <FountainEditor />
           </Box>
-        ) : (
-          <Box className="editor-scroll-area" sx={{ flex: 1, overflow: 'auto' }}>
-            <Box className={`editor-paper paper-${paperSize}`} sx={{ zoom: zoomLevel / 100 }}>
-              <FountainEditor />
-            </Box>
-          </Box>
-        )}
+        </Box>
       </Box>
     </Box>
   );

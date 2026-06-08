@@ -114,11 +114,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setIsZenMode,
     zoomLevel,
     setZoomLevel,
-    mainView,
-    setMainView,
   } = useUI();
-
-  const isActOneBundle = filePath?.toLowerCase().endsWith(".actone");
 
   const openUrl = (url: string) => {
     try {
@@ -192,9 +188,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "edit-replace", name: "Replace Text...", category: "Edit", icon: <FindReplaceIcon sx={{ fontSize: 16 }} />, action: () => { setShowSearchPanel(true); setShowReplacePanel(true); onClose(); } },
 
     // View
-    ...(isActOneBundle ? [
-      { id: "view-structure-board", name: mainView === 'board' ? "Switch to Text Editor" : "Open Structure Board", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+B", action: () => { setMainView(mainView === 'board' ? 'editor' : 'board'); onClose(); } }
-    ] : []),
     { id: "view-sidebar", name: isSidebarOpen ? "Hide Sidebar Outline" : "Show Sidebar Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } },
     { id: "view-tab-outline", name: "Switch Sidebar Tab: Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("outline"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-notepad", name: "Switch Sidebar Tab: Notepad", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("notepad"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
