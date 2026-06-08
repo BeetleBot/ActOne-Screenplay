@@ -12,8 +12,12 @@ export interface UIContextProps {
   setTypewriterMode: (enabled: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  mainView: 'editor' | 'board';
+  setMainView: (view: 'editor' | 'board') => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
+  appScale: number;
+  setAppScale: (scale: number) => void;
   autocompleteEnabled: boolean;
   setAutocompleteEnabled: (enabled: boolean) => void;
   smartQuotesEnabled: boolean;
@@ -51,8 +55,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return (localStorage.getItem("actone-paper-size") as any) || "letter";
   });
   const [activeTab, setActiveTab] = useState<string>("outline");
+  const [mainView, setMainView] = useState<'editor' | 'board'>("editor");
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
     const saved = localStorage.getItem("actone-zoom-level");
+    const parsed = saved ? parseInt(saved, 10) : 100;
+    return isNaN(parsed) ? 100 : parsed;
+  });
+  const [appScale, setAppScaleState] = useState<number>(() => {
+    const saved = localStorage.getItem("actone-app-scale");
     const parsed = saved ? parseInt(saved, 10) : 100;
     return isNaN(parsed) ? 100 : parsed;
   });
@@ -121,6 +131,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem("actone-zoom-level", String(newZoom));
   };
 
+  const setAppScale = (scale: number) => {
+    const newScale = Math.min(Math.max(scale, 50), 200);
+    setAppScaleState(newScale);
+    localStorage.setItem("actone-app-scale", String(newScale));
+  };
+
   const setIsZenMode = (enabled: boolean) => {
     setIsZenModeState(enabled);
   };
@@ -183,8 +199,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setTypewriterMode,
         activeTab,
         setActiveTab,
+        mainView,
+        setMainView,
         zoomLevel,
         setZoomLevel,
+        appScale,
+        setAppScale,
         autocompleteEnabled,
         setAutocompleteEnabled,
         smartQuotesEnabled,

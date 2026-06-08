@@ -24,7 +24,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved && themes.some(t => t.id === saved)) return saved;
     
     const isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    return isSystemDark ? "material-slate" : "material-baseline";
+    return isSystemDark ? "slate" : "baseline";
   });
 
   const setTheme = (t: ThemeId) => {
@@ -39,7 +39,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const mode: ThemeMode = currentThemeConfig.isDark ? "dark" : "light";
 
   const toggleMode = () => {
-    setTheme(mode === "light" ? "material-slate" : "material-baseline");
+    setTheme(mode === "light" ? "slate" : "baseline");
   };
 
   useEffect(() => {

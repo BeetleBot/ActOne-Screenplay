@@ -44,8 +44,12 @@ interface AppContextProps {
   setTypewriterMode: (enabled: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  mainView: 'editor' | 'board';
+  setMainView: (view: 'editor' | 'board') => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
+  appScale: number;
+  setAppScale: (scale: number) => void;
   autocompleteEnabled: boolean;
   setAutocompleteEnabled: (enabled: boolean) => void;
   smartQuotesEnabled: boolean;

@@ -340,7 +340,7 @@ export const OutlineView: React.FC = () => {
               const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
               if (container) container.focus();
             }}
-            sx={{ display: "block", cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, "&:hover": { color: "primary.main" } }}
+            sx={{ display: "block", cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "primary.main" } }}
           >
             {syn.line.text.replace(/^=[ ]*/, "").trim()}
           </Typography>
@@ -361,7 +361,7 @@ export const OutlineView: React.FC = () => {
               const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
               if (container) container.focus();
             }}
-            sx={{ cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, "&:hover": { color: "primary.main" }, display: "flex", alignItems: "center", gap: 0.5 }}
+            sx={{ cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "primary.main" }, display: "flex", alignItems: "center", gap: 0.5 }}
           >
             • {syn.line.text.replace(/^=[ ]*/, "").trim()}
           </Typography>
@@ -418,7 +418,7 @@ export const OutlineView: React.FC = () => {
             </IconButton>
             <ListItemText
               primary={
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main", fontSize: fontSizes.section }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main", fontSize: fontSizes.section, fontFamily: "var(--font-ui)", letterSpacing: "0.02em" }}>
                   {line.text.replace(/^[.#= ]+/, "").trim()}
                 </Typography>
               }
@@ -444,7 +444,7 @@ export const OutlineView: React.FC = () => {
     if (isSynopsis) {
       return (
         <Box key={line.id} sx={{ pl: 1.5, py: 0.1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: fontSizes.synopsis }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em" }}>
             {line.text.replace(/^=[ ]*/, "").trim()}
           </Typography>
         </Box>
@@ -544,6 +544,8 @@ export const OutlineView: React.FC = () => {
                   fontWeight: isActive ? 600 : 400,
                   color: isActive ? "primary.main" : "text.primary",
                   fontSize: fontSizes.scene,
+                  fontFamily: "var(--font-ui)",
+                  letterSpacing: "0.01em",
                 }}
               >
                 {getSceneTitle(line)}

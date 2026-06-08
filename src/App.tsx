@@ -20,7 +20,6 @@ function AppInner() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
-  const [showThemeModal, setShowThemeModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [showTitlePageModal, setShowTitlePageModal] = useState(false);
@@ -31,6 +30,7 @@ function AppInner() {
   const {
     zoomLevel,
     setZoomLevel,
+    appScale,
     isZenMode,
     setIsZenMode,
     showSearchPanel,
@@ -39,7 +39,7 @@ function AppInner() {
     setHideFountainMarkupEnabled
   } = useUI();
 
-  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showThemeModal || showSettingsModal || showRevisionModal || showTitlePageModal || showHelpModal;
+  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showSettingsModal || showRevisionModal || showTitlePageModal || showHelpModal;
 
   useKeyboardShortcuts({
     newFile,
@@ -73,11 +73,10 @@ function AppInner() {
   return (
     <>
       <WindowResizeHandles />
-      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{ height: "100%", display: "flex", flexDirection: "column", zoom: `${appScale}%` }}>
         <MainLayout
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
-          onOpenThemeModal={() => setShowThemeModal(true)}
           onOpenSettingsModal={() => setShowSettingsModal(true)}
           onOpenPalette={() => setIsPaletteOpen(true)}
         />
@@ -88,8 +87,6 @@ function AppInner() {
         setShowExportModal={setShowExportModal}
         showStructureModal={showStructureModal}
         setShowStructureModal={setShowStructureModal}
-        showThemeModal={showThemeModal}
-        setShowThemeModal={setShowThemeModal}
         showSettingsModal={showSettingsModal}
         setShowSettingsModal={setShowSettingsModal}
         showRevisionModal={showRevisionModal}

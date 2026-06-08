@@ -1,16 +1,22 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 
 export type ThemeId =
-  | 'material-baseline'
-  | 'material-terracotta'
-  | 'material-lavender'
-  | 'material-eucalyptus'
-  | 'material-indigo'
-  | 'material-slate'
-  | 'material-cyber'
-  | 'material-botanical'
-  | 'material-bordeaux'
-  | 'material-amber';
+  | 'baseline'
+  | 'terracotta'
+  | 'lavender'
+  | 'eucalyptus'
+  | 'indigo'
+  | 'slate'
+  | 'cyber'
+  | 'botanical'
+  | 'bordeaux'
+  | 'amber'
+  | 'azure'
+  | 'crimson'
+  | 'emerald'
+  | 'golden'
+  | 'ink'
+  | 'pitch-black';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -29,80 +35,122 @@ export interface ThemeConfig {
 
 export const themes: ThemeConfig[] = [
   {
-    id: "material-baseline",
-    name: "Material Baseline",
+    id: "baseline",
+    name: "Arctic (Light)",
     desc: "Vibrant blue and clean white",
     isDark: false,
     colors: { bg: "#fdfcff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f0f4f9" }
   },
   {
-    id: "material-terracotta",
-    name: "Material Terracotta",
+    id: "azure",
+    name: "Azure (Light)",
+    desc: "Professional and clean bright blue",
+    isDark: false,
+    colors: { bg: "#f8f9fa", text: "#202124", accent: "#1a73e8", sidebar: "#ffffff" }
+  },
+  {
+    id: "crimson",
+    name: "Crimson (Light)",
+    desc: "Energetic and playful warm red",
+    isDark: false,
+    colors: { bg: "#fffbfa", text: "#202124", accent: "#d93025", sidebar: "#fce8e6" }
+  },
+  {
+    id: "emerald",
+    name: "Emerald (Light)",
+    desc: "Fresh and organic vibrant green",
+    isDark: false,
+    colors: { bg: "#f6fbf6", text: "#202124", accent: "#1e8e3e", sidebar: "#e6f4ea" }
+  },
+  {
+    id: "golden",
+    name: "Golden (Light)",
+    desc: "Bright and cheerful warm yellow",
+    isDark: false,
+    colors: { bg: "#fffdf0", text: "#202124", accent: "#f9ab00", sidebar: "#fef7e0" }
+  },
+  {
+    id: "terracotta",
+    name: "Terracotta (Light)",
     desc: "Warm earth and peach tones",
     isDark: false,
     colors: { bg: "#fffbff", text: "#2b1700", accent: "#a04000", sidebar: "#f7eee6" }
   },
   {
-    id: "material-lavender",
-    name: "Material Lavender",
+    id: "lavender",
+    name: "Lavender (Light)",
     desc: "Playful lavender and violet pastel",
     isDark: false,
     colors: { bg: "#fffbfa", text: "#1d1622", accent: "#743f9c", sidebar: "#f4edf7" }
   },
   {
-    id: "material-eucalyptus",
-    name: "Material Eucalyptus",
+    id: "eucalyptus",
+    name: "Eucalyptus (Light)",
     desc: "Fresh sage and botanical greens",
     isDark: false,
     colors: { bg: "#fbfdf8", text: "#1a1c19", accent: "#006d3a", sidebar: "#edf2ec" }
   },
   {
-    id: "material-indigo",
-    name: "Material Indigo",
+    id: "indigo",
+    name: "Indigo (Light)",
     desc: "Classic oceanic indigo breeze",
     isDark: false,
     colors: { bg: "#fcfcff", text: "#191c1e", accent: "#3f51b5", sidebar: "#f0f2f5" }
   },
   {
-    id: "material-slate",
-    name: "Material Slate",
+    id: "slate",
+    name: "Midnight (Dark)",
     desc: "Clean slate dark with neon teal",
     isDark: true,
     colors: { bg: "#111416", text: "#e2e2e6", accent: "#a0caff", sidebar: "#1a1c1e" }
   },
   {
-    id: "material-cyber",
-    name: "Material Cyber",
+    id: "cyber",
+    name: "Cyber (Dark)",
     desc: "True black with hot magenta glow",
     isDark: true,
     colors: { bg: "#0a0b10", text: "#e0e0e0", accent: "#ff007f", sidebar: "#141520" }
   },
   {
-    id: "material-botanical",
-    name: "Material Botanical",
+    id: "botanical",
+    name: "Deep Forest (Dark)",
     desc: "Deep mint teal and dark forest shadow",
     isDark: true,
     colors: { bg: "#0f1513", text: "#e1e3e0", accent: "#38d6a1", sidebar: "#19201d" }
   },
   {
-    id: "material-bordeaux",
-    name: "Material Bordeaux",
+    id: "bordeaux",
+    name: "Bordeaux (Dark)",
     desc: "Rich crimson plum and velvet rose",
     isDark: true,
     colors: { bg: "#1d1014", text: "#f0dfdf", accent: "#ffb2be", sidebar: "#27181c" }
   },
   {
-    id: "material-amber",
-    name: "Material Amber",
+    id: "amber",
+    name: "Amber (Dark)",
     desc: "Warm dark ochre and deep copper dusk",
     isDark: true,
     colors: { bg: "#17130c", text: "#e9e1d8", accent: "#ffb951", sidebar: "#221c13" }
+  },
+  {
+    id: "ink",
+    name: "Ink (Dark)",
+    desc: "High-contrast paper and ink experience",
+    isDark: true,
+    colors: { bg: "#121212", text: "#ffffff", accent: "#ffffff", sidebar: "#1e1e1e" }
+  },
+  {
+    id: "pitch-black",
+    name: "Pitch Black (AMOLED)",
+    desc: "Pure black background optimized for OLED screens",
+    isDark: true,
+    colors: { bg: "#000000", text: "#e8e8e8", accent: "#3da9fc", sidebar: "#000000" }
   }
 ];
 
 const shared: ThemeOptions = {
   typography: {
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     button: { textTransform: 'none', fontWeight: 500 },
   },
   shape: { borderRadius: 0 },
@@ -163,8 +211,41 @@ function cssVarBlock(vars: Record<string, string>) {
     .join('\n    ');
 }
 
+function mixHex(color1: string, color2: string, weight: number): string {
+  let h1 = color1.replace('#', '');
+  let h2 = color2.replace('#', '');
+  if (h1.length === 3) h1 = h1.split('').map(x => x + x).join('');
+  if (h2.length === 3) h2 = h2.split('').map(x => x + x).join('');
+  
+  const r1 = parseInt(h1.substring(0, 2), 16);
+  const g1 = parseInt(h1.substring(2, 4), 16);
+  const b1 = parseInt(h1.substring(4, 6), 16);
+  
+  const r2 = parseInt(h2.substring(0, 2), 16);
+  const g2 = parseInt(h2.substring(2, 4), 16);
+  const b2 = parseInt(h2.substring(4, 6), 16);
+  
+  const r = Math.round(r1 * weight + r2 * (1 - weight));
+  const g = Math.round(g1 * weight + g2 * (1 - weight));
+  const b = Math.round(b1 * weight + b2 * (1 - weight));
+  
+  return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
+}
+
 export function createActOneTheme(themeId: ThemeId) {
-  const t = themes.find(x => x.id === themeId) || themes[0];
+  const baseTheme = themes.find(x => x.id === themeId) || themes[0];
+  const t: ThemeConfig = JSON.parse(JSON.stringify(baseTheme));
+
+  if (t.id !== "pitch-black" && t.id !== "ink") {
+    if (!t.isDark) {
+      t.colors.bg = mixHex(t.colors.accent, "#ffffff", 0.03);
+      t.colors.sidebar = mixHex(t.colors.accent, "#ffffff", 0.06);
+    } else {
+      t.colors.bg = mixHex(t.colors.accent, "#000000", 0.08);
+      t.colors.sidebar = mixHex(t.colors.accent, "#000000", 0.12);
+    }
+  }
+
   const editorVars = getEditorVars(t);
 
   return createTheme({

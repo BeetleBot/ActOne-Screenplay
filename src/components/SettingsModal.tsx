@@ -36,6 +36,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setTypewriterMode,
     zoomLevel,
     setZoomLevel,
+    appScale,
+    setAppScale,
     autocompleteEnabled,
     setAutocompleteEnabled,
     smartQuotesEnabled,
@@ -98,6 +100,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               </Select>
             </FormControl>
 
+            <Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Interface Scale</Typography>
+                  <Typography variant="caption" color="text.secondary">Adjust the size of the sidebar, menus, and buttons</Typography>
+                </Box>
+                <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>{appScale}%</Typography>
+              </Box>
+              <Slider
+                size="small"
+                min={75}
+                max={150}
+                step={5}
+                value={appScale}
+                onChange={(_, val) => setAppScale(val as number)}
+                valueLabelDisplay="auto"
+                aria-label="Interface Scale"
+              />
+            </Box>
+
             <FormControlLabel
               control={<Switch checked={autoSaveEnabled} onChange={(e) => setAutoSaveEnabled(e.target.checked)} />}
               label={
@@ -148,12 +170,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>{zoomLevel}%</Typography>
               </Box>
               <Slider
+                size="small"
                 min={50}
                 max={200}
                 step={10}
                 value={zoomLevel}
                 onChange={(_, val) => setZoomLevel(val as number)}
                 valueLabelDisplay="auto"
+                aria-label="Editor Zoom"
               />
             </Box>
 

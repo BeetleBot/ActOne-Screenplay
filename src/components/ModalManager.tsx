@@ -1,7 +1,6 @@
 import React from 'react';
 import { ExportModal } from './ExportModal';
 import { StructureImportModal } from './StructureImportModal';
-import { ThemeSelectorModal } from './ThemeSelectorModal';
 import { SettingsModal } from './SettingsModal';
 import { CommandPalette } from './CommandPalette';
 import { RevisionModal } from './RevisionModal';
@@ -15,8 +14,6 @@ export interface ModalManagerProps {
   setShowExportModal: (open: boolean) => void;
   showStructureModal: boolean;
   setShowStructureModal: (open: boolean) => void;
-  showThemeModal: boolean;
-  setShowThemeModal: (open: boolean) => void;
   showSettingsModal: boolean;
   setShowSettingsModal: (open: boolean) => void;
   showRevisionModal: boolean;
@@ -36,8 +33,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   setShowExportModal,
   showStructureModal,
   setShowStructureModal,
-  showThemeModal,
-  setShowThemeModal,
   showSettingsModal,
   setShowSettingsModal,
   showRevisionModal,
@@ -58,7 +53,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
         toggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
         onOpenStructureModal={() => setShowStructureModal(true)}
-        onOpenThemeModal={() => setShowThemeModal(true)}
         onOpenSettingsModal={() => setShowSettingsModal(true)}
         onOpenRevisionModal={() => setShowRevisionModal(true)}
         onOpenTitlePageModal={() => setShowTitlePageModal(true)}
@@ -66,7 +60,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
-      {showThemeModal && <ThemeSelectorModal onClose={() => setShowThemeModal(false)} />}
       {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}
       {showRevisionModal && <RevisionModal onClose={() => setShowRevisionModal(false)} />}
       {showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}

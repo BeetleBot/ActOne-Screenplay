@@ -3,6 +3,8 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useFile } from "../../context/FileContext";
 import { useUI } from "../../context/UIContext";
 import { useEditor } from "../../context/EditorContext";
+import { useTheme } from "../../context/ThemeContext";
+import { themes } from "../../theme/muiTheme";
 import { FountainEditor } from "../FountainEditor";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
@@ -19,6 +21,10 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
+import Slider from "@mui/material/Slider";
+import Button from "@mui/material/Button";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
 
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -33,6 +39,8 @@ import CropSquareIcon from "@mui/icons-material/CropSquare";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckIcon from "@mui/icons-material/Check";
 import AddIcon from "@mui/icons-material/Add";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 const getTauriWindow = () => {
   try {
@@ -311,15 +319,16 @@ const ActivityBar: React.FC<{
   setActiveTab: (tab: string) => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
-  onOpenThemeModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
-}> = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, onOpenThemeModal, onOpenSettingsModal, onOpenPalette }) => {
+}> = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette }) => {
   const {
-    fontFamily, setFontFamily, paperSize, setPaperSize,
+    paperSize, setPaperSize,
     typewriterMode, setTypewriterMode, zoomLevel, setZoomLevel,
+    appScale, setAppScale,
     hideFountainMarkupEnabled, setHideFountainMarkupEnabled,
   } = useUI();
+  const { theme, setTheme } = useTheme();
   const { filePath } = useFile();
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -391,7 +400,7 @@ const ActivityBar: React.FC<{
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Quickies" placement="right">
+      <Tooltip title="Quick Settings" placement="right">
         <IconButton
           onClick={(e) => setAnchorEl(e.currentTarget)}
           sx={{
@@ -411,67 +420,162 @@ const ActivityBar: React.FC<{
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { minWidth: 200, ml: 1 } } }}
+        slotProps={{ paper: { sx: { minWidth: 240, ml: 1, borderRadius: 0 } } }}
       >
-        <Typography variant="overline" sx={{ px: 2, py: 0.5, display: 'block', color: 'text.secondary' }}>Editor Mode</Typography>
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'primary.main' }}>
+            Quick Settings
+          </Typography>
+        </Box>
+
+        <Divider sx={{ mb: 0.5 }} />
+
+        {/* --- Scale & Zoom Section --- */}
+        <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>View & Scale</Typography>
+        
+        <Box sx={{ px: 2, py: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600 }}>Interface Scale</Typography>
+            <Typography variant="caption" color="primary">{appScale}%</Typography>
+          </Box>
+          <Slider
+            size="small"
+            min={75}
+            max={150}
+            step={5}
+            value={appScale}
+            onChange={(_, val) => setAppScale(val as number)}
+            aria-label="Interface Scale"
+          />
+        </Box>
+
+        <Box sx={{ px: 2, py: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600 }}>Editor Zoom</Typography>
+            <Typography variant="caption" color="primary">{zoomLevel}%</Typography>
+          </Box>
+          <Slider
+            size="small"
+            min={50}
+            max={200}
+            step={10}
+            value={zoomLevel}
+            onChange={(_, val) => setZoomLevel(val as number)}
+            aria-label="Editor Zoom"
+          />
+        </Box>
+
+        <MenuItem onClick={() => { setZoomLevel(100); setAppScale(100); }} dense sx={{ py: 1 }}>
+          <ListItemIcon><RestartAltIcon sx={{ fontSize: 18 }} /></ListItemIcon>
+          <ListItemText primary={<Typography variant="body2">Reset View</Typography>} />
+        </MenuItem>
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* --- Editor Preferences --- */}
+        <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Editor Preferences</Typography>
+        
         <MenuItem onClick={() => setTypewriterMode(!typewriterMode)} dense>
-          <ListItemText>Typewriter Mode</ListItemText>
-          {typewriterMode && <ListItemIcon sx={{ minWidth: 'auto' }}><CheckIcon sx={{ fontSize: 14 }} /></ListItemIcon>}
+          <ListItemIcon>
+            <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {typewriterMode ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
+            </Box>
+          </ListItemIcon>
+          <ListItemText primary={<Typography variant="body2">Typewriter Mode</Typography>} />
         </MenuItem>
+
         <MenuItem onClick={() => setHideFountainMarkupEnabled(!hideFountainMarkupEnabled)} dense>
-          <ListItemText>Hide Fountain Markup</ListItemText>
-          {hideFountainMarkupEnabled && <ListItemIcon sx={{ minWidth: 'auto' }}><CheckIcon sx={{ fontSize: 14 }} /></ListItemIcon>}
+          <ListItemIcon>
+            <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {hideFountainMarkupEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
+            </Box>
+          </ListItemIcon>
+          <ListItemText primary={<Typography variant="body2">Hide Markup</Typography>} />
         </MenuItem>
 
-        <Divider />
-        <Typography variant="overline" sx={{ px: 2, py: 0.5, display: 'block', color: 'text.secondary' }}>Font Family</Typography>
-        <MenuItem onClick={() => setFontFamily("courier-prime")} selected={fontFamily === "courier-prime"} dense>
-          <ListItemText>Courier Prime</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => setFontFamily("courier-prime-sans")} selected={fontFamily === "courier-prime-sans"} dense>
-          <ListItemText>Courier Prime Sans</ListItemText>
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* --- Layout & Configuration --- */}
+        <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Layout & Page</Typography>
+        
+        <MenuItem onClick={() => {}} sx={{ cursor: 'default', '&:hover': { bgcolor: 'transparent' } }}>
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+             <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button 
+                  size="small" 
+                  variant={paperSize === "letter" ? "contained" : "outlined"}
+                  fullWidth
+                  onClick={() => setPaperSize("letter")}
+                  sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: 0 }}
+                >
+                  Letter
+                </Button>
+                <Button 
+                  size="small" 
+                  variant={paperSize === "a4" ? "contained" : "outlined"}
+                  fullWidth
+                  onClick={() => setPaperSize("a4")}
+                  sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: 0 }}
+                >
+                  A4
+                </Button>
+             </Box>
+          </Box>
         </MenuItem>
 
-        <Divider />
-        <Typography variant="overline" sx={{ px: 2, py: 0.5, display: 'block', color: 'text.secondary' }}>Paper Size</Typography>
-        <MenuItem onClick={() => setPaperSize("letter")} selected={paperSize === "letter"} dense>
-          <ListItemText>US Letter</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => setPaperSize("a4")} selected={paperSize === "a4"} dense>
-          <ListItemText>A4</ListItemText>
-        </MenuItem>
+        <Divider sx={{ mt: 1, mb: 0.5 }} />
 
-        <Divider />
-        <Typography variant="overline" sx={{ px: 2, py: 0.5, display: 'block', color: 'text.secondary' }}>Appearance</Typography>
-        <MenuItem onClick={() => { setAnchorEl(null); onOpenThemeModal(); }} dense>
-          <ListItemText>Theme</ListItemText>
-        </MenuItem>
+        {/* --- Appearance --- */}
+        <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Appearance</Typography>
+        
+        <Box sx={{ px: 2, py: 1 }}>
+          <FormControl fullWidth size="small">
+            <Select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as any)}
+              sx={{ 
+                fontSize: '0.8rem', 
+                borderRadius: 0,
+                bgcolor: 'action.hover',
+                '& .MuiSelect-select': { py: 0.8 }
+              }}
+            >
+              {themes.map((t) => (
+                <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.8rem' }}>
+                  {t.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
 
-        <Divider />
-        <MenuItem onClick={() => setZoomLevel(100)} dense>
-          <ListItemText>Reset Zoom ({zoomLevel}%)</ListItemText>
-        </MenuItem>
+        <Divider sx={{ my: 0.5 }} />
 
-        <Divider />
         <MenuItem onClick={() => { setAnchorEl(null); onOpenSettingsModal(); }} dense>
-          <ListItemText>Open Settings</ListItemText>
+          <ListItemIcon><SettingsIcon sx={{ fontSize: 18 }} /></ListItemIcon>
+          <ListItemText primary={<Typography variant="body2">Full Settings</Typography>} />
         </MenuItem>
       </Menu>
     </Box>
   );
 };
 
+import { StructureBoard } from "../../features/board";
+
 const Workspace: React.FC<{
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
-  onOpenThemeModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
-}> = ({ isSidebarOpen, setIsSidebarOpen, onOpenThemeModal, onOpenSettingsModal, onOpenPalette }) => {
+}> = ({ isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
+  const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode, mainView } = useUI();
   const { editorView } = useEditor();
+  const { filePath } = useFile();
+
+  const isActOneBundle = filePath?.toLowerCase().endsWith(".actone");
+  const showBoard = mainView === 'board' && isActOneBundle;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -517,7 +621,6 @@ const Workspace: React.FC<{
           setActiveTab={setActiveTab}
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
-          onOpenThemeModal={onOpenThemeModal}
           onOpenSettingsModal={onOpenSettingsModal}
           onOpenPalette={onOpenPalette}
         />
@@ -562,11 +665,17 @@ const Workspace: React.FC<{
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <SearchPanel />
-        <Box className="editor-scroll-area" sx={{ flex: 1, overflow: 'auto' }}>
-          <Box className={`editor-paper paper-${paperSize}`} sx={{ zoom: zoomLevel / 100 }}>
-            <FountainEditor />
+        {showBoard ? (
+          <Box sx={{ flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}>
+            <StructureBoard />
           </Box>
-        </Box>
+        ) : (
+          <Box className="editor-scroll-area" sx={{ flex: 1, overflow: 'auto' }}>
+            <Box className={`editor-paper paper-${paperSize}`} sx={{ zoom: zoomLevel / 100 }}>
+              <FountainEditor />
+            </Box>
+          </Box>
+        )}
       </Box>
     </Box>
   );
@@ -575,13 +684,12 @@ const Workspace: React.FC<{
 export interface MainLayoutProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
-  onOpenThemeModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
-  isSidebarOpen, setIsSidebarOpen, onOpenThemeModal, onOpenSettingsModal, onOpenPalette,
+  isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
 }) => {
   const { isZenMode } = useUI();
 
@@ -598,10 +706,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       <Workspace
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
-        onOpenThemeModal={onOpenThemeModal}
         onOpenSettingsModal={onOpenSettingsModal}
         onOpenPalette={onOpenPalette}
       />
     </>
   );
 };
+

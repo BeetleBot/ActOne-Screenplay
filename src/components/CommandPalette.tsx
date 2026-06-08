@@ -56,7 +56,6 @@ interface CommandPaletteProps {
   toggleSidebar: () => void;
   isSidebarOpen: boolean;
   onOpenStructureModal: () => void;
-  onOpenThemeModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenRevisionModal: () => void;
   onOpenTitlePageModal: () => void;
@@ -70,7 +69,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   toggleSidebar,
   isSidebarOpen,
   onOpenStructureModal,
-  onOpenThemeModal,
   onOpenSettingsModal,
   onOpenRevisionModal,
   onOpenTitlePageModal,
@@ -116,7 +114,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setIsZenMode,
     zoomLevel,
     setZoomLevel,
+    mainView,
+    setMainView,
   } = useUI();
+
+  const isActOneBundle = filePath?.toLowerCase().endsWith(".actone");
 
   const openUrl = (url: string) => {
     try {
@@ -190,6 +192,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "edit-replace", name: "Replace Text...", category: "Edit", icon: <FindReplaceIcon sx={{ fontSize: 16 }} />, action: () => { setShowSearchPanel(true); setShowReplacePanel(true); onClose(); } },
 
     // View
+    ...(isActOneBundle ? [
+      { id: "view-structure-board", name: mainView === 'board' ? "Switch to Text Editor" : "Open Structure Board", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+B", action: () => { setMainView(mainView === 'board' ? 'editor' : 'board'); onClose(); } }
+    ] : []),
     { id: "view-sidebar", name: isSidebarOpen ? "Hide Sidebar Outline" : "Show Sidebar Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } },
     { id: "view-tab-outline", name: "Switch Sidebar Tab: Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("outline"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-notepad", name: "Switch Sidebar Tab: Notepad", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("notepad"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
@@ -206,12 +211,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },
     { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenStructureModal(); onClose(); } },
     { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
-    { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <DeleteIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },
-
-    // Theme
-    { id: "view-theme-selector", name: "Change Theme...", category: "Theme", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenThemeModal(); onClose(); } },
+    {id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <DeleteIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },
 
     // Settings
+
     { id: "settings-modal", name: "Open Settings...", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+,", action: () => { onOpenSettingsModal(); onClose(); } },
     { id: "settings-font-prime", name: "Set Font: Courier Prime", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setFontFamily("courier-prime"); onClose(); } },
     { id: "settings-font-sans", name: "Set Font: Courier Prime Sans", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setFontFamily("courier-prime-sans"); onClose(); } },
