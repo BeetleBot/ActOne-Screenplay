@@ -57,10 +57,24 @@ jobs:
         run: npm run tauri build
       - name: Package portable tarball
         run: |
-          mkdir -p portable
-          cp src-tauri/target/release/actone portable/
-          cp assets/linux/actone.desktop portable/
-          cp src-tauri/icons/icon.png portable/actone-icon.png
+          mkdir -p portable/usr/share/actone/icon_app
+          mkdir -p portable/usr/share/applications
+          mkdir -p portable/usr/share/mime/packages
+          
+          cp src-tauri/target/release/actone portable/usr/share/actone/
+          cp assets/linux/actone.desktop portable/usr/share/applications/
+          cp assets/linux/actone.xml portable/usr/share/mime/packages/
+          
+          for size in 16 32 64 128 256 512; do
+            if [ -f "src-tauri/icons/${size}x${size}.png" ]; then
+              cp "src-tauri/icons/${size}x${size}.png" "portable/usr/share/actone/icon_app/actone_icon_${size}x${size}.png"
+            fi
+          done
+          
+          cp assets/linux/install.sh portable/
+          cp assets/linux/uninstall.sh portable/
+          chmod +x portable/install.sh portable/uninstall.sh
+          
           tar -czf ${{ matrix.archive }}.tar.gz -C portable .
       - name: Upload to Release
         uses: softprops/action-gh-release@v2

@@ -92,38 +92,31 @@ export const WelcomeScreen: React.FC = () => {
             overflowY: "auto",
           }}
         >
-          {/* Brand header */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          {/* Quote & Buttons */}
+          <Box sx={{ my: "auto", py: 4 }}>
             <Box
               sx={{
-                width: 36,
-                height: 36,
-                borderRadius: 2,
-                bgcolor: "primary.main",
+                width: { xs: 200, sm: 300, md: 400 },
+                height: { xs: 200, sm: 300, md: 400 },
+                mb: 6,
+                mx: "auto",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: (theme) => `0 4px 12px ${theme.palette.mode === 'light' ? 'rgba(25, 118, 210, 0.2)' : 'rgba(144, 202, 249, 0.2)'}`,
               }}
             >
-              <DescriptionIcon sx={{ fontSize: 18, color: "white" }} />
+              <img src="/src/assets/logo.png" alt="ActOne Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
-              Act One
-            </Typography>
-          </Box>
 
-          {/* Quote & Buttons */}
-          <Box sx={{ my: "auto", py: 4 }}>
             {quote.text && (
-              <Box sx={{ mb: 5 }}>
+              <Box sx={{ mb: 5, textAlign: "center" }}>
                 <Typography
                   variant="h5"
                   sx={{
                     fontWeight: 700,
                     letterSpacing: "-0.02em",
                     lineHeight: 1.3,
-                    fontFamily: "monospace",
+                    fontFamily: '"Courier Prime", monospace',
                     textTransform: "uppercase",
                   }}
                 >
@@ -145,7 +138,7 @@ export const WelcomeScreen: React.FC = () => {
               </Box>
             )}
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxWidth: 320 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxWidth: 320, mx: "auto" }}>
               <Button
                 variant="contained"
                 size="large"
@@ -182,7 +175,7 @@ export const WelcomeScreen: React.FC = () => {
           </Box>
 
           {/* Footer keyboard shortcuts */}
-          <Box sx={{ display: "flex", gap: 3 }}>
+          <Box sx={{ display: "flex", gap: 3, justifyContent: "center" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
                 Ctrl+N
