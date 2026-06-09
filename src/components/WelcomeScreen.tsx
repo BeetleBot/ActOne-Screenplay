@@ -57,6 +57,8 @@ function getDynamicQuote(): Quote {
   }
 }
 
+import logoImage from "../assets/logo.png";
+
 export const WelcomeScreen: React.FC = () => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
@@ -105,7 +107,7 @@ export const WelcomeScreen: React.FC = () => {
                 justifyContent: "center",
               }}
             >
-              <img src="/src/assets/logo.png" alt="ActOne Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src={logoImage} alt="ActOne Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </Box>
 
             {quote.text && (
