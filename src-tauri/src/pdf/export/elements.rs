@@ -7,7 +7,7 @@ use krilla::{
 
 use crate::pdf::{
     rich_string::RichString,
-    screenplay::{Dialogue, DialogueElement},
+    screenplay::{Dialogue, DialogueElement, Element},
 };
 
 use super::layout::{AllFonts, LayoutInfo, Margin, DialogueMargins, FONT_SIZE, LINE_HEIGHT, PaperSize};
@@ -376,11 +376,208 @@ fn draw_shaped_line(
     }
 }
 
+fn rich_string_substring(rs: &RichString, start_char: usize, end_char: usize) -> RichString {
+    let mut out = RichString::new();
+    let mut current_char_idx = 0;
+    
+    for element in &rs.elements {
+        let el_len = element.text.chars().count();
+        if current_char_idx + el_len <= start_char {
+            current_char_idx += el_len;
+            continue;
+        }
+        
+        let start_in_element = start_char.saturating_sub(current_char_idx);
+        let end_in_element = std::cmp::min(el_len, end_char.saturating_sub(current_char_idx));
+        
+        let substring_text: String = element.text.chars().skip(start_in_element).take(end_in_element - start_in_element).collect();
+        if !substring_text.is_empty() {
+            let mut new_element = crate::pdf::rich_string::core::Element::new(substring_text);
+            new_element.attributes = element.attributes;
+            out.elements.push(new_element);
+        }
+        
+        current_char_idx += el_len;
+        if current_char_idx >= end_char {
+            break;
+        }
+    }
+    out
+}
+
+pub fn split_rich_string_into_sentences(rs: &RichString) -> Vec<RichString> {
+    let plain = rs.to_plain_string();
+    let mut sentences = Vec::new();
+    let mut start_idx = 0;
+    
+    let chars: Vec<char> = plain.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '.' || c == '?' || c == '!' || c == '…' {
+            if i + 1 == chars.len() || chars[i + 1].is_whitespace() {
+                let end_idx = i + 1;
+                sentences.push(rich_string_substring(rs, start_idx, end_idx));
+                start_idx = end_idx;
+            }
+        }
+        i += 1;
+    }
+    if start_idx < chars.len() {
+        sentences.push(rich_string_substring(rs, start_idx, chars.len()));
+    }
+    sentences
+}
+
+fn line_ends_with_sentence_punctuation(line: &ShapedLine) -> bool {
+    if let Some(last_run) = line.runs.last() {
+        if let Some(last_char) = last_run.text.trim_end().chars().last() {
+            return last_char == '.' || last_char == '?' || last_char == '!' || last_char == '…';
+        }
+    }
+    false
+}
+
+pub fn min_required_height_for_lookahead(
+    el: &Element,
+    font_system: &mut cosmic_text::FontSystem,
+    layout_info: &LayoutInfo,
+) -> f32 {
+    match el {
+        Element::Heading { slug, .. } => {
+            measure_element_height(
+                font_system,
+                slug,
+                &layout_info.margins.heading,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::Action(s) => {
+            let max_width = layout_info.margins.action.content_width(layout_info.size);
+            let shaped = shape_rich_string(
+                font_system,
+                s,
+                max_width,
+                FONT_SIZE,
+                layout_info.export_font,
+            );
+            let lines = std::cmp::min(2, shaped.lines.len());
+            lines as f32 * LINE_HEIGHT
+        }
+        Element::Dialogue(d) => {
+            let mut name = d.character.clone();
+            if let Some(ext) = &d.extension {
+                name.append(" (".into());
+                name.append(ext.clone());
+                name.append(")".into());
+            }
+            let name_height = measure_element_height(
+                font_system,
+                &name,
+                &layout_info.margins.dialogue.character,
+                layout_info.size,
+                layout_info.export_font,
+            );
+            let first_el_height = if let Some(first_el) = d.elements.first() {
+                match first_el {
+                    DialogueElement::Parenthetical(s) => {
+                        measure_element_height(
+                            font_system,
+                            s,
+                            &layout_info.margins.dialogue.parenthetical,
+                            layout_info.size,
+                            layout_info.export_font,
+                        )
+                    }
+                    DialogueElement::Line(_) => {
+                        LINE_HEIGHT
+                    }
+                }
+            } else {
+                0.0
+            };
+            name_height + first_el_height
+        }
+        Element::DualDialogue(d0, d1) => {
+            let h0 = min_required_height_for_lookahead(&Element::Dialogue(d0.clone()), font_system, layout_info);
+            let h1 = min_required_height_for_lookahead(&Element::Dialogue(d1.clone()), font_system, layout_info);
+            h0.max(h1)
+        }
+        Element::Lyrics(s) => {
+            let max_width = layout_info.margins.lyrics.content_width(layout_info.size);
+            let shaped = shape_rich_string(
+                font_system,
+                s,
+                max_width,
+                FONT_SIZE,
+                layout_info.export_font,
+            );
+            let lines = std::cmp::min(2, shaped.lines.len());
+            lines as f32 * LINE_HEIGHT
+        }
+        Element::Transition(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.transition,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::CenteredText(s) => {
+            let max_width = layout_info.margins.centered.content_width(layout_info.size);
+            let shaped = shape_rich_string(
+                font_system,
+                s,
+                max_width,
+                FONT_SIZE,
+                layout_info.export_font,
+            );
+            let lines = std::cmp::min(2, shaped.lines.len());
+            lines as f32 * LINE_HEIGHT
+        }
+        Element::Synopsis(s) => {
+            let max_width = layout_info.margins.synopsis.content_width(layout_info.size);
+            let shaped = shape_rich_string(
+                font_system,
+                s,
+                max_width,
+                FONT_SIZE,
+                layout_info.export_font,
+            );
+            let lines = std::cmp::min(2, shaped.lines.len());
+            lines as f32 * LINE_HEIGHT
+        }
+        Element::Section(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.action,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::Shot(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.action,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::PageBreak => 0.0,
+    }
+}
+
 pub fn write_element(
     ctx: &mut DrawContext<'_, '_>,
     content: &RichString,
     margin: &Margin,
     alignment: Alignment,
+    can_split: bool,
+    residual: &mut Option<usize>,
 ) -> std::io::Result<bool> {
     let max_width = margin.content_width(ctx.layout_info.size);
     let font_size = FONT_SIZE;
@@ -392,17 +589,56 @@ pub fn write_element(
         ctx.layout_info.export_font,
     );
 
-    let total_height = shaped.lines.len() as f32 * LINE_HEIGHT;
+    let start_line = residual.unwrap_or(0);
+    let total_lines = shaped.lines.len();
+
+    if start_line >= total_lines {
+        *residual = None;
+        return Ok(false);
+    }
+
+    let remaining_lines = total_lines - start_line;
+    let total_height = remaining_lines as f32 * LINE_HEIGHT;
     let fits = *ctx.y_position + total_height <= ctx.max_y;
 
     let lines_to_draw = if fits {
-        shaped.lines.len()
+        remaining_lines
+    } else if !can_split {
+        0
     } else {
-        let available = ((ctx.max_y - *ctx.y_position) / LINE_HEIGHT) as usize;
-        available
+        let mut available = ((ctx.max_y - *ctx.y_position) / LINE_HEIGHT) as usize;
+        if remaining_lines <= 3 {
+            0
+        } else if available < 2 {
+            0
+        } else {
+            if remaining_lines - available < 2 {
+                available = remaining_lines - 2;
+            }
+            let mut split_at_sentence = None;
+            let min_k = 1;
+            let max_k = available - 1;
+            if max_k >= min_k {
+                for k in (min_k..=max_k).rev() {
+                    let absolute_line_idx = start_line + k;
+                    if absolute_line_idx < total_lines {
+                        let line = &shaped.lines[absolute_line_idx];
+                        if line_ends_with_sentence_punctuation(line) {
+                            split_at_sentence = Some(k + 1);
+                            break;
+                        }
+                    }
+                }
+            }
+            if let Some(count) = split_at_sentence {
+                count
+            } else {
+                available
+            }
+        }
     };
 
-    for line in shaped.lines.iter().take(lines_to_draw) {
+    for line in shaped.lines.iter().skip(start_line).take(lines_to_draw) {
         let x = match alignment {
             Alignment::LeftToRight => margin.left,
             Alignment::RightToLeft => ctx.layout_info.size.x - margin.right - line.width,
@@ -425,7 +661,13 @@ pub fn write_element(
         *ctx.y_position += LINE_HEIGHT;
     }
 
-    Ok(!fits)
+    if fits || start_line + lines_to_draw >= total_lines {
+        *residual = None;
+        Ok(false)
+    } else {
+        *residual = Some(start_line + lines_to_draw);
+        Ok(true)
+    }
 }
 
 pub fn measure_element_height(
@@ -441,24 +683,40 @@ pub fn measure_element_height(
     shaped.lines.len() as f32 * LINE_HEIGHT
 }
 
+fn write_more_indicator(
+    ctx: &mut DrawContext<'_, '_>,
+    dialogue_margins: &DialogueMargins,
+) -> std::io::Result<()> {
+    let saved_max = ctx.max_y;
+    ctx.max_y = saved_max + LINE_HEIGHT;
+    let mut temp_res = None;
+    write_element(
+        ctx,
+        &"(MORE)".into(),
+        &dialogue_margins.character,
+        Alignment::LeftToRight,
+        false,
+        &mut temp_res,
+    )?;
+    ctx.max_y = saved_max;
+    Ok(())
+}
+
 pub fn write_dialogue(
     ctx: &mut DrawContext<'_, '_>,
     dialogue: &Dialogue,
-    residual_dialogue: &mut Option<usize>,
+    residual_dialogue: &mut Option<(usize, usize)>,
     dialogue_margins: &DialogueMargins,
 ) -> std::io::Result<bool> {
+    let (start_element, mut start_line) = residual_dialogue.unwrap_or((0, 0));
     let mut character_name = dialogue.character.clone();
-    match (*residual_dialogue, &dialogue.extension) {
-        (Some(_), _) => {
-            character_name.append(" (CONT'D)".into());
-        }
-        (None, Some(ext)) => {
-            character_name.append(" (".into());
-            character_name.append(ext.clone());
-            character_name.append(")".into());
-        }
-        _ => (),
-    };
+    if residual_dialogue.is_some() {
+        character_name.append(" (CONT'D)".into());
+    } else if let Some(ext) = &dialogue.extension {
+        character_name.append(" (".into());
+        character_name.append(ext.clone());
+        character_name.append(")".into());
+    }
 
     let name_height = measure_element_height(
         ctx.font_system,
@@ -475,30 +733,60 @@ pub fn write_dialogue(
         ));
     }
 
-    if *ctx.y_position + name_height + LINE_HEIGHT >= ctx.max_y {
-        return Ok(true);
+    if start_element == 0 && start_line == 0 {
+        let first_el_height = if let Some(first_el) = dialogue.elements.first() {
+            match first_el {
+                DialogueElement::Parenthetical(s) => {
+                    measure_element_height(
+                        ctx.font_system,
+                        s,
+                        &dialogue_margins.parenthetical,
+                        ctx.layout_info.size,
+                        ctx.layout_info.export_font,
+                    )
+                }
+                DialogueElement::Line(_) => {
+                    LINE_HEIGHT
+                }
+            }
+        } else {
+            0.0
+        };
+
+        if *ctx.y_position + name_height + first_el_height >= ctx.max_y {
+            return Ok(true);
+        }
+
+        let mut temp_res = None;
+        write_element(
+            ctx,
+            &character_name,
+            &dialogue_margins.character,
+            Alignment::LeftToRight,
+            false,
+            &mut temp_res,
+        )?;
+    } else {
+        if *ctx.y_position + name_height + LINE_HEIGHT >= ctx.max_y {
+            return Ok(true);
+        }
+
+        let mut temp_res = None;
+        write_element(
+            ctx,
+            &character_name,
+            &dialogue_margins.character,
+            Alignment::LeftToRight,
+            false,
+            &mut temp_res,
+        )?;
     }
 
-    write_element(
-        ctx,
-        &character_name,
-        &dialogue_margins.character,
-        Alignment::LeftToRight,
-    )?;
-
-    let mut dialogue_index = residual_dialogue.unwrap_or(0);
+    let mut dialogue_index = start_element;
     while dialogue_index < dialogue.elements.len() {
         if *ctx.y_position >= ctx.max_y {
-            *residual_dialogue = Some(dialogue_index);
-            let saved_max = ctx.max_y;
-            ctx.max_y = saved_max + LINE_HEIGHT;
-            write_element(
-                ctx,
-                &"(MORE)".into(),
-                &dialogue_margins.character,
-                Alignment::LeftToRight,
-            )?;
-            ctx.max_y = saved_max;
+            *residual_dialogue = Some((dialogue_index, start_line));
+            write_more_indicator(ctx, dialogue_margins)?;
             return Ok(true);
         }
 
@@ -507,23 +795,28 @@ pub fn write_dialogue(
             DialogueElement::Line(s) => (s, &dialogue_margins.line),
         };
 
-        let overflowed = write_element(ctx, content, margin, Alignment::LeftToRight)?;
+        let mut residual_line = Some(start_line);
+        let overflowed = write_element(
+            ctx,
+            content,
+            margin,
+            Alignment::LeftToRight,
+            true,
+            &mut residual_line,
+        )?;
 
         if overflowed {
-            *residual_dialogue = Some(dialogue_index);
-            let saved_max = ctx.max_y;
-            ctx.max_y = saved_max + LINE_HEIGHT;
-            write_element(
-                ctx,
-                &"(MORE)".into(),
-                &dialogue_margins.character,
-                Alignment::LeftToRight,
-            )?;
-            ctx.max_y = saved_max;
+            if let Some(rem_line) = residual_line {
+                *residual_dialogue = Some((dialogue_index, rem_line));
+            } else {
+                *residual_dialogue = Some((dialogue_index, start_line));
+            }
+            write_more_indicator(ctx, dialogue_margins)?;
             return Ok(true);
         }
 
         dialogue_index += 1;
+        start_line = 0;
     }
 
     *residual_dialogue = None;

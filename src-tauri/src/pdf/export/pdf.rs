@@ -186,6 +186,7 @@ impl PdfExporter {
 
         let mut residual_dialogue_idx = None;
         let mut residual_dual_dialogue_idx = (None, None);
+        let mut residual_element_idx = None;
 
         let mut outline = Outline::new();
         let mut font_cache = HashMap::new();
@@ -224,11 +225,14 @@ impl PdfExporter {
                     font_system,
                     font_cache: &mut font_cache,
                 };
+                let mut temp_res = None;
                 write_element(
                     &mut pn_ctx,
                     &page_num_text,
                     &layout_info.margins.page_number,
                     Alignment::RightToLeft,
+                    false,
+                    &mut temp_res,
                 )?;
             }
 
@@ -272,8 +276,20 @@ impl PdfExporter {
                             layout_info.size,
                             layout_info.export_font,
                         );
+                        let mut peek_next_iter = element_iter.clone();
+                        peek_next_iter.next();
+                        let min_next_height = if let Some(next_span) = peek_next_iter.peek() {
+                            super::elements::min_required_height_for_lookahead(
+                                &next_span.inner,
+                                ctx.font_system,
+                                layout_info,
+                            )
+                        } else {
+                            0.0
+                        };
+
                         let remaining = max_y - *ctx.y_position;
-                        if remaining < heading_height + 3.0 * LINE_HEIGHT {
+                        if remaining < heading_height + min_next_height {
                             break;
                         }
 
@@ -293,20 +309,26 @@ impl PdfExporter {
                             };
 
                             let saved_y = *ctx.y_position;
+                            let mut temp_res = None;
                             write_element(
                                 &mut ctx,
                                 &rich_number,
                                 &left_number_margin,
                                 Alignment::LeftToRight,
+                                false,
+                                &mut temp_res,
                             )?;
                             *ctx.y_position = saved_y;
 
                             if self.mirror_scene_numbers == MirrorOption::Mirror {
+                                let mut temp_res = None;
                                 write_element(
                                     &mut ctx,
                                     &rich_number,
                                     &right_number_margin,
                                     Alignment::RightToLeft,
+                                    false,
+                                    &mut temp_res,
                                 )?;
                                 *ctx.y_position = saved_y;
                             }
@@ -331,11 +353,14 @@ impl PdfExporter {
                             }
                         }
 
+                        let mut temp_res = None;
                         write_element(
                             &mut ctx,
                             &slug_to_print,
                             &layout_info.margins.heading,
                             Alignment::LeftToRight,
+                            false,
+                            &mut temp_res,
                         )?;
                     }
                     Element::Action(s) => {
@@ -344,6 +369,8 @@ impl PdfExporter {
                             s,
                             &layout_info.margins.action,
                             Alignment::LeftToRight,
+                            true,
+                            &mut residual_element_idx,
                         )?;
                         if overflowed {
                             break;
@@ -410,17 +437,22 @@ impl PdfExporter {
                             &s_styled,
                             &layout_info.margins.lyrics,
                             Alignment::Centered,
+                            true,
+                            &mut residual_element_idx,
                         )?;
                         if overflowed {
                             break;
                         }
                     }
                     Element::Transition(s) => {
+                        let mut temp_res = None;
                         let overflowed = write_element(
                             &mut ctx,
                             s,
                             &layout_info.margins.transition,
                             Alignment::RightToLeft,
+                            false,
+                            &mut temp_res,
                         )?;
                         if overflowed {
                             break;
@@ -432,12 +464,38 @@ impl PdfExporter {
                             s,
                             &layout_info.margins.centered,
                             Alignment::Centered,
+                            true,
+                            &mut residual_element_idx,
                         )?;
                         if overflowed {
                             break;
                         }
                     }
                     Element::Shot(s) => {
+                        let shot_height = measure_element_height(
+                            ctx.font_system,
+                            s,
+                            &layout_info.margins.action,
+                            layout_info.size,
+                            layout_info.export_font,
+                        );
+                        let mut peek_next_iter = element_iter.clone();
+                        peek_next_iter.next();
+                        let min_next_height = if let Some(next_span) = peek_next_iter.peek() {
+                            super::elements::min_required_height_for_lookahead(
+                                &next_span.inner,
+                                ctx.font_system,
+                                layout_info,
+                            )
+                        } else {
+                            0.0
+                        };
+
+                        let remaining = max_y - *ctx.y_position;
+                        if remaining < shot_height + min_next_height {
+                            break;
+                        }
+
                         let mut s_styled = s.clone();
                         s_styled.make_uppercase();
                         if self.bold_scene_headings {
@@ -445,11 +503,14 @@ impl PdfExporter {
                                 element.set_bold();
                             }
                         }
+                        let mut temp_res = None;
                         let overflowed = write_element(
                             &mut ctx,
                             &s_styled,
                             &layout_info.margins.action,
                             Alignment::LeftToRight,
+                            false,
+                            &mut temp_res,
                         )?;
                         if overflowed {
                             break;
@@ -469,6 +530,8 @@ impl PdfExporter {
                                 &s_styled,
                                 &layout_info.margins.synopsis,
                                 Alignment::LeftToRight,
+                                true,
+                                &mut residual_element_idx,
                             )?;
                             if overflowed {
                                 break;
@@ -477,6 +540,30 @@ impl PdfExporter {
                     }
                     Element::Section(s) => {
                         if self.sections {
+                            let section_height = measure_element_height(
+                                ctx.font_system,
+                                s,
+                                &layout_info.margins.action,
+                                layout_info.size,
+                                layout_info.export_font,
+                            );
+                            let mut peek_next_iter = element_iter.clone();
+                            peek_next_iter.next();
+                            let min_next_height = if let Some(next_span) = peek_next_iter.peek() {
+                                super::elements::min_required_height_for_lookahead(
+                                    &next_span.inner,
+                                    ctx.font_system,
+                                    layout_info,
+                                )
+                            } else {
+                                0.0
+                            };
+
+                            let remaining = max_y - *ctx.y_position;
+                            if remaining < section_height + min_next_height {
+                                break;
+                            }
+
                             let mut s_styled = s.clone();
                             s_styled.make_uppercase();
                             for element in &mut s_styled.elements {
@@ -485,11 +572,14 @@ impl PdfExporter {
                                     element.set_sans();
                                 }
                             }
+                            let mut temp_res = None;
                             let overflowed = write_element(
                                 &mut ctx,
                                 &s_styled,
                                 &layout_info.margins.action,
                                 Alignment::LeftToRight,
+                                false,
+                                &mut temp_res,
                             )?;
                             if overflowed {
                                 break;
@@ -504,7 +594,11 @@ impl PdfExporter {
 
                 y_pos += LINE_HEIGHT;
 
-                if residual_dialogue_idx.is_some() {
+                if residual_dialogue_idx.is_some()
+                    || residual_dual_dialogue_idx.0.is_some()
+                    || residual_dual_dialogue_idx.1.is_some()
+                    || residual_element_idx.is_some()
+                {
                     continue;
                 }
 

@@ -373,12 +373,34 @@ export function paginateScreenplay(lines: ParsedLine[], paperSize: 'letter' | 'a
   const startContentIndex = hasTitlePage ? titlePageEndIndex + 1 : 0;
   let currentLinesOnPage = 0;
 
+  let lastWasEmpty = false;
   const heights = lines.map(line => {
     const t = line.type;
     const isTitleType = t >= LineType.titlePageTitle && t <= LineType.titlePageUnknown;
-    if (isTitleType) return 0;
-    if (t === LineType.empty) return 1;
-    if (t === LineType.pageBreak) return 0;
+    if (isTitleType) {
+      lastWasEmpty = false;
+      return 0;
+    }
+    if (line.marker) {
+      lastWasEmpty = false;
+      return 0;
+    }
+    if (t === LineType.synopse || t === LineType.section) {
+      lastWasEmpty = false;
+      return 0;
+    }
+    if (t === LineType.pageBreak) {
+      lastWasEmpty = false;
+      return 0;
+    }
+    if (t === LineType.empty) {
+      if (lastWasEmpty) {
+        return 0;
+      }
+      lastWasEmpty = true;
+      return 1;
+    }
+    lastWasEmpty = false;
     return wrapText(line.text, getElementMaxWidth(t, paperSize));
   });
 

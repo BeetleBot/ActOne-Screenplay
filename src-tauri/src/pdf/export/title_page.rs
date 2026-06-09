@@ -23,6 +23,7 @@ pub fn write_titlepage(
             .ok_or_else(|| std::io::Error::other("invalid page dimensions"))?,
     );
     let mut surface = page.surface();
+    let mut temp_res = None;
 
     let content_width = layout_info.size.x - 2.0 * TITLE_SIDE_MARGIN;
     let title_margin = Margin {
@@ -50,7 +51,7 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, &styled, &title_margin, Alignment::Centered)?;
+            write_element(&mut ctx, &styled, &title_margin, Alignment::Centered, false, &mut temp_res)?;
         }
     }
 
@@ -67,7 +68,7 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &title_margin, Alignment::Centered)?;
+            write_element(&mut ctx, s, &title_margin, Alignment::Centered, false, &mut temp_res)?;
         }
     }
 
@@ -82,7 +83,7 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &title_margin, Alignment::Centered)?;
+            write_element(&mut ctx, s, &title_margin, Alignment::Centered, false, &mut temp_res)?;
         }
     }
 
@@ -98,7 +99,7 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &title_margin, Alignment::Centered)?;
+            write_element(&mut ctx, s, &title_margin, Alignment::Centered, false, &mut temp_res)?;
         }
     }
 
@@ -172,7 +173,7 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &left_margin, Alignment::LeftToRight)?;
+            write_element(&mut ctx, s, &left_margin, Alignment::LeftToRight, false, &mut temp_res)?;
         }
     }
 
@@ -187,7 +188,7 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &right_margin, Alignment::RightToLeft)?;
+            write_element(&mut ctx, s, &right_margin, Alignment::RightToLeft, false, &mut temp_res)?;
         }
     }
 

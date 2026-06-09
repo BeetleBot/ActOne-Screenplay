@@ -97,11 +97,11 @@ pub fn get_margins(size: &PaperSize) -> Margins {
         dialogue: DialogueMargins {
             character: Margin {
                 left: 266.4,
-                right: page_w - 410.4,
+                right: page_w - 554.4,
             },
             parenthetical: Margin {
                 left: 223.2,
-                right: page_w - 396.0,
+                right: page_w - 424.8,
             },
             line: Margin {
                 left: 180.0,
