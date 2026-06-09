@@ -1,57 +1,56 @@
-# Markers and Tags Implementation Plan (Beat-Style)
+# Markers and Production Tagging Implementation Plan
 
-This document outlines the strategy for implementing a comprehensive Markers and Tags system in ActOne, inspired by the feature set and data structures found in the Beat screenwriting app.
+This document outlines the strategy for implementing a comprehensive Markers and Tags system in ActOne.
 
 ## Feature Overview
 
 ActOne will support two primary types of annotations:
-1. **Fountain-Native Annotations:** Inline markers and scene coloring using standard Fountain note syntax.
-2. **Production Tagging:** A specialized tagging system for tracking production elements (Cast, Props, VFX, etc.) across the script.
+1. **Fountain-Native Annotations:** Inline markers and scene coloring using standard Fountain note syntax. (Currently Implemented)
+2. **Production Tagging:** A specialized tagging system for tracking production elements (Cast, Props, VFX, etc.) across the script without polluting the raw text. (Planned)
 
 ---
 
-## 1. Fountain-Native Annotations
+## 1. Fountain-Native Annotations (Implemented)
 
-These are stored directly within the script text and follow the standard Fountain philosophy.
+These are stored directly within the script text and follow the standard Fountain philosophy using double-bracket syntax `[[ ]]`.
 
 ### Markers
-- **Syntax:** `[[marker color: description]]` or `[[marker: description]]`.
+- **Syntax:** `[[marker color: description]]` or `[[color]]`.
 - **Behavior:** 
-  - Appear in the **Navigator Sidebar** as outline elements.
-  - The sidebar entry will use the specified color.
+  - Appear in the **Outline/Navigator Sidebar** as outline elements.
+  - The sidebar entry will use the specified color (e.g., `[[marker red: Fix this scene]]`).
   - Clicking a marker scrolls the editor to its location.
 - **Checklist:**
-  - [ ] Support custom hex colors and standard names (red, blue, green, etc.).
+  - [x] Support custom hex colors and standard names (red, blue, green, etc.).
+  - [x] Highlight markers in the editor with distinct styling (`.cm-fountain-marker`).
   - [ ] Add "Drop Marker" to the command palette and context menu.
-  - [ ] Highlight markers in the editor with distinct styling.
 
 ### Scene Coloring
-- **Syntax:** `[[color]]` (e.g., `[[pink]]`, `[[#ff00ff]]`) at the end of a scene heading or on the line immediately following it.
+- **Syntax:** `[[color name]]` (e.g., `[[color pink]]`, `[[color #ff00ff]]`) following a scene heading.
 - **Behavior:**
-  - Colors the scene's segment in the **Timeline View**.
+  - Colors the scene's segment in the **Outline View**.
   - Colors the scene's title in the **Navigator Sidebar**.
-  - Colors the scene's **Index Card**.
 - **Checklist:**
-  - [ ] Improve parser to reliably associate color tags with their respective scenes.
-  - [ ] Add color picker to the Navigator and Index Card views.
+  - [x] Parser reliably associates color tags with their respective scenes.
+  - [ ] Add color picker UI to the Navigator and Index Card views.
 
 ---
 
-## 2. Production Tagging System
+## 2. Production Tagging System (Planned)
 
-A professional tagging system based on the categories used in Beat. This allows for detailed breakdown and tracking of elements.
+A professional tagging system that allows for detailed breakdown and tracking of elements without cluttering the raw Fountain text. 
 
 ### Tag Categories
-ActOne will adopt the exact 15 categories from Beat:
+ActOne will support 15 standard production categories:
 
-| Category | Key | Color | Icon (Heroicon equivalent) |
+| Category | Key | Color | Icon |
 | :--- | :--- | :--- | :--- |
 | **Cast (Character)** | `cast` | Cyan | `UserIcon` |
 | **Prop** | `prop` | Orange | `BriefcaseIcon` |
 | **VFX** | `vfx` | Purple | `SparklesIcon` |
 | **SFX (Special Effect)** | `sfx` | Brown | `FireIcon` |
 | **Camera** | `camera` | Mint | `CameraIcon` |
-| **Animal** | `animal` | Yellow | `BugAntIcon` (or similar) |
+| **Animal** | `animal` | Yellow | `BugAntIcon` |
 | **Extras** | `extras` | Magenta | `UsersIcon` |
 | **Vehicle** | `vehicle` | Teal | `TruckIcon` |
 | **Costume** | `costume` | Pink | `ShoppingBagIcon` |
@@ -62,23 +61,7 @@ ActOne will adopt the exact 15 categories from Beat:
 | **Set Design** | `setDesign` | Goldenrod | `HomeIcon` |
 | **Other (Generic)** | `other` | Gray | `TagIcon` |
 
-### Tagging Mode
-- **Functionality:** A dedicated toggle in the UI that changes the editor to a "Production Breakdown" state.
-- **UX:** 
-  - Selecting text in this mode opens a **Tagging Popover**.
-  - Includes a search bar with **fuzzy matching (Levenshtein distance)** to find existing definitions.
-  - Allows one-click creation of new definitions.
-- **Visuals:** Tagged ranges are underlined in the editor with the color of their category.
-
-### Tag Manager
-- **Functionality:** A central dashboard to manage the production breakdown.
-- **Features:**
-  - View all tag definitions grouped by category.
-  - Edit definition names and types.
-  - **Merge Tags:** Combine multiple definitions into one (e.g., merge "John D." and "John Doe").
-  - **Usage Tracking:** See which scenes a specific tag appears in.
-
-### Data Structure (.actone Bundle)
+### Data Structure (`.actone` Bundle)
 Rather than cluttering the Fountain file, tagging data will be stored in the `.actone` format bundle.
 
 **File:** `tags.json`
@@ -103,27 +86,30 @@ Rather than cluttering the Fountain file, tagging data will be stored in the `.a
 }
 ```
 
-### Checklist
-- [ ] **Data Model:** Define TypeScript interfaces for `Tag`, `TagDefinition`, and `TagCategory`.
-- [ ] **Bundle Integration:** Add logic to read/write `tags.json` within the `.actone` bundle.
-- [ ] **Tagging Mode UI:**
-  - [ ] Main toolbar toggle for "Tagging Mode".
-  - [ ] `TaggingPopover` with search and category selection.
-- [ ] **Tag Manager Modal:**
-  - [ ] Category-based listing.
-  - [ ] Edit/Delete/Merge functionality.
-- [ ] **Editor Integration:**
-  - [ ] CodeMirror extension for non-destructive underlining of tagged ranges.
-  - [ ] Hover tooltips on tagged text showing the definition name and category.
-- [ ] **Navigator/Timeline:**
-  - [ ] Filter scenes by specific production tags.
-  - [ ] "Breakdown" sidebar view to see all tags in the current scene.
-- [ ] **Export:** Option to export a "Production Breakdown" report (CSV/PDF).
+### Execution Phases & Checklist
 
----
+#### Phase 1: Data Model & File I/O
+- [ ] Define TypeScript interfaces for `TagInstance`, `TagDefinition`, and `TagCategory`.
+- [ ] Update `FileContext.tsx` to handle `tags.json` saving/loading within the `.actone` bundle.
 
-## 3. Advanced Filtering & Analysis
+#### Phase 2: Editor Integration (CodeMirror)
+- [ ] Build a CodeMirror extension for non-destructive underlining of tagged ranges.
+- [ ] Implement hover tooltips on tagged text showing the definition name and category.
 
+#### Phase 3: Tagging Mode UI
+- [ ] Add a main toolbar toggle for "Tagging Mode".
+- [ ] Build a `TaggingPopover` that appears when text is selected.
+  - [ ] Include search with fuzzy matching (Levenshtein distance) to find existing definitions.
+  - [ ] Allow one-click creation of new definitions.
+
+#### Phase 4: Tag Manager Dashboard
+- [ ] Create a central dashboard (Modal or new Sidebar Tab) to manage the production breakdown.
+- [ ] View all tag definitions grouped by category.
+- [ ] Edit/Delete tag definitions.
+- [ ] **Merge Tags:** Combine multiple definitions into one (e.g., merge "John D." and "John Doe").
+- [ ] **Usage Tracking:** See which scenes a specific tag appears in.
+
+#### Phase 5: Advanced Filtering & Export
 - [ ] **Scene Breakdown:** Show all tags associated with a scene in a "Breakdown" panel.
 - [ ] **Filter View:** Allow filtering the entire script view to only show scenes containing specific tags (e.g., "Show all scenes with 'VFX' tags").
-- [ ] **Export:** Ensure tags can be optionally included or excluded during PDF/Final Draft export.
+- [ ] **Export:** Export a "Production Breakdown" report (CSV/PDF) and optionally include/exclude tags during standard PDF export.
