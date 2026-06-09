@@ -177,6 +177,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
 
       const uppercaseTrimmed = trimmed.toUpperCase();
       const isAllCaps = trimmed === uppercaseTrimmed && /[A-Z]/.test(trimmed);
+      const isForcedCharacter = trimmed.startsWith("@");
 
       const isHeadingPrefix = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(trimmed);
 
@@ -185,7 +186,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
         isOutlineElement = true;
       } else if (isAllCaps && trimmed.endsWith("TO:") && (!prevLine || prevLine.type === LineType.empty)) {
         type = LineType.transitionLine;
-      } else if (isAllCaps && (!prevLine || prevLine.type === LineType.empty) && nextLineStr !== "") {
+      } else if ((isAllCaps || isForcedCharacter) && (!prevLine || prevLine.type === LineType.empty) && nextLineStr !== "") {
         if (trimmed.endsWith("^")) {
           type = LineType.dualDialogueCharacter;
         } else {
