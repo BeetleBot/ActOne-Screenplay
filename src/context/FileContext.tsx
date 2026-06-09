@@ -87,81 +87,20 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [filePath, setFilePath] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
-  const workerRef = useRef<Worker | null>(null);
-  const activeFileIdRef = useRef(activeFileId);
-
   useEffect(() => {
-    activeFileIdRef.current = activeFileId;
-  }, [activeFileId]);
-
-  useEffect(() => {
-    workerRef.current = new Worker(
-      new URL("../parser/FountainParser.worker.ts", import.meta.url),
-      { type: "module" }
-    );
-
-    workerRef.current.onmessage = (e: MessageEvent<FountainDocument & { fileId?: string }>) => {
-      const data = e.data;
-      const targetId = data.fileId;
-      if (targetId) {
-        setFiles(prev => prev.map(f => {
-          if (f.id === targetId) {
-            const mergedSettings = (data.settings && Object.keys(data.settings).length > 0)
-              ? data.settings
-              : f.parsedDoc.settings;
-            return { ...f, parsedDoc: { ...data, settings: mergedSettings } };
-          }
-          return f;
-        }));
-        if (targetId === activeFileIdRef.current) {
-          setParsedDoc(prevDoc => {
-            const mergedSettings = (data.settings && Object.keys(data.settings).length > 0)
-              ? data.settings
-              : prevDoc.settings;
-            return { ...data, settings: mergedSettings };
-          });
-        }
-      } else {
-        setParsedDoc(prevDoc => {
-          const mergedSettings = (data.settings && Object.keys(data.settings).length > 0)
-            ? data.settings
-            : prevDoc.settings;
-          return { ...data, settings: mergedSettings };
-        });
-      }
-    };
-
-    workerRef.current.postMessage({ text: rawText, paperSize, fileId: activeFileIdRef.current });
-
-    return () => {
-      workerRef.current?.terminate();
-    };
-  }, []);
-
-  useEffect(() => {
-    files.forEach(f => {
-      if (workerRef.current) {
-        workerRef.current.postMessage({ text: f.rawText, paperSize, fileId: f.id });
-      } else {
-        const doc = parseScreenplay(f.rawText, paperSize);
-        setFiles(prev => prev.map(file => {
-          if (file.id === f.id) {
-            const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-              ? doc.settings
-              : file.parsedDoc.settings;
-            return { ...file, parsedDoc: { ...doc, settings: mergedSettings } };
-          }
-          return file;
-        }));
-        if (f.id === activeFileId) {
-          setParsedDoc(prevDoc => {
-            const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-              ? doc.settings
-              : prevDoc.settings;
-            return { ...doc, settings: mergedSettings };
-          });
-        }
-      }
+    setFiles(prev => prev.map(f => {
+      const doc = parseScreenplay(f.rawText, paperSize);
+      const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+        ? doc.settings
+        : f.parsedDoc.settings;
+      return { ...f, parsedDoc: { ...doc, settings: mergedSettings } };
+    }));
+    setParsedDoc(prevDoc => {
+      const doc = parseScreenplay(rawText, paperSize);
+      const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+        ? doc.settings
+        : prevDoc.settings;
+      return { ...doc, settings: mergedSettings };
     });
   }, [paperSize]);
 
@@ -173,9 +112,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFilePath(file.filePath);
     setParsedDoc(file.parsedDoc);
     setIsSaving(file.isSaving);
-    if (workerRef.current) {
-      workerRef.current.postMessage({ text: file.rawText, paperSize, fileId: id });
-    }
   };
 
   const newFile = (initialContent: string = "") => {
@@ -194,9 +130,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRawTextState(initialContent);
     setFilePath(null);
     setParsedDoc(newFileObj.parsedDoc);
-    if (workerRef.current) {
-      workerRef.current.postMessage({ text: initialContent, paperSize, fileId: newId });
-    }
   };
 
   const closeFile = (id: string) => {
@@ -226,9 +159,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRawTextState(nextFile.rawText);
         setFilePath(nextFile.filePath);
         setParsedDoc(nextFile.parsedDoc);
-        if (workerRef.current) {
-          workerRef.current.postMessage({ text: nextFile.rawText, paperSize, fileId: nextFile.id });
-        }
       }
     }
   };
@@ -265,34 +195,23 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const normalized = text.replace(/\r\n/g, "\n");
     setRawTextState(normalized);
     
+    const doc = parseScreenplay(normalized, paperSize);
     setFiles(prev => prev.map(f => {
       if (f.id === activeFileId) {
         const isDirty = normalized !== f.savedText;
-        return { ...f, rawText: normalized, isDirty };
+        const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+          ? doc.settings
+          : f.parsedDoc.settings;
+        return { ...f, rawText: normalized, isDirty, parsedDoc: { ...doc, settings: mergedSettings } };
       }
       return f;
     }));
-
-    if (workerRef.current) {
-      workerRef.current.postMessage({ text: normalized, paperSize, fileId: activeFileId });
-    } else {
-      const doc = parseScreenplay(normalized, paperSize);
-      setFiles(prev => prev.map(f => {
-        if (f.id === activeFileId) {
-          const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-            ? doc.settings
-            : f.parsedDoc.settings;
-          return { ...f, parsedDoc: { ...doc, settings: mergedSettings } };
-        }
-        return f;
-      }));
-      setParsedDoc(prevDoc => {
-        const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-          ? doc.settings
-          : prevDoc.settings;
-        return { ...doc, settings: mergedSettings };
-      });
-    }
+    setParsedDoc(prevDoc => {
+      const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+        ? doc.settings
+        : prevDoc.settings;
+      return { ...doc, settings: mergedSettings };
+    });
   };
 
   const updateSettings = (updater: (prev: any) => any) => {
@@ -435,9 +354,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRawTextState(cleanText);
       setParsedDoc(parsed);
       addToRecent(path);
-      if (workerRef.current) {
-        workerRef.current.postMessage({ text: cleanText, paperSize, fileId: activeFileId });
-      }
     } else {
       const newId = generateUUID();
       const newFileObj: ScreenplayFile = {
@@ -455,9 +371,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRawTextState(cleanText);
       setParsedDoc(parsed);
       addToRecent(path);
-      if (workerRef.current) {
-        workerRef.current.postMessage({ text: cleanText, paperSize, fileId: newId });
-      }
     }
   };
 
@@ -665,9 +578,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFilePath(res.path);
         setRawTextState(cleanText);
         setParsedDoc(parsed);
-        if (workerRef.current) {
-          workerRef.current.postMessage({ text: cleanText, paperSize, fileId: activeFileId });
-        }
       } else {
         const newId = generateUUID();
         const newFileObj: ScreenplayFile = {
@@ -684,9 +594,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFilePath(res.path);
         setRawTextState(cleanText);
         setParsedDoc(parsed);
-        if (workerRef.current) {
-          workerRef.current.postMessage({ text: cleanText, paperSize, fileId: newId });
-        }
       }
     }
   };
@@ -850,12 +757,17 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const filesRef = useRef(files);
+  const activeFileIdRef = useRef(activeFileId);
   const selectFileRef = useRef(selectFile);
   const saveFileRef = useRef(saveFile);
 
   useEffect(() => {
     filesRef.current = files;
   }, [files]);
+
+  useEffect(() => {
+    activeFileIdRef.current = activeFileId;
+  }, [activeFileId]);
 
   useEffect(() => {
     selectFileRef.current = selectFile;

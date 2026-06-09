@@ -193,7 +193,7 @@ const typewriterCompartment = new Compartment();
 const typewriterScrollPlugin = ViewPlugin.fromClass(
   class {
     update(update: ViewUpdate) {
-      if ((update.docChanged || update.selectionSet) && update.state.selection.main.empty) {
+      if (update.docChanged && update.state.selection.main.empty) {
         const head = update.state.selection.main.head;
         update.view.requestMeasure({
           read(view) {
