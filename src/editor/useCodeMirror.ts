@@ -188,6 +188,22 @@ function handleTab(view: EditorView): boolean {
   return true;
 }
 
+function scrollEditorToCenter(view: EditorView, pos: number) {
+  const coords = view.coordsAtPos(pos);
+  if (!coords) return;
+
+  const scrollContainer = view.dom.closest('.editor-scroll-area');
+  if (!scrollContainer) return;
+
+  const editorRect = view.dom.getBoundingClientRect();
+  const containerRect = scrollContainer.getBoundingClientRect();
+
+  const cursorCenterY = editorRect.top + (coords.top + coords.bottom) / 2;
+  const containerCenterY = containerRect.top + containerRect.height / 2;
+
+  scrollContainer.scrollTop += cursorCenterY - containerCenterY;
+}
+
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, typewriterMode } = useAppContext();
@@ -218,10 +234,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     if (viewRef.current) {
       if (typewriterMode) {
         viewRef.current.scrollDOM.classList.add("cm-typewriter-mode");
-        const pos = viewRef.current.state.selection.main.head;
-        viewRef.current.dispatch({
-          effects: EditorView.scrollIntoView(pos, { y: "center" })
-        });
+        scrollEditorToCenter(viewRef.current, viewRef.current.state.selection.main.head);
       } else {
         viewRef.current.scrollDOM.classList.remove("cm-typewriter-mode");
       }
@@ -290,9 +303,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
             }
             if (typewriterModeRef.current && update.docChanged) {
               setTimeout(() => {
-                update.view.dispatch({
-                  effects: EditorView.scrollIntoView(pos, { y: "center" })
-                });
+                scrollEditorToCenter(update.view, pos);
               }, 0);
             }
           }
@@ -308,10 +319,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     if (typewriterModeRef.current) {
       view.scrollDOM.classList.add("cm-typewriter-mode");
       setTimeout(() => {
-        const pos = view.state.selection.main.head;
-        view.dispatch({
-          effects: EditorView.scrollIntoView(pos, { y: "center" })
-        });
+        scrollEditorToCenter(view, view.state.selection.main.head);
       }, 0);
     }
 
