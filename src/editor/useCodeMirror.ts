@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { EditorState, Transaction } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
+import { EditorState, Compartment, Transaction } from "@codemirror/state";
+import { EditorView, ViewPlugin, ViewUpdate, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { autocompletion } from "@codemirror/autocomplete";
 import { search } from "@codemirror/search";
@@ -188,21 +188,24 @@ function handleTab(view: EditorView): boolean {
   return true;
 }
 
-function scrollEditorToCenter(view: EditorView, pos: number) {
-  const coords = view.coordsAtPos(pos);
-  if (!coords) return;
+const typewriterCompartment = new Compartment();
 
-  const scrollContainer = view.dom.closest('.editor-scroll-area');
-  if (!scrollContainer) return;
-
-  const editorRect = view.dom.getBoundingClientRect();
-  const containerRect = scrollContainer.getBoundingClientRect();
-
-  const cursorCenterY = editorRect.top + (coords.top + coords.bottom) / 2;
-  const containerCenterY = containerRect.top + containerRect.height / 2;
-
-  scrollContainer.scrollTop += cursorCenterY - containerCenterY;
-}
+const typewriterScrollPlugin = ViewPlugin.fromClass(
+  class {
+    update(update: ViewUpdate) {
+      if (!update.docChanged) return;
+      const head = update.state.selection.main.head;
+      update.view.requestMeasure({
+        read() {},
+        write(_measure, view) {
+          view.dispatch({
+            effects: EditorView.scrollIntoView(head, { y: "center" }),
+          });
+        },
+      });
+    }
+  }
+);
 
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
@@ -228,16 +231,13 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     setSelectedSceneIdRef.current = setSelectedSceneId;
   }, [setSelectedSceneId]);
 
-  const typewriterModeRef = useRef(typewriterMode);
   useEffect(() => {
-    typewriterModeRef.current = typewriterMode;
     if (viewRef.current) {
-      if (typewriterMode) {
-        viewRef.current.scrollDOM.classList.add("cm-typewriter-mode");
-        scrollEditorToCenter(viewRef.current, viewRef.current.state.selection.main.head);
-      } else {
-        viewRef.current.scrollDOM.classList.remove("cm-typewriter-mode");
-      }
+      viewRef.current.dispatch({
+        effects: typewriterCompartment.reconfigure(
+          typewriterMode ? typewriterScrollPlugin : []
+        ),
+      });
     }
   }, [typewriterMode]);
 
@@ -283,6 +283,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         smartQuotesExtension,
         autocompletion({ override: [fountainCompletionSource] }),
         search(),
+        typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setRawTextRef.current(update.state.doc.toString());
@@ -301,11 +302,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
                 }
               }
             }
-            if (typewriterModeRef.current && update.docChanged) {
-              setTimeout(() => {
-                scrollEditorToCenter(update.view, pos);
-              }, 0);
-            }
+
           }
         }),
       ],
@@ -316,12 +313,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       parent: containerRef.current,
     });
 
-    if (typewriterModeRef.current) {
-      view.scrollDOM.classList.add("cm-typewriter-mode");
-      setTimeout(() => {
-        scrollEditorToCenter(view, view.state.selection.main.head);
-      }, 0);
-    }
+
 
     viewRef.current = view;
     setEditorView(view);

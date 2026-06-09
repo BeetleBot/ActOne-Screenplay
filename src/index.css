@@ -116,6 +116,11 @@ body {
   height: 100%;
 }
 
+.editor-scroll-area.typewriter-active .editor-paper {
+  padding-top: 50vh;
+  padding-bottom: 50vh;
+}
+
 .editor-paper {
   width: 100%;
   max-width: 8.5in;

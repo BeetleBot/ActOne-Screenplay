@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
+import { EditorView } from "@codemirror/view";
 import { useFile } from "./FileContext";
 import { ParsedLine, LineType } from "../parser/FountainParser";
 
@@ -41,18 +42,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const line = editorView.state.doc.line(lineIndex + 1);
       editorView.dispatch({
         selection: { anchor: line.from },
+        effects: EditorView.scrollIntoView(line.from, { y: "center" }),
       });
-      const coords = editorView.coordsAtPos(line.from);
-      if (coords) {
-        const scrollContainer = editorView.dom.closest('.editor-scroll-area');
-        if (scrollContainer) {
-          const editorRect = editorView.dom.getBoundingClientRect();
-          const containerRect = scrollContainer.getBoundingClientRect();
-          const cursorCenterY = editorRect.top + (coords.top + coords.bottom) / 2;
-          const containerCenterY = containerRect.top + containerRect.height / 2;
-          scrollContainer.scrollTop += cursorCenterY - containerCenterY;
-        }
-      }
       if (!noFocus) editorView.focus();
     }
   };

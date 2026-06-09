@@ -568,7 +568,7 @@ const Workspace: React.FC<{
 }> = ({ isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode } = useUI();
+  const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode, typewriterMode } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
@@ -659,7 +659,7 @@ const Workspace: React.FC<{
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <SearchPanel />
-        <Box className="editor-scroll-area" sx={{ flex: 1, overflow: 'auto' }}>
+        <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
           <Box className={`editor-paper paper-${paperSize}`} sx={{ zoom: zoomLevel / 100 }}>
             <FountainEditor />
           </Box>
