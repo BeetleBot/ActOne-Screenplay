@@ -177,19 +177,24 @@ export const WelcomeScreen: React.FC = () => {
           </Box>
 
           {/* Footer keyboard shortcuts */}
-          <Box sx={{ display: "flex", gap: 3, justifyContent: "center" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
-                Ctrl+N
-              </Typography>
-              <Typography variant="caption" color="text.secondary">New</Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ display: "flex", gap: 3, justifyContent: "center" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
+                  Ctrl+N
+                </Typography>
+                <Typography variant="caption" color="text.secondary">New</Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
+                  Ctrl+O
+                </Typography>
+                <Typography variant="caption" color="text.secondary">Open</Typography>
+              </Box>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
-                Ctrl+O
-              </Typography>
-              <Typography variant="caption" color="text.secondary">Open</Typography>
-            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.7, fontSize: "0.7rem", fontWeight: 500 }}>
+              Version 0.1.0
+            </Typography>
           </Box>
         </Grid>
 
