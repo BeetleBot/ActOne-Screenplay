@@ -193,16 +193,30 @@ const typewriterCompartment = new Compartment();
 const typewriterScrollPlugin = ViewPlugin.fromClass(
   class {
     update(update: ViewUpdate) {
-      if (!update.docChanged) return;
-      const head = update.state.selection.main.head;
-      update.view.requestMeasure({
-        read() {},
-        write(_measure, view) {
-          view.dispatch({
-            effects: EditorView.scrollIntoView(head, { y: "center" }),
-          });
-        },
-      });
+      if ((update.docChanged || update.selectionSet) && update.state.selection.main.empty) {
+        const head = update.state.selection.main.head;
+        update.view.requestMeasure({
+          read(view) {
+            const coords = view.coordsAtPos(head);
+            const scrollContainer = view.dom.closest('.editor-scroll-area');
+            if (!coords || !scrollContainer) return null;
+
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const cursorY = (coords.top + coords.bottom) / 2;
+            const containerCenterY = containerRect.top + containerRect.height / 2;
+
+            return {
+              scrollContainer,
+              diff: cursorY - containerCenterY,
+            };
+          },
+          write(measureResult) {
+            if (measureResult && Math.abs(measureResult.diff) > 0.5) {
+              measureResult.scrollContainer.scrollTop += measureResult.diff;
+            }
+          }
+        });
+      }
     }
   }
 );
@@ -238,6 +252,21 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           typewriterMode ? typewriterScrollPlugin : []
         ),
       });
+      if (typewriterMode) {
+        setTimeout(() => {
+          if (viewRef.current) {
+            const head = viewRef.current.state.selection.main.head;
+            const coords = viewRef.current.coordsAtPos(head);
+            const scrollContainer = viewRef.current.dom.closest('.editor-scroll-area');
+            if (coords && scrollContainer) {
+              const containerRect = scrollContainer.getBoundingClientRect();
+              const cursorY = (coords.top + coords.bottom) / 2;
+              const containerCenterY = containerRect.top + containerRect.height / 2;
+              scrollContainer.scrollTop += cursorY - containerCenterY;
+            }
+          }
+        }, 50);
+      }
     }
   }, [typewriterMode]);
 
@@ -313,10 +342,24 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       parent: containerRef.current,
     });
 
-
-
     viewRef.current = view;
     setEditorView(view);
+
+    if (typewriterMode) {
+      setTimeout(() => {
+        if (viewRef.current) {
+          const head = viewRef.current.state.selection.main.head;
+          const coords = viewRef.current.coordsAtPos(head);
+          const scrollContainer = viewRef.current.dom.closest('.editor-scroll-area');
+          if (coords && scrollContainer) {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const cursorY = (coords.top + coords.bottom) / 2;
+            const containerCenterY = containerRect.top + containerRect.height / 2;
+            scrollContainer.scrollTop += cursorY - containerCenterY;
+          }
+        }
+      }, 100);
+    }
 
     return () => {
       view.destroy();
