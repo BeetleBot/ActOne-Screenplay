@@ -22,6 +22,11 @@ if [ -L "/usr/bin/actone" ]; then
 	rm /usr/bin/actone
 fi
 
+if [ -f "/usr/local/bin/actone" ]; then
+	echo "Removing old binary from /usr/local/bin/actone..."
+	rm -f /usr/local/bin/actone
+fi
+
 # Install icon resources
 if command -v xdg-icon-resource >/dev/null 2>&1; then
 	echo "Uninstalling application icons..."

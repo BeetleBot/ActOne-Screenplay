@@ -20,6 +20,12 @@ cp -R usr/share/actone /usr/share/
 echo "Creating symlink /usr/bin/actone..."
 ln -sf /usr/share/actone/actone /usr/bin/actone
 
+# Clean up old binary location from prior manual installs if it exists
+if [ -f "/usr/local/bin/actone" ] && ! [ -L "/usr/local/bin/actone" ]; then
+	echo "Removing old binary from /usr/local/bin/actone to avoid PATH conflict..."
+	rm -f /usr/local/bin/actone
+fi
+
 # Install icon resources
 if command -v xdg-icon-resource >/dev/null 2>&1; then
 	echo "Installing application icons..."
