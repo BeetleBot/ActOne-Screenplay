@@ -1,3 +1,7 @@
+---
+description: 
+---
+
 # Workflow: Modifying the Editor or Parser
 
 **Description**: Follow these steps when making changes to the CodeMirror editor or Fountain parser.
@@ -15,7 +19,7 @@
    Ensure `setRawText` correctly updates `parsedDoc` in `FileContext.tsx`. Remember that components consuming `useAppContext()` (like `SidebarViews.tsx`) will re-render automatically when the AST changes.
 
 5. **Test in Browser**:
-   Run `npm run dev` to test your changes in the Vite dev server first.
+   Run `npm run dev` to test your changes in the Vite dev server if needed. 
 
 6. **Test in Tauri Build**:
-   Run `npm run tauri build` to compile the app and test the final native desktop behavior.
+   Run `npm run tauri build` to compile the app and test the final native desktop behavior, if asked.
