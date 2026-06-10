@@ -10,7 +10,14 @@ import {
   Typography,
   Button,
   Chip,
+  Menu,
+  MenuItem,
+  IconButton,
+  Divider,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { useTheme } from "../context/ThemeContext";
+import { themes } from "../theme/muiTheme";
 
 interface Quote {
   text: string;
@@ -53,7 +60,7 @@ function getDynamicQuote(): Quote {
 }
 
 import logoImage from "../assets/logo.png";
-import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, ColorLensIcon, CheckIcon } from "./Icons";
 
 const ActionCard: React.FC<{
   icon: React.ReactNode;
@@ -82,8 +89,8 @@ const ActionCard: React.FC<{
         transform: "translateY(-1px)",
         boxShadow: (theme: any) =>
           highlighted
-            ? `0 4px 16px ${theme.palette.primary.main}50`
-            : `0 2px 8px rgba(0,0,0,0.06)`,
+            ? `0 4px 16px ${alpha(theme.palette.primary.main, 0.4)}`
+            : `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
       },
     }}
   >
@@ -96,7 +103,7 @@ const ActionCard: React.FC<{
         width: 32,
         height: 32,
         borderRadius: 2,
-        bgcolor: highlighted ? "rgba(255,255,255,0.15)" : "action.selected",
+        bgcolor: highlighted ? (theme: any) => alpha(theme.palette.primary.contrastText, 0.15) : "action.selected",
         color: highlighted ? "inherit" : "text.secondary",
       }}
     >
@@ -112,7 +119,7 @@ const ActionCard: React.FC<{
       <Typography
         variant="caption"
         sx={{
-          color: highlighted ? "rgba(255,255,255,0.65)" : "text.secondary",
+          color: highlighted ? (theme: any) => alpha(theme.palette.primary.contrastText, 0.8) : "text.secondary",
           fontSize: 10.5,
           lineHeight: 1.2,
           display: "block",
@@ -131,9 +138,11 @@ interface WelcomeScreenWindowProps {
 
 export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false }) => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
+  const { theme, setTheme } = useTheme();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
   const [showHelp, setShowHelp] = useState(false);
   const [appVersion, setAppVersion] = useState("");
+  const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     setQuote(getDynamicQuote());
@@ -243,7 +252,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           right: 0,
           height: "40%",
           background: (theme: any) =>
-            `radial-gradient(ellipse 80% 60% at 50% -10%, ${theme.palette.primary.main}10 0%, transparent 70%)`,
+            `radial-gradient(ellipse 80% 60% at 50% -10%, ${alpha(theme.palette.primary.main, 0.06)} 0%, transparent 70%)`,
           pointerEvents: "none",
         },
       }}
@@ -271,7 +280,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               height: 340,
               borderRadius: "50%",
               background: (theme: any) =>
-                `radial-gradient(ellipse, ${theme.palette.primary.main}18 0%, transparent 70%)`,
+                `radial-gradient(ellipse, ${alpha(theme.palette.primary.main, 0.09)} 0%, transparent 70%)`,
               pointerEvents: "none",
             }}
           />
@@ -389,38 +398,92 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         sx={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
+          justifyContent: "space-between",
           py: 1.5,
           px: 3,
           position: "relative",
         }}
       >
-        <Button
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Button
+            size="small"
+            startIcon={<HelpOutlinedIcon sx={{ fontSize: 13 }} />}
+            onClick={handleHelp}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: 11,
+              color: "text.secondary",
+              opacity: 0.4,
+              "&:hover": { opacity: 1, color: "text.primary" },
+            }}
+          >
+            Help
+          </Button>
+          <Typography
+            sx={{
+              fontSize: 9.5,
+              fontWeight: 600,
+              color: "text.secondary",
+              opacity: 0.25,
+            }}
+          >
+            {appVersion ? `v${appVersion}` : ""}
+          </Typography>
+        </Box>
+        <IconButton
+          onClick={(e) => setThemeMenuAnchor(e.currentTarget)}
           size="small"
-          startIcon={<HelpOutlinedIcon sx={{ fontSize: 13 }} />}
-          onClick={handleHelp}
           sx={{
-            textTransform: "none",
-            fontWeight: 600,
-            fontSize: 11,
             color: "text.secondary",
             opacity: 0.4,
             "&:hover": { opacity: 1, color: "text.primary" },
           }}
         >
-          Help
-        </Button>
-        <Typography
-          sx={{
-            fontSize: 9.5,
-            fontWeight: 600,
-            color: "text.secondary",
-            opacity: 0.25,
-          }}
+          <ColorLensIcon sx={{ fontSize: 16 }} />
+        </IconButton>
+        <Menu
+          anchorEl={themeMenuAnchor}
+          open={Boolean(themeMenuAnchor)}
+          onClose={() => setThemeMenuAnchor(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          slotProps={{ paper: { sx: { minWidth: 220, maxHeight: 420, py: 0.5 } } }}
         >
-          {appVersion ? `v${appVersion}` : ""}
-        </Typography>
+          <Typography variant="caption" sx={{ px: 2, pt: 1, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Light
+          </Typography>
+          {themes.filter(t => !t.isDark).map((t) => (
+            <MenuItem
+              key={t.id}
+              selected={theme === t.id}
+              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
+              sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
+            >
+              <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
+              </Box>
+              {t.name.replace(/\s*\((Light|Dark)\)$/, '')}
+            </MenuItem>
+          ))}
+          <Divider sx={{ my: 0.5 }} />
+          <Typography variant="caption" sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Dark
+          </Typography>
+          {themes.filter(t => t.isDark).map((t) => (
+            <MenuItem
+              key={t.id}
+              selected={theme === t.id}
+              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
+              sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
+            >
+              <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
+              </Box>
+{t.name.replace(/\s*\((Light|Dark)\)$/, '')}
+              </MenuItem>
+            ))}
+          </Menu>
       </Box>
     </Box>
     </>

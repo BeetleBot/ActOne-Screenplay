@@ -202,6 +202,29 @@ function getEditorVars(t: ThemeConfig) {
     '--scene-color-purple': '#9c27b0',
     '--scene-color-red': '#f44336',
     '--scene-color-yellow': '#ffeb3b',
+
+    // Production category colors
+    '--cat-cast': '#00bcd4',
+    '--cat-prop': '#ff9800',
+    '--cat-vfx': '#9c27b0',
+    '--cat-sfx': '#795548',
+    '--cat-camera': '#00ffcc',
+    '--cat-animal': '#ffeb3b',
+    '--cat-extras': '#e91e63',
+    '--cat-vehicle': '#008080',
+    '--cat-costume': '#ffc0cb',
+    '--cat-makeup': '#4caf50',
+    '--cat-music': '#808000',
+    '--cat-sound': '#ff6666',
+    '--cat-stunt': '#2196f3',
+    '--cat-setDesign': '#daa520',
+    '--cat-other': '#9e9e9e',
+
+    // Gender colors for statistics
+    '--gender-male': '#0081ef',
+    '--gender-female': '#fa6fc1',
+    '--gender-nonbinary': '#b520da',
+    '--gender-unknown': '#969696',
   };
 }
 

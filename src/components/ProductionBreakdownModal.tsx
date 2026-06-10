@@ -20,21 +20,21 @@ import {
 } from "@mui/material";
 
 const CATEGORIES = [
-  { key: "cast", label: "Cast", color: "#00bcd4" },
-  { key: "prop", label: "Prop", color: "#ff9800" },
-  { key: "vfx", label: "VFX", color: "#9c27b0" },
-  { key: "sfx", label: "SFX", color: "#795548" },
-  { key: "camera", label: "Camera", color: "#00ffcc" },
-  { key: "animal", label: "Animal", color: "#ffeb3b" },
-  { key: "extras", label: "Extras", color: "#e91e63" },
-  { key: "vehicle", label: "Vehicle", color: "#008080" },
-  { key: "costume", label: "Costume", color: "#ffc0cb" },
-  { key: "makeup", label: "Makeup", color: "#4caf50" },
-  { key: "music", label: "Music", color: "#808000" },
-  { key: "sound", label: "Sound", color: "#ff6666" },
-  { key: "stunt", label: "Stunt", color: "#2196f3" },
-  { key: "setDesign", label: "Set Design", color: "#daa520" },
-  { key: "other", label: "Other", color: "#9e9e9e" }
+  { key: "cast", label: "Cast", color: "var(--cat-cast)" },
+  { key: "prop", label: "Prop", color: "var(--cat-prop)" },
+  { key: "vfx", label: "VFX", color: "var(--cat-vfx)" },
+  { key: "sfx", label: "SFX", color: "var(--cat-sfx)" },
+  { key: "camera", label: "Camera", color: "var(--cat-camera)" },
+  { key: "animal", label: "Animal", color: "var(--cat-animal)" },
+  { key: "extras", label: "Extras", color: "var(--cat-extras)" },
+  { key: "vehicle", label: "Vehicle", color: "var(--cat-vehicle)" },
+  { key: "costume", label: "Costume", color: "var(--cat-costume)" },
+  { key: "makeup", label: "Makeup", color: "var(--cat-makeup)" },
+  { key: "music", label: "Music", color: "var(--cat-music)" },
+  { key: "sound", label: "Sound", color: "var(--cat-sound)" },
+  { key: "stunt", label: "Stunt", color: "var(--cat-stunt)" },
+  { key: "setDesign", label: "Set Design", color: "var(--cat-setDesign)" },
+  { key: "other", label: "Other", color: "var(--cat-other)" }
 ];
 
 interface ProductionBreakdownModalProps {

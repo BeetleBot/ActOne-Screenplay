@@ -5,6 +5,39 @@ import { computeRevisedLines } from "../utils/diff";
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
 
+export interface PageBreakDisplaySettings {
+  showPageNumbers: boolean;
+  showPageSeparators: boolean;
+}
+
+export const updatePageBreakDisplayEffect = StateEffect.define<PageBreakDisplaySettings>();
+
+class PageNumberLabel extends WidgetType {
+  constructor(readonly pageNum: number) {
+    super();
+  }
+  toDOM() {
+    const label = document.createElement("span");
+    label.className = "cm-fountain-page-number-label";
+    label.textContent = `${this.pageNum}`;
+    return label;
+  }
+  ignoreEvent() { return true; }
+  eq(other: PageNumberLabel) {
+    return this.pageNum === other.pageNum;
+  }
+}
+
+class PageSeparatorLine extends WidgetType {
+  toDOM() {
+    const div = document.createElement("div");
+    div.className = "cm-fountain-page-separator-line";
+    return div;
+  }
+  ignoreEvent() { return true; }
+  eq() { return true; }
+}
+
 class PageBreakWidget extends WidgetType {
   constructor(readonly pageNum: number) {
     super();
@@ -167,7 +200,7 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_METADATA]: "cm-fountain-metadata",
 };
 
-const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null): DecorationSet => {
+const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, displaySettings: PageBreakDisplaySettings = { showPageNumbers: true, showPageSeparators: false }): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const doc = state.doc;
   const lineTypes = classifyLines(doc);
@@ -187,20 +220,42 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
 
     let lineDecos: { from: number, to: number, dec: Decoration }[] = [];
 
-    if (docObj && docObj.pageBreaks) {
+    if (docObj && docObj.pageBreaks && (displaySettings.showPageNumbers || displaySettings.showPageSeparators)) {
       const breakIdx = docObj.pageBreaks.indexOf(i);
       if (breakIdx !== -1) {
         const hasTitlePage = docObj.lines.some(l => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown);
         const pageNum = hasTitlePage ? breakIdx + 1 : breakIdx + 2;
-        lineDecos.push({
-          from: line.from,
-          to: line.from,
-          dec: Decoration.widget({
-            widget: new PageBreakWidget(pageNum),
-            block: true,
-            side: -1
-          })
-        });
+        if (displaySettings.showPageNumbers && displaySettings.showPageSeparators) {
+          lineDecos.push({
+            from: line.from,
+            to: line.from,
+            dec: Decoration.widget({
+              widget: new PageBreakWidget(pageNum),
+              block: true,
+              side: -1
+            })
+          });
+        } else if (displaySettings.showPageNumbers) {
+          lineDecos.push({
+            from: line.from,
+            to: line.from,
+            dec: Decoration.widget({
+              widget: new PageNumberLabel(pageNum),
+              block: true,
+              side: -1
+            })
+          });
+        } else if (displaySettings.showPageSeparators) {
+          lineDecos.push({
+            from: line.from,
+            to: line.from,
+            dec: Decoration.widget({
+              widget: new PageSeparatorLine(),
+              block: true,
+              side: -1
+            })
+          });
+        }
       }
     }
 
@@ -406,24 +461,32 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
   return builder.finish();
 };
 
-export const fountainHighlightField = StateField.define<{ decorations: DecorationSet; doc: FountainDocument | null }>({
+const defaultDisplaySettings: PageBreakDisplaySettings = { showPageNumbers: true, showPageSeparators: false };
+
+export const fountainHighlightField = StateField.define<{ decorations: DecorationSet; doc: FountainDocument | null; displaySettings: PageBreakDisplaySettings }>({
   create(state) {
     return {
-      decorations: computeFountainDecorations(state, null),
+      decorations: computeFountainDecorations(state, null, defaultDisplaySettings),
       doc: null,
+      displaySettings: defaultDisplaySettings,
     };
   },
   update(value, tr) {
     let doc = value.doc;
+    let displaySettings = value.displaySettings;
     for (let effect of tr.effects) {
       if (effect.is(updateParsedDocEffect)) {
         doc = effect.value;
       }
+      if (effect.is(updatePageBreakDisplayEffect)) {
+        displaySettings = effect.value;
+      }
     }
-    if (tr.docChanged || doc !== value.doc) {
+    if (tr.docChanged || doc !== value.doc || displaySettings !== value.displaySettings) {
       return {
-        decorations: computeFountainDecorations(tr.state, doc),
+        decorations: computeFountainDecorations(tr.state, doc, displaySettings),
         doc,
+        displaySettings,
       };
     }
     return value;

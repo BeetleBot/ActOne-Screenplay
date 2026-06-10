@@ -5,6 +5,7 @@ import { useUI } from "../../context/UIContext";
 import { useEditor } from "../../context/EditorContext";
 import { useTheme } from "../../context/ThemeContext";
 import { themes } from "../../theme/muiTheme";
+import { alpha } from "@mui/material/styles";
 import { FountainEditor } from "../FountainEditor";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
@@ -23,9 +24,7 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import { FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon, AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CloseIcon, CheckIcon, AddIcon, RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon } from "../Icons";
+import { FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon, AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CloseIcon, CheckIcon, AddIcon, RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon, ColorLensIcon } from "../Icons";
 
 
 
@@ -39,7 +38,9 @@ const getTauriWindow = () => {
 
 const HeaderBar: React.FC = () => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
+  const { theme, setTheme } = useTheme();
   const [isMaximized, setIsMaximized] = useState(false);
+  const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; fileId: string } | null>(null);
@@ -121,10 +122,10 @@ const HeaderBar: React.FC = () => {
       elevation={0}
       onMouseDown={handleStartDrag}
       sx={{
-        bgcolor: (theme) => theme.palette.mode === 'light' ? '#2c2c2c' : '#121212',
-        color: 'white',
+        bgcolor: (theme) => theme.palette.mode === 'light' ? theme.palette.grey[900] : theme.palette.common.black,
+        color: (theme) => theme.palette.common.white,
         borderBottom: 1,
-        borderColor: (theme) => theme.palette.mode === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.05)',
+        borderColor: (theme) => theme.palette.mode === 'light' ? alpha(theme.palette.common.black, 0.1) : alpha(theme.palette.common.white, 0.05),
         height: 38,
         minHeight: 38,
         zIndex: 10,
@@ -167,16 +168,14 @@ const HeaderBar: React.FC = () => {
                   px: 2, height: 38, borderTopLeftRadius: '8px', borderTopRightRadius: '8px',
                   cursor: 'pointer', flexShrink: 0, userSelect: 'none',
                   fontSize: 12, whiteSpace: 'nowrap',
-                  bgcolor: isActive ? 'background.paper' : 'transparent',
-                  color: isActive 
-                    ? (theme) => theme.palette.text.primary 
-                    : 'rgba(255, 255, 255, 0.6)',
+                  bgcolor: (theme) => isActive ? theme.palette.background.paper : 'transparent',
+                  color: (theme) => isActive ? theme.palette.text.primary : alpha(theme.palette.common.white, 0.6),
                   borderRight: (theme) => isActive 
                     ? 'none' 
-                    : `1px solid ${theme.palette.mode === 'light' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)'}`,
+                    : `1px solid ${theme.palette.mode === 'light' ? alpha(theme.palette.common.white, 0.1) : alpha(theme.palette.common.white, 0.05)}`,
                   '&:hover': { 
-                    bgcolor: isActive ? 'background.paper' : 'rgba(255, 255, 255, 0.05)',
-                    color: isActive ? undefined : 'white'
+                    bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.common.white, 0.05),
+                    color: (theme) => isActive ? theme.palette.text.primary : theme.palette.common.white
                   },
                   transition: 'all 0.1s ease',
                   position: 'relative',
@@ -187,9 +186,9 @@ const HeaderBar: React.FC = () => {
                   <Box 
                     sx={{ 
                       width: 6, height: 6, borderRadius: '50%', 
-                      bgcolor: isActive ? 'primary.main' : 'rgba(255, 255, 255, 0.3)', 
+                      bgcolor: (theme) => isActive ? theme.palette.primary.main : alpha(theme.palette.common.white, 0.3), 
                       flexShrink: 0,
-                      boxShadow: isActive ? '0 0 4px rgba(25, 118, 210, 0.4)' : 'none'
+                      boxShadow: (theme) => isActive ? `0 0 4px ${alpha(theme.palette.primary.main, 0.4)}` : 'none'
                     }} 
                   />
                 )}
@@ -200,10 +199,10 @@ const HeaderBar: React.FC = () => {
                   sx={{ 
                     p: '2px', 
                     opacity: isActive ? 0.7 : 0, 
-                    color: isActive ? 'inherit' : 'rgba(255,255,255,0.5)',
+                    color: (theme) => isActive ? 'inherit' : alpha(theme.palette.common.white, 0.5),
                     '&:hover': { 
                       opacity: 1,
-                      bgcolor: isActive ? 'action.hover' : 'rgba(255,255,255,0.1)',
+                      bgcolor: (theme) => isActive ? theme.palette.action.hover : alpha(theme.palette.common.white, 0.1),
                       color: 'error.main'
                     }, 
                     ml: 0.5 
@@ -221,8 +220,8 @@ const HeaderBar: React.FC = () => {
               sx={{ 
                 p: '6px', 
                 ml: 0.5,
-                color: 'rgba(255, 255, 255, 0.6)',
-                '&:hover': { color: 'white', bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                color: (theme) => alpha(theme.palette.common.white, 0.6),
+                '&:hover': { color: (theme) => theme.palette.common.white, bgcolor: (theme) => alpha(theme.palette.common.white, 0.1) }
               }}
             >
               <AddIcon sx={{ fontSize: 16 }} />
@@ -232,12 +231,65 @@ const HeaderBar: React.FC = () => {
 
         <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           <IconButton
+            onClick={(e) => setThemeMenuAnchor(e.currentTarget)}
+            title="Change Theme"
+            sx={{
+              width: 38, height: 38, borderRadius: 0,
+              color: (theme) => alpha(theme.palette.common.white, 0.6),
+              '&:hover': { bgcolor: (theme) => alpha(theme.palette.common.white, 0.1), color: (theme) => theme.palette.common.white },
+            }}
+          >
+            <ColorLensIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+          <Menu
+            anchorEl={themeMenuAnchor}
+            open={Boolean(themeMenuAnchor)}
+            onClose={() => setThemeMenuAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            slotProps={{ paper: { sx: { minWidth: 220, maxHeight: 420, py: 0.5 } } }}
+          >
+            <Typography variant="caption" sx={{ px: 2, pt: 1, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Light
+            </Typography>
+            {themes.filter(t => !t.isDark).map((t) => (
+              <MenuItem
+                key={t.id}
+                selected={theme === t.id}
+                onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
+                sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
+              >
+                <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
+                </Box>
+                {t.name.replace(/\s*\((Light|Dark)\)$/, '')}
+              </MenuItem>
+            ))}
+            <Divider sx={{ my: 0.5 }} />
+            <Typography variant="caption" sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Dark
+            </Typography>
+            {themes.filter(t => t.isDark).map((t) => (
+              <MenuItem
+                key={t.id}
+                selected={theme === t.id}
+                onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
+                sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
+              >
+                <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
+                </Box>
+                {t.name.replace(/\s*\((Light|Dark)\)$/, '')}
+              </MenuItem>
+            ))}
+          </Menu>
+          <IconButton
             onClick={handleMinimize}
             title="Minimize"
             sx={{
               width: 46, height: 38, borderRadius: 0,
-              color: 'rgba(255, 255, 255, 0.6)',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'white' },
+              color: (theme) => alpha(theme.palette.common.white, 0.6),
+              '&:hover': { bgcolor: (theme) => alpha(theme.palette.common.white, 0.1), color: (theme) => theme.palette.common.white },
             }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -249,8 +301,8 @@ const HeaderBar: React.FC = () => {
             title={isMaximized ? "Restore" : "Maximize"}
             sx={{
               width: 46, height: 38, borderRadius: 0,
-              color: 'rgba(255, 255, 255, 0.6)',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'white' },
+              color: (theme) => alpha(theme.palette.common.white, 0.6),
+              '&:hover': { bgcolor: (theme) => alpha(theme.palette.common.white, 0.1), color: (theme) => theme.palette.common.white },
             }}
           >
             {isMaximized ? (
@@ -269,8 +321,8 @@ const HeaderBar: React.FC = () => {
             title="Close"
             sx={{
               width: 46, height: 38, borderRadius: 0,
-              color: 'rgba(255, 255, 255, 0.6)',
-              '&:hover': { bgcolor: '#e81123', color: 'white' },
+              color: (theme) => alpha(theme.palette.common.white, 0.6),
+              '&:hover': { bgcolor: (theme) => theme.palette.error.main, color: (theme) => theme.palette.common.white },
             }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -318,7 +370,6 @@ const ActivityBar: React.FC<{
     appScale, setAppScale,
     hideFountainMarkupEnabled, setHideFountainMarkupEnabled,
   } = useUI();
-  const { theme, setTheme } = useTheme();
   const { filePath } = useFile();
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -517,31 +568,6 @@ const ActivityBar: React.FC<{
              </Box>
           </Box>
         </MenuItem>
-
-        <Divider sx={{ mt: 1, mb: 0.5 }} />
-
-        {/* --- Appearance --- */}
-        <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Appearance</Typography>
-        
-        <Box sx={{ px: 2, py: 1 }}>
-          <FormControl fullWidth size="small">
-            <Select
-              value={theme}
-              onChange={(e) => setTheme(e.target.value as any)}
-              sx={{ 
-                fontSize: '0.8rem', 
-                bgcolor: 'action.hover',
-                '& .MuiSelect-select': { py: 0.8 }
-              }}
-            >
-              {themes.map((t) => (
-                <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.8rem' }}>
-                  {t.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
 
         <Divider sx={{ my: 0.5 }} />
 

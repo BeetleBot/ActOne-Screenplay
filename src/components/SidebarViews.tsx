@@ -30,6 +30,19 @@ import {
   AlertTitle,
 } from "@mui/material";
 
+const getGenderColor = (gender: string) => {
+  switch (gender) {
+    case "male":
+      return "var(--gender-male)";
+    case "female":
+      return "var(--gender-female)";
+    case "nonbinary":
+      return "var(--gender-nonbinary)";
+    default:
+      return "var(--gender-unknown)";
+  }
+};
+
 const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({ saveFileAs }) => (
   <Alert
     severity="warning"
@@ -158,19 +171,6 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
           [name]: gender,
         },
       }));
-    };
-
-    const getGenderColor = (gender: string) => {
-      switch (gender) {
-        case "male":
-          return "#0081ef";
-        case "female":
-          return "#fa6fc1";
-        case "nonbinary":
-          return "#b520da";
-        default:
-          return "#969696";
-      }
     };
 
     const handleCharKeyDown = (e: React.KeyboardEvent) => {
@@ -375,7 +375,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             {["male", "female", "nonbinary", "unknown"].map((g) => {
               const count = genderDialogueLines[g];
               const pct = totalDialogueLines > 0 ? Math.round((count / totalDialogueLines) * 100) : 0;
-              const color = g === "male" ? "#0081ef" : g === "female" ? "#fa6fc1" : g === "nonbinary" ? "#b520da" : "#969696";
+              const color = getGenderColor(g);
               return (
                 <Box key={g} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>

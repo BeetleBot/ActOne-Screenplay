@@ -218,7 +218,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
       <DialogContent dividers sx={{ p: 3, height: 480, overflowY: "auto" }}>
         {changedLines.length === 0 ? (
           <Box sx={{ display: "flex", height: "100%", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, textAlign: "center" }}>
-            <ErrorOutlinedIcon sx={{ fontSize: 48, color: "#1976d2" }} />
+            <ErrorOutlinedIcon sx={{ fontSize: 48, color: "primary.main" }} />
             <Typography variant="h6" sx={{ fontWeight: 600 }}>All Revisions Reviewed</Typography>
             <Typography variant="body2" color="text.secondary">No remaining additions or deletions found in this draft.</Typography>
             <Button 

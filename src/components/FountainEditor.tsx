@@ -4,51 +4,52 @@ import { useCodeMirror } from "../editor/useCodeMirror";
 import { useUI } from "../context/UIContext";
 import { useParking } from "../context/ParkingContext";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, AutoAwesomeIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
 
 
 
 const CATEGORIES = [
-  { key: "cast", label: "Cast (Character)", color: "#00bcd4" },
-  { key: "prop", label: "Prop", color: "#ff9800" },
-  { key: "vfx", label: "VFX", color: "#9c27b0" },
-  { key: "sfx", label: "SFX (Special Effect)", color: "#795548" },
-  { key: "camera", label: "Camera", color: "#00ffcc" },
-  { key: "animal", label: "Animal", color: "#ffeb3b" },
-  { key: "extras", label: "Extras", color: "#e91e63" },
-  { key: "vehicle", label: "Vehicle", color: "#008080" },
-  { key: "costume", label: "Costume", color: "#ffc0cb" },
-  { key: "makeup", label: "Makeup", color: "#4caf50" },
-  { key: "music", label: "Music", color: "#808000" },
-  { key: "sound", label: "Sound", color: "#ff6666" },
-  { key: "stunt", label: "Stunt", color: "#2196f3" },
-  { key: "setDesign", label: "Set Design", color: "#daa520" },
-  { key: "other", label: "Other (Generic)", color: "#9e9e9e" }
+  { key: "cast", label: "Cast (Character)", color: "var(--cat-cast)" },
+  { key: "prop", label: "Prop", color: "var(--cat-prop)" },
+  { key: "vfx", label: "VFX", color: "var(--cat-vfx)" },
+  { key: "sfx", label: "SFX (Special Effect)", color: "var(--cat-sfx)" },
+  { key: "camera", label: "Camera", color: "var(--cat-camera)" },
+  { key: "animal", label: "Animal", color: "var(--cat-animal)" },
+  { key: "extras", label: "Extras", color: "var(--cat-extras)" },
+  { key: "vehicle", label: "Vehicle", color: "var(--cat-vehicle)" },
+  { key: "costume", label: "Costume", color: "var(--cat-costume)" },
+  { key: "makeup", label: "Makeup", color: "var(--cat-makeup)" },
+  { key: "music", label: "Music", color: "var(--cat-music)" },
+  { key: "sound", label: "Sound", color: "var(--cat-sound)" },
+  { key: "stunt", label: "Stunt", color: "var(--cat-stunt)" },
+  { key: "setDesign", label: "Set Design", color: "var(--cat-setDesign)" },
+  { key: "other", label: "Other (Generic)", color: "var(--cat-other)" }
 ];
 
 const HIGHLIGHT_COLORS = [
-  { key: "red", label: "Red", color: "#e81123" },
-  { key: "orange", label: "Orange", color: "#ff9800" },
-  { key: "yellow", label: "Yellow", color: "#daa520" },
-  { key: "green", label: "Green", color: "#4caf50" },
-  { key: "blue", label: "Blue", color: "#0081ef" },
-  { key: "purple", label: "Purple", color: "#b520da" },
-  { key: "pink", label: "Pink", color: "#fa6fc1" },
-  { key: "none", label: "Clear Highlight", color: "#9e9e9e" }
+  { key: "red", label: "Red", color: "var(--scene-color-red)" },
+  { key: "orange", label: "Orange", color: "var(--scene-color-orange)" },
+  { key: "yellow", label: "Yellow", color: "var(--scene-color-yellow)" },
+  { key: "green", label: "Green", color: "var(--scene-color-green)" },
+  { key: "blue", label: "Blue", color: "var(--scene-color-blue)" },
+  { key: "purple", label: "Purple", color: "var(--scene-color-purple)" },
+  { key: "pink", label: "Pink", color: "var(--scene-color-pink)" },
+  { key: "none", label: "Clear Highlight", color: "var(--cat-other)" }
 ];
 
 const MARKER_COLORS = [
-  { key: "blue", label: "Blue", color: "#0081ef" },
-  { key: "brown", label: "Brown", color: "#795548" },
-  { key: "cyan", label: "Cyan", color: "#00bcd4" },
-  { key: "green", label: "Green", color: "#4caf50" },
-  { key: "magenta", label: "Magenta", color: "#e91e63" },
-  { key: "orange", label: "Orange", color: "#ff9800" },
-  { key: "pink", label: "Pink", color: "#fa6fc1" },
-  { key: "purple", label: "Purple", color: "#b520da" },
-  { key: "red", label: "Red", color: "#e81123" },
-  { key: "yellow", label: "Yellow", color: "#daa520" },
-  { key: "none", label: "Default (Orange)", color: "#9e9e9e" }
+  { key: "blue", label: "Blue", color: "var(--scene-color-blue)" },
+  { key: "brown", label: "Brown", color: "var(--scene-color-brown)" },
+  { key: "cyan", label: "Cyan", color: "var(--scene-color-cyan)" },
+  { key: "green", label: "Green", color: "var(--scene-color-green)" },
+  { key: "magenta", label: "Magenta", color: "var(--scene-color-magenta)" },
+  { key: "orange", label: "Orange", color: "var(--scene-color-orange)" },
+  { key: "pink", label: "Pink", color: "var(--scene-color-pink)" },
+  { key: "purple", label: "Purple", color: "var(--scene-color-purple)" },
+  { key: "red", label: "Red", color: "var(--scene-color-red)" },
+  { key: "yellow", label: "Yellow", color: "var(--scene-color-yellow)" },
+  { key: "none", label: "Default (Orange)", color: "var(--cat-other)" }
 ];
 
 export const FountainEditor: React.FC = () => {
@@ -335,14 +336,14 @@ export const FountainEditor: React.FC = () => {
     },
     slotProps: {
       paper: {
-        sx: {
+        sx: (theme: any) => ({
           borderRadius: "12px",
-          boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.15)",
+          boxShadow: `0px 8px 32px ${alpha(theme.palette.common.black, 0.15)}`,
           border: "1px solid",
           borderColor: "divider",
           minWidth: 220,
           py: 0.5,
-        }
+        })
       }
     }
   };

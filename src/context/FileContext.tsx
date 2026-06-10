@@ -94,14 +94,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
         ? doc.settings
         : f.parsedDoc.settings;
-      return { ...f, parsedDoc: { ...doc, settings: mergedSettings } };
+      return { ...f, parsedDoc: { ...doc, pageBreaks: undefined, settings: mergedSettings } };
     }));
     setParsedDoc(prevDoc => {
       const doc = parseScreenplay(rawText, paperSize);
       const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
         ? doc.settings
         : prevDoc.settings;
-      return { ...doc, settings: mergedSettings };
+      return { ...doc, pageBreaks: undefined, settings: mergedSettings };
     });
   }, [paperSize]);
 
@@ -203,7 +203,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
           ? doc.settings
           : f.parsedDoc.settings;
-        return { ...f, rawText: normalized, isDirty, parsedDoc: { ...doc, settings: mergedSettings } };
+        return { ...f, rawText: normalized, isDirty, parsedDoc: { ...doc, pageBreaks: undefined, settings: mergedSettings } };
       }
       return f;
     }));
@@ -211,7 +211,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
         ? doc.settings
         : prevDoc.settings;
-      return { ...doc, settings: mergedSettings };
+      return { ...doc, pageBreaks: undefined, settings: mergedSettings };
     });
   };
 
@@ -283,10 +283,34 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err) {
         console.error(err);
       }
-    }, 400);
+    }, 1000);
 
     return () => clearTimeout(handler);
   }, [rawText, paperSize, fontFamily, activeFileId, isTauri, revisionModeEnabled, revisionBaseText]);
+
+  useEffect(() => {
+    if (isTauri) return;
+
+    const handler = setTimeout(() => {
+      const parsed = parseScreenplay(rawText, paperSize);
+      if (parsed.pageBreaks) {
+        setParsedDoc(prev => {
+          if (prev.screenplayText === rawText) {
+            return { ...prev, pageBreaks: parsed.pageBreaks };
+          }
+          return prev;
+        });
+        setFiles(prev => prev.map(f => {
+          if (f.id === activeFileId && f.rawText === rawText) {
+            return { ...f, parsedDoc: { ...f.parsedDoc, pageBreaks: parsed.pageBreaks } };
+          }
+          return f;
+        }));
+      }
+    }, 1000);
+
+    return () => clearTimeout(handler);
+  }, [rawText, paperSize, activeFileId, isTauri]);
 
   const openFilePath = async (path: string) => {
     const existing = files.find(f => f.filePath === path);

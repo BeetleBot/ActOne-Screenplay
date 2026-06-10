@@ -10,6 +10,7 @@ import { fountainCompletionSource } from "./autocomplete";
 import { 
   fountainHighlightField, 
   updateParsedDocEffect,
+  updatePageBreakDisplayEffect,
   classifyLines,
   needsBlankAfterEnter,
   LINE_CHARACTER,
@@ -241,7 +242,7 @@ const CATEGORIES = [
 
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, typewriterMode, updateSettings } = useAppContext();
+  const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, typewriterMode, updateSettings, showPageNumbers, showPageSeparators } = useAppContext();
 
   const parsedDocRef = useRef(parsedDoc);
   useEffect(() => {
@@ -468,6 +469,14 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       });
     }
   }, [rawText]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: updatePageBreakDisplayEffect.of({ showPageNumbers, showPageSeparators })
+      });
+    }
+  }, [showPageNumbers, showPageSeparators]);
 
   useEffect(() => {
     if (viewRef.current) {

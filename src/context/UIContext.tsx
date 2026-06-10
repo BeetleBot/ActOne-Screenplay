@@ -26,6 +26,10 @@ export interface UIContextProps {
   setMatchParenthesesEnabled: (enabled: boolean) => void;
   hideFountainMarkupEnabled: boolean;
   setHideFountainMarkupEnabled: (enabled: boolean) => void;
+  showPageNumbers: boolean;
+  setShowPageNumbers: (enabled: boolean) => void;
+  showPageSeparators: boolean;
+  setShowPageSeparators: (enabled: boolean) => void;
   showSearchPanel: boolean;
   setShowSearchPanel: (show: boolean) => void;
   showReplacePanel: boolean;
@@ -78,6 +82,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   });
   const [hideFountainMarkupEnabled, setHideFountainMarkupEnabledState] = useState<boolean>(() => {
     return localStorage.getItem("actone-hide-fountain-markup-enabled") === "true";
+  });
+
+  const [showPageNumbers, setShowPageNumbersState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-show-page-numbers") !== "false";
+  });
+  const [showPageSeparators, setShowPageSeparatorsState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-show-page-separators") === "true";
   });
 
   const [autoSaveEnabled, setAutoSaveEnabledState] = useState<boolean>(() => {
@@ -176,6 +187,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem("actone-hide-fountain-markup-enabled", String(enabled));
   };
 
+  const setShowPageNumbers = (enabled: boolean) => {
+    setShowPageNumbersState(enabled);
+    localStorage.setItem("actone-show-page-numbers", String(enabled));
+  };
+
+  const setShowPageSeparators = (enabled: boolean) => {
+    setShowPageSeparatorsState(enabled);
+    localStorage.setItem("actone-show-page-separators", String(enabled));
+  };
+
   const setAutoSaveEnabled = (enabled: boolean) => {
     setAutoSaveEnabledState(enabled);
     localStorage.setItem("actone-auto-save-enabled", String(enabled));
@@ -213,6 +234,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setMatchParenthesesEnabled,
         hideFountainMarkupEnabled,
         setHideFountainMarkupEnabled,
+        showPageNumbers,
+        setShowPageNumbers,
+        showPageSeparators,
+        setShowPageSeparators,
         showSearchPanel,
         setShowSearchPanel,
         showReplacePanel,

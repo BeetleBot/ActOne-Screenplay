@@ -155,7 +155,7 @@ export const MarkerView: React.FC = () => {
                     fontWeight: isSelected ? 700 : 500,
                     border: `1.5px solid ${colorVal}`,
                     bgcolor: isSelected ? colorVal : "transparent",
-                    color: isSelected ? "#ffffff" : "text.secondary",
+                    color: isSelected ? (theme) => theme.palette.common.white : "text.secondary",
                     cursor: "pointer",
                     "&:hover": {
                       bgcolor: isSelected ? colorVal : "action.hover",
