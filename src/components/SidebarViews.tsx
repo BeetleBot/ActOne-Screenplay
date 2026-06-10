@@ -9,7 +9,6 @@ import { TodoView } from "./TodoView";
 import { OutlineView } from "./OutlineView";
 import { SprintView } from "./SprintView";
 import { MarkerView } from "./MarkerView";
-import { TagManagerView } from "./TagManagerView";
 import {
   Box,
   Typography,
@@ -33,7 +32,7 @@ import {
 const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({ saveFileAs }) => (
   <Alert
     severity="warning"
-    sx={{ mb: 2, borderRadius: 0 }}
+    sx={{ mb: 2, borderRadius: '12px' }}
     action={
       saveFileAs && (
         <Button
@@ -41,7 +40,7 @@ const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({
           size="small"
           variant="contained"
           onClick={() => saveFileAs()}
-          sx={{ fontWeight: 600, textTransform: "none" }}
+          sx={{ fontWeight: 600, textTransform: "none", borderRadius: '9999px' }}
         >
           Save as .actone
         </Button>
@@ -75,10 +74,6 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
 
   if (activeTab === "markers") {
     return <MarkerView />;
-  }
-
-  if (activeTab === "tags") {
-    return <TagManagerView />;
   }
 
   if (activeTab === "notepad") {
@@ -246,7 +241,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                   }}
                   sx={{
                     borderLeft: `4px solid ${getGenderColor(gender)}`,
-                    borderRadius: 0,
+                    borderRadius: '12px',
                     bgcolor: isSelected ? "action.selected" : "transparent",
                     transition: "background-color 0.15s ease",
                     "&:hover": {
@@ -257,7 +252,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                   <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, display: "flex", flexDirection: "column", gap: 1 }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{name}</Typography>
-                      <Typography variant="caption" sx={{ bgcolor: "action.selected", px: 1, py: 0.2, borderRadius: 0, fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ bgcolor: "action.selected", px: 1, py: 0.2, borderRadius: '9999px', fontWeight: 600 }}>
                         {count} lines
                       </Typography>
                     </Box>
@@ -266,7 +261,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                         value={gender}
                         disabled={!supportsExtended}
                         onChange={(e) => handleGenderChange(name, e.target.value)}
-                        sx={{ fontSize: 12, height: 28 }}
+                        sx={{ fontSize: 12, height: 28, borderRadius: '8px' }}
                       >
                         <MenuItem value="unknown">Gender: Unknown</MenuItem>
                         <MenuItem value="male">Male</MenuItem>
@@ -545,7 +540,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                   sx={{
                     cursor: "pointer",
                     position: "relative",
-                    borderRadius: 0,
+                    borderRadius: '12px',
                     maxHeight: "140px",
                     display: "flex",
                     flexDirection: "column",
@@ -570,7 +565,6 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                         top: 4,
                         right: 4,
                         opacity: 0.5,
-                        borderRadius: 0,
                         "&:hover": { opacity: 1 },
                         zIndex: 2,
                       }}

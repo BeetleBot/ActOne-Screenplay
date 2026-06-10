@@ -24,6 +24,7 @@ function AppInner() {
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [showTitlePageModal, setShowTitlePageModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showBreakdownModal, setShowBreakdownModal] = useState(false);
 
   const { newFile, openFile, saveFile, saveFileAs, closeFile, activeFileId, files } = useFile();
   const { editorView } = useEditor();
@@ -39,7 +40,7 @@ function AppInner() {
     setHideFountainMarkupEnabled
   } = useUI();
 
-  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showSettingsModal || showRevisionModal || showTitlePageModal || showHelpModal;
+  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showSettingsModal || showRevisionModal || showTitlePageModal || showHelpModal || showBreakdownModal;
 
   useKeyboardShortcuts({
     newFile,
@@ -79,6 +80,7 @@ function AppInner() {
           setIsSidebarOpen={setIsSidebarOpen}
           onOpenSettingsModal={() => setShowSettingsModal(true)}
           onOpenPalette={() => setIsPaletteOpen(true)}
+          onOpenBreakdownModal={() => setShowBreakdownModal(true)}
         />
       <ModalManager
         isPaletteOpen={isPaletteOpen}
@@ -95,6 +97,8 @@ function AppInner() {
         setShowTitlePageModal={setShowTitlePageModal}
         showHelpModal={showHelpModal}
         setShowHelpModal={setShowHelpModal}
+        showBreakdownModal={showBreakdownModal}
+        setShowBreakdownModal={setShowBreakdownModal}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />

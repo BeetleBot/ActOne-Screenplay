@@ -3,22 +3,23 @@ import { useAppContext } from "../context/AppContext";
 import { LineType, ParsedLine } from "../parser/FountainParser";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
-import BookmarkIcon from "@mui/icons-material/Bookmark";
 import {
   Box,
   Typography,
   IconButton,
   TextField,
-  Card,
-  CardContent,
   Chip,
   Grid,
+  List,
+  ListItemButton,
+  ListItemText,
 } from "@mui/material";
 
 interface MarkerItem {
   line: ParsedLine;
   index: number;
   context: string;
+  sceneNumber?: string;
 }
 
 export const MarkerView: React.FC = () => {
@@ -34,6 +35,7 @@ export const MarkerView: React.FC = () => {
       const line = lines[i];
       if (line.marker) {
         let nearestContext = "Introduction";
+        let nearestSceneNumber: string | undefined;
         for (let j = i; j >= 0; j--) {
           const l = lines[j];
           if (l.type === LineType.heading) {
@@ -42,6 +44,7 @@ export const MarkerView: React.FC = () => {
               .replace(/\[\[.*?\]\]/g, "")
               .replace(/#[^#]+#\s*$/, "")
               .trim();
+            nearestSceneNumber = l.sceneNumber;
             break;
           }
           if (l.type === LineType.section) {
@@ -53,6 +56,7 @@ export const MarkerView: React.FC = () => {
           line,
           index: i,
           context: nearestContext,
+          sceneNumber: nearestSceneNumber,
         });
       }
     }
@@ -129,7 +133,7 @@ export const MarkerView: React.FC = () => {
         <Chip
           label={`${filteredMarkers.length} markers`}
           size="small"
-          sx={{ height: 18, fontSize: 10, fontWeight: 600, borderRadius: 0 }}
+          sx={{ height: 18, fontSize: 10, fontWeight: 600, borderRadius: '9999px' }}
         />
       </Box>
 
@@ -147,7 +151,7 @@ export const MarkerView: React.FC = () => {
                   sx={{
                     fontSize: 9.5,
                     height: 20,
-                    borderRadius: 0,
+                    borderRadius: '9999px',
                     fontWeight: isSelected ? 700 : 500,
                     border: `1.5px solid ${colorVal}`,
                     bgcolor: isSelected ? colorVal : "transparent",
@@ -173,7 +177,6 @@ export const MarkerView: React.FC = () => {
         slotProps={{
           input: {
             sx: {
-              borderRadius: 0,
               bgcolor: "background.paper",
               fontSize: "0.75rem",
               "& fieldset": { borderColor: "divider" },
@@ -192,7 +195,6 @@ export const MarkerView: React.FC = () => {
                   setSearchQuery("");
                   setSelectedColor(null);
                 }}
-                sx={{ borderRadius: 0 }}
               >
                 <CloseIcon sx={{ fontSize: 12 }} />
               </IconButton>
@@ -201,16 +203,14 @@ export const MarkerView: React.FC = () => {
         }}
       />
 
-      <Box 
+      <List 
         tabIndex={0}
         onKeyDown={handleKeyDown}
         sx={{ 
           flex: 1, 
           overflowY: "auto", 
-          display: "flex", 
-          flexDirection: "column", 
-          gap: 1,
           outline: "none",
+          p: 0,
           "&:focus": { outline: "none" }
         }}
       >
@@ -223,72 +223,106 @@ export const MarkerView: React.FC = () => {
             const color = m.line.marker?.color || "orange";
             const colorVal = getMarkerColorValue(color);
             const isSelected = activeMarkerIdx === idx;
+            const cleanDesc = (m.line.marker?.description || "Marker").replace(/\s+/g, " ").trim();
+            const cleanContext = (m.context || "").replace(/\s+/g, " ").trim();
             return (
-              <Card
+              <ListItemButton
                 key={m.line.id}
                 data-marker-id={m.line.id}
-                variant="outlined"
+                selected={isSelected}
                 onClick={(e) => {
                   setActiveMarkerIdx(idx);
                   handleMarkerClick(m.index);
                   e.currentTarget.parentElement?.focus();
                 }}
                 sx={{
-                  cursor: "pointer",
-                  borderRadius: 0,
-                  borderLeft: `4px solid ${colorVal}`,
-                  bgcolor: isSelected ? "action.selected" : "transparent",
-                  transition: "all 0.15s ease",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    bgcolor: isSelected ? "action.selected" : "action.hover",
-                  },
+                  pl: 1.5,
+                  py: 0.25,
+                  borderRadius: '8px',
+                  mb: 0.1,
+                  alignItems: "center",
+                  transition: "background-color 0.12s ease",
                 }}
               >
-                <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, display: "flex", flexDirection: "column", gap: 0.5 }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: "break-word", fontSize: 13, lineHeight: 1.4 }}>
-                      {m.line.marker?.description || "Marker"}
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", color: colorVal, mt: 0.2 }}>
-                      <BookmarkIcon sx={{ fontSize: 12 }} />
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
+                      <Box
+                        sx={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          bgcolor: colorVal,
+                          flexShrink: 0,
+                        }}
+                      />
+                      {m.sceneNumber && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            bgcolor: "action.selected",
+                            px: 0.4,
+                            borderRadius: '4px',
+                            fontSize: '8.5px',
+                            fontWeight: 700,
+                            color: "text.secondary",
+                          }}
+                        >
+                          {m.sceneNumber}
+                        </Typography>
+                      )}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: isSelected ? 600 : 400,
+                          fontSize: '13px',
+                          color: isSelected ? "primary.main" : "text.primary",
+                          fontFamily: "var(--font-ui)",
+                          letterSpacing: "0.01em",
+                        }}
+                      >
+                        {cleanDesc}
+                      </Typography>
                     </Box>
-                  </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 0.5 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{
-                        fontSize: 10,
-                        maxWidth: "70%",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      {m.context}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        bgcolor: "action.selected",
-                        px: 0.6,
-                        py: 0.2,
-                        fontSize: 9,
-                        fontWeight: 700,
-                        color: "text.secondary",
-                      }}
-                    >
-                      Line {m.index + 1}
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
+                  }
+                  secondary={
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 0.1, pl: 1.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          fontSize: 10,
+                          maxWidth: "70%",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {cleanContext}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          bgcolor: "action.selected",
+                          px: 0.6,
+                          py: 0.2,
+                          borderRadius: '4px',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          color: "text.secondary",
+                        }}
+                      >
+                        Line {m.index + 1}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </ListItemButton>
             );
           })
         )}
-      </Box>
+      </List>
     </Box>
   );
 };

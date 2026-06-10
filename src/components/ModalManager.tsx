@@ -6,6 +6,7 @@ import { CommandPalette } from './CommandPalette';
 import { RevisionModal } from './RevisionModal';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { HelpModal } from './HelpModal';
+import { TagManagerView } from './TagManagerView';
 
 export interface ModalManagerProps {
   isPaletteOpen: boolean;
@@ -22,6 +23,8 @@ export interface ModalManagerProps {
   setShowTitlePageModal: (open: boolean) => void;
   showHelpModal: boolean;
   setShowHelpModal: (open: boolean) => void;
+  showBreakdownModal: boolean;
+  setShowBreakdownModal: (open: boolean) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }
@@ -41,6 +44,8 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   setShowTitlePageModal,
   showHelpModal,
   setShowHelpModal,
+  showBreakdownModal,
+  setShowBreakdownModal,
   isSidebarOpen,
   toggleSidebar,
 }) => {
@@ -57,6 +62,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
         onOpenRevisionModal={() => setShowRevisionModal(true)}
         onOpenTitlePageModal={() => setShowTitlePageModal(true)}
         onOpenHelpModal={() => setShowHelpModal(true)}
+        onOpenBreakdownModal={() => setShowBreakdownModal(true)}
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
@@ -64,6 +70,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       {showRevisionModal && <RevisionModal onClose={() => setShowRevisionModal(false)} />}
       {showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
+      {showBreakdownModal && <TagManagerView onClose={() => setShowBreakdownModal(false)} />}
     </>
   );
 };

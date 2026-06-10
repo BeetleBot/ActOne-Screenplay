@@ -24,6 +24,7 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import HelpOutlinedIcon from "@mui/icons-material/HelpOutlined";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import BugReportIcon from "@mui/icons-material/BugReport";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
 import {
   Dialog,
@@ -60,6 +61,7 @@ interface CommandPaletteProps {
   onOpenRevisionModal: () => void;
   onOpenTitlePageModal: () => void;
   onOpenHelpModal: () => void;
+  onOpenBreakdownModal: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -73,6 +75,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenRevisionModal,
   onOpenTitlePageModal,
   onOpenHelpModal,
+  onOpenBreakdownModal,
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -202,6 +205,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-zoom-reset", name: `Reset Zoom (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
 
     // Format
+    { id: "format-breakdown", name: "Show Production Breakdown...", category: "Format", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBreakdownModal(); onClose(); } },
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },
     { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenStructureModal(); onClose(); } },
     { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
@@ -284,8 +288,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   let currentFlatIndex = 0;
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" scroll="paper" sx={{ '& .MuiDialog-paper': { borderRadius: 4, overflow: 'hidden' } }}>
-      <Box sx={{ p: 2, pb: 1 }}>
+    <Dialog 
+      open 
+      onClose={onClose} 
+      fullWidth 
+      maxWidth="xs" 
+      scroll="paper" 
+      sx={{ 
+        '& .MuiDialog-paper': { 
+          borderRadius: '16px', 
+          overflow: 'hidden',
+          bgcolor: 'background.paper',
+          backgroundImage: 'none',
+          boxShadow: 'var(--shadow-xl)',
+        } 
+      }}
+    >
+      <Box sx={{ p: 2, pb: 1.5 }}>
         <TextField
           inputRef={inputRef}
           placeholder="Type a command or search..."
@@ -299,6 +318,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           size="small"
           slotProps={{
             input: {
+              sx: {
+                fontSize: "0.85rem",
+                "& fieldset": { border: "none" },
+                "&:hover fieldset": { border: "none" },
+                "&.Mui-focused fieldset": { border: "none" },
+                bgcolor: "action.hover",
+                borderRadius: "10px",
+                px: 1.5,
+              },
               startAdornment: (
                 <Box sx={{ display: "flex", color: "text.secondary", mr: 1 }}>
                   <SearchIcon sx={{ fontSize: 18 }} />

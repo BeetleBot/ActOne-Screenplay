@@ -153,7 +153,7 @@ const shared: ThemeOptions = {
     fontFamily: "'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     button: { textTransform: 'none', fontWeight: 500 },
   },
-  shape: { borderRadius: 0 },
+  shape: { borderRadius: 12 },
   transitions: {
     duration: { shortest: 120, shorter: 200, short: 300 },
   },
@@ -273,12 +273,12 @@ export function createActOneTheme(themeId: ThemeId) {
       },
       MuiButton: {
         styleOverrides: {
-          root: { borderRadius: 0 },
+          root: { borderRadius: '9999px' },
         },
       },
       MuiDialog: {
         styleOverrides: {
-          paper: { borderRadius: 0 },
+          paper: { borderRadius: '24px' },
         },
       },
       MuiPaper: {
@@ -289,9 +289,14 @@ export function createActOneTheme(themeId: ThemeId) {
       MuiTooltip: {
         defaultProps: { arrow: true },
       },
-      MuiIconButton: {
+      MuiMenu: {
         styleOverrides: {
-          root: { borderRadius: 0 },
+          paper: { borderRadius: '16px' },
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: { borderRadius: '12px' },
         },
       },
     },

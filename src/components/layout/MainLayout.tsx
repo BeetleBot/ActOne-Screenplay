@@ -42,7 +42,6 @@ import AddIcon from "@mui/icons-material/Add";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SettingsIcon from "@mui/icons-material/Settings";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
 const getTauriWindow = () => {
   try {
@@ -159,7 +158,7 @@ const HeaderBar: React.FC = () => {
                 fontWeight: 700,
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
-                borderRadius: 0,
+                borderRadius: '9999px',
                 flexShrink: 0,
                 mx: 1,
                 borderColor: 'error.main',
@@ -179,7 +178,7 @@ const HeaderBar: React.FC = () => {
                 onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); closeFile(file.id); } }}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 0.8,
-                  px: 2, height: 38, borderRadius: 0,
+                  px: 2, height: 38, borderTopLeftRadius: '8px', borderTopRightRadius: '8px',
                   cursor: 'pointer', flexShrink: 0, userSelect: 'none',
                   fontSize: 12, whiteSpace: 'nowrap',
                   bgcolor: isActive ? 'background.paper' : 'transparent',
@@ -323,7 +322,8 @@ const ActivityBar: React.FC<{
   setIsSidebarOpen: (open: boolean) => void;
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
-}> = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette }) => {
+  onOpenBreakdownModal: () => void;
+}> = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal }) => {
   const {
     paperSize, setPaperSize,
     typewriterMode, setTypewriterMode, zoomLevel, setZoomLevel,
@@ -336,6 +336,10 @@ const ActivityBar: React.FC<{
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleClick = (tab: string) => {
+    if (tab === "tags") {
+      onOpenBreakdownModal();
+      return;
+    }
     if (isSidebarOpen && activeTab === tab) setIsSidebarOpen(false);
     else { setActiveTab(tab); setIsSidebarOpen(true); }
   };
@@ -349,7 +353,6 @@ const ActivityBar: React.FC<{
     { id: "sprint", icon: <TimerIcon sx={{ fontSize: 20 }} />, title: "Sprint" },
     { id: "parking", icon: <ArchiveIcon sx={{ fontSize: 20 }} />, title: "Parking" },
     { id: "markers", icon: <BookmarkIcon sx={{ fontSize: 20 }} />, title: "Markers" },
-    { id: "tags", icon: <LocalOfferIcon sx={{ fontSize: 20 }} />, title: "Breakdown" },
   ];
   const tabs = supportsExtended ? allTabs : allTabs.filter(t => t.id === "outline" || t.id === "stats");
 
@@ -370,7 +373,7 @@ const ActivityBar: React.FC<{
               <IconButton
                 onClick={() => handleClick(tab.id)}
                 sx={{
-                  p: 1, borderRadius: 0,
+                  p: 1, borderRadius: '12px',
                   color: isActive ? 'primary.main' : 'text.secondary',
                   bgcolor: isActive ? 'action.selected' : 'transparent',
                   '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
@@ -378,7 +381,7 @@ const ActivityBar: React.FC<{
                   '&::before': isActive ? {
                     content: '""', position: 'absolute', left: -4,
                     top: '25%', bottom: '25%', width: 3,
-                    borderRadius: 0, bgcolor: 'primary.main',
+                    borderRadius: '3px', bgcolor: 'primary.main',
                   } : {},
                 }}
               >
@@ -395,7 +398,7 @@ const ActivityBar: React.FC<{
         <IconButton
           onClick={onOpenPalette}
           sx={{
-            p: 1, borderRadius: 0,
+            p: 1, borderRadius: '12px',
             color: 'text.secondary',
             '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
           }}
@@ -408,7 +411,7 @@ const ActivityBar: React.FC<{
         <IconButton
           onClick={(e) => setAnchorEl(e.currentTarget)}
           sx={{
-            p: 1, borderRadius: 0,
+            p: 1, borderRadius: '12px',
             color: anchorEl ? 'primary.main' : 'text.secondary',
             bgcolor: anchorEl ? 'action.selected' : 'transparent',
             '&:hover': { bgcolor: 'action.hover' },
@@ -424,7 +427,7 @@ const ActivityBar: React.FC<{
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { minWidth: 240, ml: 1, borderRadius: 0 } } }}
+        slotProps={{ paper: { sx: { minWidth: 240, ml: 1 } } }}
       >
         <Box sx={{ px: 2, py: 1.5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'primary.main' }}>
@@ -510,7 +513,7 @@ const ActivityBar: React.FC<{
                   variant={paperSize === "letter" ? "contained" : "outlined"}
                   fullWidth
                   onClick={() => setPaperSize("letter")}
-                  sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: 0 }}
+                  sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: '9999px' }}
                 >
                   Letter
                 </Button>
@@ -519,7 +522,7 @@ const ActivityBar: React.FC<{
                   variant={paperSize === "a4" ? "contained" : "outlined"}
                   fullWidth
                   onClick={() => setPaperSize("a4")}
-                  sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: 0 }}
+                  sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: '9999px' }}
                 >
                   A4
                 </Button>
@@ -539,7 +542,6 @@ const ActivityBar: React.FC<{
               onChange={(e) => setTheme(e.target.value as any)}
               sx={{ 
                 fontSize: '0.8rem', 
-                borderRadius: 0,
                 bgcolor: 'action.hover',
                 '& .MuiSelect-select': { py: 0.8 }
               }}
@@ -569,7 +571,8 @@ const Workspace: React.FC<{
   setIsSidebarOpen: (open: boolean) => void;
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
-}> = ({ isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette }) => {
+  onOpenBreakdownModal: () => void;
+}> = ({ isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode, typewriterMode } = useUI();
@@ -621,6 +624,7 @@ const Workspace: React.FC<{
           setIsSidebarOpen={setIsSidebarOpen}
           onOpenSettingsModal={onOpenSettingsModal}
           onOpenPalette={onOpenPalette}
+          onOpenBreakdownModal={onOpenBreakdownModal}
         />
       )}
 
@@ -678,10 +682,11 @@ export interface MainLayoutProps {
   setIsSidebarOpen: (open: boolean) => void;
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
+  onOpenBreakdownModal: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
-  isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
+  isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal,
 }) => {
   const { isZenMode } = useUI();
 
@@ -700,6 +705,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         setIsSidebarOpen={setIsSidebarOpen}
         onOpenSettingsModal={onOpenSettingsModal}
         onOpenPalette={onOpenPalette}
+        onOpenBreakdownModal={onOpenBreakdownModal}
       />
     </>
   );

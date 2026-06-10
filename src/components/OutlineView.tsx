@@ -390,7 +390,7 @@ export const OutlineView: React.FC = () => {
             sx={{
               pl: 0,
               py: 0.25,
-              borderRadius: 0,
+              borderRadius: '8px',
               mb: 0.1,
               transition: "background-color 0.12s ease",
             }}
@@ -401,7 +401,6 @@ export const OutlineView: React.FC = () => {
               sx={{
                 p: 0.1,
                 mr: 0.4,
-                borderRadius: 0,
                 transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
                 transition: "transform 0.15s ease",
               }}
@@ -459,7 +458,7 @@ export const OutlineView: React.FC = () => {
         sx={{
           pl: 1.5,
           py: 0.25,
-          borderRadius: 0,
+          borderRadius: '8px',
           mb: 0.1,
           opacity: isDragging ? 0.4 : 1,
           bgcolor: showDragOver
@@ -521,7 +520,7 @@ export const OutlineView: React.FC = () => {
                   sx={{
                     bgcolor: "action.selected",
                     px: 0.4,
-                    borderRadius: 0,
+                    borderRadius: '4px',
                     fontSize: fontSizes.number,
                     fontWeight: 700,
                     color: "text.secondary",
@@ -554,7 +553,7 @@ export const OutlineView: React.FC = () => {
                         height: 12,
                         fontSize: fontSizes.chip,
                         p: 0,
-                        borderRadius: 0,
+                        borderRadius: '9999px',
                         textTransform: "lowercase",
                       }}
                     />
@@ -584,18 +583,13 @@ export const OutlineView: React.FC = () => {
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Navigator
         </Typography>
-        <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ borderRadius: 0, opacity: 0.6, "&:hover": { opacity: 1 } }}>
+        <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
           <MoreVertIcon sx={{ fontSize: 14 }} />
         </IconButton>
         <Menu
           anchorEl={menuAnchor}
           open={Boolean(menuAnchor)}
           onClose={() => setMenuAnchor(null)}
-          slotProps={{
-            paper: {
-              sx: { borderRadius: 0 }
-            }
-          }}
         >
           <Box sx={{ px: 1.5, py: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
@@ -610,7 +604,7 @@ export const OutlineView: React.FC = () => {
                 setOutlineFontSize(size as any);
                 setMenuAnchor(null);
               }}
-              sx={{ textTransform: "capitalize", fontSize: 12, borderRadius: 0 }}
+              sx={{ textTransform: "capitalize", fontSize: 12 }}
             >
               {size}
             </MenuItem>
@@ -628,7 +622,6 @@ export const OutlineView: React.FC = () => {
           slotProps={{
             input: {
               sx: {
-                borderRadius: 0,
                 bgcolor: "background.paper",
                 fontSize: "0.75rem",
                 "& fieldset": { borderColor: "divider" },
@@ -641,7 +634,7 @@ export const OutlineView: React.FC = () => {
                 </Box>
               ),
               endAdornment: searchQuery && (
-                <IconButton size="small" onClick={() => setSearchQuery("")} sx={{ borderRadius: 0 }}>
+                <IconButton size="small" onClick={() => setSearchQuery("")}>
                   <CloseIcon sx={{ fontSize: 12 }} />
                 </IconButton>
               )
@@ -649,7 +642,7 @@ export const OutlineView: React.FC = () => {
           }}
         />
 
-        <Box sx={{ display: "flex", border: "1px solid", borderColor: "divider", borderRadius: 0, overflow: "hidden" }}>
+        <Box sx={{ display: "flex", border: "1px solid", borderColor: "divider", borderRadius: '9999px', overflow: "hidden" }}>
           {(["Sections", "Scenes", "Synopses"] as const).map((label) => {
             const active = label === "Sections" ? showSections : label === "Scenes" ? showScenes : showSynopses;
             const toggle = label === "Sections" ? () => setShowSections(p => !p) : label === "Scenes" ? () => setShowScenes(p => !p) : () => setShowSynopses(p => !p);

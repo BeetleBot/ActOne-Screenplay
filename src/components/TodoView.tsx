@@ -37,7 +37,7 @@ interface TodoViewProps {
 const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({ saveFileAs }) => (
   <Alert
     severity="warning"
-    sx={{ mb: 2, borderRadius: 0 }}
+    sx={{ mb: 2, borderRadius: '12px' }}
     action={
       saveFileAs && (
         <Button
@@ -45,7 +45,7 @@ const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({
           size="small"
           variant="contained"
           onClick={() => saveFileAs()}
-          sx={{ fontWeight: 600, textTransform: "none" }}
+          sx={{ fontWeight: 600, textTransform: "none", borderRadius: '9999px' }}
         >
           Save as .actone
         </Button>
@@ -148,6 +148,7 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
           fullWidth
           slotProps={{
             input: {
+              sx: { borderRadius: '12px' },
               endAdornment: (
                 <IconButton size="small" onClick={addTodo} sx={{ p: 0.5 }}>
                   <AddIcon sx={{ fontSize: 16 }} />
@@ -189,7 +190,7 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
               sx={{
                 border: "1px solid",
                 borderColor: "divider",
-                borderRadius: 0,
+                borderRadius: '12px',
                 mb: 0.5,
                 bgcolor: isSelected ? "action.selected" : "transparent",
                 "&:hover": {
@@ -203,7 +204,7 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
                   toggleTodo(todo.id);
                   e.currentTarget.closest("ul")?.focus();
                 }} 
-                sx={{ py: 1, px: 1.5 }}
+                sx={{ py: 1, px: 1.5, borderRadius: '12px' }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
                   <RadioButtonUncheckedIcon sx={{ fontSize: 16 }} />
@@ -263,13 +264,13 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
                   sx={{
                     border: "1px solid",
                     borderColor: "divider",
-                    borderRadius: 0,
+                    borderRadius: '12px',
                     mb: 0.5,
                     bgcolor: "action.selected",
                     opacity: 0.8,
                   }}
                 >
-                  <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 0.8, px: 1.5 }}>
+                  <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 0.8, px: 1.5, borderRadius: '12px' }}>
                     <ListItemIcon sx={{ minWidth: 32, color: "text.secondary" }}>
                       <CheckCircleIcon sx={{ fontSize: 16 }} />
                     </ListItemIcon>
