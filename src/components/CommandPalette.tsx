@@ -274,16 +274,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       onClose={onClose} 
       fullWidth 
       maxWidth="xs" 
-      scroll="paper" 
-      sx={{ 
-        '& .MuiDialog-paper': { 
-          borderRadius: '16px', 
-          overflow: 'hidden',
-          bgcolor: 'background.paper',
-          backgroundImage: 'none',
-          boxShadow: 'var(--shadow-xl)',
-        } 
-      }}
+      scroll="paper"
     >
       <Box sx={{ p: 2, pb: 1.5 }}>
         <TextField

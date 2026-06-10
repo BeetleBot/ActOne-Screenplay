@@ -161,7 +161,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
         </Tabs>
       </Box>
 
-      <DialogContent sx={{ p: 3, maxHeight: 420, overflowY: "auto" }}>
+      <DialogContent dividers sx={{ p: 3, maxHeight: 420, overflowY: "auto" }}>
         {activeTab === 0 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             {!hasTitlePage && (

@@ -122,7 +122,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
         </Tabs>
       </Box>
 
-      <DialogContent sx={{ p: 3.5, height: 460, overflowY: "auto" }}>
+      <DialogContent sx={{ p: 3, height: 460, overflowY: "auto" }}>
         {activeTab === 0 && (
           <Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4, lineHeight: 1.7, fontSize: 13.5 }}>
@@ -447,7 +447,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, px: 3.5, justifyContent: "space-between" }}>
+      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11.5, fontWeight: 500 }}>
           ActOne — Screenwriting Made Simple
         </Typography>

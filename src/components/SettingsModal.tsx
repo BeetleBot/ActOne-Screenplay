@@ -71,7 +71,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         </Tabs>
       </Box>
 
-      <DialogContent sx={{ p: 3, minHeight: 340 }}>
+      <DialogContent dividers sx={{ p: 3, minHeight: 340 }}>
         {activeTab === 0 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             <FormControl fullWidth size="small">

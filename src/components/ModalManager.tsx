@@ -6,7 +6,7 @@ import { CommandPalette } from './CommandPalette';
 import { RevisionModal } from './RevisionModal';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { HelpModal } from './HelpModal';
-import { TagManagerView } from './TagManagerView';
+import { ProductionBreakdownModal } from './ProductionBreakdownModal';
 
 export interface ModalManagerProps {
   isPaletteOpen: boolean;
@@ -70,7 +70,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       {showRevisionModal && <RevisionModal onClose={() => setShowRevisionModal(false)} />}
       {showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
-      {showBreakdownModal && <TagManagerView onClose={() => setShowBreakdownModal(false)} />}
+      {showBreakdownModal && <ProductionBreakdownModal onClose={() => setShowBreakdownModal(false)} />}
     </>
   );
 };

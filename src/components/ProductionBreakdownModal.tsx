@@ -15,6 +15,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  ListItemButton,
+  ListItemText,
 } from "@mui/material";
 
 const CATEGORIES = [
@@ -35,11 +37,11 @@ const CATEGORIES = [
   { key: "other", label: "Other", color: "#9e9e9e" }
 ];
 
-interface TagManagerViewProps {
+interface ProductionBreakdownModalProps {
   onClose: () => void;
 }
 
-export const TagManagerView: React.FC<TagManagerViewProps> = ({ onClose }) => {
+export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> = ({ onClose }) => {
   const { parsedDoc, updateSettings, editorView } = useAppContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [mergeTargets, setMergeTargets] = useState<{ [defId: string]: string }>({});
@@ -146,29 +148,15 @@ export const TagManagerView: React.FC<TagManagerViewProps> = ({ onClose }) => {
   }, [prodTags, searchQuery, parsedDoc.lines]);
 
   return (
-    <Dialog 
-      open 
-      onClose={onClose} 
-      fullWidth 
-      maxWidth="sm" 
-      slotProps={{ 
-        paper: { 
-          sx: { 
-            borderRadius: '16px',
-            bgcolor: 'background.paper',
-            boxShadow: 'var(--shadow-xl)'
-          } 
-        } 
-      }}
-    >
-      <DialogTitle sx={{ m: 0, p: 2, pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: "0.95rem" }}>Production Breakdown</Typography>
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", p: 0.5 }}>
-          <CloseIcon sx={{ fontSize: 16 }} />
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Production Breakdown</Typography>
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
+          <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 2, pt: 0, display: "flex", flexDirection: "column", gap: 1.5, minHeight: 350, maxHeight: 500 }}>
+      <DialogContent dividers sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2, minHeight: 350, maxHeight: 500 }}>
         <TextField
           placeholder="Filter tags..."
           value={searchQuery}
@@ -201,112 +189,90 @@ export const TagManagerView: React.FC<TagManagerViewProps> = ({ onClose }) => {
             </Typography>
           ) : (
             categoriesWithDefinitions.map((cat) => (
-              <Box key={cat.key} sx={{ mb: 0.5 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, pb: 0.5, borderBottom: "1px solid", borderColor: "divider", mb: 0.8 }}>
+              <Box key={cat.key}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, pb: 0.5, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: cat.color }} />
                   <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", fontSize: "0.7rem", color: "text.secondary", letterSpacing: "0.05em" }}>
                     {cat.label}
                   </Typography>
                 </Box>
 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                  {cat.definitions.map((def: any) => {
-                    const siblingDefs = cat.definitions.filter((d: any) => d.id !== def.id);
-                    const selectedTarget = mergeTargets[def.id] || "";
-                    return (
-                      <Box 
-                        key={def.id} 
-                        sx={{ 
-                          display: "flex", 
-                          flexDirection: "column", 
-                          p: 1, 
-                          borderRadius: "6px", 
-                          bgcolor: "background.paper", 
-                          border: "1px solid", 
-                          borderColor: "divider",
+                {cat.definitions.map((def: any) => {
+                  const siblingDefs = cat.definitions.filter((d: any) => d.id !== def.id);
+                  const selectedTarget = mergeTargets[def.id] || "";
+                  return (
+                    <ListItemButton key={def.id} dense sx={{ borderRadius: "6px", mb: 0.25, px: 1 }}>
+                      <ListItemText
+                        primary={def.name}
+                        secondary={`${def.occurrences.length} instances`}
+                        slotProps={{
+                          primary: { sx: { fontWeight: 600, fontSize: "0.8rem" } },
+                          secondary: { sx: { fontSize: "0.7rem" } },
                         }}
-                      >
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
-                          <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.8rem" }}>
-                              {def.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
-                              ({def.occurrences.length} instances)
-                            </Typography>
-                          </Box>
-
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            {siblingDefs.length > 0 && (
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                <FormControl size="small">
-                                  <Select
-                                    value={selectedTarget}
-                                    onChange={(e) => setMergeTargets(prev => ({ ...prev, [def.id]: e.target.value }))}
-                                    displayEmpty
-                                    sx={{ height: 22, fontSize: "0.7rem", borderRadius: '4px', minWidth: 80 }}
-                                  >
-                                    <MenuItem value="" sx={{ fontSize: "0.7rem" }}>Merge...</MenuItem>
-                                    {siblingDefs.map((sibling: any) => (
-                                      <MenuItem key={sibling.id} value={sibling.id} sx={{ fontSize: "0.7rem" }}>
-                                        {sibling.name}
-                                      </MenuItem>
-                                    ))}
-                                  </Select>
-                                </FormControl>
-                                <IconButton 
-                                  size="small" 
-                                  onClick={() => handleMerge(def.id)} 
-                                  disabled={!selectedTarget}
-                                  sx={{ p: 0.25, color: "primary.main" }}
-                                >
-                                  <MergeTypeIcon sx={{ fontSize: 13 }} />
-                                </IconButton>
-                              </Box>
-                            )}
-
-                            <IconButton size="small" onClick={() => handleDeleteDefinition(def.id)} sx={{ p: 0.25, color: "text.secondary" }}>
-                              <DeleteIcon sx={{ fontSize: 13 }} />
-                            </IconButton>
-                          </Box>
+                        sx={{ mr: 1 }}
+                      />
+                      {siblingDefs.length > 0 && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mr: 0.5 }}>
+                          <FormControl size="small">
+                            <Select
+                              value={selectedTarget}
+                              onChange={(e) => setMergeTargets(prev => ({ ...prev, [def.id]: e.target.value }))}
+                              displayEmpty
+                              sx={{ height: 22, fontSize: "0.7rem", borderRadius: "4px", minWidth: 80 }}
+                            >
+                              <MenuItem value="" sx={{ fontSize: "0.7rem" }}>Merge...</MenuItem>
+                              {siblingDefs.map((sibling: any) => (
+                                <MenuItem key={sibling.id} value={sibling.id} sx={{ fontSize: "0.7rem" }}>
+                                  {sibling.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleMerge(def.id)}
+                            disabled={!selectedTarget}
+                            sx={{ p: 0.25, color: "primary.main" }}
+                          >
+                            <MergeTypeIcon sx={{ fontSize: 13 }} />
+                          </IconButton>
                         </Box>
+                      )}
+                      <IconButton size="small" onClick={() => handleDeleteDefinition(def.id)} sx={{ p: 0.25, color: "text.secondary" }}>
+                        <DeleteIcon sx={{ fontSize: 13 }} />
+                      </IconButton>
+                    </ListItemButton>
+                  );
+                })}
 
-                        {def.occurrences.length > 0 && (
-                          <Box sx={{ mt: 0.5, display: "flex", flexWrap: "wrap", gap: 0.5, alignItems: "center" }}>
-                            <Typography variant="caption" sx={{ fontSize: "0.65rem", fontWeight: 700, color: "text.secondary" }}>
-                              SCENES:
-                            </Typography>
-                            {def.occurrences.map((occ: any, oIdx: number) => (
-                              <Typography
-                                key={oIdx}
-                                variant="caption"
-                                onClick={() => {
-                                  scrollToPosition(occ.pos);
-                                  onClose();
-                                }}
-                                sx={{
-                                  fontSize: "0.65rem",
-                                  bgcolor: "action.hover",
-                                  px: 0.5,
-                                  py: 0.1,
-                                  borderRadius: "3px",
-                                  cursor: "pointer",
-                                  color: "text.primary",
-                                  "&:hover": {
-                                    color: "primary.main",
-                                    bgcolor: "action.selected"
-                                  }
-                                }}
-                              >
-                                {occ.sceneName}
-                              </Typography>
-                            ))}
-                          </Box>
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Box>
+                {cat.definitions.some((def: any) => def.occurrences.length > 0) && (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, alignItems: "center", mt: 0.25, ml: 1 }}>
+                    {cat.definitions.map((def: any) =>
+                      def.occurrences.map((occ: any, oIdx: number) => (
+                        <Typography
+                          key={`${def.id}-${oIdx}`}
+                          variant="caption"
+                          onClick={() => {
+                            scrollToPosition(occ.pos);
+                            onClose();
+                          }}
+                          sx={{
+                            fontSize: "0.65rem",
+                            bgcolor: "action.hover",
+                            px: 0.5,
+                            py: 0.1,
+                            borderRadius: "3px",
+                            cursor: "pointer",
+                            color: "text.primary",
+                            "&:hover": { color: "primary.main", bgcolor: "action.selected" }
+                          }}
+                        >
+                          {occ.sceneName}
+                        </Typography>
+                      ))
+                    )}
+                  </Box>
+                )}
               </Box>
             ))
           )}

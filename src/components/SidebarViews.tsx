@@ -13,8 +13,6 @@ import {
   Typography,
   Button,
   TextField,
-  Card,
-  CardContent,
   Grid,
   Paper,
   IconButton,
@@ -23,7 +21,11 @@ import {
   FormControl,
   LinearProgress,
   List,
+  ListItemButton,
+  ListItemText,
   ListItem,
+  Card,
+  CardContent,
   Alert,
   AlertTitle,
 } from "@mui/material";
@@ -185,7 +187,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     };
 
     return (
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2, height: "100%" }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
           Character Tracking
         </Typography>
@@ -218,60 +220,54 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             tabIndex={0}
             onKeyDown={handleCharKeyDown}
             sx={{ 
-              display: "flex", 
-              flexDirection: "column", 
-              gap: 1, 
+              flex: 1,
+              overflowY: "auto",
+              minHeight: 0,
               opacity: !supportsExtended ? 0.6 : 1,
               outline: "none",
               "&:focus": { outline: "none" }
             }}
           >
-            {filteredCharacters.map(([name, count], idx) => {
-              const gender = genders[name] || "unknown";
-              const isSelected = activeItemIdx === idx;
-              return (
-                <Card
-                  key={name}
-                  data-char-id={name}
-                  variant="outlined"
-                  onClick={(e) => {
-                    setActiveItemIdx(idx);
-                    e.currentTarget.parentElement?.focus();
-                  }}
-                  sx={{
-                    borderLeft: `4px solid ${getGenderColor(gender)}`,
-                    borderRadius: '12px',
-                    bgcolor: isSelected ? "action.selected" : "transparent",
-                    transition: "background-color 0.15s ease",
-                    "&:hover": {
-                      bgcolor: isSelected ? "action.selected" : "action.hover",
-                    }
-                  }}
-                >
-                  <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, display: "flex", flexDirection: "column", gap: 1 }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{name}</Typography>
-                      <Typography variant="caption" sx={{ bgcolor: "action.selected", px: 1, py: 0.2, borderRadius: '9999px', fontWeight: 600 }}>
-                        {count} lines
-                      </Typography>
-                    </Box>
-                    <FormControl fullWidth size="small">
+            <List disablePadding>
+              {filteredCharacters.map(([name, count], idx) => {
+                const gender = genders[name] || "unknown";
+                const isSelected = activeItemIdx === idx;
+                return (
+                  <ListItemButton
+                    key={name}
+                    data-char-id={name}
+                    dense
+                    selected={isSelected}
+                    onClick={() => setActiveItemIdx(idx)}
+                    sx={{ borderRadius: "6px", mb: 0.25 }}
+                  >
+                    <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: getGenderColor(gender), mr: 1.5, flexShrink: 0 }} />
+                    <ListItemText
+                      primary={name}
+                      secondary={`${count} lines`}
+                      slotProps={{
+                        primary: { sx: { fontWeight: 600, fontSize: "0.85rem" } },
+                        secondary: { sx: { fontSize: "0.7rem" } },
+                      }}
+                      sx={{ mr: 1 }}
+                    />
+                    <FormControl size="small" sx={{ minWidth: 100 }}>
                       <Select
                         value={gender}
                         disabled={!supportsExtended}
                         onChange={(e) => handleGenderChange(name, e.target.value)}
-                        sx={{ fontSize: 12, height: 28, borderRadius: '8px' }}
+                        sx={{ fontSize: "0.75rem", height: 26, borderRadius: "6px" }}
                       >
-                        <MenuItem value="unknown">Gender: Unknown</MenuItem>
+                        <MenuItem value="unknown">Unknown</MenuItem>
                         <MenuItem value="male">Male</MenuItem>
                         <MenuItem value="female">Female</MenuItem>
                         <MenuItem value="nonbinary">Non-Binary</MenuItem>
                       </Select>
                     </FormControl>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  </ListItemButton>
+                );
+              })}
+            </List>
           </Box>
         )}
       </Box>
