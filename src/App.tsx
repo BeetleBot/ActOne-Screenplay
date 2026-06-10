@@ -10,6 +10,7 @@ import { MainLayout } from "./components/layout/MainLayout";
 import { ModalManager } from "./components/ModalManager";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { WindowResizeHandles } from "./components/WindowResizeHandles";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 import { SprintProvider } from "./context/SprintContext";
 
@@ -109,13 +110,15 @@ function AppInner() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AppProviders>
-        <SprintProvider>
-          <AppInner />
-        </SprintProvider>
-      </AppProviders>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AppProviders>
+          <SprintProvider>
+            <AppInner />
+          </SprintProvider>
+        </AppProviders>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

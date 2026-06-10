@@ -25,23 +25,9 @@ import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
+import { FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon, AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, RemoveIcon, CropSquareIcon, CloseIcon, CheckIcon, AddIcon, RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon } from "../Icons";
 
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
-import DescriptionIcon from "@mui/icons-material/Description";
-import PersonIcon from "@mui/icons-material/Person";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import TuneIcon from "@mui/icons-material/Tune";
-import SearchIcon from "@mui/icons-material/Search";
-import RemoveIcon from "@mui/icons-material/Remove";
-import CropSquareIcon from "@mui/icons-material/CropSquare";
-import CloseIcon from "@mui/icons-material/Close";
-import CheckIcon from "@mui/icons-material/Check";
-import AddIcon from "@mui/icons-material/Add";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import SettingsIcon from "@mui/icons-material/Settings";
-import BookmarkIcon from "@mui/icons-material/Bookmark";
+
 
 const getTauriWindow = () => {
   try {
@@ -313,7 +299,6 @@ const HeaderBar: React.FC = () => {
   );
 };
 
-import TimerIcon from "@mui/icons-material/Timer";
 
 const ActivityBar: React.FC<{
   activeTab: string;

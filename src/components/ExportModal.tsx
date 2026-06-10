@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import DescriptionIcon from "@mui/icons-material/Description";
-import CloseIcon from "@mui/icons-material/Close";
-import DownloadIcon from "@mui/icons-material/Download";
 import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
+import { DescriptionIcon, CloseIcon, DownloadIcon } from "./Icons";
+
 import {
   Dialog,
   DialogTitle,

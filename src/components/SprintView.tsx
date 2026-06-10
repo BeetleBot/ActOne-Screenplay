@@ -15,16 +15,11 @@ import {
   Tabs,
   Tab
 } from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import StopIcon from "@mui/icons-material/Stop";
-import DeleteIcon from "@mui/icons-material/Delete";
-import HistoryIcon from "@mui/icons-material/History";
-import TimerIcon from "@mui/icons-material/Timer";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import { useSprint, SprintSession } from "../context/SprintContext";
 import { useAppContext } from "../context/AppContext";
 import { countWords } from "../utils/text";
+import { PlayArrowIcon, StopIcon, DeleteIcon, HistoryIcon, TimerIcon, InfoOutlinedIcon, EmojiEventsIcon } from "./Icons";
+
 
 export const SprintView: React.FC = () => {
   const { 

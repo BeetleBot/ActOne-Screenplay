@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
-import CloseIcon from "@mui/icons-material/Close";
-import SearchIcon from "@mui/icons-material/Search";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import ArrowCircleDownIcon from "@mui/icons-material/ArrowCircleDown";
 import { useAppContext } from "../context/AppContext";
 import { invoke } from "@tauri-apps/api/core";
+import { CloseIcon, SearchIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon } from "./Icons";
+
 import {
   Dialog,
   DialogTitle,

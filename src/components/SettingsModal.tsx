@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import CloseIcon from "@mui/icons-material/Close";
 import { useTheme } from "../context/ThemeContext";
 import { useAppContext } from "../context/AppContext";
 import { themes } from "../theme/muiTheme";
+import { CloseIcon } from "./Icons";
+
 import {
   Dialog,
   DialogTitle,

@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
 import { LineType, ParsedLine } from "../parser/FountainParser";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import SearchIcon from "@mui/icons-material/Search";
-import CloseIcon from "@mui/icons-material/Close";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon } from "./Icons";
+
 import {
   Box,
   Typography,

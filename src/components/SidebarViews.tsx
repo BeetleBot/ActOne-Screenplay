@@ -2,13 +2,12 @@ import React, { useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import { useParking } from "../context/ParkingContext";
 import { LineType } from "../parser/FountainParser";
-import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
-import SearchIcon from "@mui/icons-material/Search";
 import { TodoView } from "./TodoView";
 import { OutlineView } from "./OutlineView";
 import { SprintView } from "./SprintView";
 import { MarkerView } from "./MarkerView";
+import { AddIcon, CloseIcon, SearchIcon } from "./Icons";
+
 import {
   Box,
   Typography,

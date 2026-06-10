@@ -2,10 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
 import { LineType } from "../parser/FountainParser";
 import { EditorView } from "@codemirror/view";
-import SearchIcon from "@mui/icons-material/Search";
-import DeleteIcon from "@mui/icons-material/Delete";
-import MergeTypeIcon from "@mui/icons-material/MergeType";
-import CloseIcon from "@mui/icons-material/Close";
+import { SearchIcon, DeleteIcon, MergeTypeIcon, CloseIcon } from "./Icons";
+
 import {
   Box,
   Typography,

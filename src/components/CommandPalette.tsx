@@ -3,28 +3,9 @@ import { useFile } from "../context/FileContext";
 import { useEditor } from "../context/EditorContext";
 import { useUI } from "../context/UIContext";
 import { startRevisionMode } from "../utils/revision";
+import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon } from "./Icons";
 
-import NoteAddIcon from "@mui/icons-material/NoteAdd";
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import SaveIcon from "@mui/icons-material/Save";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import ViewSidebarIcon from "@mui/icons-material/ViewSidebar";
-import SettingsIcon from "@mui/icons-material/Settings";
-import ContentCutIcon from "@mui/icons-material/ContentCut";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import SearchIcon from "@mui/icons-material/Search";
-import FindReplaceIcon from "@mui/icons-material/FindReplace";
-import FullscreenIcon from "@mui/icons-material/Fullscreen";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import HelpOutlinedIcon from "@mui/icons-material/HelpOutlined";
-import MenuBookIcon from "@mui/icons-material/MenuBook";
-import BugReportIcon from "@mui/icons-material/BugReport";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+
 
 import {
   Dialog,

@@ -1,12 +1,9 @@
 import React, { useMemo, useCallback } from "react";
-import CloseIcon from "@mui/icons-material/Close";
-import CheckIcon from "@mui/icons-material/Check";
-import UndoIcon from "@mui/icons-material/Undo";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import ErrorOutlinedIcon from "@mui/icons-material/ErrorOutlined";
 import { useAppContext } from "../context/AppContext";
 import { useFile } from "../context/FileContext";
 import { computeDetailedDiff, getInlineDiff, filterDiffs } from "../utils/diff";
+import { CloseIcon, CheckIcon, UndoIcon, CheckBoxIcon, ErrorOutlinedIcon } from "./Icons";
+
 import {
   Dialog,
   DialogTitle,

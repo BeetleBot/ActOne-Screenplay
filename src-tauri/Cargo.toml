@@ -29,5 +29,11 @@ cosmic-text = "0.12.1"
 unicode-properties = "0.1"
 font-kit = "0.14"
 
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+strip = "symbols"
+
 
 

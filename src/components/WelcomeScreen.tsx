@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useFile } from "../context/FileContext";
-import AddIcon from "@mui/icons-material/Add";
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import DescriptionIcon from "@mui/icons-material/Description";
-import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Box,
   Typography,
@@ -58,6 +54,8 @@ function getDynamicQuote(): Quote {
 }
 
 import logoImage from "../assets/logo.png";
+import { AddIcon, FolderOpenIcon, DescriptionIcon, DeleteIcon } from "./Icons";
+
 
 export const WelcomeScreen: React.FC = () => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();

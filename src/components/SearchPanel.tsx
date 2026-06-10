@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useUI } from "../context/UIContext";
 import { useEditor } from "../context/EditorContext";
 import { EditorView } from "@codemirror/view";
+import { ChevronRightIcon, KeyboardArrowDownIcon, ArrowUpwardIcon, ArrowDownwardIcon, CloseIcon, FindReplaceIcon, DoneAllIcon } from "./Icons";
+
 import {
   setSearchQuery,
   SearchQuery,
@@ -9,13 +11,6 @@ import {
   findPrevious,
   replaceNext,
 } from "@codemirror/search";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import CloseIcon from "@mui/icons-material/Close";
-import FindReplaceIcon from "@mui/icons-material/FindReplace";
-import DoneAllIcon from "@mui/icons-material/DoneAll";
 import {
   Box,
   Paper,

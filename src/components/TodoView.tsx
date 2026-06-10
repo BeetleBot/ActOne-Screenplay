@@ -1,10 +1,7 @@
 import React, { useState, useCallback } from "react";
-import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
 import { useAppContext } from "../context/AppContext";
+import { RadioButtonUncheckedIcon, CheckCircleIcon, KeyboardArrowDownIcon, AddIcon, CloseIcon } from "./Icons";
+
 import {
   Box,
   Typography,

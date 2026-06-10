@@ -4,23 +4,9 @@ import { useCodeMirror } from "../editor/useCodeMirror";
 import { useUI } from "../context/UIContext";
 import { useParking } from "../context/ParkingContext";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
+import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, AutoAwesomeIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
 
-import ContentCutIcon from "@mui/icons-material/ContentCut";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import BookmarkIcon from "@mui/icons-material/Bookmark";
-import ColorLensIcon from "@mui/icons-material/ColorLens";
-import TextFieldsIcon from "@mui/icons-material/TextFields";
-import SearchIcon from "@mui/icons-material/Search";
-import TaskAltIcon from "@mui/icons-material/TaskAlt";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import FormatBoldIcon from "@mui/icons-material/FormatBold";
-import FormatItalicIcon from "@mui/icons-material/FormatItalic";
-import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+
 
 const CATEGORIES = [
   { key: "cast", label: "Cast (Character)", color: "#00bcd4" },

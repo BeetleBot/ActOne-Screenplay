@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
 import { LineType, ParsedLine } from "../parser/FountainParser";
-import SearchIcon from "@mui/icons-material/Search";
-import CloseIcon from "@mui/icons-material/Close";
+import { SearchIcon, CloseIcon } from "./Icons";
+
 import {
   Box,
   Typography,

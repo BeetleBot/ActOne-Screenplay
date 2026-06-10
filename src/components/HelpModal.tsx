@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import CloseIcon from "@mui/icons-material/Close";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { CloseIcon, OpenInNewIcon } from "./Icons";
+
 import {
   Dialog,
   DialogTitle,
