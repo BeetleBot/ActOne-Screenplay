@@ -62,6 +62,7 @@ interface AppContextProps {
   setAutoSaveEnabled: (enabled: boolean) => void;
   autoSaveInterval: number;
   setAutoSaveInterval: (interval: number) => void;
+  cleanExtraSpace: () => void;
 }
 
 export const useAppContext = (): AppContextProps => {

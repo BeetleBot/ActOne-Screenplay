@@ -41,6 +41,8 @@ import CheckIcon from "@mui/icons-material/Check";
 import AddIcon from "@mui/icons-material/Add";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SettingsIcon from "@mui/icons-material/Settings";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
 const getTauriWindow = () => {
   try {
@@ -346,6 +348,8 @@ const ActivityBar: React.FC<{
     { id: "todo", icon: <AssignmentIcon sx={{ fontSize: 20 }} />, title: "Tasks" },
     { id: "sprint", icon: <TimerIcon sx={{ fontSize: 20 }} />, title: "Sprint" },
     { id: "parking", icon: <ArchiveIcon sx={{ fontSize: 20 }} />, title: "Parking" },
+    { id: "markers", icon: <BookmarkIcon sx={{ fontSize: 20 }} />, title: "Markers" },
+    { id: "tags", icon: <LocalOfferIcon sx={{ fontSize: 20 }} />, title: "Breakdown" },
   ];
   const tabs = supportsExtended ? allTabs : allTabs.filter(t => t.id === "outline" || t.id === "stats");
 

@@ -8,6 +8,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import { TodoView } from "./TodoView";
 import { OutlineView } from "./OutlineView";
 import { SprintView } from "./SprintView";
+import { MarkerView } from "./MarkerView";
+import { TagManagerView } from "./TagManagerView";
 import {
   Box,
   Typography,
@@ -61,9 +63,22 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   const parking = useParking();
   const supportsExtended = !filePath || filePath.toLowerCase().endsWith(".actone");
   const [characterFilter, setCharacterFilter] = useState("");
+  const [activeItemIdx, setActiveItemIdx] = useState<number>(-1);
+
+  React.useEffect(() => {
+    setActiveItemIdx(-1);
+  }, [activeTab]);
 
   if (activeTab === "outline") {
     return <OutlineView />;
+  }
+
+  if (activeTab === "markers") {
+    return <MarkerView />;
+  }
+
+  if (activeTab === "tags") {
+    return <TagManagerView />;
   }
 
   if (activeTab === "notepad") {
@@ -162,6 +177,19 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
       }
     };
 
+    const handleCharKeyDown = (e: React.KeyboardEvent) => {
+      if (filteredCharacters.length === 0) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const dir = e.key === "ArrowDown" ? 1 : -1;
+        const nextIdx = Math.max(0, Math.min(filteredCharacters.length - 1, activeItemIdx + dir));
+        setActiveItemIdx(nextIdx);
+        const target = filteredCharacters[nextIdx];
+        const el = e.currentTarget.querySelector(`[data-char-id="${target[0]}"]`) as HTMLElement;
+        el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    };
+
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
@@ -192,16 +220,38 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
             No characters found matching search.
           </Typography>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, opacity: !supportsExtended ? 0.6 : 1 }}>
-            {filteredCharacters.map(([name, count]) => {
+          <Box 
+            tabIndex={0}
+            onKeyDown={handleCharKeyDown}
+            sx={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: 1, 
+              opacity: !supportsExtended ? 0.6 : 1,
+              outline: "none",
+              "&:focus": { outline: "none" }
+            }}
+          >
+            {filteredCharacters.map(([name, count], idx) => {
               const gender = genders[name] || "unknown";
+              const isSelected = activeItemIdx === idx;
               return (
                 <Card
                   key={name}
+                  data-char-id={name}
                   variant="outlined"
+                  onClick={(e) => {
+                    setActiveItemIdx(idx);
+                    e.currentTarget.parentElement?.focus();
+                  }}
                   sx={{
                     borderLeft: `4px solid ${getGenderColor(gender)}`,
                     borderRadius: 0,
+                    bgcolor: isSelected ? "action.selected" : "transparent",
+                    transition: "background-color 0.15s ease",
+                    "&:hover": {
+                      bgcolor: isSelected ? "action.selected" : "action.hover",
+                    }
                   }}
                 >
                   <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, display: "flex", flexDirection: "column", gap: 1 }}>
@@ -425,6 +475,24 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
       );
     }
 
+    const handleParkKeyDown = (e: React.KeyboardEvent) => {
+      if (items.length === 0) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const dir = e.key === "ArrowDown" ? 1 : -1;
+        const nextIdx = Math.max(0, Math.min(items.length - 1, activeItemIdx + dir));
+        setActiveItemIdx(nextIdx);
+        const target = items[nextIdx];
+        const el = e.currentTarget.querySelector(`[data-card-id="${target.id}"]`) as HTMLElement;
+        el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (activeItemIdx >= 0 && activeItemIdx < items.length) {
+          handleCardClick(items[activeItemIdx]);
+        }
+      }
+    };
+
     return (
       <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2, p: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -443,56 +511,79 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
           </Button>
         </Box>
 
-        <Box sx={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 1, minHeight: 0 }}>
+        <Box 
+          tabIndex={0}
+          onKeyDown={handleParkKeyDown}
+          sx={{ 
+            flex: 1, 
+            overflowY: "auto", 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: 1, 
+            minHeight: 0,
+            outline: "none",
+            "&:focus": { outline: "none" }
+          }}
+        >
           {items.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
               Select text in the editor and click "Park Selection" to store it here.
             </Typography>
           ) : (
-            items.map((item) => (
-              <Card
-                key={item.id}
-                onClick={() => handleCardClick(item)}
-                variant="outlined"
-                sx={{
-                  cursor: "pointer",
-                  position: "relative",
-                  borderRadius: 0,
-                  maxHeight: "140px",
-                  display: "flex",
-                  flexDirection: "column",
-                  flexShrink: 0,
-                  transition: "border-color 0.15s ease",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                  },
-                }}
-              >
-                <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, pr: 4, overflowY: "auto", overscrollBehavior: "contain", flex: 1 }}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeItem(item.id);
-                    }}
-                    sx={{
-                      position: "absolute",
-                      top: 4,
-                      right: 4,
-                      opacity: 0.5,
-                      borderRadius: 0,
-                      "&:hover": { opacity: 1 },
-                      zIndex: 2,
-                    }}
-                  >
-                    <CloseIcon sx={{ fontSize: 12 }} />
-                  </IconButton>
-                  <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 12, lineHeight: 1.4 }}>
-                    {item.text}
-                  </Typography>
-                </CardContent>
-              </Card>
-            ))
+            items.map((item, idx) => {
+              const isSelected = activeItemIdx === idx;
+              return (
+                <Card
+                  key={item.id}
+                  data-card-id={item.id}
+                  onClick={(e) => {
+                    setActiveItemIdx(idx);
+                    handleCardClick(item);
+                    e.currentTarget.parentElement?.focus();
+                  }}
+                  variant="outlined"
+                  sx={{
+                    cursor: "pointer",
+                    position: "relative",
+                    borderRadius: 0,
+                    maxHeight: "140px",
+                    display: "flex",
+                    flexDirection: "column",
+                    flexShrink: 0,
+                    bgcolor: isSelected ? "action.selected" : "transparent",
+                    transition: "border-color 0.15s ease, background-color 0.15s ease",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      bgcolor: isSelected ? "action.selected" : "action.hover",
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, pr: 4, overflowY: "auto", overscrollBehavior: "contain", flex: 1 }}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeItem(item.id);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        opacity: 0.5,
+                        borderRadius: 0,
+                        "&:hover": { opacity: 1 },
+                        zIndex: 2,
+                      }}
+                    >
+                      <CloseIcon sx={{ fontSize: 12 }} />
+                    </IconButton>
+                    <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 12, lineHeight: 1.4 }}>
+                      {item.text}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </Box>
       </Box>

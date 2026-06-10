@@ -126,6 +126,49 @@ fn export_pdf(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
+fn get_page_breaks(
+    fountain_text: String,
+    paper_size: String,
+    font_family: String,
+    bold_scene_headings: bool,
+    mirror_scene_numbers: String,
+    export_sections: bool,
+    export_synopses: bool,
+    export_title_page: bool,
+    revised_lines: Vec<bool>,
+) -> Option<Vec<usize>> {
+    let paper = if paper_size == "letter" {
+        pdf::LETTER
+    } else {
+        pdf::A4
+    };
+    let export_font = if font_family == "courier-prime-sans" {
+        "courier_prime_sans".to_string()
+    } else if font_family == "courier-prime" {
+        "courier_prime".to_string()
+    } else {
+        font_family
+    };
+    let mirror = match mirror_scene_numbers.as_str() {
+        "left_side" => pdf::MirrorOption::LeftSide,
+        "mirror" => pdf::MirrorOption::Mirror,
+        _ => pdf::MirrorOption::Off,
+    };
+    let config = pdf::PdfExportConfig {
+        paper_size: paper,
+        bold_scene_headings,
+        mirror_scene_numbers: mirror,
+        export_sections,
+        export_synopses,
+        export_font,
+        revised_lines,
+        export_title_page,
+    };
+    pdf::get_page_breaks(&fountain_text, config).ok()
+}
+
+#[tauri::command]
 fn export_fountain(content: String) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("Fountain Screenplay", &["fountain"])
@@ -171,7 +214,8 @@ pub fn run() {
             save_file_binary,
             structures::get_structures,
             structures::get_structure_template,
-            get_system_fonts
+            get_system_fonts,
+            get_page_breaks
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

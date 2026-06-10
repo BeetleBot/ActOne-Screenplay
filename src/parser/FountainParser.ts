@@ -249,7 +249,6 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
             description = "";
           }
           marker = { color: markerColor, description };
-          isOutlineElement = true;
         } else if (contentLower.startsWith("storyline") && type === LineType.heading) {
           const storylineBody = content.substring(9).trim();
           storylines = storylineBody.split(",").map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
@@ -271,6 +270,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
       if (workingText.startsWith(".")) {
         workingText = workingText.substring(1).trim();
       }
+      workingText = workingText.replace(/\[\[.*?\]\]\s*$/, "").trim();
       const matchNum = workingText.match(/#([^#]+)#$/);
       if (matchNum) {
         sceneNumber = matchNum[1];
@@ -419,37 +419,42 @@ export function paginateScreenplay(lines: ParsedLine[], paperSize: 'letter' | 'a
     if (currentLinesOnPage + h > maxPageLines) {
       let breakIndex = i;
 
-      if (line.type === LineType.heading) {
-        breakIndex = i;
-      } else {
-        let foundHeadingIndex = -1;
-        for (let j = i; j >= startContentIndex; j--) {
-          if (lines[j].type === LineType.heading) {
-            foundHeadingIndex = j;
-            break;
-          }
-          if (lines[j].type === LineType.empty || lines[j].type === LineType.character || lines[j].type === LineType.dialogue) {
-            break;
-          }
-        }
-        if (foundHeadingIndex !== -1) {
-          breakIndex = foundHeadingIndex;
+      let lastVisibleIndex = -1;
+      for (let j = i - 1; j >= startContentIndex; j--) {
+        const t = lines[j].type;
+        const isTitleType = t >= LineType.titlePageTitle && t <= LineType.titlePageUnknown;
+        if (t !== LineType.empty && !isTitleType && !lines[j].marker && t !== LineType.synopse && t !== LineType.section) {
+          lastVisibleIndex = j;
+          break;
         }
       }
 
-      if (breakIndex === i) {
-        let foundCharIndex = -1;
-        for (let j = i; j >= startContentIndex; j--) {
-          if (lines[j].type === LineType.character || lines[j].type === LineType.dualDialogueCharacter) {
-            foundCharIndex = j;
-            break;
+      if (lastVisibleIndex !== -1) {
+        const lastType = lines[lastVisibleIndex].type;
+        if (lastType === LineType.heading) {
+          let earliestIndex = lastVisibleIndex;
+          for (let j = lastVisibleIndex - 1; j >= startContentIndex; j--) {
+            const t = lines[j].type;
+            if (t === LineType.heading || t === LineType.empty || t === LineType.synopse || t === LineType.section || !!lines[j].marker) {
+              earliestIndex = j;
+            } else {
+              break;
+            }
           }
-          if (lines[j].type === LineType.empty || lines[j].type === LineType.heading || lines[j].type === LineType.action) {
-            break;
+          breakIndex = earliestIndex;
+        } else if (lastType === LineType.character || lastType === LineType.dualDialogueCharacter) {
+          breakIndex = lastVisibleIndex;
+        } else if (lastType === LineType.parenthetical || lastType === LineType.dualDialogueParenthetical) {
+          let charIndex = -1;
+          for (let j = lastVisibleIndex - 1; j >= startContentIndex; j--) {
+            if (lines[j].type === LineType.character || lines[j].type === LineType.dualDialogueCharacter) {
+              charIndex = j;
+              break;
+            }
           }
-        }
-        if (foundCharIndex !== -1) {
-          breakIndex = foundCharIndex;
+          if (charIndex !== -1) {
+            breakIndex = charIndex;
+          }
         }
       }
 
@@ -475,4 +480,243 @@ export function serializeScreenplay(lines: ParsedLine[], settings: any): string 
   }
   const settingsBlock = `\n\n/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:\n${JSON.stringify(settings, null, 2)}\nEND_ACTONE*/`;
   return text + settingsBlock;
+}
+
+export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a4' = 'letter'): string {
+  const doc = parseScreenplay(rawText, paperSize);
+  const rawLines = doc.screenplayText.split(/\r?\n/);
+  const cleanedLinesText = rawLines.map(line => {
+    let cleanedText = line.trim();
+    if (cleanedText.startsWith(".")) {
+      cleanedText = "." + cleanedText.slice(1).trimStart();
+    } else if (cleanedText.startsWith("#")) {
+      const match = cleanedText.match(/^(#+)(.*)$/);
+      if (match) {
+        cleanedText = match[1] + match[2].trimStart();
+      }
+    } else if (cleanedText.startsWith("=")) {
+      if (!cleanedText.startsWith("===")) {
+        cleanedText = "=" + cleanedText.slice(1).trimStart();
+      }
+    } else if (cleanedText.startsWith("@")) {
+      cleanedText = "@" + cleanedText.slice(1).trimStart();
+    } else if (cleanedText.startsWith("!")) {
+      cleanedText = "!" + cleanedText.slice(1).trimStart();
+    } else if (cleanedText.startsWith("~")) {
+      cleanedText = "~" + cleanedText.slice(1).trimStart();
+    }
+    cleanedText = cleanedText.replace(/\[\[\s+/g, "[[").replace(/\s+\]\]/g, "]]");
+    return cleanedText;
+  });
+
+  const dialogueMergedLines: string[] = [];
+  let idx = 0;
+  while (idx < cleanedLinesText.length) {
+    const line = cleanedLinesText[idx];
+    const trimmed = line.trim();
+    const isPrevEmpty = idx === 0 || cleanedLinesText[idx - 1].trim() === "";
+    const isCaps = trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
+    const isForcedChar = trimmed.startsWith("@");
+
+    let isChar = false;
+    if ((isCaps || isForcedChar) && isPrevEmpty && trimmed !== "") {
+      const isHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(trimmed) || trimmed.startsWith(".");
+      const isTransition = trimmed.endsWith("TO:");
+      const isOutline = trimmed.startsWith("#") || trimmed.startsWith("=");
+      if (!isHeading && !isTransition && !isOutline) {
+        let nextNonEmptyIdx = idx + 1;
+        while (nextNonEmptyIdx < cleanedLinesText.length && cleanedLinesText[nextNonEmptyIdx].trim() === "") {
+          nextNonEmptyIdx++;
+        }
+        if (nextNonEmptyIdx < cleanedLinesText.length) {
+          const nextTrimmed = cleanedLinesText[nextNonEmptyIdx].trim();
+          const nextIsHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextTrimmed) || nextTrimmed.startsWith(".");
+          const nextIsTransition = nextTrimmed.endsWith("TO:") && nextTrimmed === nextTrimmed.toUpperCase() && /[A-Z]/.test(nextTrimmed);
+          const nextIsOutline = nextTrimmed.startsWith("#") || nextTrimmed.startsWith("=");
+          const nextIsForced = nextTrimmed.startsWith("@") || nextTrimmed.startsWith("!") || nextTrimmed.startsWith("~");
+
+          if (!nextIsHeading && !nextIsTransition && !nextIsOutline && !nextIsForced) {
+            isChar = true;
+          }
+        }
+      }
+    }
+
+    if (isChar) {
+      dialogueMergedLines.push(line);
+      let j = idx + 1;
+      while (j < cleanedLinesText.length) {
+        const nextLine = cleanedLinesText[j];
+        const nextTrimmed = nextLine.trim();
+        if (nextTrimmed === "") {
+          j++;
+          continue;
+        }
+        const nextIsHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextTrimmed) || nextTrimmed.startsWith(".");
+        const nextIsTransition = nextTrimmed.endsWith("TO:") && nextTrimmed === nextTrimmed.toUpperCase() && /[A-Z]/.test(nextTrimmed);
+        const nextIsOutline = nextTrimmed.startsWith("#") || nextTrimmed.startsWith("=");
+        const nextIsForced = nextTrimmed.startsWith("@") || nextTrimmed.startsWith("!") || nextTrimmed.startsWith("~");
+
+        let isNewChar = false;
+        if (nextTrimmed === nextTrimmed.toUpperCase() && /[A-Z]/.test(nextTrimmed)) {
+          let crossedEmpty = false;
+          for (let k = idx + 1; k < j; k++) {
+            if (cleanedLinesText[k].trim() === "") {
+              crossedEmpty = true;
+              break;
+            }
+          }
+          if (crossedEmpty) {
+            isNewChar = true;
+          }
+        }
+
+        if (nextIsHeading || nextIsTransition || nextIsOutline || nextIsForced || isNewChar) {
+          let crossedEmpty = false;
+          for (let k = idx + 1; k < j; k++) {
+            if (cleanedLinesText[k].trim() === "") {
+              crossedEmpty = true;
+              break;
+            }
+          }
+          if (crossedEmpty) {
+            dialogueMergedLines.push("");
+          }
+          break;
+        }
+
+        dialogueMergedLines.push(nextLine);
+        j++;
+      }
+      idx = j;
+    } else {
+      dialogueMergedLines.push(line);
+      idx++;
+    }
+  }
+
+  const cleanedRawText = dialogueMergedLines.join("\n");
+  const cleanedDoc = parseScreenplay(cleanedRawText, paperSize);
+
+  let firstBodyIndex = -1;
+  for (let i = 0; i < cleanedDoc.lines.length; i++) {
+    const line = cleanedDoc.lines[i];
+    const t = line.type;
+    const isTitleType = t >= LineType.titlePageTitle && t <= LineType.titlePageUnknown;
+    if (!isTitleType && t !== LineType.empty) {
+      firstBodyIndex = i;
+      break;
+    }
+  }
+
+  if (firstBodyIndex === -1) {
+    const titlePageLines: string[] = [];
+    let lastWasEmpty = false;
+    for (const line of dialogueMergedLines) {
+      if (line === "") {
+        if (!lastWasEmpty) {
+          titlePageLines.push("");
+          lastWasEmpty = true;
+        }
+      } else {
+        titlePageLines.push(line);
+        lastWasEmpty = false;
+      }
+    }
+    return titlePageLines.join("\n");
+  }
+
+  const titlePageLines: string[] = [];
+  let lastWasEmpty = false;
+  for (const line of dialogueMergedLines.slice(0, firstBodyIndex)) {
+    if (line === "") {
+      if (!lastWasEmpty) {
+        titlePageLines.push("");
+        lastWasEmpty = true;
+      }
+    } else {
+      titlePageLines.push(line);
+      lastWasEmpty = false;
+    }
+  }
+
+  const bodyElements = cleanedDoc.lines
+    .slice(firstBodyIndex)
+    .map((line, iIdx) => ({
+      ...line,
+      originalIndex: firstBodyIndex + iIdx
+    }))
+    .filter(line => line.type !== LineType.empty);
+
+  const isOutlineLine = (line: any) => {
+    return line.type === LineType.section || line.type === LineType.synopse || !!line.marker;
+  };
+
+  const isDialogueType = (type: LineType) => {
+    return (
+      type === LineType.character ||
+      type === LineType.parenthetical ||
+      type === LineType.dialogue ||
+      type === LineType.dualDialogueCharacter ||
+      type === LineType.dualDialogueParenthetical ||
+      type === LineType.dualDialogue
+    );
+  };
+
+  const isDialogueSubElement = (type: LineType) => {
+    return (
+      type === LineType.parenthetical ||
+      type === LineType.dialogue ||
+      type === LineType.dualDialogueParenthetical ||
+      type === LineType.dualDialogue
+    );
+  };
+
+  const hasEmptyBetween = (startIdx: number, endIdx: number): boolean => {
+    for (let i = startIdx + 1; i < endIdx; i++) {
+      if (cleanedDoc.lines[i].type === LineType.empty) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const resultLines: string[] = [...titlePageLines];
+  let prevElement: any = null;
+
+  for (let i = 0; i < bodyElements.length; i++) {
+    const curr = bodyElements[i];
+    if (prevElement === null) {
+      resultLines.push(curr.text);
+    } else {
+      let spacing = 1;
+      const prevIsOutline = isOutlineLine(prevElement);
+      const currIsOutline = isOutlineLine(curr);
+
+      if (prevIsOutline && currIsOutline) {
+        spacing = 0;
+      } else if (isDialogueSubElement(curr.type) && isDialogueType(prevElement.type)) {
+        spacing = 0;
+      } else if (curr.type === LineType.action && prevElement.type === LineType.action) {
+        spacing = hasEmptyBetween(prevElement.originalIndex, curr.originalIndex) ? 1 : 0;
+      } else if (curr.type === LineType.lyrics && prevElement.type === LineType.lyrics) {
+        spacing = hasEmptyBetween(prevElement.originalIndex, curr.originalIndex) ? 1 : 0;
+      } else {
+        spacing = 1;
+      }
+
+      if (spacing === 1) {
+        resultLines.push("");
+      }
+      resultLines.push(curr.text);
+    }
+    prevElement = curr;
+  }
+
+  const finalParsedLines = resultLines.map(text => ({
+    text,
+    type: LineType.empty
+  } as ParsedLine));
+
+  return serializeScreenplay(finalParsedLines, doc.settings);
 }

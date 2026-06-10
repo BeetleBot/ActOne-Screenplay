@@ -223,7 +223,8 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
     }
 
     if (type === LINE_HEADING) {
-      const sceneNumMatch = trimmed.match(/#([^#]+)#\s*$/);
+      let workingText = trimmed.replace(/\[\[.*?\]\]\s*$/, "").trim();
+      const sceneNumMatch = workingText.match(/#([^#]+)#\s*$/);
       if (sceneNumMatch) {
         const num = sceneNumMatch[1].trim();
         lineDecos.push({
@@ -234,7 +235,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
         const hashStart = line.text.lastIndexOf("#" + sceneNumMatch[1] + "#");
         if (hashStart >= 0) {
           lineDecos.push({
-            from: line.from + hashStart, to: line.to, dec: Decoration.mark({ class: "cm-fountain-syntax" })
+            from: line.from + hashStart, to: line.from + hashStart + sceneNumMatch[0].trim().length, dec: Decoration.mark({ class: "cm-fountain-syntax" })
           });
         }
       }
@@ -280,11 +281,70 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       const noteContent = noteM[1].trim().toLowerCase();
       const noteFrom = line.from + noteM.index;
       const noteTo = noteFrom + noteM[0].length;
+      let parsedColor: string | null = null;
       if (noteContent.startsWith("marker")) {
-        lineDecos.push({ from: noteFrom, to: noteTo, dec: Decoration.mark({ class: "cm-fountain-marker" }) });
+        const markerBody = noteM[1].trim().substring(6).trim();
+        let markerColor = "orange";
+        const colonIdx = markerBody.indexOf(":");
+        if (colonIdx !== -1) {
+          const beforeColon = markerBody.substring(0, colonIdx).trim().toLowerCase();
+          if (/^(blue|brown|cyan|green|magenta|none|orange|pink|purple|red|yellow)$/.test(beforeColon) ||
+              (beforeColon.startsWith("#") && beforeColon.length === 7)) {
+            markerColor = beforeColon;
+          }
+        } else if (/^(blue|brown|cyan|green|magenta|none|orange|pink|purple|red|yellow)$/.test(markerBody.toLowerCase())) {
+          markerColor = markerBody.toLowerCase();
+        }
+        parsedColor = markerColor;
+      } else if (/^(blue|brown|cyan|green|magenta|none|orange|pink|purple|red|yellow)$/.test(noteContent) ||
+                 (noteContent.startsWith("#") && noteContent.length === 7)) {
+        parsedColor = noteContent;
+      }
+
+      if (noteContent.startsWith("marker")) {
+        const colorVal = (parsedColor && parsedColor !== "none")
+          ? (parsedColor.startsWith("#") ? parsedColor : `var(--scene-color-${parsedColor})`)
+          : "var(--scene-color-orange)";
+        lineDecos.push({
+          from: noteFrom,
+          to: noteTo,
+          dec: Decoration.mark({
+            class: "cm-fountain-marker",
+            attributes: { style: `color: ${colorVal}` }
+          })
+        });
       } else if (noteContent.startsWith("color") || noteContent.startsWith("storyline") ||
                  /^(red|blue|green|pink|magenta|gray|purple|cyan|teal|yellow|orange|brown)$/.test(noteContent)) {
-        lineDecos.push({ from: noteFrom, to: noteTo, dec: Decoration.mark({ class: "cm-fountain-note-tag" }) });
+        const colorVal = (parsedColor && parsedColor !== "none")
+          ? (parsedColor.startsWith("#") ? parsedColor : `var(--scene-color-${parsedColor})`)
+          : undefined;
+        lineDecos.push({
+          from: noteFrom,
+          to: noteTo,
+          dec: Decoration.mark({
+            class: "cm-fountain-note-tag",
+            ...(colorVal ? { attributes: { style: `color: ${colorVal}` } } : {})
+          })
+        });
+      }
+    }
+
+    const prodTags = docObj?.settings?.productionTags;
+    if (prodTags && prodTags.tags) {
+      for (const tag of prodTags.tags) {
+        if (tag.range) {
+          const [start, len] = tag.range;
+          const end = start + len;
+          const tagFrom = Math.max(line.from, start);
+          const tagTo = Math.min(line.to, end);
+          if (tagFrom < tagTo) {
+            lineDecos.push({
+              from: tagFrom,
+              to: tagTo,
+              dec: Decoration.mark({ class: `cm-tag-${tag.type}` })
+            });
+          }
+        }
       }
     }
 

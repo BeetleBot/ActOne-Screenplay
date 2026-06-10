@@ -55,3 +55,21 @@ pub fn export_to_pdf(
     };
     exporter.export_to_file(&screenplay, path)
 }
+
+pub fn get_page_breaks(
+    fountain_text: &str,
+    config: PdfExportConfig,
+) -> std::io::Result<Vec<usize>> {
+    let screenplay = parse(fountain_text);
+    let exporter = PdfExporter {
+        paper_size: config.paper_size,
+        bold_scene_headings: config.bold_scene_headings,
+        mirror_scene_numbers: config.mirror_scene_numbers,
+        sections: config.export_sections,
+        synopses: config.export_synopses,
+        export_font: config.export_font,
+        revised_lines: config.revised_lines,
+        title_page: config.export_title_page,
+    };
+    exporter.get_page_breaks(&screenplay)
+}

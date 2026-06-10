@@ -161,7 +161,7 @@ impl Exporter for PdfExporter {
             margins: get_margins(&self.paper_size),
         };
 
-        self.generate_pdf(&mut document, &layout_info, screenplay, &mut font_system)?;
+        self.generate_pdf(&mut document, &layout_info, screenplay, &mut font_system).map(|_| ())?;
 
         let pdf = document
             .finish()
@@ -177,7 +177,7 @@ impl PdfExporter {
         layout_info: &LayoutInfo,
         screenplay: &Screenplay,
         font_system: &mut FontSystem,
-    ) -> std::io::Result<()> {
+    ) -> std::io::Result<Vec<usize>> {
         let mut element_iter = screenplay.elements.iter().peekable();
         let mut page_idx = 0;
 
@@ -191,11 +191,21 @@ impl PdfExporter {
         let mut outline = Outline::new();
         let mut font_cache = HashMap::new();
 
+        let mut page_breaks = Vec::new();
+
         let has_title_page = self.title_page && screenplay.titlepage.is_some();
         if let (true, Some(t)) = (has_title_page, &screenplay.titlepage) {
             page_idx += 1;
             write_titlepage(t, layout_info, document, font_system, &mut font_cache)?;
         }
+
+        if has_title_page {
+            if let Some(Span { start_line, .. }) = element_iter.peek() {
+                page_breaks.push(*start_line);
+            }
+        }
+
+        let mut content_page_idx = 0;
 
         while element_iter.peek().is_some() {
             let mut page = document.start_page_with(
@@ -204,6 +214,23 @@ impl PdfExporter {
             );
             let mut surface = page.surface();
             let mut y_pos = top;
+
+            if content_page_idx > 0 {
+                if let Some(Span { start_line, .. }) = element_iter.peek() {
+                    let mut break_line = *start_line;
+                    if let Some(res_idx) = residual_element_idx {
+                        break_line = start_line + res_idx;
+                    } else if let Some((el_idx, res_idx)) = residual_dialogue_idx {
+                        break_line = start_line + 1 + el_idx + res_idx;
+                    } else if let Some((el_idx, res_idx)) = residual_dual_dialogue_idx.0 {
+                        break_line = start_line + 1 + el_idx + res_idx;
+                    } else if let Some((el_idx, res_idx)) = residual_dual_dialogue_idx.1 {
+                        break_line = start_line + 1 + el_idx + res_idx;
+                    }
+                    page_breaks.push(break_line);
+                }
+            }
+            content_page_idx += 1;
 
             if (has_title_page && page_idx > 1) || (!has_title_page && page_idx > 0) {
                 let page_num_text: RichString = format!(
@@ -242,8 +269,56 @@ impl PdfExporter {
                 inner: element,
             }) = element_iter.peek()
             {
+                let mut is_skipped = false;
+                match element {
+                    Element::Synopsis(_) if !self.synopses => is_skipped = true,
+                    Element::Section(_) if !self.sections => is_skipped = true,
+                    _ => {}
+                }
+                if is_skipped {
+                    element_iter.next();
+                    continue;
+                }
+
                 if y_pos >= max_y {
                     break;
+                }
+
+                let mut peek_next_iter = element_iter.clone();
+                peek_next_iter.next();
+                let mut next_non_skipped = None;
+                while let Some(span) = peek_next_iter.peek() {
+                    let mut is_next_skipped = false;
+                    match &span.inner {
+                        Element::Synopsis(_) if !self.synopses => is_next_skipped = true,
+                        Element::Section(_) if !self.sections => is_next_skipped = true,
+                        _ => {}
+                    }
+                    if is_next_skipped {
+                        peek_next_iter.next();
+                    } else {
+                        next_non_skipped = Some(&span.inner);
+                        break;
+                    }
+                }
+
+                if let Some(Element::Transition(trans_rich_str)) = next_non_skipped {
+                    let current_height = super::elements::measure_full_element_height(
+                        element,
+                        font_system,
+                        layout_info,
+                    );
+                    let trans_height = super::elements::measure_element_height(
+                        font_system,
+                        trans_rich_str,
+                        &layout_info.margins.transition,
+                        layout_info.size,
+                        layout_info.export_font,
+                    );
+                    let remaining = max_y - y_pos;
+                    if y_pos > top && remaining < current_height + trans_height {
+                        break;
+                    }
                 }
 
                 let is_revised = match element_iter.peek() {
@@ -278,9 +353,24 @@ impl PdfExporter {
                         );
                         let mut peek_next_iter = element_iter.clone();
                         peek_next_iter.next();
-                        let min_next_height = if let Some(next_span) = peek_next_iter.peek() {
+                        let mut next_element = None;
+                        while let Some(span) = peek_next_iter.peek() {
+                            let mut is_skipped = false;
+                            match &span.inner {
+                                Element::Synopsis(_) if !self.synopses => is_skipped = true,
+                                Element::Section(_) if !self.sections => is_skipped = true,
+                                _ => {}
+                            }
+                            if is_skipped {
+                                peek_next_iter.next();
+                            } else {
+                                next_element = Some(&span.inner);
+                                break;
+                            }
+                        }
+                        let min_next_height = if let Some(el) = next_element {
                             super::elements::min_required_height_for_lookahead(
-                                &next_span.inner,
+                                el,
                                 ctx.font_system,
                                 layout_info,
                             )
@@ -391,6 +481,26 @@ impl PdfExporter {
                         let saved_y = *ctx.y_position;
                         let mut premature_exit = false;
 
+                        if residual_dual_dialogue_idx.0.is_none()
+                            && residual_dual_dialogue_idx.1.is_none()
+                        {
+                            let h0 = super::elements::min_required_height_for_lookahead(
+                                &Element::Dialogue(dialogue0.clone()),
+                                ctx.font_system,
+                                layout_info,
+                            );
+                            let h1 = super::elements::min_required_height_for_lookahead(
+                                &Element::Dialogue(dialogue1.clone()),
+                                ctx.font_system,
+                                layout_info,
+                            );
+                            let min_dual_height = h0.max(h1);
+                            let remaining = max_y - *ctx.y_position;
+                            if remaining < min_dual_height {
+                                break;
+                            }
+                        }
+
                         if (residual_dual_dialogue_idx.0.is_none()
                             && residual_dual_dialogue_idx.1.is_none())
                             || residual_dual_dialogue_idx.0.is_some()
@@ -481,9 +591,24 @@ impl PdfExporter {
                         );
                         let mut peek_next_iter = element_iter.clone();
                         peek_next_iter.next();
-                        let min_next_height = if let Some(next_span) = peek_next_iter.peek() {
+                        let mut next_element = None;
+                        while let Some(span) = peek_next_iter.peek() {
+                            let mut is_skipped = false;
+                            match &span.inner {
+                                Element::Synopsis(_) if !self.synopses => is_skipped = true,
+                                Element::Section(_) if !self.sections => is_skipped = true,
+                                _ => {}
+                            }
+                            if is_skipped {
+                                peek_next_iter.next();
+                            } else {
+                                next_element = Some(&span.inner);
+                                break;
+                            }
+                        }
+                        let min_next_height = if let Some(el) = next_element {
                             super::elements::min_required_height_for_lookahead(
-                                &next_span.inner,
+                                el,
                                 ctx.font_system,
                                 layout_info,
                             )
@@ -549,9 +674,24 @@ impl PdfExporter {
                             );
                             let mut peek_next_iter = element_iter.clone();
                             peek_next_iter.next();
-                            let min_next_height = if let Some(next_span) = peek_next_iter.peek() {
+                            let mut next_element = None;
+                            while let Some(span) = peek_next_iter.peek() {
+                                let mut is_skipped = false;
+                                match &span.inner {
+                                    Element::Synopsis(_) if !self.synopses => is_skipped = true,
+                                    Element::Section(_) if !self.sections => is_skipped = true,
+                                    _ => {}
+                                }
+                                if is_skipped {
+                                    peek_next_iter.next();
+                                } else {
+                                    next_element = Some(&span.inner);
+                                    break;
+                                }
+                            }
+                            let min_next_height = if let Some(el) = next_element {
                                 super::elements::min_required_height_for_lookahead(
-                                    &next_span.inner,
+                                    el,
                                     ctx.font_system,
                                     layout_info,
                                 )
@@ -611,7 +751,78 @@ impl PdfExporter {
         }
         document.set_outline(outline);
 
-        Ok(())
+        Ok(page_breaks)
+    }
+
+    pub fn get_page_breaks(&self, screenplay: &Screenplay) -> std::io::Result<Vec<usize>> {
+        let mut document = Document::new();
+        let mut font_system = build_font_system();
+
+        let courier = CourierFonts {
+            regular: Font::new(FONTS[0].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load regular font"))?,
+            bold: Font::new(FONTS[1].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load bold font"))?,
+            italic: Font::new(FONTS[2].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load italic font"))?,
+            bold_italic: Font::new(FONTS[3].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load bold-italic font"))?,
+            sans_regular: Font::new(FONTS[4].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load sans regular font"))?,
+            sans_bold: Font::new(FONTS[5].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load sans bold font"))?,
+            sans_italic: Font::new(FONTS[6].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load sans italic font"))?,
+            sans_bold_italic: Font::new(FONTS[7].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load sans bold-italic font"))?,
+        };
+
+        let noto = NotoFonts {
+            tamil_regular: Font::new(NOTO_FONTS[0].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load tamil regular font"))?,
+            tamil_bold: Font::new(NOTO_FONTS[1].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load tamil bold font"))?,
+            devanagari_regular: Font::new(NOTO_FONTS[2].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load devanagari regular font"))?,
+            devanagari_bold: Font::new(NOTO_FONTS[3].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load devanagari bold font"))?,
+            telugu_regular: Font::new(NOTO_FONTS[4].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load telugu regular font"))?,
+            telugu_bold: Font::new(NOTO_FONTS[5].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load telugu bold font"))?,
+            malayalam_regular: Font::new(NOTO_FONTS[6].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load malayalam regular font"))?,
+            malayalam_bold: Font::new(NOTO_FONTS[7].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load malayalam bold font"))?,
+            kannada_regular: Font::new(NOTO_FONTS[8].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load kannada regular font"))?,
+            kannada_bold: Font::new(NOTO_FONTS[9].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load kannada bold font"))?,
+            bengali_regular: Font::new(NOTO_FONTS[10].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load bengali regular font"))?,
+            bengali_bold: Font::new(NOTO_FONTS[11].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load bengali bold font"))?,
+            gujarati_regular: Font::new(NOTO_FONTS[12].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load gujarati regular font"))?,
+            gujarati_bold: Font::new(NOTO_FONTS[13].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load gujarati bold font"))?,
+            gurmukhi_regular: Font::new(NOTO_FONTS[14].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load gurmukhi regular font"))?,
+            gurmukhi_bold: Font::new(NOTO_FONTS[15].into(), 0)
+                .ok_or_else(|| std::io::Error::other("failed to load gurmukhi bold font"))?,
+        };
+
+        let all_fonts = AllFonts { courier, noto };
+
+        let layout_info = LayoutInfo {
+            size: &self.paper_size,
+            fonts: &all_fonts,
+            export_font: &self.export_font,
+            revised_lines: &self.revised_lines,
+            margins: get_margins(&self.paper_size),
+        };
+
+        self.generate_pdf(&mut document, &layout_info, screenplay, &mut font_system)
     }
 }
 
@@ -639,6 +850,73 @@ This is a test of parenthetical and normal text:
         let mut out = Vec::new();
         let res = exporter.export(&screenplay, &mut out);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_transition_lookahead_breaks() {
+        let fountain_text = r#"
+.SCENE 1
+
+Action line 1.
+Action line 2.
+Action line 3.
+Action line 4.
+Action line 5.
+Action line 6.
+Action line 7.
+Action line 8.
+Action line 9.
+Action line 10.
+Action line 11.
+Action line 12.
+Action line 13.
+Action line 14.
+Action line 15.
+Action line 16.
+Action line 17.
+Action line 18.
+Action line 19.
+Action line 20.
+Action line 21.
+Action line 22.
+Action line 23.
+Action line 24.
+Action line 25.
+Action line 26.
+Action line 27.
+Action line 28.
+Action line 29.
+Action line 30.
+Action line 31.
+Action line 32.
+Action line 33.
+Action line 34.
+Action line 35.
+Action line 36.
+Action line 37.
+Action line 38.
+Action line 39.
+Action line 40.
+Action line 41.
+Action line 42.
+Action line 43.
+Action line 44.
+Action line 45.
+Action line 46.
+Action line 47.
+Action line 48.
+Action line 49.
+Action line 50.
+
+> CUT TO:
+"#;
+        let screenplay = crate::pdf::parse(fountain_text);
+        let exporter = PdfExporter {
+            title_page: false,
+            ..Default::default()
+        };
+        let page_breaks = exporter.get_page_breaks(&screenplay);
+        assert!(page_breaks.is_ok());
     }
 }
 
