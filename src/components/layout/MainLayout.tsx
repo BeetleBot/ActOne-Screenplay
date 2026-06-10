@@ -25,7 +25,7 @@ import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
-import { FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon, AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, RemoveIcon, CropSquareIcon, CloseIcon, CheckIcon, AddIcon, RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon } from "../Icons";
+import { FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon, AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CloseIcon, CheckIcon, AddIcon, RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon } from "../Icons";
 
 
 
@@ -230,49 +230,52 @@ const HeaderBar: React.FC = () => {
           </Tooltip>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, px: 0.5 }}>
-          <IconButton 
-            size="small" 
-            onClick={handleMinimize} 
-            title="Minimize" 
-            sx={{ 
-              p: '6px', borderRadius: 0, 
+        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <IconButton
+            onClick={handleMinimize}
+            title="Minimize"
+            sx={{
+              width: 46, height: 38, borderRadius: 0,
               color: 'rgba(255, 255, 255, 0.6)',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'white' } 
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'white' },
             }}
           >
-            <RemoveIcon sx={{ fontSize: 10, fontWeight: 700 }} />
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6H10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
           </IconButton>
-          <IconButton 
-            size="small" 
-            onClick={handleMaximize} 
-            title={isMaximized ? "Restore" : "Maximize"} 
-            sx={{ 
-              p: '6px', borderRadius: 0, 
+          <IconButton
+            onClick={handleMaximize}
+            title={isMaximized ? "Restore" : "Maximize"}
+            sx={{
+              width: 46, height: 38, borderRadius: 0,
               color: 'rgba(255, 255, 255, 0.6)',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'white' } 
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'white' },
             }}
           >
             {isMaximized ? (
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 1H9V7" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M1 3H7V9H1V3Z" stroke="currentColor" strokeWidth="1.2" />
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M4 2H10V8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 4H8V10H2V4Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
               </svg>
             ) : (
-              <CropSquareIcon sx={{ fontSize: 8, fontWeight: 700 }} />
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.3" />
+              </svg>
             )}
           </IconButton>
-          <IconButton 
-            size="small" 
-            onClick={handleClose} 
-            title="Close" 
-            sx={{ 
-              p: '6px', borderRadius: 0, 
+          <IconButton
+            onClick={handleClose}
+            title="Close"
+            sx={{
+              width: 46, height: 38, borderRadius: 0,
               color: 'rgba(255, 255, 255, 0.6)',
-              '&:hover': { bgcolor: '#e81123', color: 'white' } 
+              '&:hover': { bgcolor: '#e81123', color: 'white' },
             }}
           >
-            <CloseIcon sx={{ fontSize: 10, fontWeight: 700 }} />
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
           </IconButton>
         </Box>
       </Box>

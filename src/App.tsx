@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { AppProviders } from "./context/AppProviders";
 import { useFile } from "./context/FileContext";
 import { useUI } from "./context/UIContext";
@@ -8,11 +8,17 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useNativeAppBehavior } from "./hooks/useNativeAppBehavior";
 import { MainLayout } from "./components/layout/MainLayout";
 import { ModalManager } from "./components/ModalManager";
-import { WelcomeScreen } from "./components/WelcomeScreen";
+import { WelcomeScreenWindow } from "./components/WelcomeScreen";
 import { WindowResizeHandles } from "./components/WindowResizeHandles";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { SprintProvider } from "./context/SprintContext";
+
+const params = new URLSearchParams(window.location.search);
+const action = params.get("action");
+const isEditorWindow = action === "new" || action === "open" || action === "template";
 
 function AppInner() {
   useNativeAppBehavior();
@@ -27,7 +33,7 @@ function AppInner() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showBreakdownModal, setShowBreakdownModal] = useState(false);
 
-  const { newFile, openFile, saveFile, saveFileAs, closeFile, activeFileId, files } = useFile();
+  const { newFile, openFile, saveFile, saveFileAs, closeFile, activeFileId, files, openFilePath } = useFile();
   const { editorView } = useEditor();
   const {
     zoomLevel,
@@ -63,13 +69,71 @@ function AppInner() {
     isDisabled: isModalActive,
   });
 
-  if (files.length === 0) {
+  // Editor window: handle the action param on mount (once only)
+  const initialActionHandled = useRef(false);
+  useEffect(() => {
+    if (!isEditorWindow || initialActionHandled.current) return;
+    initialActionHandled.current = true;
+
+    if (action === "new") {
+      newFile();
+      localStorage.removeItem("pending-action");
+    } else if (action === "open") {
+      const path = localStorage.getItem("pending-open-path");
+      localStorage.removeItem("pending-open-path");
+      localStorage.removeItem("pending-action");
+      if (path) openFilePath(path);
+    } else if (action === "template") {
+      newFile();
+      setShowStructureModal(true);
+      localStorage.removeItem("pending-action");
+    }
+  }, []);
+
+  // Editor window: detect transition from >0 files to 0 files → reopen welcome
+  const prevFilesLength = useRef(0);
+  useEffect(() => {
+    if (!isEditorWindow) return;
+    const prev = prevFilesLength.current;
+    prevFilesLength.current = files.length;
+    if (prev > 0 && files.length === 0) {
+      reopenWelcomeWindow();
+    }
+  }, [files.length]);
+
+  const reopenWelcomeWindow = async () => {
+    try {
+      const webview = new WebviewWindow("welcome", {
+        url: "/",
+        width: 600,
+        height: 540,
+        center: true,
+        decorations: false,
+        resizable: false,
+      });
+      await Promise.race([
+        new Promise<void>((resolve) => webview.once("tauri://created", () => resolve())),
+        new Promise<void>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+      ]);
+      await getCurrentWindow().close();
+    } catch (e) {
+      console.error("Failed to reopen welcome window:", e);
+    }
+  };
+
+  // Standalone welcome window
+  if (!isEditorWindow && files.length === 0) {
     return (
       <>
-        <WindowResizeHandles showDragHandle />
-        <WelcomeScreen />
+        <WindowResizeHandles resizeEnabled={false} showDragHandle />
+        <WelcomeScreenWindow standalone />
       </>
     );
+  }
+
+  // Editor window — will close and reopen welcome via useEffect when files hit 0
+  if (files.length === 0) {
+    return null;
   }
 
   return (

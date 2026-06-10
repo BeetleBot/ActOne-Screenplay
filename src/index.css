@@ -46,6 +46,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Allow text selection only in editor content and form fields */

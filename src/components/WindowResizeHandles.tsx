@@ -64,9 +64,10 @@ async function ensureTauri() {
 
 interface WindowResizeHandlesProps {
   showDragHandle?: boolean;
+  resizeEnabled?: boolean;
 }
 
-export const WindowResizeHandles: React.FC<WindowResizeHandlesProps> = ({ showDragHandle = false }) => {
+export const WindowResizeHandles: React.FC<WindowResizeHandlesProps> = ({ showDragHandle = false, resizeEnabled = true }) => {
 
   const onEdgeMouseDown = useCallback((dir: Dir, e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -95,7 +96,7 @@ export const WindowResizeHandles: React.FC<WindowResizeHandlesProps> = ({ showDr
 
   return (
     <>
-      {dirs.map((dir) => (
+      {resizeEnabled && dirs.map((dir) => (
         <div
           key={dir}
           style={edgeStyle(dir)}
@@ -106,10 +107,10 @@ export const WindowResizeHandles: React.FC<WindowResizeHandlesProps> = ({ showDr
         <div
           style={{
             position: "fixed",
-            top: EDGE_SIZE,
+            top: 0,
             left: 0,
             right: 0,
-            height: 24,
+            height: 28,
             zIndex: 99998,
           }}
           onMouseDown={handleDrag}

@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useFile } from "../context/FileContext";
+import { invoke } from "@tauri-apps/api/core";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getVersion } from "@tauri-apps/api/app";
+import { HelpModal } from "./HelpModal";
 import {
   Box,
   Typography,
   Button,
-  Grid,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  IconButton,
+  Chip,
 } from "@mui/material";
 
 interface Quote {
@@ -54,259 +53,376 @@ function getDynamicQuote(): Quote {
 }
 
 import logoImage from "../assets/logo.png";
-import { AddIcon, FolderOpenIcon, DescriptionIcon, DeleteIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon } from "./Icons";
 
+const ActionCard: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  highlighted?: boolean;
+  onClick: () => void;
+}> = ({ icon, title, description, highlighted, onClick }) => (
+  <Box
+    onClick={onClick}
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 1.5,
+      width: 340,
+      p: 1.25,
+      borderRadius: 2.5,
+      cursor: "pointer",
+      bgcolor: highlighted ? "primary.main" : "background.paper",
+      color: highlighted ? "primary.contrastText" : "text.primary",
+      border: highlighted ? "none" : 1,
+      borderColor: "divider",
+      transition: "all 0.15s ease",
+      "&:hover": {
+        bgcolor: highlighted ? "primary.dark" : "action.hover",
+        transform: "translateY(-1px)",
+        boxShadow: (theme: any) =>
+          highlighted
+            ? `0 4px 16px ${theme.palette.primary.main}50`
+            : `0 2px 8px rgba(0,0,0,0.06)`,
+      },
+    }}
+  >
+    <Box
+      sx={{
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 32,
+        height: 32,
+        borderRadius: 2,
+        bgcolor: highlighted ? "rgba(255,255,255,0.15)" : "action.selected",
+        color: highlighted ? "inherit" : "text.secondary",
+      }}
+    >
+      {icon}
+    </Box>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        variant="subtitle2"
+        sx={{ fontWeight: 700, fontSize: 12.5, lineHeight: 1.3 }}
+      >
+        {title}
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          color: highlighted ? "rgba(255,255,255,0.65)" : "text.secondary",
+          fontSize: 10.5,
+          lineHeight: 1.2,
+          display: "block",
+          mt: 0.15,
+        }}
+      >
+        {description}
+      </Typography>
+    </Box>
+  </Box>
+);
 
-export const WelcomeScreen: React.FC = () => {
+interface WelcomeScreenWindowProps {
+  standalone?: boolean;
+}
+
+export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false }) => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
+  const [showHelp, setShowHelp] = useState(false);
+  const [appVersion, setAppVersion] = useState("");
 
   useEffect(() => {
     setQuote(getDynamicQuote());
+    getVersion().then(setAppVersion).catch(() => setAppVersion("0.1.0"));
   }, []);
 
+  const createEditorWindow = async (action: string): Promise<boolean> => {
+    try {
+      const webview = new WebviewWindow("main", {
+        url: `/?action=${action}`,
+        title: "ActOne",
+        width: 1000,
+        height: 700,
+        decorations: false,
+      });
+      await Promise.race([
+        new Promise<void>((resolve) => webview.once("tauri://created", () => resolve())),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 5000)
+        ),
+      ]);
+      return true;
+    } catch (e) {
+      console.error("Failed to create editor window:", e);
+      return false;
+    }
+  };
+
+  const closeWelcome = async () => {
+    try {
+      await getCurrentWindow().close();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleNew = async () => {
+    if (standalone) {
+      try {
+        localStorage.setItem("pending-action", "new");
+        const created = await createEditorWindow("new");
+        if (created) { closeWelcome(); return; }
+      } catch (e) { console.error(e); }
+    }
+    newFile();
+  };
+
+  const handleOpen = async () => {
+    if (standalone) {
+      try {
+        const result = await invoke<{ path: string; content: string } | null>("open_file_dialog");
+        if (result && result.path) {
+          localStorage.setItem("pending-open-path", result.path);
+          localStorage.setItem("pending-action", "open");
+          const created = await createEditorWindow("open");
+          if (created) { closeWelcome(); return; }
+        }
+      } catch (e) { console.error(e); }
+    }
+    await openFile();
+  };
+
+  const handleTemplates = async () => {
+    if (standalone) {
+      try {
+        localStorage.setItem("pending-action", "template");
+        const created = await createEditorWindow("template");
+        if (created) { closeWelcome(); return; }
+      } catch (e) { console.error(e); }
+    }
+    newFile();
+  };
+
+  const handleOpenRecent = async (path: string) => {
+    if (standalone) {
+      try {
+        localStorage.setItem("pending-open-path", path);
+        localStorage.setItem("pending-action", "open");
+        const created = await createEditorWindow("open");
+        if (created) { closeWelcome(); return; }
+      } catch (e) { console.error(e); }
+    }
+    openFilePath(path);
+  };
+
+  const handleHelp = () => {
+    setShowHelp(true);
+  };
+
   return (
+    <>
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     <Box
       sx={{
-        position: "fixed",
-        inset: 0,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
         bgcolor: "background.default",
         color: "text.primary",
         overflow: "hidden",
+        position: "relative",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "40%",
+          background: (theme: any) =>
+            `radial-gradient(ellipse 80% 60% at 50% -10%, ${theme.palette.primary.main}10 0%, transparent 70%)`,
+          pointerEvents: "none",
+        },
       }}
     >
-      <Grid container sx={{ height: "100%" }}>
-        {/* Left Side: Branding, Quote, and Main Actions */}
-        <Grid
-          size={{ xs: 12, md: 5 }}
-          sx={{
-            p: { xs: 4, sm: 6, md: 8 },
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            bgcolor: "background.paper",
-            borderRight: { md: 1 },
-            borderBottom: { xs: 1, md: 0 },
-            borderColor: "divider",
-            height: "100%",
-            overflowY: "auto",
-          }}
-        >
-          {/* Quote & Buttons */}
-          <Box sx={{ my: "auto", py: 4 }}>
-            <Box
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          px: 4,
+        }}
+      >
+        {/* Logo with glow */}
+        <Box sx={{ position: "relative", width: 180, height: 180, mb: 1.5 }}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 340,
+              height: 340,
+              borderRadius: "50%",
+              background: (theme: any) =>
+                `radial-gradient(ellipse, ${theme.palette.primary.main}18 0%, transparent 70%)`,
+              pointerEvents: "none",
+            }}
+          />
+          <img
+            src={logoImage}
+            alt="ActOne"
+            style={{ width: "100%", height: "100%", objectFit: "contain", position: "relative" }}
+          />
+        </Box>
+
+        {/* Quote */}
+        {quote.text && (
+          <Box sx={{ mb: 2.5, textAlign: "center", maxWidth: 440 }}>
+            <Typography
               sx={{
-                width: { xs: 200, sm: 300, md: 400 },
-                height: { xs: 200, sm: 300, md: 400 },
-                mb: 6,
-                mx: "auto",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                fontSize: 14,
+                fontWeight: 800,
+                lineHeight: 1.35,
+                fontFamily: '"Courier Prime", monospace',
+                textTransform: "uppercase",
+                opacity: 0.75,
               }}
             >
-              <img src={logoImage} alt="ActOne Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </Box>
-
-            {quote.text && (
-              <Box sx={{ mb: 5, textAlign: "center" }}>
-                <Typography
-                  variant="h5"
-                  sx={{
-                    fontWeight: 700,
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.3,
-                    fontFamily: '"Courier Prime", monospace',
-                    textTransform: "uppercase",
-                  }}
-                >
-                  "{quote.text}"
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{
-                    display: "block",
-                    mt: 2,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  — {quote.author}
-                </Typography>
-              </Box>
-            )}
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxWidth: 320, mx: "auto" }}>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<AddIcon sx={{ fontSize: 18 }} />}
-                onClick={() => newFile()}
-                sx={{
-                  justifyContent: "flex-start",
-                  py: 1.5,
-                  px: 2.5,
-                  borderRadius: 2.5,
-                  fontWeight: 600,
-                  textTransform: "none",
-                }}
-              >
-                New Screenplay
-              </Button>
-              <Button
-                variant="outlined"
-                size="large"
-                startIcon={<FolderOpenIcon sx={{ fontSize: 18 }} />}
-                onClick={openFile}
-                sx={{
-                  justifyContent: "flex-start",
-                  py: 1.5,
-                  px: 2.5,
-                  borderRadius: 2.5,
-                  fontWeight: 600,
-                  textTransform: "none",
-                }}
-              >
-                Open Screenplay
-              </Button>
-            </Box>
-          </Box>
-
-          {/* Footer keyboard shortcuts */}
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-            <Box sx={{ display: "flex", gap: 3, justifyContent: "center" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
-                  Ctrl+N
-                </Typography>
-                <Typography variant="caption" color="text.secondary">New</Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography variant="caption" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 0.8, py: 0.2, bgcolor: "background.default", fontFamily: "monospace" }}>
-                  Ctrl+O
-                </Typography>
-                <Typography variant="caption" color="text.secondary">Open</Typography>
-              </Box>
-            </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.7, fontSize: "0.7rem", fontWeight: 500 }}>
-              Version 0.1.0
+              &ldquo;{quote.text}&rdquo;
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                color: "text.secondary",
+                mt: 0.5,
+                opacity: 0.5,
+              }}
+            >
+              &mdash; {quote.author}
             </Typography>
           </Box>
-        </Grid>
+        )}
 
-        {/* Right Side: Recents */}
-        <Grid
-          size={{ xs: 12, md: 7 }}
-          sx={{
-            p: { xs: 4, sm: 6, md: 8 },
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-            overflow: "hidden",
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: "text.secondary",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              mb: 3,
-            }}
-          >
-            Recent Projects
-          </Typography>
+        {/* Action Cards */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2.5 }}>
+          <ActionCard
+            icon={<AddIcon sx={{ fontSize: 16 }} />}
+            title="New Project"
+            description="Create a new screenplay"
+            highlighted
+            onClick={handleNew}
+          />
+          <ActionCard
+            icon={<FolderOpenIcon sx={{ fontSize: 16 }} />}
+            title="Open Project"
+            description="Browse and open an existing file"
+            onClick={handleOpen}
+          />
+          <ActionCard
+            icon={<AutoAwesomeIcon sx={{ fontSize: 16 }} />}
+            title="Templates"
+            description="Start from a pre-built structure"
+            onClick={handleTemplates}
+          />
+        </Box>
 
-          {recentFiles.length > 0 ? (
-            <List
-              disablePadding
+        {/* Recent Projects Strip */}
+        {recentFiles.length > 0 && (
+          <Box sx={{ textAlign: "center", maxWidth: 460 }}>
+            <Typography
+              variant="caption"
               sx={{
-                flex: 1,
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: 1,
-                pr: 1,
+                fontWeight: 700,
+                color: "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                fontSize: 10,
+                display: "block",
+                mb: 1,
+                opacity: 0.55,
               }}
             >
-              {recentFiles.map((item: any) => (
-                <ListItem
+              Recent Projects
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
+              {recentFiles.slice(0, 6).map((item: any) => (
+                <Chip
                   key={item.path}
-                  disablePadding
-                  secondaryAction={
-                    <IconButton
-                      edge="end"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFromRecent(item.path);
-                      }}
-                      sx={{
-                        opacity: 0.6,
-                        "&:hover": { opacity: 1, color: "error.main", bgcolor: "error.lighter" },
-                      }}
-                    >
-                      <DeleteIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  }
+                  icon={<DescriptionIcon sx={{ fontSize: 14, ml: 0.5 }} />}
+                  label={item.name}
+                  onDelete={() => removeFromRecent(item.path)}
+                  deleteIcon={<DeleteIcon sx={{ fontSize: 13, opacity: 0.4, "&:hover": { opacity: 1, color: "error.main" } }} />}
+                  onClick={() => handleOpenRecent(item.path)}
                   sx={{
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 2.5,
+                    maxWidth: 200,
+                    fontWeight: 600,
+                    fontSize: 11.5,
+                    height: 32,
                     bgcolor: "background.paper",
-                    transition: "all 0.2s ease",
+                    border: 1,
+                    borderColor: "divider",
                     "&:hover": {
                       borderColor: "primary.main",
-                      transform: "translateX(4px)",
+                      bgcolor: "action.hover",
                     },
+                    "& .MuiChip-icon": { color: "text.secondary", opacity: 0.5 },
                   }}
-                >
-                  <ListItemButton
-                    onClick={() => openFilePath(item.path)}
-                    sx={{ py: 1.5, px: 2, borderRadius: 2.5 }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      <DescriptionIcon sx={{ fontSize: 18, opacity: 0.7 }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                          {item.name}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {item.path}
-                        </Typography>
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
+                />
               ))}
-            </List>
-          ) : (
-            <Box
-              sx={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "text.secondary",
-                opacity: 0.5,
-                gap: 1.5,
-                textAlign: "center",
-              }}
-            >
-              <DescriptionIcon sx={{ fontSize: 36, strokeWidth: 1.5, opacity: 0.5 }} />
-              <Typography variant="body2">No recent projects</Typography>
             </Box>
-          )}
-        </Grid>
-      </Grid>
+          </Box>
+        )}
+      </Box>
+
+      {/* Footer */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 2,
+          py: 1.5,
+          px: 3,
+          position: "relative",
+        }}
+      >
+        <Button
+          size="small"
+          startIcon={<HelpOutlinedIcon sx={{ fontSize: 13 }} />}
+          onClick={handleHelp}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: 11,
+            color: "text.secondary",
+            opacity: 0.4,
+            "&:hover": { opacity: 1, color: "text.primary" },
+          }}
+        >
+          Help
+        </Button>
+        <Typography
+          sx={{
+            fontSize: 9.5,
+            fontWeight: 600,
+            color: "text.secondary",
+            opacity: 0.25,
+          }}
+        >
+          {appVersion ? `v${appVersion}` : ""}
+        </Typography>
+      </Box>
     </Box>
+    </>
   );
 };
-
