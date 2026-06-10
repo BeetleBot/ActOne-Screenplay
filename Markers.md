@@ -23,6 +23,8 @@ These are stored directly within the script text and follow the standard Fountai
 - **Checklist:**
   - [x] Support custom hex colors and standard names (red, blue, green, etc.).
   - [x] Highlight markers in the editor with distinct styling (`.cm-fountain-marker`).
+  - [x] Autocomplete dropdown when typing `[[` (suggesting color templates and existing markers).
+  - [x] Dedicated Marker sidepane to search and inspect all markers (excluding scene coloring).
   - [ ] Add "Drop Marker" to the command palette and context menu.
 
 ### Scene Coloring
@@ -90,7 +92,7 @@ Rather than cluttering the Fountain file, tagging data will be stored in the `.a
 
 #### Phase 1: Data Model & File I/O
 - [ ] Define TypeScript interfaces for `TagInstance`, `TagDefinition`, and `TagCategory`.
-- [ ] Update `FileContext.tsx` to handle `tags.json` saving/loading within the `.actone` bundle.
+- [x] Update `FileContext.tsx` to handle separate `marker.json` and `production_tags.json` saving/loading within the `.actone` bundle.
 
 #### Phase 2: Editor Integration (CodeMirror)
 - [ ] Build a CodeMirror extension for non-destructive underlining of tagged ranges.

@@ -3,6 +3,7 @@ import { parseScreenplay, FountainDocument } from "../parser/FountainParser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
+import { computeRevisedLines } from "../utils/diff";
 
 export interface ScreenplayFile {
   id: string;
@@ -51,7 +52,7 @@ export const useFile = () => {
 };
 
 export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { paperSize } = useUI();
+  const { paperSize, fontFamily } = useUI();
 
   const generateUUID = () => "file-" + Math.random().toString(36).substring(2, 15);
 
@@ -240,6 +241,53 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
 
+  const revisionModeEnabled = parsedDoc?.settings?.revisionModeEnabled;
+  const revisionBaseText = parsedDoc?.settings?.revisionBaseText;
+
+  useEffect(() => {
+    if (!isTauri) return;
+
+    const handler = setTimeout(async () => {
+      try {
+        let revisedLines: boolean[] = [];
+        if (revisionModeEnabled && typeof revisionBaseText === "string") {
+          revisedLines = computeRevisedLines(revisionBaseText, rawText);
+        }
+
+        const breaks = await invoke<number[]>("get_page_breaks", {
+          fountainText: rawText,
+          paperSize,
+          fontFamily,
+          boldSceneHeadings: false,
+          mirrorSceneNumbers: "off",
+          exportSections: false,
+          exportSynopses: false,
+          exportTitlePage: true,
+          revisedLines,
+        });
+
+        if (breaks) {
+          setParsedDoc(prev => {
+            if (prev.screenplayText === rawText) {
+              return { ...prev, pageBreaks: breaks };
+            }
+            return prev;
+          });
+          setFiles(prev => prev.map(f => {
+            if (f.id === activeFileId && f.rawText === rawText) {
+              return { ...f, parsedDoc: { ...f.parsedDoc, pageBreaks: breaks } };
+            }
+            return f;
+          }));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }, 400);
+
+    return () => clearTimeout(handler);
+  }, [rawText, paperSize, fontFamily, activeFileId, isTauri, revisionModeEnabled, revisionBaseText]);
+
   const openFilePath = async (path: string) => {
     const existing = files.find(f => f.filePath === path);
     if (existing) {
@@ -267,6 +315,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let parkingData: any[] = [];
           let notepadData = "";
           let sprintData: any[] = [];
+          let markerData: any[] = [];
+          let productionTagsData: any = { tags: [], definitions: [] };
           if (unzipped["settings.json"]) {
             try {
               parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
@@ -317,7 +367,21 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData };
+          if (unzipped["marker.json"]) {
+            try {
+              markerData = JSON.parse(strFromU8(unzipped["marker.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["production_tags.json"]) {
+            try {
+              productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData, markers: markerData, productionTags: productionTagsData };
         } else {
           content = await invoke<string>("read_file_content", { path });
         }
@@ -431,7 +495,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let parkingData: any[] = [];
           let notepadData = "";
           let sprintData: any[] = [];
-          if (unzipped["settings.json"]) {
+          let markerData: any[] = [];
+          let productionTagsData: any = { tags: [], definitions: [] };
+          if (unzipped["todos.json"]) {
             try {
               todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
             } catch (e) {
@@ -459,7 +525,21 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData };
+          if (unzipped["marker.json"]) {
+            try {
+              markerData = JSON.parse(strFromU8(unzipped["marker.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["production_tags.json"]) {
+            try {
+              productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData, markers: markerData, productionTags: productionTagsData };
             resolve({ path: file.name, content, settings });
           } else {
             const content = await file.text();
@@ -501,6 +581,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let parkingData: any[] = [];
           let notepadData = "";
           let sprintData: any[] = [];
+          let markerData: any[] = [];
+          let productionTagsData: any = { tags: [], definitions: [] };
           if (unzipped["settings.json"]) {
             try {
               parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
@@ -551,7 +633,21 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error(e);
             }
           }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData };
+          if (unzipped["marker.json"]) {
+            try {
+              markerData = JSON.parse(strFromU8(unzipped["marker.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          if (unzipped["production_tags.json"]) {
+            try {
+              productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"]));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData, markers: markerData, productionTags: productionTagsData };
         } catch (e) {
           console.error(e);
           alert("Could not read actone bundle binary");
@@ -599,7 +695,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveActoneFile = async (path: string, text: string, settings: any) => {
-    const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, ...restSettings } = settings || {};
+    const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings } = settings || {};
     const characters = genders ? { genders } : {};
     const revision = { revisionModeEnabled, revisionBaseText };
     const zipped = zipSync({
@@ -611,6 +707,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
       "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
       "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
+      "marker.json": strToU8(JSON.stringify(markers || [], null, 2)),
+      "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
     });
     await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
   };
@@ -640,7 +738,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
         }
       } else {
-        const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, ...restSettings } = currentActive.parsedDoc.settings || {};
+        const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings } = currentActive.parsedDoc.settings || {};
         const characters = genders ? { genders } : {};
         const revision = { revisionModeEnabled, revisionBaseText };
         const zipped = zipSync({
@@ -652,6 +750,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
           "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
           "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
+          "marker.json": strToU8(JSON.stringify(markers || [], null, 2)),
+          "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
         });
         const blob = new Blob([zipped], { type: "application/zip" });
         const url = URL.createObjectURL(blob);
@@ -723,7 +823,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let blob: Blob;
 
         if (isActone) {
-          const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, ...restSettings } = currentActive.parsedDoc.settings || {};
+          const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings } = currentActive.parsedDoc.settings || {};
           const characters = genders ? { genders } : {};
           const revision = { revisionModeEnabled, revisionBaseText };
           const zipped = zipSync({
@@ -735,6 +835,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
             "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
             "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
+            "marker.json": strToU8(JSON.stringify(markers || [], null, 2)),
+            "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
           });
           blob = new Blob([zipped], { type: "application/zip" });
         } else {

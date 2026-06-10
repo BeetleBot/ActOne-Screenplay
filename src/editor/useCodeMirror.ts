@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { EditorState, Compartment, Transaction } from "@codemirror/state";
-import { EditorView, ViewPlugin, ViewUpdate, keymap } from "@codemirror/view";
+import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { autocompletion } from "@codemirror/autocomplete";
 import { search } from "@codemirror/search";
@@ -221,9 +221,27 @@ const typewriterScrollPlugin = ViewPlugin.fromClass(
   }
 );
 
+const CATEGORIES = [
+  { key: "cast", label: "Cast (Character)" },
+  { key: "prop", label: "Prop" },
+  { key: "vfx", label: "VFX" },
+  { key: "sfx", label: "SFX (Special Effect)" },
+  { key: "camera", label: "Camera" },
+  { key: "animal", label: "Animal" },
+  { key: "extras", label: "Extras" },
+  { key: "vehicle", label: "Vehicle" },
+  { key: "costume", label: "Costume" },
+  { key: "makeup", label: "Makeup" },
+  { key: "music", label: "Music" },
+  { key: "sound", label: "Sound" },
+  { key: "stunt", label: "Stunt" },
+  { key: "setDesign", label: "Set Design" },
+  { key: "other", label: "Other (Generic)" }
+];
+
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, typewriterMode } = useAppContext();
+  const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, typewriterMode, updateSettings } = useAppContext();
 
   const parsedDocRef = useRef(parsedDoc);
   useEffect(() => {
@@ -244,6 +262,11 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
   useEffect(() => {
     setSelectedSceneIdRef.current = setSelectedSceneId;
   }, [setSelectedSceneId]);
+
+  const updateSettingsRef = useRef(updateSettings);
+  useEffect(() => {
+    updateSettingsRef.current = updateSettings;
+  }, [updateSettings]);
 
   useEffect(() => {
     if (viewRef.current) {
@@ -300,11 +323,40 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       }
     ]);
 
+    const prodTagsTooltip = hoverTooltip((view, pos) => {
+      const settings = parsedDocRef.current.settings;
+      const prodTags = settings?.productionTags;
+      if (!prodTags || !prodTags.tags) return null;
+
+      for (const tag of prodTags.tags) {
+        if (tag.range) {
+          const [start, len] = tag.range;
+          if (pos >= start && pos <= start + len) {
+            const def = prodTags.definitions?.find((d: any) => d.id === tag.definitionId);
+            const name = def ? def.name : view.state.sliceDoc(start, start + len);
+            const categoryLabel = CATEGORIES.find(c => c.key === tag.type)?.label || tag.type;
+            
+            return {
+              pos: start,
+              end: start + len,
+              above: true,
+              create() {
+                const dom = document.createElement("div");
+                dom.className = "cm-tag-tooltip";
+                dom.textContent = `${categoryLabel}: ${name}`;
+                return { dom };
+              }
+            };
+          }
+        }
+      }
+      return null;
+    });
+
     const startState = EditorState.create({
       doc: rawText,
       extensions: [
         history(),
-
         fountainKeymap,
         keymap.of([...defaultKeymap, ...historyKeymap]),
         editorTheme,
@@ -312,10 +364,50 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         smartQuotesExtension,
         autocompletion({ override: [fountainCompletionSource] }),
         search(),
+        prodTagsTooltip,
         typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setRawTextRef.current(update.state.doc.toString());
+            const prodTags = parsedDocRef.current.settings?.productionTags;
+            if (prodTags && prodTags.tags && prodTags.tags.length > 0) {
+              let changed = false;
+              const mappedTags = prodTags.tags.map((tag: any) => {
+                if (!tag.range) return tag;
+                const [start, len] = tag.range;
+                try {
+                  const newStart = update.changes.mapPos(start, 1);
+                  const newEnd = update.changes.mapPos(start + len, -1);
+                  const newLen = newEnd - newStart;
+                  if (newStart !== start || newLen !== len) {
+                    changed = true;
+                  }
+                  if (newLen <= 0) {
+                    changed = true;
+                    return null;
+                  }
+                  return {
+                    ...tag,
+                    range: [newStart, newLen]
+                  };
+                } catch (e) {
+                  return tag;
+                }
+              }).filter(Boolean);
+
+              if (changed) {
+                updateSettingsRef.current((prev: any) => {
+                  const prevProd = prev.productionTags || { tags: [], definitions: [] };
+                  return {
+                    ...prev,
+                    productionTags: {
+                      ...prevProd,
+                      tags: mappedTags
+                    }
+                  };
+                });
+              }
+            }
           }
           if (update.selectionSet || update.docChanged) {
             const pos = update.state.selection.main.head;
@@ -331,7 +423,6 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
                 }
               }
             }
-
           }
         }),
       ],

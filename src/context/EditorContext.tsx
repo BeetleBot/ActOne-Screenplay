@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import { useFile } from "./FileContext";
-import { ParsedLine, LineType } from "../parser/FountainParser";
+import { ParsedLine, LineType, formatScreenplaySpaces } from "../parser/FountainParser";
+import { useUI } from "./UIContext";
 
 export interface EditorContextProps {
   activeLineId: string | null;
@@ -16,6 +17,7 @@ export interface EditorContextProps {
   scrollToLine: (lineIndex: number, noFocus?: boolean) => void;
   autoAddSceneNumbers: () => void;
   clearSceneNumbers: () => void;
+  cleanExtraSpace: () => void;
 }
 
 const EditorContext = createContext<EditorContextProps | undefined>(undefined);
@@ -27,7 +29,8 @@ export const useEditor = () => {
 };
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { parsedDoc, setRawText, updateSettings } = useFile();
+  const { rawText, parsedDoc, setRawText, updateSettings } = useFile();
+  const { paperSize } = useUI();
   
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
@@ -125,6 +128,11 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setRawText(serialized);
   };
 
+  const cleanExtraSpace = () => {
+    const formatted = formatScreenplaySpaces(rawText, paperSize);
+    setRawText(formatted);
+  };
+
   return (
     <EditorContext.Provider
       value={{
@@ -140,6 +148,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         scrollToLine,
         autoAddSceneNumbers,
         clearSceneNumbers,
+        cleanExtraSpace,
       }}
     >
       {children}

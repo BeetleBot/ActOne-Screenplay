@@ -438,6 +438,132 @@ fn line_ends_with_sentence_punctuation(line: &ShapedLine) -> bool {
     false
 }
 
+pub fn measure_full_element_height(
+    el: &Element,
+    font_system: &mut cosmic_text::FontSystem,
+    layout_info: &LayoutInfo,
+) -> f32 {
+    match el {
+        Element::Heading { slug, .. } => {
+            measure_element_height(
+                font_system,
+                slug,
+                &layout_info.margins.heading,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::Action(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.action,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::Dialogue(d) => {
+            let mut name = d.character.clone();
+            if let Some(ext) = &d.extension {
+                name.append(" (".into());
+                name.append(ext.clone());
+                name.append(")".into());
+            }
+            let name_height = measure_element_height(
+                font_system,
+                &name,
+                &layout_info.margins.dialogue.character,
+                layout_info.size,
+                layout_info.export_font,
+            );
+            let mut elements_height = 0.0;
+            for first_el in &d.elements {
+                elements_height += match first_el {
+                    DialogueElement::Parenthetical(s) => {
+                        measure_element_height(
+                            font_system,
+                            s,
+                            &layout_info.margins.dialogue.parenthetical,
+                            layout_info.size,
+                            layout_info.export_font,
+                        )
+                    }
+                    DialogueElement::Line(s) => {
+                        measure_element_height(
+                            font_system,
+                            s,
+                            &layout_info.margins.dialogue.line,
+                            layout_info.size,
+                            layout_info.export_font,
+                        )
+                    }
+                };
+            }
+            name_height + elements_height
+        }
+        Element::DualDialogue(d0, d1) => {
+            let h0 = measure_full_element_height(&Element::Dialogue(d0.clone()), font_system, layout_info);
+            let h1 = measure_full_element_height(&Element::Dialogue(d1.clone()), font_system, layout_info);
+            h0.max(h1)
+        }
+        Element::Lyrics(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.lyrics,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::Transition(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.transition,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::CenteredText(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.centered,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::Shot(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.action,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::Synopsis(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.synopsis,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::Section(s) => {
+            measure_element_height(
+                font_system,
+                s,
+                &layout_info.margins.action,
+                layout_info.size,
+                layout_info.export_font,
+            )
+        }
+        Element::PageBreak => 0.0,
+    }
+}
+
 pub fn min_required_height_for_lookahead(
     el: &Element,
     font_system: &mut cosmic_text::FontSystem,

@@ -19,11 +19,6 @@ import {
 } from "@mui/material";
 
 export function getSceneColor(line: ParsedLine): string | undefined {
-  if (line.marker) {
-    return line.marker.color.startsWith("#")
-      ? line.marker.color
-      : `var(--scene-color-${line.marker.color})`;
-  }
   if (line.color) {
     return line.color.startsWith("#") ? line.color : `var(--scene-color-${line.color})`;
   }
@@ -31,9 +26,6 @@ export function getSceneColor(line: ParsedLine): string | undefined {
 }
 
 export function getSceneTitle(line: ParsedLine): string {
-  if (line.marker && line.type !== LineType.heading) {
-    return line.marker.description || "Marker";
-  }
   return line.text
     .replace(/^[.#= ]+/, "")
     .replace(/\[\[.*?\]\]/g, "")

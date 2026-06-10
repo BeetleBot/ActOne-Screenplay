@@ -467,3 +467,135 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
     margin: 1in 1in 1in 1.5in;
   }
 }
+
+.cm-tooltip.cm-tooltip-autocomplete {
+  background-color: var(--bg-sidebar) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 4px 0 !important;
+  font-family: var(--font-ui) !important;
+  font-size: 13px !important;
+  min-width: 200px !important;
+  max-width: 400px !important;
+  color: var(--text-main) !important;
+}
+
+.cm-tooltip.cm-completionInfo {
+  background-color: var(--bg-sidebar) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+  color: var(--text-main) !important;
+  font-family: var(--font-ui) !important;
+  padding: 6px 12px !important;
+}
+
+.cm-tooltip-autocomplete ul {
+  max-height: 220px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+}
+
+.cm-tooltip-autocomplete ul li {
+  padding: 6px 12px !important;
+  color: var(--text-main) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-family: var(--font-ui) !important;
+  font-size: 12.5px !important;
+  transition: background-color 0.1s ease, color 0.1s ease !important;
+}
+
+.cm-tooltip-autocomplete ul li[aria-selected="true"] {
+  background-color: var(--accent-color) !important;
+  color: var(--bg-app) !important;
+}
+
+.cm-tooltip-autocomplete ul li:hover:not([aria-selected="true"]) {
+  background-color: rgba(var(--accent-rgb), 0.08) !important;
+}
+
+.cm-completionMatched {
+  text-decoration: none !important;
+  font-weight: 750 !important;
+  color: inherit !important;
+}
+
+.cm-completionIcon {
+  display: none !important;
+}
+
+.cm-tag-cast {
+  border-bottom: 2px solid #00bcd4;
+  background-color: rgba(0, 188, 212, 0.08);
+}
+.cm-tag-prop {
+  border-bottom: 2px solid #ff9800;
+  background-color: rgba(255, 152, 0, 0.08);
+}
+.cm-tag-vfx {
+  border-bottom: 2px solid #9c27b0;
+  background-color: rgba(156, 39, 176, 0.08);
+}
+.cm-tag-sfx {
+  border-bottom: 2px solid #795548;
+  background-color: rgba(121, 85, 72, 0.08);
+}
+.cm-tag-camera {
+  border-bottom: 2px solid #00ffcc;
+  background-color: rgba(0, 255, 204, 0.08);
+}
+.cm-tag-animal {
+  border-bottom: 2px solid #ffeb3b;
+  background-color: rgba(255, 235, 59, 0.08);
+}
+.cm-tag-extras {
+  border-bottom: 2px solid #e91e63;
+  background-color: rgba(233, 30, 99, 0.08);
+}
+.cm-tag-vehicle {
+  border-bottom: 2px solid #008080;
+  background-color: rgba(0, 128, 128, 0.08);
+}
+.cm-tag-costume {
+  border-bottom: 2px solid #ffc0cb;
+  background-color: rgba(255, 192, 203, 0.08);
+}
+.cm-tag-makeup {
+  border-bottom: 2px solid #4caf50;
+  background-color: rgba(76, 175, 80, 0.08);
+}
+.cm-tag-music {
+  border-bottom: 2px solid #808000;
+  background-color: rgba(128, 128, 0, 0.08);
+}
+.cm-tag-sound {
+  border-bottom: 2px solid #ff6666;
+  background-color: rgba(255, 102, 102, 0.08);
+}
+.cm-tag-stunt {
+  border-bottom: 2px solid #2196f3;
+  background-color: rgba(33, 150, 243, 0.08);
+}
+.cm-tag-setDesign {
+  border-bottom: 2px solid #daa520;
+  background-color: rgba(218, 165, 32, 0.08);
+}
+.cm-tag-other {
+  border-bottom: 2px solid #9e9e9e;
+  background-color: rgba(158, 158, 158, 0.08);
+}
+
+.cm-tooltip .cm-tag-tooltip {
+  background-color: var(--bg-sidebar, #1e1e1e);
+  color: var(--text-main, #ffffff);
+  border: 1px solid var(--border-color, #333333);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: var(--font-ui, sans-serif);
+  border-radius: 4px;
+  box-shadow: var(--shadow-md);
+}

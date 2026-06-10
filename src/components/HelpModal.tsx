@@ -30,15 +30,16 @@ const openFountainGuide = () => {
 };
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <Box sx={{ mb: 3 }}>
+  <Box sx={{ mb: 4 }}>
     <Typography
       variant="overline"
       sx={{
-        fontWeight: 700,
+        fontWeight: 800,
         color: "primary.main",
-        letterSpacing: "0.05em",
+        letterSpacing: "0.08em",
         display: "block",
-        mb: 1.5,
+        mb: 2,
+        fontSize: 11,
       }}
     >
       {title}
@@ -48,60 +49,53 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
 );
 
 const Feature: React.FC<{ name: string; desc: string }> = ({ name, desc }) => (
-  <Box sx={{ display: "flex", gap: 1, mb: 1, fontSize: 13, lineHeight: 1.5 }}>
-    <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 140, color: "text.primary" }}>
+  <Box sx={{ mb: 2 }}>
+    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5, fontSize: 13.5 }}>
       {name}
     </Typography>
-    <Typography variant="body2" color="text.secondary">
+    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, fontSize: 13 }}>
       {desc}
     </Typography>
   </Box>
 );
 
-const shortcutGroups = [
+const shortcuts = [
   {
     group: "File Operations",
-    shortcuts: [
-      { keys: "Ctrl + N", action: "New screenplay" },
-      { keys: "Ctrl + O", action: "Open a screenplay file" },
-      { keys: "Ctrl + S", action: "Save current file" },
-      { keys: "Ctrl + Shift + S", action: "Save as a new file" },
-      { keys: "Ctrl + W / Alt + Q", action: "Close current file tab" },
-      { keys: "Ctrl + Tab", action: "Switch to next open file" },
-      { keys: "Ctrl + Shift + Tab", action: "Switch to previous open file" },
-      { keys: "Ctrl + P", action: "Open export dialog (PDF / Fountain)" },
+    items: [
+      { keys: "Ctrl + N", action: "Create a new screenplay tab" },
+      { keys: "Ctrl + O", action: "Open an existing screenplay file (.fountain, .txt, .actone)" },
+      { keys: "Ctrl + S", action: "Save changes to the active file" },
+      { keys: "Ctrl + Shift + S", action: "Save the current script as a new file" },
+      { keys: "Alt + Q", action: "Close the active screenplay tab" },
+      { keys: "Ctrl + P", action: "Open the export dialog (PDF or Fountain)" },
     ],
   },
   {
-    group: "Editing",
-    shortcuts: [
+    group: "Writing & Formatting",
+    items: [
       { keys: "Ctrl + Z", action: "Undo last change" },
       { keys: "Ctrl + Y", action: "Redo last change" },
-      { keys: "Ctrl + X", action: "Cut selected text" },
-      { keys: "Ctrl + C", action: "Copy selected text" },
-      { keys: "Ctrl + V", action: "Paste from clipboard" },
-      { keys: "Ctrl + F", action: "Open search panel" },
+      { keys: "Ctrl + X", action: "Cut highlighted text" },
+      { keys: "Ctrl + C", action: "Copy highlighted text" },
+      { keys: "Ctrl + V", action: "Paste text from clipboard" },
+      { keys: "Ctrl + B", action: "Format selection as bold (**)" },
+      { keys: "Ctrl + I", action: "Format selection as italic (*)" },
+      { keys: "Ctrl + U", action: "Format selection as underline (_)" },
     ],
   },
   {
-    group: "Text Formatting",
-    shortcuts: [
-      { keys: "Ctrl + B", action: "Bold (wraps selection in **)" },
-      { keys: "Ctrl + I", action: "Italic (wraps selection in *)" },
-      { keys: "Ctrl + U", action: "Underline (wraps selection in _)" },
-    ],
-  },
-  {
-    group: "View & Navigation",
-    shortcuts: [
-      { keys: "Ctrl + \\", action: "Toggle sidebar visibility" },
-      { keys: "Ctrl + K", action: "Open command palette" },
-      { keys: "Ctrl + ,", action: "Open settings" },
-      { keys: "Ctrl + Shift + H", action: "Toggle hide Fountain markup" },
-      { keys: "Alt + Enter", action: "Toggle zen mode (fullscreen)" },
-      { keys: "Ctrl + =", action: "Zoom in" },
-      { keys: "Ctrl + -", action: "Zoom out" },
-      { keys: "Ctrl + 0", action: "Reset zoom to 100%" },
+    group: "Workspace & Navigation",
+    items: [
+      { keys: "Ctrl + F", action: "Toggle the search and replace panel" },
+      { keys: "Ctrl + \\", action: "Toggle the sidebar visibility" },
+      { keys: "Ctrl + K", action: "Open the Command Palette" },
+      { keys: "Ctrl + ,", action: "Open the Settings dialog" },
+      { keys: "Ctrl + Shift + H", action: "Toggle Fountain formatting markup visibility" },
+      { keys: "Ctrl + Alt + Enter", action: "Toggle Zen Mode (fullscreen, distraction-free)" },
+      { keys: "Ctrl + =", action: "Zoom in on the text editor" },
+      { keys: "Ctrl + -", action: "Zoom out on the text editor" },
+      { keys: "Ctrl + 0", action: "Reset text editor zoom to 100%" },
     ],
   },
 ];
@@ -112,7 +106,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>Help Guide</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>ActOne Help Manual</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
@@ -120,168 +114,316 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
 
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)} variant="scrollable" scrollButtons="auto">
-          <Tab label="Writing & Editing" />
-          <Tab label="Files & Projects" />
-          <Tab label="Workspace & Views" />
-          <Tab label="Review & Export" />
-          <Tab label="Keyboard Shortcuts" />
+          <Tab label="Writing & Editing" sx={{ fontWeight: 600, fontSize: 13 }} />
+          <Tab label="Files & Projects" sx={{ fontWeight: 600, fontSize: 13 }} />
+          <Tab label="Workspace & Views" sx={{ fontWeight: 600, fontSize: 13 }} />
+          <Tab label="Review & Export" sx={{ fontWeight: 600, fontSize: 13 }} />
+          <Tab label="Keyboard Shortcuts" sx={{ fontWeight: 600, fontSize: 13 }} />
         </Tabs>
       </Box>
 
-      <DialogContent sx={{ p: 3, height: 400, overflowY: "auto" }}>
+      <DialogContent sx={{ p: 3.5, height: 460, overflowY: "auto" }}>
         {activeTab === 0 && (
           <Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
-              ActOne uses the Fountain file format — a plain-text markup language for screenwriting.
-              You write your script in plain text, and Fountain's simple rules automatically
-              recognize scene headings, character names, dialogue, and more.
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4, lineHeight: 1.7, fontSize: 13.5 }}>
+              ActOne is designed for plain-text screenwriting using simple writing patterns. Instead of dealing with margins, indents, and dialogue alignment manually, you simply type your script naturally, and ActOne formats it in real-time according to industry standards.
             </Typography>
 
-            <Section title="Fountain Basics">
-              <Feature name="Scene Heading" desc='Start a line with INT, EXT, INT/EXT, or similar followed by a location and time of day (e.g., "INT. COFFEE SHOP - DAY").' />
-              <Feature name="Character Name" desc="Type a character name in ALL CAPS above their dialogue. Leave a blank line before it." />
-              <Feature name="Dialogue" desc="Place directly below a character name. Keep it flowing naturally." />
-              <Feature name="Parenthetical" desc="A short instruction in parentheses, placed between character name and dialogue." />
-              <Feature name="Action / Description" desc="Any paragraph that isn't recognized as another element becomes action text." />
-              <Feature name="Transition" desc="End a line with TO: or use ALL CAPS (e.g., CUT TO:, FADE OUT.)." />
-              <Feature name="Title Page" desc="Start your file with key: value pairs (e.g., Title: My Screenplay). Separate the title page from the script with a blank line." />
-              <Feature name="Lyrics / Centered" desc="Start a line with ~ for centered text or @ for lyrics." />
-              <Feature name="Page Break" desc="Insert === on its own line to force a page break." />
-              <Feature name="Dual Dialogue" desc="Place a ^ character between two dialogue blocks to have characters speak simultaneously." />
-              <Feature name="Synopsis" desc="Start a line with = to add a synopsis note (invisible in exports)." />
-              <Feature name="Section" desc="Start a line with # to create a section heading for organizing your outline." />
+            <Section title="Writing Rules & Formats">
+              <Feature
+                name="Scene Headings"
+                desc="Indicate a change of location or time of day by starting a line with INT. (Interior) or EXT. (Exterior) in all capital letters (for example: 'INT. COFFEE SHOP - DAY'). If you want to force a scene heading that doesn't start with these prefixes, start the line with a single period (for example: '.SECRET HIDEAWAY')."
+              />
+              <Feature
+                name="Characters"
+                desc="Type character names in all CAPITAL letters on their own line with an empty line before it. To force a line as a character name, start it with the '@' symbol (for example: '@McQueen')."
+              />
+              <Feature
+                name="Dialogue"
+                desc="Type dialogue paragraphs directly underneath the character name, without leaving any blank lines."
+              />
+              <Feature
+                name="Parentheticals"
+                desc="To add actor directions or delivery instructions, wrap them in parentheses on their own line between the character name and the dialogue (for example: '(whispering)')."
+              />
+              <Feature
+                name="Action & Scene Descriptions"
+                desc="Any paragraph that does not follow the scene heading, character, dialogue, or parenthetical rules is automatically formatted as an action description. You can force a line to format as action by starting it with an exclamation mark ('!')."
+              />
+              <Feature
+                name="Transitions"
+                desc="Write transition lines (like 'CUT TO:' or 'FADE OUT.') in all CAPITAL letters at the end of a line. You can force a transition line by starting it with the '>' symbol (for example: '> FADE OUT.')."
+              />
+              <Feature
+                name="Centered Text & Lyrics"
+                desc="Center lines of text by wrapping them in '>' and '<' symbols (for example: '> THE END <'). For musical lyrics, start the line with a tilde '~' (for example: '~ Sing a song')."
+              />
+              <Feature
+                name="Page Breaks"
+                desc="Force a new page in your script by typing exactly '===' on a line by itself."
+              />
+              <Feature
+                name="Dual Dialogue"
+                desc="Create side-by-side dialogue for two characters speaking simultaneously by typing a carat '^' symbol immediately following the second character's name (for example: 'BOB ^')."
+              />
+              <Feature
+                name="Synopsis Outline Notes"
+                desc="Add outline summaries by starting a line with an equals sign '='. These notes help plan your beats and remain completely invisible when you export the final script."
+              />
+              <Feature
+                name="Outline Sections"
+                desc="Organize your script structure by starting a line with one or more '#' symbols. A single '#' denotes a major section (like an Act), while '##' creates sub-levels (like sequences)."
+              />
             </Section>
 
-            <Section title="Text Formatting">
-              <Feature name="Bold" desc="Wrap text in **double asterisks** or press Ctrl+B." />
-              <Feature name="Italic" desc="Wrap text in *single asterisks* or press Ctrl+I." />
-              <Feature name="Underline" desc="Wrap text in _underscores_ or press Ctrl+U." />
+            <Section title="Smart Writing Assistance">
+              <Feature
+                name="Autocomplete Suggestions"
+                desc="As you type character names and locations, ActOne shows smart autocomplete suggestions matching your existing script data. This feature can be toggled on or off in Settings."
+              />
+              <Feature
+                name="Smart Quotes"
+                desc={"Straight quotation marks (' or \") are automatically converted to curly typographic quotes (“ or ”) as you type."}
+              />
+              <Feature
+                name="Auto-Match Parentheses"
+                desc="Typing an opening parenthesis '(' automatically inserts the closing one ')' for you."
+              />
+              <Feature
+                name="Clean Screenplay Spaces"
+                desc="Consolidates spacing throughout your document. It removes unnecessary blank lines, groups outline elements and dialogue with no gaps, and cleans up spacing following Fountain syntax prefixes. Run it from the right-click menu or the Command Palette."
+              />
+              <Feature
+                name="Search & Replace"
+                desc="Press Ctrl+F to open the search bar. You can locate words, replace them individually, or replace all matches at once. Choose to make matches case-sensitive, match whole words, or use regular expressions. Select 'Preserve Case' to automatically capitalize replacements to match the original text."
+              />
             </Section>
 
-            <Section title="Editing Features">
-              <Feature name="Search & Replace" desc="Press Ctrl+F to open the search panel. Toggle the replace section to find and replace text. Supports case-sensitive, whole-word, and regex matching." />
-              <Feature name="Preserve Case" desc="When replacing text, toggle the preserve case option to automatically match ALL CAPS, Title Case, or lowercase of the original text." />
-              <Feature name="Autocomplete" desc="As you type character names or scene locations, ActOne suggests matches from your script. Enable/disable in Settings." />
-              <Feature name="Smart Quotes" desc="Straight quotation marks are automatically converted to curly typographic quotes as you type." />
-              <Feature name="Auto-Match Parentheses" desc="Opening a parenthesis automatically inserts the closing one." />
-              <Feature name="Undo / Redo" desc="Standard undo (Ctrl+Z) and redo (Ctrl+Y) support for your editing session." />
+            <Section title="Text Parking Lot">
+              <Feature
+                name="Parking Text Selections"
+                desc="If you want to cut a block of text out of your script but save it for later, highlight it in the editor, right-click, and choose 'Park Selection'. This deletes the text from the screenplay page and converts it into a card in the 'Parking' sidebar tab."
+              />
+              <Feature
+                name="Restoring Parked Snippets"
+                desc="To put parked text back into your script, place your writing cursor where you want it to go, open the 'Parking' sidebar tab, and click the text card. The snippet is pasted back at your cursor and removed from the parking list."
+              />
             </Section>
           </Box>
         )}
 
         {activeTab === 1 && (
           <Box>
-            <Section title="File Management">
-              <Feature name="Create New File" desc="Start a fresh screenplay from the File menu or press Ctrl+N. An untitled tab opens ready for writing." />
-              <Feature name="Open Files" desc="Open .fountain, .txt, or .actone files via File > Open or Ctrl+O. Supports both the Tauri file dialog and browser file picker." />
-              <Feature name="Save" desc="Save your work with Ctrl+S. If the file hasn't been saved yet, you'll be prompted to choose a location." />
-              <Feature name="Save As" desc="Save a copy of your script in .fountain or .actone format via File > Save As or Ctrl+Shift+S." />
-              <Feature name="Recent Files" desc="Quickly reopen recently worked-on files. The last 10 files are remembered and accessible from the recent files list." />
-              <Feature name="Auto-Save" desc="ActOne can automatically save your work at a set interval (30s, 1m, 2m, or 5m). Configure in Settings." />
+            <Section title="File & Project Management">
+              <Feature
+                name="Creating New Screenplays"
+                desc="Start a fresh, untitled screenplay page from the File menu or by using the Ctrl+N shortcut."
+              />
+              <Feature
+                name="Opening Existing Scripts"
+                desc="Open screenplay files in .fountain, .txt, or .actone formats via File > Open or by using Ctrl+O."
+              />
+              <Feature
+                name="Saving Your Work"
+                desc="Save your current script changes with Ctrl+S. Use Ctrl+Shift+S (Save As) to save a duplicate copy of your file with a new name or in a different directory."
+              />
+              <Feature
+                name="Automatic Saving"
+                desc="ActOne can automatically save changes to your open files at set time intervals (30 seconds, 1 minute, 2 minutes, or 5 minutes). You can toggle this feature and adjust the interval in Settings."
+              />
+              <Feature
+                name="Recent Projects Tracker"
+                desc="The Welcome Screen lists your recent projects. Click any project to open it, or click the trash icon next to a project to remove it from your recent files list."
+              />
             </Section>
 
             <Section title="Working with Tabs">
-              <Feature name="Multiple Files" desc="Open several scripts at once. Each file appears as a tab in the editor bar." />
-              <Feature name="Tab Navigation" desc="Switch between open files by clicking their tabs, or use Ctrl+Tab / Ctrl+Shift+Tab to cycle through them." />
-              <Feature name="Close Tabs" desc="Close the current file with Ctrl+W or Alt+Q. Click the X on a tab, or middle-click any tab to close it. Unsaved changes will prompt for confirmation." />
-              <Feature name="Dirty Indicator" desc="A filled circle on a tab means the file has unsaved changes." />
+              <Feature
+                name="Multiple Document Editing"
+                desc="Open several scripts at once. Each screenplay displays in a separate tab along the top header bar."
+              />
+              <Feature
+                name="Unsaved Changes Indicator"
+                desc="A solid circular dot displays on a tab to alert you that the file has unsaved changes."
+              />
+              <Feature
+                name="Closing Tabs"
+                desc="Close active script tabs by clicking the 'X' button on the tab, middle-clicking the tab, or pressing Alt+Q. ActOne will prompt you to save if there are unsaved changes."
+              />
             </Section>
 
-            <Section title=".actone Bundle Format">
-              <Feature name="What is .actone?" desc="The .actone format is a ZIP bundle that contains your Fountain script along with document settings, character data, and revision history — all in one file." />
-              <Feature name="Why use it?" desc="Saving as .actone preserves your sidebar notes, character gender assignments, revision history, and other document-specific settings that a plain .fountain file cannot store." />
-              <Feature name="How to save" desc='Choose "Save As" and select the .actone format. Open .actone files just like any other file.' />
+            <Section title="The ActOne Bundle Format (.actone)">
+              <Feature
+                name="What is a .actone File?"
+                desc="The .actone format is a specialized project bundle format unique to ActOne. While standard plain-text .fountain files only save the raw script text, the .actone bundle packages your screenplay text together with all your workspace notepad contents, character gender assignments, task checklists, marker categories, and writing sprint histories."
+              />
+              <Feature
+                name="Workspace Tools Persistence"
+                desc="To use and save tasks, character gender assignments, notepad entries, and note markers, you must save your script as an ActOne Bundle (.actone). If you open a standard .fountain file, a warning banner will offer to save the file as a .actone bundle so you can use these tools."
+              />
             </Section>
           </Box>
         )}
 
         {activeTab === 2 && (
           <Box>
-            <Section title="Editor Modes">
-              <Feature name="Editor View" desc="The default view — a paginated, paper-like editor where you write your screenplay using Fountain syntax." />
-              <Feature name="Index Cards View" desc="Switch to a visual index card layout showing each scene as a card. Drag cards to reorder scenes, double-click to jump to that scene in the editor." />
-              <Feature name="Zen Mode" desc="Fullscreen, distraction-free writing. Press Alt+Enter to toggle. Hides the menu bar, sidebar, and tabs." />
-              <Feature name="Typewriter Mode" desc="Keeps the line you're editing vertically centered on screen — the text scrolls around you rather than the cursor moving down the page." />
-              <Feature name="Hide Fountain Markup" desc="Hides formatting markers (like **bold** and *italic*) inside the editor for a cleaner reading experience." />
+            <Section title="Workspace Customization">
+              <Feature
+                name="Visual Themes"
+                desc="Switch between 12 curated themes (6 light and 6 dark themes) in the settings dialog or the quick settings menu to customize your workspace aesthetics."
+              />
+              <Feature
+                name="Visual Fonts"
+                desc="Toggle your editor font style between 'Courier Prime' (traditional serif font standard for screenplays) and 'Courier Prime Sans' (clean, modern sans-serif) in Settings."
+              />
+              <Feature
+                name="Zoom & Sizing"
+                desc="Adjust the text editor zoom from 50% to 200% via Settings, the Command Palette, or using Ctrl+= / Ctrl+- shortcuts. You can also adjust the scale of the entire user interface (sidebars, menus, buttons) from 75% to 150% in settings."
+              />
+              <Feature
+                name="Typewriter Mode"
+                desc="Toggle Typewriter Mode in settings to keep your active writing line vertically centered on the screen. The text scrolls around your line rather than your typing cursor moving down the page."
+              />
+              <Feature
+                name="Hide Fountain Markup"
+                desc="Toggle Hide Markup to conceal plain-text formatting characters (like **bold** asterisks, _underline_ lines, or [[marker]] tags) inside the editor. This gives you a clean reading experience while leaving the raw formatting intact."
+              />
+              <Feature
+                name="Zen Mode"
+                desc="Press Alt+Enter to toggle Zen Mode. This hides the header bar, tabs, sidebar, and status labels, expanding your editor into a distraction-free fullscreen screen."
+              />
             </Section>
 
-            <Section title="Sidebar Tools">
-              <Feature name="Outline / Navigator" desc="A hierarchical view of your script's structure. Shows sections, scene headings, and synopses. Click any item to jump to that location. Filter by keywords, toggle which elements to show." />
-              <Feature name="Drag & Drop Reorder" desc="Drag scenes up and down in the outline to rearrange them. The editor updates automatically." />
-              <Feature name="Notepad" desc="A free-form text area for brainstorming, beat sheets, or production notes. Saved inside .actone bundles." />
-              <Feature name="Characters" desc="Automatically extracts all character names from your script. Assign genders for dialogue statistics. Filter to find specific characters." />
-              <Feature name="Statistics" desc="Live script stats: estimated page count, word count, scene count, dialogue vs. action ratio, gender dialogue split, and most-used locations." />
+            <Section title="Story Outline Navigator">
+              <Feature
+                name="Navigating Script Structure"
+                desc="The Navigator panel displays a hierarchical outline of your script's acts, sequences, and scenes. Click any heading to scroll the editor to its exact line."
+              />
+              <Feature
+                name="Visibility Filters"
+                desc="Toggle outline visibility buttons to show or hide Sections, Scenes, or Synopses. This helps you examine your script's macro structure without scene clutter, or dive deep into scene synopses."
+              />
+              <Feature
+                name="Outline custom controls"
+                desc="Adjust the navigator font size (small, normal, large) in the outline menu. You can double-click section headers to collapse/expand outline branches, and navigate outline items using your keyboard (Arrow Up/Down to select, Arrow Left/Right to expand/collapse, and Enter to jump)."
+              />
             </Section>
 
-            <Section title="Visual Customization">
-              <Feature name="Themes" desc="Choose from 12 carefully designed themes — 6 light and 6 dark. Access via View > Change Theme or the toolbar settings menu." />
-              <Feature name="Font" desc="Switch between Courier Prime (serif, standard for screenplays) and Courier Prime Sans. Set in Settings." />
-              <Feature name="Paper Size" desc="Toggle between US Letter and A4. Affects page layout, preview rendering, and PDF export." />
-              <Feature name="Zoom" desc="Adjust the editor zoom from 50% to 200%. Use Ctrl+= / Ctrl+- / Ctrl+0 or the settings slider." />
+            <Section title="Workspace Tool Tabs">
+              <Feature
+                name="Document Notepad"
+                desc="A freeform notepad sidebar tab to brainstorm characters, scribble beat sheets, draft outline ideas, or outline scene goals. Your notes persist inside the .actone bundle."
+              />
+              <Feature
+                name="Character Tracking"
+                desc="Automatically scans your script to list characters and count their dialogue lines. You can assign genders (Male, Female, Non-Binary, Unknown) to characters. Search character names using the filter input."
+              />
+              <Feature
+                name="To-Do Task Manager"
+                desc="Add tasks to plan your screenplay revisions. Check off completed items to move them to a collapsible completed list at the bottom of the tasks pane, or delete tasks entirely."
+              />
+              <Feature
+                name="Writing Sprint Timer"
+                desc="Set writing sprints from 1 to 60 minutes. Sprints track countdown time, show progress visual circles, and log your net word count gains. View previous sprint sessions in History, or check out your top writing sessions on the Leaderboard."
+              />
             </Section>
           </Box>
         )}
 
         {activeTab === 3 && (
           <Box>
-            <Section title="Exporting Your Script">
-              <Feature name="Export to PDF" desc="Generate a professional, paginated PDF of your screenplay. Configure scene numbers, bold headings, paper size, font, and more." />
-              <Feature name="Export to Fountain" desc="Export a clean .fountain file with all ActOne-specific metadata stripped — ready to share or open in other Fountain-compatible tools." />
+            <Section title="Production Breakdown & Tagging">
+              <Feature
+                name="Tagging Elements"
+                desc="Tag production details without cluttering your script text. Highlight any word or phrase in the editor, right-click, select 'Tag', and assign it to one of the 15 production categories: Cast (Character), Prop, VFX, SFX, Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, or Other."
+              />
+              <Feature
+                name="Managing Tag Definitions"
+                desc="Open the 'Breakdown' sidebar tab to view tagged elements categorized in accordions. Each card displays tag occurrences in scenes. Click an occurrence to scroll to its editor position. You can delete definitions or merge redundant entries into a single target definition (for example: merging 'John D.' into 'John Doe')."
+              />
             </Section>
 
-            <Section title="Export Options">
-              <Feature name="Scene Numbers" desc="Choose to disable scene numbers, show them on the left side, or mirror them on both sides (industry standard for production)." />
-              <Feature name="Bold Scene Headings" desc="Optionally render all scene headings in bold within the PDF." />
-              <Feature name="Include Title Page" desc="Choose whether to include your title page in the exported PDF." />
-              <Feature name="Sections & Synopses" desc="Optionally keep or strip # section headings and = synopsis lines from the export." />
-              <Feature name="Clean Export" desc="When exporting to Fountain, ActOne automatically strips its internal comment blocks, marker tags, and color/storyline tags for a clean standard-format file." />
+            <Section title="Custom Markers & Notes">
+              <Feature
+                name="Creating Notes"
+                desc="Insert inline notes directly inside double brackets, using the color syntax: '[[marker color: description]]'. For example: '[[marker red: Fix action description]]'. The 11 supported colors are: blue, brown, cyan, green, magenta, none (defaults to orange), orange, pink, purple, red, and yellow. You can also type hex color codes (for example: '[[marker #ff00ff: edit note]]')."
+              />
+              <Feature
+                name="Marker Sidebar Inspector"
+                desc="View notes in the 'Markers' sidebar tab. Click color chips to filter markers by color category, or type search terms. Click any marker card to scroll the editor to its exact line."
+              />
+              <Feature
+                name="Scene Coloring"
+                desc="Type '[[color name]]' (for example: '[[color blue]]') following a scene heading. This colors that scene in the Outline Navigator, helping you map story beats visually."
+              />
             </Section>
 
-            <Section title="Title Page Editor">
-              <Feature name="Form View" desc="Edit title page fields (Title, Author, Credit, Source, Contact, Draft Date) in a structured form." />
-              <Feature name="Fountain View" desc="Edit the raw Fountain title page syntax directly." />
-              <Feature name="Two-Way Sync" desc="Changes in the form automatically update the Fountain text and vice versa." />
+            <Section title="Revision Tracking Mode">
+              <Feature
+                name="Starting Revisions"
+                desc="Activate Revision Mode in the Command Palette. ActOne captures a snapshot of your script as a base draft. The app header displays a red 'Revision' badge."
+              />
+              <Feature
+                name="Reviewing Diffs & Changes"
+                desc="Open the revision reviewer to see changes. Additions highlight in green, deletions highlight in red with strikethroughs, and modified lines display detailed word-level diffs."
+              />
+              <Feature
+                name="Accepting & Rejecting Edits"
+                desc="Review each edit in the revision list, which lists scene context. Select 'Accept' to save changes to the base draft, or 'Reject' (or 'Restore') to revert edits. You can also select 'Merge All' to approve all changes and exit revision mode, or 'Discard All' to revert entirely."
+              />
             </Section>
 
-            <Section title="Structure Templates">
-              <Feature name="Import Structure" desc="Browse built-in screenplay structure templates (Three-Act Structure, Hero's Journey, Save the Cat, etc.)." />
-              <Feature name="Insert Options" desc="Insert beat outlines at the cursor, append them to the end of your script, or overwrite the entire document with the structure." />
-              <Feature name="Beat Preview" desc="Preview a structure's full beat breakdown before inserting it." />
+            <Section title="Story Structure Templates">
+              <Feature
+                name="Importing Outline Outlines"
+                desc="Open the Structure Template modal to select classic beat structures (Three-Act, Save the Cat, Hero's Journey, etc.). Read structural beat details, and choose to: Insert beats at your cursor, Append to the end of the script, or Overwrite the document."
+              />
             </Section>
 
-            <Section title="Revision Mode">
-              <Feature name="Start Revision" desc="Capture a snapshot of your current script to begin tracking changes." />
-              <Feature name="Review Changes" desc="See a detailed diff of every added, removed, or modified line after editing." />
-              <Feature name="Accept / Reject" desc="Review each change individually with Accept or Reject buttons." />
-              <Feature name="Merge All" desc="Accept all pending changes at once to finalize your revision." />
-              <Feature name="Discard All" desc="Revert the entire script back to the pre-revision state." />
-              <Feature name="Word-Level Diff" desc="Modified lines show inline word-level changes with color highlighting for precise review." />
+            <Section title="Title Page Builder">
+              <Feature
+                name="Structured Title Pages"
+                desc="Open the Title Page modal to edit metadata. Use the Form View to modify structured fields (Title, Author, Credit, Source, Contact, Draft Date). Use the Fountain View to edit the raw Fountain title page syntax block. The two views synchronize automatically."
+              />
+            </Section>
+
+            <Section title="Screenplay Exporting">
+              <Feature
+                name="PDF Export"
+                desc="Print standard PDFs of your script. Customize options including scene numbers (off, left, or mirrored on both sides), bold headings, export fonts (Courier Prime vs Courier Prime Sans), title page inclusion, and outline elements (sections/synopses)."
+              />
+              <Feature
+                name="Fountain Export"
+                desc="Export a clean, standard Fountain plain-text file. ActOne automatically strips out all app-specific notes, markers, tag databases, and formatting colors, leaving you with a clean screenplay file ready to share."
+              />
             </Section>
           </Box>
         )}
 
         {activeTab === 4 && (
           <Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
-              Master these keyboard shortcuts to write faster and navigate ActOne without lifting your hands from the keyboard.
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4, lineHeight: 1.7, fontSize: 13.5 }}>
+              Use these verified keyboard shortcuts to navigate ActOne and format your screenplay without moving your hands from the keyboard.
             </Typography>
 
-            {shortcutGroups.map((group) => (
+            {shortcuts.map((group) => (
               <Section key={group.group} title={group.group}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                  {group.shortcuts.map((s, i) => (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {group.items.map((s, i) => (
                     <Box
                       key={i}
                       sx={{
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        p: 1,
+                        p: 1.5,
                         borderRadius: 1,
                         bgcolor: i % 2 === 0 ? "action.hover" : "transparent",
                       }}
                     >
-                      <Typography variant="body2" sx={{ color: "text.primary" }}>{s.action}</Typography>
+                      <Typography variant="body2" sx={{ color: "text.primary", fontSize: 13 }}>
+                        {s.action}
+                      </Typography>
                       <Chip
                         label={s.keys}
                         size="small"
@@ -289,8 +431,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                         sx={{
                           fontFamily: "monospace",
                           fontSize: 11,
-                          fontWeight: 600,
+                          fontWeight: 700,
                           bgcolor: "background.paper",
+                          borderRadius: 1.5,
                         }}
                       />
                     </Box>
@@ -304,14 +447,15 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
-        <Typography variant="caption" color="text.secondary">
+      <DialogActions sx={{ p: 2, px: 3.5, justifyContent: "space-between" }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11.5, fontWeight: 500 }}>
           ActOne — Screenwriting Made Simple
         </Typography>
         <Button
           onClick={openFountainGuide}
           endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
           size="small"
+          sx={{ textTransform: "none", fontWeight: 600 }}
         >
           Fountain Syntax Guide
         </Button>

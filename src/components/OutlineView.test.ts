@@ -4,28 +4,6 @@ import { LineType, ParsedLine } from "../parser/FountainParser";
 
 describe("OutlineView Helpers", () => {
   describe("getSceneColor", () => {
-    it("returns color from marker if present", () => {
-      const line: ParsedLine = {
-        id: "1",
-        text: "EXT. HOUSE - DAY",
-        type: LineType.heading,
-        isOutlineElement: true,
-        marker: { color: "#ff0000", description: "Important Scene" },
-      };
-      expect(getSceneColor(line)).toBe("#ff0000");
-    });
-
-    it("returns theme-variable based color from marker name", () => {
-      const line: ParsedLine = {
-        id: "1",
-        text: "EXT. HOUSE - DAY",
-        type: LineType.heading,
-        isOutlineElement: true,
-        marker: { color: "red", description: "Important Scene" },
-      };
-      expect(getSceneColor(line)).toBe("var(--scene-color-red)");
-    });
-
     it("returns custom line color if present and no marker", () => {
       const line: ParsedLine = {
         id: "2",
@@ -49,17 +27,6 @@ describe("OutlineView Helpers", () => {
   });
 
   describe("getSceneTitle", () => {
-    it("returns marker description for non-heading markers", () => {
-      const line: ParsedLine = {
-        id: "1",
-        text: "Some random line",
-        type: LineType.action,
-        isOutlineElement: true,
-        marker: { color: "blue", description: "Action Marker" },
-      };
-      expect(getSceneTitle(line)).toBe("Action Marker");
-    });
-
     it("cleans formatting tags for normal titles", () => {
       const line: ParsedLine = {
         id: "2",

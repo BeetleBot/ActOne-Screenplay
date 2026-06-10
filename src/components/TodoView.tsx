@@ -102,6 +102,34 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
   const activeTodos = todos.filter(t => !t.completed);
   const completedTodos = todos.filter(t => t.completed);
 
+  const [activeTodoIdx, setActiveTodoIdx] = useState<number>(-1);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (activeTodos.length === 0) return;
+
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const dir = e.key === "ArrowDown" ? 1 : -1;
+      const nextIdx = Math.max(0, Math.min(activeTodos.length - 1, activeTodoIdx + dir));
+      setActiveTodoIdx(nextIdx);
+
+      const target = activeTodos[nextIdx];
+      const el = e.currentTarget.querySelector(`[data-todo-id="${target.id}"]`) as HTMLElement;
+      el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (activeTodoIdx >= 0 && activeTodoIdx < activeTodos.length) {
+        toggleTodo(activeTodos[activeTodoIdx].id);
+      }
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      if (activeTodoIdx >= 0 && activeTodoIdx < activeTodos.length) {
+        deleteTodo(activeTodos[activeTodoIdx].id);
+        setActiveTodoIdx(prev => Math.max(-1, Math.min(activeTodos.length - 2, prev)));
+      }
+    }
+  };
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, gap: 1.5 }}>
       <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
@@ -132,6 +160,8 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
 
       <List
         disablePadding
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
         sx={{
           flex: 1,
           overflowY: "auto",
@@ -139,38 +169,52 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
           flexDirection: "column",
           gap: 0.5,
           opacity: disabled ? 0.5 : 1,
-          pointerEvents: disabled ? "none" : "auto"
+          pointerEvents: disabled ? "none" : "auto",
+          outline: "none",
+          "&:focus": { outline: "none" }
         }}
       >
-        {activeTodos.map(todo => (
-          <ListItem
-            key={todo.id}
-            disablePadding
-            secondaryAction={
-              <IconButton edge="end" size="small" onClick={() => deleteTodo(todo.id)}>
-                <CloseIcon sx={{ fontSize: 12 }} />
-              </IconButton>
-            }
-            sx={{
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 0,
-              mb: 0.5,
-              "&:hover": {
-                bgcolor: "action.hover",
+        {activeTodos.map((todo, idx) => {
+          const isSelected = activeTodoIdx === idx;
+          return (
+            <ListItem
+              key={todo.id}
+              data-todo-id={todo.id}
+              disablePadding
+              secondaryAction={
+                <IconButton edge="end" size="small" onClick={() => deleteTodo(todo.id)}>
+                  <CloseIcon sx={{ fontSize: 12 }} />
+                </IconButton>
               }
-            }}
-          >
-            <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 1, px: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                <RadioButtonUncheckedIcon sx={{ fontSize: 16 }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={<Typography variant="body2" sx={{ fontSize: 13 }}>{todo.text}</Typography>}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 0,
+                mb: 0.5,
+                bgcolor: isSelected ? "action.selected" : "transparent",
+                "&:hover": {
+                  bgcolor: isSelected ? "action.selected" : "action.hover",
+                }
+              }}
+            >
+              <ListItemButton 
+                onClick={(e) => {
+                  setActiveTodoIdx(idx);
+                  toggleTodo(todo.id);
+                  e.currentTarget.closest("ul")?.focus();
+                }} 
+                sx={{ py: 1, px: 1.5 }}
+              >
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <RadioButtonUncheckedIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={<Typography variant="body2" sx={{ fontSize: 13 }}>{todo.text}</Typography>}
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
         {activeTodos.length === 0 && (
           <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center", fontStyle: "italic" }}>
             {disabled ? "" : "No tasks yet"}
