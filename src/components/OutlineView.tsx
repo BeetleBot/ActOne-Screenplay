@@ -48,6 +48,7 @@ export interface TreeNode {
 export function buildTree(items: OutlineItem[], collapsed: { [id: string]: boolean }): TreeNode[] {
   const root: TreeNode[] = [];
   const stack: { node: TreeNode; sectionDepth: number }[] = [];
+  let lastNonSynopsisNode: TreeNode | null = null;
 
   for (const item of items) {
     const isSection = item.line.type === LineType.section;
@@ -71,12 +72,10 @@ export function buildTree(items: OutlineItem[], collapsed: { [id: string]: boole
       if (!collapsed[item.line.id]) {
         stack.push({ node, sectionDepth: sDepth });
       }
+      lastNonSynopsisNode = node;
     } else if (item.line.type === LineType.synopse) {
-      const parent = stack.length > 0
-        ? stack[stack.length - 1].node
-        : (root.length > 0 ? root[root.length - 1] : null);
-      if (parent) {
-        parent.synopses.push(item);
+      if (lastNonSynopsisNode) {
+        lastNonSynopsisNode.synopses.push(item);
       } else {
         root.push({ item, depth: 0, children: [], synopses: [] });
       }
@@ -92,6 +91,7 @@ export function buildTree(items: OutlineItem[], collapsed: { [id: string]: boole
       } else {
         root.push(node);
       }
+      lastNonSynopsisNode = node;
     }
   }
   return root;
@@ -101,9 +101,7 @@ export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
   const result: TreeNode[] = [];
   const walk = (nodes: TreeNode[]) => {
     for (const node of nodes) {
-      if (node.item.line.type !== LineType.synopse) {
-        result.push(node);
-      }
+      result.push(node);
       walk(node.children);
     }
   };
@@ -122,7 +120,7 @@ export const OutlineView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSections, setShowSections] = useState(true);
   const [showScenes, setShowScenes] = useState(true);
-  const [showSynopses, setShowSynopses] = useState(true);
+  const [showSynopses, setShowSynopses] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [outlineFontSize, setOutlineFontSizeState] = useState<"small" | "normal" | "large">(
     () => (localStorage.getItem("actone-outline-font-size") as any) || "normal"
@@ -433,12 +431,25 @@ export const OutlineView: React.FC = () => {
     }
 
     if (isSynopsis) {
+      const isActive = line.id === selectable[activeSelectableIdx]?.item.line.id || line.id === selectedSceneId;
       return (
-        <Box key={line.id} sx={{ pl: 1.5, py: 0.1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em" }}>
-            {line.text.replace(/^=[ ]*/, "").trim()}
-          </Typography>
-        </Box>
+        <ListItemButton
+          key={line.id}
+          data-scene-id={line.id}
+          ref={isActive ? activeItemRef : null}
+          selected={isActive}
+          onClick={(e) => { handleItemClick(item, true, e); }}
+          sx={{ pl: 1.5, py: 0.25, borderRadius: '8px', mb: 0.1 }}
+        >
+          <Box component="span" sx={{ mr: 0.8, fontSize: 10, color: "text.secondary" }}>•</Box>
+          <ListItemText
+            primary={
+              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em" }}>
+                {line.text.replace(/^=[ ]*/, "").trim()}
+              </Typography>
+            }
+          />
+        </ListItemButton>
       );
     }
 
@@ -593,6 +604,39 @@ export const OutlineView: React.FC = () => {
         >
           <Box sx={{ px: 1.5, py: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
+              Show
+            </Typography>
+          </Box>
+          <MenuItem
+            onClick={() => { setShowSections(p => !p); }}
+            sx={{ fontSize: 12 }}
+          >
+            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSections ? "primary.main" : "text.disabled" }}>
+              {showSections ? "✓" : "○"}
+            </Box>
+            Sections
+          </MenuItem>
+          <MenuItem
+            onClick={() => { setShowScenes(p => !p); }}
+            sx={{ fontSize: 12 }}
+          >
+            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showScenes ? "primary.main" : "text.disabled" }}>
+              {showScenes ? "✓" : "○"}
+            </Box>
+            Scenes
+          </MenuItem>
+          <MenuItem
+            onClick={() => { setShowSynopses(p => !p); }}
+            sx={{ fontSize: 12 }}
+          >
+            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSynopses ? "primary.main" : "text.disabled" }}>
+              {showSynopses ? "✓" : "○"}
+            </Box>
+            Synopses
+          </MenuItem>
+          <Box sx={{ borderTop: "1px solid", borderColor: "divider", my: 0.5 }} />
+          <Box sx={{ px: 1.5, py: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
               Outline Size
             </Typography>
           </Box>
@@ -642,37 +686,7 @@ export const OutlineView: React.FC = () => {
           }}
         />
 
-        <Box sx={{ display: "flex", border: "1px solid", borderColor: "divider", borderRadius: '9999px', overflow: "hidden" }}>
-          {(["Sections", "Scenes", "Synopses"] as const).map((label) => {
-            const active = label === "Sections" ? showSections : label === "Scenes" ? showScenes : showSynopses;
-            const toggle = label === "Sections" ? () => setShowSections(p => !p) : label === "Scenes" ? () => setShowScenes(p => !p) : () => setShowSynopses(p => !p);
-            return (
-              <Box
-                key={label}
-                onClick={toggle}
-                sx={{
-                  flex: 1,
-                  textAlign: "center",
-                  py: 0.3,
-                  fontSize: "0.65rem",
-                  textTransform: "uppercase",
-                  fontWeight: active ? 700 : 500,
-                  cursor: "pointer",
-                  bgcolor: active ? "primary.main" : "transparent",
-                  color: active ? "primary.contrastText" : "text.secondary",
-                  borderRight: label !== "Synopses" ? "1px solid" : "none",
-                  borderColor: "divider",
-                  transition: "all 0.15s ease-in-out",
-                  "&:hover": {
-                    bgcolor: active ? "primary.dark" : "action.hover",
-                  }
-                }}
-              >
-                {label}
-              </Box>
-            );
-          })}
-        </Box>
+
       </Box>
 
       <Box

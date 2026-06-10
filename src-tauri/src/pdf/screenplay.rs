@@ -52,6 +52,7 @@ pub enum Element {
     Heading {
         slug: RichString,
         number: Option<String>,
+        color: Option<String>,
     },
     Action(RichString),
     Dialogue(Dialogue),

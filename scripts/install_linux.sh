@@ -138,11 +138,17 @@ done
 
 case "$MODE" in
     default)
-        do_build
-        do_tarball
-        echo
-        echo "Done! Tarball: $TARBALL_NAME"
-        echo "To install system-wide: sudo $0 --install"
+        if [ "$PORTABLE_MODE" = true ]; then
+            do_install
+            echo
+            echo "Done! ActOne installed to your application menu."
+        else
+            do_build
+            do_tarball
+            echo
+            echo "Done! Tarball: $TARBALL_NAME"
+            echo "To install system-wide: sudo $0 --install"
+        fi
         ;;
     install)
         if [ "$PORTABLE_MODE" = false ]; then

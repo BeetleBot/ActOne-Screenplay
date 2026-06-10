@@ -836,6 +836,7 @@ pub fn write_dialogue(
 ) -> std::io::Result<bool> {
     let (start_element, mut start_line) = residual_dialogue.unwrap_or((0, 0));
     let mut character_name = dialogue.character.clone();
+    character_name.make_uppercase();
     if residual_dialogue.is_some() {
         character_name.append(" (CONT'D)".into());
     } else if let Some(ext) = &dialogue.extension {

@@ -310,6 +310,7 @@ mod tests {
             [Element::Heading {
                 slug: "InT. OUTSIDE - DAY".into(),
                 number: None,
+                color: None,
             }]
         );
 
@@ -325,6 +326,7 @@ mod tests {
             [Element::Heading {
                 slug: "INT. OUTSIDE - DAY".into(),
                 number: Some("S.1".to_string()),
+                color: None,
             }]
         );
 
@@ -334,6 +336,7 @@ mod tests {
             [Element::Heading {
                 slug: "OUTSIDE - DAY".into(),
                 number: None,
+                color: None,
             }]
         );
 
@@ -343,6 +346,7 @@ mod tests {
             [Element::Heading {
                 slug: "OUTSIDE - DAY".into(),
                 number: Some("S.1".to_string()),
+                color: None,
             }]
         );
 
@@ -515,6 +519,7 @@ House is empty.",
                 Element::Heading {
                     slug: "INT. HOUSE".into(),
                     number: None,
+                    color: None,
                 },
                 Element::Section("Montage".into()),
                 Element::Action("House is empty.".into())
@@ -535,6 +540,7 @@ House is empty.",
                 Element::Heading {
                     slug: "INT. HOUSE".into(),
                     number: None,
+                    color: None,
                 },
                 Element::Action("House is empty.".into())
             ]
@@ -559,6 +565,7 @@ House is empty.",
             [Element::Heading {
                 slug: "INT. HOUSE".into(),
                 number: None,
+                color: None,
             }]
         );
 
@@ -576,6 +583,7 @@ House is empty.",
                 Element::Heading {
                     slug: "INT. HOUSE".into(),
                     number: None,
+                    color: None,
                 },
                 Element::Action("House is empty.".into())
             ]
@@ -599,6 +607,7 @@ The house [[ This is a note
                 Element::Heading {
                     slug: "INT. HOUSE".into(),
                     number: None,
+                    color: None,
                 },
                 Element::Action("The house is empty.".into())
             ]
@@ -611,6 +620,7 @@ The house [[ This is a note
                 Element::Heading {
                     slug: "INT. HOUSE".into(),
                     number: None,
+                    color: None,
                 },
                 Element::Action("The house is empty.".into())
             ]
@@ -628,6 +638,7 @@ no",
                 Element::Heading {
                     slug: "INT. HOUSE".into(),
                     number: None,
+                    color: None,
                 },
                 Element::Action("The house [[wow".into()),
                 Element::Action("no".into())

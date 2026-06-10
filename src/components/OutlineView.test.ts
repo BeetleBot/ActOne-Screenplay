@@ -71,11 +71,12 @@ describe("OutlineView Helpers", () => {
       expect(tree[0].item.line.id).toBe("sec-1");
       expect(tree[0].children).toHaveLength(1);
       expect(tree[0].children[0].item.line.id).toBe("sce-1");
-      expect(tree[0].synopses).toHaveLength(1);
-      expect(tree[0].synopses[0].line.id).toBe("syn-1");
+      expect(tree[0].synopses).toHaveLength(0);
+      expect(tree[0].children[0].synopses).toHaveLength(1);
+      expect(tree[0].children[0].synopses[0].line.id).toBe("syn-1");
 
       const selectable = flattenSelectable(tree);
-      expect(selectable).toHaveLength(2); // synopsis is not selectable directly in flattened list
+      expect(selectable).toHaveLength(2);
       expect(selectable[0].item.line.id).toBe("sec-1");
       expect(selectable[1].item.line.id).toBe("sce-1");
     });

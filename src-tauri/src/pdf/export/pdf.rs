@@ -343,7 +343,7 @@ impl PdfExporter {
                 };
 
                 match &element {
-                    Element::Heading { slug, number } => {
+                    Element::Heading { slug, number, color: _ } => {
                         let heading_height = measure_element_height(
                             ctx.font_system,
                             slug,
@@ -555,10 +555,12 @@ impl PdfExporter {
                         }
                     }
                     Element::Transition(s) => {
+                        let mut s_styled = s.clone();
+                        s_styled.make_uppercase();
                         let mut temp_res = None;
                         let overflowed = write_element(
                             &mut ctx,
-                            s,
+                            &s_styled,
                             &layout_info.margins.transition,
                             Alignment::RightToLeft,
                             false,
@@ -623,10 +625,8 @@ impl PdfExporter {
 
                         let mut s_styled = s.clone();
                         s_styled.make_uppercase();
-                        if self.bold_scene_headings {
-                            for element in &mut s_styled.elements {
-                                element.set_bold();
-                            }
+                        for element in &mut s_styled.elements {
+                            element.set_bold();
                         }
                         let mut temp_res = None;
                         let overflowed = write_element(
@@ -646,7 +646,9 @@ impl PdfExporter {
                             let mut s_styled = s.clone();
                             for element in &mut s_styled.elements {
                                 element.set_italic();
-                                if self.export_font == "courier_prime_sans" {
+                            }
+                            if self.export_font == "courier_prime_sans" {
+                                for element in &mut s_styled.elements {
                                     element.set_sans();
                                 }
                             }
@@ -708,7 +710,9 @@ impl PdfExporter {
                             s_styled.make_uppercase();
                             for element in &mut s_styled.elements {
                                 element.set_bold();
-                                if self.export_font == "courier_prime_sans" {
+                            }
+                            if self.export_font == "courier_prime_sans" {
+                                for element in &mut s_styled.elements {
                                     element.set_sans();
                                 }
                             }
