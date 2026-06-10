@@ -10,7 +10,7 @@ TARBALL_NAME="$PRODUCT_NAME-Linux-x64.tar.gz"
 
 # Detect if running from inside an extracted tarball (portable mode)
 # or from the project development directory.
-if [ -f "$SCRIPT_DIR/$APP_NAME" ] && [ -f "$SCRIPT_DIR/$APP_NAME.desktop" ]; then
+if [ "$(basename "$0")" = "install.sh" ] || { [ -f "$SCRIPT_DIR/$APP_NAME" ] && [ -f "$SCRIPT_DIR/$APP_NAME.desktop" ]; }; then
     PORTABLE_MODE=true
     BINARY_SRC="$SCRIPT_DIR/$APP_NAME"
     DESKTOP_FILE="$SCRIPT_DIR/$APP_NAME.desktop"
