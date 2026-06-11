@@ -221,8 +221,8 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         <MenuItem onClick={() => { setAnchorEl(null); onOpenThemeManagerModal(); }} dense sx={{ py: 0.5 }}>
           <Typography variant="caption" color="primary" sx={{ fontWeight: 600, pl: 2 }}>Manage Themes...</Typography>
         </MenuItem>
-        <Divider sx={{ my: 0.5 }} />
 
+        <Divider sx={{ my: 0.5 }} />
         <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Layout & Page</Typography>
         
         <MenuItem onClick={() => {}} sx={{ cursor: 'default', '&:hover': { bgcolor: 'transparent' } }}>

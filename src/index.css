@@ -336,6 +336,10 @@ body {
   color: var(--text-editor-action) !important;
 }
 
+.cm-fountain-syntax {
+  opacity: 0.35 !important;
+}
+
 /* Responsive Mobile Editor Indents */
 @media (max-width: 768px) {
   .editor-container {
