@@ -493,36 +493,31 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
 }
 
 .cm-tooltip.cm-tooltip-autocomplete {
-  background-color: var(--bg-sidebar) !important;
+  background-color: color-mix(in srgb, var(--bg-sidebar) 98%, transparent) !important;
   border: 1px solid var(--border-color) !important;
-  box-shadow: var(--shadow-lg) !important;
-  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-xl) !important;
+  border-radius: var(--radius-sm) !important;
   padding: 4px 0 !important;
   font-family: var(--font-ui) !important;
   font-size: 13px !important;
   min-width: 200px !important;
   max-width: 400px !important;
   color: var(--text-main) !important;
-}
-
-.cm-tooltip.cm-completionInfo {
-  background-color: var(--bg-sidebar) !important;
-  border: 1px solid var(--border-color) !important;
-  box-shadow: var(--shadow-lg) !important;
-  color: var(--text-main) !important;
-  font-family: var(--font-ui) !important;
-  padding: 6px 12px !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  overflow: hidden !important;
 }
 
 .cm-tooltip-autocomplete ul {
-  max-height: 220px !important;
-  padding: 0 !important;
+  max-height: 260px !important;
+  padding: 4px !important;
   margin: 0 !important;
   list-style: none !important;
 }
 
 .cm-tooltip-autocomplete ul li {
-  padding: 6px 12px !important;
+  padding: 5px 10px !important;
+  margin: 1px 0 !important;
   color: var(--text-main) !important;
   cursor: pointer !important;
   display: flex !important;
@@ -530,12 +525,13 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   gap: 8px !important;
   font-family: var(--font-ui) !important;
   font-size: 12.5px !important;
-  transition: background-color 0.1s ease, color 0.1s ease !important;
+  border-radius: var(--radius-inline) !important;
+  transition: background-color var(--duration-fast) var(--easing-smooth), color var(--duration-fast) var(--easing-smooth) !important;
 }
 
 .cm-tooltip-autocomplete ul li[aria-selected="true"] {
   background-color: var(--accent-color) !important;
-  color: var(--bg-app) !important;
+  color: #fff !important;
 }
 
 .cm-tooltip-autocomplete ul li:hover:not([aria-selected="true"]) {
@@ -544,12 +540,18 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
 
 .cm-completionMatched {
   text-decoration: none !important;
-  font-weight: 750 !important;
-  color: inherit !important;
+  font-weight: 700 !important;
+  color: var(--accent-color) !important;
 }
 
 .cm-completionIcon {
   display: none !important;
+}
+
+.cm-completionDetail {
+  margin-left: auto !important;
+  font-size: 11px !important;
+  opacity: 0.5 !important;
 }
 
 .cm-tag-cast {

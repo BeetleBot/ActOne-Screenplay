@@ -77,8 +77,19 @@ const fountainEnterHandler = (view: EditorView): boolean => {
   const state = view.state;
   const pos = state.selection.main.head;
   const line = state.doc.lineAt(pos);
+  const after = line.text.substring(pos - line.from);
 
-  if (pos !== line.to) return false;
+  if (pos !== line.to) {
+    const afterTrimmed = after.trim();
+    if (afterTrimmed === ")") {
+      view.dispatch({
+        changes: { from: pos, to: line.to, insert: ")\n" },
+        selection: { anchor: pos + 2 },
+      });
+      return true;
+    }
+    return false;
+  }
 
   const lineTypes = classifyLines(state.doc);
   const currentType = lineTypes[line.number - 1];
@@ -310,6 +321,12 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           if (fountainParenHandler(view)) return true;
           if (localStorage.getItem("actone-match-parentheses-enabled") === "true") {
             const { head } = view.state.selection.main;
+            const line = view.state.doc.lineAt(head);
+            const after = line.text.substring(head - line.from);
+            if (after.startsWith(")")) {
+              view.dispatch({ selection: { anchor: head + 1 } });
+              return true;
+            }
             view.dispatch({
               changes: { from: head, insert: "()" },
               selection: { anchor: head + 1 }

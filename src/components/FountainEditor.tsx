@@ -332,16 +332,17 @@ export const FountainEditor: React.FC = () => {
     disableRestoreFocus: true,
     MenuListProps: {
       autoFocusItem: false,
+      dense: true,
     },
     slotProps: {
       paper: {
         sx: (theme: any) => ({
-          borderRadius: "12px",
-          boxShadow: `0px 8px 32px ${alpha(theme.palette.common.black, 0.15)}`,
+          borderRadius: "8px",
+          boxShadow: `0px 4px 16px ${alpha(theme.palette.common.black, 0.15)}`,
           border: "1px solid",
           borderColor: "divider",
-          minWidth: 220,
-          py: 0.5,
+          minWidth: 180,
+          py: 0.25,
         })
       }
     }
