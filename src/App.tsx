@@ -91,6 +91,26 @@ function AppInner() {
     }
   }, []);
 
+  // Listen for OS file open events (from Rust backend)
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    const setup = async () => {
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        unlisten = await listen<string[]>("file-opened", (event) => {
+          const paths = event.payload;
+          if (!paths || paths.length === 0) return;
+          // In editor window, open files directly
+          for (const p of paths) {
+            openFilePath(p);
+          }
+        });
+      } catch {}
+    };
+    if (files.length > 0) setup();
+    return () => { if (unlisten) unlisten(); };
+  }, [openFilePath, files.length]);
+
   // Editor window: detect transition from >0 files to 0 files → reopen welcome
   const prevFilesLength = useRef(0);
   useEffect(() => {

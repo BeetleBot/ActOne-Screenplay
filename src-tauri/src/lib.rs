@@ -1,4 +1,5 @@
 use std::fs;
+use tauri::Emitter;
 
 pub mod pdf;
 mod structures;
@@ -202,6 +203,17 @@ fn get_system_fonts() -> Result<Vec<String>, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            // Handle file paths passed as CLI arguments (Linux, Windows)
+            let args: Vec<String> = std::env::args().skip(1).collect();
+            let filtered: Vec<String> = args.into_iter()
+                .filter(|p| p.ends_with(".actone") || p.ends_with(".fountain") || p.ends_with(".txt"))
+                .collect();
+            if !filtered.is_empty() {
+                let _ = app.emit("file-opened", filtered);
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             open_file_dialog,
             save_file_content,
@@ -217,6 +229,23 @@ pub fn run() {
             get_system_fonts,
             get_page_breaks
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, _event| {
+            #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
+            if let tauri::RunEvent::Opened { urls } = event {
+                let paths: Vec<String> = urls.iter()
+                    .map(|u| {
+                        let s = u.as_str();
+                        s.strip_prefix("file://").unwrap_or(s).to_string()
+                    })
+                    .collect();
+                let filtered: Vec<String> = paths.into_iter()
+                    .filter(|p| p.ends_with(".actone") || p.ends_with(".fountain") || p.ends_with(".txt"))
+                    .collect();
+                if !filtered.is_empty() {
+                    let _ = app_handle.emit("file-opened", filtered);
+                }
+            }
+        });
 }

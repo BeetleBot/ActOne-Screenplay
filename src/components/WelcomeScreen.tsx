@@ -149,6 +149,28 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     getVersion().then(setAppVersion).catch(() => setAppVersion("0.1.0"));
   }, []);
 
+  // Listen for OS file open events (from Rust backend)
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    const setup = async () => {
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        unlisten = await listen<string[]>("file-opened", (event) => {
+          const paths = event.payload;
+          if (!paths || paths.length === 0) return;
+          const filePath = paths[0];
+          localStorage.setItem("pending-open-path", filePath);
+          localStorage.setItem("pending-action", "open");
+          createEditorWindow("open").then(created => {
+            if (created) closeWelcome();
+          });
+        });
+      } catch {}
+    };
+    setup();
+    return () => { if (unlisten) unlisten(); };
+  }, []);
+
   const createEditorWindow = async (action: string): Promise<boolean> => {
     try {
       const webview = new WebviewWindow("main", {
