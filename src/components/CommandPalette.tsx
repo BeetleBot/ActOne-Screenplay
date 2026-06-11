@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useFile } from "../context/FileContext";
-import { useEditor } from "../context/EditorContext";
-import { useUI } from "../context/UIContext";
-import { startRevisionMode } from "../utils/revision";
+import { useFile, useEditor, useUI } from "../context";
+import { startRevisionMode } from "../utils";
 import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon } from "./Icons";
 
 
@@ -96,8 +94,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setPaperSize,
     setShowSearchPanel,
     setShowReplacePanel,
-    hideFountainMarkupEnabled,
-    setHideFountainMarkupEnabled,
     isZenMode,
     setIsZenMode,
     zoomLevel,
@@ -213,7 +209,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-tab-characters", name: "Switch Sidebar Tab: Characters", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("characters"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-stats", name: "Switch Sidebar Tab: Statistics", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("stats"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
-    { id: "view-hide-markup", name: hideFountainMarkupEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+H", action: () => { setHideFountainMarkupEnabled(!hideFountainMarkupEnabled); onClose(); } },
     { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <FullscreenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },
     { id: "view-zoom-in", name: "Zoom In", category: "View", icon: <ZoomInIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+=", action: () => { setZoomLevel(zoomLevel + 10); onClose(); } },
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
@@ -369,7 +364,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       onMouseEnter={() => setSelectedIndex(index)}
                       sx={{ py: 1, px: 2, gap: 1 }}
                     >
-                      <ListItemIcon sx={{ minWidth: "auto", color: isSelected ? "primary.main" : "text.secondary" }}>
+                      <ListItemIcon sx={{ minWidth: "auto", color: isSelected ? "var(--button-color)" : "text.secondary" }}>
                         {cmd.icon}
                       </ListItemIcon>
                       <ListItemText

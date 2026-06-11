@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { useAppContext } from "../context/AppContext";
-import { LineType } from "../parser/FountainParser";
+import { useFile, useEditor } from "../context";
+import { LineType } from "../parser";
 import { EditorView } from "@codemirror/view";
 import { SearchIcon, DeleteIcon, MergeTypeIcon, CloseIcon } from "./Icons";
 
@@ -42,7 +42,8 @@ interface ProductionBreakdownModalProps {
 }
 
 export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> = ({ onClose }) => {
-  const { parsedDoc, updateSettings, editorView } = useAppContext();
+  const { parsedDoc } = useFile();
+  const { updateSettings, editorView } = useEditor();
   const [searchQuery, setSearchQuery] = useState("");
   const [mergeTargets, setMergeTargets] = useState<{ [defId: string]: string }>({});
 
@@ -264,7 +265,7 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
                             borderRadius: "3px",
                             cursor: "pointer",
                             color: "text.primary",
-                            "&:hover": { color: "primary.main", bgcolor: "action.selected" }
+                            "&:hover": { color: "var(--button-color)", bgcolor: "action.selected" }
                           }}
                         >
                           {occ.sceneName}

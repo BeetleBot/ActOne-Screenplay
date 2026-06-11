@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAppContext } from "../context/AppContext";
+import { useFile, useEditor } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { CloseIcon, SearchIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon } from "./Icons";
 
@@ -37,7 +37,8 @@ interface StructureImportModalProps {
 }
 
 export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onClose }) => {
-  const { rawText, setRawText, editorView } = useAppContext();
+  const { rawText, setRawText } = useFile();
+  const { editorView } = useEditor();
   const [structures, setStructures] = useState<Structure[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);

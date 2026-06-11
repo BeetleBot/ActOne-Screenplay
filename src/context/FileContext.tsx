@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { parseScreenplay, FountainDocument } from "../parser/FountainParser";
+import { parseScreenplay, FountainDocument } from "../parser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
-import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
-import { computeRevisedLines } from "../utils/diff";
+import { computeRevisedLines, unpackActoneBundle, packActoneBundle } from "../utils";
 
 export interface ScreenplayFile {
   id: string;
@@ -327,85 +326,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isTauri) {
         if (isActone) {
           const bytes = await invoke<number[]>("read_file_binary", { path });
-          const u8 = new Uint8Array(bytes);
-          const unzipped = unzipSync(u8);
-          if (unzipped["document.fountain"]) {
-            content = strFromU8(unzipped["document.fountain"]);
-          }
-          let parsedSettings = {};
-          let genders = {};
-          let revisionData = {};
-          let todosData: any[] = [];
-          let parkingData: any[] = [];
-          let notepadData = "";
-          let sprintData: any[] = [];
-          let markerData: any[] = [];
-          let productionTagsData: any = { tags: [], definitions: [] };
-          if (unzipped["settings.json"]) {
-            try {
-              parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["characters.json"]) {
-            try {
-              const chars = JSON.parse(strFromU8(unzipped["characters.json"]));
-              genders = chars.genders || {};
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["revision.json"]) {
-            try {
-              revisionData = JSON.parse(strFromU8(unzipped["revision.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["todos.json"]) {
-            try {
-              todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["parking.json"]) {
-            try {
-              parkingData = JSON.parse(strFromU8(unzipped["parking.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["notepad.json"]) {
-            try {
-              notepadData = JSON.parse(strFromU8(unzipped["notepad.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["sprint_data.json"]) {
-            try {
-              sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["marker.json"]) {
-            try {
-              markerData = JSON.parse(strFromU8(unzipped["marker.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["production_tags.json"]) {
-            try {
-              productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData, markers: markerData, productionTags: productionTagsData };
+          const bundle = unpackActoneBundle(new Uint8Array(bytes));
+          content = bundle.content;
+          settings = bundle.settings;
         } else {
           content = await invoke<string>("read_file_content", { path });
         }
@@ -483,88 +406,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           if (file.name.toLowerCase().endsWith(".actone")) {
             const arrayBuffer = await file.arrayBuffer();
-            const u8 = new Uint8Array(arrayBuffer);
-            const unzipped = unzipSync(u8);
-            let content = "";
-            let settings = {};
-            let parsedSettings = {};
-            let genders = {};
-            let revisionData = {};
-            if (unzipped["document.fountain"]) {
-              content = strFromU8(unzipped["document.fountain"]);
-            }
-            if (unzipped["settings.json"]) {
-              try {
-                parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
-              } catch (e) {
-                console.error(e);
-              }
-            }
-            if (unzipped["characters.json"]) {
-              try {
-                const chars = JSON.parse(strFromU8(unzipped["characters.json"]));
-                genders = chars.genders || {};
-              } catch (e) {
-                console.error(e);
-              }
-            }
-          if (unzipped["revision.json"]) {
-            try {
-              revisionData = JSON.parse(strFromU8(unzipped["revision.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          let todosData: any[] = [];
-          let parkingData: any[] = [];
-          let notepadData = "";
-          let sprintData: any[] = [];
-          let markerData: any[] = [];
-          let productionTagsData: any = { tags: [], definitions: [] };
-          if (unzipped["todos.json"]) {
-            try {
-              todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["parking.json"]) {
-            try {
-              parkingData = JSON.parse(strFromU8(unzipped["parking.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["notepad.json"]) {
-            try {
-              notepadData = JSON.parse(strFromU8(unzipped["notepad.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["sprint_data.json"]) {
-            try {
-              sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["marker.json"]) {
-            try {
-              markerData = JSON.parse(strFromU8(unzipped["marker.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["production_tags.json"]) {
-            try {
-              productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData, markers: markerData, productionTags: productionTagsData };
-            resolve({ path: file.name, content, settings });
+            const bundle = unpackActoneBundle(new Uint8Array(arrayBuffer));
+            resolve({ path: file.name, content: bundle.content, settings: bundle.settings });
           } else {
             const content = await file.text();
             resolve({ path: file.name, content });
@@ -593,85 +436,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isActone && isTauri) {
         try {
           const bytes = await invoke<number[]>("read_file_binary", { path: res.path });
-          const u8 = new Uint8Array(bytes);
-          const unzipped = unzipSync(u8);
-          if (unzipped["document.fountain"]) {
-            content = strFromU8(unzipped["document.fountain"]);
-          }
-          let parsedSettings = {};
-          let genders = {};
-          let revisionData = {};
-          let todosData: any[] = [];
-          let parkingData: any[] = [];
-          let notepadData = "";
-          let sprintData: any[] = [];
-          let markerData: any[] = [];
-          let productionTagsData: any = { tags: [], definitions: [] };
-          if (unzipped["settings.json"]) {
-            try {
-              parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["characters.json"]) {
-            try {
-              const chars = JSON.parse(strFromU8(unzipped["characters.json"]));
-              genders = chars.genders || {};
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["revision.json"]) {
-            try {
-              revisionData = JSON.parse(strFromU8(unzipped["revision.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["todos.json"]) {
-            try {
-              todosData = JSON.parse(strFromU8(unzipped["todos.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["parking.json"]) {
-            try {
-              parkingData = JSON.parse(strFromU8(unzipped["parking.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["notepad.json"]) {
-            try {
-              notepadData = JSON.parse(strFromU8(unzipped["notepad.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["sprint_data.json"]) {
-            try {
-              sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["marker.json"]) {
-            try {
-              markerData = JSON.parse(strFromU8(unzipped["marker.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          if (unzipped["production_tags.json"]) {
-            try {
-              productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"]));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          settings = { ...parsedSettings, genders, ...revisionData, todos: todosData, parking: parkingData, notepad: notepadData, sprintHistory: sprintData, markers: markerData, productionTags: productionTagsData };
+          const bundle = unpackActoneBundle(new Uint8Array(bytes));
+          content = bundle.content;
+          settings = bundle.settings;
         } catch (e) {
           console.error(e);
           alert("Could not read actone bundle binary");
@@ -719,21 +486,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveActoneFile = async (path: string, text: string, settings: any) => {
-    const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings } = settings || {};
-    const characters = genders ? { genders } : {};
-    const revision = { revisionModeEnabled, revisionBaseText };
-    const zipped = zipSync({
-      "document.fountain": strToU8(text),
-      "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
-      "characters.json": strToU8(JSON.stringify(characters, null, 2)),
-      "revision.json": strToU8(JSON.stringify(revision, null, 2)),
-      "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
-      "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
-      "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
-      "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
-      "marker.json": strToU8(JSON.stringify(markers || [], null, 2)),
-      "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
-    });
+    const zipped = packActoneBundle(text, settings);
     await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
   };
 
@@ -762,21 +515,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
         }
       } else {
-        const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings } = currentActive.parsedDoc.settings || {};
-        const characters = genders ? { genders } : {};
-        const revision = { revisionModeEnabled, revisionBaseText };
-        const zipped = zipSync({
-          "document.fountain": strToU8(cleanFountainText),
-          "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
-          "characters.json": strToU8(JSON.stringify(characters, null, 2)),
-          "revision.json": strToU8(JSON.stringify(revision, null, 2)),
-          "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
-          "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
-          "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
-          "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
-          "marker.json": strToU8(JSON.stringify(markers || [], null, 2)),
-          "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
-        });
+        const zipped = packActoneBundle(cleanFountainText, currentActive.parsedDoc.settings);
         const blob = new Blob([zipped], { type: "application/zip" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -847,21 +586,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let blob: Blob;
 
         if (isActone) {
-          const { genders, revisionModeEnabled, revisionBaseText, todos, parking, notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings } = currentActive.parsedDoc.settings || {};
-          const characters = genders ? { genders } : {};
-          const revision = { revisionModeEnabled, revisionBaseText };
-          const zipped = zipSync({
-            "document.fountain": strToU8(cleanFountainText),
-            "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
-            "characters.json": strToU8(JSON.stringify(characters, null, 2)),
-            "revision.json": strToU8(JSON.stringify(revision, null, 2)),
-            "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
-            "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
-            "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),
-            "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
-            "marker.json": strToU8(JSON.stringify(markers || [], null, 2)),
-            "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
-          });
+          const zipped = packActoneBundle(cleanFountainText, currentActive.parsedDoc.settings);
           blob = new Blob([zipped], { type: "application/zip" });
         } else {
           blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });

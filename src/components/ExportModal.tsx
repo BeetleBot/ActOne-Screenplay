@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAppContext } from "../context/AppContext";
+import { useFile, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { DescriptionIcon, CloseIcon, DownloadIcon } from "./Icons";
 
@@ -98,7 +98,8 @@ function stripFountainForExport(
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
-  const { rawText, fontFamily, paperSize } = useAppContext();
+  const { rawText } = useFile();
+  const { fontFamily, paperSize } = useUI();
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);

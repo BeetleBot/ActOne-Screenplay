@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useAppContext } from "../context/AppContext";
-import { LineType, ParsedLine } from "../parser/FountainParser";
+import { useFile, useEditor } from "../context";
+import { LineType, ParsedLine } from "../parser";
 import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon } from "./Icons";
 
 import {
@@ -108,11 +108,8 @@ export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
 }
 
 export const OutlineView: React.FC = () => {
-  const app = useAppContext();
-  const {
-    parsedDoc, scrollToLine, selectedSceneId,
-    setSelectedSceneId, reorderScenes,
-  } = app;
+  const { parsedDoc } = useFile();
+  const { scrollToLine, selectedSceneId, setSelectedSceneId, reorderScenes } = useEditor();
 
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [searchQuery, setSearchQuery] = useState("");
@@ -328,7 +325,7 @@ export const OutlineView: React.FC = () => {
               const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
               if (container) container.focus();
             }}
-            sx={{ display: "block", cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "primary.main" } }}
+            sx={{ display: "block", cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "var(--button-color)" } }}
           >
             {syn.line.text.replace(/^=[ ]*/, "").trim()}
           </Typography>
@@ -349,7 +346,7 @@ export const OutlineView: React.FC = () => {
               const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
               if (container) container.focus();
             }}
-            sx={{ cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "primary.main" }, display: "flex", alignItems: "center", gap: 0.5 }}
+            sx={{ cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "var(--button-color)" }, display: "flex", alignItems: "center", gap: 0.5 }}
           >
             • {syn.line.text.replace(/^=[ ]*/, "").trim()}
           </Typography>
@@ -405,7 +402,7 @@ export const OutlineView: React.FC = () => {
             </IconButton>
             <ListItemText
               primary={
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main", fontSize: fontSizes.section, fontFamily: "var(--font-ui)", letterSpacing: "0.02em" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--button-color)", fontSize: fontSizes.section, fontFamily: "var(--font-ui)", letterSpacing: "0.02em" }}>
                   {line.text.replace(/^[.#= ]+/, "").trim()}
                 </Typography>
               }

@@ -15,9 +15,8 @@ import {
   Tabs,
   Tab
 } from "@mui/material";
-import { useSprint, SprintSession } from "../context/SprintContext";
-import { useAppContext } from "../context/AppContext";
-import { countWords } from "../utils/text";
+import { useSprint, useFile, useEditor, type SprintSession } from "../context";
+import { countWords } from "../utils";
 import { PlayArrowIcon, StopIcon, DeleteIcon, HistoryIcon, TimerIcon, InfoOutlinedIcon, EmojiEventsIcon } from "./Icons";
 
 
@@ -33,7 +32,8 @@ export const SprintView: React.FC = () => {
     clearHistory 
   } = useSprint();
 
-  const { rawText, parsedDoc, updateSettings, filePath, activeFileId } = useAppContext();
+  const { rawText, parsedDoc, filePath, activeFileId } = useFile();
+  const { updateSettings } = useEditor();
   const [activeTab, setActiveTab] = useState(0);
 
   const [sprintDuration, setSprintDuration] = useState(25);

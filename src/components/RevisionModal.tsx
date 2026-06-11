@@ -1,7 +1,6 @@
 import React, { useMemo, useCallback } from "react";
-import { useAppContext } from "../context/AppContext";
-import { useFile } from "../context/FileContext";
-import { computeDetailedDiff, getInlineDiff, filterDiffs } from "../utils/diff";
+import { useFile } from "../context";
+import { computeDetailedDiff, getInlineDiff, filterDiffs } from "../utils";
 import { CloseIcon, CheckIcon, UndoIcon, CheckBoxIcon, ErrorOutlinedIcon } from "./Icons";
 
 import {
@@ -31,8 +30,7 @@ interface GroupedEdit {
 }
 
 export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
-  const { rawText, setRawText, parsedDoc } = useAppContext();
-  const { updateSettings } = useFile();
+  const { rawText, setRawText, parsedDoc, updateSettings } = useFile();
 
   const revisionBaseText = parsedDoc?.settings?.revisionBaseText || "";
 

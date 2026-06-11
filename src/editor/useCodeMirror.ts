@@ -4,8 +4,8 @@ import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip } from "@codem
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { autocompletion } from "@codemirror/autocomplete";
 import { search } from "@codemirror/search";
-import { useAppContext } from "../context/AppContext";
-import { LineType } from "../parser/FountainParser";
+import { useFile, useUI, useEditor } from "../context";
+import { LineType } from "../parser";
 import { fountainCompletionSource } from "./autocomplete";
 import { 
   fountainHighlightField, 
@@ -242,7 +242,9 @@ const CATEGORIES = [
 
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, setActiveLineId, setSelectedSceneId, parsedDoc, setEditorView, typewriterMode, updateSettings, showPageNumbers, showPageSeparators } = useAppContext();
+  const { rawText, setRawText, parsedDoc, updateSettings } = useFile();
+  const { typewriterMode, showPageNumbers, showPageSeparators } = useUI();
+  const { setActiveLineId, setSelectedSceneId, setEditorView } = useEditor();
 
   const parsedDocRef = useRef(parsedDoc);
   useEffect(() => {

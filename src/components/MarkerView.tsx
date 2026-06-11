@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { useAppContext } from "../context/AppContext";
-import { LineType, ParsedLine } from "../parser/FountainParser";
+import { useFile, useEditor } from "../context";
+import { LineType, ParsedLine } from "../parser";
 import { SearchIcon, CloseIcon } from "./Icons";
 
 import {
@@ -23,7 +23,8 @@ interface MarkerItem {
 }
 
 export const MarkerView: React.FC = () => {
-  const { parsedDoc, scrollToLine } = useAppContext();
+  const { parsedDoc } = useFile();
+  const { scrollToLine } = useEditor();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 

@@ -24,8 +24,6 @@ export interface UIContextProps {
   setSmartQuotesEnabled: (enabled: boolean) => void;
   matchParenthesesEnabled: boolean;
   setMatchParenthesesEnabled: (enabled: boolean) => void;
-  hideFountainMarkupEnabled: boolean;
-  setHideFountainMarkupEnabled: (enabled: boolean) => void;
   showPageNumbers: boolean;
   setShowPageNumbers: (enabled: boolean) => void;
   showPageSeparators: boolean;
@@ -50,13 +48,13 @@ export const useUI = () => {
 
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [fontFamily, setFontFamilyState] = useState<'courier-prime' | 'courier-prime-sans'>(() => {
-    return (localStorage.getItem("actone-font-family") as any) || "courier-prime";
+    return (localStorage.getItem("actone-font-family") as any) || "courier-prime-sans";
   });
   const [typewriterMode, setTypewriterModeState] = useState<boolean>(() => {
     return localStorage.getItem("actone-typewriter-mode") === "true";
   });
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
-    return (localStorage.getItem("actone-paper-size") as any) || "letter";
+    return (localStorage.getItem("actone-paper-size") as any) || "a4";
   });
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [mainView, setMainView] = useState<'editor' | 'board'>("editor");
@@ -75,24 +73,21 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem("actone-autocomplete-enabled") !== "false";
   });
   const [smartQuotesEnabled, setSmartQuotesEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-smart-quotes-enabled") === "true";
+    return localStorage.getItem("actone-smart-quotes-enabled") !== "false";
   });
   const [matchParenthesesEnabled, setMatchParenthesesEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-match-parentheses-enabled") === "true";
-  });
-  const [hideFountainMarkupEnabled, setHideFountainMarkupEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-hide-fountain-markup-enabled") === "true";
+    return localStorage.getItem("actone-match-parentheses-enabled") !== "false";
   });
 
   const [showPageNumbers, setShowPageNumbersState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-show-page-numbers") !== "false";
+    return localStorage.getItem("actone-show-page-numbers") === "true";
   });
   const [showPageSeparators, setShowPageSeparatorsState] = useState<boolean>(() => {
     return localStorage.getItem("actone-show-page-separators") === "true";
   });
 
   const [autoSaveEnabled, setAutoSaveEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-auto-save-enabled") === "true";
+    return localStorage.getItem("actone-auto-save-enabled") !== "false";
   });
   const [autoSaveInterval, setAutoSaveIntervalState] = useState<number>(() => {
     const saved = localStorage.getItem("actone-auto-save-interval");
@@ -182,11 +177,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem("actone-match-parentheses-enabled", String(enabled));
   };
 
-  const setHideFountainMarkupEnabled = (enabled: boolean) => {
-    setHideFountainMarkupEnabledState(enabled);
-    localStorage.setItem("actone-hide-fountain-markup-enabled", String(enabled));
-  };
-
   const setShowPageNumbers = (enabled: boolean) => {
     setShowPageNumbersState(enabled);
     localStorage.setItem("actone-show-page-numbers", String(enabled));
@@ -232,8 +222,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setSmartQuotesEnabled,
         matchParenthesesEnabled,
         setMatchParenthesesEnabled,
-        hideFountainMarkupEnabled,
-        setHideFountainMarkupEnabled,
         showPageNumbers,
         setShowPageNumbers,
         showPageSeparators,
@@ -246,6 +234,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAutoSaveEnabled,
         autoSaveInterval,
         setAutoSaveInterval,
+
       }}
     >
       {children}

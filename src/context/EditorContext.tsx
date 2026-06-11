@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import { useFile } from "./FileContext";
-import { ParsedLine, LineType, formatScreenplaySpaces } from "../parser/FountainParser";
+import { ParsedLine, LineType, formatScreenplaySpaces } from "../parser";
 import { useUI } from "./UIContext";
 
 export interface EditorContextProps {

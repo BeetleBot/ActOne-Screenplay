@@ -1,7 +1,7 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet, WidgetType } from "@codemirror/view";
-import { LineType, FountainDocument } from "../parser/FountainParser";
-import { computeRevisedLines } from "../utils/diff";
+import { LineType, FountainDocument } from "../parser";
+import { computeRevisedLines } from "../utils";
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
 
@@ -92,7 +92,7 @@ export const isDualType = (t: number) =>
 
 export const needsBlankAfterEnter = (t: number) =>
   t === LINE_HEADING || t === LINE_ACTION || t === LINE_DIALOGUE ||
-  t === LINE_DUAL_DIALOGUE;
+  t === LINE_DUAL_DIALOGUE || t === LINE_TRANSITION;
 
 export const classifyLines = (doc: any): number[] => {
   const types: number[] = [];

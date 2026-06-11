@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { useAppContext } from "../context/AppContext";
+import { useFile, useEditor } from "../context";
 import { RadioButtonUncheckedIcon, CheckCircleIcon, KeyboardArrowDownIcon, AddIcon, CloseIcon } from "./Icons";
 
 import {
@@ -55,7 +55,8 @@ const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({
 );
 
 export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
-  const { parsedDoc, updateSettings } = useAppContext();
+  const { parsedDoc } = useFile();
+  const { updateSettings } = useEditor();
   const [input, setInput] = useState("");
   const [showCompleted, setShowCompleted] = useState(true);
 

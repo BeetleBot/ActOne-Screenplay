@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { useAppContext } from "../context/AppContext";
+import { useFile } from "../context";
 import { CloseIcon } from "./Icons";
 
 import {
@@ -112,7 +112,7 @@ function buildTitlePage(fields: Record<string, string>): string {
 }
 
 export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onClose }) => {
-  const { rawText, setRawText } = useAppContext();
+  const { rawText, setRawText } = useFile();
 
   const initial = useMemo(() => extractTitlePage(rawText), [rawText]);
   const [activeTab, setActiveTab] = useState<number>(0);

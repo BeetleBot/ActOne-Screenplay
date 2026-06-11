@@ -1,20 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { AppProviders } from "./context/AppProviders";
-import { useFile } from "./context/FileContext";
-import { useUI } from "./context/UIContext";
-import { useEditor } from "./context/EditorContext";
-import { ThemeProvider } from "./context/ThemeContext";
-import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { useNativeAppBehavior } from "./hooks/useNativeAppBehavior";
-import { MainLayout } from "./components/layout/MainLayout";
-import { ModalManager } from "./components/ModalManager";
-import { WelcomeScreenWindow } from "./components/WelcomeScreen";
-import { WindowResizeHandles } from "./components/WindowResizeHandles";
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import { AppProviders, useFile, useUI, useEditor, ThemeProvider, SprintProvider } from "./context";
+import { useKeyboardShortcuts, useNativeAppBehavior, useModals } from "./hooks";
+import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary } from "./components";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-
-import { SprintProvider } from "./context/SprintContext";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
@@ -23,16 +12,17 @@ const isEditorWindow = action === "new" || action === "open" || action === "temp
 function AppInner() {
   useNativeAppBehavior();
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [showStructureModal, setShowStructureModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showRevisionModal, setShowRevisionModal] = useState(false);
-  const [showTitlePageModal, setShowTitlePageModal] = useState(false);
-  const [showHelpModal, setShowHelpModal] = useState(false);
-  const [showBreakdownModal, setShowBreakdownModal] = useState(false);
-  const [showThemeManagerModal, setShowThemeManagerModal] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const {
+    isModalActive, isPaletteOpen, showExportModal, showStructureModal,
+    showSettingsModal, showRevisionModal, showTitlePageModal, showHelpModal,
+    showBreakdownModal, showThemeManagerModal,
+    setIsPaletteOpen, setShowExportModal, setShowStructureModal,
+    setShowSettingsModal, setShowRevisionModal, setShowTitlePageModal,
+    setShowHelpModal, setShowBreakdownModal, setShowThemeManagerModal,
+    togglePalette
+  } = useModals();
 
   const { newFile, openFile, saveFile, saveFileAs, closeFile, activeFileId, files, openFilePath } = useFile();
   const { editorView } = useEditor();
@@ -44,11 +34,7 @@ function AppInner() {
     setIsZenMode,
     showSearchPanel,
     setShowSearchPanel,
-    hideFountainMarkupEnabled,
-    setHideFountainMarkupEnabled
   } = useUI();
-
-  const isModalActive = isPaletteOpen || showExportModal || showStructureModal || showSettingsModal || showRevisionModal || showTitlePageModal || showHelpModal || showBreakdownModal || showThemeManagerModal;
 
   useKeyboardShortcuts({
     newFile,
@@ -56,7 +42,7 @@ function AppInner() {
     saveFile,
     saveFileAs,
     closeFile: useCallback(() => closeFile(activeFileId), [closeFile, activeFileId]),
-    togglePalette: useCallback(() => setIsPaletteOpen(prev => !prev), []),
+    togglePalette,
     exportPDF: useCallback(() => setShowExportModal(true), []),
     toggleSidebar: useCallback(() => setIsSidebarOpen(prev => !prev), []),
     toggleZenMode: useCallback(() => setIsZenMode(!isZenMode), [isZenMode, setIsZenMode]),
@@ -66,7 +52,6 @@ function AppInner() {
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
     openSettings: useCallback(() => setShowSettingsModal(true), []),
     toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
-    toggleHideMarkup: useCallback(() => setHideFountainMarkupEnabled(!hideFountainMarkupEnabled), [hideFountainMarkupEnabled, setHideFountainMarkupEnabled]),
     isDisabled: isModalActive,
   });
 

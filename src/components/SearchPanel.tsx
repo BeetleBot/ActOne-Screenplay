@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useUI } from "../context/UIContext";
-import { useEditor } from "../context/EditorContext";
+import { useUI, useEditor } from "../context";
 import { EditorView } from "@codemirror/view";
 import { ChevronRightIcon, KeyboardArrowDownIcon, ArrowUpwardIcon, ArrowDownwardIcon, CloseIcon, FindReplaceIcon, DoneAllIcon } from "./Icons";
 
@@ -382,10 +381,10 @@ export const SearchPanel: React.FC = () => {
                   fontSize: 10,
                   fontWeight: 700,
                   borderRadius: 1,
-                  bgcolor: btn.active ? "primary.main" : "transparent",
-                  color: btn.active ? "primary.contrastText" : "text.secondary",
+                  bgcolor: btn.active ? "var(--button-color)" : "transparent",
+                  color: btn.active ? "#fff" : "text.secondary",
                   "&:hover": {
-                    bgcolor: btn.active ? "primary.dark" : "action.hover",
+                    bgcolor: btn.active ? "var(--button-color)" : "action.hover",
                   }
                 }}
               >
@@ -434,10 +433,10 @@ export const SearchPanel: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 700,
                 borderRadius: 1,
-                bgcolor: preserveCase ? "primary.main" : "transparent",
-                color: preserveCase ? "primary.contrastText" : "text.secondary",
+                bgcolor: preserveCase ? "var(--button-color)" : "transparent",
+                color: preserveCase ? "#fff" : "text.secondary",
                 "&:hover": {
-                  bgcolor: preserveCase ? "primary.dark" : "action.hover",
+                  bgcolor: preserveCase ? "var(--button-color)" : "action.hover",
                 }
               }}
             >

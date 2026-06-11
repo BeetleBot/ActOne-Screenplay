@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useCallback } from "react";
-import { useAppContext } from "./AppContext";
+import { useFile } from "./FileContext";
+import { useEditor } from "./EditorContext";
 
 export interface ParkedItem {
   id: string;
@@ -22,7 +23,8 @@ export const useParking = () => {
 };
 
 export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { parsedDoc, updateSettings } = useAppContext();
+  const { parsedDoc } = useFile();
+  const { updateSettings } = useEditor();
   const items: ParkedItem[] = (parsedDoc as any)?.settings?.parking || [];
 
   const addItem = useCallback((text: string) => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useFile } from "../context/FileContext";
+import { useFile } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -16,8 +16,8 @@ import {
   Divider,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { useTheme } from "../context/ThemeContext";
-import { themes } from "../theme/muiTheme";
+import { useTheme } from "../context";
+import { themes } from "../theme";
 
 interface Quote {
   text: string;
@@ -79,17 +79,17 @@ const ActionCard: React.FC<{
       p: 1.25,
       borderRadius: 2.5,
       cursor: "pointer",
-      bgcolor: highlighted ? "primary.main" : "background.paper",
-      color: highlighted ? "primary.contrastText" : "text.primary",
+      bgcolor: highlighted ? "var(--button-color)" : "background.paper",
+      color: highlighted ? "#fff" : "text.primary",
       border: highlighted ? "none" : 1,
       borderColor: "divider",
       transition: "all 0.15s ease",
       "&:hover": {
-        bgcolor: highlighted ? "primary.dark" : "action.hover",
+        bgcolor: highlighted ? "var(--button-color)" : "action.hover",
         transform: "translateY(-1px)",
         boxShadow: (theme: any) =>
           highlighted
-            ? `0 4px 16px ${alpha(theme.palette.primary.main, 0.4)}`
+            ? `0 4px 16px ${alpha("#000", 0.25)}`
             : `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
       },
     }}
@@ -103,7 +103,7 @@ const ActionCard: React.FC<{
         width: 32,
         height: 32,
         borderRadius: 2,
-        bgcolor: highlighted ? (theme: any) => alpha(theme.palette.primary.contrastText, 0.15) : "action.selected",
+        bgcolor: highlighted ? "rgba(255,255,255,0.15)" : "action.selected",
         color: highlighted ? "inherit" : "text.secondary",
       }}
     >
@@ -119,7 +119,7 @@ const ActionCard: React.FC<{
       <Typography
         variant="caption"
         sx={{
-          color: highlighted ? (theme: any) => alpha(theme.palette.primary.contrastText, 0.8) : "text.secondary",
+          color: highlighted ? "rgba(255,255,255,0.8)" : "text.secondary",
           fontSize: 10.5,
           lineHeight: 1.2,
           display: "block",
@@ -346,13 +346,20 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
 
         {/* Action Cards */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2.5 }}>
-          <ActionCard
-            icon={<AddIcon sx={{ fontSize: 16 }} />}
-            title="New Project"
-            description="Create a new screenplay"
-            highlighted
-            onClick={handleNew}
-          />
+          <Box sx={{ position: "relative" }}>
+            <Box sx={{
+              position: "absolute", inset: -8,
+              borderRadius: 3,
+              background: (t: any) => `radial-gradient(ellipse, ${alpha(t.palette.primary.main, 0.12)} 0%, transparent 70%)`,
+              pointerEvents: "none",
+            }} />
+            <ActionCard
+              icon={<AddIcon sx={{ fontSize: 16 }} />}
+              title="New Project"
+              description="Create a new screenplay"
+              onClick={handleNew}
+            />
+          </Box>
           <ActionCard
             icon={<FolderOpenIcon sx={{ fontSize: 16 }} />}
             title="Open Project"

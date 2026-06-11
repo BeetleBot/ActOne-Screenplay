@@ -1,8 +1,6 @@
 import React, { useRef, useState, useMemo } from "react";
-import { useAppContext } from "../context/AppContext";
-import { useCodeMirror } from "../editor/useCodeMirror";
-import { useUI } from "../context/UIContext";
-import { useParking } from "../context/ParkingContext";
+import { useFile, useUI, useEditor, useParking } from "../context";
+import { useCodeMirror } from "../editor";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, AutoAwesomeIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
@@ -54,9 +52,10 @@ const MARKER_COLORS = [
 
 export const FountainEditor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const app = useAppContext();
-  const { fontFamily, parsedDoc, updateSettings, cleanExtraSpace } = app;
-  const { hideFountainMarkupEnabled, setShowSearchPanel, setShowReplacePanel } = useUI();
+  const { fontFamily } = useUI();
+  const { parsedDoc } = useFile();
+  const { updateSettings, cleanExtraSpace } = useEditor();
+  const { setShowSearchPanel, setShowReplacePanel } = useUI();
   const parking = useParking();
   
   const viewRef = useCodeMirror(containerRef);
@@ -350,7 +349,7 @@ export const FountainEditor: React.FC = () => {
 
   return (
     <div 
-      className={`editor-font-wrapper ${fontFamily} ${hideFountainMarkupEnabled ? "hide-fountain-markup" : ""}`} 
+      className={`editor-font-wrapper ${fontFamily}`} 
       style={{ display: "flex", flex: 1, minHeight: "100%", flexDirection: "column" }}
       onContextMenu={handleContextMenu}
     >

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { useTheme } from "../context/ThemeContext";
-import { useAppContext } from "../context/AppContext";
-import { themes } from "../theme/muiTheme";
+import { useTheme, useUI } from "../context";
+import { themes } from "../theme";
 import { CloseIcon } from "./Icons";
 
 import {
@@ -45,8 +44,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setSmartQuotesEnabled,
     matchParenthesesEnabled,
     setMatchParenthesesEnabled,
-    hideFountainMarkupEnabled,
-    setHideFountainMarkupEnabled,
     showPageNumbers,
     setShowPageNumbers,
     showPageSeparators,
@@ -54,8 +51,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     autoSaveEnabled,
     setAutoSaveEnabled,
     autoSaveInterval,
-    setAutoSaveInterval
-  } = useAppContext();
+    setAutoSaveInterval,
+  } = useUI();
 
   const [activeTab, setActiveTab] = useState<number>(0);
 
@@ -227,16 +224,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             />
 
             <FormControlLabel
-              control={<Switch checked={hideFountainMarkupEnabled} onChange={(e) => setHideFountainMarkupEnabled(e.target.checked)} />}
-              label={
-                <Box sx={{ ml: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Hide Fountain Markup</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Hide formatting markup tags inside the editor</Typography>
-                </Box>
-              }
-            />
-
-            <FormControlLabel
               control={<Switch checked={showPageNumbers} onChange={(e) => setShowPageNumbers(e.target.checked)} />}
               label={
                 <Box sx={{ ml: 1 }}>
@@ -255,6 +242,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </Box>
               }
             />
+
           </Box>
         )}
       </DialogContent>

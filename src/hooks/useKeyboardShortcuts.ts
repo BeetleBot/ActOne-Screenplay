@@ -16,7 +16,6 @@ interface ShortcutActions {
   closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
-  toggleHideMarkup?: () => void;
   isDisabled?: boolean;
 }
 
@@ -96,12 +95,6 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "," && !shift) {
         e.preventDefault();
         actionsRef.current.openSettings?.();
-        return;
-      }
-
-      if (key === "h" && shift) {
-        e.preventDefault();
-        actionsRef.current.toggleHideMarkup?.();
         return;
       }
 
