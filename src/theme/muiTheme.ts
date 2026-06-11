@@ -4,16 +4,49 @@ export type ThemeId = 'light' | 'dark';
 
 export type ThemeMode = 'light' | 'dark';
 
+export interface ThemeColors {
+  editor: string;
+  text: string;
+  accent: string;
+  sidebar: string;
+  button: string;
+  selectionText: string;
+  selectionBg: string;
+  dropdown: string;
+  dropdownText: string;
+  border: string;
+  textSecondary: string;
+}
+
 export interface ThemeConfig {
   id: string;
   name: string;
   desc: string;
   isDark: boolean;
-  colors: {
-    bg: string;
-    text: string;
-    accent: string;
-    sidebar: string;
+  colors: ThemeColors;
+}
+
+export function deriveAllColors(colors: {
+  editor: string;
+  text: string;
+  accent: string;
+  sidebar: string;
+  button: string;
+}, isDark: boolean): ThemeColors {
+  return {
+    editor: colors.editor,
+    text: colors.text,
+    accent: colors.accent,
+    sidebar: colors.sidebar,
+    button: colors.button,
+    selectionText: colors.text,
+    selectionBg: isDark
+      ? `rgba(${hexToRgbStr(colors.accent)}, 0.25)`
+      : `rgba(${hexToRgbStr(colors.accent)}, 0.20)`,
+    dropdown: isDark ? '#242628' : '#ffffff',
+    dropdownText: colors.text,
+    border: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
+    textSecondary: isDark ? 'rgba(255,255,255,0.54)' : 'rgba(0,0,0,0.54)',
   };
 }
 
@@ -23,14 +56,26 @@ export const themes: ThemeConfig[] = [
     name: "Light",
     desc: "Clean light theme",
     isDark: false,
-    colors: { bg: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5" }
+    colors: deriveAllColors({
+      editor: "#ffffff",
+      text: "#1a1c1e",
+      accent: "#0061a4",
+      sidebar: "#f5f5f5",
+      button: "#0061a4",
+    }, false),
   },
   {
     id: "dark",
     name: "Dark",
     desc: "Clean dark theme",
     isDark: true,
-    colors: { bg: "#111416", text: "#e2e2e6", accent: "#a0caff", sidebar: "#1a1c1e" }
+    colors: deriveAllColors({
+      editor: "#111416",
+      text: "#e2e2e6",
+      accent: "#a0caff",
+      sidebar: "#1a1c1e",
+      button: "#a0caff",
+    }, true),
   }
 ];
 
@@ -55,29 +100,34 @@ function hexToRgbStr(hex: string): string {
 }
 
 function getEditorVars(t: ThemeConfig) {
-  const isLight = !t.isDark;
+  const c = t.colors;
   return {
-    '--bg-app': t.colors.bg,
-    '--bg-sidebar': t.colors.sidebar,
-    '--bg-editor-wrapper': t.colors.bg,
+    '--bg-app': c.editor,
+    '--bg-sidebar': c.sidebar,
+    '--bg-editor-wrapper': c.editor,
     '--bg-editor': 'transparent',
-    '--border-color': isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)',
-    '--text-main': t.colors.text,
-    '--text-muted': isLight ? 'rgba(0,0,0,0.54)' : 'rgba(255,255,255,0.6)',
-    '--accent-color': t.colors.accent,
-    '--accent-rgb': hexToRgbStr(t.colors.accent),
-    '--titlebar-bg': t.colors.sidebar,
-    '--text-editor-heading': t.colors.accent,
-    '--text-editor-character': t.colors.text,
-    '--text-editor-dialogue': t.colors.text,
-    '--text-editor-parenthetical': isLight ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)',
-    '--text-editor-action': t.colors.text,
-    '--text-editor-transition': t.colors.accent,
-    '--text-editor-shot': t.colors.accent,
-    '--text-editor-meta': isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.45)',
-    '--editor-cursor': t.colors.text,
+    '--bg-dropdown': c.dropdown,
+    '--border-color': c.border,
+    '--button-color': c.button,
+    '--text-main': c.text,
+    '--text-muted': c.textSecondary,
+    '--text-secondary': c.textSecondary,
+    '--accent-color': c.accent,
+    '--accent-rgb': hexToRgbStr(c.accent),
+    '--selection-bg': c.selectionBg,
+    '--selection-text': c.selectionText,
+    '--dropdown-text': c.dropdownText,
+    '--titlebar-bg': c.sidebar,
+    '--text-editor-heading': c.accent,
+    '--text-editor-character': c.text,
+    '--text-editor-dialogue': c.text,
+    '--text-editor-parenthetical': c.textSecondary,
+    '--text-editor-action': c.text,
+    '--text-editor-transition': c.accent,
+    '--text-editor-shot': c.accent,
+    '--text-editor-meta': c.textSecondary,
+    '--editor-cursor': c.text,
 
-    // Scene heading marker colors
     '--scene-color-blue': '#2196f3',
     '--scene-color-brown': '#795548',
     '--scene-color-cyan': '#00bcd4',
@@ -89,7 +139,6 @@ function getEditorVars(t: ThemeConfig) {
     '--scene-color-red': '#f44336',
     '--scene-color-yellow': '#ffeb3b',
 
-    // Production category colors
     '--cat-cast': '#00bcd4',
     '--cat-prop': '#ff9800',
     '--cat-vfx': '#9c27b0',
@@ -106,7 +155,6 @@ function getEditorVars(t: ThemeConfig) {
     '--cat-setDesign': '#daa520',
     '--cat-other': '#9e9e9e',
 
-    // Gender colors for statistics
     '--gender-male': '#0081ef',
     '--gender-female': '#fa6fc1',
     '--gender-nonbinary': '#b520da',
@@ -145,27 +193,24 @@ export function deriveThemeBg(accent: string, isDark: boolean): string {
   return isDark ? mixHex(accent, "#000000", 0.08) : mixHex(accent, "#ffffff", 0.03);
 }
 
-export function deriveThemeSidebar(accent: string, isDark: boolean): string {
-  return isDark ? mixHex(accent, "#000000", 0.12) : mixHex(accent, "#ffffff", 0.06);
-}
-
 export function createActOneTheme(t: ThemeConfig) {
+  const c = t.colors;
   const editorVars = getEditorVars(t);
 
   return createTheme({
     ...shared,
     palette: {
       mode: t.isDark ? 'dark' : 'light',
-      primary: { main: t.colors.accent },
+      primary: { main: c.accent },
       background: {
-        default: t.colors.bg,
-        paper: t.colors.sidebar,
+        default: c.editor,
+        paper: c.sidebar,
       },
       text: {
-        primary: t.colors.text,
-        secondary: t.isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+        primary: c.text,
+        secondary: c.textSecondary,
       },
-      divider: t.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+      divider: c.border,
     },
     components: {
       MuiCssBaseline: {
@@ -195,12 +240,31 @@ export function createActOneTheme(t: ThemeConfig) {
       },
       MuiMenu: {
         styleOverrides: {
-          paper: { borderRadius: '16px' },
+          paper: {
+            borderRadius: '16px',
+            backgroundColor: c.dropdown,
+            color: c.dropdownText,
+          },
+        },
+      },
+      MuiSelect: {
+        styleOverrides: {
+          select: {
+            backgroundColor: c.dropdown,
+          },
         },
       },
       MuiOutlinedInput: {
         styleOverrides: {
           root: { borderRadius: '12px' },
+        },
+      },
+      MuiAutocomplete: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: c.dropdown,
+            color: c.dropdownText,
+          },
         },
       },
     },

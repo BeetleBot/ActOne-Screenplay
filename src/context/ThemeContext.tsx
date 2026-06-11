@@ -1,17 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { createActOneTheme, deriveThemeBg, deriveThemeSidebar, type ThemeMode, type ThemeConfig, themes } from "../theme/muiTheme";
+import { createActOneTheme, deriveAllColors, type ThemeMode, type ThemeConfig, type ThemeColors, themes } from "../theme";
 
 export interface CustomTheme {
   id: string;
   name: string;
   isDark: boolean;
-  colors: {
-    text: string;
-    accent: string;
-    sidebar: string;
-  };
+  colors: ThemeColors;
 }
 
 export interface ThemeContextProps {
@@ -20,8 +16,8 @@ export interface ThemeContextProps {
   mode: ThemeMode;
   toggleMode: () => void;
   customThemes: CustomTheme[];
-  addCustomTheme: (name: string, isDark: boolean, colors: { text: string; accent: string; sidebar: string }) => string;
-  updateCustomTheme: (id: string, name: string, isDark: boolean, colors: { text: string; accent: string; sidebar: string }) => void;
+  addCustomTheme: (name: string, isDark: boolean, colors: ThemeColors) => string;
+  updateCustomTheme: (id: string, name: string, isDark: boolean, colors: ThemeColors) => void;
   deleteCustomTheme: (id: string) => void;
 }
 
@@ -51,6 +47,21 @@ function saveCustomThemes(t: CustomTheme[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(t));
 }
 
+const DEFAULT_LIGHT = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
+const DEFAULT_DARK = { editor: "#111416", text: "#e2e2e6", accent: "#a0caff", sidebar: "#1a1c1e", button: "#a0caff" };
+
+function completeCustomColors(colors: Partial<ThemeColors>, isDark: boolean): ThemeColors {
+  const def = isDark ? DEFAULT_DARK : DEFAULT_LIGHT;
+  const core = {
+    editor: (colors.editor || (colors as any).bg) ?? def.editor,
+    text: colors.text ?? def.text,
+    accent: colors.accent ?? def.accent,
+    sidebar: colors.sidebar ?? def.sidebar,
+    button: colors.button ?? colors.accent ?? def.accent,
+  };
+  return deriveAllColors(core, isDark);
+}
+
 function getCurrentThemeConfig(themeId: string, customThemes: CustomTheme[]): ThemeConfig {
   const builtin = themes.find(x => x.id === themeId);
   if (builtin) return builtin;
@@ -61,12 +72,7 @@ function getCurrentThemeConfig(themeId: string, customThemes: CustomTheme[]): Th
       name: custom.name,
       desc: "",
       isDark: custom.isDark,
-      colors: {
-        bg: deriveThemeBg(custom.colors.accent, custom.isDark),
-        text: custom.colors.text,
-        accent: custom.colors.accent,
-        sidebar: deriveThemeSidebar(custom.colors.accent, custom.isDark),
-      }
+      colors: completeCustomColors(custom.colors, custom.isDark),
     };
   }
   return themes[0];
@@ -109,7 +115,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addCustomTheme = useCallback((
     name: string,
     isDark: boolean,
-    colors: { text: string; accent: string; sidebar: string }
+    colors: ThemeColors
   ): string => {
     const id = slugify(name) + "-" + Date.now().toString(36);
     const newTheme: CustomTheme = { id, name, isDark, colors };
@@ -123,7 +129,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     id: string,
     name: string,
     isDark: boolean,
-    colors: { text: string; accent: string; sidebar: string }
+    colors: ThemeColors
   ) => {
     const updated = customThemes.map(t => t.id === id ? { ...t, name, isDark, colors } : t);
     setCustomThemes(updated);

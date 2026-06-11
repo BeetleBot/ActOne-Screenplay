@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { useAppContext } from "../context/AppContext";
-import { useParking } from "../context/ParkingContext";
-import { LineType } from "../parser/FountainParser";
+import { useFile, useEditor, useParking } from "../context";
+import { LineType } from "../parser";
 import { TodoView } from "./TodoView";
 import { OutlineView } from "./OutlineView";
 import { SprintView } from "./SprintView";
@@ -16,9 +15,8 @@ import {
   Grid,
   Paper,
   IconButton,
-  Select,
+  Menu,
   MenuItem,
-  FormControl,
   LinearProgress,
   List,
   ListItemButton,
@@ -71,12 +69,13 @@ interface SidebarViewProps {
 }
 
 export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
-  const app = useAppContext();
-  const { parsedDoc, updateSettings, filePath, saveFileAs } = app;
+  const { parsedDoc, filePath, saveFileAs } = useFile();
+  const { updateSettings, editorView } = useEditor();
   const parking = useParking();
   const supportsExtended = !filePath || filePath.toLowerCase().endsWith(".actone");
   const [characterFilter, setCharacterFilter] = useState("");
   const [activeItemIdx, setActiveItemIdx] = useState<number>(-1);
+  const [genderMenuState, setGenderMenuState] = useState<{ anchorEl: HTMLElement; characterName: string } | null>(null);
 
   React.useEffect(() => {
     setActiveItemIdx(-1);
@@ -247,29 +246,58 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                       secondary={`${count} lines`}
                       slotProps={{
                         primary: { sx: { fontWeight: 600, fontSize: "0.85rem" } },
-                        secondary: { sx: { fontSize: "0.7rem" } },
+                        secondary: { sx: { fontSize: "0.7rem", color: 'text.primary', opacity: 0.75 } },
                       }}
                       sx={{ mr: 1 }}
                     />
-                    <FormControl size="small" sx={{ minWidth: 100 }}>
-                      <Select
-                        value={gender}
-                        disabled={!supportsExtended}
-                        onChange={(e) => handleGenderChange(name, e.target.value)}
-                        sx={{ fontSize: "0.75rem", height: 26, borderRadius: "6px" }}
-                      >
-                        <MenuItem value="unknown">Unknown</MenuItem>
-                        <MenuItem value="male">Male</MenuItem>
-                        <MenuItem value="female">Female</MenuItem>
-                        <MenuItem value="nonbinary">Non-Binary</MenuItem>
-                      </Select>
-                    </FormControl>
+                    <Button
+                      size="small"
+                      disabled={!supportsExtended}
+                      onClick={(e) => setGenderMenuState({ anchorEl: e.currentTarget, characterName: name })}
+                      sx={{
+                        minWidth: 0, height: 22, px: 0.75,
+                        fontSize: '0.7rem', fontWeight: 600,
+                        textTransform: 'capitalize',
+                        color: getGenderColor(gender),
+                        border: '1px solid', borderColor: getGenderColor(gender),
+                        borderRadius: '6px', gap: 0.5,
+                        overflow: 'hidden',
+                        '&:hover': { bgcolor: 'action.hover' },
+                        '&.Mui-disabled': { opacity: 0.35 },
+                      }}
+                      endIcon={<Box component="span" sx={{ fontSize: 10, lineHeight: 1, flexShrink: 0 }}>▾</Box>}
+                    >
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'currentColor', flexShrink: 0 }} />
+                      {gender}
+                    </Button>
                   </ListItemButton>
                 );
               })}
             </List>
           </Box>
         )}
+
+        <Menu
+          anchorEl={genderMenuState?.anchorEl}
+          open={!!genderMenuState}
+          onClose={() => setGenderMenuState(null)}
+          slotProps={{ paper: { sx: { minWidth: 120 } } }}
+        >
+          {["unknown", "male", "female", "nonbinary"].map(g => (
+            <MenuItem
+              key={g}
+              selected={genderMenuState ? genders[genderMenuState.characterName] === g : false}
+              onClick={() => {
+                if (genderMenuState) handleGenderChange(genderMenuState.characterName, g);
+                setGenderMenuState(null);
+              }}
+              sx={{ fontSize: '0.8rem', gap: 1 }}
+            >
+              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getGenderColor(g), flexShrink: 0 }} />
+              {g === 'nonbinary' ? 'Non-Binary' : g.charAt(0).toUpperCase() + g.slice(1)}
+            </MenuItem>
+          ))}
+        </Menu>
       </Box>
     );
   }
@@ -426,7 +454,6 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
 
   if (activeTab === "parking") {
     const { items, addItem, removeItem } = parking;
-    const { editorView } = app;
 
     const handleParkSelection = () => {
       const view = editorView;
