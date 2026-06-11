@@ -3,7 +3,7 @@ import { useFile } from "../context/FileContext";
 import { useEditor } from "../context/EditorContext";
 import { useUI } from "../context/UIContext";
 import { startRevisionMode } from "../utils/revision";
-import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon } from "./Icons";
+import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon } from "./Icons";
 
 
 
@@ -43,6 +43,7 @@ interface CommandPaletteProps {
   onOpenTitlePageModal: () => void;
   onOpenHelpModal: () => void;
   onOpenBreakdownModal: () => void;
+  onOpenThemeManagerModal: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -57,6 +58,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenTitlePageModal,
   onOpenHelpModal,
   onOpenBreakdownModal,
+  onOpenThemeManagerModal,
 }) => {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -232,6 +234,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "settings-font-sans", name: "Set Font: Courier Prime Sans", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setFontFamily("courier-prime-sans"); onClose(); } },
     { id: "settings-paper-letter", name: "Set Paper Size: US Letter", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setPaperSize("letter"); onClose(); } },
     { id: "settings-paper-a4", name: "Set Paper Size: A4", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setPaperSize("a4"); onClose(); } },
+    { id: "settings-theme-manager", name: "Open Theme Manager...", category: "Settings", icon: <ColorLensIcon sx={{ fontSize: 16 }} />, action: () => { onOpenThemeManagerModal(); onClose(); } },
 
     // Revisions
     ...(!revisionModeEnabled ? [

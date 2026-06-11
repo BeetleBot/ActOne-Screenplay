@@ -7,6 +7,7 @@ import { RevisionModal } from './RevisionModal';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { HelpModal } from './HelpModal';
 import { ProductionBreakdownModal } from './ProductionBreakdownModal';
+import { ThemeManagerModal } from './ThemeManagerModal';
 
 export interface ModalManagerProps {
   isPaletteOpen: boolean;
@@ -25,6 +26,8 @@ export interface ModalManagerProps {
   setShowHelpModal: (open: boolean) => void;
   showBreakdownModal: boolean;
   setShowBreakdownModal: (open: boolean) => void;
+  showThemeManagerModal: boolean;
+  setShowThemeManagerModal: (open: boolean) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }
@@ -46,6 +49,8 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   setShowHelpModal,
   showBreakdownModal,
   setShowBreakdownModal,
+  showThemeManagerModal,
+  setShowThemeManagerModal,
   isSidebarOpen,
   toggleSidebar,
 }) => {
@@ -63,6 +68,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
         onOpenTitlePageModal={() => setShowTitlePageModal(true)}
         onOpenHelpModal={() => setShowHelpModal(true)}
         onOpenBreakdownModal={() => setShowBreakdownModal(true)}
+        onOpenThemeManagerModal={() => setShowThemeManagerModal(true)}
       />
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
@@ -71,6 +77,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       {showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
       {showBreakdownModal && <ProductionBreakdownModal onClose={() => setShowBreakdownModal(false)} />}
+      {showThemeManagerModal && <ThemeManagerModal onClose={() => setShowThemeManagerModal(false)} />}
     </>
   );
 };

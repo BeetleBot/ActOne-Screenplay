@@ -4,7 +4,6 @@ import { useFile } from "../../context/FileContext";
 import { useUI } from "../../context/UIContext";
 import { useEditor } from "../../context/EditorContext";
 import { useTheme } from "../../context/ThemeContext";
-import { themes } from "../../theme/muiTheme";
 import { alpha } from "@mui/material/styles";
 import { FountainEditor } from "../FountainEditor";
 import { SidebarViews } from "../SidebarViews";
@@ -22,9 +21,10 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
+import Select from "@mui/material/Select";
 import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
-import { FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon, AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CloseIcon, CheckIcon, AddIcon, RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon, ColorLensIcon } from "../Icons";
+import { FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon, AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CloseIcon, CheckIcon, AddIcon, RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon } from "../Icons";
 
 
 
@@ -38,9 +38,7 @@ const getTauriWindow = () => {
 
 const HeaderBar: React.FC = () => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
-  const { theme, setTheme } = useTheme();
   const [isMaximized, setIsMaximized] = useState(false);
-  const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; fileId: string } | null>(null);
@@ -230,59 +228,7 @@ const HeaderBar: React.FC = () => {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <IconButton
-            onClick={(e) => setThemeMenuAnchor(e.currentTarget)}
-            title="Change Theme"
-            sx={{
-              width: 38, height: 38, borderRadius: 0,
-              color: (theme) => alpha(theme.palette.common.white, 0.6),
-              '&:hover': { bgcolor: (theme) => alpha(theme.palette.common.white, 0.1), color: (theme) => theme.palette.common.white },
-            }}
-          >
-            <ColorLensIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-          <Menu
-            anchorEl={themeMenuAnchor}
-            open={Boolean(themeMenuAnchor)}
-            onClose={() => setThemeMenuAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            slotProps={{ paper: { sx: { minWidth: 220, maxHeight: 420, py: 0.5 } } }}
-          >
-            <Typography variant="caption" sx={{ px: 2, pt: 1, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Light
-            </Typography>
-            {themes.filter(t => !t.isDark).map((t) => (
-              <MenuItem
-                key={t.id}
-                selected={theme === t.id}
-                onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
-                sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
-              >
-                <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
-                </Box>
-                {t.name.replace(/\s*\((Light|Dark)\)$/, '')}
-              </MenuItem>
-            ))}
-            <Divider sx={{ my: 0.5 }} />
-            <Typography variant="caption" sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Dark
-            </Typography>
-            {themes.filter(t => t.isDark).map((t) => (
-              <MenuItem
-                key={t.id}
-                selected={theme === t.id}
-                onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
-                sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
-              >
-                <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
-                </Box>
-                {t.name.replace(/\s*\((Light|Dark)\)$/, '')}
-              </MenuItem>
-            ))}
-          </Menu>
+
           <IconButton
             onClick={handleMinimize}
             title="Minimize"
@@ -363,7 +309,8 @@ const ActivityBar: React.FC<{
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
   onOpenBreakdownModal: () => void;
-}> = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal }) => {
+  onOpenThemeManagerModal: () => void;
+}> = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal, onOpenThemeManagerModal }) => {
   const {
     paperSize, setPaperSize,
     typewriterMode, setTypewriterMode, zoomLevel, setZoomLevel,
@@ -371,6 +318,7 @@ const ActivityBar: React.FC<{
     hideFountainMarkupEnabled, setHideFountainMarkupEnabled,
   } = useUI();
   const { filePath } = useFile();
+  const { theme, setTheme, customThemes } = useTheme();
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -541,6 +489,31 @@ const ActivityBar: React.FC<{
 
         <Divider sx={{ my: 0.5 }} />
 
+        {/* --- Theme --- */}
+        <Typography variant="overline" sx={{ px: 2, pt: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Theme</Typography>
+        <MenuItem onClick={() => {}} sx={{ cursor: 'default', '&:hover': { bgcolor: 'transparent' } }}>
+          <Select
+            value={theme}
+            onChange={(e) => { setTheme(e.target.value); setAnchorEl(null); }}
+            size="small"
+            fullWidth
+            variant="outlined"
+            sx={{ fontSize: '0.8rem' }}
+          >
+            <MenuItem value="light" sx={{ fontSize: '0.8rem' }}>Light</MenuItem>
+            <MenuItem value="dark" sx={{ fontSize: '0.8rem' }}>Dark</MenuItem>
+            {customThemes.map(t => (
+              <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.8rem' }}>
+                {t.name} ({t.isDark ? 'Dark' : 'Light'})
+              </MenuItem>
+            ))}
+          </Select>
+        </MenuItem>
+        <MenuItem onClick={() => { setAnchorEl(null); onOpenThemeManagerModal(); }} dense sx={{ py: 0.5 }}>
+          <Typography variant="caption" color="primary" sx={{ fontWeight: 600, pl: 2 }}>Manage Themes...</Typography>
+        </MenuItem>
+        <Divider sx={{ my: 0.5 }} />
+
         {/* --- Layout & Configuration --- */}
         <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Layout & Page</Typography>
         
@@ -586,7 +559,8 @@ const Workspace: React.FC<{
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
   onOpenBreakdownModal: () => void;
-}> = ({ isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal }) => {
+  onOpenThemeManagerModal: () => void;
+}> = ({ isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal, onOpenThemeManagerModal }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode, typewriterMode } = useUI();
@@ -639,6 +613,7 @@ const Workspace: React.FC<{
           onOpenSettingsModal={onOpenSettingsModal}
           onOpenPalette={onOpenPalette}
           onOpenBreakdownModal={onOpenBreakdownModal}
+          onOpenThemeManagerModal={onOpenThemeManagerModal}
         />
       )}
 
@@ -697,10 +672,11 @@ export interface MainLayoutProps {
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
   onOpenBreakdownModal: () => void;
+  onOpenThemeManagerModal: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
-  isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal,
+  isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal, onOpenThemeManagerModal,
 }) => {
   const { isZenMode } = useUI();
 
@@ -720,6 +696,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         onOpenSettingsModal={onOpenSettingsModal}
         onOpenPalette={onOpenPalette}
         onOpenBreakdownModal={onOpenBreakdownModal}
+        onOpenThemeManagerModal={onOpenThemeManagerModal}
       />
     </>
   );
