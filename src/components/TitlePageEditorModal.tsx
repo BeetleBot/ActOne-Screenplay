@@ -146,7 +146,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
   const hasTitlePage = Object.values(fields).some(v => v.trim().length > 0);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm" disableScrollLock>
       <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>Title Page Editor</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>

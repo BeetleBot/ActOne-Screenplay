@@ -207,7 +207,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({ onClose }) => {
   }, [parsedDoc]);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="md">
+    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock>
       <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>Review Revisions</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>

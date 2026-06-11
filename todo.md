@@ -9,6 +9,7 @@
 * \[x] Add more export options (PDF, etc.)
 * \[x] Fix keyboard scrolling in Navigator
 * \[x] Underline shortcut works for just one letter.
+* \[ ] When command palette opens, editor scrolls to the top visually (restores on close). Need to prevent the visual scroll entirely.
 * \[ ] Improve the Index cards, redesign it completely with Sections and Synopsis Visible.
 * \[ ] Implement Marker's features.
 * \[ ] Find a way to include all Indian languages(Figure out the fonts) for the editor and export options.

@@ -170,7 +170,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm" disableScrollLock>
       <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <DownloadIcon sx={{ fontSize: 20 }} />

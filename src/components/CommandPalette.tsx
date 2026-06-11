@@ -62,6 +62,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollPosRef = useRef(0);
   const {
     newFile,
     openFile,
@@ -109,25 +110,56 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     }
   };
 
+  const prevOpen = useRef(isOpen);
+  const scrollAreaRef = useRef<HTMLElement | null>(null);
+
+  if (isOpen && !prevOpen.current) {
+    scrollAreaRef.current = document.querySelector('.editor-scroll-area');
+    const el = scrollAreaRef.current;
+    if (el) {
+      scrollPosRef.current = el.scrollTop;
+      el.style.overflow = 'hidden';
+    }
+  }
+
+  if (!isOpen && prevOpen.current) {
+    const el = scrollAreaRef.current || document.querySelector('.editor-scroll-area');
+    if (el) {
+      el.style.overflow = 'hidden';
+    }
+  }
+
   useEffect(() => {
     if (isOpen) {
       setSearch("");
       setSelectedIndex(0);
+      const el = scrollAreaRef.current || document.querySelector('.editor-scroll-area');
+      if (el) {
+        el.style.overflow = '';
+        el.scrollTop = scrollPosRef.current;
+      }
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
 
-  const prevOpen = useRef(isOpen);
   useEffect(() => {
     if (prevOpen.current && !isOpen) {
-      editorView?.focus();
+      const el = scrollAreaRef.current || document.querySelector('.editor-scroll-area');
+      if (el) {
+        el.style.overflow = 'hidden';
+      }
+      editorView?.dom.focus({ preventScroll: true });
+      if (el) {
+        el.style.overflow = '';
+        el.scrollTop = scrollPosRef.current;
+      }
     }
     prevOpen.current = isOpen;
   }, [isOpen, editorView]);
 
   const handleEditorAction = (cmd: string) => {
     if (!editorView) return;
-    editorView.focus();
+    editorView.dom.focus({ preventScroll: true });
     document.execCommand(cmd);
     onClose();
   };
@@ -275,6 +307,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       fullWidth 
       maxWidth="xs" 
       scroll="paper"
+      disableScrollLock
     >
       <Box sx={{ p: 2, pb: 1.5 }}>
         <TextField

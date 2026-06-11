@@ -86,7 +86,7 @@ body {
   width: 100vw;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  text-rendering: auto;
 }
 
 #root {
@@ -116,6 +116,7 @@ body {
   overflow-x: hidden;
   width: 100%;
   height: 100%;
+  overscroll-behavior: contain;
 }
 
 .editor-scroll-area.typewriter-active .editor-paper {
