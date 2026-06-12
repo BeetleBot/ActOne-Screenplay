@@ -241,9 +241,41 @@ export function createActOneTheme(t: ThemeConfig) {
       MuiMenu: {
         styleOverrides: {
           paper: {
-            borderRadius: '16px',
+            borderRadius: '10px',
             backgroundColor: c.dropdown,
             color: c.dropdownText,
+          },
+          list: {
+            paddingTop: '4px',
+            paddingBottom: '4px',
+          },
+        },
+      },
+      MuiMenuItem: {
+        styleOverrides: {
+          root: {
+            fontSize: '12.5px',
+            paddingTop: '3px',
+            paddingBottom: '3px',
+            paddingLeft: '8px',
+            paddingRight: '8px',
+            minHeight: '26px',
+            borderRadius: '6px',
+            margin: '1px 4px',
+            '& .MuiListItemText-primary': {
+              fontSize: '12.5px',
+            },
+            '& .MuiListItemText-secondary': {
+              fontSize: '10.5px',
+              marginLeft: '8px',
+            },
+            '& .MuiListItemIcon-root': {
+              minWidth: '24px',
+              color: 'inherit',
+            },
+            '& .MuiSvgIcon-root': {
+              fontSize: '16px',
+            },
           },
         },
       },

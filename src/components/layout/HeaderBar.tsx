@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFile } from "../../context";
 import { getTauriWindow } from "../../utils";
-import { alpha } from "@mui/material/styles";
+import { alpha, darken } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
@@ -78,7 +78,12 @@ export const HeaderBar: React.FC = () => {
   const handleStartDrag = async (e: React.MouseEvent) => {
     if (e.button === 0) {
       const target = e.target as HTMLElement;
-      if (target.tagName !== "BUTTON" && !target.closest("button") && target.tagName !== "INPUT" && !target.closest("input")) {
+      const isTab = target.closest(".header-tab");
+      const isIconButton = target.closest("button") || target.tagName === "BUTTON";
+      const isInput = target.closest("input") || target.tagName === "INPUT";
+      const isMenuItem = target.closest(".MuiMenuItem-root") || target.closest(".MuiMenu-root") || target.tagName === "LI";
+
+      if (!isTab && !isIconButton && !isInput && !isMenuItem) {
         const now = Date.now();
         if (now - lastClickTimeRef.current < 400) { handleMaximize(); lastClickTimeRef.current = 0; return; }
         lastClickTimeRef.current = now;
@@ -96,16 +101,16 @@ export const HeaderBar: React.FC = () => {
       elevation={0}
       onMouseDown={handleStartDrag}
       sx={{
-        bgcolor: (theme) => theme.palette.mode === 'light' ? theme.palette.grey[900] : theme.palette.common.black,
-        color: (theme) => theme.palette.common.white,
+        bgcolor: (theme) => theme.palette.mode === 'light' ? darken(theme.palette.background.paper, 0.08) : darken(theme.palette.background.paper, 0.25),
+        color: (theme) => theme.palette.text.secondary,
         borderBottom: 1,
-        borderColor: (theme) => theme.palette.mode === 'light' ? alpha(theme.palette.common.black, 0.1) : alpha(theme.palette.common.white, 0.05),
-        height: 38,
-        minHeight: 38,
+        borderColor: (theme) => theme.palette.mode === 'light' ? alpha(theme.palette.text.primary, 0.08) : alpha(theme.palette.text.primary, 0.05),
+        height: 30,
+        minHeight: 30,
         zIndex: 10,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', height: 38, minHeight: 38, px: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', height: 30, minHeight: 30, px: 0 }}>
         <Box ref={tabsContainerRef} className="header-tabs-container" sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', overflow: 'hidden', px: 0, gap: 0 }}>
           {isRevisionMode && (
             <Chip
@@ -114,8 +119,8 @@ export const HeaderBar: React.FC = () => {
               color="error"
               variant="outlined"
               sx={{
-                height: 20,
-                fontSize: 9,
+                height: 18,
+                fontSize: 8,
                 fontWeight: 700,
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
@@ -136,20 +141,23 @@ export const HeaderBar: React.FC = () => {
                 className={`header-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
                 onClick={() => selectFile(file.id)}
                 onContextMenu={(e) => handleContextMenu(e, file.id)}
-                onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); closeFile(file.id); } }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  if (e.button === 1) { e.preventDefault(); closeFile(file.id); }
+                }}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 0.8,
-                  px: 2, height: 38, borderTopLeftRadius: '8px', borderTopRightRadius: '8px',
+                  px: 1.5, height: 30, borderTopLeftRadius: '6px', borderTopRightRadius: '6px',
                   cursor: 'pointer', flexShrink: 0, userSelect: 'none',
-                  fontSize: 12, whiteSpace: 'nowrap',
+                  fontSize: 11.5, whiteSpace: 'nowrap',
                   bgcolor: (theme) => isActive ? theme.palette.background.paper : 'transparent',
-                  color: (theme) => isActive ? theme.palette.text.primary : alpha(theme.palette.common.white, 0.6),
+                  color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
                   borderRight: (theme) => isActive 
                     ? 'none' 
-                    : `1px solid ${theme.palette.mode === 'light' ? alpha(theme.palette.common.white, 0.1) : alpha(theme.palette.common.white, 0.05)}`,
+                    : `1px solid ${theme.palette.mode === 'light' ? alpha(theme.palette.text.primary, 0.08) : alpha(theme.palette.text.primary, 0.04)}`,
                   '&:hover': { 
-                    bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.common.white, 0.05),
-                    color: (theme) => isActive ? theme.palette.text.primary : theme.palette.common.white
+                    bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.text.primary, 0.04),
+                    color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary
                   },
                   transition: 'all 0.1s ease',
                   position: 'relative',
@@ -159,8 +167,8 @@ export const HeaderBar: React.FC = () => {
                 {file.isDirty && (
                   <Box 
                     sx={{ 
-                      width: 6, height: 6, borderRadius: '50%', 
-                      bgcolor: (theme) => isActive ? theme.palette.primary.main : alpha(theme.palette.common.white, 0.3), 
+                      width: 5, height: 5, borderRadius: '50%', 
+                      bgcolor: (theme) => isActive ? theme.palette.primary.main : theme.palette.text.secondary, 
                       flexShrink: 0,
                       boxShadow: (theme) => isActive ? `0 0 4px ${alpha(theme.palette.primary.main, 0.4)}` : 'none'
                     }} 
@@ -169,20 +177,28 @@ export const HeaderBar: React.FC = () => {
                 <IconButton
                   size="small"
                   className="tab-close"
-                  onClick={(e) => { e.stopPropagation(); closeFile(file.id); }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    closeFile(file.id);
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
                   sx={{ 
-                    p: '2px', 
-                    opacity: isActive ? 0.7 : 0, 
-                    color: (theme) => isActive ? 'inherit' : alpha(theme.palette.common.white, 0.5),
+                    p: '1px', 
+                    opacity: 0.6, 
+                    color: 'inherit',
                     '&:hover': { 
                       opacity: 1,
-                      bgcolor: (theme) => isActive ? theme.palette.action.hover : alpha(theme.palette.common.white, 0.1),
+                      bgcolor: 'action.hover',
                       color: 'error.main'
                     }, 
                     ml: 0.5 
                   }}
                 >
-                  <CloseIcon sx={{ fontSize: 12 }} />
+                  <CloseIcon sx={{ fontSize: 14 }} />
                 </IconButton>
               </Box>
             );
@@ -191,26 +207,27 @@ export const HeaderBar: React.FC = () => {
             <IconButton 
               size="small" 
               onClick={(e) => { e.stopPropagation(); newFile(); }} 
+              onMouseDown={(e) => e.stopPropagation()}
               sx={{ 
-                p: '6px', 
+                p: '4px', 
                 ml: 0.5,
-                color: (theme) => alpha(theme.palette.common.white, 0.6),
-                '&:hover': { color: (theme) => theme.palette.common.white, bgcolor: (theme) => alpha(theme.palette.common.white, 0.1) }
+                color: 'text.secondary',
+                '&:hover': { color: 'text.primary', bgcolor: 'action.hover' }
               }}
             >
-              <AddIcon sx={{ fontSize: 16 }} />
+              <AddIcon sx={{ fontSize: 15 }} />
             </IconButton>
           </Tooltip>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} onMouseDown={(e) => e.stopPropagation()}>
           <IconButton
             onClick={handleMinimize}
             title="Minimize"
             sx={{
-              width: 46, height: 38, borderRadius: 0,
-              color: (theme) => alpha(theme.palette.common.white, 0.6),
-              '&:hover': { bgcolor: (theme) => alpha(theme.palette.common.white, 0.1), color: (theme) => theme.palette.common.white },
+              width: 46, height: 30, borderRadius: 0,
+              color: 'inherit',
+              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
             }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -221,9 +238,9 @@ export const HeaderBar: React.FC = () => {
             onClick={handleMaximize}
             title={isMaximized ? "Restore" : "Maximize"}
             sx={{
-              width: 46, height: 38, borderRadius: 0,
-              color: (theme) => alpha(theme.palette.common.white, 0.6),
-              '&:hover': { bgcolor: (theme) => alpha(theme.palette.common.white, 0.1), color: (theme) => theme.palette.common.white },
+              width: 46, height: 30, borderRadius: 0,
+              color: 'inherit',
+              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
             }}
           >
             {isMaximized ? (
@@ -241,8 +258,8 @@ export const HeaderBar: React.FC = () => {
             onClick={handleClose}
             title="Close"
             sx={{
-              width: 46, height: 38, borderRadius: 0,
-              color: (theme) => alpha(theme.palette.common.white, 0.6),
+              width: 46, height: 30, borderRadius: 0,
+              color: 'inherit',
               '&:hover': { bgcolor: (theme) => theme.palette.error.main, color: (theme) => theme.palette.common.white },
             }}
           >
@@ -260,6 +277,7 @@ export const HeaderBar: React.FC = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={{ paper: { sx: { minWidth: 160 } } }}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <MenuItem onClick={() => { if (menuAnchor) { closeFile(menuAnchor.fileId); handleCloseMenu(); } }}>
           <ListItemText primary="Close" />

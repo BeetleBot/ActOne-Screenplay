@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo } from "react";
-import { useFile, useUI, useEditor, useParking } from "../context";
+import { useFile, useUI, useEditor, useParking, useCustomModal } from "../context";
 import { useCodeMirror } from "../editor";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -57,6 +57,7 @@ export const FountainEditor: React.FC = () => {
   const { updateSettings, cleanExtraSpace } = useEditor();
   const { setShowSearchPanel, setShowReplacePanel } = useUI();
   const parking = useParking();
+  const { prompt: showPrompt } = useCustomModal();
   
   const viewRef = useCodeMirror(containerRef);
 
@@ -259,12 +260,17 @@ export const FountainEditor: React.FC = () => {
     handleClose();
   };
 
-  const handleDropMarkerWithColor = (colorName: string) => {
+  const handleDropMarkerWithColor = async (colorName: string) => {
     if (!view || !selection) return;
     const from = selection.from;
     const to = selection.to;
     const defaultDesc = selectedText || "";
-    const desc = prompt(`Enter ${colorName} marker description:`, defaultDesc);
+    handleClose();
+    const desc = await showPrompt({
+      title: "Drop Marker",
+      message: `Enter ${colorName} marker description:`,
+      defaultValue: defaultDesc
+    });
     if (desc !== null) {
       const markerText = colorName === "none" ? `[[marker: ${desc.trim()}]]` : `[[marker ${colorName}: ${desc.trim()}]]`;
       view.dispatch({
@@ -272,7 +278,6 @@ export const FountainEditor: React.FC = () => {
         selection: { anchor: from + markerText.length }
       });
     }
-    handleClose();
   };
 
   const handleTransformCase = (mode: "upper" | "title" | "lower") => {
@@ -382,21 +387,21 @@ export const FountainEditor: React.FC = () => {
           <ListItemIcon>
             <ContentCutIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Cut" secondary="Ctrl+X" />
+          <ListItemText primary="Cut" />
         </MenuItem>
         
         <MenuItem disabled={!hasSelection} onClick={() => handleEditorAction("copy")}>
           <ListItemIcon>
             <ContentCopyIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Copy" secondary="Ctrl+C" />
+          <ListItemText primary="Copy" />
         </MenuItem>
         
         <MenuItem onClick={() => handleEditorAction("paste")}>
           <ListItemIcon>
             <AssignmentIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Paste" secondary="Ctrl+V" />
+          <ListItemText primary="Paste" />
         </MenuItem>
 
         <Divider />
@@ -658,19 +663,19 @@ export const FountainEditor: React.FC = () => {
           <ListItemIcon>
             <FormatBoldIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Bold" secondary="**" />
+          <ListItemText primary="Bold" />
         </MenuItem>
         <MenuItem disabled={!hasSelection} onClick={() => toggleInlineMarker("*")}>
           <ListItemIcon>
             <FormatItalicIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Italic" secondary="*" />
+          <ListItemText primary="Italic" />
         </MenuItem>
         <MenuItem disabled={!hasSelection} onClick={() => toggleInlineMarker("_")}>
           <ListItemIcon>
             <FormatUnderlinedIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Underline" secondary="_" />
+          <ListItemText primary="Underline" />
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleCleanSpaces}>

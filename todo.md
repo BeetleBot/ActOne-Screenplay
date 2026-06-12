@@ -9,10 +9,10 @@
 * \[x] Add more export options (PDF, etc.)
 * \[x] Fix keyboard scrolling in Navigator
 * \[x] Underline shortcut works for just one letter.
-* \[ ] When command palette opens, editor scrolls to the top visually (restores on close). Need to prevent the visual scroll entirely.
+* \[x] When command palette opens, editor scrolls to the top visually (restores on close). Need to prevent the visual scroll entirely.
 * \[ ] Improve the Index cards, redesign it completely with Sections and Synopsis Visible.
-* \[ ] Implement Marker's features.
-* \[ ] Find a way to include all Indian languages(Figure out the fonts) for the editor and export options.
+* \[x] Implement Marker's features.
+* \[x] Find a way to include all Indian languages(Figure out the fonts) for the editor and export options.
 * \[x] Make sure that the pagination is right.
 * \[x] Hide fountain markup.
 
@@ -24,10 +24,9 @@
 * \[x] Search / Replace / Replace All
 * \[x] Revision mode.
 * \[ ] screenplay Preview feature.
-* \[ ] Markers and tags.
+* \[x] Markers and tags.
 * \[ ] X-Ray or Analysis stuffs.
 * \[ ] AI integration(For Translations, Rephrasing and Better words)
 * \[ ] Cloud integration(Google Drive, Dropbox, etc.,)
-* \[ ] Add a seperate title page customisation modal, with Image support, if possible.
-c
+* \[x] Add a seperate title page customisation modal, with Image support, if possible.
 

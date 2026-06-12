@@ -3,6 +3,7 @@ import { parseScreenplay, FountainDocument } from "../parser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { computeRevisedLines, unpackActoneBundle, packActoneBundle } from "../utils";
+import { useCustomModal } from "./CustomModalContext";
 
 export interface ScreenplayFile {
   id: string;
@@ -33,9 +34,9 @@ export interface FileContextProps {
   saveFileAs: () => Promise<string | null>;
   selectFile: (id: string) => void;
   newFile: (initialContent?: string) => void;
-  closeFile: (id: string) => void;
-  closeOthers: (id: string) => void;
-  closeAll: () => void;
+  closeFile: (id: string) => Promise<void>;
+  closeOthers: (id: string) => Promise<void>;
+  closeAll: () => Promise<void>;
   recentFiles: RecentFile[];
   openFilePath: (path: string) => Promise<void>;
   removeFromRecent: (path: string) => void;
@@ -52,6 +53,7 @@ export const useFile = () => {
 
 export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { paperSize, fontFamily } = useUI();
+  const { confirm, prompt } = useCustomModal();
 
   const generateUUID = () => "file-" + Math.random().toString(36).substring(2, 15);
 
@@ -132,13 +134,30 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setParsedDoc(newFileObj.parsedDoc);
   };
 
-  const closeFile = (id: string) => {
+  const closeFile = async (id: string) => {
     const fileToClose = files.find(f => f.id === id);
     if (!fileToClose) return;
 
     if (fileToClose.isDirty) {
-      const confirmClose = window.confirm(`"${fileToClose.filePath ? fileToClose.filePath.split(/[/\\]/).pop() : 'Untitled'}" has unsaved changes. Are you sure you want to close it?`);
-      if (!confirmClose) return;
+      const confirmClose = await confirm({
+        title: "Unsaved Changes",
+        message: `"${fileToClose.filePath ? fileToClose.filePath.split(/[/\\]/).pop() : 'Untitled'}" has unsaved changes. Do you want to save your changes before closing?`,
+        buttons: [
+          { value: "save", label: "Save & Close", variant: "contained", color: "primary" },
+          { value: "discard", label: "Discard", variant: "outlined", color: "error" },
+          { value: "cancel", label: "Cancel", variant: "text", color: "inherit" }
+        ]
+      });
+      if (confirmClose === "cancel") return;
+      if (confirmClose === "save") {
+        const originalActiveId = activeFileId;
+        if (originalActiveId !== id) {
+          selectFile(id);
+        }
+        await saveFile();
+        const updated = files.find(f => f.id === id);
+        if (updated && updated.isDirty) return; // aborted or cancelled save
+      }
     }
 
     const index = files.findIndex(f => f.id === id);
@@ -163,11 +182,24 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const closeOthers = (id: string) => {
+  const closeOthers = async (id: string) => {
     const dirtyOthers = files.filter(f => f.id !== id && f.isDirty);
-    if (dirtyOthers.length > 0) {
-      if (!window.confirm(`There are ${dirtyOthers.length} unsaved files. Are you sure you want to close them?`)) {
-        return;
+    for (const f of dirtyOthers) {
+      const confirmClose = await confirm({
+        title: "Unsaved Changes",
+        message: `"${f.filePath ? f.filePath.split(/[/\\]/).pop() : 'Untitled'}" has unsaved changes. Do you want to save your changes before closing?`,
+        buttons: [
+          { value: "save", label: "Save & Close", variant: "contained", color: "primary" },
+          { value: "discard", label: "Discard", variant: "outlined", color: "error" },
+          { value: "cancel", label: "Cancel", variant: "text", color: "inherit" }
+        ]
+      });
+      if (confirmClose === "cancel") return;
+      if (confirmClose === "save") {
+        selectFile(f.id);
+        await saveFile();
+        const updated = files.find(file => file.id === f.id);
+        if (updated && updated.isDirty) return; // aborted or cancelled save
       }
     }
     const fileToKeep = files.find(f => f.id === id);
@@ -177,11 +209,24 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const closeAll = () => {
+  const closeAll = async () => {
     const dirtyFiles = files.filter(f => f.isDirty);
-    if (dirtyFiles.length > 0) {
-      if (!window.confirm(`There are ${dirtyFiles.length} unsaved files. Are you sure you want to close them?`)) {
-        return;
+    for (const f of dirtyFiles) {
+      const confirmClose = await confirm({
+        title: "Unsaved Changes",
+        message: `"${f.filePath ? f.filePath.split(/[/\\]/).pop() : 'Untitled'}" has unsaved changes. Do you want to save your changes before closing?`,
+        buttons: [
+          { value: "save", label: "Save & Close", variant: "contained", color: "primary" },
+          { value: "discard", label: "Discard", variant: "outlined", color: "error" },
+          { value: "cancel", label: "Cancel", variant: "text", color: "inherit" }
+        ]
+      });
+      if (confirmClose === "cancel") return;
+      if (confirmClose === "save") {
+        selectFile(f.id);
+        await saveFile();
+        const updated = files.find(file => file.id === f.id);
+        if (updated && updated.isDirty) return; // aborted or cancelled save
       }
     }
     setFiles([]);
@@ -338,7 +383,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error(e);
       removeFromRecent(path);
-      alert("Could not open file: " + path);
+      await confirm({
+        title: "Error Opening File",
+        message: "Could not open file: " + path,
+        buttons: [{ value: "ok", label: "OK", variant: "contained" }]
+      });
       return;
     }
 
@@ -441,7 +490,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           settings = bundle.settings;
         } catch (e) {
           console.error(e);
-          alert("Could not read actone bundle binary");
+          await confirm({
+            title: "Error Reading Bundle",
+            message: "Could not read actone bundle binary",
+            buttons: [{ value: "ok", label: "OK", variant: "contained" }]
+          });
           return;
         }
       }
@@ -573,7 +626,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error(e);
       }
     } else {
-      const filename = window.prompt("Enter filename to save:", filePath || "Untitled.actone");
+      const filename = await prompt({
+        title: "Save As",
+        message: "Enter filename to save:",
+        defaultValue: filePath || "Untitled.actone"
+      });
       if (filename) {
         let isActone = filename.toLowerCase().endsWith(".actone");
         let finalName = filename;

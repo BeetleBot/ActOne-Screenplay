@@ -3,6 +3,7 @@ import { useUI } from "../../context";
 import { getTauriWindow } from "../../utils";
 import { HeaderBar } from "./HeaderBar";
 import { Workspace } from "./Workspace";
+import { StatusBar } from "./StatusBar";
 
 export interface MainLayoutProps {
   isSidebarOpen: boolean;
@@ -37,6 +38,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         onOpenBreakdownModal={onOpenBreakdownModal}
         onOpenThemeManagerModal={onOpenThemeManagerModal}
       />
+      <StatusBar />
     </>
   );
 };

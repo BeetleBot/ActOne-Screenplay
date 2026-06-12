@@ -1,37 +1,15 @@
 import React from "react";
+import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
 
-type IconProps = {
-  sx?: Record<string, any>;
-  fontSize?: number | string;
-  color?: string;
-  className?: string;
-  style?: React.CSSProperties;
+type IconProps = SvgIconProps & {
+  sx?: any;
 };
 
 function createIcon(d: string): React.FC<IconProps> {
-  return ({ sx, fontSize = "1em", color, className, style }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      width={typeof fontSize === "number" ? fontSize : undefined}
-      height={typeof fontSize === "number" ? fontSize : undefined}
-      className={className}
-      style={{
-        width: typeof fontSize !== "number" ? fontSize : undefined,
-        height: typeof fontSize !== "number" ? fontSize : undefined,
-        flexShrink: 0,
-        color,
-        ...style,
-        ...(sx ? Object.fromEntries(
-          Object.entries(sx).map(([k, v]) => {
-            const cssKey = k.replace(/([A-Z])/g, (m: string) => "-" + m.toLowerCase());
-            return [cssKey, v];
-          })
-        ) : {}),
-      }}
-    >
+  return (props) => (
+    <SvgIcon {...props}>
       <path d={d} />
-    </svg>
+    </SvgIcon>
   );
 }
 
@@ -51,6 +29,7 @@ export const CheckBoxIcon = createIcon("M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2
 export const CheckCircleIcon = createIcon("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8z");
 export const ChevronRightIcon = createIcon("M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z");
 export const CloseIcon = createIcon("M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z");
+export const ClearIcon = CloseIcon;
 export const ColorLensIcon = createIcon("M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8m-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12m3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8m5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8m3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5");
 export const ContentCopyIcon = createIcon("M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z");
 export const ContentCutIcon = createIcon("M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2m0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2m6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5M19 3l-6 6 2 2 7-7V3z");

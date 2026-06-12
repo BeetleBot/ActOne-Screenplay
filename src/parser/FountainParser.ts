@@ -545,10 +545,13 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
     if (isChar) {
       dialogueMergedLines.push(line);
       let j = idx + 1;
+      let crossedEmpty = false;
+      let lastType: 'character' | 'parenthetical' | 'dialogue' = 'character';
       while (j < cleanedLinesText.length) {
         const nextLine = cleanedLinesText[j];
         const nextTrimmed = nextLine.trim();
         if (nextTrimmed === "") {
+          crossedEmpty = true;
           j++;
           continue;
         }
@@ -558,27 +561,15 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
         const nextIsForced = nextTrimmed.startsWith("@") || nextTrimmed.startsWith("!") || nextTrimmed.startsWith("~");
 
         let isNewChar = false;
-        if (nextTrimmed === nextTrimmed.toUpperCase() && /[A-Z]/.test(nextTrimmed)) {
-          let crossedEmpty = false;
-          for (let k = idx + 1; k < j; k++) {
-            if (cleanedLinesText[k].trim() === "") {
-              crossedEmpty = true;
-              break;
-            }
-          }
-          if (crossedEmpty) {
-            isNewChar = true;
-          }
+        if (nextTrimmed === nextTrimmed.toUpperCase() && /[A-Z]/.test(nextTrimmed) && crossedEmpty) {
+          isNewChar = true;
         }
 
-        if (nextIsHeading || nextIsTransition || nextIsOutline || nextIsForced || isNewChar) {
-          let crossedEmpty = false;
-          for (let k = idx + 1; k < j; k++) {
-            if (cleanedLinesText[k].trim() === "") {
-              crossedEmpty = true;
-              break;
-            }
-          }
+        const nextIsParenthetical = nextTrimmed.startsWith("(");
+        const shouldEndDialogue = nextIsHeading || nextIsTransition || nextIsOutline || nextIsForced || isNewChar || 
+                                  (crossedEmpty && lastType === 'dialogue' && !nextIsParenthetical);
+
+        if (shouldEndDialogue) {
           if (crossedEmpty) {
             dialogueMergedLines.push("");
           }
@@ -586,6 +577,7 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
         }
 
         dialogueMergedLines.push(nextLine);
+        lastType = nextIsParenthetical ? 'parenthetical' : 'dialogue';
         j++;
       }
       idx = j;

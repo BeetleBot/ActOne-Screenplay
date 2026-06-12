@@ -11,3 +11,5 @@ export { ParkingProvider, useParking } from './ParkingContext';
 export type { ParkedItem } from './ParkingContext';
 export { SprintProvider, useSprint } from './SprintContext';
 export type { SprintSession } from './SprintContext';
+export { CustomModalProvider, useCustomModal } from './CustomModalContext';
+export type { ButtonOption, ConfirmOptions, PromptOptions } from './CustomModalContext';

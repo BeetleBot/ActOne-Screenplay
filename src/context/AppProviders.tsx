@@ -3,17 +3,20 @@ import { UIProvider } from "./UIContext";
 import { FileProvider } from "./FileContext";
 import { EditorProvider } from "./EditorContext";
 import { ParkingProvider } from "./ParkingContext";
+import { CustomModalProvider } from "./CustomModalContext";
 
 export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <UIProvider>
-      <FileProvider>
-        <EditorProvider>
-          <ParkingProvider>
-            {children}
-          </ParkingProvider>
-        </EditorProvider>
-      </FileProvider>
+      <CustomModalProvider>
+        <FileProvider>
+          <EditorProvider>
+            <ParkingProvider>
+              {children}
+            </ParkingProvider>
+          </EditorProvider>
+        </FileProvider>
+      </CustomModalProvider>
     </UIProvider>
   );
 };

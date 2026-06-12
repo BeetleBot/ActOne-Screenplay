@@ -199,6 +199,14 @@ fn get_system_fonts() -> Result<Vec<String>, String> {
     }
 }
 
+#[tauri::command]
+fn get_cli_args() -> Vec<String> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    args.into_iter()
+        .filter(|p| p.ends_with(".actone") || p.ends_with(".fountain") || p.ends_with(".txt"))
+        .collect()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -227,7 +235,8 @@ pub fn run() {
             structures::get_structures,
             structures::get_structure_template,
             get_system_fonts,
-            get_page_breaks
+            get_page_breaks,
+            get_cli_args
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

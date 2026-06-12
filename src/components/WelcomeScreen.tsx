@@ -66,69 +66,65 @@ const ActionCard: React.FC<{
   icon: React.ReactNode;
   title: string;
   description: string;
-  highlighted?: boolean;
   onClick: () => void;
-}> = ({ icon, title, description, highlighted, onClick }) => (
+}> = ({ icon, title, description, onClick }) => (
   <Box
     onClick={onClick}
     sx={{
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
-      gap: 1.5,
-      width: 340,
-      p: 1.25,
-      borderRadius: 2.5,
+      justifyContent: "center",
+      textAlign: "center",
+      width: 120,
+      height: 85,
+      p: 1.2,
+      borderRadius: 2,
       cursor: "pointer",
-      bgcolor: highlighted ? "var(--button-color)" : "background.paper",
-      color: highlighted ? "#fff" : "text.primary",
-      border: highlighted ? "none" : 1,
+      bgcolor: "background.paper",
+      color: "text.primary",
+      border: 1,
       borderColor: "divider",
       transition: "all 0.15s ease",
       "&:hover": {
-        bgcolor: highlighted ? "var(--button-color)" : "action.hover",
+        bgcolor: "action.hover",
         transform: "translateY(-1px)",
-        boxShadow: (theme: any) =>
-          highlighted
-            ? `0 4px 16px ${alpha("#000", 0.25)}`
-            : `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
+        boxShadow: (theme: any) => `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
       },
     }}
   >
     <Box
       sx={{
-        flexShrink: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 32,
-        height: 32,
-        borderRadius: 2,
-        bgcolor: highlighted ? "rgba(255,255,255,0.15)" : "action.selected",
-        color: highlighted ? "inherit" : "text.secondary",
+        width: 26,
+        height: 26,
+        borderRadius: 1.5,
+        bgcolor: "action.selected",
+        color: "text.secondary",
+        mb: 0.75,
       }}
     >
       {icon}
     </Box>
-    <Box sx={{ minWidth: 0 }}>
-      <Typography
-        variant="subtitle2"
-        sx={{ fontWeight: 700, fontSize: 12.5, lineHeight: 1.3 }}
-      >
-        {title}
-      </Typography>
-      <Typography
-        variant="caption"
-        sx={{
-          color: highlighted ? "rgba(255,255,255,0.8)" : "text.secondary",
-          fontSize: 10.5,
-          lineHeight: 1.2,
-          display: "block",
-          mt: 0.15,
-        }}
-      >
-        {description}
-      </Typography>
-    </Box>
+    <Typography
+      variant="subtitle2"
+      sx={{ fontWeight: 700, fontSize: 12, lineHeight: 1.2 }}
+    >
+      {title}
+    </Typography>
+    <Typography
+      variant="caption"
+      sx={{
+        color: "text.secondary",
+        fontSize: 9,
+        lineHeight: 1.1,
+        mt: 0.25,
+      }}
+    >
+      {description}
+    </Typography>
   </Box>
 );
 
@@ -147,6 +143,18 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   useEffect(() => {
     setQuote(getDynamicQuote());
     getVersion().then(setAppVersion).catch(() => setAppVersion("0.1.0"));
+
+    // Check if double-clicked file was passed as CLI argument on startup
+    invoke<string[]>("get_cli_args").then((paths) => {
+      if (paths && paths.length > 0) {
+        const filePath = paths[0];
+        localStorage.setItem("pending-open-path", filePath);
+        localStorage.setItem("pending-action", "open");
+        createEditorWindow("open").then(created => {
+          if (created) closeWelcome();
+        });
+      }
+    }).catch(console.error);
   }, []);
 
   // Listen for OS file open events (from Rust backend)
@@ -315,7 +323,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
 
         {/* Quote */}
         {quote.text && (
-          <Box sx={{ mb: 2.5, textAlign: "center", maxWidth: 440 }}>
+          <Box sx={{ mb: 1.5, textAlign: "center", maxWidth: 440 }}>
             <Typography
               sx={{
                 fontSize: 14,
@@ -345,31 +353,31 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         )}
 
         {/* Action Cards */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2.5 }}>
+        <Box sx={{ display: "flex", flexDirection: "row", gap: 1.5, mb: 2 }}>
           <Box sx={{ position: "relative" }}>
             <Box sx={{
-              position: "absolute", inset: -8,
-              borderRadius: 3,
+              position: "absolute", inset: -5,
+              borderRadius: 2,
               background: (t: any) => `radial-gradient(ellipse, ${alpha(t.palette.primary.main, 0.12)} 0%, transparent 70%)`,
               pointerEvents: "none",
             }} />
             <ActionCard
-              icon={<AddIcon sx={{ fontSize: 16 }} />}
+              icon={<AddIcon sx={{ fontSize: 15 }} />}
               title="New Project"
-              description="Create a new screenplay"
+              description="Create screenplay"
               onClick={handleNew}
             />
           </Box>
           <ActionCard
-            icon={<FolderOpenIcon sx={{ fontSize: 16 }} />}
+            icon={<FolderOpenIcon sx={{ fontSize: 15 }} />}
             title="Open Project"
-            description="Browse and open an existing file"
+            description="Browse and open"
             onClick={handleOpen}
           />
           <ActionCard
-            icon={<AutoAwesomeIcon sx={{ fontSize: 16 }} />}
+            icon={<AutoAwesomeIcon sx={{ fontSize: 15 }} />}
             title="Templates"
-            description="Start from a pre-built structure"
+            description="Structure template"
             onClick={handleTemplates}
           />
         </Box>

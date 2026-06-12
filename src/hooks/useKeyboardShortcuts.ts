@@ -16,6 +16,7 @@ interface ShortcutActions {
   closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
+  cleanExtraSpace: () => void;
   isDisabled?: boolean;
 }
 
@@ -57,6 +58,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (e.altKey && e.key.toLowerCase() === "q") {
         e.preventDefault();
         actionsRef.current.closeFile();
+        return;
+      }
+
+      if (e.shiftKey && e.altKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        actionsRef.current.cleanExtraSpace();
         return;
       }
 

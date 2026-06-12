@@ -163,15 +163,19 @@ export const SearchPanel: React.FC = () => {
       return;
     }
 
-    const cursorHead = editorView.state.selection.main.head;
-    let foundIndex = matches.findIndex((m) => m.index >= cursorHead);
+    const mainSel = editorView.state.selection.main;
+    let foundIndex = matches.findIndex((m) => m.index === mainSel.from);
+
+    if (foundIndex === -1) {
+      foundIndex = matches.findIndex((m) => m.index >= mainSel.head);
+    }
 
     if (foundIndex === -1) {
       foundIndex = matches.length - 1;
     }
 
     setActiveIndex(foundIndex);
-  }, [matches, editorView?.state.selection.main.head]);
+  }, [matches, editorView?.state.selection.main]);
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
