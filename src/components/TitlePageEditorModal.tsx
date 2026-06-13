@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { useFile } from "../context";
+import { useFile, useUI } from "../context";
 import { CloseIcon } from "./Icons";
 
 import {
@@ -113,6 +113,7 @@ function buildTitlePage(fields: Record<string, string>): string {
 
 export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onClose }) => {
   const { rawText, setRawText } = useFile();
+  const { appScale } = useUI();
 
   const initial = useMemo(() => extractTitlePage(rawText), [rawText]);
   const [activeTab, setActiveTab] = useState<number>(0);
@@ -161,7 +162,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
         </Tabs>
       </Box>
 
-      <DialogContent dividers sx={{ p: 3, maxHeight: 420, overflowY: "auto" }}>
+      <DialogContent dividers sx={{ p: 3, maxHeight: `${(65 * 100) / appScale}vh`, overflowY: "auto" }}>
         {activeTab === 0 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             {!hasTitlePage && (

@@ -24,8 +24,6 @@ import {
   Select,
   FormControl,
   InputLabel,
-  ToggleButtonGroup,
-  ToggleButton,
 } from "@mui/material";
 
 export const ScriptsView: React.FC = () => {
@@ -38,7 +36,7 @@ export const ScriptsView: React.FC = () => {
   const [renameDialog, setRenameDialog] = useState<{ open: boolean; index: number; value: string } | null>(null);
   const [exportDialog, setExportDialog] = useState(false);
 
-  const [exportFormat, setExportFormat] = useState<"fountain" | "pdf">("fountain");
+  const [exportFormat, setExportFormat] = useState<"fountain" | "pdf">("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
   const [mirrorSceneNumbers, setMirrorSceneNumbers] = useState("off");
   const [exportSections, setExportSections] = useState(false);
@@ -252,23 +250,18 @@ export const ScriptsView: React.FC = () => {
           </DialogTitle>
 
           <DialogContent dividers sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-              <ToggleButtonGroup
+            <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+              <InputLabel id="export-format-label">Export Format</InputLabel>
+              <Select
+                labelId="export-format-label"
                 value={exportFormat}
-                exclusive
-                onChange={(_, val) => val && setExportFormat(val)}
-                aria-label="export format"
-                fullWidth
-                size="small"
+                label="Export Format"
+                onChange={(e) => setExportFormat(e.target.value as "fountain" | "pdf")}
               >
-                <ToggleButton value="fountain" sx={{ gap: 1 }}>
-                  Fountain
-                </ToggleButton>
-                <ToggleButton value="pdf" sx={{ gap: 1 }}>
-                  PDF
-                </ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
+                <MenuItem value="pdf">PDF</MenuItem>
+                <MenuItem value="fountain">Fountain</MenuItem>
+              </Select>
+            </FormControl>
 
             {exportFormat === "pdf" && (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>

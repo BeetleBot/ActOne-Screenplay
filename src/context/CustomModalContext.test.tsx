@@ -2,9 +2,12 @@ import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import React from "react";
 import { CustomModalProvider, useCustomModal } from "./CustomModalContext";
+import { UIProvider } from "./UIContext";
 
 function wrapper({ children }: { children: React.ReactNode }) {
-  return React.createElement(CustomModalProvider, null, children);
+  return React.createElement(UIProvider, null,
+    React.createElement(CustomModalProvider, null, children)
+  );
 }
 
 describe("CustomModalContext", () => {

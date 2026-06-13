@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useFile, useEditor } from "../context";
+import { useFile, useEditor, useUI } from "../context";
 import { LineType } from "../parser";
 import { EditorView } from "@codemirror/view";
 import { SearchIcon, DeleteIcon, MergeTypeIcon, CloseIcon } from "./Icons";
@@ -44,6 +44,7 @@ interface ProductionBreakdownModalProps {
 export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> = ({ onClose }) => {
   const { parsedDoc } = useFile();
   const { updateSettings, editorView } = useEditor();
+  const { appScale } = useUI();
   const [searchQuery, setSearchQuery] = useState("");
   const [mergeTargets, setMergeTargets] = useState<{ [defId: string]: string }>({});
 
@@ -157,7 +158,7 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2, minHeight: 350, maxHeight: 500 }}>
+      <DialogContent dividers sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2, maxHeight: `${(70 * 100) / appScale}vh` }}>
         <TextField
           placeholder="Filter tags..."
           value={searchQuery}

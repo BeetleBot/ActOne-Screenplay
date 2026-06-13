@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useUI } from "../context";
 import { CloseIcon, OpenInNewIcon, SearchIcon, ClearIcon } from "./Icons";
 
 import {
@@ -297,6 +298,7 @@ const shortcuts = [
 ];
 
 export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
+  const { appScale } = useUI();
   const [activeTab, setActiveTab] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -381,7 +383,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
         </Box>
       )}
 
-      <DialogContent sx={{ p: 3, height: 460, overflowY: "auto" }}>
+      <DialogContent sx={{ p: 3, maxHeight: `${(70 * 100) / appScale}vh`, overflowY: "auto" }}>
         {searchQuery ? (
           // Search Results View
           <Box>

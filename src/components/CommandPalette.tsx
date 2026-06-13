@@ -89,6 +89,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setIsZenMode,
     zoomLevel,
     setZoomLevel,
+    appScale,
   } = useUI();
 
   const openUrl = (url: string) => {
@@ -326,7 +327,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         />
       </Box>
 
-      <DialogContent dividers sx={{ p: 0, maxHeight: 320 }} ref={containerRef}>
+      <DialogContent dividers sx={{ p: 0, maxHeight: `${(50 * 100) / appScale}vh` }} ref={containerRef}>
         {flatGroupedList.length === 0 ? (
           <Typography color="text.secondary" sx={{ p: 3, textAlign: "center", fontSize: 13 }}>
             No results found for "{search}"

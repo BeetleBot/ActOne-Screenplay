@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useFile, useEditor } from "../context";
+import { useFile, useEditor, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { CloseIcon, SearchIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon } from "./Icons";
 
@@ -39,6 +39,7 @@ interface StructureImportModalProps {
 export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onClose }) => {
   const { rawText, setRawText } = useFile();
   const { editorView } = useEditor();
+  const { appScale } = useUI();
   const [structures, setStructures] = useState<Structure[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
@@ -127,7 +128,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 0, height: 460 }}>
+      <DialogContent dividers sx={{ p: 0, maxHeight: `${(70 * 100) / appScale}vh`, height: "100%" }}>
         <Grid container sx={{ height: "100%" }}>
           {/* Left Panel: Search & List */}
           <Grid size={{ xs: 5 }} sx={{ borderRight: 1, borderColor: "divider", display: "flex", flexDirection: "column", height: "100%" }}>

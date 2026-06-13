@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useFile, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
-import { DescriptionIcon, CloseIcon, DownloadIcon } from "./Icons";
+import { CloseIcon, DownloadIcon } from "./Icons";
 
 import {
   Dialog,
@@ -18,8 +18,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  ToggleButtonGroup,
-  ToggleButton,
 } from "@mui/material";
 
 type ExportFormat = "pdf" | "fountain";
@@ -198,25 +196,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
             </Typography>
           </Box>
         )}
-        <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-          <ToggleButtonGroup
+        <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+          <InputLabel id="export-format-label">Export Format</InputLabel>
+          <Select
+            labelId="export-format-label"
             value={format}
-            exclusive
-            onChange={(_, val) => val && setFormat(val)}
-            aria-label="export format"
-            fullWidth
-            size="small"
+            label="Export Format"
+            onChange={(e) => setFormat(e.target.value as ExportFormat)}
           >
-            <ToggleButton value="pdf" aria-label="export as pdf" sx={{ gap: 1 }}>
-              <DescriptionIcon sx={{ fontSize: 16 }} />
-              PDF
-            </ToggleButton>
-            <ToggleButton value="fountain" aria-label="export as fountain" sx={{ gap: 1 }}>
-              <DescriptionIcon sx={{ fontSize: 16 }} />
-              Fountain
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
+            <MenuItem value="pdf">PDF</MenuItem>
+            <MenuItem value="fountain">Fountain</MenuItem>
+          </Select>
+        </FormControl>
 
         {format === "pdf" ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>

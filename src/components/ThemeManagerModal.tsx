@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTheme, type CustomTheme } from "../context";
+import { useTheme, useUI, type CustomTheme } from "../context";
 import { deriveAllColors, themes, type ThemeColors } from "../theme";
 import {
   Dialog, DialogTitle, DialogContent, Typography, IconButton, Box,
@@ -206,6 +206,7 @@ function ThemePreview({ colors, isDark }: { colors: ThemeColors; isDark: boolean
 
 export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose }) => {
   const { theme, setTheme, customThemes, addCustomTheme, updateCustomTheme, deleteCustomTheme } = useTheme();
+  const { appScale } = useUI();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -295,7 +296,7 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
       </DialogTitle>
 
       <DialogContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, height: 540 }}>
+        <Box sx={{ display: 'flex', gap: 2, maxHeight: `${(75 * 100) / appScale}vh` }}>
           {/* ── Left pane: list or form ── */}
           <Box sx={{
             width: 340, flexShrink: 0, display: 'flex', flexDirection: 'column',
