@@ -9,6 +9,7 @@ export { ModalManager } from './ModalManager';
 export type { ModalManagerProps } from './ModalManager';
 export { OutlineView } from './OutlineView';
 export { ProductionBreakdownModal } from './ProductionBreakdownModal';
+export { ScriptsView } from './ScriptsView';
 export { SearchPanel } from './SearchPanel';
 export { SettingsModal } from './SettingsModal';
 export { SidebarViews } from './SidebarViews';

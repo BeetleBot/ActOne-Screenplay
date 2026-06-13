@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { parseScreenplay, FountainDocument } from "../parser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundle } from "../utils";
+import type { ScriptInfo } from "../utils";
 import { useCustomModal } from "./CustomModalContext";
 
 export interface ScreenplayFile {
@@ -13,6 +14,8 @@ export interface ScreenplayFile {
   isSaving: boolean;
   isDirty: boolean;
   savedText: string;
+  scripts?: ScriptInfo[];
+  activeScriptIndex?: number;
 }
 
 export interface RecentFile {
@@ -41,6 +44,14 @@ export interface FileContextProps {
   openFilePath: (path: string) => Promise<void>;
   removeFromRecent: (path: string) => void;
   updateSettings: (updater: (prev: any) => any) => void;
+  scripts: ScriptInfo[];
+  activeScriptIndex: number;
+  activeScriptName: string;
+  isBundle: boolean;
+  setActiveScript: (index: number) => void;
+  addScript: (name?: string) => Promise<string | null>;
+  renameScript: (index: number, newName: string) => Promise<boolean>;
+  deleteScript: (index: number) => Promise<boolean>;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -49,6 +60,19 @@ export const useFile = () => {
   const context = useContext(FileContext);
   if (!context) throw new Error("useFile must be used within a FileProvider");
   return context;
+};
+
+const sanitizeFileName = (name: string): string =>
+  name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").trim() || "Untitled";
+
+const getUniqueName = (base: string, existing: ScriptInfo[]): string => {
+  let name = base;
+  let counter = 1;
+  while (existing.some((s) => s.name === name)) {
+    counter++;
+    name = `${base} (${counter})`;
+  }
+  return name;
 };
 
 export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -88,22 +112,30 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [parsedDoc, setParsedDoc] = useState<FountainDocument>(() => parseScreenplay(defaultText, paperSize));
   const [filePath, setFilePath] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  
+  const [scriptsState, setScriptsState] = useState<ScriptInfo[]>([]);
+  const [activeScriptIndex, setActiveScriptIndexState] = useState<number>(0);
+
+  const activeFile = files.find(f => f.id === activeFileId);
+  const isBundle = !!activeFile?.scripts;
+
   useEffect(() => {
-    setFiles(prev => prev.map(f => {
-      const doc = parseScreenplay(f.rawText, paperSize);
-      const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-        ? doc.settings
-        : f.parsedDoc.settings;
-      return { ...f, parsedDoc: { ...doc, pageBreaks: undefined, settings: mergedSettings } };
-    }));
-    setParsedDoc(prevDoc => {
-      const doc = parseScreenplay(rawText, paperSize);
-      const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-        ? doc.settings
-        : prevDoc.settings;
-      return { ...doc, pageBreaks: undefined, settings: mergedSettings };
-    });
+    const updateAll = () => {
+      setFiles(prev => prev.map(f => {
+        const doc = parseScreenplay(f.rawText, paperSize);
+        const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+          ? doc.settings
+          : f.parsedDoc.settings;
+        return { ...f, parsedDoc: { ...doc, pageBreaks: undefined, settings: mergedSettings } };
+      }));
+      setParsedDoc(prevDoc => {
+        const doc = parseScreenplay(rawText, paperSize);
+        const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+          ? doc.settings
+          : prevDoc.settings;
+        return { ...doc, pageBreaks: undefined, settings: mergedSettings };
+      });
+    };
+    updateAll();
   }, [paperSize]);
 
   const selectFile = (id: string) => {
@@ -114,10 +146,19 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFilePath(file.filePath);
     setParsedDoc(file.parsedDoc);
     setIsSaving(file.isSaving);
+    setScriptsState(file.scripts || []);
+    setActiveScriptIndexState(file.activeScriptIndex ?? 0);
   };
 
   const newFile = (initialContent: string = "") => {
     const newId = generateUUID();
+    const scriptName = "Untitled";
+    const scripts: ScriptInfo[] = [{
+      name: scriptName,
+      fileName: `${scriptName}.fountain`,
+      content: initialContent,
+      savedContent: initialContent,
+    }];
     const newFileObj: ScreenplayFile = {
       id: newId,
       filePath: null,
@@ -126,12 +167,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isSaving: false,
       isDirty: initialContent !== "",
       savedText: "",
+      scripts,
+      activeScriptIndex: 0,
     };
     setFiles(prev => [...prev, newFileObj]);
     setActiveFileIdState(newId);
     setRawTextState(initialContent);
     setFilePath(null);
     setParsedDoc(newFileObj.parsedDoc);
+    setScriptsState(scripts);
+    setActiveScriptIndexState(0);
   };
 
   const closeFile = async (id: string) => {
@@ -156,7 +201,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         await saveFile();
         const updated = files.find(f => f.id === id);
-        if (updated && updated.isDirty) return; // aborted or cancelled save
+        if (updated && updated.isDirty) return;
       }
     }
 
@@ -169,15 +214,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRawTextState("");
       setFilePath(null);
       setParsedDoc(parseScreenplay("", paperSize));
+      setScriptsState([]);
+      setActiveScriptIndexState(0);
     } else {
       setFiles(newFiles);
       if (activeFileId === id) {
         const nextActiveIndex = index >= newFiles.length ? newFiles.length - 1 : index;
         const nextFile = newFiles[nextActiveIndex];
-        setActiveFileIdState(nextFile.id);
-        setRawTextState(nextFile.rawText);
-        setFilePath(nextFile.filePath);
-        setParsedDoc(nextFile.parsedDoc);
+        selectFile(nextFile.id);
       }
     }
   };
@@ -199,7 +243,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectFile(f.id);
         await saveFile();
         const updated = files.find(file => file.id === f.id);
-        if (updated && updated.isDirty) return; // aborted or cancelled save
+        if (updated && updated.isDirty) return;
       }
     }
     const fileToKeep = files.find(f => f.id === id);
@@ -226,7 +270,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectFile(f.id);
         await saveFile();
         const updated = files.find(file => file.id === f.id);
-        if (updated && updated.isDirty) return; // aborted or cancelled save
+        if (updated && updated.isDirty) return;
       }
     }
     setFiles([]);
@@ -234,12 +278,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRawTextState("");
     setFilePath(null);
     setParsedDoc(parseScreenplay("", paperSize));
+    setScriptsState([]);
+    setActiveScriptIndexState(0);
   };
 
   const setRawText = (text: string) => {
     const normalized = text.replace(/\r\n/g, "\n");
     setRawTextState(normalized);
-    
+
     const doc = parseScreenplay(normalized, paperSize);
     setFiles(prev => prev.map(f => {
       if (f.id === activeFileId) {
@@ -247,7 +293,22 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
           ? doc.settings
           : f.parsedDoc.settings;
-        return { ...f, rawText: normalized, isDirty, parsedDoc: { ...doc, pageBreaks: undefined, settings: mergedSettings } };
+
+        let updatedScripts = f.scripts;
+        if (updatedScripts && updatedScripts.length > 0) {
+          const idx = f.activeScriptIndex ?? 0;
+          updatedScripts = updatedScripts.map((s, i) =>
+            i === idx ? { ...s, content: normalized } : s
+          );
+        }
+
+        return {
+          ...f,
+          rawText: normalized,
+          isDirty,
+          parsedDoc: { ...doc, pageBreaks: undefined, settings: mergedSettings },
+          scripts: updatedScripts,
+        };
       }
       return f;
     }));
@@ -357,19 +418,26 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    let content = "";
     let settings = {};
+    let scripts: ScriptInfo[] = [];
     const isActone = path.toLowerCase().endsWith(".actone");
+    const bundleName = path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
 
     try {
       if (isTauri) {
         if (isActone) {
           const bytes = await invoke<number[]>("read_file_binary", { path });
-          const bundle = unpackActoneBundle(new Uint8Array(bytes));
-          content = bundle.content;
+          const bundle = unpackActoneBundle(new Uint8Array(bytes), bundleName);
+          scripts = bundle.scripts;
           settings = bundle.settings;
         } else {
-          content = await invoke<string>("read_file_content", { path });
+          const content = await invoke<string>("read_file_content", { path });
+          scripts = [{
+            name: bundleName,
+            fileName: `${bundleName}.fountain`,
+            content,
+            savedContent: content,
+          }];
         }
       } else {
         throw new Error("Cannot open direct path in web mode");
@@ -385,14 +453,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    const activeScript = scripts[0] || { name: "Untitled", fileName: "Untitled.fountain", content: "", savedContent: "" };
+    const content = activeScript.content;
     const parsed = parseScreenplay(content, paperSize);
     if (isActone) {
       parsed.settings = settings;
     }
     const cleanText = parsed.screenplayText;
-    
+
     const currentActive = files.find(f => f.id === activeFileId);
-    const isDefault = currentActive && !currentActive.filePath && 
+    const isDefault = currentActive && !currentActive.filePath &&
                       (currentActive.rawText === "" || !currentActive.isDirty);
 
     if (isDefault && currentActive) {
@@ -402,11 +472,15 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         rawText: cleanText,
         savedText: cleanText,
         isDirty: false,
-        parsedDoc: parsed
+        parsedDoc: parsed,
+        scripts,
+        activeScriptIndex: 0,
       } : f));
       setFilePath(path);
       setRawTextState(cleanText);
       setParsedDoc(parsed);
+      setScriptsState(scripts);
+      setActiveScriptIndexState(0);
       addToRecent(path);
     } else {
       const newId = generateUUID();
@@ -418,12 +492,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isDirty: false,
         parsedDoc: parsed,
         isSaving: false,
+        scripts: isActone ? scripts : undefined,
+        activeScriptIndex: 0,
       };
       setFiles(prev => [...prev, newFileObj]);
       setActiveFileIdState(newId);
       setFilePath(path);
       setRawTextState(cleanText);
       setParsedDoc(parsed);
+      setScriptsState(isActone ? scripts : []);
+      setActiveScriptIndexState(0);
       addToRecent(path);
     }
   };
@@ -449,8 +527,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           if (file.name.toLowerCase().endsWith(".actone")) {
             const arrayBuffer = await file.arrayBuffer();
-            const bundle = unpackActoneBundle(new Uint8Array(arrayBuffer));
-            resolve({ path: file.name, content: bundle.content, settings: bundle.settings });
+            const bundle = unpackActoneBundle(new Uint8Array(arrayBuffer), file.name.replace(/\.actone$/i, ""));
+            const scripts = bundle.scripts;
+            resolve({ path: file.name, content: scripts[0]?.content || "", settings: bundle.settings });
           } else {
             const content = await file.text();
             resolve({ path: file.name, content });
@@ -469,28 +548,47 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const currentActive = files.find(f => f.id === activeFileId);
-      const isDefault = currentActive && !currentActive.filePath && 
+      const isDefault = currentActive && !currentActive.filePath &&
                         (currentActive.rawText === "" || !currentActive.isDirty);
 
-      let content = res.content;
+      let scripts: ScriptInfo[] = [];
       let settings = res.settings || {};
+      let content = res.content;
       const isActone = res.path.toLowerCase().endsWith(".actone");
+      const bundleName = res.path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
 
-      if (isActone && isTauri) {
-        try {
-          const bytes = await invoke<number[]>("read_file_binary", { path: res.path });
-          const bundle = unpackActoneBundle(new Uint8Array(bytes));
-          content = bundle.content;
-          settings = bundle.settings;
-        } catch (e) {
-          console.error(e);
-          await confirm({
-            title: "Error Reading Bundle",
-            message: "Could not read actone bundle binary",
-            buttons: [{ value: "ok", label: "OK", variant: "contained" }]
-          });
-          return;
+      if (isActone) {
+        if (isTauri) {
+          try {
+            const bytes = await invoke<number[]>("read_file_binary", { path: res.path });
+            const bundle = unpackActoneBundle(new Uint8Array(bytes), bundleName);
+            scripts = bundle.scripts;
+            content = bundle.scripts[0]?.content || "";
+            settings = bundle.settings;
+          } catch (e) {
+            console.error(e);
+            await confirm({
+              title: "Error Reading Bundle",
+              message: "Could not read actone bundle binary",
+              buttons: [{ value: "ok", label: "OK", variant: "contained" }]
+            });
+            return;
+          }
+        } else {
+          scripts = [{
+            name: bundleName,
+            fileName: `${bundleName}.fountain`,
+            content,
+            savedContent: content,
+          }];
         }
+      } else {
+        scripts = [{
+          name: bundleName,
+          fileName: `${bundleName}.fountain`,
+          content,
+          savedContent: content,
+        }];
       }
 
       const parsed = parseScreenplay(content, paperSize);
@@ -506,12 +604,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           rawText: cleanText,
           savedText: cleanText,
           isDirty: false,
-          parsedDoc: parsed
+          parsedDoc: parsed,
+          scripts: isActone ? scripts : undefined,
+          activeScriptIndex: 0,
         } : f);
         setFiles(updatedFiles);
         setFilePath(res.path);
         setRawTextState(cleanText);
         setParsedDoc(parsed);
+        setScriptsState(isActone ? scripts : []);
+        setActiveScriptIndexState(0);
       } else {
         const newId = generateUUID();
         const newFileObj: ScreenplayFile = {
@@ -522,18 +624,22 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isDirty: false,
           parsedDoc: parsed,
           isSaving: false,
+          scripts: isActone ? scripts : undefined,
+          activeScriptIndex: 0,
         };
         setFiles(prev => [...prev, newFileObj]);
         setActiveFileIdState(newId);
         setFilePath(res.path);
         setRawTextState(cleanText);
         setParsedDoc(parsed);
+        setScriptsState(isActone ? scripts : []);
+        setActiveScriptIndexState(0);
       }
     }
   };
 
-  const saveActoneFile = async (path: string, text: string, settings: any) => {
-    const zipped = packActoneBundle(text, settings);
+  const saveActoneFile = async (path: string, scripts: ScriptInfo[], settings: any) => {
+    const zipped = packActoneBundle(scripts, settings);
     await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
   };
 
@@ -549,12 +655,30 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isActone = currentActive.filePath.toLowerCase().endsWith(".actone");
 
     if (isActone) {
+      let updatedScripts = currentActive.scripts ? [...currentActive.scripts] : [];
+      if (updatedScripts.length > 0) {
+        const idx = currentActive.activeScriptIndex ?? 0;
+        updatedScripts[idx] = { ...updatedScripts[idx], content: cleanFountainText, savedContent: cleanFountainText };
+      } else {
+        updatedScripts = [{
+          name: currentActive.filePath.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
+          fileName: "document.fountain",
+          content: cleanFountainText,
+          savedContent: cleanFountainText,
+        }];
+      }
+
       if (isTauri) {
         setIsSaving(true);
         setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
         try {
-          await saveActoneFile(currentActive.filePath, cleanFountainText, currentActive.parsedDoc.settings);
-          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+          await saveActoneFile(currentActive.filePath, updatedScripts, currentActive.parsedDoc.settings);
+          setFiles(prev => prev.map(f => f.id === activeFileId ? {
+            ...f,
+            isDirty: false,
+            savedText: rawText,
+            scripts: updatedScripts,
+          } : f));
         } catch (e) {
           console.error(e);
         } finally {
@@ -562,7 +686,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
         }
       } else {
-        const zipped = packActoneBundle(cleanFountainText, currentActive.parsedDoc.settings);
+        const zipped = packActoneBundle(updatedScripts, currentActive.parsedDoc.settings);
         const blob = new Blob([zipped], { type: "application/zip" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -570,7 +694,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         link.download = currentActive.filePath;
         link.click();
         URL.revokeObjectURL(url);
-        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+        setFiles(prev => prev.map(f => f.id === activeFileId ? {
+          ...f,
+          isDirty: false,
+          savedText: rawText,
+          scripts: updatedScripts,
+        } : f));
       }
     } else {
       if (isTauri) {
@@ -609,7 +738,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (path) {
           const isActone = path.toLowerCase().endsWith(".actone");
           if (isActone) {
-            await saveActoneFile(path, cleanFountainText, currentActive.parsedDoc.settings);
+            const scripts = currentActive.scripts || [{
+              name: path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
+              fileName: "document.fountain",
+              content: cleanFountainText,
+              savedContent: cleanFountainText,
+            }];
+            await saveActoneFile(path, scripts, currentActive.parsedDoc.settings);
           }
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: path, isDirty: false, savedText: rawText } : f));
           setFilePath(path);
@@ -634,22 +769,32 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           finalName = isActone ? filename : (filename.endsWith(".fountain") ? filename : `${filename}.fountain`);
         }
-        let blob: Blob;
 
         if (isActone) {
-          const zipped = packActoneBundle(cleanFountainText, currentActive.parsedDoc.settings);
-          blob = new Blob([zipped], { type: "application/zip" });
+          const scripts = currentActive.scripts || [{
+            name: finalName.replace(/\.actone$/i, ""),
+            fileName: "document.fountain",
+            content: cleanFountainText,
+            savedContent: cleanFountainText,
+          }];
+          const zipped = packActoneBundle(scripts, currentActive.parsedDoc.settings);
+          const blob = new Blob([zipped], { type: "application/zip" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = finalName;
+          link.click();
+          URL.revokeObjectURL(url);
         } else {
-          blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
+          const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = finalName;
+          link.click();
+          URL.revokeObjectURL(url);
         }
 
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = finalName;
-        link.click();
-        URL.revokeObjectURL(url);
-        
         setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: finalName, isDirty: false, savedText: rawText } : f));
         setFilePath(finalName);
         return finalName;
@@ -657,6 +802,158 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return null;
   };
+
+  const setActiveScript = useCallback((index: number) => {
+    const file = files.find(f => f.id === activeFileId);
+    if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return;
+
+    const updatedScripts = file.scripts.map((s, i) =>
+      i === (file.activeScriptIndex ?? 0) ? { ...s, content: rawText } : s
+    );
+    const newScript = updatedScripts[index];
+    const doc = parseScreenplay(newScript.content, paperSize);
+    if (file.parsedDoc.settings) {
+      doc.settings = file.parsedDoc.settings;
+    }
+
+    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+      ...f,
+      rawText: newScript.content,
+      savedText: newScript.savedContent,
+      parsedDoc: doc,
+      isDirty: newScript.content !== newScript.savedContent,
+      scripts: updatedScripts,
+      activeScriptIndex: index,
+    } : f));
+
+    setRawTextState(newScript.content);
+    setParsedDoc(doc);
+    setScriptsState(updatedScripts);
+    setActiveScriptIndexState(index);
+  }, [files, activeFileId, rawText, paperSize]);
+
+  const addScript = useCallback(async (name?: string): Promise<string | null> => {
+    const file = files.find(f => f.id === activeFileId);
+    if (!file || !file.scripts) return null;
+
+    const baseName = name || (await prompt({
+      title: "New Script",
+      message: "Enter a name for the new script:",
+      defaultValue: "Untitled"
+    }));
+    if (!baseName) return null;
+
+    const uniqueName = getUniqueName(baseName.trim(), file.scripts);
+    const fileName = `${sanitizeFileName(uniqueName)}.fountain`;
+    const newScript: ScriptInfo = {
+      name: uniqueName,
+      fileName,
+      content: "",
+      savedContent: "",
+    };
+
+    const updatedScripts = [...file.scripts, newScript];
+    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+      ...f,
+      scripts: updatedScripts,
+      activeScriptIndex: updatedScripts.length - 1,
+      rawText: "",
+      savedText: "",
+      isDirty: false,
+      parsedDoc: parseScreenplay("", paperSize),
+    } : f));
+
+    setScriptsState(updatedScripts);
+    setActiveScriptIndexState(updatedScripts.length - 1);
+    setRawTextState("");
+    setParsedDoc(parseScreenplay("", paperSize));
+
+    return uniqueName;
+  }, [files, activeFileId, prompt, paperSize]);
+
+  const renameScript = useCallback(async (index: number, newName: string): Promise<boolean> => {
+    const file = files.find(f => f.id === activeFileId);
+    if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return false;
+
+    const trimmed = newName.trim();
+    if (!trimmed) return false;
+
+    const duplicate = file.scripts.some((s, i) => i !== index && s.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      await confirm({
+        title: "Duplicate Name",
+        message: `A script named "${trimmed}" already exists.`,
+        buttons: [{ value: "ok", label: "OK", variant: "contained" }]
+      });
+      return false;
+    }
+
+    const updatedScripts = file.scripts.map((s, i) =>
+      i === index ? { ...s, name: trimmed, fileName: `${sanitizeFileName(trimmed)}.fountain` } : s
+    );
+
+    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+      ...f,
+      scripts: updatedScripts,
+    } : f));
+    setScriptsState(updatedScripts);
+    return true;
+  }, [files, activeFileId, confirm]);
+
+  const deleteScript = useCallback(async (index: number): Promise<boolean> => {
+    const file = files.find(f => f.id === activeFileId);
+    if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return false;
+
+    if (file.scripts.length <= 1) {
+      await confirm({
+        title: "Cannot Delete",
+        message: "A bundle must have at least one script.",
+        buttons: [{ value: "ok", label: "OK", variant: "contained" }]
+      });
+      return false;
+    }
+
+    const result = await confirm({
+      title: "Delete Script",
+      message: `Are you sure you want to delete "${file.scripts[index].name}"? This action cannot be undone.`,
+      buttons: [
+        { value: "yes", label: "Delete", variant: "contained", color: "error" },
+        { value: "no", label: "Cancel", variant: "text", color: "inherit" }
+      ]
+    });
+    if (result !== "yes") return false;
+
+    const updatedScripts = file.scripts.filter((_, i) => i !== index);
+    let newActiveIndex = file.activeScriptIndex ?? 0;
+    if (newActiveIndex >= updatedScripts.length) {
+      newActiveIndex = updatedScripts.length - 1;
+    }
+
+    const targetScript = updatedScripts[newActiveIndex];
+    const doc = parseScreenplay(targetScript.content, paperSize);
+    if (file.parsedDoc.settings) {
+      doc.settings = file.parsedDoc.settings;
+    }
+
+    const targetIdx = newActiveIndex;
+
+    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+      ...f,
+      scripts: updatedScripts,
+      activeScriptIndex: targetIdx,
+      rawText: targetScript.content,
+      savedText: targetScript.savedContent,
+      isDirty: targetScript.content !== targetScript.savedContent,
+      parsedDoc: doc,
+    } : f));
+
+    setScriptsState(updatedScripts);
+    setActiveScriptIndexState(targetIdx);
+    setRawTextState(targetScript.content);
+    setParsedDoc(doc);
+
+    return true;
+  }, [files, activeFileId, confirm, paperSize]);
 
   const filesRef = useRef(files);
   const activeFileIdRef = useRef(activeFileId);
@@ -700,7 +997,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        
+
         const currentFiles = filesRef.current;
         const currentActiveId = activeFileIdRef.current;
         if (currentFiles.length <= 1) return;
@@ -712,7 +1009,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           nextIndex = (currentIndex + 1) % currentFiles.length;
         }
-        
+
         const nextFile = currentFiles[nextIndex];
         selectFileRef.current(nextFile.id);
       }
@@ -720,6 +1017,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     window.addEventListener("keydown", handleKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const activeScriptName = scriptsState[activeScriptIndex]?.name || "";
 
   return (
     <FileContext.Provider
@@ -743,6 +1042,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openFilePath,
         removeFromRecent,
         updateSettings,
+        scripts: scriptsState,
+        activeScriptIndex,
+        activeScriptName,
+        isBundle,
+        setActiveScript,
+        addScript,
+        renameScript,
+        deleteScript,
       }}
     >
       {children}

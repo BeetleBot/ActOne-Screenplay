@@ -1,13 +1,19 @@
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 
-export interface ActoneBundle {
+export interface ScriptInfo {
+  name: string;
+  fileName: string;
   content: string;
+  savedContent: string;
+}
+
+export interface ActoneBundle {
+  scripts: ScriptInfo[];
   settings: Record<string, any>;
 }
 
-export function unpackActoneBundle(bytes: Uint8Array): ActoneBundle {
+export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): ActoneBundle {
   const unzipped = unzipSync(bytes);
-  const content = unzipped["document.fountain"] ? strFromU8(unzipped["document.fountain"]) : "";
 
   let parsedSettings: Record<string, any> = {};
   let genders: Record<string, string> = {};
@@ -24,7 +30,6 @@ export function unpackActoneBundle(bytes: Uint8Array): ActoneBundle {
   if (unzipped["characters.json"]) {
     try { const chars = JSON.parse(strFromU8(unzipped["characters.json"])); genders = chars.genders || {}; } catch {}
   }
-
   if (unzipped["todos.json"]) {
     try { todosData = JSON.parse(strFromU8(unzipped["todos.json"])); } catch {}
   }
@@ -55,17 +60,36 @@ export function unpackActoneBundle(bytes: Uint8Array): ActoneBundle {
     productionTags: productionTagsData,
   };
 
-  return { content, settings };
+  let scripts: ScriptInfo[];
+  if (unzipped["fountain.json"]) {
+    const manifest: { name: string; file: string }[] = JSON.parse(strFromU8(unzipped["fountain.json"]));
+    scripts = manifest.map((entry) => {
+      const content = unzipped[entry.file] ? strFromU8(unzipped[entry.file]) : "";
+      return { name: entry.name, fileName: entry.file, content, savedContent: content };
+    });
+    if (scripts.length === 0) {
+      const name = bundleName || "Untitled";
+      scripts = [{ name, fileName: `${name}.fountain`, content: "", savedContent: "" }];
+    }
+  } else {
+    const content = unzipped["document.fountain"] ? strFromU8(unzipped["document.fountain"]) : "";
+    const name = bundleName || "Untitled";
+    scripts = [{ name, fileName: "document.fountain", content, savedContent: content }];
+  }
+
+  return { scripts, settings };
 }
 
-export function packActoneBundle(content: string, settings: Record<string, any>): Uint8Array {
+export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string, any>): Uint8Array {
   const {
     genders, todos, parking, notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings
   } = settings || {};
   const characters = genders ? { genders } : {};
 
-  return zipSync({
-    "document.fountain": strToU8(content),
+  const manifest = scripts.map((s) => ({ name: s.name, file: s.fileName }));
+
+  const entries: Record<string, Uint8Array> = {
+    "fountain.json": strToU8(JSON.stringify(manifest, null, 2)),
     "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
     "characters.json": strToU8(JSON.stringify(characters, null, 2)),
     "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
@@ -74,5 +98,11 @@ export function packActoneBundle(content: string, settings: Record<string, any>)
     "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
     "marker.json": strToU8(JSON.stringify(markers || [], null, 2)),
     "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
-  });
+  };
+
+  for (const script of scripts) {
+    entries[script.fileName] = strToU8(script.content);
+  }
+
+  return zipSync(entries);
 }

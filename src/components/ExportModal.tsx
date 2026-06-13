@@ -98,7 +98,7 @@ function stripFountainForExport(
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
-  const { rawText } = useFile();
+  const { rawText, isBundle, activeScriptName, filePath } = useFile();
   const { fontFamily, paperSize } = useUI();
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
@@ -148,11 +148,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       if (isTauri) {
         await invoke("export_fountain", { content: cleaned });
       } else {
+        const bundleName = filePath
+          ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"
+          : "Untitled";
+        const scriptSuffix = isBundle ? `_${activeScriptName}` : "";
+        const downloadName = `${bundleName}${scriptSuffix}.fountain`;
         const blob = new Blob([cleaned], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "screenplay.fountain";
+        a.download = downloadName;
         a.click();
         URL.revokeObjectURL(url);
       }
@@ -183,6 +188,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       </DialogTitle>
 
       <DialogContent dividers sx={{ p: 3 }}>
+        {isBundle && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, px: 1.5, py: 1, bgcolor: "action.hover", borderRadius: 1 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, color: "text.secondary" }}>
+              Exporting:
+            </Typography>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 11, color: "text.primary" }}>
+              {filePath?.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled"}_{activeScriptName}
+            </Typography>
+          </Box>
+        )}
         <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
           <ToggleButtonGroup
             value={format}

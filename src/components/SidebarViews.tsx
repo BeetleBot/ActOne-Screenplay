@@ -5,6 +5,7 @@ import { TodoView } from "./TodoView";
 import { OutlineView } from "./OutlineView";
 import { SprintView } from "./SprintView";
 import { MarkerView } from "./MarkerView";
+import { ScriptsView } from "./ScriptsView";
 import { AddIcon, CloseIcon, SearchIcon } from "./Icons";
 
 import {
@@ -80,6 +81,10 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   React.useEffect(() => {
     setActiveItemIdx(-1);
   }, [activeTab]);
+
+  if (activeTab === "scripts") {
+    return <ScriptsView />;
+  }
 
   if (activeTab === "outline") {
     return <OutlineView />;

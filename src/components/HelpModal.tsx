@@ -181,6 +181,12 @@ const HELP_ITEMS: HelpItem[] = [
     category: "Files & Projects",
     keywords: ["tabs", "close tab", "close others", "close all", "unsaved changes dot", "alt+q", "middle click"]
   },
+  {
+    name: "Multi-Script Bundles (.actone)",
+    desc: "The Scripts sidebar tab lets you manage multiple fountain scripts inside a single .actone bundle. Add new scripts, rename them, or delete them (with confirmation). Click a script name to load it into the editor. The status bar shows the active script — click it to quickly switch between scripts. Export All exports every script in the bundle as separate files.",
+    category: "Files & Projects",
+    keywords: ["scripts", "multi-script", "bundle", "add script", "rename script", "delete script", "export all", "script switcher", "fountain.json"]
+  },
   // Workspace & Views
   {
     name: "Zen Mode (Distraction-Free)",

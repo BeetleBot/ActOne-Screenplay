@@ -1,30 +1,74 @@
 import { describe, it, expect } from "vitest";
 import { packActoneBundle, unpackActoneBundle } from "./actone";
+import type { ScriptInfo } from "./actone";
+
+const makeScripts = (arr: { name: string; content: string }[]): ScriptInfo[] =>
+  arr.map((s) => ({ name: s.name, fileName: `${s.name}.fountain`, content: s.content, savedContent: s.content }));
 
 describe("actone bundle", () => {
-  it("packs and unpacks a bundle with content only", () => {
-    const content = "EXT. HOUSE - DAY\n\nHello world.";
+  it("packs and unpacks a single script", () => {
+    const scripts = makeScripts([{ name: "Main", content: "EXT. HOUSE - DAY\n\nHello world." }]);
     const settings = {};
-    const packed = packActoneBundle(content, settings);
-    expect(packed).toBeInstanceOf(Uint8Array);
-    expect(packed.length).toBeGreaterThan(0);
-
+    const packed = packActoneBundle(scripts, settings);
     const unpacked = unpackActoneBundle(packed);
-    expect(unpacked.content).toBe(content);
+    expect(unpacked.scripts).toHaveLength(1);
+    expect(unpacked.scripts[0].name).toBe("Main");
+    expect(unpacked.scripts[0].content).toBe("EXT. HOUSE - DAY\n\nHello world.");
+  });
+
+  it("packs and unpacks multiple scripts", () => {
+    const scripts = makeScripts([
+      { name: "Act One", content: "INT. ROOM - NIGHT\n\nJohn enters." },
+      { name: "Act Two", content: "EXT. GARDEN - DAY\n\nBirds chirp." },
+    ]);
+    const packed = packActoneBundle(scripts, {});
+    const unpacked = unpackActoneBundle(packed);
+    expect(unpacked.scripts).toHaveLength(2);
+    expect(unpacked.scripts[0].name).toBe("Act One");
+    expect(unpacked.scripts[1].name).toBe("Act Two");
+    expect(unpacked.scripts[0].content).toBe("INT. ROOM - NIGHT\n\nJohn enters.");
+    expect(unpacked.scripts[1].content).toBe("EXT. GARDEN - DAY\n\nBirds chirp.");
+  });
+
+  it("preserves manifest order", () => {
+    const scripts = makeScripts([
+      { name: "C", content: "Third" },
+      { name: "A", content: "First" },
+      { name: "B", content: "Second" },
+    ]);
+    const packed = packActoneBundle(scripts, {});
+    const unpacked = unpackActoneBundle(packed);
+    expect(unpacked.scripts.map((s) => s.name)).toEqual(["C", "A", "B"]);
+  });
+
+  it("handles legacy document.fountain bundles", () => {
+    const { zipSync, strToU8 } = require("fflate");
+    const legacy = zipSync({ "document.fountain": strToU8("INT. TEST - DAY\n\nHello.") });
+    const unpacked = unpackActoneBundle(legacy, "MyScript");
+    expect(unpacked.scripts).toHaveLength(1);
+    expect(unpacked.scripts[0].name).toBe("MyScript");
+    expect(unpacked.scripts[0].fileName).toBe("document.fountain");
+    expect(unpacked.scripts[0].content).toBe("INT. TEST - DAY\n\nHello.");
+  });
+
+  it("handles empty content gracefully", () => {
+    const scripts = makeScripts([{ name: "Empty", content: "" }]);
+    const packed = packActoneBundle(scripts, {});
+    const unpacked = unpackActoneBundle(packed);
+    expect(unpacked.scripts[0].content).toBe("");
   });
 
   it("packs and unpacks with settings", () => {
-    const content = "INT. ROOM - NIGHT";
+    const scripts = makeScripts([{ name: "Main", content: "INT. ROOM - NIGHT" }]);
     const settings = { revisionModeEnabled: true, genders: { JOHN: "male" } };
-    const packed = packActoneBundle(content, settings);
+    const packed = packActoneBundle(scripts, settings);
     const unpacked = unpackActoneBundle(packed);
-    expect(unpacked.content).toBe(content);
     expect(unpacked.settings.genders).toEqual({ JOHN: "male" });
     expect(unpacked.settings.todos).toEqual([]);
   });
 
   it("packs and unpacks with todos, parking, sprint", () => {
-    const content = "Action line.";
+    const scripts = makeScripts([{ name: "Main", content: "Action line." }]);
     const settings = {
       todos: [{ id: "1", text: "Fix this", completed: false }],
       parking: [{ id: "p1", text: "Parked text", createdAt: 100 }],
@@ -32,7 +76,7 @@ describe("actone bundle", () => {
       markers: [{ id: "m1", color: "red", description: "Fix this" }],
       productionTags: { tags: [], definitions: [] },
     };
-    const packed = packActoneBundle(content, settings);
+    const packed = packActoneBundle(scripts, settings);
     const unpacked = unpackActoneBundle(packed);
     expect(unpacked.settings.todos).toHaveLength(1);
     expect(unpacked.settings.parking).toHaveLength(1);
@@ -41,10 +85,14 @@ describe("actone bundle", () => {
     expect(unpacked.settings.productionTags).toEqual({ tags: [], definitions: [] });
   });
 
-  it("handles empty content gracefully", () => {
-    const packed = packActoneBundle("", {});
-    const unpacked = unpackActoneBundle(packed);
-    expect(unpacked.content).toBe("");
+  it("fountain.json exists in new bundles", () => {
+    const scripts = makeScripts([{ name: "Main", content: "Test." }]);
+    const packed = packActoneBundle(scripts, {});
+    const { unzipSync, strFromU8 } = require("fflate");
+    const unzipped = unzipSync(packed);
+    expect(unzipped["fountain.json"]).toBeDefined();
+    const manifest = JSON.parse(strFromU8(unzipped["fountain.json"]));
+    expect(manifest).toEqual([{ name: "Main", file: "Main.fountain" }]);
   });
 
   it("throws for non-zipped bytes", () => {

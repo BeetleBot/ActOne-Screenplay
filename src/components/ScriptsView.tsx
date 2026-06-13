@@ -1,0 +1,395 @@
+import React, { useState } from "react";
+import { useFile } from "../context";
+import { invoke } from "@tauri-apps/api/core";
+import { AddIcon, DownloadIcon } from "./Icons";
+
+import {
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Divider,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Switch,
+  FormControlLabel,
+  Select,
+  FormControl,
+  InputLabel,
+  ToggleButtonGroup,
+  ToggleButton,
+} from "@mui/material";
+
+export const ScriptsView: React.FC = () => {
+  const {
+    scripts, activeScriptIndex, isBundle, filePath,
+    setActiveScript, addScript, renameScript, deleteScript,
+  } = useFile();
+
+  const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
+  const [renameDialog, setRenameDialog] = useState<{ open: boolean; index: number; value: string } | null>(null);
+  const [exportDialog, setExportDialog] = useState(false);
+
+  const [exportFormat, setExportFormat] = useState<"fountain" | "pdf">("fountain");
+  const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
+  const [mirrorSceneNumbers, setMirrorSceneNumbers] = useState("off");
+  const [exportSections, setExportSections] = useState(false);
+  const [exportSynopses, setExportSynopses] = useState(false);
+  const [exportTitlePage, setExportTitlePage] = useState(true);
+  const [selectedFont, setSelectedFont] = useState("courier-prime");
+
+  if (!isBundle) return null;
+
+  const bundleName = filePath
+    ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"
+    : "Untitled";
+
+  const handleAdd = async () => {
+    await addScript();
+  };
+
+  const handleRenameOpen = () => {
+    if (!menuState) return;
+    setRenameDialog({ open: true, index: menuState.index, value: scripts[menuState.index]?.name || "" });
+    setMenuState(null);
+  };
+
+  const handleRenameSubmit = async () => {
+    if (!renameDialog) return;
+    await renameScript(renameDialog.index, renameDialog.value);
+    setRenameDialog(null);
+  };
+
+  const handleDelete = async () => {
+    if (!menuState) return;
+    await deleteScript(menuState.index);
+    setMenuState(null);
+  };
+
+  const handleExportAll = async () => {
+    if (!scripts.length) return;
+    setExportDialog(false);
+
+    const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
+
+    if (!isTauri) {
+      if (exportFormat === "pdf") {
+        alert("PDF export is only supported in the desktop app.");
+        return;
+      }
+      for (const script of scripts) {
+        const fileName = `${bundleName}_${script.name}.fountain`;
+        const blob = new Blob([script.content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      return;
+    }
+
+    const dir = await invoke<string | null>("pick_directory");
+    if (!dir) return;
+
+    const revisedLines: boolean[] = [];
+    const pdfParams = {
+      paperSize: "letter",
+      fontFamily: selectedFont,
+      boldSceneHeadings,
+      mirrorSceneNumbers,
+      exportSections,
+      exportSynopses,
+      exportTitlePage,
+      revisedLines,
+    };
+
+    for (const script of scripts) {
+      const safeName = script.name.replace(/[<>:"/\\|?*]/g, "_");
+      const sep = "/";
+      if (exportFormat === "fountain") {
+        const filePath = `${dir}${sep}${bundleName}_${safeName}.fountain`;
+        await invoke("save_file_content", { path: filePath, content: script.content });
+      } else {
+        const bytes = await invoke<number[] | null>("generate_pdf_bytes", {
+          fountainText: script.content,
+          ...pdfParams,
+        });
+        if (bytes) {
+          const filePath = `${dir}${sep}${bundleName}_${safeName}.pdf`;
+          await invoke("save_file_binary", { path: filePath, bytes: Array.from(bytes) });
+        }
+      }
+    }
+  };
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, pt: 2, pb: 1 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
+          Scripts
+        </Typography>
+        <IconButton size="small" onClick={handleAdd} title="Add Script">
+          <AddIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </Box>
+
+      <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, px: 1 }}>
+        {scripts.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", px: 1, py: 2 }}>
+            No scripts yet. Add one.
+          </Typography>
+        ) : (
+          <List disablePadding>
+            {scripts.map((script, index) => {
+              const isActive = index === activeScriptIndex;
+              return (
+                <ListItemButton
+                  key={`${script.name}-${index}`}
+                  dense
+                  selected={isActive}
+                  onClick={() => setActiveScript(index)}
+                  sx={{
+                    borderRadius: "6px", mb: 0.25, pr: 1,
+                    "&.Mui-selected": {
+                      bgcolor: "action.selected",
+                      "&:hover": { bgcolor: "action.selected" },
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={script.name}
+                    secondary={isActive ? "active" : undefined}
+                    slotProps={{
+                      primary: { sx: { fontWeight: isActive ? 700 : 500, fontSize: "0.85rem" } },
+                      secondary: { sx: { fontSize: "0.65rem", color: "primary.main" } },
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuState({ anchorEl: e.currentTarget, index });
+                    }}
+                    sx={{ opacity: 0.5, "&:hover": { opacity: 1 } }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                    </svg>
+                  </IconButton>
+                </ListItemButton>
+              );
+            })}
+          </List>
+        )}
+      </Box>
+
+      <Divider sx={{ mx: 2 }} />
+
+      <Box sx={{ p: 2 }}>
+        <Button
+          variant="outlined"
+          size="small"
+          fullWidth
+          startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
+          onClick={() => setExportDialog(true)}
+          disabled={scripts.length === 0}
+          sx={{ textTransform: "none", fontSize: 11, fontWeight: 600, borderRadius: "8px" }}
+        >
+          Export All Scripts
+        </Button>
+      </Box>
+
+      <Menu
+        anchorEl={menuState?.anchorEl}
+        open={!!menuState}
+        onClose={() => setMenuState(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { minWidth: 140 } } }}
+      >
+        <MenuItem onClick={handleRenameOpen} dense>Rename</MenuItem>
+        <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
+      </Menu>
+
+      {renameDialog && (
+        <Dialog open onClose={() => setRenameDialog(null)} disableScrollLock maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 600, fontSize: 15 }}>Rename Script</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              size="small"
+              value={renameDialog.value}
+              onChange={(e) => setRenameDialog({ ...renameDialog, value: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter") handleRenameSubmit(); }}
+              sx={{ mt: 1 }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setRenameDialog(null)} color="inherit" size="small">Cancel</Button>
+            <Button onClick={handleRenameSubmit} variant="contained" size="small">Rename</Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
+      {exportDialog && (
+        <Dialog open onClose={() => setExportDialog(false)} fullWidth maxWidth="sm" disableScrollLock>
+          <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", gap: 1 }}>
+            <DownloadIcon sx={{ fontSize: 20 }} />
+            <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+              Export All Scripts ({scripts.length})
+            </Typography>
+          </DialogTitle>
+
+          <DialogContent dividers sx={{ p: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+              <ToggleButtonGroup
+                value={exportFormat}
+                exclusive
+                onChange={(_, val) => val && setExportFormat(val)}
+                aria-label="export format"
+                fullWidth
+                size="small"
+              >
+                <ToggleButton value="fountain" sx={{ gap: 1 }}>
+                  Fountain
+                </ToggleButton>
+                <ToggleButton value="pdf" sx={{ gap: 1 }}>
+                  PDF
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            {exportFormat === "pdf" && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <FormControlLabel
+                  control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Title Page</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Export the title page if it is defined</Typography>
+                    </Box>
+                  }
+                />
+                <FormControlLabel
+                  control={<Switch checked={boldSceneHeadings} onChange={(e) => setBoldSceneHeadings(e.target.checked)} />}
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Bold Scene Headings</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Make scene headings bold in the PDF</Typography>
+                    </Box>
+                  }
+                />
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="scene-numbers-label">Scene Numbers</InputLabel>
+                    <Select
+                      labelId="scene-numbers-label"
+                      value={mirrorSceneNumbers}
+                      label="Scene Numbers"
+                      onChange={(e) => setMirrorSceneNumbers(e.target.value)}
+                    >
+                      <MenuItem value="off">Disabled</MenuItem>
+                      <MenuItem value="left_side">Left Side Only</MenuItem>
+                      <MenuItem value="mirror">Mirror on Both Sides</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="export-font-label">Export Font</InputLabel>
+                    <Select
+                      labelId="export-font-label"
+                      value={selectedFont}
+                      label="Export Font"
+                      onChange={(e) => setSelectedFont(e.target.value)}
+                    >
+                      <MenuItem value="courier-prime">Courier Prime</MenuItem>
+                      <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+                <FormControlLabel
+                  control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Sections</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Render section headings (#) in export</Typography>
+                    </Box>
+                  }
+                />
+                <FormControlLabel
+                  control={<Switch checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Synopsis</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Render synopses (=) in export</Typography>
+                    </Box>
+                  }
+                />
+              </Box>
+            )}
+
+            {exportFormat === "fountain" && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                    Export {scripts.length} Script{scripts.length !== 1 ? "s" : ""} as Clean Fountain Files
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" component="div">
+                    Each script is saved as a separate .fountain file in your chosen directory.
+                    <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
+                      <li>Files are named: <strong>{bundleName}_ScriptName.fountain</strong></li>
+                    </Box>
+                  </Typography>
+                </Box>
+                <FormControlLabel
+                  control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Title Page</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Export the title page if it is defined</Typography>
+                    </Box>
+                  }
+                />
+                <FormControlLabel
+                  control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Sections</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Keep section lines (#) in the exported file</Typography>
+                    </Box>
+                  }
+                />
+                <FormControlLabel
+                  control={<Switch checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Synopsis</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Keep synopsis lines (=) in the exported file</Typography>
+                    </Box>
+                  }
+                />
+              </Box>
+            )}
+          </DialogContent>
+
+          <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
+            <Button onClick={() => setExportDialog(false)} color="inherit" variant="outlined">Cancel</Button>
+            <Button onClick={handleExportAll} variant="contained" color="primary">
+              Export All
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+    </Box>
+  );
+};
