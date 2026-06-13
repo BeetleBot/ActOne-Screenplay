@@ -6,7 +6,6 @@ import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import Chip from "@mui/material/Chip";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
@@ -92,8 +91,7 @@ export const HeaderBar: React.FC = () => {
     }
   };
 
-  const activeFile = files.find(f => f.id === activeFileId);
-  const isRevisionMode = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
+
 
   return (
     <AppBar
@@ -112,26 +110,7 @@ export const HeaderBar: React.FC = () => {
     >
       <Box sx={{ display: 'flex', alignItems: 'center', height: 30, minHeight: 30, px: 0 }}>
         <Box ref={tabsContainerRef} className="header-tabs-container" sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', overflow: 'hidden', px: 0, gap: 0 }}>
-          {isRevisionMode && (
-            <Chip
-              label="Revision"
-              size="small"
-              color="error"
-              variant="outlined"
-              sx={{
-                height: 18,
-                fontSize: 8,
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                borderRadius: '9999px',
-                flexShrink: 0,
-                mx: 1,
-                borderColor: 'error.main',
-                color: 'error.main'
-              }}
-            />
-          )}
+
           {files.map((file) => {
             const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled";
             const isActive = file.id === activeFileId;

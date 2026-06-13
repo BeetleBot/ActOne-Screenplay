@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseScreenplay, serializeScreenplay, LineType, formatScreenplaySpaces, paginateScreenplay } from "./FountainParser";
+import { parseScreenplay, serializeScreenplay, LineType, formatScreenplaySpaces, paginateScreenplay, wrapText, getElementMaxWidth } from "./FountainParser";
 
 describe("Fountain Screenplay Parser", () => {
   it("should parse headings and actions correctly", () => {
     const text = "EXT. HOUSE - DAY\n\nJohn walks to the door.";
     const doc = parseScreenplay(text);
-    
     expect(doc.lines.length).toBe(3);
     expect(doc.lines[0].type).toBe(LineType.heading);
     expect(doc.lines[0].text).toBe("EXT. HOUSE - DAY");
@@ -17,8 +16,7 @@ describe("Fountain Screenplay Parser", () => {
   it("should parse dialogue block correctly", () => {
     const text = "JOHN\nHello world.";
     const doc = parseScreenplay(text);
-    
-    expect(doc.lines.length).toBe(2);
+    expect(doc.lines).toHaveLength(2);
     expect(doc.lines[0].type).toBe(LineType.character);
     expect(doc.lines[1].type).toBe(LineType.dialogue);
   });
@@ -26,20 +24,64 @@ describe("Fountain Screenplay Parser", () => {
   it("should parse settings comment block at the end", () => {
     const text = "EXT. HOUSE - DAY\n\n/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:\n{\n  \"revisionModeEnabled\": true\n}\nEND_ACTONE*/";
     const doc = parseScreenplay(text);
-    
     expect(doc.settings.revisionModeEnabled).toBe(true);
     expect(doc.screenplayText).toBe("EXT. HOUSE - DAY");
   });
 
-  it("should serialize screenplay lines and settings block correctly", () => {
+  it("should parse settings with alternative comment format", () => {
+    const text = "Content.\n\n/* If you're seeing this, you can remove the following stuff - ACTONE:\n{\"key\":\"val\"}\nEND_ACTONE*/";
+    const doc = parseScreenplay(text);
+    expect(doc.settings.key).toBe("val");
+  });
+
+  it("should handle empty settings gracefully", () => {
+    const text = "Content.\n\n/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:\ninvalid json\nEND_ACTONE*/";
+    const doc = parseScreenplay(text);
+    expect(doc.settings).toEqual({});
+  });
+
+  it("should serialize screenplay lines without settings", () => {
+    const doc = parseScreenplay("EXT. HOUSE - DAY\n\nINT. ROOM - NIGHT");
+    const serialized = serializeScreenplay(doc.lines, {});
+    expect(serialized).toBe("EXT. HOUSE - DAY\n\nINT. ROOM - NIGHT");
+  });
+
+  it("should serialize with settings block", () => {
     const doc = parseScreenplay("EXT. HOUSE - DAY");
-    const settings = { revisionModeEnabled: true };
-    const serialized = serializeScreenplay(doc.lines, settings);
-    
+    const serialized = serializeScreenplay(doc.lines, { revisionModeEnabled: true });
     expect(serialized).toContain("EXT. HOUSE - DAY");
     expect(serialized).toContain("/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:");
     expect(serialized).toContain("revisionModeEnabled");
     expect(serialized).toContain("END_ACTONE*/");
+  });
+
+  describe("wrapText", () => {
+    it("returns 1 for empty text", () => {
+      expect(wrapText("", 60)).toBe(1);
+    });
+
+    it("returns 1 for short text", () => {
+      expect(wrapText("Hello world", 60)).toBe(1);
+    });
+
+    it("returns multiple lines for long text", () => {
+      expect(wrapText("word1 word2 word3 word4 word5 word6 word7", 10)).toBeGreaterThan(1);
+    });
+  });
+
+  describe("getElementMaxWidth", () => {
+    it("returns correct widths for different types", () => {
+      expect(getElementMaxWidth(LineType.character, "letter")).toBe(38);
+      expect(getElementMaxWidth(LineType.dialogue, "letter")).toBe(35);
+      expect(getElementMaxWidth(LineType.parenthetical, "letter")).toBe(25);
+      expect(getElementMaxWidth(LineType.heading, "letter")).toBe(60);
+      expect(getElementMaxWidth(LineType.action, "letter")).toBe(60);
+    });
+
+    it("returns different widths for A4", () => {
+      expect(getElementMaxWidth(LineType.character, "a4")).toBe(35);
+      expect(getElementMaxWidth(LineType.heading, "a4")).toBe(57);
+    });
   });
 
   describe("formatScreenplaySpaces", () => {
@@ -78,6 +120,12 @@ describe("Fountain Screenplay Parser", () => {
       const expected = "Title: Movie\nAuthor: Me\n\nEXT. HOUSE - DAY";
       expect(formatScreenplaySpaces(input)).toBe(expected);
     });
+
+    it("handles only title page content", () => {
+      const input = "Title: Movie\nAuthor: Me\n\n";
+      const result = formatScreenplaySpaces(input);
+      expect(result).toBeTruthy();
+    });
   });
 
   describe("paginateScreenplay", () => {
@@ -111,18 +159,196 @@ describe("Fountain Screenplay Parser", () => {
       const pageBreaks = paginateScreenplay(lines, "letter");
       expect(pageBreaks).toContain(54);
     });
+
+    it("returns empty breaks for empty screenplay", () => {
+      const breaks = paginateScreenplay([], "letter");
+      expect(breaks).toEqual([]);
+    });
+
+    it("handles page break markers", () => {
+      const lines = [
+        { id: "a1", text: "Action 1.", type: LineType.action, isOutlineElement: false },
+        { id: "pb", text: "===", type: LineType.pageBreak, isOutlineElement: false },
+        { id: "a2", text: "Action 2.", type: LineType.action, isOutlineElement: false },
+      ];
+      const breaks = paginateScreenplay(lines, "letter");
+      expect(breaks).toContain(3);
+    });
+
+    it("respects A4 paper size", () => {
+      const lines = Array.from({ length: 60 }, (_, i) => ({
+        id: `line-${i}`,
+        text: `Action ${i}`,
+        type: LineType.action,
+        isOutlineElement: false,
+      }));
+      const breaks = paginateScreenplay(lines, "a4");
+      expect(breaks.length).toBeGreaterThan(0);
+    });
   });
 
-  describe("markers parsing", () => {
-    it("should parse markers with different colors and descriptions", () => {
-      const text = "EXT. HOUSE - DAY\n\nJohn walks [[marker red: Fix action]]\n\nAlice walks [[marker blue: check character]]";
-      const doc = parseScreenplay(text);
+  describe("Advanced Fountain parsing", () => {
+    it("should parse forced character with @", () => {
+      const doc = parseScreenplay("@JOHN\nHello.");
+      expect(doc.lines[0].type).toBe(LineType.character);
+    });
+
+    it("should parse forced action with !", () => {
+      const doc = parseScreenplay("!HE RUNS.");
+      expect(doc.lines[0].type).toBe(LineType.action);
+    });
+
+    it("should parse transition with > prefix (after title page break)", () => {
+      const doc = parseScreenplay("X\n\n> FADE TO:");
+      expect(doc.lines[2].type).toBe(LineType.transitionLine);
+    });
+
+    it("should parse transition without colon", () => {
+      const doc = parseScreenplay("X\n\n> FADE OUT");
+      expect(doc.lines[2].type).toBe(LineType.transitionLine);
+    });
+
+    it("should parse centered text", () => {
+      const doc = parseScreenplay(">THE END<");
+      expect(doc.lines[0].type).toBe(LineType.centered);
+    });
+
+    it("should parse lyrics with ~", () => {
+      const doc = parseScreenplay("~La la la");
+      expect(doc.lines[0].type).toBe(LineType.lyrics);
+    });
+
+    it("should parse shot with !!", () => {
+      const doc = parseScreenplay("!!CLOSE UP");
+      expect(doc.lines[0].type).toBe(LineType.shot);
+    });
+
+    it("should parse section headings", () => {
+      const doc = parseScreenplay("# ACT 1\n## SCENE 1");
+      expect(doc.lines[0].type).toBe(LineType.section);
+      expect(doc.lines[0].sectionDepth).toBe(1);
+      expect(doc.lines[1].type).toBe(LineType.section);
+      expect(doc.lines[1].sectionDepth).toBe(2);
+    });
+
+    it("should parse synopse lines", () => {
+      const doc = parseScreenplay("= Synopsis");
+      expect(doc.lines[0].type).toBe(LineType.synopse);
+    });
+
+    it("should parse page breaks (===)", () => {
+      const doc = parseScreenplay("===");
+      expect(doc.lines[0].type).toBe(LineType.pageBreak);
+    });
+
+    it("should parse title page", () => {
+      const doc = parseScreenplay("Title: My Movie\nAuthor: Me\n\nEXT. HOUSE");
+      expect(doc.lines[0].type).toBe(LineType.titlePageTitle);
+      expect(doc.lines[1].type).toBe(LineType.titlePageAuthor);
+    });
+
+    it("should parse dual dialogue", () => {
+      const doc = parseScreenplay("JOHN^\nHello world.\n\nALICE\nHi.");
+      expect(doc.lines[0].type).toBe(LineType.dualDialogueCharacter);
+      expect(doc.lines[1].type).toBe(LineType.dualDialogue);
+    });
+
+    it("should parse scene numbers", () => {
+      const doc = parseScreenplay("EXT. HOUSE - DAY #1#");
+      expect(doc.lines[0].sceneNumber).toBe("1");
+    });
+
+    it("should parse color notes on headings", () => {
+      const doc = parseScreenplay("EXT. HOUSE - DAY [[red]]");
+      expect(doc.lines[0].color).toBe("red");
+    });
+
+    it("should parse color notes with color prefix", () => {
+      const doc = parseScreenplay("EXT. HOUSE - DAY [[color blue]]");
+      expect(doc.lines[0].color).toBe("blue");
+    });
+
+    it("should parse storyline notes", () => {
+      const doc = parseScreenplay("EXT. HOUSE - DAY [[storyline A, B]]");
+      expect(doc.lines[0].storylines).toEqual(["A", "B"]);
+    });
+
+    it("should parse markers with color and description", () => {
+      const doc = parseScreenplay("EXT. HOUSE - DAY\n\nJohn walks [[marker red: Fix action]]");
       expect(doc.lines[2].marker).toBeDefined();
+      expect(doc.lines[2].marker!.color).toBe("red");
+      expect(doc.lines[2].marker!.description).toBe("Fix action");
+    });
+
+    it("should parse markers with color only", () => {
+      const doc = parseScreenplay("Line [[marker red]]");
+      expect(doc.lines[0].marker).toBeDefined();
+      expect(doc.lines[0].marker!.color).toBe("red");
+      expect(doc.lines[0].marker!.description).toBe("");
+    });
+
+    it("should parse markers with default color", () => {
+      const doc = parseScreenplay("X\n\nLine [[marker: fix me]]");
+      expect(doc.lines[2].marker).toBeDefined();
+      expect(doc.lines[2].marker!.color).toBe("orange");
+      expect(doc.lines[2].marker!.description).toBe("fix me");
+    });
+
+    it("should parse markers without colon separator", () => {
+      const doc = parseScreenplay("X\n\nLine [[marker fixme]]");
+      expect(doc.lines[2].marker).toBeDefined();
+      expect(doc.lines[2].marker!.color).toBe("orange");
+      expect(doc.lines[2].marker!.description).toBe("fixme");
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("handles empty input", () => {
+      const doc = parseScreenplay("");
+      expect(doc.lines).toHaveLength(1);
+      expect(doc.screenplayText).toBe("");
+    });
+
+    it("handles whitespace-only input", () => {
+      const doc = parseScreenplay("   \n\n  ");
+      expect(doc.screenplayText).toBe("   \n\n  ");
+    });
+
+    it("handles lines starting with numbers", () => {
+      const doc = parseScreenplay("42 is the answer.");
+      expect(doc.lines[0].type).toBe(LineType.action);
+    });
+
+    it("handles parenthetical outside dialogue as action", () => {
+      const doc = parseScreenplay("(standalone paren)");
+      expect(doc.lines[0].type).toBe(LineType.action);
+    });
+
+    it("handles dual dialogue parenthetical", () => {
+      const doc = parseScreenplay("JOHN^\n(whispering)\nHello.");
+      expect(doc.lines[0].type).toBe(LineType.dualDialogueCharacter);
+      expect(doc.lines[1].type).toBe(LineType.dualDialogueParenthetical);
+      expect(doc.lines[2].type).toBe(LineType.dualDialogue);
+    });
+
+    it("handles lines starting with '..' (not a heading)", () => {
+      const doc = parseScreenplay("..not a heading");
+      expect(doc.lines[0].type).not.toBe(LineType.heading);
+    });
+  });
+
+  describe("Marker color parsing", () => {
+    it("supports all named colors", () => {
+      const colors = ["blue", "brown", "cyan", "green", "magenta", "orange", "pink", "purple", "red", "yellow"];
+      for (const c of colors) {
+        const doc = parseScreenplay(`X\n\nLine [[marker ${c}: desc]]`);
+        expect(doc.lines[2].marker?.color).toBe(c);
+      }
+    });
+
+    it("supports color only without description", () => {
+      const doc = parseScreenplay("X\n\nLine [[marker red]]");
       expect(doc.lines[2].marker?.color).toBe("red");
-      expect(doc.lines[2].marker?.description).toBe("Fix action");
-      expect(doc.lines[4].marker).toBeDefined();
-      expect(doc.lines[4].marker?.color).toBe("blue");
-      expect(doc.lines[4].marker?.description).toBe("check character");
     });
   });
 });

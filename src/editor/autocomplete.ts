@@ -20,13 +20,13 @@ export const fountainCompletionSource = (context: CompletionContext): Completion
 
   // Suggest character names on character or empty lines
   if (currentType === LINE_CHARACTER || currentType === LINE_EMPTY) {
-    const docText = context.state.doc.toString();
+    const doc = context.state.doc;
     const characters = new Set<string>();
-    const lines = docText.split("\n");
-    const allTypes = classifyLines(context.state.doc);
-    for (let i = 0; i < lines.length; i++) {
-      if (allTypes[i] === LINE_CHARACTER || allTypes[i] === LINE_DUAL_CHARACTER) {
-        const name = lines[i].trim().replace(/\s*\^$/, "").replace(/\s*\(.*\)$/, "").trim();
+    const allTypes = classifyLines(doc);
+    for (let i = 1; i <= doc.lines; i++) {
+      if (allTypes[i - 1] === LINE_CHARACTER || allTypes[i - 1] === LINE_DUAL_CHARACTER) {
+        const lineText = doc.line(i).text;
+        const name = lineText.trim().replace(/\s*\^$/, "").replace(/\s*\(.*\)$/, "").trim();
         if (name.length > 1) characters.add(name);
       }
     }

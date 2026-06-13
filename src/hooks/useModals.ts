@@ -5,7 +5,6 @@ export interface ModalState {
   showExportModal: boolean;
   showStructureModal: boolean;
   showSettingsModal: boolean;
-  showRevisionModal: boolean;
   showTitlePageModal: boolean;
   showHelpModal: boolean;
   showBreakdownModal: boolean;
@@ -17,7 +16,6 @@ export interface ModalActions {
   setShowExportModal: (v: boolean) => void;
   setShowStructureModal: (v: boolean) => void;
   setShowSettingsModal: (v: boolean) => void;
-  setShowRevisionModal: (v: boolean) => void;
   setShowTitlePageModal: (v: boolean) => void;
   setShowHelpModal: (v: boolean) => void;
   setShowBreakdownModal: (v: boolean) => void;
@@ -29,7 +27,6 @@ export function useModals() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [showTitlePageModal, setShowTitlePageModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showBreakdownModal, setShowBreakdownModal] = useState(false);
@@ -37,10 +34,10 @@ export function useModals() {
 
   const isModalActive = useMemo(
     () => isPaletteOpen || showExportModal || showStructureModal || showSettingsModal ||
-         showRevisionModal || showTitlePageModal || showHelpModal || showBreakdownModal ||
+         showTitlePageModal || showHelpModal || showBreakdownModal ||
          showThemeManagerModal,
     [isPaletteOpen, showExportModal, showStructureModal, showSettingsModal,
-     showRevisionModal, showTitlePageModal, showHelpModal, showBreakdownModal,
+     showTitlePageModal, showHelpModal, showBreakdownModal,
      showThemeManagerModal]
   );
 
@@ -48,15 +45,15 @@ export function useModals() {
 
   const state: ModalState = useMemo(() => ({
     isPaletteOpen, showExportModal, showStructureModal, showSettingsModal,
-    showRevisionModal, showTitlePageModal, showHelpModal, showBreakdownModal,
+    showTitlePageModal, showHelpModal, showBreakdownModal,
     showThemeManagerModal
   }), [isPaletteOpen, showExportModal, showStructureModal, showSettingsModal,
-      showRevisionModal, showTitlePageModal, showHelpModal, showBreakdownModal,
+      showTitlePageModal, showHelpModal, showBreakdownModal,
       showThemeManagerModal]);
 
   const actions: ModalActions = {
     setIsPaletteOpen, setShowExportModal, setShowStructureModal, setShowSettingsModal,
-    setShowRevisionModal, setShowTitlePageModal, setShowHelpModal, setShowBreakdownModal,
+    setShowTitlePageModal, setShowHelpModal, setShowBreakdownModal,
     setShowThemeManagerModal
   };
 

@@ -11,7 +11,6 @@ export function unpackActoneBundle(bytes: Uint8Array): ActoneBundle {
 
   let parsedSettings: Record<string, any> = {};
   let genders: Record<string, string> = {};
-  let revisionData: Record<string, any> = {};
   let todosData: any[] = [];
   let parkingData: any[] = [];
   let notepadData = "";
@@ -25,9 +24,7 @@ export function unpackActoneBundle(bytes: Uint8Array): ActoneBundle {
   if (unzipped["characters.json"]) {
     try { const chars = JSON.parse(strFromU8(unzipped["characters.json"])); genders = chars.genders || {}; } catch {}
   }
-  if (unzipped["revision.json"]) {
-    try { revisionData = JSON.parse(strFromU8(unzipped["revision.json"])); } catch {}
-  }
+
   if (unzipped["todos.json"]) {
     try { todosData = JSON.parse(strFromU8(unzipped["todos.json"])); } catch {}
   }
@@ -50,7 +47,6 @@ export function unpackActoneBundle(bytes: Uint8Array): ActoneBundle {
   const settings = {
     ...parsedSettings,
     genders,
-    ...revisionData,
     todos: todosData,
     parking: parkingData,
     notepad: notepadData,
@@ -64,17 +60,14 @@ export function unpackActoneBundle(bytes: Uint8Array): ActoneBundle {
 
 export function packActoneBundle(content: string, settings: Record<string, any>): Uint8Array {
   const {
-    genders, revisionModeEnabled, revisionBaseText, todos, parking,
-    notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings
+    genders, todos, parking, notepad, sprintHistory: sprintData, markers, productionTags, ...restSettings
   } = settings || {};
   const characters = genders ? { genders } : {};
-  const revision = { revisionModeEnabled, revisionBaseText };
 
   return zipSync({
     "document.fountain": strToU8(content),
     "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
     "characters.json": strToU8(JSON.stringify(characters, null, 2)),
-    "revision.json": strToU8(JSON.stringify(revision, null, 2)),
     "todos.json": strToU8(JSON.stringify(todos || [], null, 2)),
     "parking.json": strToU8(JSON.stringify(parking || [], null, 2)),
     "notepad.json": strToU8(JSON.stringify(notepad || "", null, 2)),

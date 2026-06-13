@@ -1,7 +1,7 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet, WidgetType } from "@codemirror/view";
 import { LineType, FountainDocument } from "../parser";
-import { computeRevisedLines } from "../utils";
+
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
 
@@ -205,12 +205,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
   const doc = state.doc;
   const lineTypes = classifyLines(doc);
 
-  const revisionModeEnabled = docObj?.settings?.revisionModeEnabled;
-  const revisionBaseText = docObj?.settings?.revisionBaseText;
-  let revisedLines: boolean[] = [];
-  if (revisionModeEnabled && typeof revisionBaseText === "string") {
-    revisedLines = computeRevisedLines(revisionBaseText, doc.toString());
-  }
+
 
   for (let i = 1; i <= doc.lines; i++) {
     const line = doc.line(i);
@@ -267,14 +262,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
           finalClassName += " cm-fountain-metadata-start";
         }
       }
-      if (revisedLines[i - 1]) {
-        finalClassName += " cm-fountain-revised";
-      }
       lineDecos.push({ from: line.from, to: line.from, dec: Decoration.line({ class: finalClassName }) });
-    } else {
-      if (revisedLines[i - 1]) {
-        lineDecos.push({ from: line.from, to: line.from, dec: Decoration.line({ class: "cm-fountain-revised" }) });
-      }
     }
 
     if (type === LINE_HEADING) {

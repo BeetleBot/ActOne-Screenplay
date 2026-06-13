@@ -237,12 +237,7 @@ const HELP_ITEMS: HelpItem[] = [
     category: "Review & Export",
     keywords: ["markers", "notes", "brackets", "color notes", "inline comments", "marker filters"]
   },
-  {
-    name: "Revision Tracking Mode",
-    desc: "Activate Revision Mode in the Command Palette to capture a base draft snapshot. Additions highlight in green, deletions highlight in red with strikethroughs, and modified lines display detailed word-level diffs. Review edits in the revision panel, choosing to Accept, Reject, Merge All, or Discard All.",
-    category: "Review & Export",
-    keywords: ["revision mode", "diff tracking", "accept revisions", "reject revisions", "base draft", "green highlights", "red highlights"]
-  },
+
   {
     name: "PDF & Fountain Exporting",
     desc: "Print standard PDFs of your script with customizable options (scene numbers on left/right/mirrored, bold headings, font choices, title page inclusion, and outline elements). You can also export a clean, standard Fountain plain-text file with all app-specific tags and markup stripped.",

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from "r
 import { parseScreenplay, FountainDocument } from "../parser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
-import { computeRevisedLines, unpackActoneBundle, packActoneBundle } from "../utils";
+import { unpackActoneBundle, packActoneBundle } from "../utils";
 import { useCustomModal } from "./CustomModalContext";
 
 export interface ScreenplayFile {
@@ -285,18 +285,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
 
-  const revisionModeEnabled = parsedDoc?.settings?.revisionModeEnabled;
-  const revisionBaseText = parsedDoc?.settings?.revisionBaseText;
-
   useEffect(() => {
     if (!isTauri) return;
 
     const handler = setTimeout(async () => {
       try {
-        let revisedLines: boolean[] = [];
-        if (revisionModeEnabled && typeof revisionBaseText === "string") {
-          revisedLines = computeRevisedLines(revisionBaseText, rawText);
-        }
+        const revisedLines: boolean[] = [];
 
         const breaks = await invoke<number[]>("get_page_breaks", {
           fountainText: rawText,
@@ -330,7 +324,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 1000);
 
     return () => clearTimeout(handler);
-  }, [rawText, paperSize, fontFamily, activeFileId, isTauri, revisionModeEnabled, revisionBaseText]);
+  }, [rawText, paperSize, fontFamily, activeFileId, isTauri]);
 
   useEffect(() => {
     if (isTauri) return;

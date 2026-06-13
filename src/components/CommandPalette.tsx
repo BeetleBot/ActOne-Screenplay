@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFile, useEditor, useUI } from "../context";
-import { startRevisionMode } from "../utils";
+
 import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon } from "./Icons";
 
 
@@ -37,7 +37,6 @@ interface CommandPaletteProps {
   isSidebarOpen: boolean;
   onOpenStructureModal: () => void;
   onOpenSettingsModal: () => void;
-  onOpenRevisionModal: () => void;
   onOpenTitlePageModal: () => void;
   onOpenHelpModal: () => void;
   onOpenBreakdownModal: () => void;
@@ -52,7 +51,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isSidebarOpen,
   onOpenStructureModal,
   onOpenSettingsModal,
-  onOpenRevisionModal,
   onOpenTitlePageModal,
   onOpenHelpModal,
   onOpenBreakdownModal,
@@ -70,14 +68,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     saveFileAs,
     closeFile,
     activeFileId,
-    files,
-    updateSettings,
   } = useFile();
-
-  const activeFile = files.find(f => f.id === activeFileId);
-  const revisionModeEnabled = activeFile?.parsedDoc?.settings?.revisionModeEnabled;
-  const filePath = activeFile?.filePath || null;
-  const rawText = activeFile?.rawText || "";
 
   const {
     autoAddSceneNumbers,
@@ -231,12 +222,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "settings-paper-a4", name: "Set Paper Size: A4", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setPaperSize("a4"); onClose(); } },
     { id: "settings-theme-manager", name: "Open Theme Manager...", category: "Settings", icon: <ColorLensIcon sx={{ fontSize: 16 }} />, action: () => { onOpenThemeManagerModal(); onClose(); } },
 
-    // Revisions
-    ...(!revisionModeEnabled ? [
-      { id: "revision-start", name: "Start Revision Mode", category: "Revisions", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { startRevisionMode(filePath, rawText, updateSettings, saveFileAs); onClose(); } }
-    ] : [
-      { id: "revision-review", name: "Review Revisions...", category: "Revisions", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenRevisionModal(); onClose(); } }
-    ]),
+
 
     // Help
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, action: () => { onOpenHelpModal(); onClose(); } },

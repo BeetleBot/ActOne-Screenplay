@@ -329,6 +329,8 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
         if (dashIdx !== -1) {
           loc = text.substring(0, dashIdx).trim();
         }
+        // Remove common scene heading prefixes
+        loc = loc.replace(/^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b[ .]*/i, "").trim();
         locationCounts[loc] = (locationCounts[loc] || 0) + 1;
       } else if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
         currentSpeaker = line.text

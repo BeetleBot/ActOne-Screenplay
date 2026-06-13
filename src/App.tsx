@@ -15,10 +15,10 @@ function AppInner() {
 
   const {
     isModalActive, isPaletteOpen, showExportModal, showStructureModal,
-    showSettingsModal, showRevisionModal, showTitlePageModal, showHelpModal,
+    showSettingsModal, showTitlePageModal, showHelpModal,
     showBreakdownModal, showThemeManagerModal,
     setIsPaletteOpen, setShowExportModal, setShowStructureModal,
-    setShowSettingsModal, setShowRevisionModal, setShowTitlePageModal,
+    setShowSettingsModal, setShowTitlePageModal,
     setShowHelpModal, setShowBreakdownModal, setShowThemeManagerModal,
     togglePalette
   } = useModals();
@@ -252,8 +252,6 @@ function AppInner() {
         setShowStructureModal={setShowStructureModal}
         showSettingsModal={showSettingsModal}
         setShowSettingsModal={setShowSettingsModal}
-        showRevisionModal={showRevisionModal}
-        setShowRevisionModal={setShowRevisionModal}
         showTitlePageModal={showTitlePageModal}
         setShowTitlePageModal={setShowTitlePageModal}
         showHelpModal={showHelpModal}

@@ -3,7 +3,6 @@ import { ExportModal } from './ExportModal';
 import { StructureImportModal } from './StructureImportModal';
 import { SettingsModal } from './SettingsModal';
 import { CommandPalette } from './CommandPalette';
-import { RevisionModal } from './RevisionModal';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { HelpModal } from './HelpModal';
 import { ProductionBreakdownModal } from './ProductionBreakdownModal';
@@ -18,8 +17,6 @@ export interface ModalManagerProps {
   setShowStructureModal: (open: boolean) => void;
   showSettingsModal: boolean;
   setShowSettingsModal: (open: boolean) => void;
-  showRevisionModal: boolean;
-  setShowRevisionModal: (open: boolean) => void;
   showTitlePageModal: boolean;
   setShowTitlePageModal: (open: boolean) => void;
   showHelpModal: boolean;
@@ -41,8 +38,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   setShowStructureModal,
   showSettingsModal,
   setShowSettingsModal,
-  showRevisionModal,
-  setShowRevisionModal,
   showTitlePageModal,
   setShowTitlePageModal,
   showHelpModal,
@@ -64,7 +59,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
         isSidebarOpen={isSidebarOpen}
         onOpenStructureModal={() => setShowStructureModal(true)}
         onOpenSettingsModal={() => setShowSettingsModal(true)}
-        onOpenRevisionModal={() => setShowRevisionModal(true)}
         onOpenTitlePageModal={() => setShowTitlePageModal(true)}
         onOpenHelpModal={() => setShowHelpModal(true)}
         onOpenBreakdownModal={() => setShowBreakdownModal(true)}
@@ -73,7 +67,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
       {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
       {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}
-      {showRevisionModal && <RevisionModal onClose={() => setShowRevisionModal(false)} />}
       {showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
       {showBreakdownModal && <ProductionBreakdownModal onClose={() => setShowBreakdownModal(false)} />}
