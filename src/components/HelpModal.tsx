@@ -33,7 +33,7 @@ const openFountainGuide = () => {
 };
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <Box sx={{ mb: 4 }}>
+  <Box sx={{ mb: 3 }}>
     <Typography
       variant="overline"
       sx={{
@@ -52,7 +52,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
 );
 
 const Feature: React.FC<{ name: string; desc: string }> = ({ name, desc }) => (
-  <Box sx={{ mb: 2.5 }}>
+  <Box sx={{ mb: 2 }}>
     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5, fontSize: 13.5 }}>
       {name}
     </Typography>
@@ -331,9 +331,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
     : [];
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}>
-      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>ActOne Help Manual</Typography>
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, whiteSpace: "nowrap", fontSize: 15 }}>ActOne Help Manual</Typography>
         
         {/* Modern Search Bar */}
         <TextField
@@ -346,8 +346,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             maxWidth: 400,
             "& .MuiOutlinedInput-root": {
               borderRadius: "20px",
-              height: 36,
-              fontSize: "0.85rem",
+              height: 32,
+              fontSize: "0.8rem",
               bgcolor: "action.hover",
               "& fieldset": { borderColor: "transparent" },
               "&:hover fieldset": { borderColor: "divider" },
@@ -389,7 +389,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
         </Box>
       )}
 
-      <DialogContent sx={{ p: 3, maxHeight: `${(70 * 100) / appScale}vh`, overflowY: "auto" }}>
+      <DialogContent sx={{ px: 2.5, py: 2, maxHeight: `${(60 * 100) / appScale}vh`, overflowY: "auto" }}>
         {searchQuery ? (
           // Search Results View
           <Box>
@@ -553,8 +553,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11.5, fontWeight: 500 }}>
+      <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11, fontWeight: 500 }}>
           ActOne — Built for Screenwriters
         </Typography>
         <Button

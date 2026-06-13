@@ -115,6 +115,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [scriptsState, setScriptsState] = useState<ScriptInfo[]>([]);
   const [activeScriptIndex, setActiveScriptIndexState] = useState<number>(0);
 
+  const isBundleDirty = useCallback((scripts: ScriptInfo[]): boolean => {
+    return scripts.some(s => s.content !== s.savedContent);
+  }, []);
+
   const activeFile = files.find(f => f.id === activeFileId);
   const isBundle = !!activeFile?.scripts;
 
@@ -289,7 +293,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const doc = parseScreenplay(normalized, paperSize);
     setFiles(prev => prev.map(f => {
       if (f.id === activeFileId) {
-        const isDirty = normalized !== f.savedText;
         const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
           ? doc.settings
           : f.parsedDoc.settings;
@@ -301,6 +304,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             i === idx ? { ...s, content: normalized } : s
           );
         }
+
+        const isDirty = updatedScripts && updatedScripts.length > 0
+          ? isBundleDirty(updatedScripts)
+          : normalized !== f.savedText;
 
         return {
           ...f,
@@ -658,7 +665,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let updatedScripts = currentActive.scripts ? [...currentActive.scripts] : [];
       if (updatedScripts.length > 0) {
         const idx = currentActive.activeScriptIndex ?? 0;
-        updatedScripts[idx] = { ...updatedScripts[idx], content: cleanFountainText, savedContent: cleanFountainText };
+        updatedScripts[idx] = { ...updatedScripts[idx], content: cleanFountainText };
+        // Mark every script as saved
+        updatedScripts = updatedScripts.map(s => ({ ...s, savedContent: s.content }));
       } else {
         updatedScripts = [{
           name: currentActive.filePath.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
@@ -821,7 +830,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       rawText: newScript.content,
       savedText: newScript.savedContent,
       parsedDoc: doc,
-      isDirty: newScript.content !== newScript.savedContent,
+      isDirty: isBundleDirty(updatedScripts),
       scripts: updatedScripts,
       activeScriptIndex: index,
     } : f));
@@ -859,7 +868,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScriptIndex: updatedScripts.length - 1,
       rawText: "",
       savedText: "",
-      isDirty: false,
+      isDirty: isBundleDirty(updatedScripts),
       parsedDoc: parseScreenplay("", paperSize),
     } : f));
 
@@ -943,7 +952,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScriptIndex: targetIdx,
       rawText: targetScript.content,
       savedText: targetScript.savedContent,
-      isDirty: targetScript.content !== targetScript.savedContent,
+      isDirty: isBundleDirty(updatedScripts),
       parsedDoc: doc,
     } : f));
 

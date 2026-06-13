@@ -106,30 +106,31 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         slotProps={{
           paper: {
             sx: {
-              borderRadius: "16px",
-              minWidth: 320,
-              p: 1,
+              borderRadius: "10px",
+              minWidth: 280,
+              p: 0.5,
               zoom: `${appScale}%`
             }
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: "1.1rem" }}>
+        <DialogTitle sx={{ fontWeight: 600, fontSize: "1rem" }}>
           {confirmOpts?.title}
         </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ fontSize: "0.9rem" }}>
+          <DialogContentText sx={{ fontSize: "0.85rem" }}>
             {confirmOpts?.message}
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 1, gap: 1 }}>
+        <DialogActions sx={{ px: 1.5, pb: 0.75, gap: 0.5 }}>
           {confirmOpts?.buttons.map((btn) => (
             <Button
               key={btn.value}
               onClick={() => handleConfirmClose(btn.value)}
               variant={btn.variant || "outlined"}
               color={btn.color || "primary"}
-              sx={{ borderRadius: "20px", fontSize: "0.85rem", px: 2.5 }}
+              size="small"
+              sx={{ fontSize: "0.8rem", px: 2 }}
             >
               {btn.label}
             </Button>
@@ -144,19 +145,19 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         slotProps={{
           paper: {
             sx: {
-              borderRadius: "16px",
-              minWidth: 320,
-              p: 1,
+              borderRadius: "10px",
+              minWidth: 280,
+              p: 0.5,
               zoom: `${appScale}%`
             }
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: "1.1rem" }}>
+        <DialogTitle sx={{ fontWeight: 600, fontSize: "1rem" }}>
           {promptOpts?.title}
         </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 2, fontSize: "0.9rem" }}>
+          <DialogContentText sx={{ mb: 1.5, fontSize: "0.85rem" }}>
             {promptOpts?.message}
           </DialogContentText>
           <TextField
@@ -175,22 +176,23 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
             }}
             slotProps={{
               htmlInput: {
-                style: { fontSize: "0.9rem" }
+                style: { fontSize: "0.85rem" }
               }
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                borderRadius: "10px",
+                borderRadius: "8px",
               }
             }}
           />
         </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 1, gap: 1 }}>
+        <DialogActions sx={{ px: 1.5, pb: 0.75, gap: 0.5 }}>
           <Button
             onClick={handlePromptCancel}
             variant="text"
             color="inherit"
-            sx={{ borderRadius: "20px", fontSize: "0.85rem", px: 2.5 }}
+            size="small"
+            sx={{ fontSize: "0.8rem", px: 2 }}
           >
             Cancel
           </Button>
@@ -198,7 +200,8 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
             onClick={handlePromptSubmit}
             variant="contained"
             color="primary"
-            sx={{ borderRadius: "20px", fontSize: "0.85rem", px: 2.5 }}
+            size="small"
+            sx={{ fontSize: "0.8rem", px: 2 }}
           >
             OK
           </Button>

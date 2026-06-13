@@ -224,9 +224,10 @@ export const ScriptsView: React.FC = () => {
       </Menu>
 
       {renameDialog && (
-        <Dialog open onClose={() => setRenameDialog(null)} disableScrollLock maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontWeight: 600, fontSize: 15 }}>Rename Script</DialogTitle>
-          <DialogContent>
+        <Dialog open onClose={() => setRenameDialog(null)} disableScrollLock maxWidth="xs" fullWidth
+          sx={{ '& .MuiDialog-paper': { borderRadius: '10px' } }}>
+          <DialogTitle sx={{ fontWeight: 600, fontSize: 14, px: 2, py: 1 }}>Rename Script</DialogTitle>
+          <DialogContent sx={{ px: 2, py: 1 }}>
             <TextField
               autoFocus
               fullWidth
@@ -234,10 +235,9 @@ export const ScriptsView: React.FC = () => {
               value={renameDialog.value}
               onChange={(e) => setRenameDialog({ ...renameDialog, value: e.target.value })}
               onKeyDown={(e) => { if (e.key === "Enter") handleRenameSubmit(); }}
-              sx={{ mt: 1 }}
             />
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
+          <DialogActions sx={{ px: 2, py: 1 }}>
             <Button onClick={() => setRenameDialog(null)} color="inherit" size="small">Cancel</Button>
             <Button onClick={handleRenameSubmit} variant="contained" size="small">Rename</Button>
           </DialogActions>
@@ -245,15 +245,16 @@ export const ScriptsView: React.FC = () => {
       )}
 
       {exportDialog && (
-        <Dialog open onClose={() => setExportDialog(false)} fullWidth maxWidth="sm" disableScrollLock>
-          <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", gap: 1 }}>
-            <DownloadIcon sx={{ fontSize: 20 }} />
-            <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+        <Dialog open onClose={() => setExportDialog(false)} fullWidth maxWidth="sm" disableScrollLock
+          sx={{ '& .MuiDialog-paper': { borderRadius: '10px' } }}>
+          <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", gap: 1 }}>
+            <DownloadIcon sx={{ fontSize: 18 }} />
+            <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 15 }}>
               Export All Scripts ({scripts.length})
             </Typography>
           </DialogTitle>
 
-          <DialogContent dividers sx={{ p: 3 }}>
+          <DialogContent dividers sx={{ px: 2.5, py: 2 }}>
             <FormControl fullWidth size="small" sx={{ mb: 3 }}>
               <InputLabel id="export-format-label">Export Format</InputLabel>
               <Select
@@ -269,7 +270,7 @@ export const ScriptsView: React.FC = () => {
             </FormControl>
 
             {exportFormat === "pdf" && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <FormControlLabel
                   control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
                   label={
@@ -351,7 +352,7 @@ export const ScriptsView: React.FC = () => {
             )}
 
             {exportFormat === "fountain" && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
                   <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
                     Export {scripts.length} Script{scripts.length !== 1 ? "s" : ""} as Clean Fountain Files
@@ -394,9 +395,9 @@ export const ScriptsView: React.FC = () => {
             )}
           </DialogContent>
 
-          <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
-            <Button onClick={() => setExportDialog(false)} color="inherit" variant="outlined">Cancel</Button>
-            <Button onClick={handleExportAll} variant="contained" color="primary">
+          <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
+            <Button onClick={() => setExportDialog(false)} color="inherit" variant="outlined" size="small">Cancel</Button>
+            <Button onClick={handleExportAll} variant="contained" color="primary" size="small">
               Export All
             </Button>
           </DialogActions>

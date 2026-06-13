@@ -57,9 +57,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<number>(0);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}>
-      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>Settings</Typography>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Settings</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
@@ -72,9 +72,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         </Tabs>
       </Box>
 
-      <DialogContent dividers sx={{ p: 3, maxHeight: `${(65 * 100) / appScale}vh` }}>
+      <DialogContent dividers sx={{ px: 2.5, py: 2, maxHeight: `${(55 * 100) / appScale}vh` }}>
         {activeTab === 0 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <FormControl fullWidth size="small">
               <InputLabel id="theme-select-label">Visual Theme</InputLabel>
               <Select
@@ -152,7 +152,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         )}
 
         {activeTab === 1 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <FormControl fullWidth size="small">
               <InputLabel id="font-family-label">Font Style</InputLabel>
               <Select

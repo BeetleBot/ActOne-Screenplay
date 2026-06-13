@@ -147,9 +147,9 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
   const hasTitlePage = Object.values(fields).some(v => v.trim().length > 0);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}>
-      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>Title Page Editor</Typography>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Title Page Editor</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
@@ -162,9 +162,9 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
         </Tabs>
       </Box>
 
-      <DialogContent dividers sx={{ p: 3, maxHeight: `${(65 * 100) / appScale}vh`, overflowY: "auto" }}>
+      <DialogContent dividers sx={{ px: 2.5, py: 2, maxHeight: `${(55 * 100) / appScale}vh`, overflowY: "auto" }}>
         {activeTab === 0 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {!hasTitlePage && (
               <Alert severity="warning">
                 No title page found. Fill in the fields below to create one.
@@ -204,9 +204,9 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
         )}
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
-        <Button onClick={onClose} variant="outlined" color="inherit">Cancel</Button>
-        <Button onClick={handleApply} variant="contained" color="primary">
+      <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
+        <Button onClick={onClose} variant="outlined" color="inherit" size="small">Cancel</Button>
+        <Button onClick={handleApply} variant="contained" color="primary" size="small">
           Apply to Document
         </Button>
       </DialogActions>

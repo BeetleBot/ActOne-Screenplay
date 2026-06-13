@@ -205,18 +205,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}>
-      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <DownloadIcon sx={{ fontSize: 20 }} />
-          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>Export Screenplay</Typography>
+          <DownloadIcon sx={{ fontSize: 18 }} />
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 15 }}>Export Screenplay</Typography>
         </Box>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 3 }}>
+      <DialogContent dividers sx={{ px: 2.5, py: 2 }}>
         {isBundle && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, px: 1.5, py: 1, bgcolor: "action.hover", borderRadius: 1 }}>
             <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, color: "text.secondary" }}>
@@ -242,7 +242,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         </FormControl>
 
         {format === "pdf" ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5, bgcolor: "action.hover", borderRadius: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 500 }}>Summary Settings</Typography>
               <Typography variant="caption" color="text.secondary">
@@ -329,8 +329,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>Clean Fountain File Export</Typography>
               <Typography variant="caption" color="text.secondary" component="div">
                 Exports a standard Fountain file without ActOne-specific metadata or draft variables.
@@ -375,9 +375,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         )}
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
-        <Button onClick={onClose} color="inherit" variant="outlined">Cancel</Button>
-        <Button onClick={handleExport} variant="contained" color="primary">
+      <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
+        <Button onClick={onClose} color="inherit" variant="outlined" size="small">Cancel</Button>
+        <Button onClick={handleExport} variant="contained" color="primary" size="small">
           Export to {format === "pdf" ? "PDF" : "Fountain"}
         </Button>
       </DialogActions>

@@ -120,15 +120,15 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}>
-      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>Screenplay Structure Outlines</Typography>
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Screenplay Structure Outlines</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 0, maxHeight: `${(70 * 100) / appScale}vh`, height: "100%" }}>
+      <DialogContent dividers sx={{ p: 0, maxHeight: `${(60 * 100) / appScale}vh`, height: "100%" }}>
         <Grid container sx={{ height: "100%" }}>
           {/* Left Panel: Search & List */}
           <Grid size={{ xs: 5 }} sx={{ borderRight: 1, borderColor: "divider", display: "flex", flexDirection: "column", height: "100%" }}>
@@ -211,11 +211,11 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
         </Grid>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
+      <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
         <Typography variant="caption" color="text.secondary" sx={{ maxWidth: "40%" }}>
-          Importing inserts Section headers (##) and Synopsis (=).
+          Inserts Section headers (##) and Synopsis (=).
         </Typography>
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 0.5 }}>
           <Button onClick={onClose} variant="outlined" size="small" color="inherit">Cancel</Button>
           <Button
             variant="outlined"

@@ -293,9 +293,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       maxWidth="xs" 
       scroll="paper"
       disableScrollLock
-      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}
+      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}
     >
-      <Box sx={{ p: 2, pb: 1.5 }}>
+      <Box sx={{ px: 2, py: 1 }}>
         <TextField
           inputRef={inputRef}
           placeholder="Type a command or search..."
@@ -315,7 +315,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 "&:hover fieldset": { border: "none" },
                 "&.Mui-focused fieldset": { border: "none" },
                 bgcolor: "action.hover",
-                borderRadius: "10px",
+                borderRadius: "8px",
                 px: 1.5,
               },
               startAdornment: (
@@ -377,7 +377,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
       <Divider />
 
-      <Box sx={{ p: 1.5, px: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover" }}>
+      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover" }}>
         <Box sx={{ display: "flex", gap: 1.5 }}>
           <Typography variant="caption" color="text.secondary">
             <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: "action.selected", px: 0.5, py: 0.2, borderRadius: 0.5 }}>↑↓</Typography> navigate

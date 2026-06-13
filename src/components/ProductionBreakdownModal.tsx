@@ -150,15 +150,15 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
   }, [prodTags, searchQuery, parsedDoc.lines]);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}>
-      <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>Production Breakdown</Typography>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Production Breakdown</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2, maxHeight: `${(70 * 100) / appScale}vh` }}>
+      <DialogContent dividers sx={{ px: 2.5, py: 2, display: "flex", flexDirection: "column", gap: 1.5, maxHeight: `${(60 * 100) / appScale}vh` }}>
         <TextField
           placeholder="Filter tags..."
           value={searchQuery}

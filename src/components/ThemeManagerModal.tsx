@@ -287,16 +287,16 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
   })();
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}>
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>Theme Manager</Typography>
+    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Theme Manager</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: 'text.secondary' }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, maxHeight: `${(75 * 100) / appScale}vh` }}>
+      <DialogContent sx={{ px: 2, py: 1.5 }}>
+        <Box sx={{ display: 'flex', gap: 2, maxHeight: `${(65 * 100) / appScale}vh` }}>
           {/* ── Left pane: list or form ── */}
           <Box sx={{
             width: 340, flexShrink: 0, display: 'flex', flexDirection: 'column',
