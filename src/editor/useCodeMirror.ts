@@ -25,7 +25,7 @@ const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
   if (localStorage.getItem("actone-smart-quotes-enabled") !== "true") return tr;
   if (!tr.docChanged || tr.annotation(Transaction.userEvent) !== "input.type") return tr;
   
-  const changes: any[] = [];
+  const changes: { from: number; to: number; insert: string }[] = [];
   tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
     const text = inserted.toString();
     if (text === '"') {
@@ -352,7 +352,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         if (tag.range) {
           const [start, len] = tag.range;
           if (pos >= start && pos <= start + len) {
-            const def = prodTags.definitions?.find((d: any) => d.id === tag.definitionId);
+            const def = prodTags.definitions?.find((d: Record<string, unknown>) => d.id === tag.definitionId);
             const name = def ? def.name : view.state.sliceDoc(start, start + len);
             const categoryLabel = CATEGORIES.find(c => c.key === tag.type)?.label || tag.type;
             
@@ -392,7 +392,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
             const prodTags = parsedDocRef.current.settings?.productionTags;
             if (prodTags && prodTags.tags && prodTags.tags.length > 0) {
               let changed = false;
-              const mappedTags = prodTags.tags.map((tag: any) => {
+              const mappedTags = prodTags.tags.map((tag: { range?: [number, number]; definitionId?: string; type?: string; sceneId?: string }) => {
                 if (!tag.range) return tag;
                 const [start, len] = tag.range;
                 try {
@@ -416,7 +416,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
               }).filter(Boolean);
 
               if (changed) {
-                updateSettingsRef.current((prev: any) => {
+                updateSettingsRef.current((prev) => {
                   const prevProd = prev.productionTags || { tags: [], definitions: [] };
                   return {
                     ...prev,

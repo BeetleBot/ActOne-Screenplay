@@ -5,6 +5,9 @@ import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundle } from "../utils";
 import type { ScriptInfo } from "../utils";
 import { useCustomModal } from "./CustomModalContext";
+import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
+
+export type SettingsUpdater = (prev: Record<string, any>) => Record<string, any>;
 
 export interface ScreenplayFile {
   id: string;
@@ -43,7 +46,7 @@ export interface FileContextProps {
   recentFiles: RecentFile[];
   openFilePath: (path: string) => Promise<void>;
   removeFromRecent: (path: string) => void;
-  updateSettings: (updater: (prev: any) => any) => void;
+  updateSettings: (updater: SettingsUpdater) => void;
   scripts: ScriptInfo[];
   activeScriptIndex: number;
   activeScriptName: string;
@@ -88,7 +91,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [files, setFiles] = useState<ScreenplayFile[]>([]);
   const [activeFileId, setActiveFileIdState] = useState<string>("");
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>(() => {
-    const saved = localStorage.getItem("actone-recent-files");
+    const saved = localStorage.getItem(STORAGE_KEYS.RECENT_FILES);
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -96,8 +99,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRecentFiles(prev => {
       const name = path.split(/[/\\]/).pop() || "Untitled";
       const filtered = prev.filter(f => f.path !== path);
-      const updated = [{ path, name, lastOpened: Date.now() }, ...filtered].slice(0, 10);
-      localStorage.setItem("actone-recent-files", JSON.stringify(updated));
+      const updated = [{ path, name, lastOpened: Date.now() }, ...filtered].slice(0, MAX_RECENT_FILES);
+      localStorage.setItem(STORAGE_KEYS.RECENT_FILES, JSON.stringify(updated));
       return updated;
     });
   };
@@ -105,7 +108,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const removeFromRecent = (path: string) => {
     setRecentFiles(prev => {
       const updated = prev.filter(f => f.path !== path);
-      localStorage.setItem("actone-recent-files", JSON.stringify(updated));
+      localStorage.setItem(STORAGE_KEYS.RECENT_FILES, JSON.stringify(updated));
       return updated;
     });
   };
@@ -329,7 +332,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const updateSettings = (updater: (prev: any) => any) => {
+  const updateSettings = (updater: SettingsUpdater) => {
     setFiles(prev => prev.map(f => {
       if (f.id === activeFileId) {
         const nextSettings = updater(f.parsedDoc.settings || {});
@@ -353,7 +356,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
+  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
   // Validate recent files on startup — remove any that no longer exist
   useEffect(() => {
@@ -363,7 +366,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const exists = await invoke<boolean>("file_exists", { path: f.path });
           if (!exists) removeFromRecent(f.path);
-        } catch { /* ignore check errors */ }
+        } catch (e) { console.warn("Failed to check file existence", e); }
       }
     })();
   }, []); // run once on mount
@@ -985,7 +988,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!file || !file.scripts) return null;
 
     let fileName = "";
-    let content = "";
+    let content: string | null = "";
 
     if (isTauri) {
       try {

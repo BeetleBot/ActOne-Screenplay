@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { createActOneTheme, deriveAllColors, type ThemeMode, type ThemeConfig, type ThemeColors, themes } from "../theme";
+import { STORAGE_KEYS } from "../constants";
 
 export interface CustomTheme {
   id: string;
@@ -33,14 +34,14 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'theme';
 }
 
-const STORAGE_KEY = "actone-custom-themes";
-const THEME_ID_KEY = "actone-theme-id";
+const STORAGE_KEY = STORAGE_KEYS.CUSTOM_THEMES;
+const THEME_ID_KEY = STORAGE_KEYS.THEME_ID;
 
 function loadCustomThemes(): CustomTheme[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  } catch (e) { console.warn("Failed to load custom themes", e); return []; }
 }
 
 function saveCustomThemes(t: CustomTheme[]) {

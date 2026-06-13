@@ -61,8 +61,8 @@ export const HeaderBar: React.FC = () => {
     return () => container.removeEventListener("wheel", handleWheel);
   }, []);
 
-  const handleClose = () => { try { getTauriWindow()?.close(); } catch {} };
-  const handleMinimize = () => { try { getTauriWindow()?.minimize(); } catch {} };
+  const handleClose = () => { try { getTauriWindow()?.close(); } catch (e) { console.error(e); } };
+  const handleMinimize = () => { try { getTauriWindow()?.minimize(); } catch (e) { console.error(e); } };
   const handleMaximize = async () => {
     try {
       const win = getTauriWindow();
@@ -70,7 +70,7 @@ export const HeaderBar: React.FC = () => {
         if (await win.isMaximized()) { await win.unmaximize(); setIsMaximized(false); }
         else { await win.maximize(); setIsMaximized(true); }
       }
-    } catch {}
+    } catch (e) { console.error(e); }
   };
 
   const lastClickTimeRef = useRef<number>(0);
@@ -86,7 +86,7 @@ export const HeaderBar: React.FC = () => {
         const now = Date.now();
         if (now - lastClickTimeRef.current < 400) { handleMaximize(); lastClickTimeRef.current = 0; return; }
         lastClickTimeRef.current = now;
-        try { const win = getTauriWindow(); if (win) await win.startDragging(); } catch {}
+        try { const win = getTauriWindow(); if (win) await win.startDragging(); } catch (e) { console.error(e); }
       }
     }
   };

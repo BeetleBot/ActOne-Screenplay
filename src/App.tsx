@@ -90,7 +90,7 @@ function AppInner() {
             openFilePath(p);
           }
         });
-      } catch {}
+      } catch (e) { console.error("Failed to listen for file-opened events", e); }
     };
     if (files.length > 0) setup();
     return () => { if (unlisten) unlisten(); };

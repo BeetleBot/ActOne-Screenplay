@@ -173,7 +173,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             if (created) closeWelcome();
           });
         });
-      } catch {}
+      } catch (e) { console.error("Failed to listen for file-opened events:", e); }
     };
     setup();
     return () => { if (unlisten) unlisten(); };

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type { EditorView } from "@codemirror/view";
 
 interface ShortcutActions {
   newFile: () => void;
@@ -9,7 +10,7 @@ interface ShortcutActions {
   exportPDF: () => void;
   toggleSidebar: () => void;
   toggleZenMode: () => void;
-  getEditorView: () => any | null;
+  getEditorView: () => EditorView | null;
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
@@ -20,7 +21,7 @@ interface ShortcutActions {
   isDisabled?: boolean;
 }
 
-function toggleInlineMarker(view: any, marker: string) {
+function toggleInlineMarker(view: EditorView | null, marker: string) {
   if (!view) return;
 
   const { from, to } = view.state.selection.main;

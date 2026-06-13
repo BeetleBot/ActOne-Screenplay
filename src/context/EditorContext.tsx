@@ -1,19 +1,19 @@
 import React, { createContext, useContext, useState } from "react";
 import { EditorView } from "@codemirror/view";
-import { useFile } from "./FileContext";
+import { useFile, type SettingsUpdater } from "./FileContext";
 import { ParsedLine, LineType, formatScreenplaySpaces } from "../parser";
 import { useUI } from "./UIContext";
 
 export interface EditorContextProps {
   activeLineId: string | null;
   selectedSceneId: string | null;
-  editorView: any | null;
+  editorView: EditorView | null;
   setActiveLineId: (id: string | null) => void;
   setSelectedSceneId: (id: string | null) => void;
   updateLineText: (lineId: string, newText: string) => void;
-  updateSettings: (updater: (prev: any) => any) => void;
+  updateSettings: (updater: SettingsUpdater) => void;
   reorderScenes: (startIndex: number, endIndex: number) => void;
-  setEditorView: (view: any | null) => void;
+  setEditorView: (view: EditorView | null) => void;
   scrollToLine: (lineIndex: number, noFocus?: boolean) => void;
   autoAddSceneNumbers: () => void;
   clearSceneNumbers: () => void;
@@ -34,9 +34,9 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
-  const [editorView, setEditorViewState] = useState<any | null>(null);
+  const [editorView, setEditorViewState] = useState<EditorView | null>(null);
 
-  const setEditorView = (view: any | null) => {
+  const setEditorView = (view: EditorView | null) => {
     setEditorViewState(view);
   };
 

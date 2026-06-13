@@ -95,7 +95,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const openUrl = (url: string) => {
     try {
       import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url));
-    } catch {
+    } catch (e) {
+      console.warn("Failed to open URL via Tauri opener, falling back to window.open", e);
       window.open(url, "_blank");
     }
   };
@@ -161,7 +162,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       if (undoBtn) {
         undoBtn.dispatchEvent(new KeyboardEvent("keydown", { key: "z", code: "KeyZ", ctrlKey: true, bubbles: true }));
       }
-    } catch (e) {}
+    } catch (e) { console.warn("Undo failed", e); }
     onClose();
   };
 
@@ -172,7 +173,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       if (redoBtn) {
         redoBtn.dispatchEvent(new KeyboardEvent("keydown", { key: "y", code: "KeyY", ctrlKey: true, bubbles: true }));
       }
-    } catch (e) {}
+    } catch (e) { console.warn("Redo failed", e); }
     onClose();
   };
 

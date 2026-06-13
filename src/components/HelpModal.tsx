@@ -27,7 +27,8 @@ const openFountainGuide = () => {
   const url = "https://fountain.io";
   try {
     import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url));
-  } catch {
+  } catch (e) {
+    console.warn("Failed to open URL via Tauri opener", e);
     window.open(url, "_blank");
   }
 };

@@ -99,7 +99,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const val = e.target.value;
-      updateSettings((prev: any) => ({
+      updateSettings((prev) => ({
         ...prev,
         notepad: val,
       }));
@@ -168,7 +168,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     const genders = parsedDoc.settings.genders || {};
 
     const handleGenderChange = (name: string, gender: string) => {
-      updateSettings((prev: any) => ({
+      updateSettings((prev) => ({
         ...prev,
         genders: {
           ...(prev.genders || {}),

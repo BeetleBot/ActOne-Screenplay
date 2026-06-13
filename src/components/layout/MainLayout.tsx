@@ -24,7 +24,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   useEffect(() => {
     const toggleFullscreen = async () => {
-      try { const win = getTauriWindow(); if (win) await win.setFullscreen(isZenMode); } catch {}
+      try { const win = getTauriWindow(); if (win) await win.setFullscreen(isZenMode); } catch (e) { console.error(e); }
     };
     toggleFullscreen();
   }, [isZenMode]);

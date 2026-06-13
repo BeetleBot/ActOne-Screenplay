@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { STORAGE_KEYS } from "../constants";
 
 export interface UIContextProps {
   fontFamily: 'courier-prime' | 'courier-prime-sans';
@@ -48,49 +49,49 @@ export const useUI = () => {
 
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [fontFamily, setFontFamilyState] = useState<'courier-prime' | 'courier-prime-sans'>(() => {
-    return (localStorage.getItem("actone-font-family") as any) || "courier-prime-sans";
+    return (localStorage.getItem(STORAGE_KEYS.FONT_FAMILY) as any) || "courier-prime-sans";
   });
   const [typewriterMode, setTypewriterModeState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-typewriter-mode") === "true";
+    return localStorage.getItem(STORAGE_KEYS.TYPEWRITER_MODE) === "true";
   });
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
-    return (localStorage.getItem("actone-paper-size") as any) || "a4";
+    return (localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) as any) || "a4";
   });
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [mainView, setMainView] = useState<'editor' | 'board'>("editor");
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
-    const saved = localStorage.getItem("actone-zoom-level");
+    const saved = localStorage.getItem(STORAGE_KEYS.ZOOM_LEVEL);
     const parsed = saved ? parseInt(saved, 10) : 100;
     return isNaN(parsed) ? 100 : parsed;
   });
   const [appScale, setAppScaleState] = useState<number>(() => {
-    const saved = localStorage.getItem("actone-app-scale");
+    const saved = localStorage.getItem(STORAGE_KEYS.APP_SCALE);
     const parsed = saved ? parseInt(saved, 10) : 100;
     return isNaN(parsed) ? 100 : parsed;
   });
 
   const [autocompleteEnabled, setAutocompleteEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-autocomplete-enabled") !== "false";
+    return localStorage.getItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED) !== "false";
   });
   const [smartQuotesEnabled, setSmartQuotesEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-smart-quotes-enabled") !== "false";
+    return localStorage.getItem(STORAGE_KEYS.SMART_QUOTES_ENABLED) !== "false";
   });
   const [matchParenthesesEnabled, setMatchParenthesesEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-match-parentheses-enabled") !== "false";
+    return localStorage.getItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED) !== "false";
   });
 
   const [showPageNumbers, setShowPageNumbersState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-show-page-numbers") === "true";
+    return localStorage.getItem(STORAGE_KEYS.SHOW_PAGE_NUMBERS) === "true";
   });
   const [showPageSeparators, setShowPageSeparatorsState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-show-page-separators") === "true";
+    return localStorage.getItem(STORAGE_KEYS.SHOW_PAGE_SEPARATORS) === "true";
   });
 
   const [autoSaveEnabled, setAutoSaveEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-auto-save-enabled") !== "false";
+    return localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_ENABLED) !== "false";
   });
   const [autoSaveInterval, setAutoSaveIntervalState] = useState<number>(() => {
-    const saved = localStorage.getItem("actone-auto-save-interval");
+    const saved = localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL);
     return saved ? parseInt(saved, 10) : 60000;
   });
 
@@ -134,13 +135,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const setZoomLevel = (zoom: number) => {
     const newZoom = Math.min(Math.max(zoom, 50), 300);
     setZoomLevelState(newZoom);
-    localStorage.setItem("actone-zoom-level", String(newZoom));
+    localStorage.setItem(STORAGE_KEYS.ZOOM_LEVEL, String(newZoom));
   };
 
   const setAppScale = (scale: number) => {
     const newScale = Math.min(Math.max(scale, 50), 200);
     setAppScaleState(newScale);
-    localStorage.setItem("actone-app-scale", String(newScale));
+    localStorage.setItem(STORAGE_KEYS.APP_SCALE, String(newScale));
   };
 
   const setIsZenMode = (enabled: boolean) => {
@@ -149,52 +150,52 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const setFontFamily = (font: 'courier-prime' | 'courier-prime-sans') => {
     setFontFamilyState(font);
-    localStorage.setItem("actone-font-family", font);
+    localStorage.setItem(STORAGE_KEYS.FONT_FAMILY, font);
   };
 
   const setTypewriterMode = (enabled: boolean) => {
     setTypewriterModeState(enabled);
-    localStorage.setItem("actone-typewriter-mode", String(enabled));
+    localStorage.setItem(STORAGE_KEYS.TYPEWRITER_MODE, String(enabled));
   };
 
   const setPaperSize = (size: 'letter' | 'a4') => {
     setPaperSizeState(size);
-    localStorage.setItem("actone-paper-size", size);
+    localStorage.setItem(STORAGE_KEYS.PAPER_SIZE, size);
   };
 
   const setAutocompleteEnabled = (enabled: boolean) => {
     setAutocompleteEnabledState(enabled);
-    localStorage.setItem("actone-autocomplete-enabled", String(enabled));
+    localStorage.setItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, String(enabled));
   };
 
   const setSmartQuotesEnabled = (enabled: boolean) => {
     setSmartQuotesEnabledState(enabled);
-    localStorage.setItem("actone-smart-quotes-enabled", String(enabled));
+    localStorage.setItem(STORAGE_KEYS.SMART_QUOTES_ENABLED, String(enabled));
   };
 
   const setMatchParenthesesEnabled = (enabled: boolean) => {
     setMatchParenthesesEnabledState(enabled);
-    localStorage.setItem("actone-match-parentheses-enabled", String(enabled));
+    localStorage.setItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, String(enabled));
   };
 
   const setShowPageNumbers = (enabled: boolean) => {
     setShowPageNumbersState(enabled);
-    localStorage.setItem("actone-show-page-numbers", String(enabled));
+    localStorage.setItem(STORAGE_KEYS.SHOW_PAGE_NUMBERS, String(enabled));
   };
 
   const setShowPageSeparators = (enabled: boolean) => {
     setShowPageSeparatorsState(enabled);
-    localStorage.setItem("actone-show-page-separators", String(enabled));
+    localStorage.setItem(STORAGE_KEYS.SHOW_PAGE_SEPARATORS, String(enabled));
   };
 
   const setAutoSaveEnabled = (enabled: boolean) => {
     setAutoSaveEnabledState(enabled);
-    localStorage.setItem("actone-auto-save-enabled", String(enabled));
+    localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_ENABLED, String(enabled));
   };
 
   const setAutoSaveInterval = (interval: number) => {
     setAutoSaveIntervalState(interval);
-    localStorage.setItem("actone-auto-save-interval", String(interval));
+    localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL, String(interval));
   };
 
   return (

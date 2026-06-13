@@ -86,7 +86,7 @@ export const StatusBar: React.FC = () => {
       >
         {scripts.map((script, index) => (
           <MenuItem
-            key={`${script.name}-${index}`}
+            key={script.fileName}
             selected={index === activeScriptIndex}
             onClick={() => { setActiveScript(index); setAnchorEl(null); }}
             dense

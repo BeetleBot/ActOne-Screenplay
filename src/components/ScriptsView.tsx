@@ -255,7 +255,7 @@ export const ScriptsView: React.FC = () => {
               const isOver = overIndex === index && !isDragging;
               return (
                 <ListItemButton
-                  key={`${script.name}-${index}`}
+                  key={script.fileName}
                   dense
                   selected={isActive}
                   disableRipple={dragIndex !== null}

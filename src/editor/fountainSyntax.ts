@@ -94,7 +94,7 @@ export const needsBlankAfterEnter = (t: number) =>
   t === LINE_HEADING || t === LINE_ACTION || t === LINE_DIALOGUE ||
   t === LINE_DUAL_DIALOGUE || t === LINE_TRANSITION;
 
-export const classifyLines = (doc: any): number[] => {
+export const classifyLines = (doc: { line: (n: number) => { text: string }; lines: number }): number[] => {
   const types: number[] = [];
   let inTitlePage = true;
   let inMetadataBlock = false;

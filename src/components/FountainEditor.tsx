@@ -93,7 +93,7 @@ export const FountainEditor: React.FC = () => {
           return { index: i, line };
         }
       }
-    } catch (e) {}
+    } catch (e) { console.warn("Failed to find current scene line", e); }
     return null;
   }, [parsedDoc?.lines, view, selection]);
 
