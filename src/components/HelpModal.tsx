@@ -246,10 +246,16 @@ const HELP_ITEMS: HelpItem[] = [
   },
 
   {
-    name: "PDF & Fountain Exporting",
-    desc: "Print standard PDFs of your script with customizable options (scene numbers on left/right/mirrored, bold headings, font choices, title page inclusion, and outline elements). You can also export a clean, standard Fountain plain-text file with all app-specific tags and markup stripped.",
+    name: "PDF, Fountain & FDX Exporting",
+    desc: "Export your screenplay in three formats. PDF with customizable options (scene numbers, bold headings, font choices, title page, sections/synopses). Fountain as a clean plain-text file with all app-specific tags stripped. FDX (Final Draft XML) for compatibility with Final Draft, Fade In, and other professional screenwriting applications.",
     category: "Review & Export",
-    keywords: ["export", "pdf", "fountain export", "print screenplay", "scene numbers", "print options"]
+    keywords: ["export", "pdf", "fountain export", "fdx", "final draft", "print screenplay", "scene numbers", "print options"]
+  },
+  {
+    name: "Adaptive Interface & Modal Sizing",
+    desc: "All dialogs and modals automatically adapt to your window size and Interface Scale setting. Modal heights are capped to viewport size so they never overflow on small screens. Adjust the overall UI size via Settings > Interface Scale (75%–150%).",
+    category: "Workspace & Views",
+    keywords: ["interface scale", "modal sizing", "responsive", "window size", "adaptive", "dialog size", "view"]
   },
 ];
 
