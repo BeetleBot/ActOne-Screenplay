@@ -293,6 +293,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       maxWidth="xs" 
       scroll="paper"
       disableScrollLock
+      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}
     >
       <Box sx={{ p: 2, pb: 1.5 }}>
         <TextField

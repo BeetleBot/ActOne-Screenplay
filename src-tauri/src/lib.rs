@@ -231,6 +231,26 @@ fn export_fountain(content: String) -> Option<String> {
 }
 
 #[tauri::command]
+fn export_fdx(fountain_text: String) -> Option<String> {
+    let file = rfd::FileDialog::new()
+        .add_filter("Final Draft File", &["fdx"])
+        .save_file()?;
+
+    let screenplay = pdf::parse(&fountain_text);
+    let fdx_content = pdf::export_to_fdx(&screenplay);
+    if fs::write(&file, &fdx_content).is_ok() {
+        return Some(file.to_string_lossy().to_string());
+    }
+    None
+}
+
+#[tauri::command]
+fn generate_fdx_string(fountain_text: String) -> String {
+    let screenplay = pdf::parse(&fountain_text);
+    pdf::export_to_fdx(&screenplay)
+}
+
+#[tauri::command]
 fn read_file_content(path: String) -> Result<String, String> {
     fs::read_to_string(path).map_err(|e| e.to_string())
 }
@@ -278,6 +298,7 @@ pub fn run() {
             save_pdf_dialog,
             export_pdf,
             export_fountain,
+            export_fdx,
             pick_directory,
             generate_pdf_bytes,
             read_file_content,
@@ -287,7 +308,8 @@ pub fn run() {
             structures::get_structure_template,
             get_system_fonts,
             get_page_breaks,
-            get_cli_args
+            get_cli_args,
+            generate_fdx_string
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

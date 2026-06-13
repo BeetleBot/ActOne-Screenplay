@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod export;
+mod fdx;
 mod parser;
 
 pub mod rich_string;
@@ -13,6 +14,7 @@ pub use self::export::layout::A4;
 pub use self::export::layout::LETTER;
 pub use self::export::layout::PaperSize;
 pub use self::export::pdf::PdfExporter;
+pub use self::fdx::export as export_to_fdx;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum MirrorOption {

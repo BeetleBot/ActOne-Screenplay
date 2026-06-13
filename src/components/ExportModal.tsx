@@ -20,7 +20,7 @@ import {
   InputLabel,
 } from "@mui/material";
 
-type ExportFormat = "pdf" | "fountain";
+type ExportFormat = "pdf" | "fountain" | "fdx";
 
 interface ExportModalProps {
   onClose: () => void;
@@ -97,7 +97,7 @@ function stripFountainForExport(
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   const { rawText, isBundle, activeScriptName, filePath } = useFile();
-  const { fontFamily, paperSize } = useUI();
+  const { fontFamily, paperSize, appScale } = useUI();
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
@@ -165,16 +165,47 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     }
   };
 
+  const handleExportFDX = async () => {
+    try {
+      const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
+      if (isTauri) {
+        await invoke("export_fdx", { fountainText: rawText });
+      } else {
+        const cleaned = stripFountainForExport(rawText, {
+          sections: false,
+          synopses: false,
+          titlePage: true,
+        });
+        const bundleName = filePath
+          ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"
+          : "Untitled";
+        const scriptSuffix = isBundle ? `_${activeScriptName}` : "";
+        const blob = new Blob([cleaned], { type: "application/xml" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${bundleName}${scriptSuffix}.fdx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      onClose();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleExport = () => {
     if (format === "pdf") {
       handleExportPDF();
+    } else if (format === "fdx") {
+      handleExportFDX();
     } else {
       handleExportFountain();
     }
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm" disableScrollLock>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%` } }}>
       <DialogTitle sx={{ m: 0, p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <DownloadIcon sx={{ fontSize: 20 }} />
@@ -206,6 +237,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           >
             <MenuItem value="pdf">PDF</MenuItem>
             <MenuItem value="fountain">Fountain</MenuItem>
+            <MenuItem value="fdx">FDX (Final Draft)</MenuItem>
           </Select>
         </FormControl>
 
@@ -286,6 +318,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 </Box>
               }
             />
+          </Box>
+        ) : format === "fdx" ? (
+          <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+              Export as FDX (Final Draft)
+            </Typography>
+            <Typography variant="caption" color="text.secondary" component="div">
+              Exports the screenplay as a Final Draft XML (.fdx) file, compatible with Final Draft, Fade In, and other professional screenwriting apps.
+            </Typography>
           </Box>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>

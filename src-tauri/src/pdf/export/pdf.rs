@@ -272,7 +272,7 @@ impl PdfExporter {
                 let mut is_skipped = false;
                 match element {
                     Element::Synopsis(_) if !self.synopses => is_skipped = true,
-                    Element::Section(_) if !self.sections => is_skipped = true,
+                    Element::Section { .. } if !self.sections => is_skipped = true,
                     _ => {}
                 }
                 if is_skipped {
@@ -291,7 +291,7 @@ impl PdfExporter {
                     let mut is_next_skipped = false;
                     match &span.inner {
                         Element::Synopsis(_) if !self.synopses => is_next_skipped = true,
-                        Element::Section(_) if !self.sections => is_next_skipped = true,
+                        Element::Section { .. } if !self.sections => is_next_skipped = true,
                         _ => {}
                     }
                     if is_next_skipped {
@@ -358,7 +358,7 @@ impl PdfExporter {
                             let mut is_skipped = false;
                             match &span.inner {
                                 Element::Synopsis(_) if !self.synopses => is_skipped = true,
-                                Element::Section(_) if !self.sections => is_skipped = true,
+                                Element::Section { .. } if !self.sections => is_skipped = true,
                                 _ => {}
                             }
                             if is_skipped {
@@ -598,7 +598,7 @@ impl PdfExporter {
                             let mut is_skipped = false;
                             match &span.inner {
                                 Element::Synopsis(_) if !self.synopses => is_skipped = true,
-                                Element::Section(_) if !self.sections => is_skipped = true,
+                                Element::Section { .. } if !self.sections => is_skipped = true,
                                 _ => {}
                             }
                             if is_skipped {
@@ -665,11 +665,11 @@ impl PdfExporter {
                             }
                         }
                     }
-                    Element::Section(s) => {
+                    Element::Section { text, .. } => {
                         if self.sections {
                             let section_height = measure_element_height(
                                 ctx.font_system,
-                                s,
+                                text,
                                 &layout_info.margins.action,
                                 layout_info.size,
                                 layout_info.export_font,
@@ -681,7 +681,7 @@ impl PdfExporter {
                                 let mut is_skipped = false;
                                 match &span.inner {
                                     Element::Synopsis(_) if !self.synopses => is_skipped = true,
-                                    Element::Section(_) if !self.sections => is_skipped = true,
+                                    Element::Section { .. } if !self.sections => is_skipped = true,
                                     _ => {}
                                 }
                                 if is_skipped {
@@ -706,7 +706,7 @@ impl PdfExporter {
                                 break;
                             }
 
-                            let mut s_styled = s.clone();
+                            let mut s_styled = text.clone();
                             s_styled.make_uppercase();
                             for element in &mut s_styled.elements {
                                 element.set_bold();

@@ -36,7 +36,7 @@ export const ScriptsView: React.FC = () => {
   const [renameDialog, setRenameDialog] = useState<{ open: boolean; index: number; value: string } | null>(null);
   const [exportDialog, setExportDialog] = useState(false);
 
-  const [exportFormat, setExportFormat] = useState<"fountain" | "pdf">("pdf");
+  const [exportFormat, setExportFormat] = useState<"fountain" | "pdf" | "fdx">("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
   const [mirrorSceneNumbers, setMirrorSceneNumbers] = useState("off");
   const [exportSections, setExportSections] = useState(false);
@@ -79,8 +79,8 @@ export const ScriptsView: React.FC = () => {
     const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
 
     if (!isTauri) {
-      if (exportFormat === "pdf") {
-        alert("PDF export is only supported in the desktop app.");
+      if (exportFormat === "pdf" || exportFormat === "fdx") {
+        alert(exportFormat === "pdf" ? "PDF export is only supported in the desktop app." : "FDX export is only supported in the desktop app.");
         return;
       }
       for (const script of scripts) {
@@ -117,6 +117,10 @@ export const ScriptsView: React.FC = () => {
       if (exportFormat === "fountain") {
         const filePath = `${dir}${sep}${bundleName}_${safeName}.fountain`;
         await invoke("save_file_content", { path: filePath, content: script.content });
+      } else if (exportFormat === "fdx") {
+        const fdxContent = await invoke<string>("generate_fdx_string", { fountainText: script.content });
+        const filePath = `${dir}${sep}${bundleName}_${safeName}.fdx`;
+        await invoke("save_file_content", { path: filePath, content: fdxContent });
       } else {
         const bytes = await invoke<number[] | null>("generate_pdf_bytes", {
           fountainText: script.content,
@@ -256,10 +260,11 @@ export const ScriptsView: React.FC = () => {
                 labelId="export-format-label"
                 value={exportFormat}
                 label="Export Format"
-                onChange={(e) => setExportFormat(e.target.value as "fountain" | "pdf")}
+                onChange={(e) => setExportFormat(e.target.value as "fountain" | "pdf" | "fdx")}
               >
                 <MenuItem value="pdf">PDF</MenuItem>
                 <MenuItem value="fountain">Fountain</MenuItem>
+                <MenuItem value="fdx">FDX (Final Draft)</MenuItem>
               </Select>
             </FormControl>
 
@@ -328,6 +333,20 @@ export const ScriptsView: React.FC = () => {
                     </Box>
                   }
                 />
+              </Box>
+            )}
+
+            {exportFormat === "fdx" && (
+              <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                  Export {scripts.length} Script{scripts.length !== 1 ? "s" : ""} as FDX Files
+                </Typography>
+                <Typography variant="caption" color="text.secondary" component="div">
+                  Each script is saved as a separate .fdx (Final Draft XML) file.
+                  <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
+                    <li>Files are named: <strong>{bundleName}_ScriptName.fdx</strong></li>
+                  </Box>
+                </Typography>
               </Box>
             )}
 

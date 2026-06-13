@@ -551,10 +551,10 @@ pub fn measure_full_element_height(
                 layout_info.export_font,
             )
         }
-        Element::Section(s) => {
+        Element::Section { text, .. } => {
             measure_element_height(
                 font_system,
-                s,
+                text,
                 &layout_info.margins.action,
                 layout_info.size,
                 layout_info.export_font,
@@ -675,10 +675,10 @@ pub fn min_required_height_for_lookahead(
             let lines = std::cmp::min(2, shaped.lines.len());
             lines as f32 * LINE_HEIGHT
         }
-        Element::Section(s) => {
+        Element::Section { text, .. } => {
             measure_element_height(
                 font_system,
-                s,
+                text,
                 &layout_info.margins.action,
                 layout_info.size,
                 layout_info.export_font,

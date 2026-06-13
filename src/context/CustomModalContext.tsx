@@ -107,8 +107,9 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           paper: {
             sx: {
               borderRadius: "16px",
-              minWidth: Math.round(320 * appScale / 100),
+              minWidth: 320,
               p: 1,
+              zoom: `${appScale}%`
             }
           }
         }}
@@ -144,8 +145,9 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           paper: {
             sx: {
               borderRadius: "16px",
-              minWidth: Math.round(320 * appScale / 100),
+              minWidth: 320,
               p: 1,
+              zoom: `${appScale}%`
             }
           }
         }}

@@ -10,12 +10,14 @@ impl<'a> Parser<'a> {
             line,
             |_, s| s.trim_start().strip_prefix('#'),
             |this, inner| {
+                let mut depth = 1usize;
                 let mut inner = inner.trim_start();
                 while inner.starts_with('#') {
+                    depth += 1;
                     inner = inner.strip_prefix('#').unwrap().trim_start();
                 }
                 let rs = RichString::from(inner);
-                this.elements.push(Span::new(Element::Section(rs), line_idx));
+                this.elements.push(Span::new(Element::Section { text: rs, depth }, line_idx));
                 this.state = State::InBlock;
             },
         )

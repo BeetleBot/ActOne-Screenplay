@@ -21,6 +21,9 @@ const tauriDirections: Record<Dir, string> = {
   sw: "SouthWest",
 };
 
+const TITLEBAR_HEIGHT = 30;
+const WINDOW_CONTROLS_WIDTH = 138;
+
 function edgeStyle(dir: Dir): React.CSSProperties {
   const style: React.CSSProperties = {
     position: "fixed",
@@ -28,12 +31,12 @@ function edgeStyle(dir: Dir): React.CSSProperties {
   };
   if (dir === "n" || dir === "s") {
     style.left = CORNER_SIZE;
-    style.right = CORNER_SIZE;
+    style.right = dir === "n" ? WINDOW_CONTROLS_WIDTH : CORNER_SIZE;
     style.height = EDGE_SIZE;
     style[dir === "n" ? "top" : "bottom"] = 0;
     style.cursor = cursors[dir];
   } else if (dir === "e" || dir === "w") {
-    style.top = CORNER_SIZE;
+    style.top = dir === "e" ? TITLEBAR_HEIGHT : CORNER_SIZE;
     style.bottom = CORNER_SIZE;
     style.width = EDGE_SIZE;
     style[dir === "e" ? "right" : "left"] = 0;
@@ -46,6 +49,11 @@ function edgeStyle(dir: Dir): React.CSSProperties {
     if (dir.includes("e")) style.right = 0;
     if (dir.includes("w")) style.left = 0;
     style.cursor = cursors[dir];
+    
+    // Hide 'ne' completely so it doesn't overlap the close button
+    if (dir === "ne") {
+      style.display = "none";
+    }
   }
   return style;
 }
