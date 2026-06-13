@@ -17,7 +17,6 @@ import {
   ListItemButton,
   ListItemText,
   InputAdornment,
-  Grid,
   Divider,
 } from "@mui/material";
 
@@ -120,7 +119,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Screenplay Structure Outlines</Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
@@ -128,11 +127,11 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 0, maxHeight: `${(60 * 100) / appScale}vh`, height: "100%" }}>
-        <Grid container sx={{ height: "100%" }}>
+      <DialogContent dividers sx={{ px: 2.5, py: 2, maxHeight: `${(60 * 100) / appScale}vh`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
           {/* Left Panel: Search & List */}
-          <Grid size={{ xs: 5 }} sx={{ borderRight: 1, borderColor: "divider", display: "flex", flexDirection: "column", height: "100%" }}>
-            <Box sx={{ p: 2 }}>
+          <Box sx={{ width: "42%", borderRight: 1, borderColor: "divider", display: "flex", flexDirection: "column", minHeight: 0 }}>
+            <Box sx={{ mb: 1.5 }}>
               <TextField
                 placeholder="Search templates..."
                 value={searchQuery}
@@ -150,7 +149,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                 }}
               />
             </Box>
-            <Box sx={{ flex: 1, overflowY: "auto", px: 1 }}>
+            <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, px: 1 }}>
               {loading ? (
                 <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 13 }}>Loading structures...</Typography>
               ) : filteredStructures.length === 0 ? (
@@ -173,12 +172,12 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                 </List>
               )}
             </Box>
-          </Grid>
+          </Box>
 
           {/* Right Panel: Detail Preview */}
-          <Grid size={{ xs: 7 }} sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <Box sx={{ width: "58%", display: "flex", flexDirection: "column", minHeight: 0 }}>
             {selectedStructure ? (
-              <Box sx={{ p: 3, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Box sx={{ p: 3, flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 2.5 }}>
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{selectedStructure.name}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{selectedStructure.description}</Typography>
@@ -203,12 +202,12 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                 </Box>
               </Box>
             ) : (
-              <Box sx={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", color: "text.secondary" }}>
+              <Box sx={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", color: "text.secondary" }}>
                 <Typography variant="body2">Select a structure template to view details</Typography>
               </Box>
             )}
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </DialogContent>
 
       <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>

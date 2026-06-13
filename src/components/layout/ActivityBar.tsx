@@ -13,7 +13,7 @@ import Select from "@mui/material/Select";
 import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
 import {
-  FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon,
+  FormatListBulletedIcon, LibraryBooksIcon, PersonIcon, BarChartIcon,
   AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CheckIcon,
   RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon, NoteAddIcon,
 } from "../Icons";
@@ -54,7 +54,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
 
   const allTabs = [
     { id: "outline", icon: <FormatListBulletedIcon sx={{ fontSize: 20 }} />, title: "Outline" },
-    { id: "scripts", icon: <DescriptionIcon sx={{ fontSize: 20 }} />, title: "Scripts" },
+    { id: "scripts", icon: <LibraryBooksIcon sx={{ fontSize: 20 }} />, title: "Scripts" },
     { id: "characters", icon: <PersonIcon sx={{ fontSize: 20 }} />, title: "Characters" },
     { id: "stats", icon: <BarChartIcon sx={{ fontSize: 20 }} />, title: "Statistics" },
     { id: "notepad", icon: <NoteAddIcon sx={{ fontSize: 20 }} />, title: "Notepad" },

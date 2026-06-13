@@ -85,7 +85,7 @@ const ActionCard: React.FC<{
       color: "text.primary",
       border: 1,
       borderColor: "divider",
-      transition: "all 0.15s ease",
+      transition: "all 0.12s ease",
       "&:hover": {
         bgcolor: "action.hover",
         transform: "translateY(-1px)",

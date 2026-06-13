@@ -580,7 +580,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                     flexDirection: "column",
                     flexShrink: 0,
                     bgcolor: isSelected ? "action.selected" : "transparent",
-                    transition: "border-color 0.15s ease, background-color 0.15s ease",
+                    transition: "border-color 0.12s ease, background-color 0.12s ease",
                     "&:hover": {
                       borderColor: "primary.main",
                       bgcolor: isSelected ? "action.selected" : "action.hover",

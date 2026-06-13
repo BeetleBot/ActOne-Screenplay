@@ -355,6 +355,19 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
 
+  // Validate recent files on startup — remove any that no longer exist
+  useEffect(() => {
+    if (!isTauri || recentFiles.length === 0) return;
+    (async () => {
+      for (const f of recentFiles) {
+        try {
+          const exists = await invoke<boolean>("file_exists", { path: f.path });
+          if (!exists) removeFromRecent(f.path);
+        } catch { /* ignore check errors */ }
+      }
+    })();
+  }, []); // run once on mount
+
   useEffect(() => {
     if (!isTauri) return;
 
@@ -604,7 +617,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isActone) {
         parsed.settings = settings;
       }
-      const cleanText = parsed.screenplayText;
+    const cleanText = parsed.screenplayText.replace(/\r\n/g, "\n");
 
       if (isDefault && currentActive) {
         const updatedFiles = files.map(f => f.id === activeFileId ? {
@@ -870,7 +883,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScriptIndex: updatedScripts.length - 1,
       rawText: "",
       savedText: "",
-      isDirty: isBundleDirty(updatedScripts),
+      isDirty: true,
       parsedDoc: parseScreenplay("", paperSize),
     } : f));
 
@@ -906,6 +919,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFiles(prev => prev.map(f => f.id === activeFileId ? {
       ...f,
       scripts: updatedScripts,
+      isDirty: true,
     } : f));
     setScriptsState(updatedScripts);
     return true;
@@ -954,7 +968,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScriptIndex: targetIdx,
       rawText: targetScript.content,
       savedText: targetScript.savedContent,
-      isDirty: isBundleDirty(updatedScripts),
+      isDirty: true,
       parsedDoc: doc,
     } : f));
 
@@ -1015,7 +1029,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScriptIndex: updatedScripts.length - 1,
       rawText: content,
       savedText: content,
-      isDirty: isBundleDirty(updatedScripts),
+      isDirty: true,
       parsedDoc: parseScreenplay(content, paperSize),
     } : f));
 
@@ -1055,7 +1069,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScriptIndex: newActiveIndex,
       rawText: targetScript.content,
       savedText: targetScript.savedContent,
-      isDirty: isBundleDirty(updatedScripts),
+      isDirty: true,
       parsedDoc: parseScreenplay(targetScript.content, paperSize),
     } : f));
 

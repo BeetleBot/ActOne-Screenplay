@@ -22,7 +22,7 @@ interface TitlePageEditorModalProps {
 }
 
 function extractTitlePage(text: string): { header: string; body: string; fields: Record<string, string> } {
-  const lines = text.split("\n");
+  const lines = text.split(/\r?\n/);
   let titlePageEnd = -1;
   let foundContent = false;
 
@@ -43,7 +43,7 @@ function extractTitlePage(text: string): { header: string; body: string; fields:
 
   const fields: Record<string, string> = {};
   if (header) {
-    const headerLines = header.split("\n");
+    const headerLines = header.split(/\r?\n/);
     let currentKey = "";
     let currentValues: string[] = [];
 
@@ -87,7 +87,7 @@ function buildTitlePage(fields: Record<string, string>): string {
     const val = fields[key];
     if (val) {
       const label = key === "draft date" ? "Draft date" : key.charAt(0).toUpperCase() + key.slice(1);
-      const valLines = val.split("\n");
+      const valLines = val.split(/\r?\n/);
       lines.push(`${label}: ${valLines[0]}`);
       for (let i = 1; i < valLines.length; i++) {
         lines.push("  " + valLines[i]);
@@ -100,7 +100,7 @@ function buildTitlePage(fields: Record<string, string>): string {
     const val = fields[key];
     if (val) {
       const label = key.charAt(0).toUpperCase() + key.slice(1);
-      const valLines = val.split("\n");
+      const valLines = val.split(/\r?\n/);
       lines.push(`${label}: ${valLines[0]}`);
       for (let i = 1; i < valLines.length; i++) {
         lines.push("  " + valLines[i]);

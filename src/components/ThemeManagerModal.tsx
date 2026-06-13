@@ -295,7 +295,7 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ px: 2, py: 1.5 }}>
+      <DialogContent sx={{ px: 2.5, py: 2 }}>
         <Box sx={{ display: 'flex', gap: 2, maxHeight: `${(65 * 100) / appScale}vh` }}>
           {/* ── Left pane: list or form ── */}
           <Box sx={{
@@ -333,7 +333,7 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                         border: '2px solid', borderColor: 'divider',
                         display: 'flex', flexDirection: 'column', overflow: 'hidden',
                         '&:hover': { borderColor: 'primary.main' },
-                        transition: 'border-color 0.15s',
+                        transition: 'border-color 0.12s ease',
                       }}
                     >
                       <Box sx={{ flex: 1, bgcolor: p.colors.sidebar }} />
@@ -377,7 +377,7 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                         border: '2px solid', borderColor: isActive ? 'primary.main' : 'divider',
                         bgcolor: isActive ? 'action.selected' : 'transparent',
                         '&:hover': { bgcolor: 'action.hover' },
-                        transition: 'all 0.15s',
+                        transition: 'all 0.12s ease',
                       }}
                     >
                       <Box sx={{
@@ -426,7 +426,7 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                         border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                         bgcolor: isActive ? 'action.selected' : 'transparent',
                         '&:hover': { bgcolor: 'action.hover' },
-                        transition: 'all 0.15s',
+                        transition: 'all 0.12s ease',
                       }}
                       onClick={() => setTheme(ct.id)}
                     >

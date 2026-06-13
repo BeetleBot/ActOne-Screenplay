@@ -1,7 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { useFile } from "../context";
 import { invoke } from "@tauri-apps/api/core";
-import { AddIcon, DownloadIcon, FolderOpenIcon, DragHandleIcon } from "./Icons";
+import { AddIcon, DownloadIcon, FolderOpenIcon, DragHandleIcon, CloseIcon } from "./Icons";
 
 import {
   Box,
@@ -37,7 +37,10 @@ export const ScriptsView: React.FC = () => {
   const [exportDialog, setExportDialog] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
-  const dragNode = useRef<HTMLElement | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const mouseDragRef = useRef<number | null>(null);
+  const mouseOverRef = useRef<number | null>(null);
+  const ghostRef = useRef<HTMLDivElement | null>(null);
 
   const [exportFormat, setExportFormat] = useState<"fountain" | "pdf" | "fdx">("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
@@ -128,7 +131,7 @@ export const ScriptsView: React.FC = () => {
 
     for (const script of scripts) {
       const safeName = script.name.replace(/[<>:"/\\|?*]/g, "_");
-      const sep = "/";
+      const sep = dir.includes("\\") ? "\\" : "/";
       if (exportFormat === "fountain") {
         const filePath = `${dir}${sep}${bundleName}_${safeName}.fountain`;
         await invoke("save_file_content", { path: filePath, content: script.content });
@@ -149,48 +152,79 @@ export const ScriptsView: React.FC = () => {
     }
   };
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    dragNode.current = e.currentTarget as HTMLElement;
+  const handleHandleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
+    e.preventDefault();
+    if (!listRef.current) return;
+
+    mouseDragRef.current = index;
     setDragIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", String(index));
-    setTimeout(() => {
-      if (dragNode.current) dragNode.current.style.opacity = "0.4";
-    }, 0);
-  };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (dragIndex !== index) setOverIndex(index);
-  };
+    const ghost = document.createElement("div");
+    ghost.textContent = scripts[index].name;
+    Object.assign(ghost.style, {
+      position: "fixed",
+      pointerEvents: "none",
+      zIndex: "10000",
+      opacity: "0.85",
+      padding: "4px 10px",
+      background: "rgb(25, 118, 210)",
+      color: "white",
+      borderRadius: "6px",
+      fontSize: "13px",
+      left: e.clientX + "px",
+      top: e.clientY + "px",
+      transform: "translate(-50%, -50%)",
+      whiteSpace: "nowrap",
+    });
+    document.body.appendChild(ghost);
+    ghostRef.current = ghost;
 
-  const handleDragEnter = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (dragIndex !== index) setOverIndex(index);
-  };
+    const getTargetIndex = (clientY: number): number | null => {
+      if (!listRef.current) return null;
+      const items = listRef.current.querySelectorAll("[data-script-index]");
+      for (const item of items) {
+        const rect = item.getBoundingClientRect();
+        const idx = parseInt(item.getAttribute("data-script-index") || "", 10);
+        if (idx === mouseDragRef.current) continue;
+        if (clientY <= rect.bottom) return clientY < rect.top + rect.height / 2 ? idx : idx + 1;
+      }
+      return scripts.length;
+    };
 
-  const handleDragLeave = () => {
-    setOverIndex(null);
-  };
+    const onMove = (ev: MouseEvent) => {
+      if (ghostRef.current) {
+        ghostRef.current.style.left = ev.clientX + "px";
+        ghostRef.current.style.top = ev.clientY + "px";
+      }
+      const target = getTargetIndex(ev.clientY);
+      if (target !== mouseOverRef.current) {
+        mouseOverRef.current = target;
+        setOverIndex(target);
+      }
+    };
 
-  const handleDrop = (e: React.DragEvent, toIndex: number) => {
-    e.preventDefault();
-    if (dragNode.current) dragNode.current.style.opacity = "";
-    if (dragIndex !== null && dragIndex !== toIndex) {
-      moveScript(dragIndex, toIndex);
-    }
-    setDragIndex(null);
-    setOverIndex(null);
-    dragNode.current = null;
-  };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      if (ghostRef.current) {
+        document.body.removeChild(ghostRef.current);
+        ghostRef.current = null;
+      }
+      const fromIdx = mouseDragRef.current;
+      const toIdx = mouseOverRef.current;
+      mouseDragRef.current = null;
+      mouseOverRef.current = null;
+      setDragIndex(null);
+      setOverIndex(null);
+      if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
+        const clampedTo = Math.min(toIdx, scripts.length - 1);
+        moveScript(fromIdx, clampedTo);
+      }
+    };
 
-  const handleDragEnd = () => {
-    if (dragNode.current) dragNode.current.style.opacity = "";
-    setDragIndex(null);
-    setOverIndex(null);
-    dragNode.current = null;
-  };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [scripts, moveScript]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -214,7 +248,7 @@ export const ScriptsView: React.FC = () => {
             No scripts yet. Add one.
           </Typography>
         ) : (
-          <List disablePadding>
+          <List disablePadding ref={listRef}>
             {scripts.map((script, index) => {
               const isActive = index === activeScriptIndex;
               const isDragging = dragIndex === index;
@@ -226,40 +260,34 @@ export const ScriptsView: React.FC = () => {
                   selected={isActive}
                   disableRipple={dragIndex !== null}
                   onClick={() => { if (dragIndex === null) setActiveScript(index); }}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragEnter={(e) => handleDragEnter(e, index)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, index)}
-                  onDragEnd={handleDragEnd}
+                  data-script-index={index}
                   sx={{
                     borderRadius: "6px", mb: 0.25, pr: 1, py: 0.5, pl: 0.5,
                     opacity: isDragging ? 0.4 : 1,
                     borderTop: isOver ? "2px solid" : "2px solid transparent",
                     borderTopColor: isOver ? "primary.main" : "transparent",
-                    transition: "border-top-color 0.1s, opacity 0.1s",
-                    cursor: dragIndex !== null ? "grabbing" : "default",
+                    transition: "border-top-color 0.12s ease, opacity 0.12s ease",
                     "&.Mui-selected": {
                       bgcolor: "action.selected",
                       "&:hover": { bgcolor: "action.selected" },
                     },
                   }}
                 >
-                  <IconButton
-                    size="small"
-                    onMouseDown={(e) => e.stopPropagation()}
+                  <Box
+                    onMouseDown={(e) => handleHandleMouseDown(e, index)}
                     sx={{
+                      display: "flex",
+                      alignItems: "center",
                       cursor: "grab",
                       color: "text.disabled",
                       mr: 0.5,
-                      p: 0.25,
                       flexShrink: 0,
                       "&:hover": { color: "text.secondary" },
+                      "&:active": { cursor: "grabbing" },
                     }}
                   >
                     <DragHandleIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
+                  </Box>
                   <ListItemText
                     primary={script.name}
                     secondary={isActive && dragIndex === null ? "active" : undefined}
@@ -323,8 +351,13 @@ export const ScriptsView: React.FC = () => {
       {renameDialog && (
         <Dialog open onClose={() => setRenameDialog(null)} disableScrollLock maxWidth="xs" fullWidth
           sx={{ '& .MuiDialog-paper': { borderRadius: '10px' } }}>
-          <DialogTitle sx={{ fontWeight: 600, fontSize: 14, px: 2, py: 1 }}>Rename Script</DialogTitle>
-          <DialogContent sx={{ px: 2, py: 1 }}>
+          <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Rename Script</Typography>
+            <IconButton aria-label="close" onClick={() => setRenameDialog(null)} sx={{ color: "text.secondary" }}>
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ px: 2.5, py: 2 }}>
             <TextField
               autoFocus
               fullWidth
@@ -334,7 +367,7 @@ export const ScriptsView: React.FC = () => {
               onKeyDown={(e) => { if (e.key === "Enter") handleRenameSubmit(); }}
             />
           </DialogContent>
-          <DialogActions sx={{ px: 2, py: 1 }}>
+          <DialogActions sx={{ px: 2.5, py: 1.25 }}>
             <Button onClick={() => setRenameDialog(null)} color="inherit" size="small">Cancel</Button>
             <Button onClick={handleRenameSubmit} variant="contained" size="small">Rename</Button>
           </DialogActions>
@@ -344,11 +377,16 @@ export const ScriptsView: React.FC = () => {
       {exportDialog && (
         <Dialog open onClose={() => setExportDialog(false)} fullWidth maxWidth="sm" disableScrollLock
           sx={{ '& .MuiDialog-paper': { borderRadius: '10px' } }}>
-          <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", gap: 1 }}>
-            <DownloadIcon sx={{ fontSize: 18 }} />
-            <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 15 }}>
-              Export All Scripts ({scripts.length})
-            </Typography>
+          <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <DownloadIcon sx={{ fontSize: 18 }} />
+              <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 15 }}>
+                Export All Scripts ({scripts.length})
+              </Typography>
+            </Box>
+            <IconButton aria-label="close" onClick={() => setExportDialog(false)} sx={{ color: "text.secondary" }}>
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
           </DialogTitle>
 
           <DialogContent dividers sx={{ px: 2.5, py: 2 }}>

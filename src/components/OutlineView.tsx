@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useFile, useEditor } from "../context";
 import { LineType, ParsedLine } from "../parser";
-import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon } from "./Icons";
+import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon } from "./Icons";
 
 import {
   Box,
@@ -125,6 +125,9 @@ export const OutlineView: React.FC = () => {
 
   const listRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLDivElement>(null);
+  const mouseDragRef = useRef<number | null>(null);
+  const mouseOverRef = useRef<number | null>(null);
+  const ghostRef = useRef<HTMLDivElement | null>(null);
 
   const setOutlineFontSize = (size: "small" | "normal" | "large") => {
     setOutlineFontSizeState(size);
@@ -251,30 +254,79 @@ export const OutlineView: React.FC = () => {
     }
   };
 
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    const sceneIndex = scenesItems.findIndex((s) => s.line.id === id);
-    if (sceneIndex !== -1) {
-      e.dataTransfer.setData("text/plain", sceneIndex.toString());
-      setDraggedItemIdx(sceneIndex);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent, id: string) => {
+  const handleHandleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
     e.preventDefault();
-    const sceneIndex = scenesItems.findIndex((s) => s.line.id === id);
-    if (sceneIndex !== -1) setDragOverItemIdx(sceneIndex);
-  };
+    if (!listRef.current) return;
 
-  const handleDrop = (e: React.DragEvent, id: string) => {
-    e.preventDefault();
-    const targetSceneIndex = scenesItems.findIndex((s) => s.line.id === id);
-    const sourceSceneIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
-    if (sourceSceneIndex !== targetSceneIndex && !isNaN(sourceSceneIndex) && targetSceneIndex !== -1) {
-      reorderScenes(sourceSceneIndex, targetSceneIndex);
-    }
-    setDraggedItemIdx(null);
-    setDragOverItemIdx(null);
-  };
+    mouseDragRef.current = index;
+    setDraggedItemIdx(index);
+
+    const ghost = document.createElement("div");
+    ghost.textContent = scenesItems[index] ? getSceneTitle(scenesItems[index].line) : "";
+    Object.assign(ghost.style, {
+      position: "fixed",
+      pointerEvents: "none",
+      zIndex: "10000",
+      opacity: "0.85",
+      padding: "4px 10px",
+      background: "rgb(25, 118, 210)",
+      color: "white",
+      borderRadius: "6px",
+      fontSize: "13px",
+      left: e.clientX + "px",
+      top: e.clientY + "px",
+      transform: "translate(-50%, -50%)",
+      whiteSpace: "nowrap",
+    });
+    document.body.appendChild(ghost);
+    ghostRef.current = ghost;
+
+    const getTargetIndex = (clientY: number): number | null => {
+      if (!listRef.current) return null;
+      const items = listRef.current.querySelectorAll("[data-scene-index]");
+      for (const item of items) {
+        const rect = item.getBoundingClientRect();
+        const idx = parseInt(item.getAttribute("data-scene-index") || "", 10);
+        if (idx === mouseDragRef.current) continue;
+        if (clientY <= rect.bottom) return clientY < rect.top + rect.height / 2 ? idx : idx + 1;
+      }
+      return scenesItems.length;
+    };
+
+    const onMove = (ev: MouseEvent) => {
+      if (ghostRef.current) {
+        ghostRef.current.style.left = ev.clientX + "px";
+        ghostRef.current.style.top = ev.clientY + "px";
+      }
+      const target = getTargetIndex(ev.clientY);
+      if (target !== mouseOverRef.current) {
+        mouseOverRef.current = target;
+        setDragOverItemIdx(target);
+      }
+    };
+
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      if (ghostRef.current) {
+        document.body.removeChild(ghostRef.current);
+        ghostRef.current = null;
+      }
+      const fromIdx = mouseDragRef.current;
+      const toIdx = mouseOverRef.current;
+      mouseDragRef.current = null;
+      mouseOverRef.current = null;
+      setDraggedItemIdx(null);
+      setDragOverItemIdx(null);
+      if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
+        const clampedTo = Math.min(toIdx, scenesItems.length - 1);
+        reorderScenes(fromIdx, clampedTo);
+      }
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [scenesItems, reorderScenes]);
 
   const handleItemClick = (item: OutlineItem, isSelectable: boolean, e: React.MouseEvent) => {
     scrollToLine(item.index, true);
@@ -383,7 +435,7 @@ export const OutlineView: React.FC = () => {
             sx={{
               pl: 0,
               py: 0.25,
-              borderRadius: '8px',
+              borderRadius: '6px',
               mb: 0.1,
               transition: "background-color 0.12s ease",
             }}
@@ -434,7 +486,7 @@ export const OutlineView: React.FC = () => {
           ref={isActive ? activeItemRef : null}
           selected={isActive}
           onClick={(e) => { handleItemClick(item, true, e); }}
-          sx={{ pl: 1.5, py: 0.25, borderRadius: '8px', mb: 0.1 }}
+          sx={{ pl: 1.5, py: 0.25, borderRadius: '6px', mb: 0.1 }}
         >
           <Box component="span" sx={{ mr: 0.8, fontSize: 10, color: "text.secondary" }}>•</Box>
           <ListItemText
@@ -453,18 +505,14 @@ export const OutlineView: React.FC = () => {
       <ListItemButton
         key={line.id}
         data-scene-id={line.id}
+        data-scene-index={isScene ? sceneIndex : undefined}
         ref={isActive ? activeItemRef : null}
         selected={isActive}
         onClick={(e) => handleItemClick(item, true, e)}
-        draggable={isScene}
-        onDragStart={isScene ? (e) => handleDragStart(e, line.id) : undefined}
-        onDragOver={isScene ? (e) => handleDragOver(e, line.id) : undefined}
-        onDragLeave={isScene ? () => setDragOverItemIdx(null) : undefined}
-        onDrop={isScene ? (e) => handleDrop(e, line.id) : undefined}
         sx={{
-          pl: 1.5,
+          pl: 0.5,
           py: 0.25,
-          borderRadius: '8px',
+          borderRadius: '6px',
           mb: 0.1,
           opacity: isDragging ? 0.4 : 1,
           bgcolor: showDragOver
@@ -508,6 +556,24 @@ export const OutlineView: React.FC = () => {
           } : undefined,
         }}
       >
+        {isScene && (
+          <Box
+            onMouseDown={(e) => handleHandleMouseDown(e, sceneIndex)}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              cursor: "grab",
+              color: "text.disabled",
+              mr: 0.3,
+              flexShrink: 0,
+              "&:hover": { color: "text.secondary" },
+              "&:active": { cursor: "grabbing" },
+            }}
+          >
+            <DragHandleIcon sx={{ fontSize: 14 }} />
+          </Box>
+        )}
+        {!isScene && <Box sx={{ width: 20, flexShrink: 0 }} />}
         <ListItemText
           primary={
             <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>

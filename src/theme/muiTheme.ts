@@ -227,7 +227,7 @@ export function createActOneTheme(t: ThemeConfig) {
       },
       MuiDialog: {
         styleOverrides: {
-          paper: { borderRadius: '24px' },
+          paper: { borderRadius: '10px', outline: 'none', '&:focus-visible': { outline: 'none' } },
         },
       },
       MuiPaper: {

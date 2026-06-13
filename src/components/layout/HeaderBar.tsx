@@ -138,7 +138,7 @@ export const HeaderBar: React.FC = () => {
                     bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.text.primary, 0.04),
                     color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary
                   },
-                  transition: 'all 0.1s ease',
+                  transition: 'all 0.12s ease',
                   position: 'relative',
                 }}
               >

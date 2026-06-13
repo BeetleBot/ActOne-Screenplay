@@ -70,6 +70,11 @@ fn read_file_binary(path: String) -> Result<Vec<u8>, String> {
 }
 
 #[tauri::command]
+fn file_exists(path: String) -> bool {
+    std::path::Path::new(&path).exists()
+}
+
+#[tauri::command]
 fn save_file_binary(path: String, bytes: Vec<u8>) -> Result<(), String> {
     fs::write(path, bytes).map_err(|e| e.to_string())
 }
@@ -313,6 +318,7 @@ pub fn run() {
             generate_pdf_bytes,
             read_file_content,
             read_file_binary,
+            file_exists,
             save_file_binary,
             structures::get_structures,
             structures::get_structure_template,
