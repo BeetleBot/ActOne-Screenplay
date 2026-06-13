@@ -10,7 +10,7 @@ fn open_file_dialog() -> Option<serde_json::Value> {
         .add_filter("ActOne Bundle", &["actone"])
         .add_filter("Fountain Screenplays", &["fountain", "txt"])
         .pick_file()?;
-        
+
     let path_str = file.to_string_lossy().to_string();
     if path_str.ends_with(".actone") {
         return Some(serde_json::json!({
@@ -24,6 +24,16 @@ fn open_file_dialog() -> Option<serde_json::Value> {
         "path": path_str,
         "content": content
     }))
+}
+
+#[tauri::command]
+fn import_fountain_dialog() -> Option<serde_json::Value> {
+    let file = rfd::FileDialog::new()
+        .add_filter("Fountain Files", &["fountain", "txt"])
+        .pick_file()?;
+    let path_str = file.to_string_lossy().to_string();
+    let content = fs::read_to_string(&file).ok()?;
+    Some(serde_json::json!({ "path": path_str, "content": content }))
 }
 
 #[tauri::command]
@@ -309,7 +319,8 @@ pub fn run() {
             get_system_fonts,
             get_page_breaks,
             get_cli_args,
-            generate_fdx_string
+            generate_fdx_string,
+            import_fountain_dialog
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

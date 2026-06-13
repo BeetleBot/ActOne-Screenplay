@@ -50,8 +50,10 @@ export interface FileContextProps {
   isBundle: boolean;
   setActiveScript: (index: number) => void;
   addScript: (name?: string) => Promise<string | null>;
+  importScript: () => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
   deleteScript: (index: number) => Promise<boolean>;
+  moveScript: (fromIndex: number, toIndex: number) => Promise<void>;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -964,6 +966,105 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [files, activeFileId, confirm, paperSize]);
 
+  const importScript = useCallback(async (): Promise<string | null> => {
+    const file = files.find(f => f.id === activeFileId);
+    if (!file || !file.scripts) return null;
+
+    let fileName = "";
+    let content = "";
+
+    if (isTauri) {
+      try {
+        const result = await invoke<{ path: string; content: string } | null>("import_fountain_dialog");
+        if (!result) return null;
+        fileName = result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt)$/i, "") || "Imported";
+        content = result.content;
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    } else {
+      content = await new Promise<string | null>((resolve) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".fountain,.txt";
+        input.onchange = async () => {
+          const f = input.files?.[0];
+          if (!f) { resolve(null); return; }
+          fileName = f.name.replace(/\.(fountain|txt)$/i, "");
+          resolve(await f.text());
+        };
+        input.click();
+      });
+      if (content === null) return null;
+    }
+
+    const uniqueName = getUniqueName(fileName.trim() || "Imported", file.scripts);
+    const safeFileName = `${sanitizeFileName(uniqueName)}.fountain`;
+    const newScript: ScriptInfo = {
+      name: uniqueName,
+      fileName: safeFileName,
+      content,
+      savedContent: content,
+    };
+
+    const updatedScripts = [...file.scripts, newScript];
+    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+      ...f,
+      scripts: updatedScripts,
+      activeScriptIndex: updatedScripts.length - 1,
+      rawText: content,
+      savedText: content,
+      isDirty: isBundleDirty(updatedScripts),
+      parsedDoc: parseScreenplay(content, paperSize),
+    } : f));
+
+    setScriptsState(updatedScripts);
+    setActiveScriptIndexState(updatedScripts.length - 1);
+    setRawTextState(content);
+    setParsedDoc(parseScreenplay(content, paperSize));
+
+    return uniqueName;
+  }, [files, activeFileId, isTauri, paperSize]);
+
+  const moveScript = useCallback(async (fromIndex: number, toIndex: number) => {
+    const file = files.find(f => f.id === activeFileId);
+    if (!file || !file.scripts) return;
+    if (fromIndex < 0 || fromIndex >= file.scripts.length) return;
+    if (toIndex < 0 || toIndex >= file.scripts.length) return;
+    if (fromIndex === toIndex) return;
+
+    const updatedScripts = [...file.scripts];
+    const [moved] = updatedScripts.splice(fromIndex, 1);
+    updatedScripts.splice(toIndex, 0, moved);
+
+    const currentActive = file.activeScriptIndex ?? 0;
+    let newActiveIndex = currentActive;
+    if (currentActive === fromIndex) {
+      newActiveIndex = toIndex;
+    } else if (currentActive > fromIndex && currentActive <= toIndex) {
+      newActiveIndex = currentActive - 1;
+    } else if (currentActive < fromIndex && currentActive >= toIndex) {
+      newActiveIndex = currentActive + 1;
+    }
+
+    const targetScript = updatedScripts[newActiveIndex];
+    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+      ...f,
+      scripts: updatedScripts,
+      activeScriptIndex: newActiveIndex,
+      rawText: targetScript.content,
+      savedText: targetScript.savedContent,
+      isDirty: isBundleDirty(updatedScripts),
+      parsedDoc: parseScreenplay(targetScript.content, paperSize),
+    } : f));
+
+    setScriptsState(updatedScripts);
+    setActiveScriptIndexState(newActiveIndex);
+    setRawTextState(targetScript.content);
+    setParsedDoc(parseScreenplay(targetScript.content, paperSize));
+  }, [files, activeFileId, paperSize]);
+
   const filesRef = useRef(files);
   const activeFileIdRef = useRef(activeFileId);
   const selectFileRef = useRef(selectFile);
@@ -1057,8 +1158,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isBundle,
         setActiveScript,
         addScript,
+        importScript,
         renameScript,
         deleteScript,
+        moveScript,
       }}
     >
       {children}

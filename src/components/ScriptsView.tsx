@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useFile } from "../context";
 import { invoke } from "@tauri-apps/api/core";
-import { AddIcon, DownloadIcon } from "./Icons";
+import { AddIcon, DownloadIcon, FolderOpenIcon } from "./Icons";
 
 import {
   Box,
@@ -29,7 +29,7 @@ import {
 export const ScriptsView: React.FC = () => {
   const {
     scripts, activeScriptIndex, isBundle, filePath,
-    setActiveScript, addScript, renameScript, deleteScript,
+    setActiveScript, addScript, importScript, renameScript, deleteScript, moveScript,
   } = useFile();
 
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
@@ -69,6 +69,18 @@ export const ScriptsView: React.FC = () => {
   const handleDelete = async () => {
     if (!menuState) return;
     await deleteScript(menuState.index);
+    setMenuState(null);
+  };
+
+  const handleMoveUp = () => {
+    if (!menuState || menuState.index <= 0) return;
+    moveScript(menuState.index, menuState.index - 1);
+    setMenuState(null);
+  };
+
+  const handleMoveDown = () => {
+    if (!menuState || menuState.index >= scripts.length - 1) return;
+    moveScript(menuState.index, menuState.index + 1);
     setMenuState(null);
   };
 
@@ -136,18 +148,23 @@ export const ScriptsView: React.FC = () => {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, pt: 2, pb: 1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1.5, pt: 1.5, pb: 0.75 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: 12 }}>
           Scripts
         </Typography>
-        <IconButton size="small" onClick={handleAdd} title="Add Script">
-          <AddIcon sx={{ fontSize: 18 }} />
-        </IconButton>
+        <Box sx={{ display: "flex", gap: 0.25 }}>
+          <IconButton size="small" onClick={importScript} title="Import Fountain File" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
+            <FolderOpenIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+          <IconButton size="small" onClick={handleAdd} title="Add Script">
+            <AddIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
       </Box>
 
       <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, px: 1 }}>
         {scripts.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", px: 1, py: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", px: 1, py: 2, fontSize: 12 }}>
             No scripts yet. Add one.
           </Typography>
         ) : (
@@ -161,7 +178,7 @@ export const ScriptsView: React.FC = () => {
                   selected={isActive}
                   onClick={() => setActiveScript(index)}
                   sx={{
-                    borderRadius: "6px", mb: 0.25, pr: 1,
+                    borderRadius: "6px", mb: 0.25, pr: 1, py: 0.5,
                     "&.Mui-selected": {
                       bgcolor: "action.selected",
                       "&:hover": { bgcolor: "action.selected" },
@@ -172,8 +189,8 @@ export const ScriptsView: React.FC = () => {
                     primary={script.name}
                     secondary={isActive ? "active" : undefined}
                     slotProps={{
-                      primary: { sx: { fontWeight: isActive ? 700 : 500, fontSize: "0.85rem" } },
-                      secondary: { sx: { fontSize: "0.65rem", color: "primary.main" } },
+                      primary: { sx: { fontWeight: isActive ? 700 : 500, fontSize: "0.8rem" } },
+                      secondary: { sx: { fontSize: "0.6rem", color: "primary.main" } },
                     }}
                   />
                   <IconButton
@@ -184,7 +201,7 @@ export const ScriptsView: React.FC = () => {
                     }}
                     sx={{ opacity: 0.5, "&:hover": { opacity: 1 } }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                     </svg>
                   </IconButton>
@@ -195,17 +212,17 @@ export const ScriptsView: React.FC = () => {
         )}
       </Box>
 
-      <Divider sx={{ mx: 2 }} />
+      <Divider sx={{ mx: 1.5 }} />
 
-      <Box sx={{ p: 2 }}>
+      <Box sx={{ p: 1.5 }}>
         <Button
           variant="outlined"
           size="small"
           fullWidth
-          startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
+          startIcon={<DownloadIcon sx={{ fontSize: 13 }} />}
           onClick={() => setExportDialog(true)}
           disabled={scripts.length === 0}
-          sx={{ textTransform: "none", fontSize: 11, fontWeight: 600, borderRadius: "8px" }}
+          sx={{ textTransform: "none", fontSize: 10.5, fontWeight: 600, borderRadius: "6px" }}
         >
           Export All Scripts
         </Button>
@@ -217,10 +234,14 @@ export const ScriptsView: React.FC = () => {
         onClose={() => setMenuState(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { minWidth: 140 } } }}
+        slotProps={{ paper: { sx: { minWidth: 130 } } }}
       >
-        <MenuItem onClick={handleRenameOpen} dense>Rename</MenuItem>
-        <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
+        <MenuItem onClick={handleRenameOpen} dense sx={{ fontSize: 13 }}>Rename</MenuItem>
+        <Divider />
+        <MenuItem onClick={handleMoveUp} dense disabled={!menuState || menuState.index <= 0} sx={{ fontSize: 13 }}>Move Up</MenuItem>
+        <MenuItem onClick={handleMoveDown} dense disabled={!menuState || menuState.index >= scripts.length - 1} sx={{ fontSize: 13 }}>Move Down</MenuItem>
+        <Divider />
+        <MenuItem onClick={handleDelete} dense sx={{ color: "error.main", fontSize: 13 }}>Delete</MenuItem>
       </Menu>
 
       {renameDialog && (
@@ -255,7 +276,7 @@ export const ScriptsView: React.FC = () => {
           </DialogTitle>
 
           <DialogContent dividers sx={{ px: 2.5, py: 2 }}>
-            <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+            <FormControl fullWidth size="small" sx={{ mb: 2.5 }}>
               <InputLabel id="export-format-label">Export Format</InputLabel>
               <Select
                 labelId="export-format-label"
@@ -338,11 +359,11 @@ export const ScriptsView: React.FC = () => {
             )}
 
             {exportFormat === "fdx" && (
-              <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+              <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5, fontSize: 13 }}>
                   Export {scripts.length} Script{scripts.length !== 1 ? "s" : ""} as FDX Files
                 </Typography>
-                <Typography variant="caption" color="text.secondary" component="div">
+                <Typography variant="caption" color="text.secondary" component="div" sx={{ fontSize: 11.5 }}>
                   Each script is saved as a separate .fdx (Final Draft XML) file.
                   <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
                     <li>Files are named: <strong>{bundleName}_ScriptName.fdx</strong></li>
@@ -353,11 +374,11 @@ export const ScriptsView: React.FC = () => {
 
             {exportFormat === "fountain" && (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5, fontSize: 13 }}>
                     Export {scripts.length} Script{scripts.length !== 1 ? "s" : ""} as Clean Fountain Files
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" component="div">
+                  <Typography variant="caption" color="text.secondary" component="div" sx={{ fontSize: 11.5 }}>
                     Each script is saved as a separate .fountain file in your chosen directory.
                     <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
                       <li>Files are named: <strong>{bundleName}_ScriptName.fountain</strong></li>
