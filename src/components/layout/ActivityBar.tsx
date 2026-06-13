@@ -15,7 +15,7 @@ import Button from "@mui/material/Button";
 import {
   FormatListBulletedIcon, DescriptionIcon, PersonIcon, BarChartIcon,
   AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CheckIcon,
-  RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon,
+  RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon, NoteAddIcon,
 } from "../Icons";
 
 interface ActivityBarProps {
@@ -57,7 +57,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
     { id: "scripts", icon: <DescriptionIcon sx={{ fontSize: 20 }} />, title: "Scripts" },
     { id: "characters", icon: <PersonIcon sx={{ fontSize: 20 }} />, title: "Characters" },
     { id: "stats", icon: <BarChartIcon sx={{ fontSize: 20 }} />, title: "Statistics" },
-    { id: "notepad", icon: <DescriptionIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
+    { id: "notepad", icon: <NoteAddIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
     { id: "markers", icon: <BookmarkIcon sx={{ fontSize: 20 }} />, title: "Markers" },
     { id: "todo", icon: <AssignmentIcon sx={{ fontSize: 20 }} />, title: "Tasks" },
     { id: "sprint", icon: <TimerIcon sx={{ fontSize: 20 }} />, title: "Sprint" },

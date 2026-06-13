@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useFile } from "../context";
 import { invoke } from "@tauri-apps/api/core";
-import { AddIcon, DownloadIcon, FolderOpenIcon } from "./Icons";
+import { AddIcon, DownloadIcon, FolderOpenIcon, DragHandleIcon } from "./Icons";
 
 import {
   Box,
@@ -35,6 +35,9 @@ export const ScriptsView: React.FC = () => {
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
   const [renameDialog, setRenameDialog] = useState<{ open: boolean; index: number; value: string } | null>(null);
   const [exportDialog, setExportDialog] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const dragNode = useRef<HTMLElement | null>(null);
 
   const [exportFormat, setExportFormat] = useState<"fountain" | "pdf" | "fdx">("pdf");
   const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
@@ -146,6 +149,49 @@ export const ScriptsView: React.FC = () => {
     }
   };
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    dragNode.current = e.currentTarget as HTMLElement;
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+    setTimeout(() => {
+      if (dragNode.current) dragNode.current.style.opacity = "0.4";
+    }, 0);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragIndex !== index) setOverIndex(index);
+  };
+
+  const handleDragEnter = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragIndex !== index) setOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    if (dragNode.current) dragNode.current.style.opacity = "";
+    if (dragIndex !== null && dragIndex !== toIndex) {
+      moveScript(dragIndex, toIndex);
+    }
+    setDragIndex(null);
+    setOverIndex(null);
+    dragNode.current = null;
+  };
+
+  const handleDragEnd = () => {
+    if (dragNode.current) dragNode.current.style.opacity = "";
+    setDragIndex(null);
+    setOverIndex(null);
+    dragNode.current = null;
+  };
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1.5, pt: 1.5, pb: 0.75 }}>
@@ -171,27 +217,57 @@ export const ScriptsView: React.FC = () => {
           <List disablePadding>
             {scripts.map((script, index) => {
               const isActive = index === activeScriptIndex;
+              const isDragging = dragIndex === index;
+              const isOver = overIndex === index && !isDragging;
               return (
                 <ListItemButton
                   key={`${script.name}-${index}`}
                   dense
                   selected={isActive}
-                  onClick={() => setActiveScript(index)}
+                  disableRipple={dragIndex !== null}
+                  onClick={() => { if (dragIndex === null) setActiveScript(index); }}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnter={(e) => handleDragEnter(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
                   sx={{
-                    borderRadius: "6px", mb: 0.25, pr: 1, py: 0.5,
+                    borderRadius: "6px", mb: 0.25, pr: 1, py: 0.5, pl: 0.5,
+                    opacity: isDragging ? 0.4 : 1,
+                    borderTop: isOver ? "2px solid" : "2px solid transparent",
+                    borderTopColor: isOver ? "primary.main" : "transparent",
+                    transition: "border-top-color 0.1s, opacity 0.1s",
+                    cursor: dragIndex !== null ? "grabbing" : "default",
                     "&.Mui-selected": {
                       bgcolor: "action.selected",
                       "&:hover": { bgcolor: "action.selected" },
                     },
                   }}
                 >
+                  <IconButton
+                    size="small"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    sx={{
+                      cursor: "grab",
+                      color: "text.disabled",
+                      mr: 0.5,
+                      p: 0.25,
+                      flexShrink: 0,
+                      "&:hover": { color: "text.secondary" },
+                    }}
+                  >
+                    <DragHandleIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
                   <ListItemText
                     primary={script.name}
-                    secondary={isActive ? "active" : undefined}
+                    secondary={isActive && dragIndex === null ? "active" : undefined}
                     slotProps={{
                       primary: { sx: { fontWeight: isActive ? 700 : 500, fontSize: "0.8rem" } },
                       secondary: { sx: { fontSize: "0.6rem", color: "primary.main" } },
                     }}
+                    sx={{ minWidth: 0 }}
                   />
                   <IconButton
                     size="small"
@@ -199,7 +275,7 @@ export const ScriptsView: React.FC = () => {
                       e.stopPropagation();
                       setMenuState({ anchorEl: e.currentTarget, index });
                     }}
-                    sx={{ opacity: 0.5, "&:hover": { opacity: 1 } }}
+                    sx={{ opacity: 0.5, "&:hover": { opacity: 1 }, flexShrink: 0 }}
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
