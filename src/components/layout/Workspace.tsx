@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useUI, useEditor } from "../../context";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
-import { ActivityBar } from "./ActivityBar";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { FountainEditor } from "../FountainEditor";
@@ -10,19 +9,14 @@ import { FountainEditor } from "../FountainEditor";
 interface WorkspaceProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
-  onOpenSettingsModal: () => void;
-  onOpenPalette: () => void;
-  onOpenBreakdownModal: () => void;
-  onOpenThemeManagerModal: () => void;
 }
 
 export const Workspace: React.FC<WorkspaceProps> = ({
-  isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
-  onOpenBreakdownModal, onOpenThemeManagerModal,
+  isSidebarOpen, setIsSidebarOpen,
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, activeTab, setActiveTab, zoomLevel, isZenMode, typewriterMode } = useUI();
+  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
@@ -63,19 +57,6 @@ export const Workspace: React.FC<WorkspaceProps> = ({
 
   return (
     <Box className="app-workspace" sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      {!isZenMode && (
-        <ActivityBar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}
-          onOpenSettingsModal={onOpenSettingsModal}
-          onOpenPalette={onOpenPalette}
-          onOpenBreakdownModal={onOpenBreakdownModal}
-          onOpenThemeManagerModal={onOpenThemeManagerModal}
-        />
-      )}
-
       {isSidebarOpen && !isZenMode && (
         <>
           <Paper

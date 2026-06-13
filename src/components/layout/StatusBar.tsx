@@ -40,9 +40,6 @@ export const StatusBar: React.FC = () => {
           Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
         </Typography>
         <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
-          Characters: <strong style={{ color: "var(--text-main)" }}>{stats.chars}</strong>
-        </Typography>
-        <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
           Pages: <strong style={{ color: "var(--text-main)" }}>{stats.pages}</strong>
         </Typography>
       </Box>
