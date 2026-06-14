@@ -555,9 +555,14 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
       <Divider />
 
       <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11, fontWeight: 500 }}>
-          ActOne — Built for Screenwriters
-        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11, fontWeight: 500 }}>
+            ActOne — Built for Screenwriters
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: 9, opacity: 0.45 }}>
+            &copy; 2026 P Nirmal Kasi Rajan
+          </Typography>
+        </Box>
         <Button
           onClick={openFountainGuide}
           endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}

@@ -23,17 +23,17 @@ export { WindowResizeHandles } from './WindowResizeHandles';
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,
   ArrowDownwardIcon, ArrowUpwardIcon, AssignmentIcon, AutoAwesomeIcon,
-  BarChartIcon, BookmarkIcon, BugReportIcon, CheckIcon, CheckBoxIcon,
+  BarChartIcon, BookmarkIcon, BugReportIcon, CheckIcon,
   CheckCircleIcon, ChevronRightIcon, CloseIcon, ColorLensIcon,
-  ContentCopyIcon, ContentCutIcon, CropSquareIcon, DeleteIcon,
+  ContentCopyIcon, ContentCutIcon, DeleteIcon,
   DescriptionIcon, DoneAllIcon, DownloadIcon, EmojiEventsIcon,
-  ErrorOutlinedIcon, FileDownloadIcon, FindReplaceIcon, FolderOpenIcon,
+  FileDownloadIcon, FindReplaceIcon, FolderOpenIcon,
   FormatBoldIcon, FormatItalicIcon, FormatListBulletedIcon,
   FormatUnderlinedIcon, FullscreenIcon, HelpOutlinedIcon, HistoryIcon,
   InfoOutlinedIcon, KeyboardArrowDownIcon, LocalOfferIcon, MenuBookIcon,
   MergeTypeIcon, MoreVertIcon, NoteAddIcon, OpenInNewIcon, PersonIcon,
-  PlayArrowIcon, RadioButtonUncheckedIcon, RemoveIcon, RestartAltIcon,
+  PlayArrowIcon, RadioButtonUncheckedIcon, RestartAltIcon,
   SaveIcon, SearchIcon, SettingsIcon, StopIcon, TaskAltIcon,
-  TextFieldsIcon, TimerIcon, TuneIcon, UndoIcon, ViewSidebarIcon,
+  TextFieldsIcon, TimerIcon, TuneIcon, ViewSidebarIcon,
   ZoomInIcon, ZoomOutIcon
 } from './Icons';

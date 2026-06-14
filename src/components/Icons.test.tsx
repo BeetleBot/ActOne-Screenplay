@@ -3,13 +3,13 @@ import { render } from "@testing-library/react";
 import React from "react";
 import {
   AddIcon, CloseIcon, SearchIcon, SaveIcon, SettingsIcon,
-  DeleteIcon, UndoIcon, ZoomInIcon, ZoomOutIcon, HelpOutlinedIcon,
+  DeleteIcon, ZoomInIcon, ZoomOutIcon, HelpOutlinedIcon,
   KeyboardArrowDownIcon, MoreVertIcon, BookmarkIcon
 } from "./Icons";
 
 const icons = [
   AddIcon, CloseIcon, SearchIcon, SaveIcon, SettingsIcon,
-  DeleteIcon, UndoIcon, ZoomInIcon, ZoomOutIcon, HelpOutlinedIcon,
+  DeleteIcon, ZoomInIcon, ZoomOutIcon, HelpOutlinedIcon,
   KeyboardArrowDownIcon, MoreVertIcon, BookmarkIcon
 ];
 

@@ -32,25 +32,6 @@ function stripFountainForExport(
 ): string {
   let text = rawText;
 
-  let drafterStart = text.indexOf("/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:");
-  if (drafterStart === -1) {
-    drafterStart = text.indexOf("/* If you're seeing this, you can remove the following stuff - ACTONE:");
-  }
-  if (drafterStart !== -1) {
-    const drafterEnd = text.indexOf("END_ACTONE*/");
-    if (drafterEnd !== -1) {
-      text = text.substring(0, drafterStart).trimEnd();
-    }
-  }
-
-  const beatStart = text.indexOf("/* If you're seeing this, you can remove the following stuff - BEAT:");
-  if (beatStart !== -1) {
-    const beatEnd = text.indexOf("END_BEAT*/");
-    if (beatEnd !== -1) {
-      text = text.substring(0, beatStart).trimEnd();
-    }
-  }
-
   text = text.replace(/\[\[marker[^\]]*\]\]/gi, "");
 
   text = text.replace(/\[\[(color\s[^\]]*|storyline[^\]]*|red|blue|green|pink|magenta|gray|purple|cyan|teal|yellow|orange|brown)\]\]/gi, "");
@@ -231,16 +212,23 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       </DialogTitle>
 
       <DialogContent dividers sx={{ px: 2.5, py: 2 }}>
-        {isBundle && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, px: 1.5, py: 1, bgcolor: "action.hover", borderRadius: 1 }}>
-            <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, color: "text.secondary" }}>
-              Exporting:
-            </Typography>
-            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 11, color: "text.primary" }}>
-              {filePath?.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled"}_{activeScriptName}
-            </Typography>
-          </Box>
-        )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 2, px: 1.5, py: 1, bgcolor: "action.hover", borderRadius: 1 }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, color: "text.secondary" }}>
+            Exporting
+          </Typography>
+          {isBundle && (
+            <>
+              <Typography variant="caption" sx={{ fontSize: 11, color: "text.disabled" }}>&gt;</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 500, fontSize: 11, color: "text.secondary" }}>
+                {filePath?.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled"}
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: 11, color: "text.disabled" }}>&gt;</Typography>
+            </>
+          )}
+          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 11, color: "text.primary" }}>
+            {activeScriptName}
+          </Typography>
+        </Box>
         <FormControl fullWidth size="small" sx={{ mb: 3 }}>
           <InputLabel id="export-format-label">Export Format</InputLabel>
           <Select

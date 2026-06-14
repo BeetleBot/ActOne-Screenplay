@@ -467,6 +467,17 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           >
             {appVersion ? `v${appVersion}` : ""}
           </Typography>
+          <Typography
+            sx={{
+              fontSize: 9,
+              fontWeight: 500,
+              color: "text.secondary",
+              opacity: 0.15,
+              userSelect: "none",
+            }}
+          >
+            &copy; 2026 ActOne
+          </Typography>
         </Box>
         <IconButton
           onClick={(e) => setThemeMenuAnchor(e.currentTarget)}

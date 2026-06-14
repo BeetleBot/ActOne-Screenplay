@@ -207,10 +207,19 @@ fn shape_rich_string(
                 current_start_x = glyph.x;
             }
 
+            let mut start = glyph.start;
+            let mut end = glyph.end;
+            while start > 0 && !plain.is_char_boundary(start) {
+                start -= 1;
+            }
+            while end < plain.len() && !plain.is_char_boundary(end) {
+                end += 1;
+            }
+
             current_glyphs.push(KrillaGlyphWrapper {
                 glyph_id: glyph.glyph_id as u32,
-                start: glyph.start,
-                end: glyph.end,
+                start,
+                end,
                 x_advance: glyph.w / glyph.font_size,
                 x_offset: glyph.x_offset,
                 y_offset: glyph.y_offset,
