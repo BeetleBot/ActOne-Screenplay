@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useUI, useFile, useTheme } from "../../context";
+import { PILL_RADIUS } from "../../constants";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -234,16 +235,16 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
                   variant={paperSize === "letter" ? "contained" : "outlined"}
                   fullWidth
                   onClick={() => setPaperSize("letter")}
-                  sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: '9999px' }}
-                >
-                  Letter
-                </Button>
-                <Button 
-                  size="small" 
-                  variant={paperSize === "a4" ? "contained" : "outlined"}
-                  fullWidth
-                  onClick={() => setPaperSize("a4")}
-                  sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: '9999px' }}
+                   sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: PILL_RADIUS }}
+                 >
+                   Letter
+                 </Button>
+                 <Button 
+                   size="small" 
+                   variant={paperSize === "a4" ? "contained" : "outlined"}
+                   fullWidth
+                   onClick={() => setPaperSize("a4")}
+                   sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: PILL_RADIUS }}
                 >
                   A4
                 </Button>

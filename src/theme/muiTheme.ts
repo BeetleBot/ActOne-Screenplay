@@ -1,4 +1,5 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { PILL_RADIUS } from '../constants';
 
 export type ThemeId = 'light' | 'dark';
 
@@ -222,7 +223,7 @@ export function createActOneTheme(t: ThemeConfig) {
       },
       MuiButton: {
         styleOverrides: {
-          root: { borderRadius: '9999px' },
+          root: { borderRadius: PILL_RADIUS },
         },
       },
       MuiDialog: {

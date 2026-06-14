@@ -7,6 +7,7 @@ import { SprintView } from "./SprintView";
 import { MarkerView } from "./MarkerView";
 import { ScriptsView } from "./ScriptsView";
 import { AddIcon, CloseIcon, SearchIcon } from "./Icons";
+import { PILL_RADIUS } from "../constants";
 
 import {
   Box,
@@ -51,7 +52,7 @@ const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({
           size="small"
           variant="contained"
           onClick={() => saveFileAs()}
-          sx={{ fontWeight: 600, textTransform: "none", borderRadius: '9999px' }}
+          sx={{ fontWeight: 600, textTransform: "none", borderRadius: PILL_RADIUS }}
         >
           Save as .actone
         </Button>

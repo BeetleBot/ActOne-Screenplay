@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useFile, useEditor } from "../context";
+import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
 import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon } from "./Icons";
 
@@ -625,7 +626,7 @@ export const OutlineView: React.FC = () => {
                         height: 12,
                         fontSize: fontSizes.chip,
                         p: 0,
-                        borderRadius: '9999px',
+                        borderRadius: PILL_RADIUS,
                         textTransform: "lowercase",
                       }}
                     />

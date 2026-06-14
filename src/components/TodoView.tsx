@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useFile, useEditor } from "../context";
+import { PILL_RADIUS } from "../constants";
 import { RadioButtonUncheckedIcon, CheckCircleIcon, KeyboardArrowDownIcon, AddIcon, CloseIcon } from "./Icons";
 
 import {
@@ -42,7 +43,7 @@ const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({
           size="small"
           variant="contained"
           onClick={() => saveFileAs()}
-          sx={{ fontWeight: 600, textTransform: "none", borderRadius: '9999px' }}
+          sx={{ fontWeight: 600, textTransform: "none", borderRadius: PILL_RADIUS }}
         >
           Save as .actone
         </Button>

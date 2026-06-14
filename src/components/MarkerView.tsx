@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useFile, useEditor } from "../context";
+import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
 import { SearchIcon, CloseIcon } from "./Icons";
 
@@ -134,7 +135,7 @@ export const MarkerView: React.FC = () => {
         <Chip
           label={`${filteredMarkers.length} markers`}
           size="small"
-          sx={{ height: 18, fontSize: 10, fontWeight: 600, borderRadius: '9999px' }}
+          sx={{ height: 18, fontSize: 10, fontWeight: 600, borderRadius: PILL_RADIUS }}
         />
       </Box>
 
@@ -152,7 +153,7 @@ export const MarkerView: React.FC = () => {
                   sx={{
                     fontSize: 9.5,
                     height: 20,
-                    borderRadius: '9999px',
+                    borderRadius: PILL_RADIUS,
                     fontWeight: isSelected ? 700 : 500,
                     border: `1.5px solid ${colorVal}`,
                     bgcolor: isSelected ? colorVal : "transparent",

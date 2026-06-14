@@ -41,6 +41,36 @@ interface ProductionBreakdownModalProps {
   onClose: () => void;
 }
 
+interface ProdTag {
+  range?: [number, number];
+  type?: string;
+  definitionId?: string;
+  sceneId?: string;
+}
+
+interface ProdDefinition {
+  id: string;
+  name: string;
+  type: string;
+  colorOverride: string | null;
+}
+
+interface Occurrence {
+  pos: number;
+  sceneName: string;
+}
+
+interface DefWithOccurrences extends ProdDefinition {
+  occurrences: Occurrence[];
+}
+
+interface CatWithDefs {
+  key: string;
+  label: string;
+  color: string;
+  definitions: DefWithOccurrences[];
+}
+
 export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> = ({ onClose }) => {
   const { parsedDoc } = useFile();
   const { updateSettings, editorView } = useEditor();
@@ -78,10 +108,10 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
   };
 
   const handleDeleteDefinition = (defId: string) => {
-    updateSettings((prev: any) => {
+    updateSettings((prev) => {
       const prevProd = prev.productionTags || { tags: [], definitions: [] };
-      const tags = (prevProd.tags || []).filter((t: any) => t.definitionId !== defId);
-      const definitions = (prevProd.definitions || []).filter((d: any) => d.id !== defId);
+      const tags = (prevProd.tags || []).filter((t: ProdTag) => t.definitionId !== defId);
+      const definitions = (prevProd.definitions || []).filter((d: ProdDefinition) => d.id !== defId);
       return {
         ...prev,
         productionTags: {
@@ -96,15 +126,15 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
     const targetId = mergeTargets[sourceId];
     if (!targetId) return;
 
-    updateSettings((prev: any) => {
+    updateSettings((prev) => {
       const prevProd = prev.productionTags || { tags: [], definitions: [] };
-      const tags = (prevProd.tags || []).map((t: any) => {
+      const tags = (prevProd.tags || []).map((t: ProdTag) => {
         if (t.definitionId === sourceId) {
           return { ...t, definitionId: targetId };
         }
         return t;
       });
-      const definitions = (prevProd.definitions || []).filter((d: any) => d.id !== sourceId);
+      const definitions = (prevProd.definitions || []).filter((d: ProdDefinition) => d.id !== sourceId);
       return {
         ...prev,
         productionTags: {
@@ -123,7 +153,7 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
 
   const categoriesWithDefinitions = useMemo(() => {
     return CATEGORIES.map((cat) => {
-      const defs = (prodTags.definitions || []).filter((d: any) => {
+      const defs = (prodTags.definitions || []).filter((d: ProdDefinition) => {
         if (d.type !== cat.key) return false;
         if (searchQuery) {
           return d.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -131,9 +161,9 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
         return true;
       });
 
-      const defsWithOccurrences = defs.map((def: any) => {
-        const occurrences = (prodTags.tags || []).filter((t: any) => t.definitionId === def.id).map((t: any) => {
-          const [start] = t.range;
+      const defsWithOccurrences: DefWithOccurrences[] = defs.map((def: ProdDefinition) => {
+        const occurrences: Occurrence[] = (prodTags.tags || []).filter((t: ProdTag) => t.definitionId === def.id).map((t: ProdTag) => {
+          const [start] = t.range || [0];
           return {
             pos: start,
             sceneName: getSceneForPosition(start)
@@ -146,7 +176,7 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
         ...cat,
         definitions: defsWithOccurrences
       };
-    }).filter((cat) => cat.definitions.length > 0);
+    }).filter((cat: CatWithDefs) => cat.definitions.length > 0);
   }, [prodTags, searchQuery, parsedDoc.lines]);
 
   return (
@@ -199,8 +229,8 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
                   </Typography>
                 </Box>
 
-                {cat.definitions.map((def: any) => {
-                  const siblingDefs = cat.definitions.filter((d: any) => d.id !== def.id);
+                {cat.definitions.map((def: DefWithOccurrences) => {
+                  const siblingDefs = cat.definitions.filter((d: DefWithOccurrences) => d.id !== def.id);
                   const selectedTarget = mergeTargets[def.id] || "";
                   return (
                     <ListItemButton key={def.id} dense sx={{ borderRadius: "6px", mb: 0.25, px: 1 }}>
@@ -223,7 +253,7 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
                               sx={{ height: 22, fontSize: "0.7rem", borderRadius: "4px", minWidth: 80 }}
                             >
                               <MenuItem value="" sx={{ fontSize: "0.7rem" }}>Merge...</MenuItem>
-                              {siblingDefs.map((sibling: any) => (
+                              {siblingDefs.map((sibling: DefWithOccurrences) => (
                                 <MenuItem key={sibling.id} value={sibling.id} sx={{ fontSize: "0.7rem" }}>
                                   {sibling.name}
                                 </MenuItem>
@@ -247,10 +277,10 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
                   );
                 })}
 
-                {cat.definitions.some((def: any) => def.occurrences.length > 0) && (
+                {cat.definitions.some((def: DefWithOccurrences) => def.occurrences.length > 0) && (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, alignItems: "center", mt: 0.25, ml: 1 }}>
-                    {cat.definitions.map((def: any) =>
-                      def.occurrences.map((occ: any, oIdx: number) => (
+                    {cat.definitions.map((def: DefWithOccurrences) =>
+                      def.occurrences.map((occ: Occurrence, oIdx: number) => (
                         <Typography
                           key={`${def.id}-${oIdx}`}
                           variant="caption"

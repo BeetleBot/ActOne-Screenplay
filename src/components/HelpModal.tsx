@@ -400,8 +400,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             
             {filteredItems.length > 0 && (
               <Section title="Matching Help Articles">
-                {filteredItems.map((item, idx) => (
-                  <Feature key={idx} name={item.name} desc={item.desc} />
+                  {filteredItems.map((item) => (
+                  <Feature key={item.name} name={item.name} desc={item.desc} />
                 ))}
               </Section>
             )}
@@ -410,9 +410,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
               <Section title="Matching Keyboard Shortcuts">
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   {filteredShortcuts.map((group) =>
-                    group.items.map((s, i) => (
+                    group.items.map((s) => (
                       <Box
-                        key={`${group.group}-${i}`}
+                        key={`${group.group}-${s.keys}`}
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
@@ -464,13 +464,13 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                   ActOne allows plain-text screenwriting using the simple industry-standard Fountain syntax. Write naturally and let ActOne format margins, dialogue alignments, and headers automatically in real-time.
                 </Typography>
                 <Section title="Fountain Syntax Screenwriting">
-                  {HELP_ITEMS.filter((item) => item.category === "Writing & Formatting" && !item.name.toLowerCase().includes("autocomplete") && !item.name.toLowerCase().includes("spaces") && !item.name.toLowerCase().includes("search")).map((item, idx) => (
-                    <Feature key={idx} name={item.name} desc={item.desc} />
+                  {HELP_ITEMS.filter((item) => item.category === "Writing & Formatting" && !item.name.toLowerCase().includes("autocomplete") && !item.name.toLowerCase().includes("spaces") && !item.name.toLowerCase().includes("search")).map((item) => (
+                    <Feature key={item.name} name={item.name} desc={item.desc} />
                   ))}
                 </Section>
                 <Section title="Smart Writing Assistance">
-                  {HELP_ITEMS.filter((item) => item.category === "Writing & Formatting" && (item.name.toLowerCase().includes("autocomplete") || item.name.toLowerCase().includes("spaces") || item.name.toLowerCase().includes("search") || item.name.toLowerCase().includes("smart quotes"))).map((item, idx) => (
-                    <Feature key={idx} name={item.name} desc={item.desc} />
+                  {HELP_ITEMS.filter((item) => item.category === "Writing & Formatting" && (item.name.toLowerCase().includes("autocomplete") || item.name.toLowerCase().includes("spaces") || item.name.toLowerCase().includes("search") || item.name.toLowerCase().includes("smart quotes"))).map((item) => (
+                    <Feature key={item.name} name={item.name} desc={item.desc} />
                   ))}
                 </Section>
               </Box>
@@ -479,8 +479,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             {activeTab === 1 && (
               <Box>
                 <Section title="Files, Projects & Form Persistence">
-                  {HELP_ITEMS.filter((item) => item.category === "Files & Projects").map((item, idx) => (
-                    <Feature key={idx} name={item.name} desc={item.desc} />
+                  {HELP_ITEMS.filter((item) => item.category === "Files & Projects").map((item) => (
+                    <Feature key={item.name} name={item.name} desc={item.desc} />
                   ))}
                 </Section>
               </Box>
@@ -489,8 +489,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             {activeTab === 2 && (
               <Box>
                 <Section title="Workspace, Layouts & custom Views">
-                  {HELP_ITEMS.filter((item) => item.category === "Workspace & Views").map((item, idx) => (
-                    <Feature key={idx} name={item.name} desc={item.desc} />
+                  {HELP_ITEMS.filter((item) => item.category === "Workspace & Views").map((item) => (
+                    <Feature key={item.name} name={item.name} desc={item.desc} />
                   ))}
                 </Section>
               </Box>
@@ -499,8 +499,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             {activeTab === 3 && (
               <Box>
                 <Section title="Production Breakdown, Markers & Exporting">
-                  {HELP_ITEMS.filter((item) => item.category === "Review & Export").map((item, idx) => (
-                    <Feature key={idx} name={item.name} desc={item.desc} />
+                  {HELP_ITEMS.filter((item) => item.category === "Review & Export").map((item) => (
+                    <Feature key={item.name} name={item.name} desc={item.desc} />
                   ))}
                 </Section>
               </Box>
@@ -514,16 +514,16 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                 {shortcuts.map((group) => (
                   <Section key={group.group} title={group.group}>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                      {group.items.map((s, i) => (
+                      {group.items.map((s, idx) => (
                         <Box
-                          key={i}
+                          key={s.keys}
                           sx={{
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
                             p: 1.5,
                             borderRadius: 1,
-                            bgcolor: i % 2 === 0 ? "action.hover" : "transparent",
+                            bgcolor: idx % 2 === 0 ? "action.hover" : "transparent",
                           }}
                         >
                           <Typography variant="body2" sx={{ color: "text.primary", fontSize: 13 }}>
