@@ -12,7 +12,7 @@ interface WorkspaceProps {
 }
 
 export const Workspace: React.FC<WorkspaceProps> = ({
-  isSidebarOpen, setIsSidebarOpen,
+  isSidebarOpen,
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);

@@ -98,16 +98,8 @@ jobs:
       - run: npm ci
       - name: Build Tauri app
         run: npm run tauri build
-      - name: Package portable zip
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path portable -Force
-          Copy-Item src-tauri/target/release/actone.exe portable/
-          Compress-Archive -Path portable/* -DestinationPath ActOne-Windows-x64.zip
-      - name: Upload to Release
+      - name: Upload MSI to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            src-tauri/target/release/bundle/msi/*.msi
-            ActOne-Windows-x64.zip
+          files: src-tauri/target/release/bundle/msi/*.msi
           token: ${{ secrets.GITHUB_TOKEN }}
