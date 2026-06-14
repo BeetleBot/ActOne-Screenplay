@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useFile, useUI, useSprint } from "../../context";
+import { LineType } from "../../parser";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Menu from "@mui/material/Menu";
@@ -40,7 +41,8 @@ export const StatusBar: React.FC = () => {
         currentPage = parsedDoc.pageBreaks.filter(b => b <= activeLineIndex).length + 1;
       }
     }
-    return { words, chars, pages, currentPage };
+    const sceneCount = parsedDoc.lines.filter(l => l.type === LineType.heading).length;
+    return { words, chars, pages, currentPage, sceneCount };
   }, [rawText, parsedDoc, activeLineId]);
 
   const sprintDetails = useMemo(() => {
@@ -134,6 +136,9 @@ export const StatusBar: React.FC = () => {
             Sprint: <strong style={{ color: "var(--text-main)", marginLeft: 3 }}>{sprintDetails.timeStr} / {sprintDetails.total}m</strong>&nbsp;({sprintDetails.wpm} WPM)
           </Typography>
         )}
+        <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
+          Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
+        </Typography>
         <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
           Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
         </Typography>
