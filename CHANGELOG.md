@@ -1,28 +1,36 @@
 # Changelog
 
+## [0.1.8] - 2026-06-14
+
+### Changed
+- Editor: Added "Start writing here" placeholder text when document is empty.
+- `ProductionBreakdownModal` fully typed — 16 `: any` replaced with proper interfaces.
+- `PILL_RADIUS` constant used across 6 component files + muiTheme (replaces hardcoded `"9999px"`).
+
+### Fixed
+- Build: test files excluded from `tsc` compilation to prevent pipeline failures.
+- Unused imports removed from SidebarViews (`LinearProgress`, `ListItem`) and Workspace (`setIsSidebarOpen`).
+- Fragile `key={idx}` in HelpModal replaced with stable keys.
+- Windows portable zip removed from release workflow (MSI/MSIX preferred).
+
 ## [0.1.7] - 2026-06-14
 
 ### Changed
-- Editor: Added "Start writing here" placeholder text when the document is empty, styled as a faded italic hint.
 - Modal focus rings removed globally (MuiDialog paper `outline: none`).
 - All modals standardised to compact layout with consistent padding and `borderRadius: 10px`.
 - Hover transitions consolidated to `0.12s ease` across the entire UI.
-- Script list icon changed to `LibraryBooksIcon` for clearer identity.
+- Script list icon changed to `LibraryBooksIcon`.
 - Structure Import Modal layout rebuilt with flex for independent pane scrolling.
+- `updateSettings` uses a shared `SettingsUpdater` type instead of `(prev: any) => any`.
+- `isTauri` detection uses safe `"__TAURI_INTERNALS__" in window` cast.
+- All localStorage keys centralised in `src/constants.ts` as `STORAGE_KEYS`.
 
 ### Fixed
-- Empty `catch` blocks across 17 locations now log errors instead of silently failing.
-- `editorView` typed as `EditorView | null` instead of `any` (eliminated 10+ unsafe casts).
-- `updateSettings` now uses a shared `SettingsUpdater` type instead of `(prev: any) => any`.
+- Empty `catch` blocks across 17 locations now log errors instead of silent failures.
+- `editorView` typed as `EditorView | null` instead of `any` (10+ unsafe casts eliminated).
 - Windows `\r\n` line endings normalised in TitlePageEditorModal and FileContext.
-- Stale recent files are proactively removed on startup via `file_exists` Tauri command.
-- Focus ring on modals removed globally via muiTheme MuiDialog paper styling.
+- Stale recent files proactively removed on startup via `file_exists` Tauri command.
 - Fragile React keys in ScriptsView and StatusBar replaced with stable identifiers.
-- Hardcoded `"9999px"` replaced with `PILL_RADIUS` constant across 6 component files.
-- `ProductionBreakdownModal` fully typed — replaced 16 `: any` with proper interfaces.
-- Build: test files excluded from `tsc` compilation to prevent pipeline failures.
-- Windows portable zip removed from release workflow (MSI/MSIX preferred).
-- `isTauri` detection changed from unsafe `(window as any)` cast to `"__TAURI_INTERNALS__" in window`.
 
 ## [0.1.6] - 2026-06-12
 
