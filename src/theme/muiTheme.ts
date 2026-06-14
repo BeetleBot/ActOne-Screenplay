@@ -82,7 +82,7 @@ export const themes: ThemeConfig[] = [
 
 const shared: ThemeOptions = {
   typography: {
-    fontFamily: "'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "var(--font-ui)",
     button: { textTransform: 'none', fontWeight: 500 },
   },
   shape: { borderRadius: 12 },

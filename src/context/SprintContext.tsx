@@ -70,11 +70,12 @@ export const SprintProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const active = activeSprints[fileId];
     if (!active) return null;
 
+    const actualDuration = Math.min(active.durationMinutes, Math.max(1, Math.round((Date.now() - active.startTime) / 60000)));
     const newSession: SprintSession = {
       id: Date.now().toString(),
       startTime: active.startTime,
       endTime: Date.now(),
-      durationMinutes: active.durationMinutes,
+      durationMinutes: actualDuration,
       wordCount,
       content: "",
       fileName,
@@ -112,9 +113,7 @@ export const SprintProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const clearHistory = () => {
-    if (window.confirm("Are you sure you want to clear all global sprint history? This will not clear data saved inside .actone bundles.")) {
-      setSprintHistory([]);
-    }
+    setSprintHistory([]);
   };
 
   return (

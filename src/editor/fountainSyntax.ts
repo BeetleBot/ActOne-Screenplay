@@ -12,57 +12,7 @@ export interface PageBreakDisplaySettings {
 
 export const updatePageBreakDisplayEffect = StateEffect.define<PageBreakDisplaySettings>();
 
-class PageNumberLabel extends WidgetType {
-  constructor(readonly pageNum: number) {
-    super();
-  }
-  toDOM() {
-    const label = document.createElement("span");
-    label.className = "cm-fountain-page-number-label";
-    label.textContent = `${this.pageNum}`;
-    return label;
-  }
-  ignoreEvent() { return true; }
-  eq(other: PageNumberLabel) {
-    return this.pageNum === other.pageNum;
-  }
-}
 
-class PageSeparatorLine extends WidgetType {
-  toDOM() {
-    const div = document.createElement("div");
-    div.className = "cm-fountain-page-separator-line";
-    return div;
-  }
-  ignoreEvent() { return true; }
-  eq() { return true; }
-}
-
-class PageBreakWidget extends WidgetType {
-  constructor(readonly pageNum: number) {
-    super();
-  }
-  toDOM() {
-    const div = document.createElement("div");
-    div.className = "cm-fountain-pagebreak-widget";
-    
-    const line = document.createElement("div");
-    line.className = "cm-fountain-pagebreak-line";
-    
-    const label = document.createElement("span");
-    label.className = "cm-fountain-pagebreak-label";
-    label.textContent = `${this.pageNum}`;
-    
-    div.appendChild(line);
-    div.appendChild(label);
-    
-    return div;
-  }
-  ignoreEvent() { return true; }
-  eq(other: PageBreakWidget) {
-    return this.pageNum === other.pageNum;
-  }
-}
 
 export const LINE_EMPTY = 0;
 export const LINE_SECTION = 1;
@@ -215,44 +165,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
 
     let lineDecos: { from: number, to: number, dec: Decoration }[] = [];
 
-    if (docObj && docObj.pageBreaks && (displaySettings.showPageNumbers || displaySettings.showPageSeparators)) {
-      const breakIdx = docObj.pageBreaks.indexOf(i);
-      if (breakIdx !== -1) {
-        const hasTitlePage = docObj.lines.some(l => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown);
-        const pageNum = hasTitlePage ? breakIdx + 1 : breakIdx + 2;
-        if (displaySettings.showPageNumbers && displaySettings.showPageSeparators) {
-          lineDecos.push({
-            from: line.from,
-            to: line.from,
-            dec: Decoration.widget({
-              widget: new PageBreakWidget(pageNum),
-              block: true,
-              side: -1
-            })
-          });
-        } else if (displaySettings.showPageNumbers) {
-          lineDecos.push({
-            from: line.from,
-            to: line.from,
-            dec: Decoration.widget({
-              widget: new PageNumberLabel(pageNum),
-              block: true,
-              side: -1
-            })
-          });
-        } else if (displaySettings.showPageSeparators) {
-          lineDecos.push({
-            from: line.from,
-            to: line.from,
-            dec: Decoration.widget({
-              widget: new PageSeparatorLine(),
-              block: true,
-              side: -1
-            })
-          });
-        }
-      }
-    }
+
 
     if (className) {
       let finalClassName = className;

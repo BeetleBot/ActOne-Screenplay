@@ -26,8 +26,7 @@ describe("UIContext", () => {
     expect(result.current.autocompleteEnabled).toBe(true);
     expect(result.current.smartQuotesEnabled).toBe(true);
     expect(result.current.matchParenthesesEnabled).toBe(true);
-    expect(result.current.showPageNumbers).toBe(false);
-    expect(result.current.showPageSeparators).toBe(false);
+
     expect(result.current.autoSaveEnabled).toBe(true);
     expect(result.current.autoSaveInterval).toBe(60000);
     expect(result.current.showSearchPanel).toBe(false);
@@ -82,8 +81,7 @@ describe("UIContext", () => {
     act(() => result.current.setSmartQuotesEnabled(false));
     expect(result.current.smartQuotesEnabled).toBe(false);
 
-    act(() => result.current.setShowPageNumbers(true));
-    expect(result.current.showPageNumbers).toBe(true);
+
 
     act(() => result.current.setAutoSaveInterval(120000));
     expect(result.current.autoSaveInterval).toBe(120000);

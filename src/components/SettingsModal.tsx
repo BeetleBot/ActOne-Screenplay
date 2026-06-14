@@ -44,10 +44,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setSmartQuotesEnabled,
     matchParenthesesEnabled,
     setMatchParenthesesEnabled,
-    showPageNumbers,
-    setShowPageNumbers,
-    showPageSeparators,
-    setShowPageSeparators,
     autoSaveEnabled,
     setAutoSaveEnabled,
     autoSaveInterval,
@@ -223,25 +219,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               }
             />
 
-            <FormControlLabel
-              control={<Switch checked={showPageNumbers} onChange={(e) => setShowPageNumbers(e.target.checked)} />}
-              label={
-                <Box sx={{ ml: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Show Page Numbers</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Display page numbers in the editor</Typography>
-                </Box>
-              }
-            />
-
-            <FormControlLabel
-              control={<Switch checked={showPageSeparators} onChange={(e) => setShowPageSeparators(e.target.checked)} />}
-              label={
-                <Box sx={{ ml: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Show Page Separators</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Show horizontal lines at page breaks</Typography>
-                </Box>
-              }
-            />
 
           </Box>
         )}

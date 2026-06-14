@@ -57,7 +57,21 @@ function stripFountainForExport(
 
   const lines = text.split(/\r?\n/);
   const filtered: string[] = [];
-  let inTitlePage = true;
+  
+  let hasTitlePage = false;
+  const firstNonEmptyLine = lines.find(l => l.trim() !== "");
+  if (firstNonEmptyLine) {
+    const colonIdx = firstNonEmptyLine.indexOf(":");
+    if (colonIdx !== -1) {
+      const key = firstNonEmptyLine.substring(0, colonIdx).trim().toLowerCase();
+      const validKeys = ["title", "credit", "author", "authors", "source", "notes", "draft date", "date", "contact", "copyright"];
+      if (validKeys.includes(key)) {
+        hasTitlePage = true;
+      }
+    }
+  }
+
+  let inTitlePage = hasTitlePage;
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();

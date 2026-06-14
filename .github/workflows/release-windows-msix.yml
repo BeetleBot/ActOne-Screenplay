@@ -1,19 +1,10 @@
-name: MSIX Distribution
+name: Windows MSIX Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build Type'
-        required: true
-        default: 'test'
-        type: choice
-        options:
-          - test
-          - release
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -30,7 +21,20 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Rust binary
         run: cargo build --release --manifest-path src-tauri/Cargo.toml
 
       - name: Extract version
@@ -87,16 +91,7 @@ jobs:
           & $makeappx pack /d target/msix/layout /p "target/msix/$filename" /o
           echo "FILENAME=$filename" >> $env:GITHUB_ENV
 
-      - name: Upload Artifact (Manual/Test)
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ActOne-MSIX-${{ steps.version.outputs.SEMVER }}
-          path: target/msix/${{ env.FILENAME }}
-          retention-days: 5
-
       - name: Upload to Release (Tag)
-        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
           files: target/msix/${{ env.FILENAME }}

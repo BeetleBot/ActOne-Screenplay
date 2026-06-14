@@ -1,23 +1,66 @@
-import React, { useMemo, useState } from "react";
-import { useFile, useUI } from "../../context";
+import React, { useMemo, useState, useEffect } from "react";
+import { useFile, useUI, useSprint } from "../../context";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
 
+import { useEditor } from "../../context";
+
 export const StatusBar: React.FC = () => {
-  const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript } = useFile();
+  const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId } = useFile();
   const { isZenMode } = useUI();
+  const { activeLineId } = useEditor();
+  const { activeSprints } = useSprint();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [tick, setTick] = useState(0);
+
+  const currentSprint = activeSprints[activeFileId];
+
+  useEffect(() => {
+    if (currentSprint) {
+      const timer = setInterval(() => {
+        setTick(t => t + 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [currentSprint]);
 
   const stats = useMemo(() => {
     const text = rawText || "";
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     const chars = text.length;
     const pages = parsedDoc.pageBreaks ? parsedDoc.pageBreaks.length + 1 : 1;
-    return { words, chars, pages };
-  }, [rawText, parsedDoc]);
+
+    let currentPage = 1;
+    if (parsedDoc?.lines) {
+      const activeLineIndex = parsedDoc.lines.findIndex(l => l.id === activeLineId);
+      if (activeLineIndex !== -1 && parsedDoc.pageBreaks) {
+        currentPage = parsedDoc.pageBreaks.filter(b => b <= activeLineIndex).length + 1;
+      }
+    }
+    return { words, chars, pages, currentPage };
+  }, [rawText, parsedDoc, activeLineId]);
+
+  const sprintDetails = useMemo(() => {
+    if (!currentSprint) return null;
+    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - currentSprint.startTime) / 1000));
+    const elapsedMinutes = elapsedSeconds / 60;
+    const sprintWords = Math.max(0, stats.words - currentSprint.startWordCount);
+    const wpm = elapsedMinutes > 0 ? Math.round(sprintWords / elapsedMinutes) : 0;
+
+    const elapsedMins = Math.floor(elapsedSeconds / 60);
+    const elapsedSecs = elapsedSeconds % 60;
+    const timeStr = `${elapsedMins}:${elapsedSecs.toString().padStart(2, "0")}`;
+
+    return {
+      timeStr,
+      total: currentSprint.durationMinutes,
+      wpm,
+      words: sprintWords
+    };
+  }, [currentSprint, stats.words, tick]);
 
   if (isZenMode) return null;
 
@@ -67,12 +110,35 @@ export const StatusBar: React.FC = () => {
         )}
       </Box>
 
-      <Box sx={{ display: "flex", gap: 2 }}>
+      <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        {sprintDetails && (
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              fontSize: 11, 
+              color: "primary.main", 
+              fontWeight: 500, 
+              display: "flex", 
+              alignItems: "center",
+              mr: 1
+            }}
+          >
+            <span style={{ 
+              display: "inline-block", 
+              width: 6, 
+              height: 6, 
+              borderRadius: "50%", 
+              backgroundColor: "var(--accent-color)", 
+              marginRight: 6
+            }}></span>
+            Sprint: <strong style={{ color: "var(--text-main)", marginLeft: 3 }}>{sprintDetails.timeStr} / {sprintDetails.total}m</strong>&nbsp;({sprintDetails.wpm} WPM)
+          </Typography>
+        )}
         <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
           Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
         </Typography>
         <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
-          Pages: <strong style={{ color: "var(--text-main)" }}>{stats.pages}</strong>
+          Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
         </Typography>
       </Box>
 

@@ -278,6 +278,7 @@ export const OutlineView: React.FC = () => {
       top: e.clientY + "px",
       transform: "translate(-50%, -50%)",
       whiteSpace: "nowrap",
+      textTransform: "uppercase",
     });
     document.body.appendChild(ghost);
     ghostRef.current = ghost;
@@ -610,6 +611,7 @@ export const OutlineView: React.FC = () => {
                   fontSize: fontSizes.scene,
                   fontFamily: "var(--font-ui)",
                   letterSpacing: "0.01em",
+                  textTransform: "uppercase",
                 }}
               >
                 {getSceneTitle(line)}

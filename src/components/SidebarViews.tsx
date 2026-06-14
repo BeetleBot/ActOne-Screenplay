@@ -358,7 +358,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
     const totalDialogueLines = Object.values(genderDialogueLines).reduce((a, b) => a + b, 0);
 
     const statCards = [
-      { label: "Pages", value: pages, color: "primary.main" },
+      { label: "Estd. Pages", value: pages, color: "primary.main" },
       { label: "Words", value: totalWords.toLocaleString(), color: "text.primary" },
       { label: "Scenes", value: headingCount, color: "text.primary" },
       { label: "Lines", value: totalLines.toLocaleString(), color: "text.primary" },

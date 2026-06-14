@@ -25,10 +25,7 @@ export interface UIContextProps {
   setSmartQuotesEnabled: (enabled: boolean) => void;
   matchParenthesesEnabled: boolean;
   setMatchParenthesesEnabled: (enabled: boolean) => void;
-  showPageNumbers: boolean;
-  setShowPageNumbers: (enabled: boolean) => void;
-  showPageSeparators: boolean;
-  setShowPageSeparators: (enabled: boolean) => void;
+
   showSearchPanel: boolean;
   setShowSearchPanel: (show: boolean) => void;
   showReplacePanel: boolean;
@@ -80,12 +77,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED) !== "false";
   });
 
-  const [showPageNumbers, setShowPageNumbersState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.SHOW_PAGE_NUMBERS) === "true";
-  });
-  const [showPageSeparators, setShowPageSeparatorsState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.SHOW_PAGE_SEPARATORS) === "true";
-  });
+
 
   const [autoSaveEnabled, setAutoSaveEnabledState] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_ENABLED) !== "false";
@@ -178,15 +170,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, String(enabled));
   };
 
-  const setShowPageNumbers = (enabled: boolean) => {
-    setShowPageNumbersState(enabled);
-    localStorage.setItem(STORAGE_KEYS.SHOW_PAGE_NUMBERS, String(enabled));
-  };
 
-  const setShowPageSeparators = (enabled: boolean) => {
-    setShowPageSeparatorsState(enabled);
-    localStorage.setItem(STORAGE_KEYS.SHOW_PAGE_SEPARATORS, String(enabled));
-  };
 
   const setAutoSaveEnabled = (enabled: boolean) => {
     setAutoSaveEnabledState(enabled);
@@ -223,10 +207,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setSmartQuotesEnabled,
         matchParenthesesEnabled,
         setMatchParenthesesEnabled,
-        showPageNumbers,
-        setShowPageNumbers,
-        showPageSeparators,
-        setShowPageSeparators,
+
         showSearchPanel,
         setShowSearchPanel,
         showReplacePanel,

@@ -29,7 +29,7 @@ The application state revolves around the editor text and the parsed Fountain AS
 ## 4. Critical Architectural Constraints (WARNING TO AGENTS)
 - **NO WEB WORKERS FOR PARSING:** Do not use Web Workers (`new Worker()`) for parsing screenplays. Tauri's Linux WebKit2GTK webview natively blocks Module Web Workers loaded over the custom `tauri://localhost` protocol due to cross-origin security policies. Parsing must remain synchronous on the main thread.
 - **FORCED CHARACTERS:** The Fountain Parser (`FountainParser.ts`) must respect the `@` symbol for forced character names (e.g., `@sharanya`), regardless of whether the character name is in uppercase or lowercase.
-- **LINUX PACKAGING:** When building for Linux release, always build the frontend first (`npm run build`) before running the Tauri packager (`npx tauri build`), and package the binary using the custom `install.sh` and `uninstall.sh` shell scripts in the `portable/` directory.
+- **LINUX PACKAGING:** When building for Linux release, always build the frontend first (`npm run build`) before running the Tauri packager (`npx tauri build`), and package the binary using the custom `install.sh` and `uninstall.sh` shell scripts in the `tarball/` directory.
 
 ## 5. Fountain Syntax Parsing Rules (`FountainParser.ts`)
 The custom parser implements the Fountain specification alongside several ActOne-specific extensions. Agents MUST respect these parsing rules when reading or modifying parser logic:

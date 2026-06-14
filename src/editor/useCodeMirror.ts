@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { EditorState, Compartment, Transaction } from "@codemirror/state";
-import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip } from "@codemirror/view";
+import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip, placeholder } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { autocompletion } from "@codemirror/autocomplete";
 import { search } from "@codemirror/search";
@@ -70,6 +70,11 @@ const editorTheme = EditorView.theme({
   },
   "&.cm-focused": {
     outline: "none",
+  },
+  ".cm-placeholder": {
+    color: "var(--placeholder-color, rgba(128, 128, 128, 0.3))",
+    fontStyle: "italic",
+    fontWeight: 400,
   }
 });
 
@@ -254,7 +259,7 @@ const CATEGORIES = [
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings } = useFile();
-  const { typewriterMode, showPageNumbers, showPageSeparators } = useUI();
+  const { typewriterMode } = useUI();
   const { setActiveLineId, setSelectedSceneId, setEditorView } = useEditor();
 
   const parsedDocRef = useRef(parsedDoc);
@@ -380,6 +385,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         fountainKeymap,
         keymap.of([...defaultKeymap, ...historyKeymap]),
         editorTheme,
+        placeholder("Start writing here"),
         fountainHighlightField,
         smartQuotesExtension,
         autocompletion({ override: [fountainCompletionSource] }),
@@ -491,17 +497,30 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
   useEffect(() => {
     if (viewRef.current) {
-      viewRef.current.dispatch({
-        effects: updatePageBreakDisplayEffect.of({ showPageNumbers, showPageSeparators })
-      });
-    }
-  }, [showPageNumbers, showPageSeparators]);
+      const view = viewRef.current;
+      let prevCursorY: number | null = null;
+      try {
+        const coords = view.coordsAtPos(view.state.selection.main.head);
+        if (coords) prevCursorY = coords.top;
+      } catch (e) {}
 
-  useEffect(() => {
-    if (viewRef.current) {
-      viewRef.current.dispatch({
+      view.dispatch({
         effects: updateParsedDocEffect.of(parsedDoc)
       });
+
+      if (prevCursorY !== null) {
+        requestAnimationFrame(() => {
+          try {
+            const coords = view.coordsAtPos(view.state.selection.main.head);
+            if (coords) {
+              const diff = coords.top - (prevCursorY as number);
+              if (Math.abs(diff) > 0.5) {
+                view.scrollDOM.scrollTop += diff;
+              }
+            }
+          } catch (e) {}
+        });
+      }
     }
   }, [parsedDoc]);
 
