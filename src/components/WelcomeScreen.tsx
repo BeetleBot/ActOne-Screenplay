@@ -134,7 +134,7 @@ interface WelcomeScreenWindowProps {
 
 export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false }) => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, customThemes } = useTheme();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
   const [showHelp, setShowHelp] = useState(false);
   const [appVersion, setAppVersion] = useState("");
@@ -500,7 +500,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
               </Box>
-              {t.name.replace(/\s*\((Light|Dark)\)$/, '')}
+              {t.name}
             </MenuItem>
           ))}
           <Divider sx={{ my: 0.5 }} />
@@ -517,10 +517,31 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
               </Box>
-{t.name.replace(/\s*\((Light|Dark)\)$/, '')}
-              </MenuItem>
-            ))}
-          </Menu>
+              {t.name}
+            </MenuItem>
+          ))}
+          {customThemes.length > 0 && (
+            <>
+              <Divider sx={{ my: 0.5 }} />
+              <Typography variant="caption" sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Custom
+              </Typography>
+              {customThemes.map((t) => (
+                <MenuItem
+                  key={t.id}
+                  selected={theme === t.id}
+                  onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
+                  sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
+                >
+                  <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
+                  </Box>
+                  {t.name}
+                </MenuItem>
+              ))}
+            </>
+          )}
+        </Menu>
       </Box>
     </Box>
     </>

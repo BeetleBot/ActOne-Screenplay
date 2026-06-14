@@ -1,7 +1,7 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { PILL_RADIUS } from '../constants';
 
-export type ThemeId = 'light' | 'dark';
+export type ThemeId = 'light' | 'dark' | 'sepia' | 'charcoal';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -54,7 +54,7 @@ export function deriveAllColors(colors: {
 export const themes: ThemeConfig[] = [
   {
     id: "light",
-    name: "Light",
+    name: "Studio Light",
     desc: "Clean light theme",
     isDark: false,
     colors: deriveAllColors({
@@ -67,7 +67,7 @@ export const themes: ThemeConfig[] = [
   },
   {
     id: "dark",
-    name: "Dark",
+    name: "Midnight",
     desc: "Clean dark theme",
     isDark: true,
     colors: deriveAllColors({
@@ -76,6 +76,32 @@ export const themes: ThemeConfig[] = [
       accent: "#a0caff",
       sidebar: "#1a1c1e",
       button: "#a0caff",
+    }, true),
+  },
+  {
+    id: "sepia",
+    name: "Warm Sepia",
+    desc: "Comfortable cream colors for writing",
+    isDark: false,
+    colors: deriveAllColors({
+      editor: "#f4ecd8",
+      text: "#433422",
+      accent: "#b45309",
+      sidebar: "#eadcb9",
+      button: "#b45309",
+    }, false),
+  },
+  {
+    id: "charcoal",
+    name: "Matrix Charcoal",
+    desc: "Dark charcoal with neon green accents",
+    isDark: true,
+    colors: deriveAllColors({
+      editor: "#1a1a1a",
+      text: "#e0e0e0",
+      accent: "#10b981",
+      sidebar: "#262626",
+      button: "#10b981",
     }, true),
   }
 ];

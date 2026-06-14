@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useUI, useFile, useTheme } from "../../context";
+import { themes } from "../../theme";
 import { PILL_RADIUS } from "../../constants";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
@@ -211,11 +212,14 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
             variant="outlined"
             sx={{ fontSize: '0.8rem' }}
           >
-            <MenuItem value="light" sx={{ fontSize: '0.8rem' }}>Light</MenuItem>
-            <MenuItem value="dark" sx={{ fontSize: '0.8rem' }}>Dark</MenuItem>
+            {themes.map(t => (
+              <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.8rem' }}>
+                {t.name}
+              </MenuItem>
+            ))}
             {customThemes.map(t => (
               <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.8rem' }}>
-                {t.name} ({t.isDark ? 'Dark' : 'Light'})
+                {t.name} (Custom)
               </MenuItem>
             ))}
           </Select>
