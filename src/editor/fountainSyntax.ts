@@ -1,6 +1,6 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
-import { EditorView, Decoration, DecorationSet, WidgetType } from "@codemirror/view";
-import { LineType, FountainDocument } from "../parser";
+import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
+import { FountainDocument } from "../parser";
 
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
@@ -150,7 +150,7 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_METADATA]: "cm-fountain-metadata",
 };
 
-const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, displaySettings: PageBreakDisplaySettings = { showPageNumbers: true, showPageSeparators: false }): DecorationSet => {
+const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const doc = state.doc;
   const lineTypes = classifyLines(doc);
@@ -367,7 +367,7 @@ const defaultDisplaySettings: PageBreakDisplaySettings = { showPageNumbers: true
 export const fountainHighlightField = StateField.define<{ decorations: DecorationSet; doc: FountainDocument | null; displaySettings: PageBreakDisplaySettings }>({
   create(state) {
     return {
-      decorations: computeFountainDecorations(state, null, defaultDisplaySettings),
+      decorations: computeFountainDecorations(state, null),
       doc: null,
       displaySettings: defaultDisplaySettings,
     };
@@ -385,7 +385,7 @@ export const fountainHighlightField = StateField.define<{ decorations: Decoratio
     }
     if (tr.docChanged || doc !== value.doc || displaySettings !== value.displaySettings) {
       return {
-        decorations: computeFountainDecorations(tr.state, doc, displaySettings),
+        decorations: computeFountainDecorations(tr.state, doc),
         doc,
         displaySettings,
       };

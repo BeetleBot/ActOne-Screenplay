@@ -10,7 +10,6 @@ import { fountainCompletionSource } from "./autocomplete";
 import { 
   fountainHighlightField, 
   updateParsedDocEffect,
-  updatePageBreakDisplayEffect,
   classifyLines,
   needsBlankAfterEnter,
   LINE_CHARACTER,
