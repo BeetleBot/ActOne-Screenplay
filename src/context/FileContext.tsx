@@ -764,17 +764,27 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const path = await invoke<string | null>("save_file_dialog", { content: cleanFountainText });
         if (path) {
           const isActone = path.toLowerCase().endsWith(".actone");
+          let finalScripts = currentActive.scripts;
           if (isActone) {
-            const scripts = currentActive.scripts || [{
+            finalScripts = finalScripts || [{
               name: path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
               fileName: "document.fountain",
               content: cleanFountainText,
               savedContent: cleanFountainText,
             }];
-            await saveActoneFile(path, scripts, currentActive.parsedDoc.settings);
+            await saveActoneFile(path, finalScripts, currentActive.parsedDoc.settings);
           }
-          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: path, isDirty: false, savedText: rawText } : f));
+          setFiles(prev => prev.map(f => f.id === activeFileId ? {
+            ...f,
+            filePath: path,
+            isDirty: false,
+            savedText: rawText,
+            scripts: isActone ? finalScripts : undefined,
+            activeScriptIndex: isActone ? (f.activeScriptIndex ?? 0) : undefined,
+          } : f));
           setFilePath(path);
+          setScriptsState(isActone && finalScripts ? finalScripts : []);
+          setActiveScriptIndexState(isActone ? (currentActive.activeScriptIndex ?? 0) : 0);
           addToRecent(path);
           return path;
         }
@@ -798,13 +808,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (isActone) {
-          const scripts = currentActive.scripts || [{
+          const finalScripts = currentActive.scripts || [{
             name: finalName.replace(/\.actone$/i, ""),
             fileName: "document.fountain",
             content: cleanFountainText,
             savedContent: cleanFountainText,
           }];
-          const zipped = packActoneBundle(scripts, currentActive.parsedDoc.settings);
+          const zipped = packActoneBundle(finalScripts, currentActive.parsedDoc.settings);
           const blob = new Blob([zipped], { type: "application/zip" });
           const url = URL.createObjectURL(blob);
           const link = document.createElement("a");
@@ -812,6 +822,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link.download = finalName;
           link.click();
           URL.revokeObjectURL(url);
+          setFiles(prev => prev.map(f => f.id === activeFileId ? {
+            ...f,
+            filePath: finalName,
+            isDirty: false,
+            savedText: rawText,
+            scripts: finalScripts,
+            activeScriptIndex: f.activeScriptIndex ?? 0,
+          } : f));
+          setScriptsState(finalScripts);
+          setActiveScriptIndexState(currentActive.activeScriptIndex ?? 0);
         } else {
           const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
           const url = URL.createObjectURL(blob);
@@ -820,9 +840,18 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link.download = finalName;
           link.click();
           URL.revokeObjectURL(url);
+          setFiles(prev => prev.map(f => f.id === activeFileId ? {
+            ...f,
+            filePath: finalName,
+            isDirty: false,
+            savedText: rawText,
+            scripts: undefined,
+            activeScriptIndex: undefined,
+          } : f));
+          setScriptsState([]);
+          setActiveScriptIndexState(0);
         }
 
-        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, filePath: finalName, isDirty: false, savedText: rawText } : f));
         setFilePath(finalName);
         return finalName;
       }

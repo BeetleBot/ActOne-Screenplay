@@ -1,7 +1,7 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { PILL_RADIUS } from '../constants';
 
-export type ThemeId = 'light' | 'dark' | 'sepia' | 'charcoal';
+export type ThemeId = 'light' | 'dark' | 'sepia' | 'charcoal' | 'pitch-black' | 'pitch-white';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -103,6 +103,32 @@ export const themes: ThemeConfig[] = [
       sidebar: "#262626",
       button: "#10b981",
     }, true),
+  },
+  {
+    id: "pitch-black",
+    name: "Pitch Black",
+    desc: "Pure black background with grey tones",
+    isDark: true,
+    colors: deriveAllColors({
+      editor: "#000000",
+      text: "#deddda",
+      accent: "#9a9996",
+      sidebar: "#000000",
+      button: "#c3c3c3",
+    }, true),
+  },
+  {
+    id: "pitch-white",
+    name: "Pitch White",
+    desc: "Pure white e-ink style, only black and white",
+    isDark: false,
+    colors: deriveAllColors({
+      editor: "#ffffff",
+      text: "#000000",
+      accent: "#000000",
+      sidebar: "#ffffff",
+      button: "#000000",
+    }, false),
   }
 ];
 

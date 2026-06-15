@@ -29,16 +29,20 @@ const CORE_KEYS: { key: keyof CoreColors; label: string }[] = [
 ];
 
 const COLOR_PRESETS: { name: string; isDark: boolean; colors: CoreColors }[] = [
-  { name: "Noir",    isDark: true,  colors: { editor: "#111416", text: "#e2e2e6", accent: "#c8a05c", sidebar: "#1a1a1e", button: "#c8a05c" } },
-  { name: "Ocean",   isDark: true,  colors: { editor: "#0a1628", text: "#e0f0ff", accent: "#4ecdc4", sidebar: "#0d1b2a", button: "#4ecdc4" } },
-  { name: "Sunset",  isDark: false, colors: { editor: "#fffaf5", text: "#2d1b14", accent: "#e8634a", sidebar: "#fff5ee", button: "#e8634a" } },
-  { name: "Forest",  isDark: true,  colors: { editor: "#162416", text: "#d4e6d4", accent: "#7ec850", sidebar: "#1a2e1a", button: "#7ec850" } },
-  { name: "Lavender",isDark: false, colors: { editor: "#faf7ff", text: "#2a1a3e", accent: "#b088d6", sidebar: "#f5f0ff", button: "#b088d6" } },
+  { name: "Noir",      isDark: true,  colors: { editor: "#111416", text: "#e2e2e6", accent: "#c8a05c", sidebar: "#1a1a1e", button: "#c8a05c" } },
+  { name: "Ocean",     isDark: true,  colors: { editor: "#0a1628", text: "#e0f0ff", accent: "#4ecdc4", sidebar: "#0d1b2a", button: "#4ecdc4" } },
+  { name: "Sunset",    isDark: false, colors: { editor: "#fffaf5", text: "#2d1b14", accent: "#e8634a", sidebar: "#fff5ee", button: "#e8634a" } },
+  { name: "Forest",    isDark: true,  colors: { editor: "#162416", text: "#d4e6d4", accent: "#7ec850", sidebar: "#1a2e1a", button: "#7ec850" } },
+  { name: "Lavender",  isDark: false, colors: { editor: "#faf7ff", text: "#2a1a3e", accent: "#b088d6", sidebar: "#f5f0ff", button: "#b088d6" } },
 ];
 
 const BUILTIN_THEMES = [
   { id: "light", name: "Light", isDark: false },
   { id: "dark", name: "Dark", isDark: true },
+  { id: "sepia", name: "Warm Sepia", isDark: false },
+  { id: "charcoal", name: "Matrix Charcoal", isDark: true },
+  { id: "pitch-black", name: "Pitch Black", isDark: true },
+  { id: "pitch-white", name: "Pitch White", isDark: false },
 ];
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {

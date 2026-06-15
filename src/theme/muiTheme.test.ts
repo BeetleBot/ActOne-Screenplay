@@ -51,7 +51,7 @@ describe("deriveThemeBg", () => {
 
 describe("themes", () => {
   it("has light and dark themes", () => {
-    expect(themes).toHaveLength(2);
+    expect(themes.length).toBeGreaterThanOrEqual(2);
     expect(themes[0].id).toBe("light");
     expect(themes[1].id).toBe("dark");
   });

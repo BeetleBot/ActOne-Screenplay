@@ -21,6 +21,7 @@ describe("useKeyboardShortcuts", () => {
       openSettings: vi.fn(),
       toggleSearch: vi.fn(),
       cleanExtraSpace: vi.fn(),
+      toggleViewMode: vi.fn(),
     };
   }
 
@@ -141,5 +142,12 @@ describe("useKeyboardShortcuts", () => {
     renderHook(() => useKeyboardShortcuts(actions));
     fireKey("Enter", { ctrl: true, alt: true });
     expect(actions.toggleZenMode).toHaveBeenCalled();
+  });
+
+  it("calls toggleViewMode on Ctrl+Shift+P", () => {
+    const actions = createActions();
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("p", { ctrl: true, shift: true });
+    expect(actions.toggleViewMode).toHaveBeenCalled();
   });
 });

@@ -11,6 +11,7 @@ export interface PageBreakDisplaySettings {
 }
 
 export const updatePageBreakDisplayEffect = StateEffect.define<PageBreakDisplaySettings>();
+export const updateHideSyntaxEffect = StateEffect.define<boolean>();
 
 
 
@@ -150,10 +151,11 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_METADATA]: "cm-fountain-metadata",
 };
 
-const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null): DecorationSet => {
+const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const doc = state.doc;
   const lineTypes = classifyLines(doc);
+  const activeLineNum = state.selection ? state.doc.lineAt(state.selection.main.head).number : -1;
 
 
 
@@ -197,38 +199,46 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       }
     }
 
+    const isEditingThisLine = i === activeLineNum;
+    const syntaxDeco = (hideSyntaxEnabled && !isEditingThisLine)
+      ? Decoration.replace({})
+      : Decoration.mark({ class: "cm-fountain-syntax" });
+
     if (trimmed.startsWith("#") && type === LINE_SECTION) {
       const match = trimmed.match(/^#+/);
       if (match) {
-        lineDecos.push({ from: line.from + line.text.indexOf("#"), to: line.from + line.text.indexOf("#") + match[0].length, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+        const startIdx = line.text.indexOf("#");
+        const nextChar = line.text[startIdx + match[0].length];
+        const toPos = startIdx + match[0].length + (nextChar === " " ? 1 : 0);
+        lineDecos.push({ from: line.from + startIdx, to: line.from + toPos, dec: syntaxDeco });
       }
     }
     if (trimmed.startsWith("=") && type === LINE_SYNOPSE) {
-      lineDecos.push({ from: line.from + line.text.indexOf("="), to: line.from + line.text.indexOf("=") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.from + line.text.indexOf("="), to: line.from + line.text.indexOf("=") + 1, dec: syntaxDeco });
     }
 
     if (trimmed.startsWith(".") && !trimmed.startsWith("..") && type === LINE_HEADING) {
-      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf(".") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf(".") + 1, dec: syntaxDeco });
     }
     if (trimmed.startsWith("!!") && type === LINE_SHOT) {
-      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("!!") + 2, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("!!") + 2, dec: syntaxDeco });
     } else if (trimmed.startsWith("!") && type === LINE_ACTION) {
-      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("!") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("!") + 1, dec: syntaxDeco });
     }
     if (trimmed.startsWith("~") && type === LINE_LYRICS) {
-      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("~") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("~") + 1, dec: syntaxDeco });
     }
     if (trimmed.startsWith(">") && trimmed.endsWith("<") && type === LINE_CENTERED) {
-      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf(">") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
-      lineDecos.push({ from: line.to - 1, to: line.to, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf(">") + 1, dec: syntaxDeco });
+      lineDecos.push({ from: line.to - 1, to: line.to, dec: syntaxDeco });
     } else if (trimmed.startsWith(">") && !trimmed.endsWith("<") && type === LINE_TRANSITION) {
-      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf(">") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf(">") + 1, dec: syntaxDeco });
     }
     if (trimmed.endsWith("^") && type === LINE_DUAL_CHARACTER) {
-      lineDecos.push({ from: line.to - 1, to: line.to, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.to - 1, to: line.to, dec: syntaxDeco });
     }
     if (trimmed.startsWith("@") && type === LINE_CHARACTER) {
-      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("@") + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("@") + 1, dec: syntaxDeco });
     }
 
     let noteTagRegex = /\[\[(.*?)\]\]/g;
@@ -312,9 +322,9 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
     let m;
     while ((m = boldRegex.exec(text)) !== null) {
       let start = line.from + m.index;
-      lineDecos.push({ from: start, to: start + 2, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: start, to: start + 2, dec: syntaxDeco });
       lineDecos.push({ from: start + 2, to: start + m[0].length - 2, dec: Decoration.mark({ class: "cm-fountain-bold" }) });
-      lineDecos.push({ from: start + m[0].length - 2, to: start + m[0].length, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: start + m[0].length - 2, to: start + m[0].length, dec: syntaxDeco });
     }
 
     // Italic
@@ -323,18 +333,18 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       let offset = m[1].length;
       let start = line.from + m.index + offset;
       let matchLen = m[0].length - offset;
-      lineDecos.push({ from: start, to: start + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: start, to: start + 1, dec: syntaxDeco });
       lineDecos.push({ from: start + 1, to: start + matchLen - 1, dec: Decoration.mark({ class: "cm-fountain-italic" }) });
-      lineDecos.push({ from: start + matchLen - 1, to: start + matchLen, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: start + matchLen - 1, to: start + matchLen, dec: syntaxDeco });
     }
 
     // Underline
     let underlineRegex = /_([^_]+)_/g;
     while ((m = underlineRegex.exec(text)) !== null) {
       let start = line.from + m.index;
-      lineDecos.push({ from: start, to: start + 1, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: start, to: start + 1, dec: syntaxDeco });
       lineDecos.push({ from: start + 1, to: start + m[0].length - 1, dec: Decoration.mark({ class: "cm-fountain-underline" }) });
-      lineDecos.push({ from: start + m[0].length - 1, to: start + m[0].length, dec: Decoration.mark({ class: "cm-fountain-syntax" }) });
+      lineDecos.push({ from: start + m[0].length - 1, to: start + m[0].length, dec: syntaxDeco });
     }
 
     // Sort to satisfy RangeSetBuilder constraints
@@ -364,17 +374,26 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
 
 const defaultDisplaySettings: PageBreakDisplaySettings = { showPageNumbers: true, showPageSeparators: false };
 
-export const fountainHighlightField = StateField.define<{ decorations: DecorationSet; doc: FountainDocument | null; displaySettings: PageBreakDisplaySettings }>({
+export const fountainHighlightField = StateField.define<{
+  decorations: DecorationSet;
+  doc: FountainDocument | null;
+  displaySettings: PageBreakDisplaySettings;
+  hideSyntaxEnabled: boolean;
+}>({
   create(state) {
     return {
-      decorations: computeFountainDecorations(state, null),
+      decorations: computeFountainDecorations(state, null, false),
       doc: null,
       displaySettings: defaultDisplaySettings,
+      hideSyntaxEnabled: false,
     };
   },
   update(value, tr) {
     let doc = value.doc;
     let displaySettings = value.displaySettings;
+    let hideSyntaxEnabled = value.hideSyntaxEnabled;
+    let hideSyntaxChanged = false;
+
     for (let effect of tr.effects) {
       if (effect.is(updateParsedDocEffect)) {
         doc = effect.value;
@@ -382,12 +401,17 @@ export const fountainHighlightField = StateField.define<{ decorations: Decoratio
       if (effect.is(updatePageBreakDisplayEffect)) {
         displaySettings = effect.value;
       }
+      if (effect.is(updateHideSyntaxEffect)) {
+        hideSyntaxEnabled = effect.value;
+        hideSyntaxChanged = true;
+      }
     }
-    if (tr.docChanged || doc !== value.doc || displaySettings !== value.displaySettings) {
+    if (tr.docChanged || tr.selection || doc !== value.doc || displaySettings !== value.displaySettings || hideSyntaxChanged) {
       return {
-        decorations: computeFountainDecorations(tr.state, doc),
+        decorations: computeFountainDecorations(tr.state, doc, hideSyntaxEnabled),
         doc,
         displaySettings,
+        hideSyntaxEnabled,
       };
     }
     return value;

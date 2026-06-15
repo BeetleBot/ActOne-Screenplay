@@ -55,7 +55,6 @@ export const FountainEditor: React.FC = () => {
   const { fontFamily } = useUI();
   const { parsedDoc } = useFile();
   const { updateSettings, cleanExtraSpace } = useEditor();
-  const { setShowSearchPanel, setShowReplacePanel } = useUI();
   const parking = useParking();
   const { prompt: showPrompt } = useCustomModal();
   
@@ -250,9 +249,12 @@ export const FountainEditor: React.FC = () => {
     const { index } = currentSceneLine;
     const lineObj = view.state.doc.line(index + 1);
     const originalText = lineObj.text;
-    let newText = originalText.replace(/\s*\[\[color\s+\w+\]\]/gi, "");
+    const supportedColors = ["blue", "brown", "cyan", "green", "magenta", "orange", "pink", "purple", "red", "yellow"];
+    let newText = originalText.replace(/\s*\[\[color\s+[#\w]+\]\]/gi, "");
+    const colorRegex = new RegExp(`\\s*\\[\\[(${supportedColors.join("|")}|#[0-9a-fA-F]{6})\\]\\]`, "gi");
+    newText = newText.replace(colorRegex, "");
     if (colorName !== "none") {
-      newText = `${newText.trimEnd()} [[color ${colorName}]]`;
+      newText = `${newText.trimEnd()} [[${colorName}]]`;
     }
     view.dispatch({
       changes: { from: lineObj.from, to: lineObj.to, insert: newText }
@@ -319,9 +321,11 @@ export const FountainEditor: React.FC = () => {
   };
 
   const handleLookUpSelection = () => {
-    setShowSearchPanel(true);
-    setShowReplacePanel(false);
     handleClose();
+    if (!selectedText) return;
+    const query = encodeURIComponent(selectedText.trim());
+    const url = `https://www.google.com/search?q=${query}`;
+    import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url)).catch(() => window.open(url, "_blank"));
   };
 
   const handleEditorAction = (cmd: string) => {

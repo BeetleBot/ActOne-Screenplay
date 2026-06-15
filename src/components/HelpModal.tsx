@@ -139,18 +139,30 @@ const HELP_ITEMS: HelpItem[] = [
     category: "Writing & Formatting",
     keywords: ["outline section", "header", "#", "##", "act", "sequence"]
   },
-  // Writing Assistance
+  // Formatting Assistance
   {
-    name: "Autocomplete Suggestions",
-    desc: "ActOne autocompletes character names and scene locations automatically based on existing script items. Autocomplete suggestions can be toggled in Settings.",
+    name: "Inline Text Formatting",
+    desc: "Select text and press Ctrl+B to wrap it in bold ** markers, Ctrl+I for italic * markers, or Ctrl+U for underline _ markers. Press the same shortcut again to remove the formatting. Access the same options via the right-click context menu under Format.",
     category: "Writing & Formatting",
-    keywords: ["autocomplete", "suggestions", "character autocomplete", "location autocomplete", "settings"]
+    keywords: ["bold", "italic", "underline", "inline formatting", "ctrl+b", "ctrl+i", "ctrl+u", "**", "format"]
   },
   {
-    name: "Smart Quotes & Auto-Parentheses",
-    desc: "As you type, straight quotation marks (' and \") are converted to smart curly quotes (“ and ”). Typing an opening parenthesis '(' automatically inserts the matching closing one ')'.",
+    name: "Transform Case",
+    desc: "Right-click a selection and choose Transform Case to convert text to UPPERCASE, Title Case, or lowercase. Useful for quickly normalizing character names or scene headings.",
     category: "Writing & Formatting",
-    keywords: ["smart quotes", "auto parentheses", "curly quotes", "quotes", "parentheses"]
+    keywords: ["transform case", "uppercase", "title case", "lowercase", "case conversion", "context menu"]
+  },
+  {
+    name: "Tab-to-Cycle Line Prefixes",
+    desc: "Press Tab at the start of a line to cycle through Fountain prefixes: @ (forced character), . (forced scene heading), > (forced transition), and back to normal. Each press advances to the next prefix in the cycle.",
+    category: "Writing & Formatting",
+    keywords: ["tab cycle", "line prefix", "@", ".", ">", "forced character", "forced heading", "forced transition"]
+  },
+  {
+    name: "Smart Newline Handling",
+    desc: "When you press Enter after a scene heading, character name, parenthetical, dialogue, or transition, ActOne automatically inserts the correct blank line spacing required by Fountain syntax—no extra manual blank lines needed.",
+    category: "Writing & Formatting",
+    keywords: ["smart newline", "enter", "blank lines", "spacing", "auto spacing"]
   },
   {
     name: "Clean Screenplay Spaces",
@@ -164,18 +176,30 @@ const HELP_ITEMS: HelpItem[] = [
     category: "Writing & Formatting",
     keywords: ["search", "replace", "ctrl+f", "regex", "preserve case", "case sensitive"]
   },
+  {
+    name: "Look Up Word",
+    desc: "Right-click any selected word and choose Look Up to search it on Google in a new browser tab. Quick way to research terms, names, or definitions while writing.",
+    category: "Writing & Formatting",
+    keywords: ["look up", "google search", "search web", "right click", "context menu", "word lookup", "research"]
+  },
+  {
+    name: "Scene Numbers",
+    desc: "Automatically add sequential scene numbers to all scene headings via Command Palette > Renumber Scene Headings (appends #1#, #2#, etc.). Clear all scene numbers at once with Clear Scene Numbers. Scene numbers display in the editor, outline navigator, and planning board cards.",
+    category: "Writing & Formatting",
+    keywords: ["scene numbers", "renumber", "clear scene numbers", "#", "sequential numbering"]
+  },
+  {
+    name: "Import Structure Template",
+    desc: "Open Command Palette > Import Structure Template to browse and insert predefined screenplay structures (e.g., Three-Act Structure, Save the Cat, Hero's Journey). Each structure inserts section headers and beat descriptions as outline elements in your script.",
+    category: "Writing & Formatting",
+    keywords: ["structure template", "import structure", "three act", "save the cat", "hero's journey", "beat sheet", "outline template"]
+  },
   // File & Project
   {
     name: "ActOne Bundle Format (.actone)",
-    desc: "The .actone format is a specialized project bundle format unique to ActOne. Standard .fountain files only save the raw script text. The .actone bundle packages your screenplay text together with all your workspace notepad contents, character gender assignments, task checklists, marker categories, and writing sprint histories. Save as a .actone bundle to unlock these sidebar panels.",
+    desc: "The .actone format is a specialized project bundle format unique to ActOne. Standard .fountain files only save the raw script text. The .actone bundle packages your screenplay text together with all your workspace notepad contents, character gender assignments, task checklists, marker categories, and writing sprint histories. Save as a .actone bundle to unlock these sidebar panels. The format is extremely portable and human-friendly — rename any .actone file to .zip and extract it to find your screenplay as a plain .fountain file alongside all supporting data as readable JSON files.",
     category: "Files & Projects",
-    keywords: ["actone bundle", ".actone", "workspace tool persistence", "save as actone", "notepad contents", "gender assignments"]
-  },
-  {
-    name: "Automatic Saving",
-    desc: "ActOne can automatically save changes to your active files at customizable intervals (30s, 1m, 2m, 5m). Toggle autosave and set the interval in Settings.",
-    category: "Files & Projects",
-    keywords: ["automatic saving", "autosave", "settings", "interval"]
+    keywords: ["actone bundle", ".actone", "workspace tool persistence", "save as actone", "notepad contents", "gender assignments", "zip", "extract", "portable", "human friendly", "fountain"]
   },
   {
     name: "File Tabs Control",
@@ -189,18 +213,54 @@ const HELP_ITEMS: HelpItem[] = [
     category: "Files & Projects",
     keywords: ["scripts", "multi-script", "bundle", "add script", "rename script", "delete script", "export all", "script switcher", "fountain.json"]
   },
+  {
+    name: "Title Page Editor",
+    desc: "Open Command Palette > Edit Title Page to set your screenplay's title, author, contact info, draft date, and more. The title page is embedded in your Fountain file following standard Fountain title page format and appears in PDF exports.",
+    category: "Review & Export",
+    keywords: ["title page", "title editor", "cover page", "author", "contact", "draft date", "fountain title page"]
+  },
   // Workspace & Views
+  {
+    name: "Planning Board Overview",
+    desc: "Switch to Planning Board mode via the status bar button or Command Palette (Ctrl+Shift+P). The Planning Board visualizes your screenplay structure as a kanban-style board where Sections become columns, Subsections become grouped cards, and individual Scenes become draggable cards with optional color coding and synopsis notes.",
+    category: "Workspace & Views",
+    keywords: ["planning board", "kanban", "visual outline", "board view", "ctrl+shift+p", "scene cards", "storyboard"]
+  },
+  {
+    name: "Planning Board Sections & Hierarchy",
+    desc: "Sections (# headers) become columns on the board. Subsections (## headers) become grouped areas within columns. Scenes (INT./EXT. headings) become individual cards. Each card shows the scene title, scene number badge (if assigned), a synopsis editor, and a delete button. Add new Sections, Subsections, or Scenes using the + buttons.",
+    category: "Workspace & Views",
+    keywords: ["sections", "subsections", "scene cards", "add section", "add scene", "hierarchy", "#", "##"]
+  },
+  {
+    name: "Planning Board Drag & Drop",
+    desc: "Drag and drop scene cards between sections, subsections, or reorder them within the same group. A dashed placeholder appears at the drop target showing exactly where the scene will land. Sections and subsections are also draggable for full structural reordering. Auto-scroll makes it easy to drag across large boards.",
+    category: "Workspace & Views",
+    keywords: ["drag drop", "reorder scenes", "move scene", "auto scroll", "placeholder", "reorder sections"]
+  },
+  {
+    name: "Scene Highlighting (Color Coding)",
+    desc: "Right-click a scene heading line in the editor, choose Highlight Scene, and pick a color (Red, Orange, Yellow, Green, Blue, Purple, Pink) or Clear Highlight to remove it. Highlighted scenes show a colored left border in the editor and a colored card border in the Planning Board.",
+    category: "Workspace & Views",
+    keywords: ["scene highlight", "color coding", "scene color", "highlight scene", "colored border", "right click highlight"]
+  },
+  {
+    name: "Scene Drag-and-Drop Reordering",
+    desc: "In the Outline sidebar, drag and drop scenes to reorder them. A visual indicator shows the insertion point. The editor text updates automatically to reflect the new scene order.",
+    category: "Workspace & Views",
+    keywords: ["scene reorder", "drag drop outline", "reorder scenes", "outline reorder", "move scene up down"]
+  },
+  {
+    name: "Hide Fountain Markup",
+    desc: "Toggle 'Hide Fountain Markup' via Command Palette or the Quick Settings menu in the activity bar to hide Fountain syntax prefixes (., @, !, >, ~, #, =) from view. The active line still shows prefixes so you can edit. This gives a clean, manuscript-like reading view without cluttering the text.",
+    category: "Workspace & Views",
+    keywords: ["hide syntax", "hide fountain markup", "clean view", "reading view", "manuscript view", "hide prefixes", "fountain syntax"]
+  },
   {
     name: "Zen Mode (Distraction-Free)",
     desc: "Press Alt+Enter to toggle Zen Mode. This hides the header bar, tabs, sidebars, and the status bar, expanding your editor into a distraction-free fullscreen screen. Zoom the editor view from 50% to 200% with Ctrl+= and Ctrl+-.",
     category: "Workspace & Views",
     keywords: ["zen mode", "fullscreen", "distraction free", "alt+enter", "zoom", "ctrl+=", "ctrl+-"]
-  },
-  {
-    name: "Typewriter Mode",
-    desc: "Toggle Typewriter Mode in Settings to keep your active writing line vertically centered on the screen. The text scrolls around your line rather than your typing cursor moving down the page.",
-    category: "Workspace & Views",
-    keywords: ["typewriter mode", "scroll active line", "center cursor"]
   },
   {
     name: "Story Outline Navigator",
@@ -240,6 +300,18 @@ const HELP_ITEMS: HelpItem[] = [
     keywords: ["production breakdown", "tagging", "props", "cast", "vfx", "tag editor", "merge tags"]
   },
   {
+    name: "Text Parking",
+    desc: "The Parking sidebar tab works as a temporary clipboard for storing text snippets you want to reuse later. Right-click a selection in the editor and choose Park Selection to save it. Click a parked item to re-insert it at the cursor. Remove items individually or clear all. Parked text persists in .actone bundles.",
+    category: "Workspace & Views",
+    keywords: ["parking", "park selection", "clipboard", "text storage", "temporary storage", "reuse text", "parked items"]
+  },
+  {
+    name: "Editor Context Menu",
+    desc: "Right-click anywhere in the editor for quick access to: Cut/Copy/Paste, Tag (production breakdown categories), Highlight Scene (color), Drop Marker (inline color notes), Format (Bold/Italic/Underline/Clean Spaces), Transform Case (UPPER/Title/lower), Look Up Word (Google search), Create Task (adds to Tasks sidebar), and Park Selection (saves to Parking sidebar).",
+    category: "Workspace & Views",
+    keywords: ["context menu", "right click", "tag", "highlight", "marker", "format", "transform case", "look up", "create task", "park"]
+  },
+  {
     name: "Custom Color Markers & Notes",
     desc: "Insert inline notes directly inside double brackets, using the syntax: '[[marker color: description]]' (e.g. '[[marker red: Fix description]]'). Supports 11 colors (blue, brown, cyan, green, magenta, orange, pink, purple, red, yellow, none) and hex codes. View, search, and filter notes by color in the Markers sidebar.",
     category: "Review & Export",
@@ -258,6 +330,43 @@ const HELP_ITEMS: HelpItem[] = [
     category: "Workspace & Views",
     keywords: ["interface scale", "modal sizing", "responsive", "window size", "adaptive", "dialog size", "view"]
   },
+  // Settings & Configuration
+  {
+    name: "Theme Manager & Custom Themes",
+    desc: "Open Settings > Theme Manager to create, edit, and apply custom color themes. Choose from built-in Light/Dark themes or create your own by setting Editor, Text, Accent, Sidebar, and Button colors. Five preset themes (Noir, Ocean, Sunset, Forest, Lavender) provide quick starting points. Custom themes persist in local storage.",
+    category: "Settings & Configuration",
+    keywords: ["theme manager", "custom theme", "color theme", "noir", "ocean", "sunset", "forest", "lavender", "accent color", "dark mode", "light mode"]
+  },
+  {
+    name: "Font & Paper Settings",
+    desc: "In Settings, choose between Courier Prime (standard screenplay monospace) and Courier Prime Sans. Switch paper size between US Letter and A4 for PDF export formatting. Font and paper settings apply globally.",
+    category: "Settings & Configuration",
+    keywords: ["font", "courier prime", "courier prime sans", "paper size", "us letter", "a4", "settings"]
+  },
+  {
+    name: "Typewriter Mode",
+    desc: "Toggle Typewriter Mode in Settings to keep your active writing line vertically centered on the screen. The text scrolls around your line rather than your typing cursor moving down the page.",
+    category: "Settings & Configuration",
+    keywords: ["typewriter mode", "scroll active line", "center cursor"]
+  },
+  {
+    name: "Automatic Saving",
+    desc: "ActOne can automatically save changes to your active files at customizable intervals (30s, 1m, 2m, 5m). Toggle autosave and set the interval in Settings.",
+    category: "Settings & Configuration",
+    keywords: ["automatic saving", "autosave", "settings", "interval"]
+  },
+  {
+    name: "Smart Quotes & Auto-Parentheses",
+    desc: "As you type, straight quotation marks (' and \") are converted to smart curly quotes (\" and \"). Typing an opening parenthesis '(' automatically inserts the matching closing one ')'. Both features can be toggled in Settings.",
+    category: "Settings & Configuration",
+    keywords: ["smart quotes", "auto parentheses", "curly quotes", "quotes", "parentheses"]
+  },
+  {
+    name: "Autocomplete Suggestions",
+    desc: "ActOne autocompletes character names and scene locations automatically based on existing script items. Autocomplete suggestions can be toggled in Settings.",
+    category: "Settings & Configuration",
+    keywords: ["autocomplete", "suggestions", "character autocomplete", "location autocomplete", "settings"]
+  },
 ];
 
 const shortcuts = [
@@ -270,32 +379,35 @@ const shortcuts = [
       { keys: "Ctrl + Shift + S", action: "Save the current script as a new file" },
       { keys: "Alt + Q", action: "Close the active screenplay tab" },
       { keys: "Ctrl + P", action: "Open the export dialog (PDF or Fountain)" },
+      { keys: "Ctrl + Tab / Ctrl + PageDown", action: "Switch to the next document tab" },
+      { keys: "Ctrl + Shift + Tab / Ctrl + PageUp", action: "Switch to the previous document tab" },
     ],
   },
   {
-    group: "Writing & Formatting",
+    group: "Editing & Text Formatting",
     items: [
       { keys: "Ctrl + Z", action: "Undo last change" },
       { keys: "Ctrl + Y", action: "Redo last change" },
       { keys: "Ctrl + X", action: "Cut highlighted text" },
       { keys: "Ctrl + C", action: "Copy highlighted text" },
       { keys: "Ctrl + V", action: "Paste text from clipboard" },
+      { keys: "Ctrl + A", action: "Select all text" },
       { keys: "Ctrl + B", action: "Format selection as bold (**)" },
       { keys: "Ctrl + I", action: "Format selection as italic (*)" },
       { keys: "Ctrl + U", action: "Format selection as underline (_)" },
       { keys: "Shift + Alt + C", action: "Clean screenplay spaces and consolidate formatting" },
+      { keys: "Tab", action: "Cycle line prefixes (@ → . → > → normal)" },
     ],
   },
   {
-    group: "Workspace & Navigation",
+    group: "View & Navigation",
     items: [
       { keys: "Ctrl + F", action: "Toggle the search and replace panel" },
       { keys: "Ctrl + \\", action: "Toggle the sidebar visibility" },
       { keys: "Ctrl + K", action: "Open the Command Palette" },
       { keys: "Ctrl + ,", action: "Open the Settings dialog" },
+      { keys: "Ctrl + Shift + P", action: "Switch between Editor and Planning Board" },
       { keys: "Alt + Enter", action: "Toggle Zen Mode (fullscreen, distraction-free)" },
-      { keys: "Ctrl + Tab / Ctrl + PageDown", action: "Switch to the next document tab" },
-      { keys: "Ctrl + Shift + Tab / Ctrl + PageUp", action: "Switch to the previous document tab" },
       { keys: "Escape", action: "Move cursor focus back to the editor" },
       { keys: "Ctrl + =", action: "Zoom in on the text editor" },
       { keys: "Ctrl + -", action: "Zoom out on the text editor" },
@@ -385,6 +497,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             <Tab label="Files & Projects" sx={{ fontWeight: 600, fontSize: 13 }} />
             <Tab label="Workspace & Views" sx={{ fontWeight: 600, fontSize: 13 }} />
             <Tab label="Review & Export" sx={{ fontWeight: 600, fontSize: 13 }} />
+            <Tab label="Settings & Config" sx={{ fontWeight: 600, fontSize: 13 }} />
             <Tab label="Keyboard Shortcuts" sx={{ fontWeight: 600, fontSize: 13 }} />
           </Tabs>
         </Box>
@@ -507,6 +620,19 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             )}
 
             {activeTab === 4 && (
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 4, lineHeight: 1.7, fontSize: 13.5 }}>
+                  Customize ActOne to match your workflow. These settings control the writing environment, visual preferences, and smart assistance features.
+                </Typography>
+                <Section title="Settings & Configuration">
+                  {HELP_ITEMS.filter((item) => item.category === "Settings & Configuration").map((item) => (
+                    <Feature key={item.name} name={item.name} desc={item.desc} />
+                  ))}
+                </Section>
+              </Box>
+            )}
+
+            {activeTab === 5 && (
               <Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 4, lineHeight: 1.7, fontSize: 13.5 }}>
                   Control ActOne completely with these dedicated keyboard shortcuts designed to keep your focus on writing.

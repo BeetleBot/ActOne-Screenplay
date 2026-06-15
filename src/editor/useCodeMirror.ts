@@ -10,6 +10,7 @@ import { fountainCompletionSource } from "./autocomplete";
 import { 
   fountainHighlightField, 
   updateParsedDocEffect,
+  updateHideSyntaxEffect,
   classifyLines,
   needsBlankAfterEnter,
   LINE_CHARACTER,
@@ -258,7 +259,7 @@ const CATEGORIES = [
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings } = useFile();
-  const { typewriterMode } = useUI();
+  const { typewriterMode, hideSyntaxEnabled } = useUI();
   const { setActiveLineId, setSelectedSceneId, setEditorView } = useEditor();
 
   const parsedDocRef = useRef(parsedDoc);
@@ -310,6 +311,14 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       }
     }
   }, [typewriterMode]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: updateHideSyntaxEffect.of(hideSyntaxEnabled)
+      });
+    }
+  }, [hideSyntaxEnabled]);
 
   useEffect(() => {
     if (!containerRef.current) return;

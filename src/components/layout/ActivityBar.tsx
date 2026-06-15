@@ -39,6 +39,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
     paperSize, setPaperSize,
     typewriterMode, setTypewriterMode, zoomLevel, setZoomLevel,
     appScale, setAppScale,
+    hideSyntaxEnabled, setHideSyntaxEnabled,
   } = useUI();
   const { filePath } = useFile();
   const { theme, setTheme, customThemes } = useTheme();
@@ -198,6 +199,15 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
             </Box>
           </ListItemIcon>
           <ListItemText primary={<Typography variant="body2">Typewriter Mode</Typography>} />
+        </MenuItem>
+
+        <MenuItem onClick={() => setHideSyntaxEnabled(!hideSyntaxEnabled)} dense>
+          <ListItemIcon>
+            <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {hideSyntaxEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
+            </Box>
+          </ListItemIcon>
+          <ListItemText primary={<Typography variant="body2">Hide Fountain Markup</Typography>} />
         </MenuItem>
 
         <Divider sx={{ my: 0.5 }} />

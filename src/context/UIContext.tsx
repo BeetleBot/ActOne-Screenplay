@@ -34,6 +34,8 @@ export interface UIContextProps {
   setAutoSaveEnabled: (enabled: boolean) => void;
   autoSaveInterval: number;
   setAutoSaveInterval: (interval: number) => void;
+  hideSyntaxEnabled: boolean;
+  setHideSyntaxEnabled: (enabled: boolean) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -85,6 +87,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [autoSaveInterval, setAutoSaveIntervalState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL);
     return saved ? parseInt(saved, 10) : 60000;
+  });
+  const [hideSyntaxEnabled, setHideSyntaxEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED) === "true";
   });
 
   const [showSearchPanel, setShowSearchPanel] = useState<boolean>(false);
@@ -182,6 +187,11 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL, String(interval));
   };
 
+  const setHideSyntaxEnabled = (enabled: boolean) => {
+    setHideSyntaxEnabledState(enabled);
+    localStorage.setItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, String(enabled));
+  };
+
   return (
     <UIContext.Provider
       value={{
@@ -216,7 +226,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAutoSaveEnabled,
         autoSaveInterval,
         setAutoSaveInterval,
-
+        hideSyntaxEnabled,
+        setHideSyntaxEnabled,
       }}
     >
       {children}

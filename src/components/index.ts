@@ -8,6 +8,7 @@ export { MarkerView } from './MarkerView';
 export { ModalManager } from './ModalManager';
 export type { ModalManagerProps } from './ModalManager';
 export { OutlineView } from './OutlineView';
+export { PlanningBoard } from './PlanningBoard';
 export { ProductionBreakdownModal } from './ProductionBreakdownModal';
 export { ScriptsView } from './ScriptsView';
 export { SearchPanel } from './SearchPanel';
@@ -26,7 +27,7 @@ export {
   BarChartIcon, BookmarkIcon, BugReportIcon, CheckIcon,
   CheckCircleIcon, ChevronRightIcon, CloseIcon, ColorLensIcon,
   ContentCopyIcon, ContentCutIcon, DeleteIcon,
-  DescriptionIcon, DoneAllIcon, DownloadIcon, EmojiEventsIcon,
+  DescriptionIcon, DoneAllIcon, DownloadIcon, EditIcon, EmojiEventsIcon,
   FileDownloadIcon, FindReplaceIcon, FolderOpenIcon,
   FormatBoldIcon, FormatItalicIcon, FormatListBulletedIcon,
   FormatUnderlinedIcon, FullscreenIcon, HelpOutlinedIcon, HistoryIcon,

@@ -17,6 +17,7 @@ export const STORAGE_KEYS = {
   AUTO_SAVE_INTERVAL: "actone-auto-save-interval",
   ACTIVE_SPRINTS: "actone-active-sprints",
   SPRINT_HISTORY: "actone-sprint-history",
+  HIDE_SYNTAX_ENABLED: "actone-hide-syntax-enabled",
 } as const;
 
 export const PILL_RADIUS = "9999px";

@@ -90,6 +90,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     zoomLevel,
     setZoomLevel,
     appScale,
+    hideSyntaxEnabled,
+    setHideSyntaxEnabled,
+    mainView,
+    setMainView,
   } = useUI();
 
   const openUrl = (url: string) => {
@@ -206,6 +210,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-zoom-in", name: "Zoom In", category: "View", icon: <ZoomInIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+=", action: () => { setZoomLevel(zoomLevel + 10); onClose(); } },
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
     { id: "view-zoom-reset", name: `Reset Zoom (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
+    { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
+    { id: "view-mode-toggle", name: mainView === 'board' ? "Switch to Editor Mode" : "Switch to Planning Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+P", action: () => { setMainView(mainView === 'board' ? 'editor' : 'board'); onClose(); } },
 
     // Format
     { id: "format-breakdown", name: "Show Production Breakdown...", category: "Format", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBreakdownModal(); onClose(); } },

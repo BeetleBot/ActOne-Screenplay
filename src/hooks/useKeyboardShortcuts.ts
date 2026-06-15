@@ -18,6 +18,7 @@ interface ShortcutActions {
   openSettings?: () => void;
   toggleSearch: () => void;
   cleanExtraSpace: () => void;
+  toggleViewMode?: () => void;
   isDisabled?: boolean;
 }
 
@@ -133,6 +134,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "p" && !shift) {
         e.preventDefault();
         actionsRef.current.exportPDF();
+        return;
+      }
+
+      if (key === "p" && shift && !alt) {
+        e.preventDefault();
+        actionsRef.current.toggleViewMode?.();
         return;
       }
 

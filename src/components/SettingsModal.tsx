@@ -48,6 +48,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setAutoSaveEnabled,
     autoSaveInterval,
     setAutoSaveInterval,
+    hideSyntaxEnabled,
+    setHideSyntaxEnabled,
   } = useUI();
 
   const [activeTab, setActiveTab] = useState<number>(0);
@@ -215,6 +217,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 <Box sx={{ ml: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>Auto-match Parentheses</Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Automatically insert closing parenthesis</Typography>
+                </Box>
+              }
+            />
+
+            <FormControlLabel
+              control={<Switch checked={hideSyntaxEnabled} onChange={(e) => setHideSyntaxEnabled(e.target.checked)} />}
+              label={
+                <Box sx={{ ml: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Hide Fountain Markup</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Completely hide formatting syntax on inactive lines</Typography>
                 </Box>
               }
             />

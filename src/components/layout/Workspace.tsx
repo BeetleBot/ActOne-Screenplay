@@ -5,6 +5,7 @@ import Paper from "@mui/material/Paper";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { FountainEditor } from "../FountainEditor";
+import { PlanningBoard } from "../PlanningBoard";
 
 interface WorkspaceProps {
   isSidebarOpen: boolean;
@@ -16,7 +17,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode } = useUI();
+  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, mainView } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
@@ -95,12 +96,20 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       )}
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <SearchPanel />
-        <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
-          <Box className={`editor-paper paper-${paperSize}`} sx={{ zoom: zoomLevel / 100 }}>
-            <FountainEditor />
-          </Box>
-        </Box>
+
+
+        {mainView === 'board' ? (
+          <PlanningBoard />
+        ) : (
+          <>
+            <SearchPanel />
+            <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
+              <Box className={`editor-paper paper-${paperSize}`} sx={{ zoom: zoomLevel / 100 }}>
+                <FountainEditor />
+              </Box>
+            </Box>
+          </>
+        )}
       </Box>
     </Box>
   );
