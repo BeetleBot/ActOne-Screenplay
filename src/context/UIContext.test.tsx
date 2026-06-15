@@ -20,7 +20,7 @@ describe("UIContext", () => {
     expect(result.current.isZenMode).toBe(false);
     expect(result.current.typewriterMode).toBe(false);
     expect(result.current.activeTab).toBe("outline");
-    expect(result.current.mainView).toBe("editor");
+    expect(result.current.showTimeline).toBe(true);
     expect(result.current.zoomLevel).toBe(100);
     expect(result.current.appScale).toBe(100);
     expect(result.current.autocompleteEnabled).toBe(true);
@@ -31,6 +31,7 @@ describe("UIContext", () => {
     expect(result.current.autoSaveInterval).toBe(60000);
     expect(result.current.showSearchPanel).toBe(false);
     expect(result.current.showReplacePanel).toBe(false);
+    expect(result.current.timelineFilter).toEqual({ type: 'default', values: [] });
   });
 
   it("sets font family", () => {

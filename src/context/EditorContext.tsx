@@ -3,7 +3,7 @@ import { EditorView } from "@codemirror/view";
 import { useFile, type SettingsUpdater } from "./FileContext";
 import { ParsedLine, LineType, formatScreenplaySpaces } from "../parser";
 import { useUI } from "./UIContext";
-import { ScriptBlock, parseBlocks, serializeBlocks } from "../utils/boardUtils";
+
 
 export interface EditorContextProps {
   activeLineId: string | null;
@@ -19,8 +19,6 @@ export interface EditorContextProps {
   autoAddSceneNumbers: () => void;
   clearSceneNumbers: () => void;
   cleanExtraSpace: () => void;
-  updateAllBlocks: (newBlocks: ScriptBlock[]) => void;
-  updateBlockSynopsis: (blockId: string, synopsisText: string) => void;
 }
 
 const EditorContext = createContext<EditorContextProps | undefined>(undefined);
@@ -136,43 +134,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setRawText(formatted);
   };
 
-  const updateAllBlocks = (newBlocks: ScriptBlock[]) => {
-    const serialized = serializeBlocks(newBlocks);
-    setRawText(serialized);
-  };
-
-  const updateBlockSynopsis = (blockId: string, synopsisText: string) => {
-    const currentBlocks = parseBlocks(parsedDoc.lines);
-    const updatedBlocks = currentBlocks.map((block) => {
-      if (block.id === blockId) {
-        if (!synopsisText.trim()) {
-          const { synopsisLine, ...rest } = block;
-          return rest;
-        } else {
-          const textVal = `= ${synopsisText.trim()}`;
-          if (block.synopsisLine) {
-            return {
-              ...block,
-              synopsisLine: { ...block.synopsisLine, text: textVal }
-            };
-          } else {
-            return {
-              ...block,
-              synopsisLine: {
-                id: "line-syn-" + Math.random().toString(36).substring(2, 11),
-                text: textVal,
-                type: LineType.synopse,
-                isOutlineElement: false
-              }
-            };
-          }
-        }
-      }
-      return block;
-    });
-    updateAllBlocks(updatedBlocks);
-  };
-
   return (
     <EditorContext.Provider
       value={{
@@ -189,8 +150,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         autoAddSceneNumbers,
         clearSceneNumbers,
         cleanExtraSpace,
-        updateAllBlocks,
-        updateBlockSynopsis,
       }}
     >
       {children}

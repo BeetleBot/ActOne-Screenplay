@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseScreenplay, serializeScreenplay, LineType, formatScreenplaySpaces, paginateScreenplay, wrapText, getElementMaxWidth } from "./FountainParser";
+import { parseScreenplay, serializeScreenplay, LineType, formatScreenplaySpaces, paginateScreenplay, wrapText, getElementMaxWidth, parseSceneHeading } from "./FountainParser";
 
 describe("Fountain Screenplay Parser", () => {
   it("should parse headings and actions correctly", () => {
@@ -349,6 +349,73 @@ describe("Fountain Screenplay Parser", () => {
     it("supports color only without description", () => {
       const doc = parseScreenplay("X\n\nLine [[marker red]]");
       expect(doc.lines[2].marker?.color).toBe("red");
+    });
+  });
+
+  describe("parseSceneHeading", () => {
+    it("should extract INT setting, location and clean timeOfDay with modifiers", () => {
+      const result = parseSceneHeading("INT. TEST - DAY [LATER]");
+      expect(result.setting).toBe("INT");
+      expect(result.location).toBe("TEST");
+      expect(result.timeOfDay).toBe("DAY");
+      expect(result.sceneNumber).toBeNull();
+    });
+
+    it("should extract EXT setting, location and clean timeOfDay with parentheticals", () => {
+      const result = parseSceneHeading("EXT. COFFEE SHOP - NIGHT (LATER)");
+      expect(result.setting).toBe("EXT");
+      expect(result.location).toBe("COFFEE SHOP");
+      expect(result.timeOfDay).toBe("NIGHT");
+      expect(result.sceneNumber).toBeNull();
+    });
+
+    it("should extract settings, locations and timeOfDay without modifiers", () => {
+      const result = parseSceneHeading("INT. ROOM - DAY");
+      expect(result.setting).toBe("INT");
+      expect(result.location).toBe("ROOM");
+      expect(result.timeOfDay).toBe("DAY");
+    });
+
+    it("should not extract timeOfDay if there is no hyphen separator", () => {
+      const result = parseSceneHeading("INT. TEST");
+      expect(result.setting).toBe("INT");
+      expect(result.location).toBe("TEST");
+      expect(result.timeOfDay).toBeNull();
+    });
+
+    it("should extract scene number if present", () => {
+      const result = parseSceneHeading("EXT. STREET - NIGHT #1A#");
+      expect(result.setting).toBe("EXT");
+      expect(result.location).toBe("STREET");
+      expect(result.timeOfDay).toBe("NIGHT");
+      expect(result.sceneNumber).toBe("1A");
+    });
+
+    it("should handle forced headings starting with a dot", () => {
+      const result = parseSceneHeading(".EXT. FOREST - DAWN");
+      expect(result.setting).toBe("EXT");
+      expect(result.location).toBe("FOREST");
+      expect(result.timeOfDay).toBe("DAWN");
+    });
+
+    it("should extract slash-delimited settings like INT/EXT, EXT/INT, E/I, /EXT, /INT without leaving leftovers", () => {
+      const result1 = parseSceneHeading("INT/EXT. BLOOM HOUSE - DAY");
+      expect(result1.setting).toBe("INT/EXT");
+      expect(result1.location).toBe("BLOOM HOUSE");
+      expect(result1.timeOfDay).toBe("DAY");
+
+      const result2 = parseSceneHeading("EXT/INT. HOUSE - NIGHT");
+      expect(result2.setting).toBe("EXT/INT");
+      expect(result2.location).toBe("HOUSE");
+      expect(result2.timeOfDay).toBe("NIGHT");
+
+      const result3 = parseSceneHeading("E/I. COFFEE SHOP - DAY");
+      expect(result3.setting).toBe("E/I");
+      expect(result3.location).toBe("COFFEE SHOP");
+
+      const result4 = parseSceneHeading("/EXT. BLOOM HOUSE - NIGHT");
+      expect(result4.setting).toBe("/EXT");
+      expect(result4.location).toBe("BLOOM HOUSE");
     });
   });
 });

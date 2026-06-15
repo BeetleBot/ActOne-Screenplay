@@ -1,6 +1,7 @@
-export type { ParsedLine, FountainDocument } from './FountainParser';
+export type { ParsedLine, FountainDocument, ParsedSceneHeading } from './FountainParser';
 export {
   LineType,
   parseScreenplay, getElementMaxWidth, wrapText,
-  paginateScreenplay, serializeScreenplay, formatScreenplaySpaces
+  paginateScreenplay, serializeScreenplay, formatScreenplaySpaces,
+  parseSceneHeading
 } from './FountainParser';

@@ -54,6 +54,61 @@ function generateUUID(): string {
   return "line-" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+export interface ParsedSceneHeading {
+  setting: string | null;
+  location: string | null;
+  timeOfDay: string | null;
+  sceneNumber: string | null;
+}
+
+export function parseSceneHeading(headingText: string): ParsedSceneHeading {
+  let cleanText = headingText.trim();
+  if (cleanText.startsWith(".")) {
+    cleanText = cleanText.substring(1).trim();
+  }
+  cleanText = cleanText.replace(/\[\[.*?\]\]/g, "").trim();
+  
+  let sceneNumber: string | null = null;
+  const matchNum = cleanText.match(/#([^#]+)#$/);
+  if (matchNum) {
+    sceneNumber = matchNum[1].trim();
+    cleanText = cleanText.replace(/#[^#]+#$/, "").trim();
+  }
+
+  let setting: string | null = null;
+  const settingMatch = cleanText.match(/^(INT\/EXT|EXT\/INT|INT|EXT|I\/E|E\/I|\/EXT|\/INT)(?:\.|\s+|$)/i);
+  if (settingMatch) {
+    setting = settingMatch[1].toUpperCase();
+    cleanText = cleanText.substring(settingMatch[0].length).trim();
+  }
+
+  let location: string | null = null;
+  let timeOfDay: string | null = null;
+  const parts = cleanText.split(/\s+-\s+/);
+
+  if (parts.length > 1) {
+    const rawTime = parts[parts.length - 1].trim();
+    const cleanTime = rawTime.replace(/[\[\(].*?[\]\)]/g, "").trim().toUpperCase();
+    if (cleanTime) {
+      timeOfDay = cleanTime;
+    }
+    const locPart = parts.slice(0, parts.length - 1).join(" - ").trim().toUpperCase();
+    if (locPart) {
+      location = locPart;
+    }
+  } else if (cleanText) {
+    location = cleanText.trim().toUpperCase();
+  }
+
+  if (location) {
+    location = location
+      .replace(/^(INT\/EXT|EXT\/INT|INT|EXT|I\/E|E\/I|\/EXT|\/INT)\b\.?\s*/i, "")
+      .trim();
+  }
+
+  return { setting, location, timeOfDay, sceneNumber };
+}
+
 export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'letter'): FountainDocument {
   let screenplayText = rawText;
   let settings: any = {};

@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { STORAGE_KEYS } from "../constants";
 
+export type TimelineFilter = { type: 'default' | 'character' | 'location' | 'time' | 'setting'; values: string[] };
+
 export interface UIContextProps {
   fontFamily: 'courier-prime' | 'courier-prime-sans';
   paperSize: 'letter' | 'a4';
@@ -13,8 +15,8 @@ export interface UIContextProps {
   setTypewriterMode: (enabled: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  mainView: 'editor' | 'board';
-  setMainView: (view: 'editor' | 'board') => void;
+  showTimeline: boolean;
+  setShowTimeline: (show: boolean) => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
   appScale: number;
@@ -36,6 +38,8 @@ export interface UIContextProps {
   setAutoSaveInterval: (interval: number) => void;
   hideSyntaxEnabled: boolean;
   setHideSyntaxEnabled: (enabled: boolean) => void;
+  timelineFilter: TimelineFilter;
+  setTimelineFilter: (filter: TimelineFilter) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -57,7 +61,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return (localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) as any) || "a4";
   });
   const [activeTab, setActiveTab] = useState<string>("outline");
-  const [mainView, setMainView] = useState<'editor' | 'board'>("editor");
+  const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-show-timeline") !== "false";
+  });
+  const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>({ type: 'default', values: [] });
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ZOOM_LEVEL);
     const parsed = saved ? parseInt(saved, 10) : 100;
@@ -155,6 +162,11 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem(STORAGE_KEYS.TYPEWRITER_MODE, String(enabled));
   };
 
+  const setShowTimeline = (show: boolean) => {
+    setShowTimelineState(show);
+    localStorage.setItem("actone-show-timeline", String(show));
+  };
+
   const setPaperSize = (size: 'letter' | 'a4') => {
     setPaperSizeState(size);
     localStorage.setItem(STORAGE_KEYS.PAPER_SIZE, size);
@@ -205,8 +217,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setTypewriterMode,
         activeTab,
         setActiveTab,
-        mainView,
-        setMainView,
+        showTimeline,
+        setShowTimeline,
         zoomLevel,
         setZoomLevel,
         appScale,
@@ -228,6 +240,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAutoSaveInterval,
         hideSyntaxEnabled,
         setHideSyntaxEnabled,
+        timelineFilter,
+        setTimelineFilter,
       }}
     >
       {children}

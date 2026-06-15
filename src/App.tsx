@@ -33,8 +33,8 @@ function AppInner() {
     setIsZenMode,
     showSearchPanel,
     setShowSearchPanel,
-    mainView,
-    setMainView,
+    showTimeline,
+    setShowTimeline,
   } = useUI();
 
   useKeyboardShortcuts({
@@ -54,7 +54,7 @@ function AppInner() {
     openSettings: useCallback(() => setShowSettingsModal(true), []),
     toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
     cleanExtraSpace,
-    toggleViewMode: useCallback(() => setMainView(mainView === "board" ? "editor" : "board"), [mainView, setMainView]),
+    toggleTimeline: useCallback(() => setShowTimeline(!showTimeline), [showTimeline, setShowTimeline]),
     isDisabled: isModalActive,
   });
 

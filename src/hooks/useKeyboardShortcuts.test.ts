@@ -21,7 +21,7 @@ describe("useKeyboardShortcuts", () => {
       openSettings: vi.fn(),
       toggleSearch: vi.fn(),
       cleanExtraSpace: vi.fn(),
-      toggleViewMode: vi.fn(),
+      toggleTimeline: vi.fn(),
     };
   }
 
@@ -144,10 +144,10 @@ describe("useKeyboardShortcuts", () => {
     expect(actions.toggleZenMode).toHaveBeenCalled();
   });
 
-  it("calls toggleViewMode on Ctrl+Shift+P", () => {
+  it("calls toggleTimeline on Ctrl+Shift+P", () => {
     const actions = createActions();
     renderHook(() => useKeyboardShortcuts(actions));
     fireKey("p", { ctrl: true, shift: true });
-    expect(actions.toggleViewMode).toHaveBeenCalled();
+    expect(actions.toggleTimeline).toHaveBeenCalled();
   });
 });

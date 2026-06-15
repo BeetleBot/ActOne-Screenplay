@@ -8,7 +8,6 @@ export { MarkerView } from './MarkerView';
 export { ModalManager } from './ModalManager';
 export type { ModalManagerProps } from './ModalManager';
 export { OutlineView } from './OutlineView';
-export { PlanningBoard } from './PlanningBoard';
 export { ProductionBreakdownModal } from './ProductionBreakdownModal';
 export { ScriptsView } from './ScriptsView';
 export { SearchPanel } from './SearchPanel';
