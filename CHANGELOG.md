@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.11] - 2026-06-15
+
+### Added
+- **Dynamic Versioning**: Implemented automated version synchronization from `package.json` to Tauri configuration and Rust compiler config (`Cargo.toml`).
+
+### Changed
+- **Planning Board Drag & Drop**: Enabled seamless, fluid drag-and-drop animation and container layout shifting across different section columns.
+- **View Switcher Control**: Redesigned the Editor/Planning mode switcher in the status bar to operate as a direct toggle click instead of a dropdown menu.
+- **Branding Attribution**: Transitioned project metadata, author fields, and copyright elements to brand under "Lune Studio Works, Chennai".
+
+### Fixed
+- **Windows Drag & Drop**: Resolved exceptions under WebView2 (Windows WebView) that caused drag-and-drop actions to silently abort.
+- **Delete Button on Virtual Section**: Hidden the delete button on the unassigned/preamble section header to prevent deletion of the virtual column.
+
 ## [0.1.10] - 2026-06-15
 
 ### Added

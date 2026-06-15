@@ -35,16 +35,11 @@ describe("useNativeAppBehavior", () => {
     expect(preventDefaultSpy).toHaveBeenCalled();
   });
 
-  it("prevents default drag behavior", () => {
+  it("prevents browser navigation on window drop (external file drops)", () => {
     renderHook(() => useNativeAppBehavior());
-    const opts = { cancelable: true } as any;
-    const dragover = new MouseEvent("dragover", opts);
-    const drop = new MouseEvent("drop", opts);
-    const preventSpy1 = vi.spyOn(dragover, "preventDefault");
-    const preventSpy2 = vi.spyOn(drop, "preventDefault");
-    window.dispatchEvent(dragover);
+    const drop = new MouseEvent("drop", { cancelable: true } as any);
+    const preventSpy = vi.spyOn(drop, "preventDefault");
     window.dispatchEvent(drop);
-    expect(preventSpy1).toHaveBeenCalled();
-    expect(preventSpy2).toHaveBeenCalled();
+    expect(preventSpy).toHaveBeenCalled();
   });
 });

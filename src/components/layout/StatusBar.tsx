@@ -15,7 +15,6 @@ export const StatusBar: React.FC = () => {
   const { activeLineId } = useEditor();
   const { activeSprints } = useSprint();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [modeAnchorEl, setModeAnchorEl] = useState<null | HTMLElement>(null);
   const [tick, setTick] = useState(0);
 
   const currentSprint = activeSprints[activeFileId];
@@ -183,7 +182,7 @@ export const StatusBar: React.FC = () => {
         )}
 
         <Box 
-          onClick={(e) => setModeAnchorEl(e.currentTarget)}
+          onClick={() => setMainView(mainView === 'board' ? 'editor' : 'board')}
           sx={{ 
             display: "flex", 
             alignItems: "center", 
@@ -198,9 +197,6 @@ export const StatusBar: React.FC = () => {
           <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 600, color: "primary.main", textTransform: "uppercase" }}>
             {mainView === 'board' ? "Planning" : "Editor"}
           </Typography>
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.5 }}>
-            <path d="M7 14l5-5 5 5z" />
-          </svg>
         </Box>
       </Box>
 
@@ -232,21 +228,6 @@ export const StatusBar: React.FC = () => {
             )}
           </MenuItem>
         ))}
-      </Menu>
-
-      <Menu
-        anchorEl={modeAnchorEl}
-        open={Boolean(modeAnchorEl)}
-        onClose={() => setModeAnchorEl(null)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        transformOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <MenuItem onClick={() => { setMainView('editor'); setModeAnchorEl(null); }} selected={mainView === 'editor'}>
-          <ListItemText primary="Editor Mode" />
-        </MenuItem>
-        <MenuItem onClick={() => { setMainView('board'); setModeAnchorEl(null); }} selected={mainView === 'board'}>
-          <ListItemText primary="Planning Mode" />
-        </MenuItem>
       </Menu>
     </Box>
   );

@@ -686,7 +686,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             ActOne — Built for Screenwriters
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontSize: 9, opacity: 0.45 }}>
-            &copy; 2026 P Nirmal Kasi Rajan
+            &copy; 2026 Lune Studio Works, Chennai
           </Typography>
         </Box>
         <Button

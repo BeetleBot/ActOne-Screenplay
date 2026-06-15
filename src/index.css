@@ -23,11 +23,11 @@
   --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.08);
   --shadow-2xl: 0 16px 48px rgba(0, 0, 0, 0.10);
 
-  --duration-fast: 0.12s;
-  --duration-normal: 0.2s;
-  --duration-slow: 0.3s;
-  --easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  --easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 0.08s;
+  --duration-normal: 0.15s;
+  --duration-slow: 0.22s;
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --easing-smooth: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --bg-app: #ffffff;
   --bg-sidebar: #f8f9fa;
@@ -612,4 +612,76 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   font-family: var(--font-ui, sans-serif);
   border-radius: 4px;
   box-shadow: var(--shadow-md);
+}
+
+/* Fast yet Bouncy Transitions & Animations */
+button,
+.MuiButton-root,
+.MuiIconButton-root,
+.MuiCard-root,
+.MuiPaper-root,
+.sidebar-tab,
+.sidebar-item,
+.board-card,
+.cm-tooltip-autocomplete ul li {
+  transition: transform var(--duration-normal) var(--easing-spring), background-color var(--duration-fast) ease, box-shadow var(--duration-normal) var(--easing-spring), border-color var(--duration-fast) ease !important;
+}
+
+button:hover,
+.MuiButton-root:hover,
+.MuiIconButton-root:hover {
+  transform: scale(1.05);
+}
+
+button:active,
+.MuiButton-root:active,
+.MuiIconButton-root:active {
+  transform: scale(0.95);
+}
+
+.MuiCard-root:hover,
+.board-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--shadow-md) !important;
+}
+
+.MuiCard-root:active,
+.board-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.sidebar,
+.editor-container,
+.app-workspace,
+.MuiDrawer-paper {
+  transition: width var(--duration-slow) var(--easing-spring), transform var(--duration-slow) var(--easing-spring) !important;
+}
+
+.MuiDialog-paper,
+.modal-content,
+.search-panel-container,
+.MuiPopover-paper,
+.MuiMenu-paper {
+  animation: bouncy-zoom-in var(--duration-slow) var(--easing-spring) forwards;
+}
+
+@keyframes bouncy-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.93) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.MuiTab-root {
+  transition: all var(--duration-normal) var(--easing-spring) !important;
+}
+.MuiTab-root:hover {
+  transform: translateY(-1px);
+}
+.MuiTab-root:active {
+  transform: translateY(0);
 }

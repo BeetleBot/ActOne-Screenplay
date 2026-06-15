@@ -476,7 +476,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               userSelect: "none",
             }}
           >
-            &copy; 2026 ActOne
+            &copy; 2026 Lune Studio Works
           </Typography>
         </Box>
         <IconButton

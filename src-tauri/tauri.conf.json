@@ -1,6 +1,6 @@
 {
   "productName": "ActOne",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "identifier": "com.writeup.actone",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -26,17 +26,26 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "rpm", "nsis"],
+    "targets": [
+      "deb",
+      "rpm",
+      "nsis"
+    ],
     "fileAssociations": [
       {
         "name": "actone-bundle",
         "description": "ActOne Screenplay Bundle",
-        "ext": ["actone"]
+        "ext": [
+          "actone"
+        ]
       },
       {
         "name": "fountain-screenplay",
         "description": "Fountain Screenplay",
-        "ext": ["fountain", "txt"]
+        "ext": [
+          "fountain",
+          "txt"
+        ]
       }
     ],
     "icon": [

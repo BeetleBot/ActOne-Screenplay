@@ -78,10 +78,8 @@ export function useNativeAppBehavior() {
       }
     };
 
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault();
-    };
-
+    // Prevent browser navigation on external file drops (harmless for in-app DnD
+    // since child element drop handlers run before this bubbles up to window)
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
     };
@@ -89,14 +87,12 @@ export function useNativeAppBehavior() {
     document.addEventListener("contextmenu", handleContextMenu);
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("dragover", handleDragOver);
     window.addEventListener("drop", handleDrop);
 
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("dragover", handleDragOver);
       window.removeEventListener("drop", handleDrop);
     };
   }, []);
