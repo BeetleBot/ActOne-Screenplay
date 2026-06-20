@@ -33,8 +33,6 @@ function AppInner() {
     setIsZenMode,
     showSearchPanel,
     setShowSearchPanel,
-    showTimeline,
-    setShowTimeline,
   } = useUI();
 
   useKeyboardShortcuts({
@@ -54,7 +52,6 @@ function AppInner() {
     openSettings: useCallback(() => setShowSettingsModal(true), []),
     toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
     cleanExtraSpace,
-    toggleTimeline: useCallback(() => setShowTimeline(!showTimeline), [showTimeline, setShowTimeline]),
     isDisabled: isModalActive,
   });
 

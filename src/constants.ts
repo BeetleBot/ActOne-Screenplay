@@ -11,8 +11,6 @@ export const STORAGE_KEYS = {
   AUTOCOMPLETE_ENABLED: "actone-autocomplete-enabled",
   SMART_QUOTES_ENABLED: "actone-smart-quotes-enabled",
   MATCH_PARENTHESES_ENABLED: "actone-match-parentheses-enabled",
-  SHOW_PAGE_NUMBERS: "actone-show-page-numbers",
-  SHOW_PAGE_SEPARATORS: "actone-show-page-separators",
   AUTO_SAVE_ENABLED: "actone-auto-save-enabled",
   AUTO_SAVE_INTERVAL: "actone-auto-save-interval",
   ACTIVE_SPRINTS: "actone-active-sprints",

@@ -1,7 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Box from "@mui/material/Box";
 import { useUI } from "../../context";
-import { getTauriWindow } from "../../utils";
 import { HeaderBar } from "./HeaderBar";
 import { ActivityBar } from "./ActivityBar";
 import { Workspace } from "./Workspace";
@@ -22,13 +21,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 }) => {
   const { isZenMode, activeTab, setActiveTab } = useUI();
 
-  useEffect(() => {
-    const toggleFullscreen = async () => {
-      try { const win = getTauriWindow(); if (win) await win.setFullscreen(isZenMode); } catch (e) { console.error(e); }
-    };
-    toggleFullscreen();
-  }, [isZenMode]);
-
   return (
     <>
       {!isZenMode && <HeaderBar />}
@@ -48,7 +40,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <Workspace
             isSidebarOpen={isSidebarOpen}
-            setIsSidebarOpen={setIsSidebarOpen}
           />
           <StatusBar />
         </Box>

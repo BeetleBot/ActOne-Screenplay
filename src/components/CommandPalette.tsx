@@ -92,8 +92,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     appScale,
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
-    showTimeline,
-    setShowTimeline,
   } = useUI();
 
   const openUrl = (url: string) => {
@@ -211,8 +209,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
     { id: "view-zoom-reset", name: `Reset Zoom (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
     { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
-    { id: "view-timeline-toggle", name: showTimeline ? "Hide Timeline View" : "Show Timeline View", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+P", action: () => { setShowTimeline(!showTimeline); onClose(); } },
-
     // Format
     { id: "format-breakdown", name: "Show Production Breakdown...", category: "Format", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBreakdownModal(); onClose(); } },
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },

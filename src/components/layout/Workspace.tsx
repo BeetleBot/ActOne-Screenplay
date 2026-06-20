@@ -5,11 +5,9 @@ import Paper from "@mui/material/Paper";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { FountainEditor } from "../FountainEditor";
-import { TimelineView } from "../TimelineView";
 
 interface WorkspaceProps {
   isSidebarOpen: boolean;
-  setIsSidebarOpen: (open: boolean) => void;
 }
 
 export const Workspace: React.FC<WorkspaceProps> = ({
@@ -17,7 +15,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, showTimeline } = useUI();
+  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
@@ -102,7 +100,6 @@ export const Workspace: React.FC<WorkspaceProps> = ({
             <FountainEditor />
           </Box>
         </Box>
-        {showTimeline && !isZenMode && <TimelineView />}
       </Box>
     </Box>
   );
