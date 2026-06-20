@@ -194,7 +194,7 @@ export const StatusBar: React.FC = () => {
         flexShrink: 0 
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
         <Typography 
           onClick={handleScriptClick}
           variant="caption" 
@@ -204,13 +204,18 @@ export const StatusBar: React.FC = () => {
             cursor: isBundle && scripts.length > 0 ? "pointer" : "default",
             display: "flex",
             alignItems: "center",
-            '&:hover': isBundle && scripts.length > 0 ? { color: "primary.main" } : {}
+            '&:hover': isBundle && scripts.length > 0 ? { color: "primary.main" } : {},
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            maxWidth: { xs: 150, sm: 250, md: 350 },
+            flexShrink: 0
           }}
         >
-          File: <strong style={{ color: "var(--text-main)", marginLeft: 3 }}>
+          File: <strong style={{ color: "var(--text-main)", marginLeft: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {isBundle ? `${activeScriptName} (${fileName})` : fileName}
           </strong>
-          {isBundle && scripts.length > 0 && <span style={{ marginLeft: 4, fontSize: 8 }}>▼</span>}
+          {isBundle && scripts.length > 0 && <span style={{ marginLeft: 4, fontSize: 8, flexShrink: 0 }}>▼</span>}
         </Typography>
 
         {isBundle && scripts.length > 0 && (
@@ -238,7 +243,7 @@ export const StatusBar: React.FC = () => {
         )}
       </Box>
 
-      <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 3 }, flexShrink: 0 }}>
         {showTimeline && (
           <Box 
             onClick={handleTimelineMenuOpen}
@@ -250,10 +255,11 @@ export const StatusBar: React.FC = () => {
               py: 0.25,
               borderRadius: "4px",
               '&:hover': { bgcolor: 'action.hover' }, 
-              gap: 0.5 
+              gap: 0.5,
+              flexShrink: 0
             }}
           >
-            <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 600, color: "primary.main", textTransform: "uppercase" }}>
+            <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 600, color: "primary.main", textTransform: "uppercase", whiteSpace: "nowrap" }}>
               {getFilterLabel()}
             </Typography>
           </Box>
@@ -433,7 +439,9 @@ export const StatusBar: React.FC = () => {
               fontWeight: 500, 
               display: "flex", 
               alignItems: "center",
-              mr: 1
+              mr: 1,
+              whiteSpace: "nowrap",
+              flexShrink: 0
             }}
           >
             <span style={{ 
@@ -442,23 +450,24 @@ export const StatusBar: React.FC = () => {
               height: 6, 
               borderRadius: "50%", 
               backgroundColor: "var(--accent-color)", 
-              marginRight: 6
+              marginRight: 6,
+              flexShrink: 0
             }}></span>
             Sprint: <strong style={{ color: "var(--text-main)", marginLeft: 3 }}>{sprintDetails.timeStr} / {sprintDetails.total}m</strong>&nbsp;({sprintDetails.wpm} WPM)
           </Typography>
         )}
 
-        <>
-          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
+          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
             Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
           </Typography>
-          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
+          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
             Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
           </Typography>
-          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary" }}>
+          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap" }}>
             Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
           </Typography>
-        </>
+        </Box>
       </Box>
     </Box>
   );

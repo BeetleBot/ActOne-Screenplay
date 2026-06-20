@@ -263,6 +263,12 @@ const HELP_ITEMS: HelpItem[] = [
     keywords: ["zen mode", "fullscreen", "distraction free", "alt+enter", "zoom", "ctrl+=", "ctrl+-"]
   },
   {
+    name: "Story Outline Timeline",
+    desc: "The timeline at the bottom of the editor visualizes your screenplay's structure in three vertical tracks: Sections (Acts), Sub-sections (Sequences), and Scenes. Horizontal track lines represent duration, and scene boundaries are marked with vertical ticks. When segments are wide enough, scene numbers or section names are shown inline (otherwise visible via hover tooltips). Click or drag to scrub-seek through the script. Zoom the scale with Ctrl+Mouse Wheel, and Ctrl+Middle Click to reset.",
+    category: "Workspace & Views",
+    keywords: ["timeline", "zoom timeline", "scrub timeline", "outline timeline", "sections", "sub-sections", "scenes", "act", "sequence"]
+  },
+  {
     name: "Story Outline Navigator",
     desc: "Displays a hierarchical outline of your sections, scenes, and synopses in the sidebar. Click outline items to scroll the editor to that line. Features visibility filters (Sections, Scenes, Synopses), outline font sizing, collapsible headers, and full keyboard navigation (Arrows Up/Down to navigate, Arrows Left/Right to expand/collapse).",
     category: "Workspace & Views",
@@ -412,6 +418,10 @@ const shortcuts = [
       { keys: "Ctrl + =", action: "Zoom in on the text editor" },
       { keys: "Ctrl + -", action: "Zoom out on the text editor" },
       { keys: "Ctrl + 0", action: "Reset text editor zoom to 100%" },
+      { keys: "Ctrl + Mouse Wheel", action: "Zoom in/out on the timeline" },
+      { keys: "Ctrl + Middle Click", action: "Reset timeline zoom scale" },
+      { keys: "Mouse Wheel", action: "Scroll timeline horizontally (when zoomed)" },
+      { keys: "Drag / Click", action: "Scrub and navigate through script timeline" },
     ],
   },
 ];
