@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.12] - 2026-06-20
+
+### Changed
+- **Editor Font Rendering**: Applied `text-rendering: optimizeLegibility` and `font-weight: 450` to `.cm-editor` for smoother Courier Prime glyph rendering on Windows/Linux.
+
 ## [0.1.11] - 2026-06-15
 
 ### Added

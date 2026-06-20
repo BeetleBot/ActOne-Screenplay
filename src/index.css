@@ -157,8 +157,9 @@ body {
   background: transparent !important;
   caret-color: var(--editor-cursor) !important;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeSpeed;
+  text-rendering: optimizeLegibility;
   font-kerning: none;
+  font-weight: 450 !important;
 }
 
 .cm-editor.cm-focused {
