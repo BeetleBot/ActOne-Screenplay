@@ -50,6 +50,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setAutoSaveInterval,
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
+    lineFocusEnabled,
+    setLineFocusEnabled,
   } = useUI();
 
   const [activeTab, setActiveTab] = useState<number>(0);
@@ -227,6 +229,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 <Box sx={{ ml: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>Hide Fountain Markup</Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Completely hide formatting syntax on inactive lines</Typography>
+                </Box>
+              }
+            />
+
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mt: 1, mb: -1, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Focus Mode
+            </Typography>
+
+            <FormControlLabel
+              control={<Switch checked={lineFocusEnabled} onChange={(e) => setLineFocusEnabled(e.target.checked)} />}
+              label={
+                <Box sx={{ ml: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Focus Mode</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Fade out all lines except the active line</Typography>
                 </Box>
               }
             />

@@ -1,13 +1,12 @@
 import { useEffect, useRef } from "react";
-import { EditorState, Compartment, Transaction } from "@codemirror/state";
-import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip, placeholder } from "@codemirror/view";
+import { EditorState, Compartment, Transaction, RangeSetBuilder } from "@codemirror/state";
+import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip, placeholder, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { search } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
 import { LineType } from "../parser";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource } from "./inlineAutocomplete";
-import { emptyLineSelectionPlugin } from "./emptyLineSelection";
 import { 
   fountainHighlightField, 
   updateParsedDocEffect,
@@ -76,6 +75,19 @@ const editorTheme = EditorView.theme({
     color: "var(--placeholder-color, rgba(128, 128, 128, 0.3))",
     fontStyle: "italic",
     fontWeight: 400,
+  },
+  ".cm-gutters": {
+    backgroundColor: "transparent !important",
+    border: "none !important",
+    userSelect: "none",
+  },
+  ".cm-gutter": {
+    minWidth: "16px",
+  },
+  ".cm-gutterElement": {
+    display: "flex !important",
+    alignItems: "center !important",
+    justifyContent: "center !important",
   }
 });
 
@@ -239,6 +251,49 @@ const typewriterScrollPlugin = ViewPlugin.fromClass(
   }
 );
 
+const fadedLineDeco = Decoration.line({ class: "cm-faded-line" });
+const activeLineDeco = Decoration.line({ class: "cm-activeLine-always" });
+
+const activeLineAlwaysPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = this.getDecos(view);
+    }
+
+    update(_update: ViewUpdate) {
+      this.decorations = this.getDecos(_update.view);
+    }
+
+    getDecos(view: EditorView): DecorationSet {
+      const state = view.state;
+      const pos = state.selection.main.head;
+      const activeLine = state.doc.lineAt(pos);
+      const focusEnabled = localStorage.getItem("actone-line-focus-enabled") === "true";
+      const builder = new RangeSetBuilder<Decoration>();
+
+      if (focusEnabled) {
+        for (let i = 1; i <= state.doc.lines; i++) {
+          const line = state.doc.line(i);
+          if (line.number === activeLine.number) {
+            builder.add(line.from, line.from, activeLineDeco);
+          } else {
+            builder.add(line.from, line.from, fadedLineDeco);
+          }
+        }
+      } else {
+        builder.add(activeLine.from, activeLine.from, activeLineDeco);
+      }
+
+      return builder.finish();
+    }
+  },
+  {
+    decorations: (v) => v.decorations,
+  }
+);
+
 const CATEGORIES = [
   { key: "cast", label: "Cast (Character)" },
   { key: "prop", label: "Prop" },
@@ -260,7 +315,7 @@ const CATEGORIES = [
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings } = useFile();
-  const { typewriterMode, hideSyntaxEnabled } = useUI();
+  const { typewriterMode, hideSyntaxEnabled, lineFocusEnabled } = useUI();
   const { setActiveLineId, setSelectedSceneId, setEditorView } = useEditor();
 
   const parsedDocRef = useRef(parsedDoc);
@@ -320,6 +375,12 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       });
     }
   }, [hideSyntaxEnabled]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({});
+    }
+  }, [lineFocusEnabled]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -396,7 +457,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         history(),
         ghostSuggestionField,
         ghostSuggestionKeymap(),
-        emptyLineSelectionPlugin,
+        activeLineAlwaysPlugin,
         fountainKeymap,
         autocompletion({ override: [fountainCompletionSource], activateOnTyping: false }),
         keymap.of([...defaultKeymap, ...historyKeymap]),
@@ -406,6 +467,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         smartQuotesExtension,
         search(),
         prodTagsTooltip,
+
         typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {

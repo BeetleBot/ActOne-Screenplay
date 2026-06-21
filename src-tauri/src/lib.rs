@@ -246,6 +246,23 @@ fn export_fountain(content: String) -> Option<String> {
 }
 
 #[tauri::command]
+fn export_csv(content: String) -> Option<String> {
+    let file = rfd::FileDialog::new()
+        .add_filter("CSV Spreadsheet", &["csv"])
+        .save_file()?;
+
+    let mut file_path = file;
+    if file_path.extension().is_none() {
+        file_path.set_extension("csv");
+    }
+
+    if fs::write(&file_path, &content).is_ok() {
+        return Some(file_path.to_string_lossy().to_string());
+    }
+    None
+}
+
+#[tauri::command]
 fn export_fdx(fountain_text: String) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("Final Draft File", &["fdx"])
@@ -313,6 +330,7 @@ pub fn run() {
             save_pdf_dialog,
             export_pdf,
             export_fountain,
+            export_csv,
             export_fdx,
             pick_directory,
             generate_pdf_bytes,

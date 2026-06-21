@@ -34,6 +34,8 @@ export interface UIContextProps {
   setAutoSaveInterval: (interval: number) => void;
   hideSyntaxEnabled: boolean;
   setHideSyntaxEnabled: (enabled: boolean) => void;
+  lineFocusEnabled: boolean;
+  setLineFocusEnabled: (enabled: boolean) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -93,6 +95,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [showReplacePanel, setShowReplacePanel] = useState<boolean>(false);
 
   const [isZenMode, setIsZenModeState] = useState(false);
+
+  const [lineFocusEnabled, setLineFocusEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem("actone-line-focus-enabled") === "true";
+  });
 
   useEffect(() => {
     const applyZenMode = async () => {
@@ -189,6 +195,11 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, String(enabled));
   };
 
+  const setLineFocusEnabled = (enabled: boolean) => {
+    setLineFocusEnabledState(enabled);
+    localStorage.setItem("actone-line-focus-enabled", enabled ? "true" : "false");
+  };
+
   return (
     <UIContext.Provider
       value={{
@@ -223,6 +234,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAutoSaveInterval,
         hideSyntaxEnabled,
         setHideSyntaxEnabled,
+        lineFocusEnabled,
+        setLineFocusEnabled,
       }}
     >
       {children}

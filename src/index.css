@@ -196,12 +196,15 @@ body {
   background: rgba(var(--accent-rgb), 0.3) !important;
 }
 
-.cm-selected-empty-line {
-  background: rgba(var(--accent-rgb), 0.2);
+.cm-activeLine,
+.cm-focused .cm-activeLine {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
-.cm-focused .cm-selected-empty-line {
-  background: rgba(var(--accent-rgb), 0.3);
+.cm-faded-line {
+  opacity: 0.35;
+  transition: opacity 0.15s ease-in-out;
 }
 
 /* Fountain Element Layout & Indents */

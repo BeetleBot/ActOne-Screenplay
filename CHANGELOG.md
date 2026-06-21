@@ -8,6 +8,10 @@
 - **Empty Line Visual Selection**: Empty lines now properly show selection highlighting, making multi-line selections visually consistent.
 - **Gender Cycle Pill**: In the Characters sidebar, gender is now set by clicking a colored pill that cycles through Unknown → Male → Female → Non-Binary, replacing the previous dropdown menu.
 - **Tutorial Topics Reference**: Added `TUTORIAL_TOPICS.md` outlining planned video tutorial topics for future documentation.
+- **Production Breakdown Matrix**: Added a structured, scene-wise grid view that aggregates breakdown tags (Cast, Prop, VFX, etc.) under their corresponding scenes for easier reference.
+- **CSV Export**: Added support for exporting production breakdown data to a CSV sheet (using native save dialogs under Tauri, and data-URI downloads under web browsers).
+- **Automatic Cast Detection**: Scenes automatically include speaking characters in their Cast list columns by scanning for dialogue elements, saving manual tagging overhead.
+- **Focus Mode**: Added a Focus Mode toggle (Settings → Editor, or via Command Palette) that fades all non-active lines to reduce visual clutter and help writers concentrate on the current line.
 
 ### Changed
 - **Autocomplete Activation**: Autocomplete now activates only on explicit request (Ctrl+Space), avoiding unwanted popups while typing. Character and location completions appear inline as ghost text instead.
@@ -15,10 +19,19 @@
 - **Section Heading Detection**: `#` and `##` section headings are now properly distinguished from invalid `###` prefixes.
 - **Shot Line Blank Line Insertion**: Pressing Enter after a shot line now automatically inserts the required blank line, matching other Fountain element behavior.
 - **Context Menu Styling**: Backdrop blur removed from context menus for better consistency across platforms.
+- **Repository Optimization**: Streamlined `.gitignore` rules and removed untracked vendored folders (like `ref/`) from version control tracking.
+- **Build Chunk Optimization**: Configured Rollup code-splitting in `vite.config.ts` to separate Material UI and CodeMirror libraries into separate chunks, eliminating the 500 KB bundle size warning.
+- **Character Autocomplete Case Sensitivity**: Ghost text and dropdown character suggestions on action lines now only trigger when the typed text is all-uppercase (e.g., `SM` → `SMITH`) or forced with `@`. Lowercase input no longer produces unwanted character suggestions.
 
 ### Removed
 - **ACTONE Metadata Comments**: The embedded `/* ... ACTONE: ... END_ACTONE*/` comment block system has been removed. Settings are no longer stored inside `.fountain` files, simplifying the format. Existing files with these blocks will read cleanly — the blocks are simply ignored.
 - **Legacy Autocomplete Module**: Replaced the old `autocomplete.ts` system with the new inline ghost-text autocomplete (`inlineAutocomplete.ts`).
+- **Collapsible Headings (Folding)**: Removed the editor folding/collapse feature for section and scene headings.
+- **Active Line Highlight**: Removed the active line background highlight from the editor.
+
+### Fixed
+- **Test Environment & Dependencies**: Fixed the missing/corrupted package installation of `pretty-format` that caused the Vitest runner to fail rendering test suites.
+- **Inter UI Font Assets**: Restored the Inter UI font files (`woff2` formats) to `public/fonts/` to resolve asset-resolution warnings during compilation and ensure consistent UI styling.
 
 ## [0.1.12] - 2026-06-20
 

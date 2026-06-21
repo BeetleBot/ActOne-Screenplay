@@ -92,6 +92,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     appScale,
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
+    lineFocusEnabled,
+    setLineFocusEnabled,
   } = useUI();
 
   const openUrl = (url: string) => {
@@ -205,6 +207,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-tab-stats", name: "Switch Sidebar Tab: Statistics", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("stats"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <FullscreenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },
+    { id: "view-focus-mode", name: lineFocusEnabled ? "Disable Focus Mode" : "Enable Focus Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setLineFocusEnabled(!lineFocusEnabled); onClose(); } },
     { id: "view-zoom-in", name: "Zoom In", category: "View", icon: <ZoomInIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+=", action: () => { setZoomLevel(zoomLevel + 10); onClose(); } },
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
     { id: "view-zoom-reset", name: `Reset Zoom (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },

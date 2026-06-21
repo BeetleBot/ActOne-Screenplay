@@ -22,11 +22,28 @@ export default defineConfig(async () => ({
           protocol: "ws",
           host,
           port: 1421,
-        }
+          }
       : undefined,
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("@mui") || id.includes("@emotion")) {
+              return "vendor-mui";
+            }
+            if (id.includes("codemirror") || id.includes("@codemirror") || id.includes("@lezer")) {
+              return "vendor-codemirror";
+            }
+            return "vendor-core";
+          }
+        },
+      },
     },
   },
 }));

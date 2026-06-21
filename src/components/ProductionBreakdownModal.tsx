@@ -2,21 +2,25 @@ import React, { useState, useMemo } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { LineType } from "../parser";
 import { EditorView } from "@codemirror/view";
-import { SearchIcon, DeleteIcon, MergeTypeIcon, CloseIcon } from "./Icons";
+import { SearchIcon, CloseIcon, DownloadIcon } from "./Icons";
+import { invoke } from "@tauri-apps/api/core";
 
 import {
   Box,
   Typography,
   TextField,
   IconButton,
-  Select,
-  MenuItem,
-  FormControl,
   Dialog,
   DialogTitle,
   DialogContent,
-  ListItemButton,
-  ListItemText,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
 } from "@mui/material";
 
 const CATEGORIES = [
@@ -55,47 +59,27 @@ interface ProdDefinition {
   colorOverride: string | null;
 }
 
-interface Occurrence {
+interface SceneTag {
+  name: string;
   pos: number;
-  sceneName: string;
 }
 
-interface DefWithOccurrences extends ProdDefinition {
-  occurrences: Occurrence[];
-}
-
-interface CatWithDefs {
-  key: string;
-  label: string;
-  color: string;
-  definitions: DefWithOccurrences[];
+interface SceneInfo {
+  index: number;
+  sceneNumber: string;
+  name: string;
+  startPos: number;
+  endPos: number;
+  tags: { [categoryKey: string]: SceneTag[] };
 }
 
 export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> = ({ onClose }) => {
-  const { parsedDoc } = useFile();
-  const { updateSettings, editorView } = useEditor();
+  const { parsedDoc, filePath, activeScriptName } = useFile();
+  const { editorView } = useEditor();
   const { appScale } = useUI();
   const [searchQuery, setSearchQuery] = useState("");
-  const [mergeTargets, setMergeTargets] = useState<{ [defId: string]: string }>({});
 
   const prodTags = parsedDoc.settings?.productionTags || { tags: [], definitions: [] };
-
-  const getSceneForPosition = (pos: number) => {
-    const lines = parsedDoc.lines;
-    let accum = 0;
-    let lastHeading = "Introduction";
-    for (let i = 0; i < lines.length; i++) {
-      const lineLen = lines[i].text.length + 1;
-      if (lines[i].type === LineType.heading) {
-        lastHeading = lines[i].text.replace(/^[.#= ]+/, "").replace(/\[\[.*?\]\]/g, "").replace(/#[^#]+#\s*$/, "").trim();
-      }
-      if (accum <= pos && pos <= accum + lineLen) {
-        return lastHeading;
-      }
-      accum += lineLen;
-    }
-    return lastHeading;
-  };
 
   const scrollToPosition = (pos: number) => {
     if (editorView) {
@@ -107,90 +91,234 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
     }
   };
 
-  const handleDeleteDefinition = (defId: string) => {
-    updateSettings((prev) => {
-      const prevProd = prev.productionTags || { tags: [], definitions: [] };
-      const tags = (prevProd.tags || []).filter((t: ProdTag) => t.definitionId !== defId);
-      const definitions = (prevProd.definitions || []).filter((d: ProdDefinition) => d.id !== defId);
-      return {
-        ...prev,
-        productionTags: {
-          tags,
-          definitions
+  const { finalScenes, activeHeaders } = useMemo(() => {
+    const scenes: SceneInfo[] = [];
+    const lines = parsedDoc.lines;
+    const activeCategories = new Set<string>();
+
+    let accum = 0;
+    let currentScene: SceneInfo | null = null;
+    let headingCount = 0;
+
+    const preambleScene: SceneInfo = {
+      index: 0,
+      sceneNumber: "-",
+      name: "Preamble",
+      startPos: 0,
+      endPos: 0,
+      tags: {}
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineLen = line.text.length + 1;
+
+      if (line.type === LineType.heading) {
+        headingCount++;
+        const sceneName = line.text
+          .replace(/^[.#= ]+/, "")
+          .replace(/\[\[.*?\]\]/g, "")
+          .replace(/#[^#]+#\s*$/, "")
+          .trim();
+
+        if (currentScene) {
+          currentScene.endPos = accum;
+        } else {
+          preambleScene.endPos = accum;
         }
-      };
+
+        currentScene = {
+          index: headingCount,
+          sceneNumber: line.sceneNumber || String(headingCount),
+          name: sceneName,
+          startPos: accum,
+          endPos: accum + lineLen,
+          tags: {}
+        };
+        scenes.push(currentScene);
+      } else {
+        if (currentScene) {
+          currentScene.endPos = accum + lineLen;
+        } else {
+          preambleScene.endPos = accum + lineLen;
+        }
+
+        if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
+          const charName = line.text
+            .replace(/^@[ ]*/, "")
+            .replace(/[ ]*\^[ ]*$/, "")
+            .replace(/\s*\([^)]*\)/g, "")
+            .trim()
+            .toUpperCase();
+          if (charName) {
+            const targetScene = currentScene || preambleScene;
+            if (!targetScene.tags["cast"]) {
+              targetScene.tags["cast"] = [];
+            }
+            if (!targetScene.tags["cast"].some(t => t.name === charName)) {
+              targetScene.tags["cast"].push({ name: charName, pos: accum });
+            }
+            activeCategories.add("cast");
+          }
+        }
+      }
+      accum += lineLen;
+    }
+
+    const definitionsMap = new Map<string, ProdDefinition>();
+    (prodTags.definitions || []).forEach((def: ProdDefinition) => {
+      definitionsMap.set(def.id, def);
     });
+
+    (prodTags.tags || []).forEach((tag: ProdTag) => {
+      const [start] = tag.range || [0];
+      const def = definitionsMap.get(tag.definitionId || "");
+      if (!def) return;
+
+      const categoryKey = def.type;
+      const tagName = def.name;
+      activeCategories.add(categoryKey);
+
+      let targetScene: SceneInfo | null = null;
+      if (start >= preambleScene.startPos && start < preambleScene.endPos) {
+        targetScene = preambleScene;
+      } else {
+        for (const scene of scenes) {
+          if (start >= scene.startPos && start < scene.endPos) {
+            targetScene = scene;
+            break;
+          }
+        }
+      }
+
+      if (targetScene) {
+        if (!targetScene.tags[categoryKey]) {
+          targetScene.tags[categoryKey] = [];
+        }
+        if (!targetScene.tags[categoryKey].some(t => t.name === tagName)) {
+          targetScene.tags[categoryKey].push({ name: tagName, pos: start });
+        }
+      }
+    });
+
+    const finalScenesList: SceneInfo[] = [];
+    const hasPreambleTags = Object.keys(preambleScene.tags).length > 0;
+    if (hasPreambleTags) {
+      finalScenesList.push(preambleScene);
+    }
+    finalScenesList.push(...scenes);
+
+    const filteredScenes = finalScenesList.filter(scene => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      if (scene.name.toLowerCase().includes(query)) return true;
+      if (scene.sceneNumber.toLowerCase().includes(query)) return true;
+
+      return Object.values(scene.tags).some(tagsList =>
+        tagsList.some(tag => tag.name.toLowerCase().includes(query))
+      );
+    });
+
+    const headers = CATEGORIES.filter(cat => activeCategories.has(cat.key));
+
+    return {
+      finalScenes: filteredScenes,
+      activeHeaders: headers
+    };
+  }, [parsedDoc, prodTags, searchQuery]);
+
+  const escapeCSV = (val: string) => {
+    if (!val) return "";
+    const str = String(val);
+    if (str.includes(",") || str.includes("\"") || str.includes("\n") || str.includes("\r")) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
   };
 
-  const handleMerge = (sourceId: string) => {
-    const targetId = mergeTargets[sourceId];
-    if (!targetId) return;
+  const handleExportCSV = async () => {
+    const headers = ["Scene #", "Scene Title", ...activeHeaders.map(h => h.label)];
+    const csvRows = [headers.join(",")];
 
-    updateSettings((prev) => {
-      const prevProd = prev.productionTags || { tags: [], definitions: [] };
-      const tags = (prevProd.tags || []).map((t: ProdTag) => {
-        if (t.definitionId === sourceId) {
-          return { ...t, definitionId: targetId };
-        }
-        return t;
-      });
-      const definitions = (prevProd.definitions || []).filter((d: ProdDefinition) => d.id !== sourceId);
-      return {
-        ...prev,
-        productionTags: {
-          tags,
-          definitions
-        }
-      };
+    finalScenes.forEach(scene => {
+      const row = [
+        escapeCSV(scene.sceneNumber),
+        escapeCSV(scene.name),
+        ...activeHeaders.map(cat => {
+          const tags = scene.tags[cat.key] || [];
+          return escapeCSV(tags.map(t => t.name).join("; "));
+        })
+      ];
+      csvRows.push(row.join(","));
     });
 
-    setMergeTargets((prev) => {
-      const copy = { ...prev };
-      delete copy[sourceId];
-      return copy;
-    });
+    const csvContent = csvRows.join("\n");
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+    if (isTauri) {
+      try {
+        await invoke("export_csv", { content: csvContent });
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const baseName = filePath
+        ? filePath.split(/[/\\]/).pop()?.replace(/\.[^/.]+$/, "") || "production_breakdown"
+        : activeScriptName || "production_breakdown";
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${baseName}_breakdown.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
-
-  const categoriesWithDefinitions = useMemo(() => {
-    return CATEGORIES.map((cat) => {
-      const defs = (prodTags.definitions || []).filter((d: ProdDefinition) => {
-        if (d.type !== cat.key) return false;
-        if (searchQuery) {
-          return d.name.toLowerCase().includes(searchQuery.toLowerCase());
-        }
-        return true;
-      });
-
-      const defsWithOccurrences: DefWithOccurrences[] = defs.map((def: ProdDefinition) => {
-        const occurrences: Occurrence[] = (prodTags.tags || []).filter((t: ProdTag) => t.definitionId === def.id).map((t: ProdTag) => {
-          const [start] = t.range || [0];
-          return {
-            pos: start,
-            sceneName: getSceneForPosition(start)
-          };
-        });
-        return { ...def, occurrences };
-      });
-
-      return {
-        ...cat,
-        definitions: defsWithOccurrences
-      };
-    }).filter((cat: CatWithDefs) => cat.definitions.length > 0);
-  }, [prodTags, searchQuery, parsedDoc.lines]);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
-      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Production Breakdown</Typography>
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 18 }} />
-        </IconButton>
+    <Dialog
+      open
+      onClose={onClose}
+      fullWidth
+      maxWidth="lg"
+      disableScrollLock
+      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}
+    >
+      <DialogTitle sx={{ m: 0, px: 2.5, py: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 16 }}>Production Breakdown Matrix</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleExportCSV}
+            startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              borderRadius: "6px",
+              fontSize: "0.75rem",
+              textTransform: "none",
+              px: 1.5,
+              py: 0.5,
+              borderColor: "divider",
+              color: "text.primary",
+              '&:hover': {
+                borderColor: "text.secondary",
+                bgcolor: "action.hover",
+              }
+            }}
+          >
+            Export CSV
+          </Button>
+          <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", p: 0.5 }}>
+            <CloseIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: 2.5, py: 2, display: "flex", flexDirection: "column", gap: 1.5, maxHeight: `${(60 * 100) / appScale}vh` }}>
+      <DialogContent dividers sx={{ px: 2.5, py: 2, display: "flex", flexDirection: "column", gap: 2, maxHeight: "80vh" }}>
         <TextField
-          placeholder="Filter tags..."
+          placeholder="Search by scene name, number, or tag content..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           size="small"
@@ -199,116 +327,96 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
             input: {
               sx: {
                 bgcolor: "action.hover",
-                fontSize: "0.75rem",
+                fontSize: "0.8rem",
                 "& fieldset": { border: "none" },
                 "&:hover fieldset": { border: "none" },
                 "&.Mui-focused fieldset": { border: "none" },
                 borderRadius: "8px",
               },
               startAdornment: (
-                <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
-                  <SearchIcon sx={{ fontSize: 14 }} />
+                <Box sx={{ display: "flex", color: "text.secondary", mr: 1 }}>
+                  <SearchIcon sx={{ fontSize: 16 }} />
                 </Box>
               )
             }
           }}
         />
 
-        <Box sx={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 1.5, pr: 0.5 }}>
-          {categoriesWithDefinitions.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center", fontStyle: "italic", fontSize: "0.8rem" }}>
-              No production tags defined yet.
-            </Typography>
-          ) : (
-            categoriesWithDefinitions.map((cat) => (
-              <Box key={cat.key}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, pb: 0.5, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
-                  <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: cat.color }} />
-                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", fontSize: "0.7rem", color: "text.secondary", letterSpacing: "0.05em" }}>
-                    {cat.label}
-                  </Typography>
-                </Box>
-
-                {cat.definitions.map((def: DefWithOccurrences) => {
-                  const siblingDefs = cat.definitions.filter((d: DefWithOccurrences) => d.id !== def.id);
-                  const selectedTarget = mergeTargets[def.id] || "";
-                  return (
-                    <ListItemButton key={def.id} dense sx={{ borderRadius: "6px", mb: 0.25, px: 1 }}>
-                      <ListItemText
-                        primary={def.name}
-                        secondary={`${def.occurrences.length} instances`}
-                        slotProps={{
-                          primary: { sx: { fontWeight: 600, fontSize: "0.8rem" } },
-                          secondary: { sx: { fontSize: "0.7rem" } },
-                        }}
-                        sx={{ mr: 1 }}
-                      />
-                      {siblingDefs.length > 0 && (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mr: 0.5 }}>
-                          <FormControl size="small">
-                            <Select
-                              value={selectedTarget}
-                              onChange={(e) => setMergeTargets(prev => ({ ...prev, [def.id]: e.target.value }))}
-                              displayEmpty
-                              sx={{ height: 22, fontSize: "0.7rem", borderRadius: "4px", minWidth: 80 }}
-                            >
-                              <MenuItem value="" sx={{ fontSize: "0.7rem" }}>Merge...</MenuItem>
-                              {siblingDefs.map((sibling: DefWithOccurrences) => (
-                                <MenuItem key={sibling.id} value={sibling.id} sx={{ fontSize: "0.7rem" }}>
-                                  {sibling.name}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleMerge(def.id)}
-                            disabled={!selectedTarget}
-                            sx={{ p: 0.25, color: "primary.main" }}
-                          >
-                            <MergeTypeIcon sx={{ fontSize: 13 }} />
-                          </IconButton>
-                        </Box>
-                      )}
-                      <IconButton size="small" onClick={() => handleDeleteDefinition(def.id)} sx={{ p: 0.25, color: "text.secondary" }}>
-                        <DeleteIcon sx={{ fontSize: 13 }} />
-                      </IconButton>
-                    </ListItemButton>
-                  );
-                })}
-
-                {cat.definitions.some((def: DefWithOccurrences) => def.occurrences.length > 0) && (
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, alignItems: "center", mt: 0.25, ml: 1 }}>
-                    {cat.definitions.map((def: DefWithOccurrences) =>
-                      def.occurrences.map((occ: Occurrence, oIdx: number) => (
-                        <Typography
-                          key={`${def.id}-${oIdx}`}
-                          variant="caption"
-                          onClick={() => {
-                            scrollToPosition(occ.pos);
-                            onClose();
-                          }}
-                          sx={{
-                            fontSize: "0.65rem",
-                            bgcolor: "action.hover",
-                            px: 0.5,
-                            py: 0.1,
-                            borderRadius: "3px",
-                            cursor: "pointer",
-                            color: "text.primary",
-                            "&:hover": { color: "var(--button-color)", bgcolor: "action.selected" }
-                          }}
-                        >
-                          {occ.sceneName}
-                        </Typography>
-                      ))
-                    )}
-                  </Box>
-                )}
-              </Box>
-            ))
-          )}
-        </Box>
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "8px", overflow: "auto", flex: 1 }}>
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700, bgcolor: "background.paper", width: 80 }}>Scene #</TableCell>
+                <TableCell sx={{ fontWeight: 700, bgcolor: "background.paper", minWidth: 200 }}>Scene Title</TableCell>
+                {activeHeaders.map(header => (
+                  <TableCell key={header.key} sx={{ fontWeight: 700, bgcolor: "background.paper", minWidth: 150 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: header.color }} />
+                      {header.label}
+                    </Box>
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {finalScenes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={activeHeaders.length + 2} align="center" sx={{ py: 4, color: "text.secondary", fontStyle: "italic" }}>
+                    No matching scenes or tags found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                finalScenes.map((scene) => (
+                  <TableRow key={scene.index === 0 ? "preamble" : scene.name} hover>
+                    <TableCell sx={{ fontSize: "0.8rem", color: "text.secondary", fontWeight: 600 }}>
+                      {scene.sceneNumber}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: "0.8rem", fontWeight: 600 }}>
+                      {scene.name}
+                    </TableCell>
+                    {activeHeaders.map(header => {
+                      const tags = scene.tags[header.key] || [];
+                      return (
+                        <TableCell key={header.key}>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                            {tags.map((tag, tIdx) => (
+                              <Box
+                                key={`${tag.name}-${tIdx}`}
+                                onClick={() => {
+                                  scrollToPosition(tag.pos);
+                                  onClose();
+                                }}
+                                sx={{
+                                  fontSize: "0.7rem",
+                                  bgcolor: `${header.color}15`,
+                                  color: header.color,
+                                  border: `1px solid ${header.color}30`,
+                                  px: 1,
+                                  py: 0.25,
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                  fontWeight: 500,
+                                  transition: "all 0.15s",
+                                  '&:hover': {
+                                    bgcolor: `${header.color}25`,
+                                    transform: "translateY(-1px)",
+                                    boxShadow: `0 2px 4px ${header.color}15`
+                                  }
+                                }}
+                              >
+                                {tag.name}
+                              </Box>
+                            ))}
+                          </Box>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </DialogContent>
     </Dialog>
   );
