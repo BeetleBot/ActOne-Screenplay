@@ -19,7 +19,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
   onOpenBreakdownModal, onOpenThemeManagerModal,
 }) => {
-  const { isZenMode, activeTab, setActiveTab } = useUI();
+  const { activeTab, setActiveTab } = useUI();
 
   return (
     <>

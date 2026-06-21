@@ -126,7 +126,7 @@ export const StatusBar: React.FC = () => {
               display: "flex", 
               alignItems: "center", 
               gap: 0.5,
-              opacity: saveStatus === "idle" ? 0 : 1,
+              opacity: 1,
               transition: "opacity 0.2s ease-in-out",
               flexShrink: 0
             }}
