@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.13] - Unreleased
+## [0.1.13] - 2026-06-21
 
 ### Added
 - **Inline Ghost Text Autocomplete**: Character names, locations, and parenthetical extensions (V.O., O.S., etc.) now appear as faint ghost text inline as you type. Press Tab to accept; press ArrowDown to open the full dropdown for alternative matches.
