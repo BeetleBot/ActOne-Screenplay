@@ -6,7 +6,7 @@ import {
   LINE_HEADING, LINE_ACTION, LINE_CHARACTER, LINE_PARENTHETICAL,
   LINE_DIALOGUE, LINE_DUAL_CHARACTER, LINE_DUAL_PARENTHETICAL,
   LINE_DUAL_DIALOGUE, LINE_TRANSITION, LINE_LYRICS, LINE_PAGEBREAK,
-  LINE_CENTERED, LINE_SHOT, LINE_METADATA,
+  LINE_CENTERED, LINE_SHOT,
 } from "./fountainSyntax";
 
 function classify(text: string): number[] {
@@ -102,14 +102,6 @@ describe("classifyLines", () => {
     expect(types[1]).toBe(LINE_TITLE_PAGE);
     expect(types[2]).toBe(LINE_EMPTY);
     expect(types[3]).toBe(LINE_HEADING);
-  });
-
-  it("classifies metadata block", () => {
-    const text = "EXT. HOUSE - DAY\n\n/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:\n{\"key\": \"val\"}\nEND_ACTONE*/";
-    const types = classify(text);
-    expect(types[2]).toBe(LINE_METADATA);
-    expect(types[3]).toBe(LINE_METADATA);
-    expect(types[4]).toBe(LINE_METADATA);
   });
 
   it("classifies empty lines", () => {

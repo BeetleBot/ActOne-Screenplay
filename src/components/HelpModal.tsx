@@ -693,7 +693,7 @@ const articles: HelpArticle[] = [
         </Typography>
         <ul style={{ margin: 0, paddingLeft: "20px", lineHeight: 2 }}>
           <li><Typography variant="body2" color="text.secondary">Filter characters by name with the search field</Typography></li>
-          <li><Typography variant="body2" color="text.secondary">Assign gender (Male, Female, Non-Binary, Unknown) — shown as colored dots</Typography></li>
+          <li><Typography variant="body2" color="text.secondary">Set gender by clicking the colored pill — cycles through Unknown → Male → Female → Non-Binary</Typography></li>
           <li><Typography variant="body2" color="text.secondary">Keyboard navigation: <KBD>↑</KBD><KBD>↓</KBD> to move between characters</Typography></li>
           <li><Typography variant="body2" color="text.secondary">Gender data feeds into the Statistics dashboard's "Dialogue by Gender" chart</Typography></li>
         </ul>

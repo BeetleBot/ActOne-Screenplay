@@ -2,11 +2,12 @@ import { useEffect, useRef } from "react";
 import { EditorState, Compartment, Transaction } from "@codemirror/state";
 import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip, placeholder } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { autocompletion } from "@codemirror/autocomplete";
 import { search } from "@codemirror/search";
+import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
 import { LineType } from "../parser";
-import { fountainCompletionSource } from "./autocomplete";
+import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource } from "./inlineAutocomplete";
+import { emptyLineSelectionPlugin } from "./emptyLineSelection";
 import { 
   fountainHighlightField, 
   updateParsedDocEffect,
@@ -332,9 +333,12 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         key: "(",
         run: (view) => {
           if (fountainParenHandler(view)) return true;
+          const { head } = view.state.selection.main;
+          const line = view.state.doc.lineAt(head);
+          const types = classifyLines(view.state.doc);
+          const lineType = types[line.number - 1];
+          if (lineType === LINE_CHARACTER || lineType === LINE_DUAL_CHARACTER) return false;
           if (localStorage.getItem("actone-match-parentheses-enabled") === "true") {
-            const { head } = view.state.selection.main;
-            const line = view.state.doc.lineAt(head);
             const after = line.text.substring(head - line.from);
             if (after.startsWith(")")) {
               view.dispatch({ selection: { anchor: head + 1 } });
@@ -390,13 +394,16 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       doc: rawText,
       extensions: [
         history(),
+        ghostSuggestionField,
+        ghostSuggestionKeymap(),
+        emptyLineSelectionPlugin,
         fountainKeymap,
+        autocompletion({ override: [fountainCompletionSource], activateOnTyping: false }),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         editorTheme,
         placeholder("Start writing here"),
         fountainHighlightField,
         smartQuotesExtension,
-        autocompletion({ override: [fountainCompletionSource] }),
         search(),
         prodTagsTooltip,
         typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),

@@ -1,0 +1,86 @@
+[package]
+name = "fount"
+version = "0.11.0"
+authors = [
+    "BeetleBot"
+]
+edition = "2024"
+description = "A terminal-based Fountain screenplay editor"
+license = "GPL-3.0-only"
+homepage = "https://github.com/BeetleBot/FountTUI"
+repository = "https://github.com/BeetleBot/FountTUI"
+
+[package.metadata]
+readme = "README.md"
+keywords = ["screenwriting", "fountain", "tui", "editor"]
+categories = ["text-editors", "command-line-utilities"]
+
+[lib]
+name = "fount"
+path = "src/lib.rs"
+
+[[bin]]
+name = "fount"
+path = "src/main.rs"
+
+[dependencies]
+arboard = { version = "3", features = ["wayland-data-control"] }
+ratatui = "0.29.0"
+crossterm = { version = "0.28.1", features = ["event-stream"] }
+unicode-width = "0.2.0"
+regex = "1.12"
+clap = { version = "4.5", features = ["derive"] }
+directories = "6.0.0"
+supports-color = "3.0.2"
+krilla = "0.7.0"
+bitflags = "2"
+unicode-properties = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+native-dialog = "0.7"
+open = "5.3.5"
+tui-piechart = "0.1.0"
+
+[build-dependencies]
+winres = "0.1"
+
+[dev-dependencies]
+criterion = "0.5.1"
+proptest = "1.5.0"
+tempfile = "3"
+
+[[bench]]
+name = "engine_bench"
+harness = false
+
+[profile.release]
+opt-level = 3                # Optimize for speed
+lto = true                   # Enable full Link Time Optimization
+codegen-units = 1            # Reduce parallel codegen units for better optimization
+panic = "abort"              # Reduce binary size by avoiding stack unwinding
+strip = true                 # Automatically strip symbols from the binary
+
+[package.metadata.deb]
+maintainer = "BeetleBot"
+copyright = "2024 BeetleBot"
+license-file = ["LICENSE", "0"]
+depends = "$auto"
+section = "utils"
+priority = "optional"
+assets = [
+    ["target/release/fount", "/usr/bin/fount", "755"],
+    ["README.md", "/usr/share/doc/fount/README.md", "644"],
+    ["assets/linux/fount.desktop", "/usr/share/applications/fount.desktop", "644"],
+    ["assets/icons/FountTUI_Logo.png", "/usr/share/icons/hicolor/256x256/apps/fount.png", "644"],
+]
+
+[package.metadata.generate-rpm]
+summary = "A terminal-based Fountain screenplay editor"
+description = "A terminal-based Fountain screenplay editor (fork of coignard/lottie)"
+license = "GPL-3.0-only"
+assets = [
+    { source = "target/release/fount", dest = "/usr/bin/fount", mode = "755" },
+    { source = "assets/linux/fount.desktop", dest = "/usr/share/applications/fount.desktop", mode = "644" },
+    { source = "assets/icons/FountTUI_Logo.png", dest = "/usr/share/icons/hicolor/256x256/apps/fount.png", mode = "644" },
+]

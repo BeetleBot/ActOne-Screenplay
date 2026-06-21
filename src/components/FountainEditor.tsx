@@ -61,6 +61,7 @@ export const FountainEditor: React.FC = () => {
   const viewRef = useCodeMirror(containerRef);
 
   const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number } | null>(null);
+  const [quickTagMode, setQuickTagMode] = useState(false);
   const [subMenuAnchorEl, setSubMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [formatMenuAnchorEl, setFormatMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [highlightMenuAnchorEl, setHighlightMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -118,6 +119,7 @@ export const FountainEditor: React.FC = () => {
 
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
+    setQuickTagMode(event.ctrlKey || event.metaKey);
     setContextMenu({
       mouseX: event.clientX,
       mouseY: event.clientY,
@@ -126,6 +128,7 @@ export const FountainEditor: React.FC = () => {
 
   const handleClose = () => {
     setContextMenu(null);
+    setQuickTagMode(false);
     setSubMenuAnchorEl(null);
     setFormatMenuAnchorEl(null);
     setHighlightMenuAnchorEl(null);
@@ -376,6 +379,41 @@ export const FountainEditor: React.FC = () => {
         }
         {...menuProps}
       >
+        {quickTagMode ? (
+          <>
+            {hasSelection && (
+              <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
+                  QUICK TAG
+                </Typography>
+              </Box>
+            )}
+            {CATEGORIES.map((cat) => (
+              <MenuItem key={cat.key} onClick={() => handleTagClick(cat.key)} disabled={!hasSelection}>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: cat.color,
+                    mr: 1.5,
+                    flexShrink: 0
+                  }}
+                />
+                <ListItemText primary={cat.label} />
+              </MenuItem>
+            ))}
+            {existingTag && (
+              <MenuItem onClick={handleRemoveTag}>
+                <ListItemIcon>
+                  <DeleteIcon fontSize="small" color="error" />
+                </ListItemIcon>
+                <ListItemText primary="Remove Tag" secondary={existingTag.def?.name || "unnamed"} />
+              </MenuItem>
+            )}
+          </>
+        ) : (
+          <>
         {hasSelection && (
           <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
@@ -554,6 +592,8 @@ export const FountainEditor: React.FC = () => {
           </ListItemIcon>
           <ListItemText primary="Park Selection" />
         </MenuItem>
+        </>
+        )}
       </Menu>
 
       <Menu

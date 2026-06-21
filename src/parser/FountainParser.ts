@@ -113,25 +113,6 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
   let screenplayText = rawText;
   let settings: any = {};
 
-  let beatStartIdx = rawText.indexOf("/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:");
-  let beatEndIdx = rawText.indexOf("END_ACTONE*/");
-  let startStr = "/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:";
-
-  if (beatStartIdx === -1) {
-    beatStartIdx = rawText.indexOf("/* If you're seeing this, you can remove the following stuff - ACTONE:");
-    startStr = "/* If you're seeing this, you can remove the following stuff - ACTONE:";
-  }
-
-  if (beatStartIdx !== -1 && beatEndIdx !== -1 && beatEndIdx > beatStartIdx) {
-    const jsonStr = rawText.substring(beatStartIdx + startStr.length, beatEndIdx).trim();
-    try {
-      settings = JSON.parse(jsonStr);
-    } catch (e) {
-      settings = {};
-    }
-    screenplayText = rawText.substring(0, beatStartIdx).trimEnd();
-  }
-
   const rawLines = screenplayText.split(/\r?\n/);
   const parsedLines: ParsedLine[] = [];
   let inTitlePage = true;
@@ -198,7 +179,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
 
     if (trimmed === "") {
       type = LineType.empty;
-    } else if (trimmed.startsWith("#")) {
+    } else if (/^#{1,2}(?:[^#]|$)/.test(trimmed)) {
       type = LineType.section;
       isOutlineElement = true;
       let depth = 0;
@@ -528,13 +509,8 @@ export function paginateScreenplay(lines: ParsedLine[], paperSize: 'letter' | 'a
   return pageBreaks;
 }
 
-export function serializeScreenplay(lines: ParsedLine[], settings: any): string {
-  const text = lines.map(l => l.text).join("\n");
-  if (!settings || Object.keys(settings).length === 0) {
-    return text;
-  }
-  const settingsBlock = `\n\n/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:\n${JSON.stringify(settings, null, 2)}\nEND_ACTONE*/`;
-  return text + settingsBlock;
+export function serializeScreenplay(lines: ParsedLine[]): string {
+  return lines.map(l => l.text).join("\n");
 }
 
 export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a4' = 'letter'): string {
@@ -760,10 +736,5 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
     prevElement = curr;
   }
 
-  const finalParsedLines = resultLines.map(text => ({
-    text,
-    type: LineType.empty
-  } as ParsedLine));
-
-  return serializeScreenplay(finalParsedLines, doc.settings);
+  return resultLines.join("\n");
 }

@@ -1,0 +1,22 @@
+FOUNT FOR WINDOWS (PORTABLE)
+
+Thank you for downloading the portable version of Fount, the minimal Fountain screenplay editor.
+
+QUICK START:
+1. Extract the contents of this ZIP file to a folder of your choice.
+2. Open PowerShell or Command Prompt in that folder.
+3. Run: .\fount.exe
+
+Optional: To open a specific script:
+.\fount.exe my_screenplay.fountain
+
+CONFIGURATION:
+Fount stores settings in: %APPDATA%\Fount\config\fount.conf
+
+SHORTCUTS:
+- Ctrl+S: Save
+- Ctrl+T: Scene Tree
+- Ctrl+L: Character Sidebar
+- / (slash): Open command bar (type /help)
+
+For more information, visit: https://github.com/BeetleBot/Fount

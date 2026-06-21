@@ -21,38 +21,10 @@ describe("Fountain Screenplay Parser", () => {
     expect(doc.lines[1].type).toBe(LineType.dialogue);
   });
 
-  it("should parse settings comment block at the end", () => {
-    const text = "EXT. HOUSE - DAY\n\n/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:\n{\n  \"revisionModeEnabled\": true\n}\nEND_ACTONE*/";
-    const doc = parseScreenplay(text);
-    expect(doc.settings.revisionModeEnabled).toBe(true);
-    expect(doc.screenplayText).toBe("EXT. HOUSE - DAY");
-  });
-
-  it("should parse settings with alternative comment format", () => {
-    const text = "Content.\n\n/* If you're seeing this, you can remove the following stuff - ACTONE:\n{\"key\":\"val\"}\nEND_ACTONE*/";
-    const doc = parseScreenplay(text);
-    expect(doc.settings.key).toBe("val");
-  });
-
-  it("should handle empty settings gracefully", () => {
-    const text = "Content.\n\n/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:\ninvalid json\nEND_ACTONE*/";
-    const doc = parseScreenplay(text);
-    expect(doc.settings).toEqual({});
-  });
-
-  it("should serialize screenplay lines without settings", () => {
+  it("should serialize screenplay lines", () => {
     const doc = parseScreenplay("EXT. HOUSE - DAY\n\nINT. ROOM - NIGHT");
-    const serialized = serializeScreenplay(doc.lines, {});
+    const serialized = serializeScreenplay(doc.lines);
     expect(serialized).toBe("EXT. HOUSE - DAY\n\nINT. ROOM - NIGHT");
-  });
-
-  it("should serialize with settings block", () => {
-    const doc = parseScreenplay("EXT. HOUSE - DAY");
-    const serialized = serializeScreenplay(doc.lines, { revisionModeEnabled: true });
-    expect(serialized).toContain("EXT. HOUSE - DAY");
-    expect(serialized).toContain("/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:");
-    expect(serialized).toContain("revisionModeEnabled");
-    expect(serialized).toContain("END_ACTONE*/");
   });
 
   describe("wrapText", () => {

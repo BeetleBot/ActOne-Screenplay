@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Fount
+GenericName=Screenplay Editor
+Comment=Terminal-based Fountain screenplay editor
+Exec=fount %f
+Icon=fount
+Terminal=true
+Categories=Office;WordProcessor;TextEditor;
+Keywords=screenplay;fountain;script;writing;
+MimeType=text/vnd.fountain;
+StartupNotify=false

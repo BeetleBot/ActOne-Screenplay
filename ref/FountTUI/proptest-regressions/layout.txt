@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 6daf5791fbf8cbf88e1483adb588711fb7708674b1e2ec783b6a725fe20cf333 # shrinks to s = "", lt = PageBreak
+cc d5c2af986c6810b61bad3273a55af54da962e676afcdf4705ec460c46919fe05 # shrinks to s = "\u{e000}\u{b}\0 ", lt = PageBreak
+cc c6ba1254dce3b469d68f7860be401f1269c1e8f962a1e568d2d705b9983fca6a # shrinks to s = "¡aa0⺀0𠀀 A\u{d64}Ͱ   0A𠀀aa0\u{e000}ःa A¡", lt = Parenthetical
+cc 805efe646ac3a6273f235708f719eb9a55f359c77ec17441d44439e0a1c3515f # shrinks to s = "a", lt = SceneHeading

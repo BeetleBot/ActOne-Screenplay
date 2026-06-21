@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.1.13] - Unreleased
+
+### Added
+- **Inline Ghost Text Autocomplete**: Character names, locations, and parenthetical extensions (V.O., O.S., etc.) now appear as faint ghost text inline as you type. Press Tab to accept; press ArrowDown to open the full dropdown for alternative matches.
+- **Quick Tag Mode**: Hold Ctrl while right-clicking a selection to open a streamlined context menu showing only category/tag options — no more wading through the full menu for production breakdown tagging.
+- **Empty Line Visual Selection**: Empty lines now properly show selection highlighting, making multi-line selections visually consistent.
+- **Gender Cycle Pill**: In the Characters sidebar, gender is now set by clicking a colored pill that cycles through Unknown → Male → Female → Non-Binary, replacing the previous dropdown menu.
+- **Tutorial Topics Reference**: Added `TUTORIAL_TOPICS.md` outlining planned video tutorial topics for future documentation.
+
+### Changed
+- **Autocomplete Activation**: Autocomplete now activates only on explicit request (Ctrl+Space), avoiding unwanted popups while typing. Character and location completions appear inline as ghost text instead.
+- **Autocomplete Dropdown Styling**: Cleaner, tighter dropdown with reduced padding, no backdrop blur, and rounded item corners.
+- **Section Heading Detection**: `#` and `##` section headings are now properly distinguished from invalid `###` prefixes.
+- **Shot Line Blank Line Insertion**: Pressing Enter after a shot line now automatically inserts the required blank line, matching other Fountain element behavior.
+- **Context Menu Styling**: Backdrop blur removed from context menus for better consistency across platforms.
+
+### Removed
+- **ACTONE Metadata Comments**: The embedded `/* ... ACTONE: ... END_ACTONE*/` comment block system has been removed. Settings are no longer stored inside `.fountain` files, simplifying the format. Existing files with these blocks will read cleanly — the blocks are simply ignored.
+- **Legacy Autocomplete Module**: Replaced the old `autocomplete.ts` system with the new inline ghost-text autocomplete (`inlineAutocomplete.ts`).
+
 ## [0.1.12] - 2026-06-20
 
 ### Changed

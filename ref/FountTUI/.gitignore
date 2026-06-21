@@ -1,0 +1,7 @@
+/target/
+Cargo.lock
+**/*.save
+**/*.save.*
+.DS_Store
+Cargo.lock
+.agents/

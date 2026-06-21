@@ -32,8 +32,6 @@ export const LINE_LYRICS = 19;
 export const LINE_PAGEBREAK = 20;
 export const LINE_CENTERED = 21;
 export const LINE_SHOT = 22;
-export const LINE_METADATA = 99;
-
 export const isDialogueType = (t: number) =>
   t === LINE_CHARACTER || t === LINE_DIALOGUE || t === LINE_PARENTHETICAL ||
   t === LINE_DUAL_CHARACTER || t === LINE_DUAL_DIALOGUE || t === LINE_DUAL_PARENTHETICAL;
@@ -43,31 +41,17 @@ export const isDualType = (t: number) =>
 
 export const needsBlankAfterEnter = (t: number) =>
   t === LINE_HEADING || t === LINE_ACTION || t === LINE_DIALOGUE ||
-  t === LINE_DUAL_DIALOGUE || t === LINE_TRANSITION;
+  t === LINE_DUAL_DIALOGUE || t === LINE_TRANSITION ||
+  t === LINE_SHOT;
 
 export const classifyLines = (doc: { line: (n: number) => { text: string }; lines: number }): number[] => {
   const types: number[] = [];
   let inTitlePage = true;
-  let inMetadataBlock = false;
 
   for (let i = 1; i <= doc.lines; i++) {
     const text = doc.line(i).text;
     const trimmed = text.trim();
     let type = LINE_ACTION;
-
-    if (trimmed.includes("/* If you are seeing this and you are not using ActOne, you can delete these. - ACTONE:") ||
-        trimmed.includes("/* If you're seeing this, you can remove the following stuff - ACTONE:") ||
-        trimmed.includes("ACTONE:")) {
-      inMetadataBlock = true;
-    }
-
-    if (inMetadataBlock) {
-      types.push(LINE_METADATA);
-      if (trimmed.includes("END_ACTONE*/")) {
-        inMetadataBlock = false;
-      }
-      continue;
-    }
 
     if (inTitlePage) {
       if (trimmed === "") {
@@ -89,7 +73,7 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
 
     if (trimmed === "") {
       type = LINE_EMPTY;
-    } else if (trimmed.startsWith("#")) {
+    } else if (/^#{1,2}(?:[^#]|$)/.test(trimmed)) {
       type = LINE_SECTION;
     } else if (trimmed.startsWith("=")) {
       type = (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") ? LINE_PAGEBREAK : LINE_SYNOPSE;
@@ -148,7 +132,6 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_TITLE_PAGE]: "cm-fountain-titlepage",
   [LINE_ACTION]: "cm-fountain-action",
   [LINE_SHOT]: "cm-fountain-shot",
-  [LINE_METADATA]: "cm-fountain-metadata",
 };
 
 const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean): DecorationSet => {
@@ -170,14 +153,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
 
 
     if (className) {
-      let finalClassName = className;
-      if (type === LINE_METADATA) {
-        const isStart = i === 1 || lineTypes[i - 2] !== LINE_METADATA;
-        if (isStart) {
-          finalClassName += " cm-fountain-metadata-start";
-        }
-      }
-      lineDecos.push({ from: line.from, to: line.from, dec: Decoration.line({ class: finalClassName }) });
+      lineDecos.push({ from: line.from, to: line.from, dec: Decoration.line({ class: className }) });
     }
 
     if (type === LINE_HEADING) {
@@ -204,7 +180,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       ? Decoration.replace({})
       : Decoration.mark({ class: "cm-fountain-syntax" });
 
-    if (trimmed.startsWith("#") && type === LINE_SECTION) {
+    if (/^#{1,2}(?:[^#]|$)/.test(trimmed) && type === LINE_SECTION) {
       const match = trimmed.match(/^#+/);
       if (match) {
         const startIdx = line.text.indexOf("#");

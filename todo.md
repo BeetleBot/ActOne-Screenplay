@@ -15,6 +15,8 @@
 * \[x] Find a way to include all Indian languages(Figure out the fonts) for the editor and export options.
 * \[x] Make sure that the pagination is right.
 * \[x] Hide fountain markup.
+* \[ ] Figure out how Production Breakdown modal displays the data. I want more structured and scene wise list. Like a Excel data. With an option to export it to CSV.
+* \[x] And I want quick tagging context menu. Like when I select a word or sentence and Hold ctrl + right click, then the app should show me tagging options only.
 
 ## Features to Implement
 

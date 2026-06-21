@@ -17,8 +17,6 @@ import {
   Grid,
   Paper,
   IconButton,
-  Menu,
-  MenuItem,
   List,
   ListItemButton,
   ListItemText,
@@ -75,7 +73,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   const supportsExtended = !filePath || filePath.toLowerCase().endsWith(".actone");
   const [characterFilter, setCharacterFilter] = useState("");
   const [activeItemIdx, setActiveItemIdx] = useState<number>(-1);
-  const [genderMenuState, setGenderMenuState] = useState<{ anchorEl: HTMLElement; characterName: string } | null>(null);
+  const GENDER_CYCLE = ["unknown", "male", "female", "nonbinary"] as const;
 
   React.useEffect(() => {
     setActiveItemIdx(-1);
@@ -176,6 +174,12 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
       }));
     };
 
+    const cycleGender = (name: string, current: string) => {
+      const idx = GENDER_CYCLE.indexOf(current as typeof GENDER_CYCLE[number]);
+      const next = GENDER_CYCLE[(idx + 1) % GENDER_CYCLE.length];
+      handleGenderChange(name, next);
+    };
+
     const handleCharKeyDown = (e: React.KeyboardEvent) => {
       if (filteredCharacters.length === 0) return;
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -244,7 +248,27 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                     onClick={() => setActiveItemIdx(idx)}
                     sx={{ borderRadius: "6px", mb: 0.25 }}
                   >
-                    <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: getGenderColor(gender), mr: 1.5, flexShrink: 0 }} />
+                    <Box
+                      component="button"
+                      disabled={!supportsExtended}
+                      onClick={() => cycleGender(name, gender)}
+                      sx={{
+                        width: 22, height: 22,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: 'none',
+                        borderRadius: '10px',
+                        bgcolor: `${getGenderColor(gender)}18`,
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        mr: 1.5,
+                        '&:hover': { bgcolor: `${getGenderColor(gender)}30` },
+                        '&.Mui-disabled': { opacity: 0.35 },
+                        transition: 'background-color 0.15s',
+                      }}
+                      title={gender === 'nonbinary' ? 'Non-Binary' : gender.charAt(0).toUpperCase() + gender.slice(1)}
+                    >
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getGenderColor(gender), flexShrink: 0 }} />
+                    </Box>
                     <ListItemText
                       primary={name}
                       secondary={`${count} lines`}
@@ -254,26 +278,6 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
                       }}
                       sx={{ mr: 1 }}
                     />
-                    <Button
-                      size="small"
-                      disabled={!supportsExtended}
-                      onClick={(e) => setGenderMenuState({ anchorEl: e.currentTarget, characterName: name })}
-                      sx={{
-                        minWidth: 0, height: 22, px: 0.75,
-                        fontSize: '0.7rem', fontWeight: 600,
-                        textTransform: 'capitalize',
-                        color: getGenderColor(gender),
-                        border: '1px solid', borderColor: getGenderColor(gender),
-                        borderRadius: '6px', gap: 0.5,
-                        overflow: 'hidden',
-                        '&:hover': { bgcolor: 'action.hover' },
-                        '&.Mui-disabled': { opacity: 0.35 },
-                      }}
-                      endIcon={<Box component="span" sx={{ fontSize: 10, lineHeight: 1, flexShrink: 0 }}>▾</Box>}
-                    >
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'currentColor', flexShrink: 0 }} />
-                      {gender}
-                    </Button>
                   </ListItemButton>
                 );
               })}
@@ -281,27 +285,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
           </Box>
         )}
 
-        <Menu
-          anchorEl={genderMenuState?.anchorEl}
-          open={!!genderMenuState}
-          onClose={() => setGenderMenuState(null)}
-          slotProps={{ paper: { sx: { minWidth: 120 } } }}
-        >
-          {["unknown", "male", "female", "nonbinary"].map(g => (
-            <MenuItem
-              key={g}
-              selected={genderMenuState ? genders[genderMenuState.characterName] === g : false}
-              onClick={() => {
-                if (genderMenuState) handleGenderChange(genderMenuState.characterName, g);
-                setGenderMenuState(null);
-              }}
-              sx={{ fontSize: '0.8rem', gap: 1 }}
-            >
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getGenderColor(g), flexShrink: 0 }} />
-              {g === 'nonbinary' ? 'Non-Binary' : g.charAt(0).toUpperCase() + g.slice(1)}
-            </MenuItem>
-          ))}
-        </Menu>
+
       </Box>
     );
   }

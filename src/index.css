@@ -196,12 +196,12 @@ body {
   background: rgba(var(--accent-rgb), 0.3) !important;
 }
 
-.cm-selectionBackground {
-  background: rgba(var(--accent-rgb), 0.2) !important;
+.cm-selected-empty-line {
+  background: rgba(var(--accent-rgb), 0.2);
 }
 
-.cm-focused .cm-selectionBackground {
-  background: rgba(var(--accent-rgb), 0.3) !important;
+.cm-focused .cm-selected-empty-line {
+  background: rgba(var(--accent-rgb), 0.3);
 }
 
 /* Fountain Element Layout & Indents */
@@ -338,6 +338,20 @@ body {
   opacity: 0.35 !important;
 }
 
+.cm-ghost-text {
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.cm-ghost-hint {
+  opacity: 0.15 !important;
+  font-style: italic !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  margin-left: 4px !important;
+}
+
 /* Responsive Mobile Editor Indents */
 @media (max-width: 768px) {
   .editor-container {
@@ -470,28 +484,27 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   background-color: color-mix(in srgb, var(--bg-sidebar) 98%, transparent) !important;
   border: 1px solid var(--border-color) !important;
   box-shadow: var(--shadow-xl) !important;
-  border-radius: var(--radius-sm) !important;
+  border-radius: 10px !important;
   padding: 4px 0 !important;
   font-family: var(--font-ui) !important;
   font-size: 13px !important;
   min-width: 200px !important;
   max-width: 400px !important;
   color: var(--text-main) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
   overflow: hidden !important;
 }
 
 .cm-tooltip-autocomplete ul {
   max-height: 260px !important;
-  padding: 4px !important;
+  padding: 0 !important;
   margin: 0 !important;
   list-style: none !important;
 }
 
 .cm-tooltip-autocomplete ul li {
-  padding: 5px 10px !important;
-  margin: 1px 0 !important;
+  padding: 2px 6px !important;
+  margin: 1px 4px !important;
+  min-height: 22px !important;
   color: var(--text-main) !important;
   cursor: pointer !important;
   display: flex !important;
@@ -499,7 +512,7 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   gap: 8px !important;
   font-family: var(--font-ui) !important;
   font-size: 12.5px !important;
-  border-radius: var(--radius-inline) !important;
+  border-radius: 6px !important;
   transition: background-color var(--duration-fast) var(--easing-spring), color var(--duration-fast) var(--easing-spring) !important;
 }
 
