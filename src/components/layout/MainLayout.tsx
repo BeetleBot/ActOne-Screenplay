@@ -23,20 +23,18 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   return (
     <>
-      {!isZenMode && <HeaderBar />}
+      <HeaderBar />
       <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {!isZenMode && (
-          <ActivityBar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            isSidebarOpen={isSidebarOpen}
-            setIsSidebarOpen={setIsSidebarOpen}
-            onOpenSettingsModal={onOpenSettingsModal}
-            onOpenPalette={onOpenPalette}
-            onOpenBreakdownModal={onOpenBreakdownModal}
-            onOpenThemeManagerModal={onOpenThemeManagerModal}
-          />
-        )}
+        <ActivityBar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          onOpenSettingsModal={onOpenSettingsModal}
+          onOpenPalette={onOpenPalette}
+          onOpenBreakdownModal={onOpenBreakdownModal}
+          onOpenThemeManagerModal={onOpenThemeManagerModal}
+        />
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <Workspace
             isSidebarOpen={isSidebarOpen}

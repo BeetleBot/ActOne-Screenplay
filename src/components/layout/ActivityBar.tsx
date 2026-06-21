@@ -40,6 +40,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
     typewriterMode, setTypewriterMode, zoomLevel, setZoomLevel,
     appScale, setAppScale,
     hideSyntaxEnabled, setHideSyntaxEnabled,
+    isZenMode,
   } = useUI();
   const { filePath } = useFile();
   const { theme, setTheme, customThemes } = useTheme();
@@ -71,10 +72,16 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   return (
     <Box
       sx={{
-        width: 48, display: 'flex', flexDirection: 'column',
+        width: isZenMode ? 0 : 48, display: 'flex', flexDirection: 'column',
         alignItems: 'center', py: 0.5, gap: 0.25,
-        bgcolor: 'background.paper', borderRight: 1, borderColor: 'divider',
+        bgcolor: 'background.paper', borderRight: isZenMode ? 0 : 1, borderColor: 'divider',
         flexShrink: 0,
+        // Zen mode transition support with staggered delay (0.05s)
+        opacity: isZenMode ? 0 : 1,
+        transform: isZenMode ? 'translateX(-100%)' : 'translateX(0)',
+        pointerEvents: isZenMode ? 'none' : 'auto',
+        transition: 'opacity 0.3s ease-in-out 0.05s, transform 0.3s ease-in-out 0.05s, width 0.3s ease-in-out 0.05s, border-right 0.3s ease-in-out 0.05s',
+        overflow: 'hidden',
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25, flex: 1 }}>

@@ -52,6 +52,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+
+
   const updateLineText = (lineId: string, newText: string) => {
     const updatedLines = parsedDoc.lines.map((line) =>
       line.id === lineId ? { ...line, text: newText } : line

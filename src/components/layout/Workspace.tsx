@@ -56,7 +56,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
 
   return (
     <Box className="app-workspace" sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      {isSidebarOpen && !isZenMode && (
+      {isSidebarOpen && (
         <>
           <Paper
             className="sidebar"
@@ -64,9 +64,14 @@ export const Workspace: React.FC<WorkspaceProps> = ({
             tabIndex={-1}
             square
             sx={{
-              width: sidebarWidth, flexShrink: 0, outline: 'none',
-              borderRight: 1, borderColor: 'divider', overflow: 'hidden',
+              width: isZenMode ? 0 : sidebarWidth, flexShrink: 0, outline: 'none',
+              borderRight: isZenMode ? '0px solid' : '1px solid',
+              borderColor: 'divider', overflow: 'hidden',
               display: 'flex', flexDirection: 'column',
+              // Zen mode transition support with staggered delay (0.1s)
+              opacity: isZenMode ? 0 : 1,
+              pointerEvents: isZenMode ? 'none' : 'auto',
+              transition: 'opacity 0.3s ease-in-out 0.1s, width 0.3s ease-in-out 0.1s, border-right 0.3s ease-in-out 0.1s',
             }}
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
@@ -85,9 +90,12 @@ export const Workspace: React.FC<WorkspaceProps> = ({
             className="sidebar-resizer"
             onMouseDown={() => setIsDragging(true)}
             sx={{
-              width: 4, cursor: 'col-resize', flexShrink: 0,
+              width: isZenMode ? 0 : 4, cursor: 'col-resize', flexShrink: 0,
+              // Zen mode transition support with staggered delay (0.1s)
+              opacity: isZenMode ? 0 : 1,
+              pointerEvents: isZenMode ? 'none' : 'auto',
               '&:hover': { bgcolor: 'var(--button-color)', opacity: 0.3 },
-              transition: 'background-color 0.2s',
+              transition: 'background-color 0.2s, opacity 0.3s ease-in-out 0.1s, width 0.3s ease-in-out 0.1s',
             }}
           />
         </>
@@ -96,7 +104,13 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <SearchPanel />
         <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
-          <Box className={`editor-paper paper-${paperSize}`} sx={{ zoom: zoomLevel / 100 }}>
+          <Box
+            className={`editor-paper paper-${paperSize}`}
+            sx={{
+              zoom: zoomLevel / 100,
+              transition: 'zoom 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          >
             <FountainEditor />
           </Box>
         </Box>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useFile } from "../../context";
+import { useFile, useUI } from "../../context";
 import { getTauriWindow } from "../../utils";
 import { alpha, darken } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
@@ -13,6 +13,7 @@ import { CloseIcon, AddIcon } from "../Icons";
 
 export const HeaderBar: React.FC = () => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
+  const { isZenMode } = useUI();
   const [isMaximized, setIsMaximized] = useState(false);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -101,11 +102,17 @@ export const HeaderBar: React.FC = () => {
       sx={{
         bgcolor: (theme) => theme.palette.mode === 'light' ? darken(theme.palette.background.paper, 0.08) : darken(theme.palette.background.paper, 0.25),
         color: (theme) => theme.palette.text.secondary,
-        borderBottom: 1,
+        borderBottom: isZenMode ? 0 : 1,
         borderColor: (theme) => theme.palette.mode === 'light' ? alpha(theme.palette.text.primary, 0.08) : alpha(theme.palette.text.primary, 0.05),
-        height: 30,
-        minHeight: 30,
+        height: isZenMode ? 0 : 30,
+        minHeight: isZenMode ? 0 : 30,
         zIndex: 10,
+        // Zen mode transition support
+        opacity: isZenMode ? 0 : 1,
+        transform: isZenMode ? 'translateY(-100%)' : 'translateY(0)',
+        pointerEvents: isZenMode ? 'none' : 'auto',
+        transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out, height 0.3s ease-in-out, min-height 0.3s ease-in-out',
+        overflow: 'hidden',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', height: 30, minHeight: 30, px: 0 }}>

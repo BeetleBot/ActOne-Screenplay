@@ -1,5 +1,8 @@
 use std::fs;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Emitter;
+
+static CLI_ARGS_READ: AtomicBool = AtomicBool::new(false);
 
 pub mod pdf;
 mod structures;
@@ -12,7 +15,7 @@ fn open_file_dialog() -> Option<serde_json::Value> {
         .pick_file()?;
 
     let path_str = file.to_string_lossy().to_string();
-    if path_str.ends_with(".actone") {
+    if path_str.to_ascii_lowercase().ends_with(".actone") {
         return Some(serde_json::json!({
             "path": path_str,
             "content": ""
@@ -49,12 +52,16 @@ fn save_file_dialog(content: String) -> Option<String> {
         .save_file()?;
         
     let mut file_path = file;
-    if file_path.extension().is_none() {
+    if let Some(ext) = file_path.extension() {
+        if ext.to_string_lossy().to_ascii_lowercase() == "actone" {
+            file_path.set_extension("actone");
+        }
+    } else {
         file_path.set_extension("actone");
     }
 
     let path = file_path.to_string_lossy().to_string();
-    if path.ends_with(".actone") {
+    if path.to_ascii_lowercase().ends_with(".actone") {
         return Some(path);
     }
 
@@ -302,9 +309,15 @@ fn get_system_fonts() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 fn get_cli_args() -> Vec<String> {
+    if CLI_ARGS_READ.swap(true, Ordering::SeqCst) {
+        return vec![];
+    }
     let args: Vec<String> = std::env::args().skip(1).collect();
     args.into_iter()
-        .filter(|p| p.ends_with(".actone") || p.ends_with(".fountain") || p.ends_with(".txt"))
+        .filter(|p| {
+            let lp = p.to_ascii_lowercase();
+            lp.ends_with(".actone") || lp.ends_with(".fountain") || lp.ends_with(".txt")
+        })
         .collect()
 }
 
@@ -316,7 +329,10 @@ pub fn run() {
             // Handle file paths passed as CLI arguments (Linux, Windows)
             let args: Vec<String> = std::env::args().skip(1).collect();
             let filtered: Vec<String> = args.into_iter()
-                .filter(|p| p.ends_with(".actone") || p.ends_with(".fountain") || p.ends_with(".txt"))
+                .filter(|p| {
+                    let lp = p.to_ascii_lowercase();
+                    lp.ends_with(".actone") || lp.ends_with(".fountain") || lp.ends_with(".txt")
+                })
                 .collect();
             if !filtered.is_empty() {
                 let _ = app.emit("file-opened", filtered);
@@ -358,7 +374,10 @@ pub fn run() {
                     })
                     .collect();
                 let filtered: Vec<String> = paths.into_iter()
-                    .filter(|p| p.ends_with(".actone") || p.ends_with(".fountain") || p.ends_with(".txt"))
+                    .filter(|p| {
+                        let lp = p.to_ascii_lowercase();
+                        lp.ends_with(".actone") || lp.ends_with(".fountain") || lp.ends_with(".txt")
+                    })
                     .collect();
                 if !filtered.is_empty() {
                     let _ = app_handle.emit("file-opened", filtered);

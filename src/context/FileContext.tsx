@@ -57,6 +57,7 @@ export interface FileContextProps {
   renameScript: (index: number, newName: string) => Promise<boolean>;
   deleteScript: (index: number) => Promise<boolean>;
   moveScript: (fromIndex: number, toIndex: number) => Promise<void>;
+  saveStatus: "idle" | "saving" | "saved";
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -89,6 +90,17 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const defaultText = "";
 
   const [files, setFiles] = useState<ScreenplayFile[]>([]);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const saveStatusTimeoutRef = useRef<any>(null);
+
+  const triggerSaveStatusSaved = () => {
+    setSaveStatus("saved");
+    if (saveStatusTimeoutRef.current) clearTimeout(saveStatusTimeoutRef.current);
+    saveStatusTimeoutRef.current = setTimeout(() => {
+      setSaveStatus("idle");
+    }, 2000);
+  };
+
   const [activeFileId, setActiveFileIdState] = useState<string>("");
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.RECENT_FILES);
@@ -437,7 +449,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [rawText, paperSize, activeFileId, isTauri]);
 
   const openFilePath = async (path: string) => {
-    const existing = files.find(f => f.filePath === path);
+    const isActone = path.toLowerCase().endsWith(".actone");
+    const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
+    const existing = files.find(f => f.filePath?.toLowerCase() === normalizedPath.toLowerCase());
     if (existing) {
       selectFile(existing.id);
       return;
@@ -445,7 +459,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     let settings = {};
     let scripts: ScriptInfo[] = [];
-    const isActone = path.toLowerCase().endsWith(".actone");
     const bundleName = path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
 
     try {
@@ -493,7 +506,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isDefault && currentActive) {
       setFiles(prev => prev.map(f => f.id === activeFileId ? {
         ...f,
-        filePath: path,
+        filePath: normalizedPath,
         rawText: cleanText,
         savedText: cleanText,
         isDirty: false,
@@ -501,17 +514,17 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         scripts,
         activeScriptIndex: 0,
       } : f));
-      setFilePath(path);
+      setFilePath(normalizedPath);
       setRawTextState(cleanText);
       setParsedDoc(parsed);
       setScriptsState(scripts);
       setActiveScriptIndexState(0);
-      addToRecent(path);
+      addToRecent(normalizedPath);
     } else {
       const newId = generateUUID();
       const newFileObj: ScreenplayFile = {
         id: newId,
-        filePath: path,
+        filePath: normalizedPath,
         rawText: cleanText,
         savedText: cleanText,
         isDirty: false,
@@ -522,12 +535,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setFiles(prev => [...prev, newFileObj]);
       setActiveFileIdState(newId);
-      setFilePath(path);
+      setFilePath(normalizedPath);
       setRawTextState(cleanText);
       setParsedDoc(parsed);
       setScriptsState(isActone ? scripts : []);
       setActiveScriptIndexState(0);
-      addToRecent(path);
+      addToRecent(normalizedPath);
     }
   };
 
@@ -565,8 +578,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (res) {
-      if (isTauri) addToRecent(res.path);
-      const existing = files.find(f => f.filePath === res.path);
+      const isActone = res.path.toLowerCase().endsWith(".actone");
+      const normalizedPath = isActone ? res.path.replace(/\.actone$/i, ".actone") : res.path;
+      if (isTauri) addToRecent(normalizedPath);
+      const existing = files.find(f => f.filePath?.toLowerCase() === normalizedPath.toLowerCase());
       if (existing) {
         selectFile(existing.id);
         return;
@@ -579,7 +594,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let scripts: ScriptInfo[] = [];
       let settings = res.settings || {};
       let content = res.content;
-      const isActone = res.path.toLowerCase().endsWith(".actone");
       const bundleName = res.path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
 
       if (isActone) {
@@ -620,12 +634,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isActone) {
         parsed.settings = settings;
       }
-    const cleanText = parsed.screenplayText.replace(/\r\n/g, "\n");
+      const cleanText = parsed.screenplayText.replace(/\r\n/g, "\n");
 
       if (isDefault && currentActive) {
         const updatedFiles = files.map(f => f.id === activeFileId ? {
           ...f,
-          filePath: res.path,
+          filePath: normalizedPath,
           rawText: cleanText,
           savedText: cleanText,
           isDirty: false,
@@ -634,7 +648,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           activeScriptIndex: 0,
         } : f);
         setFiles(updatedFiles);
-        setFilePath(res.path);
+        setFilePath(normalizedPath);
         setRawTextState(cleanText);
         setParsedDoc(parsed);
         setScriptsState(isActone ? scripts : []);
@@ -643,7 +657,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const newId = generateUUID();
         const newFileObj: ScreenplayFile = {
           id: newId,
-          filePath: res.path,
+          filePath: normalizedPath,
           rawText: cleanText,
           savedText: cleanText,
           isDirty: false,
@@ -654,7 +668,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setFiles(prev => [...prev, newFileObj]);
         setActiveFileIdState(newId);
-        setFilePath(res.path);
+        setFilePath(normalizedPath);
         setRawTextState(cleanText);
         setParsedDoc(parsed);
         setScriptsState(isActone ? scripts : []);
@@ -664,8 +678,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveActoneFile = async (path: string, scripts: ScriptInfo[], settings: any) => {
+    const isActone = path.toLowerCase().endsWith(".actone");
+    const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
     const zipped = packActoneBundle(scripts, settings);
-    await invoke("save_file_binary", { path, bytes: Array.from(zipped) });
+    await invoke("save_file_binary", { path: normalizedPath, bytes: Array.from(zipped) });
   };
 
   const saveFile = async () => {
@@ -678,7 +694,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const cleanFountainText = currentActive.parsedDoc.lines.map(l => l.text).join("\n");
     const isActone = currentActive.filePath.toLowerCase().endsWith(".actone");
+    const normalizedPath = isActone ? currentActive.filePath.replace(/\.actone$/i, ".actone") : currentActive.filePath;
 
+    setSaveStatus("saving");
     if (isActone) {
       let updatedScripts = currentActive.scripts ? [...currentActive.scripts] : [];
       if (updatedScripts.length > 0) {
@@ -688,7 +706,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedScripts = updatedScripts.map(s => ({ ...s, savedContent: s.content }));
       } else {
         updatedScripts = [{
-          name: currentActive.filePath.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
+          name: normalizedPath.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
           fileName: "document.fountain",
           content: cleanFountainText,
           savedContent: cleanFountainText,
@@ -699,34 +717,45 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsSaving(true);
         setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
         try {
-          await saveActoneFile(currentActive.filePath, updatedScripts, currentActive.parsedDoc.settings);
+          await saveActoneFile(normalizedPath, updatedScripts, currentActive.parsedDoc.settings);
           setFiles(prev => prev.map(f => f.id === activeFileId ? {
             ...f,
             isDirty: false,
             savedText: rawText,
             scripts: updatedScripts,
+            filePath: normalizedPath,
           } : f));
+          setFilePath(normalizedPath);
+          triggerSaveStatusSaved();
         } catch (e) {
           console.error(e);
+          setSaveStatus("idle");
         } finally {
           setIsSaving(false);
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
         }
       } else {
-        const zipped = packActoneBundle(updatedScripts, currentActive.parsedDoc.settings);
-        const blob = new Blob([zipped], { type: "application/zip" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = currentActive.filePath;
-        link.click();
-        URL.revokeObjectURL(url);
-        setFiles(prev => prev.map(f => f.id === activeFileId ? {
-          ...f,
-          isDirty: false,
-          savedText: rawText,
-          scripts: updatedScripts,
-        } : f));
+        try {
+          const zipped = packActoneBundle(updatedScripts, currentActive.parsedDoc.settings);
+          const blob = new Blob([zipped], { type: "application/zip" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = normalizedPath;
+          link.click();
+          URL.revokeObjectURL(url);
+          setFiles(prev => prev.map(f => f.id === activeFileId ? {
+            ...f,
+            isDirty: false,
+            savedText: rawText,
+            scripts: updatedScripts,
+            filePath: normalizedPath,
+          } : f));
+          triggerSaveStatusSaved();
+        } catch (e) {
+          console.error(e);
+          setSaveStatus("idle");
+        }
       }
     } else {
       if (isTauri) {
@@ -735,21 +764,30 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           await invoke("save_file_content", { path: currentActive.filePath, content: cleanFountainText });
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+          triggerSaveStatusSaved();
         } catch (e) {
           console.error(e);
+          setSaveStatus("idle");
         } finally {
           setIsSaving(false);
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
         }
       } else {
-        const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = currentActive.filePath.endsWith(".fountain") ? currentActive.filePath : `${currentActive.filePath}.fountain`;
-        link.click();
-        URL.revokeObjectURL(url);
-        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+        try {
+          const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          const normalizedPlainPath = currentActive.filePath.toLowerCase().endsWith(".fountain") ? currentActive.filePath.replace(/\.fountain$/i, ".fountain") : `${currentActive.filePath}.fountain`;
+          link.download = normalizedPlainPath;
+          link.click();
+          URL.revokeObjectURL(url);
+          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
+          triggerSaveStatusSaved();
+        } catch (e) {
+          console.error(e);
+          setSaveStatus("idle");
+        }
       }
     }
   };
@@ -759,37 +797,43 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentActive) return null;
     const cleanFountainText = currentActive.parsedDoc.lines.map(l => l.text).join("\n");
 
+    setSaveStatus("saving");
     if (isTauri) {
       try {
         const path = await invoke<string | null>("save_file_dialog", { content: cleanFountainText });
         if (path) {
           const isActone = path.toLowerCase().endsWith(".actone");
+          const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
           let finalScripts = currentActive.scripts;
           if (isActone) {
             finalScripts = finalScripts || [{
-              name: path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
+              name: normalizedPath.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
               fileName: "document.fountain",
               content: cleanFountainText,
               savedContent: cleanFountainText,
             }];
-            await saveActoneFile(path, finalScripts, currentActive.parsedDoc.settings);
+            await saveActoneFile(normalizedPath, finalScripts, currentActive.parsedDoc.settings);
           }
           setFiles(prev => prev.map(f => f.id === activeFileId ? {
             ...f,
-            filePath: path,
+            filePath: normalizedPath,
             isDirty: false,
             savedText: rawText,
             scripts: isActone ? finalScripts : undefined,
             activeScriptIndex: isActone ? (f.activeScriptIndex ?? 0) : undefined,
           } : f));
-          setFilePath(path);
+          setFilePath(normalizedPath);
           setScriptsState(isActone && finalScripts ? finalScripts : []);
           setActiveScriptIndexState(isActone ? (currentActive.activeScriptIndex ?? 0) : 0);
-          addToRecent(path);
-          return path;
+          addToRecent(normalizedPath);
+          triggerSaveStatusSaved();
+          return normalizedPath;
+        } else {
+          setSaveStatus("idle");
         }
       } catch (e) {
         console.error(e);
+        setSaveStatus("idle");
       }
     } else {
       const filename = await prompt({
@@ -804,56 +848,69 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           finalName = filename + ".actone";
           isActone = true;
         } else {
-          finalName = isActone ? filename : (filename.endsWith(".fountain") ? filename : `${filename}.fountain`);
+          if (isActone) {
+            finalName = filename.replace(/\.actone$/i, ".actone");
+          } else {
+            finalName = filename.toLowerCase().endsWith(".fountain") ? filename.replace(/\.fountain$/i, ".fountain") : `${filename}.fountain`;
+          }
         }
 
-        if (isActone) {
-          const finalScripts = currentActive.scripts || [{
-            name: finalName.replace(/\.actone$/i, ""),
-            fileName: "document.fountain",
-            content: cleanFountainText,
-            savedContent: cleanFountainText,
-          }];
-          const zipped = packActoneBundle(finalScripts, currentActive.parsedDoc.settings);
-          const blob = new Blob([zipped], { type: "application/zip" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = finalName;
-          link.click();
-          URL.revokeObjectURL(url);
-          setFiles(prev => prev.map(f => f.id === activeFileId ? {
-            ...f,
-            filePath: finalName,
-            isDirty: false,
-            savedText: rawText,
-            scripts: finalScripts,
-            activeScriptIndex: f.activeScriptIndex ?? 0,
-          } : f));
-          setScriptsState(finalScripts);
-          setActiveScriptIndexState(currentActive.activeScriptIndex ?? 0);
-        } else {
-          const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = finalName;
-          link.click();
-          URL.revokeObjectURL(url);
-          setFiles(prev => prev.map(f => f.id === activeFileId ? {
-            ...f,
-            filePath: finalName,
-            isDirty: false,
-            savedText: rawText,
-            scripts: undefined,
-            activeScriptIndex: undefined,
-          } : f));
-          setScriptsState([]);
-          setActiveScriptIndexState(0);
-        }
+        try {
+          if (isActone) {
+            const finalScripts = currentActive.scripts || [{
+              name: finalName.replace(/\.actone$/i, ""),
+              fileName: "document.fountain",
+              content: cleanFountainText,
+              savedContent: cleanFountainText,
+            }];
+            const zipped = packActoneBundle(finalScripts, currentActive.parsedDoc.settings);
+            const blob = new Blob([zipped], { type: "application/zip" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = finalName;
+            link.click();
+            URL.revokeObjectURL(url);
+            setFiles(prev => prev.map(f => f.id === activeFileId ? {
+              ...f,
+              filePath: finalName,
+              isDirty: false,
+              savedText: rawText,
+              scripts: finalScripts,
+              activeScriptIndex: f.activeScriptIndex ?? 0,
+            } : f));
+            setScriptsState(finalScripts);
+            setActiveScriptIndexState(currentActive.activeScriptIndex ?? 0);
+            triggerSaveStatusSaved();
+          } else {
+            const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = finalName;
+            link.click();
+            URL.revokeObjectURL(url);
+            setFiles(prev => prev.map(f => f.id === activeFileId ? {
+              ...f,
+              filePath: finalName,
+              isDirty: false,
+              savedText: rawText,
+              scripts: undefined,
+              activeScriptIndex: undefined,
+            } : f));
+            setScriptsState([]);
+            setActiveScriptIndexState(0);
+            triggerSaveStatusSaved();
+          }
 
-        setFilePath(finalName);
-        return finalName;
+          setFilePath(finalName);
+          return finalName;
+        } catch (e) {
+          console.error(e);
+          setSaveStatus("idle");
+        }
+      } else {
+        setSaveStatus("idle");
       }
     }
     return null;
@@ -1208,6 +1265,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         renameScript,
         deleteScript,
         moveScript,
+        saveStatus,
       }}
     >
       {children}

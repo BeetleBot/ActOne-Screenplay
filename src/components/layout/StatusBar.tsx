@@ -6,7 +6,7 @@ import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 import { useEditor } from "../../context";
 
 export const StatusBar: React.FC = () => {
-  const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId } = useFile();
+  const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
   const { isZenMode } = useUI();
   const { activeLineId } = useEditor();
   const { activeSprints } = useSprint();
@@ -72,23 +72,27 @@ export const StatusBar: React.FC = () => {
     setAnchorEl(null);
   };
 
-  if (isZenMode) return null;
-
   const fileName = filePath ? filePath.split(/[/\\]/).pop() || "Untitled" : "Untitled";
 
   return (
     <Box 
       sx={{ 
-        height: 28, 
+        height: isZenMode ? 0 : 28, 
         bgcolor: "background.paper", 
-        borderTop: 1, 
+        borderTop: isZenMode ? 0 : 1, 
         borderColor: "divider", 
         display: "flex", 
         alignItems: "center", 
         justifyContent: "space-between", 
         px: 2, 
         userSelect: "none", 
-        flexShrink: 0 
+        flexShrink: 0,
+        // Zen mode transition support with staggered delay (0.15s)
+        opacity: isZenMode ? 0 : 1,
+        transform: isZenMode ? 'translateY(100%)' : 'translateY(0)',
+        pointerEvents: isZenMode ? 'none' : 'auto',
+        transition: 'opacity 0.3s ease-in-out 0.15s, transform 0.3s ease-in-out 0.15s, height 0.3s ease-in-out 0.15s, border-top 0.3s ease-in-out 0.15s',
+        overflow: 'hidden',
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
@@ -114,6 +118,46 @@ export const StatusBar: React.FC = () => {
           </strong>
           {isBundle && scripts.length > 0 && <span style={{ marginLeft: 4, fontSize: 8, flexShrink: 0 }}>▼</span>}
         </Typography>
+
+
+        {saveStatus !== "idle" && (
+          <Box 
+            sx={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: 0.5,
+              opacity: saveStatus === "idle" ? 0 : 1,
+              transition: "opacity 0.2s ease-in-out",
+              flexShrink: 0
+            }}
+          >
+            {saveStatus === "saving" && (
+              <Box 
+                sx={{ 
+                  width: 10, 
+                  height: 10, 
+                  border: "1.5px solid",
+                  borderColor: "primary.main",
+                  borderTopColor: "transparent",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                  "@keyframes spin": {
+                    "0%": { transform: "rotate(0deg)" },
+                    "100%": { transform: "rotate(360deg)" }
+                  }
+                }}
+              />
+            )}
+            {saveStatus === "saved" && (
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M2 5L4.5 7.5L8.5 2.5" stroke="#4caf50" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+            <Typography variant="caption" sx={{ fontSize: 10, color: saveStatus === "saved" ? "#4caf50" : "text.secondary", fontWeight: 500 }}>
+              {saveStatus === "saving" ? "Saving..." : "Saved"}
+            </Typography>
+          </Box>
+        )}
 
         {isBundle && scripts.length > 0 && (
           <Menu
