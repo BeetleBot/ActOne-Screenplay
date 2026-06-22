@@ -31,11 +31,13 @@
       "rpm",
       "nsis"
     ],
-    "nsis": {
-      "installerIcon": "icons/icon.ico",
-      "installMode": "currentUser",
-      "headerImage": "icons/nsis-header.bmp",
-      "sidebarImage": "icons/nsis-sidebar.bmp"
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "currentUser",
+        "headerImage": "icons/nsis-header.bmp",
+        "sidebarImage": "icons/nsis-sidebar.bmp"
+      }
     },
     "fileAssociations": [
       {
