@@ -9,5 +9,6 @@ Thumbs.db
 
 # MSIX packaging
 packaging/msix/staging/
+packaging/msix/Assets/
 packaging/msix/*.msix
 packaging/msix/*.appx

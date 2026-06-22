@@ -46,25 +46,25 @@
             <uap5:ExecutionAlias Alias="actone.exe" />
           </uap5:AppExecutionAlias>
         </uap5:Extension>
-        <desktop:Extension Category="windows.fileTypeAssociation">
-          <desktop:FileTypeAssociation Name="actone-bundle">
-            <desktop:DisplayName>ActOne Screenplay Bundle</desktop:DisplayName>
-            <desktop:Logo>Assets\Square44x44Logo.png</desktop:Logo>
-            <desktop:SupportedFileTypes>
-              <desktop:FileType>.actone</desktop:FileType>
-            </desktop:SupportedFileTypes>
-          </desktop:FileTypeAssociation>
-        </desktop:Extension>
-        <desktop:Extension Category="windows.fileTypeAssociation">
-          <desktop:FileTypeAssociation Name="fountain-screenplay">
-            <desktop:DisplayName>Fountain Screenplay</desktop:DisplayName>
-            <desktop:Logo>Assets\Square44x44Logo.png</desktop:Logo>
-            <desktop:SupportedFileTypes>
-              <desktop:FileType>.fountain</desktop:FileType>
-              <desktop:FileType>.txt</desktop:FileType>
-            </desktop:SupportedFileTypes>
-          </desktop:FileTypeAssociation>
-        </desktop:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="actone-bundle">
+            <uap:DisplayName>ActOne Screenplay Bundle</uap:DisplayName>
+            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.actone</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="fountain-screenplay">
+            <uap:DisplayName>Fountain Screenplay</uap:DisplayName>
+            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.fountain</uap:FileType>
+              <uap:FileType>.txt</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
       </Extensions>
     </Application>
   </Applications>

@@ -39,9 +39,9 @@ foreach ($f in $iconFiles) {
 }
 
 $manifest = [System.IO.File]::ReadAllText($ManifestPath)
-$manifest = $manifest -replace 'Version="[^"]+"', "Version=`"$Version.0`""
+$manifest = $manifest -replace '(?<!xml\s)Version="\d+\.\d+\.\d+\.\d+"', "Version=`"$Version.0`""
 $manifest = $manifest -replace 'MaxVersionTested="[^"]+"', 'MaxVersionTested="10.0.26100.0"'
-Set-Content -Path "$StagingDir\AppxManifest.xml" -Value $manifest -Encoding UTF8
+[System.IO.File]::WriteAllText("$StagingDir\AppxManifest.xml", $manifest)
 
 Write-Output "=== Creating MSIX ==="
 $MakeAppx = "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\MakeAppx.exe"
