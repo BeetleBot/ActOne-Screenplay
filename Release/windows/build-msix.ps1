@@ -11,13 +11,8 @@ $ErrorActionPreference = "Stop"
 # Self-elevate to admin if SelfSign is requested and we're not admin
 $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if ((-not $IsAdmin) -and $SelfSign) {
-    $myArgs = "-NoExit -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-    foreach ($key in $MyInvocation.BoundParameters.Keys) {
-        $val = $MyInvocation.BoundParameters[$key]
-        if ($val -is [switch]) { $myArgs += " -$key" }
-        else { $myArgs += " -$key `"$val`"" }
-    }
-    Start-Process -Verb RunAs -FilePath "powershell" -ArgumentList $myArgs
+    $scriptPath = $MyInvocation.MyCommand.Path
+    Start-Process -Verb RunAs -FilePath "powershell" -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-File", "`"$scriptPath`"", "-SelfSign"
     exit
 }
 

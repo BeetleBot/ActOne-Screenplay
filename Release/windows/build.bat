@@ -20,19 +20,11 @@ pause
 exit /b
 
 :selfsign
-echo.
-echo Self-signing selected. Requesting admin rights (needed for cert install)...
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    powershell Start-Process -Verb RunAs -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File ""%~dp0build-msix.ps1"" -SelfSign"
-    exit /b
-)
 powershell -ExecutionPolicy Bypass -File "%~dp0build-msix.ps1" -SelfSign
 pause
 exit /b
 
 :skipsign
-echo.
 powershell -ExecutionPolicy Bypass -File "%~dp0build-msix.ps1" -SkipSigning
 pause
 exit /b
@@ -40,7 +32,6 @@ exit /b
 :pfxsign
 set /p pfxpath="Enter PFX file path: "
 set /p pfxpass="Enter PFX password: "
-echo.
 powershell -ExecutionPolicy Bypass -File "%~dp0build-msix.ps1" -PfxPath "%pfxpath%" -PfxPassword "%pfxpass%"
 pause
 exit /b
