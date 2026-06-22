@@ -40,6 +40,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Build Tauri app (release)
+        run: npm run tauri build -- --no-bundle
+
       - name: Build MSIX package
         run: npm run tauri:windows:build -- --arch x64 --runner npm
 
