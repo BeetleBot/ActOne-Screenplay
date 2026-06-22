@@ -1,6 +1,6 @@
 {
   "productName": "ActOne",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "identifier": "com.writeup.actone",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -30,6 +30,7 @@
       "deb",
       "rpm",
       "msi",
+      "msix",
       "nsis"
     ],
     "windows": {
