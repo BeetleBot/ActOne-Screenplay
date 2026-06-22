@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useFile, useEditor } from "../context";
 import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
-import { SearchIcon, CloseIcon } from "./Icons";
+import { SearchIcon, CloseIcon, TuneIcon } from "./Icons";
 
 import {
   Box,
@@ -14,6 +14,9 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Popover,
+  Badge,
+  Divider,
 } from "@mui/material";
 
 interface MarkerItem {
@@ -21,6 +24,7 @@ interface MarkerItem {
   index: number;
   context: string;
   sceneNumber?: string;
+  sceneStorylines?: string[];
 }
 
 export const MarkerView: React.FC = () => {
@@ -28,6 +32,9 @@ export const MarkerView: React.FC = () => {
   const { scrollToLine } = useEditor();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedStoryline, setSelectedStoryline] = useState<string | null>(null);
+
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const markersList = useMemo(() => {
     const list: MarkerItem[] = [];
@@ -38,6 +45,8 @@ export const MarkerView: React.FC = () => {
       if (line.marker) {
         let nearestContext = "Introduction";
         let nearestSceneNumber: string | undefined;
+        let sceneStorylines: string[] | undefined;
+
         for (let j = i; j >= 0; j--) {
           const l = lines[j];
           if (l.type === LineType.heading) {
@@ -47,6 +56,7 @@ export const MarkerView: React.FC = () => {
               .replace(/#[^#]+#\s*$/, "")
               .trim();
             nearestSceneNumber = l.sceneNumber;
+            sceneStorylines = l.storylines;
             break;
           }
           if (l.type === LineType.section) {
@@ -59,6 +69,7 @@ export const MarkerView: React.FC = () => {
           index: i,
           context: nearestContext,
           sceneNumber: nearestSceneNumber,
+          sceneStorylines,
         });
       }
     }
@@ -68,8 +79,20 @@ export const MarkerView: React.FC = () => {
   const colorStats = useMemo(() => {
     const stats: { [color: string]: number } = {};
     markersList.forEach((m) => {
-      const color = m.line.marker?.color || "orange";
-      stats[color] = (stats[color] || 0) + 1;
+      const mColor = m.line.marker?.color || "orange";
+      stats[mColor] = (stats[mColor] || 0) + 1;
+    });
+    return stats;
+  }, [markersList]);
+
+  const storylineStats = useMemo(() => {
+    const stats: { [storyline: string]: number } = {};
+    markersList.forEach((m) => {
+      if (m.sceneStorylines) {
+        m.sceneStorylines.forEach((sl) => {
+          stats[sl] = (stats[sl] || 0) + 1;
+        });
+      }
     });
     return stats;
   }, [markersList]);
@@ -80,6 +103,9 @@ export const MarkerView: React.FC = () => {
     return markersList.filter((m) => {
       const color = m.line.marker?.color || "orange";
       if (selectedColor && color !== selectedColor) {
+        return false;
+      }
+      if (selectedStoryline && (!m.sceneStorylines || !m.sceneStorylines.includes(selectedStoryline))) {
         return false;
       }
       if (searchQuery) {
@@ -93,7 +119,7 @@ export const MarkerView: React.FC = () => {
       }
       return true;
     });
-  }, [markersList, selectedColor, searchQuery]);
+  }, [markersList, selectedColor, selectedStoryline, searchQuery]);
 
   const handleMarkerClick = (index: number) => {
     scrollToLine(index, true);
@@ -126,6 +152,18 @@ export const MarkerView: React.FC = () => {
     return `var(--scene-color-${color})`;
   };
 
+  const handleFilterClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  const openFilter = Boolean(filterAnchorEl);
+
+  const activeFilterCount = (selectedColor ? 1 : 0) + (selectedStoryline ? 1 : 0);
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, gap: 2 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -139,71 +177,161 @@ export const MarkerView: React.FC = () => {
         />
       </Box>
 
-      {markersList.length > 0 && (
-        <Grid container spacing={0.5} sx={{ mb: 0.5 }}>
-          {Object.entries(colorStats).map(([color, count]) => {
-            const isSelected = selectedColor === color;
-            const colorVal = getMarkerColorValue(color);
-            return (
-              <Grid key={color}>
-                <Chip
-                  label={`${color} (${count})`}
+      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+        <TextField
+          placeholder="Filter markers..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              sx: {
+                bgcolor: "background.paper",
+                fontSize: "0.75rem",
+                "& fieldset": { borderColor: "divider" },
+                "&:hover fieldset": { borderColor: "text.secondary" },
+                "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+              },
+              startAdornment: (
+                <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
+                  <SearchIcon sx={{ fontSize: 14 }} />
+                </Box>
+              ),
+              endAdornment: searchQuery && (
+                <IconButton
                   size="small"
-                  onClick={() => setSelectedColor(isSelected ? null : color)}
-                  sx={{
-                    fontSize: 9.5,
-                    height: 20,
-                    borderRadius: PILL_RADIUS,
-                    fontWeight: isSelected ? 700 : 500,
-                    border: `1.5px solid ${colorVal}`,
-                    bgcolor: isSelected ? colorVal : "transparent",
-                    color: isSelected ? (theme) => theme.palette.common.white : "text.secondary",
-                    cursor: "pointer",
-                    "&:hover": {
-                      bgcolor: isSelected ? colorVal : "action.hover",
-                    },
-                  }}
-                />
-              </Grid>
-            );
-          })}
-        </Grid>
-      )}
-
-      <TextField
-        placeholder="Filter markers..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        size="small"
-        fullWidth
-        slotProps={{
-          input: {
-            sx: {
-              bgcolor: "background.paper",
-              fontSize: "0.75rem",
-              "& fieldset": { borderColor: "divider" },
-              "&:hover fieldset": { borderColor: "text.secondary" },
-              "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+                  onClick={() => setSearchQuery("")}
+                >
+                  <CloseIcon sx={{ fontSize: 12 }} />
+                </IconButton>
+              ),
             },
-            startAdornment: (
-              <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
-                <SearchIcon sx={{ fontSize: 14 }} />
-              </Box>
-            ),
-            endAdornment: (searchQuery || selectedColor) && (
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedColor(null);
-                }}
-              >
-                <CloseIcon sx={{ fontSize: 12 }} />
-              </IconButton>
-            ),
+          }}
+        />
+        <IconButton
+          size="small"
+          onClick={handleFilterClick}
+          sx={{
+            border: "1px solid",
+            borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
+            bgcolor: activeFilterCount > 0 ? "action.selected" : "transparent",
+            p: 0.8,
+          }}
+        >
+          <Badge badgeContent={activeFilterCount} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}>
+            <TuneIcon sx={{ fontSize: 16 }} />
+          </Badge>
+        </IconButton>
+      </Box>
+
+      <Popover
+        open={openFilter}
+        anchorEl={filterAnchorEl}
+        onClose={handleFilterClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        slotProps={{
+          paper: {
+            sx: { p: 2, width: 280, display: "flex", flexDirection: "column", gap: 1.5 },
           },
         }}
-      />
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.75rem" }}>
+            Filters
+          </Typography>
+          {activeFilterCount > 0 && (
+            <Chip
+              label="Clear All"
+              size="small"
+              onClick={() => {
+                setSelectedColor(null);
+                setSelectedStoryline(null);
+              }}
+              sx={{ height: 18, fontSize: 10, cursor: "pointer" }}
+            />
+          )}
+        </Box>
+
+        <Divider />
+
+        <Box>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
+            Marker Color
+          </Typography>
+          <Grid container spacing={0.5}>
+            {Object.entries(colorStats).map(([color, count]) => {
+              const isSelected = selectedColor === color;
+              const colorVal = getMarkerColorValue(color);
+              return (
+                <Grid item key={color}>
+                  <Chip
+                    label={`${color} (${count})`}
+                    size="small"
+                    onClick={() => setSelectedColor(isSelected ? null : color)}
+                    sx={{
+                      fontSize: 9.5,
+                      height: 20,
+                      borderRadius: PILL_RADIUS,
+                      fontWeight: isSelected ? 700 : 500,
+                      border: `1.5px solid ${colorVal}`,
+                      bgcolor: isSelected ? colorVal : "transparent",
+                      color: isSelected ? (theme) => theme.palette.common.white : "text.secondary",
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: isSelected ? colorVal : "action.hover",
+                      },
+                    }}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Box>
+
+        {Object.keys(storylineStats).length > 0 && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
+              Storyline
+            </Typography>
+            <Grid container spacing={0.5}>
+              {Object.entries(storylineStats).map(([sl, count]) => {
+                const isSelected = selectedStoryline === sl;
+                return (
+                  <Grid item key={sl}>
+                    <Chip
+                      label={`${sl} (${count})`}
+                      size="small"
+                      onClick={() => setSelectedStoryline(isSelected ? null : sl)}
+                      sx={{
+                        fontSize: 9.5,
+                        height: 20,
+                        borderRadius: PILL_RADIUS,
+                        fontWeight: isSelected ? 700 : 500,
+                        border: "1px solid",
+                        borderColor: isSelected ? "primary.main" : "divider",
+                        bgcolor: isSelected ? "primary.main" : "transparent",
+                        color: isSelected ? "primary.contrastText" : "text.secondary",
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: isSelected ? "primary.main" : "action.hover",
+                        },
+                      }}
+                    />
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Box>
+        )}
+      </Popover>
 
       <List 
         tabIndex={0}
@@ -248,7 +376,7 @@ export const MarkerView: React.FC = () => {
               >
                 <ListItemText
                   primary={
-                    <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
+                    <Box sx={{ display: "flex", gap: 0.8, alignItems: "center", flexWrap: "wrap" }}>
                       <Box
                         sx={{
                           width: 6,
@@ -285,6 +413,25 @@ export const MarkerView: React.FC = () => {
                       >
                         {cleanDesc}
                       </Typography>
+                      {m.sceneStorylines && m.sceneStorylines.length > 0 && (
+                        <Box sx={{ display: "flex", gap: 0.4 }}>
+                          {m.sceneStorylines.map((sl) => (
+                            <Chip
+                              key={sl}
+                              label={sl}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 12,
+                                fontSize: '7.5px',
+                                p: 0,
+                                borderRadius: PILL_RADIUS,
+                                textTransform: "lowercase",
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
                     </Box>
                   }
                   secondary={

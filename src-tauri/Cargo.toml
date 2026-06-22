@@ -2,7 +2,7 @@
 name = "actone"
 version = "0.1.15"
 description = "A Tauri App"
-authors = ["Lune Studio Works"]
+authors = ["Write Up Film Service Company"]
 license = "Proprietary"
 edition = "2024"
 

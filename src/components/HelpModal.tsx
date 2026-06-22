@@ -1574,7 +1574,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
 
       <Box sx={{ borderTop: 1, borderColor: "divider", px: 2.5, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10.5, fontWeight: 500 }}>
-          ActOne &copy; 2026 Lune Studio Works
+          ActOne &copy; 2026 Write Up Film Service Company
         </Typography>
         <Button onClick={openFountainGuide} endIcon={<OpenInNewIcon sx={{ fontSize: 13 }} />} size="small" sx={{ textTransform: "none", fontWeight: 600, fontSize: 12 }}>
           Fountain Syntax Guide

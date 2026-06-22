@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.16] - 2026-06-22
+
+### Changed
+- **Branding Attribution**: Renamed Lune Studio Works to Write Up Film Service Company.
+- **Markers Navigation Filters**: Rebuilt the Markers list filter UI. Replaced static color chips with a popover filter menu containing Marker Color and Storyline filters.
+- **Marker Lists Item Details**: Added outlined storyline tag chips inside each list item matching navigator style.
+
+### Fixed
+- **Vite Developer Server**: Ignored Visual Studio `.vs/` files in Vite's HMR watcher to prevent file lock crashes on Windows.
+- **CI Workflows**: Enabled Rust caching in release actions and resolved MSIX packaging build failure by correcting the Square310x310Logo icon target.
+
 ## [0.1.13] - 2026-06-21
 
 ### Added
@@ -46,7 +57,7 @@
 ### Changed
 - **Planning Board Drag & Drop**: Enabled seamless, fluid drag-and-drop animation and container layout shifting across different section columns.
 - **View Switcher Control**: Redesigned the Editor/Planning mode switcher in the status bar to operate as a direct toggle click instead of a dropdown menu.
-- **Branding Attribution**: Transitioned project metadata, author fields, and copyright elements to brand under "Lune Studio Works, Chennai".
+- **Branding Attribution**: Transitioned project metadata, author fields, and copyright elements to brand under "Write Up Film Service Company".
 
 ### Fixed
 - **Windows Drag & Drop**: Resolved exceptions under WebView2 (Windows WebView) that caused drag-and-drop actions to silently abort.

@@ -21,6 +21,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri -> target"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -62,22 +67,11 @@ jobs:
           Copy-Item src-tauri/target/release/actone.exe $layout/
           Copy-Item packaging/msix/AppxManifest.xml $layout/
 
-          $sizes = @{
-            "StoreLogo" = "50x50"
-            "Square44x44Logo" = "44x44"
-            "Square150x150Logo" = "150x150"
-            "Wide310x150Logo" = "310x150"
-            "LargeSquareLogo" = "310x310"
-          }
-
-          foreach ($entry in $sizes.GetEnumerator()) {
-            magick src-tauri/icons/icon.png `
-              -resize $entry.Value `
-              -gravity center `
-              -background "#1a1b26" `
-              -extent $entry.Value `
-              "$layout/Assets/$($entry.Key).png"
-          }
+          Copy-Item src-tauri/icons/StoreLogo.png "$layout/Assets/"
+          Copy-Item src-tauri/icons/Square44x44Logo.png "$layout/Assets/"
+          Copy-Item src-tauri/icons/Square150x150Logo.png "$layout/Assets/"
+          Copy-Item src-tauri/icons/Wide310x150Logo.png "$layout/Assets/"
+          Copy-Item src-tauri/icons/Square310x310Logo.png "$layout/Assets/"
 
       - name: Create MSIX
         shell: pwsh
