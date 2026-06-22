@@ -271,7 +271,7 @@ export const MarkerView: React.FC = () => {
               const isSelected = selectedColor === color;
               const colorVal = getMarkerColorValue(color);
               return (
-                <Grid item key={color}>
+                <Grid key={color}>
                   <Chip
                     label={`${color} (${count})`}
                     size="small"
@@ -305,7 +305,7 @@ export const MarkerView: React.FC = () => {
               {Object.entries(storylineStats).map(([sl, count]) => {
                 const isSelected = selectedStoryline === sl;
                 return (
-                  <Grid item key={sl}>
+                  <Grid key={sl}>
                     <Chip
                       label={`${sl} (${count})`}
                       size="small"

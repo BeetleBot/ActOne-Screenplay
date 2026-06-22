@@ -234,7 +234,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     // Help
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, action: () => { onOpenHelpModal(); onClose(); } },
     { id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } },
-    { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://github.com/BeetleBot/ActOne/issues"); onClose(); } },
+    { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://github.com/beetlebot/ActOne/issues"); onClose(); } },
   ];
 
   const filteredCommands = commands.filter((cmd) =>
