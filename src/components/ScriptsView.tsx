@@ -32,8 +32,9 @@ export const ScriptsView: React.FC = () => {
     setActiveScript, addScript, importScript, renameScript, deleteScript, moveScript,
   } = useFile();
 
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState("");
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
-  const [renameDialog, setRenameDialog] = useState<{ open: boolean; index: number; value: string } | null>(null);
   const [exportDialog, setExportDialog] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
@@ -57,19 +58,27 @@ export const ScriptsView: React.FC = () => {
     : "Untitled";
 
   const handleAdd = async () => {
-    await addScript();
+    const newIndex = scripts.length;
+    const newName = await addScript("Untitled");
+    if (newName) {
+      setEditingIndex(newIndex);
+      setEditingValue(newName);
+    }
   };
 
   const handleRenameOpen = () => {
     if (!menuState) return;
-    setRenameDialog({ open: true, index: menuState.index, value: scripts[menuState.index]?.name || "" });
+    setEditingIndex(menuState.index);
+    setEditingValue(scripts[menuState.index]?.name || "");
     setMenuState(null);
   };
 
-  const handleRenameSubmit = async () => {
-    if (!renameDialog) return;
-    await renameScript(renameDialog.index, renameDialog.value);
-    setRenameDialog(null);
+  const handleRenameSave = async (index: number) => {
+    if (editingValue.trim()) {
+      await renameScript(index, editingValue.trim());
+    }
+    setEditingIndex(null);
+    setEditingValue("");
   };
 
   const handleDelete = async () => {
@@ -260,6 +269,10 @@ export const ScriptsView: React.FC = () => {
                   selected={isActive}
                   disableRipple={dragIndex !== null}
                   onClick={() => { if (dragIndex === null) setActiveScript(index); }}
+                  onDoubleClick={() => {
+                    setEditingIndex(index);
+                    setEditingValue(script.name);
+                  }}
                   data-script-index={index}
                   sx={{
                     borderRadius: "6px", mb: 0.25, pr: 1, py: 0.5, pl: 0.5,
@@ -288,15 +301,41 @@ export const ScriptsView: React.FC = () => {
                   >
                     <DragHandleIcon sx={{ fontSize: 16 }} />
                   </Box>
-                  <ListItemText
-                    primary={script.name}
-                    secondary={isActive && dragIndex === null ? "active" : undefined}
-                    slotProps={{
-                      primary: { sx: { fontWeight: isActive ? 700 : 500, fontSize: "0.8rem" } },
-                      secondary: { sx: { fontSize: "0.6rem", color: "primary.main" } },
-                    }}
-                    sx={{ minWidth: 0 }}
-                  />
+                  {editingIndex === index ? (
+                    <TextField
+                      autoFocus
+                      size="small"
+                      value={editingValue}
+                      onChange={(e) => setEditingValue(e.target.value)}
+                      onBlur={() => handleRenameSave(index)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRenameSave(index);
+                        } else if (e.key === "Escape") {
+                          setEditingIndex(null);
+                          setEditingValue("");
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      onDoubleClick={(e) => e.stopPropagation()}
+                      slotProps={{
+                        input: {
+                          sx: { fontSize: "0.8rem", py: 0.25, height: 24 }
+                        }
+                      }}
+                      sx={{ flex: 1, mr: 1 }}
+                    />
+                  ) : (
+                    <ListItemText
+                      primary={script.name}
+                      secondary={isActive && dragIndex === null ? "active" : undefined}
+                      slotProps={{
+                        primary: { sx: { fontWeight: isActive ? 700 : 500, fontSize: "0.8rem" } },
+                        secondary: { sx: { fontSize: "0.6rem", color: "primary.main" } },
+                      }}
+                      sx={{ minWidth: 0 }}
+                    />
+                  )}
                   <IconButton
                     size="small"
                     onClick={(e) => {
@@ -348,31 +387,7 @@ export const ScriptsView: React.FC = () => {
         <MenuItem onClick={handleDelete} dense sx={{ color: "error.main", fontSize: 13 }}>Delete</MenuItem>
       </Menu>
 
-      {renameDialog && (
-        <Dialog open onClose={() => setRenameDialog(null)} disableScrollLock maxWidth="xs" fullWidth
-          sx={{ '& .MuiDialog-paper': { borderRadius: '10px' } }}>
-          <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Rename Script</Typography>
-            <IconButton aria-label="close" onClick={() => setRenameDialog(null)} sx={{ color: "text.secondary" }}>
-              <CloseIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ px: 2.5, py: 2 }}>
-            <TextField
-              autoFocus
-              fullWidth
-              size="small"
-              value={renameDialog.value}
-              onChange={(e) => setRenameDialog({ ...renameDialog, value: e.target.value })}
-              onKeyDown={(e) => { if (e.key === "Enter") handleRenameSubmit(); }}
-            />
-          </DialogContent>
-          <DialogActions sx={{ px: 2.5, py: 1.25 }}>
-            <Button onClick={() => setRenameDialog(null)} color="inherit" size="small">Cancel</Button>
-            <Button onClick={handleRenameSubmit} variant="contained" size="small">Rename</Button>
-          </DialogActions>
-        </Dialog>
-      )}
+
 
       {exportDialog && (
         <Dialog open onClose={() => setExportDialog(false)} fullWidth maxWidth="sm" disableScrollLock

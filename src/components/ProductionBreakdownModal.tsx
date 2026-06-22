@@ -118,7 +118,7 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
         const sceneName = line.text
           .replace(/^[.#= ]+/, "")
           .replace(/\[\[.*?\]\]/g, "")
-          .replace(/#[^#]+#\s*$/, "")
+          .replace(/#[^#\s]+#\s*/g, "")
           .trim();
 
         if (currentScene) {

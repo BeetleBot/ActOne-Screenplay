@@ -314,9 +314,11 @@ const CATEGORIES = [
 
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, parsedDoc, updateSettings } = useFile();
+  const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId } = useFile();
   const { typewriterMode, hideSyntaxEnabled, lineFocusEnabled } = useUI();
   const { setActiveLineId, setSelectedSceneId, setEditorView } = useEditor();
+  const lastScriptKeyRef = useRef("");
+  const currentScriptKey = `${activeFileId}-${activeScriptIndex}`;
 
   const parsedDocRef = useRef(parsedDoc);
   useEffect(() => {
@@ -562,15 +564,33 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
   }, []);
 
   useEffect(() => {
-    if (viewRef.current && viewRef.current.state.doc.toString() !== rawText) {
+    if (viewRef.current) {
       const view = viewRef.current;
-      const cursor = view.state.selection.main.head;
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: rawText },
-        selection: { anchor: Math.min(cursor, rawText.length) },
-      });
+      const isDifferentScript = lastScriptKeyRef.current !== currentScriptKey;
+      lastScriptKeyRef.current = currentScriptKey;
+
+      if (view.state.doc.toString() !== rawText) {
+        if (isDifferentScript) {
+          view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: rawText },
+            selection: { anchor: 0 },
+            scrollIntoView: true,
+          });
+          const scroller = view.scrollDOM;
+          if (scroller) {
+            scroller.scrollTop = 0;
+            scroller.scrollLeft = 0;
+          }
+        } else {
+          const cursor = view.state.selection.main.head;
+          view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: rawText },
+            selection: { anchor: Math.min(cursor, rawText.length) },
+          });
+        }
+      }
     }
-  }, [rawText]);
+  }, [rawText, currentScriptKey]);
 
   useEffect(() => {
     if (viewRef.current) {

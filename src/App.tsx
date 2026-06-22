@@ -271,13 +271,13 @@ function AppInner() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <AppProviders>
+      <AppProviders>
+        <ThemeProvider>
           <SprintProvider>
             <AppInner />
           </SprintProvider>
-        </AppProviders>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AppProviders>
     </ErrorBoundary>
   );
 }

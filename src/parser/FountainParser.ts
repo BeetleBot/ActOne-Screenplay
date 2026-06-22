@@ -69,10 +69,10 @@ export function parseSceneHeading(headingText: string): ParsedSceneHeading {
   cleanText = cleanText.replace(/\[\[.*?\]\]/g, "").trim();
   
   let sceneNumber: string | null = null;
-  const matchNum = cleanText.match(/#([^#]+)#$/);
+  const matchNum = cleanText.match(/#([^#\s]+)#/);
   if (matchNum) {
     sceneNumber = matchNum[1].trim();
-    cleanText = cleanText.replace(/#[^#]+#$/, "").trim();
+    cleanText = cleanText.replace(/#([^#\s]+)#/, "").trim();
   }
 
   let setting: string | null = null;
@@ -306,8 +306,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
       if (workingText.startsWith(".")) {
         workingText = workingText.substring(1).trim();
       }
-      workingText = workingText.replace(/\[\[.*?\]\]\s*$/, "").trim();
-      const matchNum = workingText.match(/#([^#]+)#$/);
+      const matchNum = workingText.match(/#([^#\s]+)#/);
       if (matchNum) {
         sceneNumber = matchNum[1];
       }

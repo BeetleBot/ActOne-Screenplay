@@ -3,6 +3,7 @@ import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { createActOneTheme, deriveAllColors, type ThemeMode, type ThemeConfig, type ThemeColors, themes } from "../theme";
 import { STORAGE_KEYS } from "../constants";
+import { useUI } from "./UIContext";
 
 export interface CustomTheme {
   id: string;
@@ -111,7 +112,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.body.classList.toggle("dark-theme", mode === "dark");
   }, [mode]);
 
-  const muiTheme = useMemo(() => createActOneTheme(currentThemeConfig), [currentThemeConfig]);
+  const { appScale } = useUI();
+
+  const muiTheme = useMemo(() => createActOneTheme(currentThemeConfig, appScale), [currentThemeConfig, appScale]);
 
   const addCustomTheme = useCallback((
     name: string,

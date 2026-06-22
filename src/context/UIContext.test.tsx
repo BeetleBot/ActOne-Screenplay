@@ -53,22 +53,22 @@ describe("UIContext", () => {
     expect(localStorage.getItem("actone-typewriter-mode")).toBe("true");
   });
 
-  it("sets zoom level clamped between 50-300", () => {
+  it("sets zoom level clamped between 50-400", () => {
     const { result } = renderHook(() => useUI(), { wrapper });
     act(() => result.current.setZoomLevel(25));
     expect(result.current.zoomLevel).toBe(50);
-    act(() => result.current.setZoomLevel(350));
-    expect(result.current.zoomLevel).toBe(300);
+    act(() => result.current.setZoomLevel(450));
+    expect(result.current.zoomLevel).toBe(400);
     act(() => result.current.setZoomLevel(150));
     expect(result.current.zoomLevel).toBe(150);
   });
 
-  it("sets app scale clamped between 50-200", () => {
+  it("sets app scale clamped between 50-300", () => {
     const { result } = renderHook(() => useUI(), { wrapper });
     act(() => result.current.setAppScale(25));
     expect(result.current.appScale).toBe(50);
-    act(() => result.current.setAppScale(250));
-    expect(result.current.appScale).toBe(200);
+    act(() => result.current.setAppScale(350));
+    expect(result.current.appScale).toBe(300);
   });
 
   it("toggles settings and persists them", () => {

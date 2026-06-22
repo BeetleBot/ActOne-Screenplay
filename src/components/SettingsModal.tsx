@@ -113,7 +113,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               <Slider
                 size="small"
                 min={75}
-                max={150}
+                max={300}
                 step={5}
                 value={appScale}
                 onChange={(_, val) => setAppScale(val as number)}
@@ -174,7 +174,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               <Slider
                 size="small"
                 min={50}
-                max={200}
+                max={400}
                 step={10}
                 value={zoomLevel}
                 onChange={(_, val) => setZoomLevel(val as number)}

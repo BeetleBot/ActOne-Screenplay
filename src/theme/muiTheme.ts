@@ -152,9 +152,10 @@ function hexToRgbStr(hex: string): string {
   return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
 }
 
-function getEditorVars(t: ThemeConfig) {
+function getEditorVars(t: ThemeConfig, appScale: number) {
   const c = t.colors;
   return {
+    '--app-scale': `${appScale}%`,
     '--bg-app': c.editor,
     '--bg-sidebar': c.sidebar,
     '--bg-editor-wrapper': c.editor,
@@ -246,9 +247,9 @@ export function deriveThemeBg(accent: string, isDark: boolean): string {
   return isDark ? mixHex(accent, "#000000", 0.08) : mixHex(accent, "#ffffff", 0.03);
 }
 
-export function createActOneTheme(t: ThemeConfig) {
+export function createActOneTheme(t: ThemeConfig, appScale: number) {
   const c = t.colors;
-  const editorVars = getEditorVars(t);
+  const editorVars = getEditorVars(t, appScale);
 
   return createTheme({
     ...shared,

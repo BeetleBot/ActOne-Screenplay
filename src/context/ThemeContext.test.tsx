@@ -2,9 +2,10 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import React from "react";
 import { ThemeProvider, useTheme } from "./ThemeContext";
+import { UIProvider } from "./UIContext";
 
 function wrapper({ children }: { children: React.ReactNode }) {
-  return React.createElement(ThemeProvider, null, children);
+  return React.createElement(UIProvider, null, React.createElement(ThemeProvider, null, children));
 }
 
 describe("ThemeContext", () => {

@@ -133,13 +133,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   }, [isZenMode]);
 
   const setZoomLevel = (zoom: number) => {
-    const newZoom = Math.min(Math.max(zoom, 50), 300);
+    const newZoom = Math.min(Math.max(zoom, 50), 400);
     setZoomLevelState(newZoom);
     localStorage.setItem(STORAGE_KEYS.ZOOM_LEVEL, String(newZoom));
   };
 
   const setAppScale = (scale: number) => {
-    const newScale = Math.min(Math.max(scale, 50), 200);
+    const newScale = Math.min(Math.max(scale, 50), 300);
     setAppScaleState(newScale);
     localStorage.setItem(STORAGE_KEYS.APP_SCALE, String(newScale));
   };

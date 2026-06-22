@@ -104,7 +104,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     let sceneIndex = 1;
     const updatedLines = parsedDoc.lines.map((line) => {
       if (line.type === LineType.heading) {
-        const cleanedText = line.text.replace(/\s*#([^#]+)#\s*$/, "");
+        const cleanedText = line.text.replace(/\s*#([^#\s]+)#\s*/g, " ").trim();
         return {
           ...line,
           text: `${cleanedText} #${sceneIndex++}#`
@@ -119,7 +119,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const clearSceneNumbers = () => {
     const updatedLines = parsedDoc.lines.map((line) => {
       if (line.type === LineType.heading) {
-        const cleanedText = line.text.replace(/\s*#([^#]+)#\s*$/, "");
+        const cleanedText = line.text.replace(/\s*#([^#\s]+)#\s*/g, " ").trim();
         return {
           ...line,
           text: cleanedText

@@ -157,8 +157,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
     }
 
     if (type === LINE_HEADING) {
-      let workingText = trimmed.replace(/\[\[.*?\]\]\s*$/, "").trim();
-      const sceneNumMatch = workingText.match(/#([^#]+)#\s*$/);
+      const sceneNumMatch = trimmed.match(/#([^#\s]+)#/);
       if (sceneNumMatch) {
         const num = sceneNumMatch[1].trim();
         lineDecos.push({
@@ -166,10 +165,10 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
             attributes: { "data-scene-number": num }
           })
         });
-        const hashStart = line.text.lastIndexOf("#" + sceneNumMatch[1] + "#");
+        const hashStart = line.text.indexOf("#" + sceneNumMatch[1] + "#");
         if (hashStart >= 0) {
           lineDecos.push({
-            from: line.from + hashStart, to: line.from + hashStart + sceneNumMatch[0].trim().length, dec: Decoration.mark({ class: "cm-fountain-syntax" })
+            from: line.from + hashStart, to: line.from + hashStart + sceneNumMatch[0].length, dec: Decoration.mark({ class: "cm-fountain-syntax" })
           });
         }
       }

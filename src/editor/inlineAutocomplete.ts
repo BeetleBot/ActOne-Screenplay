@@ -101,8 +101,8 @@ function computeLocations(state: EditorState, excludeLine?: number): Set<string>
       const lineText = state.doc.line(i).text;
       let clean = lineText.trim();
       clean = clean.replace(/^\./, "").trim();
-      clean = clean.replace(/#[^#]+#$/, "").trim();
       clean = clean.replace(/\[\[.*?\]\]/g, "").trim();
+      clean = clean.replace(/#([^#\s]+)#/g, "").trim();
       const settingMatch = clean.match(/^(INT\/EXT|EXT\/INT|INT|EXT|I\/E|E\/I)\b\.?\s*/i);
       if (settingMatch) {
         clean = clean.substring(settingMatch[0].length).trim();

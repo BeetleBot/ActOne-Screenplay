@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useFile, useEditor } from "../context";
 import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
-import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon } from "./Icons";
+import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon } from "./Icons";
 
 import {
   Box,
@@ -15,6 +15,10 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Popover,
+  Grid,
+  Badge,
+  Divider,
 } from "@mui/material";
 
 export function getSceneColor(line: ParsedLine): string | undefined {
@@ -28,7 +32,7 @@ export function getSceneTitle(line: ParsedLine): string {
   return line.text
     .replace(/^[.#= ]+/, "")
     .replace(/\[\[.*?\]\]/g, "")
-    .replace(/#[^#]+#\s*$/, "")
+    .replace(/#[^#\s]+#\s*/g, "")
     .trim();
 }
 
@@ -117,7 +121,12 @@ export const OutlineView: React.FC = () => {
   const [showSections, setShowSections] = useState(true);
   const [showScenes, setShowScenes] = useState(true);
   const [showSynopses, setShowSynopses] = useState(false);
+  const [showStorylines, setShowStorylines] = useState(true);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedStoryline, setSelectedStoryline] = useState<string | null>(null);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const activeFilterCount = (selectedColor ? 1 : 0) + (selectedStoryline ? 1 : 0);
   const [outlineFontSize, setOutlineFontSizeState] = useState<"small" | "normal" | "large">(
     () => (localStorage.getItem("actone-outline-font-size") as any) || "normal"
   );
@@ -157,8 +166,42 @@ export const OutlineView: React.FC = () => {
     [rawOutlineItems]
   );
 
+  const colorStats = useMemo(() => {
+    const stats: { [color: string]: number } = {};
+    rawOutlineItems.forEach(({ line }) => {
+      const isSection = line.type === LineType.section;
+      const isSynopsis = line.type === LineType.synopse;
+      const isScene = !isSection && !isSynopsis;
+      if (isScene && line.color) {
+        stats[line.color] = (stats[line.color] || 0) + 1;
+      }
+    });
+    return stats;
+  }, [rawOutlineItems]);
+
+  const storylineStats = useMemo(() => {
+    const stats: { [storyline: string]: number } = {};
+    rawOutlineItems.forEach(({ line }) => {
+      if (line.storylines) {
+        line.storylines.forEach((sl) => {
+          stats[sl] = (stats[sl] || 0) + 1;
+        });
+      }
+    });
+    return stats;
+  }, [rawOutlineItems]);
+
   // Filter + collapse
   const visibleItems: OutlineItem[] = useMemo(() => {
+    const getSynopsisPrecedingScene = (lineIdx: number) => {
+      for (let j = lineIdx - 1; j >= 0; j--) {
+        const l = parsedDoc.lines[j];
+        if (l.type === LineType.heading) return l;
+        if (l.type === LineType.section) return null;
+      }
+      return null;
+    };
+
     const filtered = rawOutlineItems.filter((item) => {
       const isSection = item.line.type === LineType.section;
       const isSynopsis = item.line.type === LineType.synopse;
@@ -166,6 +209,26 @@ export const OutlineView: React.FC = () => {
       if (!showSections && isSection) return false;
       if (!showScenes && isScene) return false;
       if (!showSynopses && isSynopsis) return false;
+
+      let itemColor = isScene ? item.line.color : undefined;
+      let itemStorylines = isScene ? item.line.storylines : undefined;
+
+      if (isSynopsis) {
+        const parentScene = getSynopsisPrecedingScene(item.index);
+        if (parentScene) {
+          itemColor = parentScene.color;
+          itemStorylines = parentScene.storylines;
+        }
+      }
+
+      if (selectedColor && (isScene || isSynopsis) && itemColor !== selectedColor) {
+        return false;
+      }
+
+      if (selectedStoryline && (isScene || isSynopsis) && (!itemStorylines || !itemStorylines.includes(selectedStoryline))) {
+        return false;
+      }
+
       if (searchQuery) {
         const textToSearch = item.line.text.replace(/^[.#= ]+/, "").trim().toLowerCase();
         if (!textToSearch.includes(searchQuery.toLowerCase())) return false;
@@ -193,7 +256,7 @@ export const OutlineView: React.FC = () => {
       }
     }
     return result;
-  }, [rawOutlineItems, showSections, showScenes, showSynopses, searchQuery, collapsedSections]);
+  }, [rawOutlineItems, showSections, showScenes, showSynopses, searchQuery, collapsedSections, selectedColor, selectedStoryline, parsedDoc.lines]);
 
   const tree = useMemo(() => buildTree(visibleItems, collapsedSections), [visibleItems, collapsedSections]);
   const selectable = useMemo(() => flattenSelectable(tree), [tree]);
@@ -616,28 +679,42 @@ export const OutlineView: React.FC = () => {
               >
                 {getSceneTitle(line)}
               </Typography>
-              {line.storylines && line.storylines.length > 0 && (
-                <Box sx={{ display: "flex", gap: 0.4 }}>
-                  {line.storylines.map((sl) => (
-                    <Chip
-                      key={sl}
-                      label={sl}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        height: 12,
-                        fontSize: fontSizes.chip,
-                        p: 0,
-                        borderRadius: PILL_RADIUS,
-                        textTransform: "lowercase",
-                      }}
-                    />
-                  ))}
-                </Box>
-              )}
             </Box>
           }
-          secondary={showSynopses && renderOutlineSynopses(synopses)}
+          secondary={
+            (showStorylines || showSynopses) && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.4 }}>
+                {showStorylines && line.storylines && line.storylines.length > 0 && (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6, mt: 0.6, mb: 0.4, pl: 0.5 }}>
+                    {line.storylines.map((sl) => (
+                      <Box
+                        key={sl}
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          px: 0.8,
+                          py: 0.3,
+                          borderRadius: "4px",
+                          border: "1px solid",
+                          borderColor: "divider",
+                          bgcolor: "action.hover",
+                          color: "text.primary",
+                          fontSize: "10.5px",
+                          fontWeight: 700,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                          fontFamily: "var(--font-ui)",
+                        }}
+                      >
+                        {sl}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+                {showSynopses && renderOutlineSynopses(synopses)}
+              </Box>
+            )
+          }
         />
       </ListItemButton>
     );
@@ -698,6 +775,15 @@ export const OutlineView: React.FC = () => {
             </Box>
             Synopses
           </MenuItem>
+          <MenuItem
+            onClick={() => { setShowStorylines(p => !p); }}
+            sx={{ fontSize: 12 }}
+          >
+            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showStorylines ? "primary.main" : "text.disabled" }}>
+              {showStorylines ? "✓" : "○"}
+            </Box>
+            Storylines
+          </MenuItem>
           <Box sx={{ borderTop: "1px solid", borderColor: "divider", my: 0.5 }} />
           <Box sx={{ px: 1.5, py: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
@@ -720,7 +806,7 @@ export const OutlineView: React.FC = () => {
         </Menu>
       </Box>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+      <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
         <TextField
           placeholder="Search outline..."
           value={searchQuery}
@@ -749,9 +835,129 @@ export const OutlineView: React.FC = () => {
             }
           }}
         />
-
-
+        <IconButton
+          size="small"
+          onClick={(e) => setFilterAnchorEl(e.currentTarget)}
+          sx={{
+            border: "1px solid",
+            borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
+            bgcolor: activeFilterCount > 0 ? "action.selected" : "transparent",
+            p: 0.8,
+          }}
+        >
+          <Badge badgeContent={activeFilterCount} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}>
+            <TuneIcon sx={{ fontSize: 14 }} />
+          </Badge>
+        </IconButton>
       </Box>
+
+      <Popover
+        open={Boolean(filterAnchorEl)}
+        anchorEl={filterAnchorEl}
+        onClose={() => setFilterAnchorEl(null)}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        slotProps={{
+          paper: {
+            sx: { p: 2, width: 280, display: "flex", flexDirection: "column", gap: 1.5 },
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.75rem" }}>
+            Outline Filters
+          </Typography>
+          {activeFilterCount > 0 && (
+            <Chip
+              label="Clear All"
+              size="small"
+              onClick={() => {
+                setSelectedColor(null);
+                setSelectedStoryline(null);
+              }}
+              sx={{ height: 18, fontSize: 10, cursor: "pointer" }}
+            />
+          )}
+        </Box>
+
+        <Divider />
+
+        <Box>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
+            Scene Color
+          </Typography>
+          <Grid container spacing={0.5}>
+            {Object.entries(colorStats).map(([color, count]) => {
+              const isSelected = selectedColor === color;
+              const colorVal = color.startsWith("#") ? color : `var(--scene-color-${color})`;
+              return (
+                <Grid key={color}>
+                  <Chip
+                    label={`${color} (${count})`}
+                    size="small"
+                    onClick={() => setSelectedColor(isSelected ? null : color)}
+                    sx={{
+                      fontSize: 9.5,
+                      height: 20,
+                      borderRadius: PILL_RADIUS,
+                      fontWeight: isSelected ? 700 : 500,
+                      border: `1.5px solid ${colorVal}`,
+                      bgcolor: isSelected ? colorVal : "transparent",
+                      color: isSelected ? (theme) => theme.palette.common.white : "text.secondary",
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: isSelected ? colorVal : "action.hover",
+                      },
+                    }}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Box>
+
+        {Object.keys(storylineStats).length > 0 && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
+              Storyline
+            </Typography>
+            <Grid container spacing={0.5}>
+              {Object.entries(storylineStats).map(([sl, count]) => {
+                const isSelected = selectedStoryline === sl;
+                return (
+                  <Grid key={sl}>
+                    <Chip
+                      label={`${sl} (${count})`}
+                      size="small"
+                      onClick={() => setSelectedStoryline(isSelected ? null : sl)}
+                      sx={{
+                        fontSize: 9.5,
+                        height: 20,
+                        borderRadius: PILL_RADIUS,
+                        fontWeight: isSelected ? 700 : 500,
+                        border: "1px solid",
+                        borderColor: isSelected ? "primary.main" : "divider",
+                        bgcolor: isSelected ? "primary.main" : "transparent",
+                        color: isSelected ? "primary.contrastText" : "text.secondary",
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: isSelected ? "primary.main" : "action.hover",
+                        },
+                      }}
+                    />
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Box>
+        )}
+      </Popover>
 
       <Box
         ref={listRef}

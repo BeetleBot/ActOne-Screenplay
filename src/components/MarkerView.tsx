@@ -32,7 +32,6 @@ export const MarkerView: React.FC = () => {
   const { scrollToLine } = useEditor();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedStoryline, setSelectedStoryline] = useState<string | null>(null);
 
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
@@ -53,7 +52,7 @@ export const MarkerView: React.FC = () => {
             nearestContext = l.text
               .replace(/^[.#= ]+/, "")
               .replace(/\[\[.*?\]\]/g, "")
-              .replace(/#[^#]+#\s*$/, "")
+              .replace(/#[^#\s]+#\s*/g, "")
               .trim();
             nearestSceneNumber = l.sceneNumber;
             sceneStorylines = l.storylines;
@@ -85,27 +84,12 @@ export const MarkerView: React.FC = () => {
     return stats;
   }, [markersList]);
 
-  const storylineStats = useMemo(() => {
-    const stats: { [storyline: string]: number } = {};
-    markersList.forEach((m) => {
-      if (m.sceneStorylines) {
-        m.sceneStorylines.forEach((sl) => {
-          stats[sl] = (stats[sl] || 0) + 1;
-        });
-      }
-    });
-    return stats;
-  }, [markersList]);
-
   const [activeMarkerIdx, setActiveMarkerIdx] = useState<number>(-1);
 
   const filteredMarkers = useMemo(() => {
     return markersList.filter((m) => {
       const color = m.line.marker?.color || "orange";
       if (selectedColor && color !== selectedColor) {
-        return false;
-      }
-      if (selectedStoryline && (!m.sceneStorylines || !m.sceneStorylines.includes(selectedStoryline))) {
         return false;
       }
       if (searchQuery) {
@@ -119,7 +103,7 @@ export const MarkerView: React.FC = () => {
       }
       return true;
     });
-  }, [markersList, selectedColor, selectedStoryline, searchQuery]);
+  }, [markersList, selectedColor, searchQuery]);
 
   const handleMarkerClick = (index: number) => {
     scrollToLine(index, true);
@@ -162,7 +146,7 @@ export const MarkerView: React.FC = () => {
 
   const openFilter = Boolean(filterAnchorEl);
 
-  const activeFilterCount = (selectedColor ? 1 : 0) + (selectedStoryline ? 1 : 0);
+  const activeFilterCount = selectedColor ? 1 : 0;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, gap: 2 }}>
@@ -253,7 +237,6 @@ export const MarkerView: React.FC = () => {
               size="small"
               onClick={() => {
                 setSelectedColor(null);
-                setSelectedStoryline(null);
               }}
               sx={{ height: 18, fontSize: 10, cursor: "pointer" }}
             />
@@ -295,42 +278,6 @@ export const MarkerView: React.FC = () => {
             })}
           </Grid>
         </Box>
-
-        {Object.keys(storylineStats).length > 0 && (
-          <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
-              Storyline
-            </Typography>
-            <Grid container spacing={0.5}>
-              {Object.entries(storylineStats).map(([sl, count]) => {
-                const isSelected = selectedStoryline === sl;
-                return (
-                  <Grid key={sl}>
-                    <Chip
-                      label={`${sl} (${count})`}
-                      size="small"
-                      onClick={() => setSelectedStoryline(isSelected ? null : sl)}
-                      sx={{
-                        fontSize: 9.5,
-                        height: 20,
-                        borderRadius: PILL_RADIUS,
-                        fontWeight: isSelected ? 700 : 500,
-                        border: "1px solid",
-                        borderColor: isSelected ? "primary.main" : "divider",
-                        bgcolor: isSelected ? "primary.main" : "transparent",
-                        color: isSelected ? "primary.contrastText" : "text.secondary",
-                        cursor: "pointer",
-                        "&:hover": {
-                          bgcolor: isSelected ? "primary.main" : "action.hover",
-                        },
-                      }}
-                    />
-                  </Grid>
-                );
-              })}
-            </Grid>
-          </Box>
-        )}
       </Popover>
 
       <List 
