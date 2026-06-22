@@ -46,8 +46,42 @@ jobs:
             $ver = (Select-String -Path "src-tauri/Cargo.toml" -Pattern '^version = "([^"]+)"').Matches.Groups[1].Value
           }
           echo "SEMVER=$ver" >> $env:GITHUB_OUTPUT
+          echo "MSIX_VER=$ver.0" >> $env:GITHUB_OUTPUT
 
-      - name: Configure MSIX signing certificate
+      - name: Create NSIS and MSI bundles
+        run: npm run tauri bundle -- --bundles nsis,msi
+
+      - name: Prepare MSIX layout
+        shell: pwsh
+        run: |
+          $layout = "target/msix/layout"
+          New-Item -ItemType Directory -Path "$layout/Assets" -Force | Out-Null
+          Copy-Item src-tauri/target/release/actone.exe $layout/
+          Copy-Item packaging/msix/AppxManifest.xml $layout/
+          Copy-Item src-tauri/icons/StoreLogo.png "$layout/Assets/"
+          Copy-Item src-tauri/icons/Square44x44Logo.png "$layout/Assets/"
+          Copy-Item src-tauri/icons/Square150x150Logo.png "$layout/Assets/"
+          Copy-Item src-tauri/icons/Wide310x150Logo.png "$layout/Assets/"
+          Copy-Item src-tauri/icons/Square310x310Logo.png "$layout/Assets/"
+
+      - name: Stamp version into manifest
+        shell: pwsh
+        run: |
+          $xml = [xml](Get-Content "target/msix/layout/AppxManifest.xml")
+          $xml.Package.Identity.Version = "${{ steps.version.outputs.MSIX_VER }}"
+          $xml.Save("target/msix/layout/AppxManifest.xml")
+
+      - name: Create MSIX package
+        shell: pwsh
+        run: |
+          $sdkDir = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\10.*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $makeappx = Join-Path $sdkDir.FullName "x64\MakeAppx.exe"
+          Write-Host "Using MakeAppx: $makeappx"
+          $filename = "ActOne-${{ steps.version.outputs.SEMVER }}.msix"
+          & $makeappx pack /d target/msix/layout /p "target/msix/$filename" /o
+          echo "MSIX_FILENAME=$filename" >> $env:GITHUB_ENV
+
+      - name: Sign MSIX package
         shell: pwsh
         env:
           PFX_BASE64: ${{ secrets.MSIX_PFX_BASE64 }}
@@ -57,17 +91,14 @@ jobs:
             $pfxBytes = [Convert]::FromBase64String($env:PFX_BASE64)
             $pfxPath = "${{ runner.temp }}\signing.pfx"
             [IO.File]::WriteAllBytes($pfxPath, $pfxBytes)
-            $config = Get-Content src-tauri/gen/windows/bundle.config.json -Raw | ConvertFrom-Json
-            $config.signing.pfx = $pfxPath
-            $config.signing.pfxPassword = $env:PFX_PASSWORD
-            $config | ConvertTo-Json -Depth 10 | Set-Content src-tauri/gen/windows/bundle.config.json
-            Write-Host "MSIX signing configured with certificate"
+            $sdkDir = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\10.*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+            $signtool = Join-Path $sdkDir.FullName "x64\signtool.exe"
+            $msix = "target/msix/${{ env.MSIX_FILENAME }}"
+            & $signtool sign /fd SHA256 /f $pfxPath /p $env:PFX_PASSWORD $msix
+            Write-Host "MSIX signed successfully"
           } else {
-            Write-Host "No signing certificate found - MSIX will be unsigned (Store will sign it during ingestion)"
+            Write-Host "No signing certificate - MSIX unsigned (Store will sign)"
           }
-
-      - name: Create NSIS, MSI, and MSIX bundles
-        run: npm run tauri bundle -- --bundles nsis,msi,msix
 
       - name: Prepare portable binary
         shell: pwsh
@@ -81,6 +112,6 @@ jobs:
           files: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/msix/*.msix
+            target/msix/${{ env.MSIX_FILENAME }}
             src-tauri/target/release/ActOne-Portable-x64-${{ steps.version.outputs.SEMVER }}.exe
           token: ${{ secrets.GITHUB_TOKEN }}
