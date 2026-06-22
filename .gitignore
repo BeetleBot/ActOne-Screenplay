@@ -18,6 +18,7 @@ packaging/msix/*.appx
 
 # Build artifacts
 *.rlib
+Release/artifacts/
 
 # WinApp output
 target/msix/
