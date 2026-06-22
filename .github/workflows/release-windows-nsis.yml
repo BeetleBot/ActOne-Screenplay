@@ -52,8 +52,8 @@ jobs:
           }
           echo "SEMVER=$ver" >> $env:GITHUB_OUTPUT
 
-      - name: Create NSIS installer
-        run: npm run tauri bundle -- --bundles nsis
+      - name: Create NSIS and MSI installers
+        run: npm run tauri bundle -- --bundles nsis,msi
 
       - name: Prepare portable binary
         shell: pwsh
@@ -66,5 +66,7 @@ jobs:
         with:
           files: |
             src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/ActOne-Portable-x64-${{ steps.version.outputs.SEMVER }}.exe
           token: ${{ secrets.GITHUB_TOKEN }}
+

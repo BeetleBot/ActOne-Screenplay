@@ -2,7 +2,7 @@
   "name": "actone",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "type": "module",
   "scripts": {
     "predev": "node sync-version.js",
@@ -12,8 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "tauri": "tauri",
-    "tauri:windows:build": "tauri-windows-bundle build"
+    "tauri": "tauri"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.2",
@@ -47,7 +46,6 @@
     "jsdom": "^29.1.1",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
-    "vitest": "^4.1.7",
-    "@choochmeque/tauri-windows-bundle": "^0.1.25"
+    "vitest": "^4.1.7"
   }
 }
