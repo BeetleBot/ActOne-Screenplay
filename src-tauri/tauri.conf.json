@@ -30,7 +30,6 @@
       "deb",
       "rpm",
       "msi",
-      "msix",
       "nsis"
     ],
     "windows": {
