@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:windows:build": "tauri-windows-bundle build"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.2",
@@ -46,6 +47,7 @@
     "jsdom": "^29.1.1",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.7",
+    "@choochmeque/tauri-windows-bundle": "^0.1.25"
   }
 }

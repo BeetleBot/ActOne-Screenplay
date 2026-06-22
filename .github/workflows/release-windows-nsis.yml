@@ -1,4 +1,4 @@
-name: Windows Store Release (NSIS + MSIX)
+name: Windows NSIS Release
 
 on:
   push:
@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build Windows (NSIS + MSIX)
+  build-nsis:
+    name: Build NSIS Installer + Portable
     runs-on: windows-latest
     env:
       RUSTFLAGS: -C target-feature=+crt-static
@@ -61,36 +61,10 @@ jobs:
           $ver = "${{ steps.version.outputs.SEMVER }}"
           Copy-Item src-tauri/target/release/actone.exe "src-tauri/target/release/ActOne-Portable-x64-$ver.exe"
 
-      - name: Install WinAppCli
-        uses: microsoft/setup-WinAppCli@v1
-
-      - name: Stage MSIX package folder
-        shell: pwsh
-        run: |
-          $stageDir = "msix-staging"
-          New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
-          New-Item -ItemType Directory -Path "$stageDir/Assets" -Force | Out-Null
-
-          Copy-Item winapp/Package.appxmanifest "$stageDir/"
-          Copy-Item src-tauri/target/release/actone.exe "$stageDir/"
-
-          Copy-Item src-tauri/icons/StoreLogo.png "$stageDir/Assets/"
-          Copy-Item src-tauri/icons/Square44x44Logo.png "$stageDir/Assets/"
-          Copy-Item src-tauri/icons/Square150x150Logo.png "$stageDir/Assets/"
-          Copy-Item src-tauri/icons/Wide310x150Logo.png "$stageDir/Assets/"
-          Copy-Item src-tauri/icons/Square310x310Logo.png "$stageDir/Assets/"
-
-      - name: Create MSIX via WinApp
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path target/msix -Force | Out-Null
-          winapp pack ./msix-staging --output target/msix/ActOne.msix
-
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/ActOne-Portable-x64-${{ steps.version.outputs.SEMVER }}.exe
-            target/msix/*.msix
           token: ${{ secrets.GITHUB_TOKEN }}

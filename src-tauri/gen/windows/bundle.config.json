@@ -1,0 +1,43 @@
+{
+  "publisher": "CN=A5C810D1-3C33-4DED-95DA-33D6BC28A3B0",
+  "publisherDisplayName": "Write Up Film Service Company",
+  "capabilities": {
+    "general": [
+      "internetClient"
+    ]
+  },
+  "extensions": {
+    "shareTarget": false,
+    "fileAssociations": [
+      {
+        "name": "actone-bundle",
+        "description": "ActOne Screenplay Bundle",
+        "extensions": [
+          ".actone"
+        ]
+      },
+      {
+        "name": "fountain-screenplay",
+        "description": "Fountain Screenplay",
+        "extensions": [
+          ".fountain",
+          ".txt"
+        ]
+      }
+    ],
+    "protocolHandlers": [],
+    "appExecutionAliases": [
+      {
+        "alias": "actone"
+      }
+    ]
+  },
+  "signing": {
+    "pfx": null,
+    "pfxPassword": null
+  },
+  "resourceIndex": {
+    "enabled": false,
+    "keepConfig": false
+  }
+}
