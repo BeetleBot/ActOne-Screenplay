@@ -6,3 +6,8 @@ ref/
 *.log
 .DS_Store
 Thumbs.db
+
+# MSIX packaging
+packaging/msix/staging/
+packaging/msix/*.msix
+packaging/msix/*.appx

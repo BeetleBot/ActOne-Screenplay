@@ -1,6 +1,6 @@
 {
   "productName": "ActOne",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "identifier": "com.writeup.actone",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -31,6 +31,12 @@
       "rpm",
       "nsis"
     ],
+    "nsis": {
+      "installerIcon": "icons/icon.ico",
+      "installMode": "currentUser",
+      "headerImage": "icons/nsis-header.bmp",
+      "sidebarImage": "icons/nsis-sidebar.bmp"
+    },
     "fileAssociations": [
       {
         "name": "actone-bundle",

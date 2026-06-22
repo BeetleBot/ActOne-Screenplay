@@ -10,7 +10,7 @@
   <Identity
     Name="WriteUpFilmServiceCompany.ActOne"
     Publisher="CN=A5C810D1-3C33-4DED-95DA-33D6BC28A3B0"
-    Version="0.1.0.0"
+    Version="0.1.15.0"
     ProcessorArchitecture="x64" />
 
   <Properties>
@@ -21,7 +21,7 @@
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
   </Dependencies>
 
   <Resources>
@@ -38,7 +38,7 @@
         BackgroundColor="#1a1b26"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" Square310x310Logo="Assets\LargeSquareLogo.png" />
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" Square310x310Logo="Assets\Square310x310Logo.png" />
       </uap:VisualElements>
       <Extensions>
         <uap5:Extension Category="windows.appExecutionAlias">
@@ -46,6 +46,25 @@
             <uap5:ExecutionAlias Alias="actone.exe" />
           </uap5:AppExecutionAlias>
         </uap5:Extension>
+        <desktop:Extension Category="windows.fileTypeAssociation">
+          <desktop:FileTypeAssociation Name="actone-bundle">
+            <desktop:DisplayName>ActOne Screenplay Bundle</desktop:DisplayName>
+            <desktop:Logo>Assets\Square44x44Logo.png</desktop:Logo>
+            <desktop:SupportedFileTypes>
+              <desktop:FileType>.actone</desktop:FileType>
+            </desktop:SupportedFileTypes>
+          </desktop:FileTypeAssociation>
+        </desktop:Extension>
+        <desktop:Extension Category="windows.fileTypeAssociation">
+          <desktop:FileTypeAssociation Name="fountain-screenplay">
+            <desktop:DisplayName>Fountain Screenplay</desktop:DisplayName>
+            <desktop:Logo>Assets\Square44x44Logo.png</desktop:Logo>
+            <desktop:SupportedFileTypes>
+              <desktop:FileType>.fountain</desktop:FileType>
+              <desktop:FileType>.txt</desktop:FileType>
+            </desktop:SupportedFileTypes>
+          </desktop:FileTypeAssociation>
+        </desktop:Extension>
       </Extensions>
     </Application>
   </Applications>
