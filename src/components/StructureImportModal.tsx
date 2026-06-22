@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { CloseIcon, SearchIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon } from "./Icons";
+import { logger } from "../utils/logger";
 
 import {
   Dialog,
@@ -53,7 +54,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
           setSelectedStructure(data[0]);
         }
       } catch (err) {
-        console.error("Failed to load structures:", err);
+        logger.error("structure", "Failed to load structures:", err);
       } finally {
         setLoading(false);
       }

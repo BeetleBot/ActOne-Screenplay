@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useFile, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { CloseIcon, DownloadIcon } from "./Icons";
+import { logger } from "../utils/logger";
 
 import {
   Dialog,
@@ -105,7 +106,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
 
   const handleExportPDF = async () => {
     try {
-      const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
+      const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
         const revisedLines: boolean[] = [];
 
@@ -125,13 +126,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       }
       onClose();
     } catch (e) {
-      console.error(e);
+      logger.error("export", "handleExportPDF failed", e);
     }
   };
 
   const handleExportFountain = async () => {
     try {
-      const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
+      const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       const cleaned = stripFountainForExport(rawText, {
         sections: exportSections,
         synopses: exportSynopses,
@@ -156,13 +157,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       }
       onClose();
     } catch (e) {
-      console.error(e);
+      logger.error("export", "handleExportFountain failed", e);
     }
   };
 
   const handleExportFDX = async () => {
     try {
-      const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
+      const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
         await invoke("export_fdx", { fountainText: rawText });
       } else {
@@ -185,7 +186,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       }
       onClose();
     } catch (e) {
-      console.error(e);
+      logger.error("export", "handleExportFDX failed", e);
     }
   };
 

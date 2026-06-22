@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useFile, useEditor } from "../context";
 import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
+import { getSceneTitle } from "../utils/text";
 import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon } from "./Icons";
 
 import {
@@ -28,13 +29,7 @@ export function getSceneColor(line: ParsedLine): string | undefined {
   return undefined;
 }
 
-export function getSceneTitle(line: ParsedLine): string {
-  return line.text
-    .replace(/^[.#= ]+/, "")
-    .replace(/\[\[.*?\]\]/g, "")
-    .replace(/#[^#\s]+#\s*/g, "")
-    .trim();
-}
+export { getSceneTitle };
 
 export interface OutlineItem {
   line: ParsedLine;
@@ -128,7 +123,7 @@ export const OutlineView: React.FC = () => {
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
   const activeFilterCount = (selectedColor ? 1 : 0) + (selectedStoryline ? 1 : 0);
   const [outlineFontSize, setOutlineFontSizeState] = useState<"small" | "normal" | "large">(
-    () => (localStorage.getItem("actone-outline-font-size") as any) || "normal"
+    () => (localStorage.getItem("actone-outline-font-size") as 'small' | 'normal' | 'large' | null) ?? "normal"
   );
   const [draggedItemIdx, setDraggedItemIdx] = useState<number | null>(null);
   const [dragOverItemIdx, setDragOverItemIdx] = useState<number | null>(null);
@@ -795,7 +790,7 @@ export const OutlineView: React.FC = () => {
               key={size}
               selected={outlineFontSize === size}
               onClick={() => {
-                setOutlineFontSize(size as any);
+                setOutlineFontSize(size as 'small' | 'normal' | 'large');
                 setMenuAnchor(null);
               }}
               sx={{ textTransform: "capitalize", fontSize: 12 }}

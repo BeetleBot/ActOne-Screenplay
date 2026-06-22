@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from "react";
 import { useFile } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { AddIcon, DownloadIcon, FolderOpenIcon, DragHandleIcon, CloseIcon } from "./Icons";
+import { logger } from "../utils/logger";
 
 import {
   Box,
@@ -103,7 +104,7 @@ export const ScriptsView: React.FC = () => {
     if (!scripts.length) return;
     setExportDialog(false);
 
-    const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__;
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
     if (!isTauri) {
       if (exportFormat === "pdf" || exportFormat === "fdx") {
@@ -123,7 +124,13 @@ export const ScriptsView: React.FC = () => {
       return;
     }
 
-    const dir = await invoke<string | null>("pick_directory");
+    let dir: string | null = null;
+    try {
+      dir = await invoke<string | null>("pick_directory");
+    } catch (e) {
+      logger.error("export", "Failed to pick directory", e);
+      return;
+    }
     if (!dir) return;
 
     const revisedLines: boolean[] = [];
@@ -139,24 +146,28 @@ export const ScriptsView: React.FC = () => {
     };
 
     for (const script of scripts) {
-      const safeName = script.name.replace(/[<>:"/\\|?*]/g, "_");
-      const sep = dir.includes("\\") ? "\\" : "/";
-      if (exportFormat === "fountain") {
-        const filePath = `${dir}${sep}${bundleName}_${safeName}.fountain`;
-        await invoke("save_file_content", { path: filePath, content: script.content });
-      } else if (exportFormat === "fdx") {
-        const fdxContent = await invoke<string>("generate_fdx_string", { fountainText: script.content });
-        const filePath = `${dir}${sep}${bundleName}_${safeName}.fdx`;
-        await invoke("save_file_content", { path: filePath, content: fdxContent });
-      } else {
-        const bytes = await invoke<number[] | null>("generate_pdf_bytes", {
-          fountainText: script.content,
-          ...pdfParams,
-        });
-        if (bytes) {
-          const filePath = `${dir}${sep}${bundleName}_${safeName}.pdf`;
-          await invoke("save_file_binary", { path: filePath, bytes: Array.from(bytes) });
+      try {
+        const safeName = script.name.replace(/[<>:"/\\|?*]/g, "_");
+        const sep = dir.includes("\\") ? "\\" : "/";
+        if (exportFormat === "fountain") {
+          const filePath = `${dir}${sep}${bundleName}_${safeName}.fountain`;
+          await invoke("save_file_content", { path: filePath, content: script.content });
+        } else if (exportFormat === "fdx") {
+          const fdxContent = await invoke<string>("generate_fdx_string", { fountainText: script.content });
+          const filePath = `${dir}${sep}${bundleName}_${safeName}.fdx`;
+          await invoke("save_file_content", { path: filePath, content: fdxContent });
+        } else {
+          const bytes = await invoke<number[] | null>("generate_pdf_bytes", {
+            fountainText: script.content,
+            ...pdfParams,
+          });
+          if (bytes) {
+            const filePath = `${dir}${sep}${bundleName}_${safeName}.pdf`;
+            await invoke("save_file_binary", { path: filePath, bytes: Array.from(bytes) });
+          }
         }
+      } catch (e) {
+        logger.error("export", `Failed to export script "${script.name}"`, e);
       }
     }
   };

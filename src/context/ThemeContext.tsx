@@ -42,7 +42,7 @@ function loadCustomThemes(): CustomTheme[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch (e) { console.warn("Failed to load custom themes", e); return []; }
+  } catch (e) { /* theme load failure is non-critical */ return []; }
 }
 
 function saveCustomThemes(t: CustomTheme[]) {
@@ -55,7 +55,7 @@ const DEFAULT_DARK = { editor: "#111416", text: "#e2e2e6", accent: "#a0caff", si
 function completeCustomColors(colors: Partial<ThemeColors>, isDark: boolean): ThemeColors {
   const def = isDark ? DEFAULT_DARK : DEFAULT_LIGHT;
   const core = {
-    editor: (colors.editor || (colors as any).bg) ?? def.editor,
+    editor: colors.editor ?? (colors as Record<string, string | undefined>).bg ?? def.editor,
     text: colors.text ?? def.text,
     accent: colors.accent ?? def.accent,
     sidebar: colors.sidebar ?? def.sidebar,

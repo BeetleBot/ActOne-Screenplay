@@ -23,12 +23,12 @@ describe("ErrorBoundary", () => {
         React.createElement(ThrowingComponent)
       )
     );
-    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.getByText(/component crashed/)).toBeTruthy();
     expect(screen.getByText("Test error")).toBeTruthy();
-    expect(screen.getByText("Try Again")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
   });
 
-  it("resets error state when Try Again is clicked", () => {
+  it("resets error state when Retry is clicked", async () => {
     let shouldThrow = true;
     const ThrowingComponent = () => {
       if (shouldThrow) throw new Error("Test error");
@@ -41,15 +41,14 @@ describe("ErrorBoundary", () => {
       )
     );
 
-    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.getByText(/component crashed/)).toBeTruthy();
     shouldThrow = false;
     rerender(
       React.createElement(ErrorBoundary, null,
         React.createElement(ThrowingComponent)
       )
     );
-    // Click reset
-    screen.getByText("Try Again").click();
-    waitFor(() => expect(screen.getByText("Recovered")).toBeTruthy());
+    screen.getByText("Retry").click();
+    await waitFor(() => expect(screen.getByText("Recovered")).toBeTruthy());
   });
 });

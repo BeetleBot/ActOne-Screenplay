@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { STORAGE_KEYS } from "../constants";
+import { logger } from "../utils/logger";
 
 export interface UIContextProps {
   fontFamily: 'courier-prime' | 'courier-prime-sans';
@@ -48,13 +49,13 @@ export const useUI = () => {
 
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [fontFamily, setFontFamilyState] = useState<'courier-prime' | 'courier-prime-sans'>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.FONT_FAMILY) as any) || "courier-prime-sans";
+    return (localStorage.getItem(STORAGE_KEYS.FONT_FAMILY) as 'courier-prime' | 'courier-prime-sans' | null) ?? "courier-prime-sans";
   });
   const [typewriterMode, setTypewriterModeState] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEYS.TYPEWRITER_MODE) === "true";
   });
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) as any) || "a4";
+    return (localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) as 'letter' | 'a4' | null) ?? "a4";
   });
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
@@ -110,7 +111,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           tauriSuccess = true;
         }
       } catch (e) {
-        console.error("Failed to set Tauri fullscreen:", e);
+        logger.error("ui", "Failed to set Tauri fullscreen:", e);
       }
 
       if (!tauriSuccess) {
@@ -125,7 +126,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
             }
           }
         } catch (err) {
-          console.error("HTML5 fullscreen toggle failed:", err);
+          logger.error("ui", "HTML5 fullscreen toggle failed:", err);
         }
       }
     };

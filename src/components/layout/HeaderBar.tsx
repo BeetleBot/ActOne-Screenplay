@@ -10,6 +10,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
 import { CloseIcon, AddIcon } from "../Icons";
+import { logger } from "../../utils/logger";
 
 export const HeaderBar: React.FC = () => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
@@ -62,8 +63,8 @@ export const HeaderBar: React.FC = () => {
     return () => container.removeEventListener("wheel", handleWheel);
   }, []);
 
-  const handleClose = () => { try { getTauriWindow()?.close(); } catch (e) { console.error(e); } };
-  const handleMinimize = () => { try { getTauriWindow()?.minimize(); } catch (e) { console.error(e); } };
+  const handleClose = () => { try { getTauriWindow()?.close(); } catch (e) { logger.error("header", String(e)); } };
+  const handleMinimize = () => { try { getTauriWindow()?.minimize(); } catch (e) { logger.error("header", String(e)); } };
   const handleMaximize = async () => {
     try {
       const win = getTauriWindow();
@@ -71,7 +72,7 @@ export const HeaderBar: React.FC = () => {
         if (await win.isMaximized()) { await win.unmaximize(); setIsMaximized(false); }
         else { await win.maximize(); setIsMaximized(true); }
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { logger.error("header", String(e)); }
   };
 
   const lastClickTimeRef = useRef<number>(0);
@@ -87,7 +88,7 @@ export const HeaderBar: React.FC = () => {
         const now = Date.now();
         if (now - lastClickTimeRef.current < 400) { handleMaximize(); lastClickTimeRef.current = 0; return; }
         lastClickTimeRef.current = now;
-        try { const win = getTauriWindow(); if (win) await win.startDragging(); } catch (e) { console.error(e); }
+        try { const win = getTauriWindow(); if (win) await win.startDragging(); } catch (e) { logger.error("header", String(e)); }
       }
     }
   };

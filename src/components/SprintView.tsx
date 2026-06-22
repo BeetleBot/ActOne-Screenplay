@@ -44,7 +44,7 @@ export const SprintView: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
 
   const [sprintDuration, setSprintDuration] = useState<number>(25);
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
 
   const currentSprint = activeSprints[activeFileId];

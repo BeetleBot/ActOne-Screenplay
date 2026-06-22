@@ -25,7 +25,7 @@ export const useParking = () => {
 export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { parsedDoc } = useFile();
   const { updateSettings } = useEditor();
-  const items: ParkedItem[] = (parsedDoc as any)?.settings?.parking || [];
+  const items: ParkedItem[] = (parsedDoc.settings?.parking as ParkedItem[]) ?? [];
 
   const addItem = useCallback((text: string) => {
     if (!text.trim()) return;

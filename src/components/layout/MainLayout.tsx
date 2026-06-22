@@ -5,6 +5,7 @@ import { HeaderBar } from "./HeaderBar";
 import { ActivityBar } from "./ActivityBar";
 import { Workspace } from "./Workspace";
 import { StatusBar } from "./StatusBar";
+import { ErrorBoundary } from "../ErrorBoundary";
 
 export interface MainLayoutProps {
   isSidebarOpen: boolean;
@@ -23,7 +24,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   return (
     <>
-      <HeaderBar />
+      <ErrorBoundary name="header"><HeaderBar /></ErrorBoundary>
       <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <ActivityBar
           activeTab={activeTab}
@@ -39,7 +40,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           <Workspace
             isSidebarOpen={isSidebarOpen}
           />
-          <StatusBar />
+          <ErrorBoundary name="status"><StatusBar /></ErrorBoundary>
         </Box>
       </Box>
     </>

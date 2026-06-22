@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useFile, useEditor } from "../context";
 import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
+import { getSceneTitle } from "../utils/text";
 import { SearchIcon, CloseIcon, TuneIcon } from "./Icons";
 
 import {
@@ -49,11 +50,7 @@ export const MarkerView: React.FC = () => {
         for (let j = i; j >= 0; j--) {
           const l = lines[j];
           if (l.type === LineType.heading) {
-            nearestContext = l.text
-              .replace(/^[.#= ]+/, "")
-              .replace(/\[\[.*?\]\]/g, "")
-              .replace(/#[^#\s]+#\s*/g, "")
-              .trim();
+            nearestContext = getSceneTitle(l);
             nearestSceneNumber = l.sceneNumber;
             sceneStorylines = l.storylines;
             break;

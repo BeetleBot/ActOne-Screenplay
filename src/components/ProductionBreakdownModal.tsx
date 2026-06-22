@@ -4,6 +4,8 @@ import { LineType } from "../parser";
 import { EditorView } from "@codemirror/view";
 import { SearchIcon, CloseIcon, DownloadIcon } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
+import { logger } from "../utils/logger";
+import { CATEGORIES } from "../constants";
 
 import {
   Box,
@@ -22,24 +24,6 @@ import {
   Paper,
   Button,
 } from "@mui/material";
-
-const CATEGORIES = [
-  { key: "cast", label: "Cast", color: "var(--cat-cast)" },
-  { key: "prop", label: "Prop", color: "var(--cat-prop)" },
-  { key: "vfx", label: "VFX", color: "var(--cat-vfx)" },
-  { key: "sfx", label: "SFX", color: "var(--cat-sfx)" },
-  { key: "camera", label: "Camera", color: "var(--cat-camera)" },
-  { key: "animal", label: "Animal", color: "var(--cat-animal)" },
-  { key: "extras", label: "Extras", color: "var(--cat-extras)" },
-  { key: "vehicle", label: "Vehicle", color: "var(--cat-vehicle)" },
-  { key: "costume", label: "Costume", color: "var(--cat-costume)" },
-  { key: "makeup", label: "Makeup", color: "var(--cat-makeup)" },
-  { key: "music", label: "Music", color: "var(--cat-music)" },
-  { key: "sound", label: "Sound", color: "var(--cat-sound)" },
-  { key: "stunt", label: "Stunt", color: "var(--cat-stunt)" },
-  { key: "setDesign", label: "Set Design", color: "var(--cat-setDesign)" },
-  { key: "other", label: "Other", color: "var(--cat-other)" }
-];
 
 interface ProductionBreakdownModalProps {
   onClose: () => void;
@@ -259,7 +243,7 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
       try {
         await invoke("export_csv", { content: csvContent });
       } catch (err) {
-        console.error(err);
+        logger.error("breakdown", String(err));
       }
     } else {
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

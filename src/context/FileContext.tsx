@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundle } from "../utils";
 import type { ScriptInfo } from "../utils";
+import { logger } from "../utils/logger";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
 
@@ -91,7 +92,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [files, setFiles] = useState<ScreenplayFile[]>([]);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
-  const saveStatusTimeoutRef = useRef<any>(null);
+  const saveStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerSaveStatusSaved = () => {
     setSaveStatus("saved");
@@ -378,7 +379,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const exists = await invoke<boolean>("file_exists", { path: f.path });
           if (!exists) removeFromRecent(f.path);
-        } catch (e) { console.warn("Failed to check file existence", e); }
+        } catch (e) { logger.warn("file", "Failed to check file existence", e); }
       }
     })();
   }, []); // run once on mount
@@ -417,7 +418,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }));
         }
       } catch (err) {
-        console.error(err);
+        logger.error("file", "Page break calculation failed", err);
       }
     }, 1000);
 
@@ -481,7 +482,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Cannot open direct path in web mode");
       }
     } catch (e) {
-      console.error(e);
+      logger.error("file", "Failed to open file path", e);
       removeFromRecent(path);
       await confirm({
         title: "Error Opening File",
@@ -550,7 +551,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         res = await invoke<{ path: string; content: string } | null>("open_file_dialog");
       } catch (e) {
-        console.error(e);
+        logger.error("file", "Open file dialog failed", e);
       }
     } else {
       res = await new Promise<{ path: string; content: string; settings?: any } | null>((resolve) => {
@@ -605,7 +606,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             content = bundle.scripts[0]?.content || "";
             settings = bundle.settings;
           } catch (e) {
-            console.error(e);
+            logger.error("file", "Failed to read actone bundle", e);
             await confirm({
               title: "Error Reading Bundle",
               message: "Could not read actone bundle binary",
@@ -728,7 +729,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFilePath(normalizedPath);
           triggerSaveStatusSaved();
         } catch (e) {
-          console.error(e);
+          logger.error("file", "Save actone file failed", e);
           setSaveStatus("idle");
         } finally {
           setIsSaving(false);
@@ -753,7 +754,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } : f));
           triggerSaveStatusSaved();
         } catch (e) {
-          console.error(e);
+          logger.error("file", "Save actone file failed (browser)", e);
           setSaveStatus("idle");
         }
       }
@@ -766,7 +767,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
           triggerSaveStatusSaved();
         } catch (e) {
-          console.error(e);
+          logger.error("file", "Save file content failed", e);
           setSaveStatus("idle");
         } finally {
           setIsSaving(false);
@@ -785,7 +786,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
           triggerSaveStatusSaved();
         } catch (e) {
-          console.error(e);
+          logger.error("file", "Save file failed (browser)", e);
           setSaveStatus("idle");
         }
       }
@@ -832,7 +833,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSaveStatus("idle");
         }
       } catch (e) {
-        console.error(e);
+        logger.error("file", "Save file dialog failed", e);
         setSaveStatus("idle");
       }
     } else {
@@ -906,7 +907,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setFilePath(finalName);
           return finalName;
         } catch (e) {
-          console.error(e);
+          logger.error("file", "Save file as failed (browser)", e);
           setSaveStatus("idle");
         }
       } else {
@@ -1083,7 +1084,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fileName = result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt)$/i, "") || "Imported";
         content = result.content;
       } catch (e) {
-        console.error(e);
+        logger.error("file", "Import script dialog failed", e);
         return null;
       }
     } else {

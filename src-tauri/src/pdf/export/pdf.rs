@@ -88,6 +88,64 @@ fn build_font_system() -> FontSystem {
     FontSystem::new_with_locale_and_db("en-US".to_string(), db)
 }
 
+fn load_courier_fonts() -> std::io::Result<CourierFonts> {
+    Ok(CourierFonts {
+        regular: Font::new(FONTS[0].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load regular font"))?,
+        bold: Font::new(FONTS[1].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load bold font"))?,
+        italic: Font::new(FONTS[2].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load italic font"))?,
+        bold_italic: Font::new(FONTS[3].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load bold-italic font"))?,
+        sans_regular: Font::new(FONTS[4].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load sans regular font"))?,
+        sans_bold: Font::new(FONTS[5].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load sans bold font"))?,
+        sans_italic: Font::new(FONTS[6].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load sans italic font"))?,
+        sans_bold_italic: Font::new(FONTS[7].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load sans bold-italic font"))?,
+    })
+}
+
+fn load_noto_fonts() -> std::io::Result<NotoFonts> {
+    Ok(NotoFonts {
+        tamil_regular: Font::new(NOTO_FONTS[0].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load tamil regular font"))?,
+        tamil_bold: Font::new(NOTO_FONTS[1].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load tamil bold font"))?,
+        devanagari_regular: Font::new(NOTO_FONTS[2].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load devanagari regular font"))?,
+        devanagari_bold: Font::new(NOTO_FONTS[3].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load devanagari bold font"))?,
+        telugu_regular: Font::new(NOTO_FONTS[4].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load telugu regular font"))?,
+        telugu_bold: Font::new(NOTO_FONTS[5].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load telugu bold font"))?,
+        malayalam_regular: Font::new(NOTO_FONTS[6].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load malayalam regular font"))?,
+        malayalam_bold: Font::new(NOTO_FONTS[7].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load malayalam bold font"))?,
+        kannada_regular: Font::new(NOTO_FONTS[8].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load kannada regular font"))?,
+        kannada_bold: Font::new(NOTO_FONTS[9].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load kannada bold font"))?,
+        bengali_regular: Font::new(NOTO_FONTS[10].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load bengali regular font"))?,
+        bengali_bold: Font::new(NOTO_FONTS[11].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load bengali bold font"))?,
+        gujarati_regular: Font::new(NOTO_FONTS[12].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load gujarati regular font"))?,
+        gujarati_bold: Font::new(NOTO_FONTS[13].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load gujarati bold font"))?,
+        gurmukhi_regular: Font::new(NOTO_FONTS[14].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load gurmukhi regular font"))?,
+        gurmukhi_bold: Font::new(NOTO_FONTS[15].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load gurmukhi bold font"))?,
+    })
+}
+
 impl Exporter for PdfExporter {
     fn file_extension(&self) -> &'static str {
         "pdf"
@@ -96,60 +154,8 @@ impl Exporter for PdfExporter {
     fn export(&self, screenplay: &Screenplay, writer: &mut dyn Write) -> std::io::Result<()> {
         let mut document = Document::new();
         let mut font_system = build_font_system();
-
-        let courier = CourierFonts {
-            regular: Font::new(FONTS[0].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load regular font"))?,
-            bold: Font::new(FONTS[1].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load bold font"))?,
-            italic: Font::new(FONTS[2].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load italic font"))?,
-            bold_italic: Font::new(FONTS[3].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load bold-italic font"))?,
-            sans_regular: Font::new(FONTS[4].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load sans regular font"))?,
-            sans_bold: Font::new(FONTS[5].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load sans bold font"))?,
-            sans_italic: Font::new(FONTS[6].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load sans italic font"))?,
-            sans_bold_italic: Font::new(FONTS[7].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load sans bold-italic font"))?,
-        };
-
-        let noto = NotoFonts {
-            tamil_regular: Font::new(NOTO_FONTS[0].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load tamil regular font"))?,
-            tamil_bold: Font::new(NOTO_FONTS[1].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load tamil bold font"))?,
-            devanagari_regular: Font::new(NOTO_FONTS[2].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load devanagari regular font"))?,
-            devanagari_bold: Font::new(NOTO_FONTS[3].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load devanagari bold font"))?,
-            telugu_regular: Font::new(NOTO_FONTS[4].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load telugu regular font"))?,
-            telugu_bold: Font::new(NOTO_FONTS[5].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load telugu bold font"))?,
-            malayalam_regular: Font::new(NOTO_FONTS[6].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load malayalam regular font"))?,
-            malayalam_bold: Font::new(NOTO_FONTS[7].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load malayalam bold font"))?,
-            kannada_regular: Font::new(NOTO_FONTS[8].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load kannada regular font"))?,
-            kannada_bold: Font::new(NOTO_FONTS[9].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load kannada bold font"))?,
-            bengali_regular: Font::new(NOTO_FONTS[10].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load bengali regular font"))?,
-            bengali_bold: Font::new(NOTO_FONTS[11].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load bengali bold font"))?,
-            gujarati_regular: Font::new(NOTO_FONTS[12].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load gujarati regular font"))?,
-            gujarati_bold: Font::new(NOTO_FONTS[13].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load gujarati bold font"))?,
-            gurmukhi_regular: Font::new(NOTO_FONTS[14].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load gurmukhi regular font"))?,
-            gurmukhi_bold: Font::new(NOTO_FONTS[15].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load gurmukhi bold font"))?,
-        };
+        let courier = load_courier_fonts()?;
+        let noto = load_noto_fonts()?;
 
         let all_fonts = AllFonts { courier, noto };
 
@@ -171,6 +177,13 @@ impl Exporter for PdfExporter {
 }
 
 impl PdfExporter {
+    fn is_element_skipped(&self, element: &Element) -> bool {
+        matches!(
+            (element, self.synopses, self.sections),
+            (Element::Synopsis(_), false, _) | (Element::Section { .. }, _, false)
+        )
+    }
+
     fn generate_pdf(
         &self,
         document: &mut Document,
@@ -269,13 +282,7 @@ impl PdfExporter {
                 inner: element,
             }) = element_iter.peek()
             {
-                let mut is_skipped = false;
-                match element {
-                    Element::Synopsis(_) if !self.synopses => is_skipped = true,
-                    Element::Section { .. } if !self.sections => is_skipped = true,
-                    _ => {}
-                }
-                if is_skipped {
+                if self.is_element_skipped(element) {
                     element_iter.next();
                     continue;
                 }
@@ -288,13 +295,7 @@ impl PdfExporter {
                 peek_next_iter.next();
                 let mut next_non_skipped = None;
                 while let Some(span) = peek_next_iter.peek() {
-                    let mut is_next_skipped = false;
-                    match &span.inner {
-                        Element::Synopsis(_) if !self.synopses => is_next_skipped = true,
-                        Element::Section { .. } if !self.sections => is_next_skipped = true,
-                        _ => {}
-                    }
-                    if is_next_skipped {
+                    if self.is_element_skipped(&span.inner) {
                         peek_next_iter.next();
                     } else {
                         next_non_skipped = Some(&span.inner);
@@ -355,13 +356,7 @@ impl PdfExporter {
                         peek_next_iter.next();
                         let mut next_element = None;
                         while let Some(span) = peek_next_iter.peek() {
-                            let mut is_skipped = false;
-                            match &span.inner {
-                                Element::Synopsis(_) if !self.synopses => is_skipped = true,
-                                Element::Section { .. } if !self.sections => is_skipped = true,
-                                _ => {}
-                            }
-                            if is_skipped {
+                            if self.is_element_skipped(&span.inner) {
                                 peek_next_iter.next();
                             } else {
                                 next_element = Some(&span.inner);
@@ -595,13 +590,7 @@ impl PdfExporter {
                         peek_next_iter.next();
                         let mut next_element = None;
                         while let Some(span) = peek_next_iter.peek() {
-                            let mut is_skipped = false;
-                            match &span.inner {
-                                Element::Synopsis(_) if !self.synopses => is_skipped = true,
-                                Element::Section { .. } if !self.sections => is_skipped = true,
-                                _ => {}
-                            }
-                            if is_skipped {
+                            if self.is_element_skipped(&span.inner) {
                                 peek_next_iter.next();
                             } else {
                                 next_element = Some(&span.inner);
@@ -678,13 +667,7 @@ impl PdfExporter {
                             peek_next_iter.next();
                             let mut next_element = None;
                             while let Some(span) = peek_next_iter.peek() {
-                                let mut is_skipped = false;
-                                match &span.inner {
-                                    Element::Synopsis(_) if !self.synopses => is_skipped = true,
-                                    Element::Section { .. } if !self.sections => is_skipped = true,
-                                    _ => {}
-                                }
-                                if is_skipped {
+                                if self.is_element_skipped(&span.inner) {
                                     peek_next_iter.next();
                                 } else {
                                     next_element = Some(&span.inner);
@@ -761,61 +744,8 @@ impl PdfExporter {
     pub fn get_page_breaks(&self, screenplay: &Screenplay) -> std::io::Result<Vec<usize>> {
         let mut document = Document::new();
         let mut font_system = build_font_system();
-
-        let courier = CourierFonts {
-            regular: Font::new(FONTS[0].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load regular font"))?,
-            bold: Font::new(FONTS[1].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load bold font"))?,
-            italic: Font::new(FONTS[2].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load italic font"))?,
-            bold_italic: Font::new(FONTS[3].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load bold-italic font"))?,
-            sans_regular: Font::new(FONTS[4].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load sans regular font"))?,
-            sans_bold: Font::new(FONTS[5].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load sans bold font"))?,
-            sans_italic: Font::new(FONTS[6].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load sans italic font"))?,
-            sans_bold_italic: Font::new(FONTS[7].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load sans bold-italic font"))?,
-        };
-
-        let noto = NotoFonts {
-            tamil_regular: Font::new(NOTO_FONTS[0].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load tamil regular font"))?,
-            tamil_bold: Font::new(NOTO_FONTS[1].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load tamil bold font"))?,
-            devanagari_regular: Font::new(NOTO_FONTS[2].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load devanagari regular font"))?,
-            devanagari_bold: Font::new(NOTO_FONTS[3].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load devanagari bold font"))?,
-            telugu_regular: Font::new(NOTO_FONTS[4].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load telugu regular font"))?,
-            telugu_bold: Font::new(NOTO_FONTS[5].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load telugu bold font"))?,
-            malayalam_regular: Font::new(NOTO_FONTS[6].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load malayalam regular font"))?,
-            malayalam_bold: Font::new(NOTO_FONTS[7].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load malayalam bold font"))?,
-            kannada_regular: Font::new(NOTO_FONTS[8].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load kannada regular font"))?,
-            kannada_bold: Font::new(NOTO_FONTS[9].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load kannada bold font"))?,
-            bengali_regular: Font::new(NOTO_FONTS[10].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load bengali regular font"))?,
-            bengali_bold: Font::new(NOTO_FONTS[11].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load bengali bold font"))?,
-            gujarati_regular: Font::new(NOTO_FONTS[12].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load gujarati regular font"))?,
-            gujarati_bold: Font::new(NOTO_FONTS[13].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load gujarati bold font"))?,
-            gurmukhi_regular: Font::new(NOTO_FONTS[14].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load gurmukhi regular font"))?,
-            gurmukhi_bold: Font::new(NOTO_FONTS[15].into(), 0)
-                .ok_or_else(|| std::io::Error::other("failed to load gurmukhi bold font"))?,
-        };
-
+        let courier = load_courier_fonts()?;
+        let noto = load_noto_fonts()?;
         let all_fonts = AllFonts { courier, noto };
 
         let layout_info = LayoutInfo {

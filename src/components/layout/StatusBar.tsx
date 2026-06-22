@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useFile, useUI, useSprint } from "../../context";
 import { LineType } from "../../parser";
+import { countWords } from "../../utils/text";
 import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 
 import { useEditor } from "../../context";
@@ -26,7 +27,7 @@ export const StatusBar: React.FC = () => {
 
   const stats = useMemo(() => {
     const text = rawText || "";
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const words = countWords(text);
     const chars = text.length;
     const pages = parsedDoc?.pageBreaks ? parsedDoc.pageBreaks.length + 1 : 1;
 
@@ -53,7 +54,7 @@ export const StatusBar: React.FC = () => {
     const timeStr = `${m}:${s.toString().padStart(2, "0")}`;
 
     const text = rawText || "";
-    const currentWords = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const currentWords = countWords(text);
     const diffWords = Math.max(0, currentWords - currentSprint.startWordCount);
     const elapsedMins = Math.max(0.1, elapsed / 60);
     const wpm = Math.round(diffWords / elapsedMins);

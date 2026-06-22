@@ -81,7 +81,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 labelId="theme-select-label"
                 value={theme}
                 label="Visual Theme"
-                onChange={(e) => setTheme(e.target.value as any)}
+                onChange={(e) => setTheme(e.target.value as string)}
               >
                 {themes.map((t) => (
                   <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
@@ -95,7 +95,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 labelId="paper-size-select-label"
                 value={paperSize}
                 label="Paper/Page Size"
-                onChange={(e) => setPaperSize(e.target.value as any)}
+                onChange={(e) => setPaperSize(e.target.value as 'letter' | 'a4')}
               >
                 <MenuItem value="letter">Letter (US)</MenuItem>
                 <MenuItem value="a4">A4 (Standard)</MenuItem>
@@ -159,7 +159,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 labelId="font-family-label"
                 value={fontFamily}
                 label="Font Style"
-                onChange={(e) => setFontFamily(e.target.value as any)}
+                onChange={(e) => setFontFamily(e.target.value as 'courier-prime' | 'courier-prime-sans')}
               >
                 <MenuItem value="courier-prime">Courier Prime (Serif)</MenuItem>
                 <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>

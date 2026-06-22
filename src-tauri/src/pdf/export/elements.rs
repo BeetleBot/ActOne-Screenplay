@@ -29,6 +29,7 @@ pub struct DrawContext<'a, 'b> {
     pub font_cache: &'a mut HashMap<cosmic_text::fontdb::ID, krilla::text::Font>,
 }
 
+#[allow(dead_code)]
 fn measure_line_width(font_system: &mut FontSystem, text: &str, font_size: f32) -> f32 {
     let metrics = Metrics::new(font_size, font_size);
     let mut buffer = Buffer::new(font_system, metrics);
@@ -133,6 +134,7 @@ fn adjust_and_rebuild_run(
     }
 }
 
+#[allow(dead_code)]
 pub fn contains_indic(s: &str) -> bool {
     s.chars().any(|c| matches!(c as u32, 0x0900..=0x0D7F))
 }
@@ -149,40 +151,40 @@ fn shape_rich_string(
         return ShapedParagraph { lines: vec![] };
     }
 
-    let is_bold = content.elements.first().map_or(false, |e| e.is_bold());
-    let is_italic = content.elements.first().map_or(false, |e| e.is_italic());
-    let is_underline = content.elements.first().map_or(false, |e| e.is_underline());
     let is_sans = export_font == "courier_prime_sans"
-        || content.elements.first().map_or(false, |e| e.is_sans());
+        || content.elements.iter().any(|e| e.is_sans());
+    let family_name = if is_sans { "Courier Prime Sans" } else { "Courier Prime" };
 
-    let family_name = if is_sans {
-        "Courier Prime Sans"
-    } else {
-        "Courier Prime"
-    };
+    // Build underline span map: (byte_start, byte_end) for each underlined region
+    let mut underline_spans: Vec<(usize, usize)> = Vec::new();
+    let mut span_offset = 0;
+    for element in &content.elements {
+        let byte_len = element.text.len();
+        if byte_len > 0 && element.is_underline() {
+            underline_spans.push((span_offset, span_offset + byte_len));
+        }
+        span_offset += byte_len;
+    }
 
     let metrics = Metrics::new(font_size, font_size);
     let mut buffer = Buffer::new(font_system, metrics);
     let mut buffer = buffer.borrow_with(font_system);
     buffer.set_size(Some(max_width), None);
 
-    let weight = if is_bold {
-        Weight::BOLD
-    } else {
-        Weight::NORMAL
-    };
-    let style = if is_italic {
-        cosmic_text::Style::Italic
-    } else {
-        cosmic_text::Style::Normal
-    };
+    let default_attrs = Attrs::new().family(Family::Name(family_name));
 
-    let attrs = Attrs::new()
-        .family(Family::Name(family_name))
-        .weight(weight)
-        .style(style);
-
-    buffer.set_text(&plain, attrs, Shaping::Advanced);
+    // Per-element formatting using set_rich_text
+    let spans: Vec<(&str, Attrs)> = content.elements.iter().map(|element| {
+        let mut attrs = default_attrs;
+        if element.is_bold() {
+            attrs = attrs.weight(Weight::BOLD);
+        }
+        if element.is_italic() {
+            attrs = attrs.style(cosmic_text::Style::Italic);
+        }
+        (element.text.as_str(), attrs)
+    }).collect();
+    buffer.set_rich_text(spans, default_attrs, Shaping::Advanced);
 
     let mut lines = Vec::new();
     for run in buffer.layout_runs() {
@@ -192,6 +194,7 @@ fn shape_rich_string(
         let mut current_font_id = None;
         let mut current_glyphs = Vec::new();
         let mut current_start_x = 0.0;
+        let mut line_has_underline = false;
 
         for glyph in run.glyphs.iter() {
             if current_font_id.is_none() {
@@ -216,6 +219,16 @@ fn shape_rich_string(
                 end += 1;
             }
 
+            // Check if this glyph falls within any underline span
+            if !line_has_underline {
+                for (ul_start, ul_end) in &underline_spans {
+                    if start < *ul_end && end > *ul_start {
+                        line_has_underline = true;
+                        break;
+                    }
+                }
+            }
+
             current_glyphs.push(KrillaGlyphWrapper {
                 glyph_id: glyph.glyph_id as u32,
                 start,
@@ -234,12 +247,11 @@ fn shape_rich_string(
         lines.push(ShapedLine {
             runs: runs_in_line,
             width: line_width,
-            is_underline,
+            is_underline: line_has_underline,
         });
     }
 
     if lines.is_empty() && !plain.is_empty() {
-        // Fallback single run if somehow layout_runs was empty
         let font_id = font_system.db().faces().next().map(|f| f.id).unwrap_or(cosmic_text::fontdb::ID::dummy());
         lines.push(ShapedLine {
             runs: vec![ShapedRun {
@@ -249,7 +261,7 @@ fn shape_rich_string(
                 x_offset: 0.0,
             }],
             width: 0.0,
-            is_underline,
+            is_underline: false,
         });
     }
 
@@ -385,6 +397,7 @@ fn draw_shaped_line(
     }
 }
 
+#[allow(dead_code)]
 fn rich_string_substring(rs: &RichString, start_char: usize, end_char: usize) -> RichString {
     let mut out = RichString::new();
     let mut current_char_idx = 0;
@@ -414,6 +427,7 @@ fn rich_string_substring(rs: &RichString, start_char: usize, end_char: usize) ->
     out
 }
 
+#[allow(dead_code)]
 pub fn split_rich_string_into_sentences(rs: &RichString) -> Vec<RichString> {
     let plain = rs.to_plain_string();
     let mut sentences = Vec::new();

@@ -5,6 +5,7 @@ import Paper from "@mui/material/Paper";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { FountainEditor } from "../FountainEditor";
+import { ErrorBoundary } from "../ErrorBoundary";
 
 interface WorkspaceProps {
   isSidebarOpen: boolean;
@@ -83,7 +84,9 @@ export const Workspace: React.FC<WorkspaceProps> = ({
             }}
           >
             <Box className="sidebar-content" sx={{ flex: 1, overflow: 'auto' }}>
-              <SidebarViews activeTab={activeTab} />
+              <ErrorBoundary name="sidebar">
+                <SidebarViews activeTab={activeTab} />
+              </ErrorBoundary>
             </Box>
           </Paper>
           <Box
@@ -102,7 +105,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       )}
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <SearchPanel />
+        <ErrorBoundary name="search-panel"><SearchPanel /></ErrorBoundary>
         <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
           <Box
             className={`editor-paper paper-${paperSize}`}
@@ -111,7 +114,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
               transition: 'zoom 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
-            <FountainEditor />
+            <ErrorBoundary name="editor"><FountainEditor /></ErrorBoundary>
           </Box>
         </Box>
       </Box>

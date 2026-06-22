@@ -6,9 +6,8 @@ import { OutlineView } from "./OutlineView";
 import { SprintView } from "./SprintView";
 import { MarkerView } from "./MarkerView";
 import { ScriptsView } from "./ScriptsView";
+import { ActoneBanner } from "./ActoneBanner";
 import { AddIcon, CloseIcon, SearchIcon } from "./Icons";
-import { PILL_RADIUS } from "../constants";
-
 import {
   Box,
   Typography,
@@ -22,8 +21,6 @@ import {
   ListItemText,
   Card,
   CardContent,
-  Alert,
-  AlertTitle,
 } from "@mui/material";
 
 const getGenderColor = (gender: string) => {
@@ -38,29 +35,6 @@ const getGenderColor = (gender: string) => {
       return "var(--gender-unknown)";
   }
 };
-
-const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({ saveFileAs }) => (
-  <Alert
-    severity="warning"
-    sx={{ mb: 2, borderRadius: '12px' }}
-    action={
-      saveFileAs && (
-        <Button
-          color="warning"
-          size="small"
-          variant="contained"
-          onClick={() => saveFileAs()}
-          sx={{ fontWeight: 600, textTransform: "none", borderRadius: PILL_RADIUS }}
-        >
-          Save as .actone
-        </Button>
-      )
-    }
-  >
-    <AlertTitle sx={{ fontWeight: 700 }}>Only available on .actone</AlertTitle>
-    Workspace features require saving the screenplay as an ActOne Bundle (.actone).
-  </Alert>
-);
 
 interface SidebarViewProps {
   activeTab: string;
@@ -108,7 +82,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
           Document Notepad
         </Typography>
         {!supportsExtended && (
-          <ActoneBanner saveFileAs={saveFileAs} />
+          <ActoneBanner message="Workspace features require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />
         )}
         <TextField
           value={notepadText}
@@ -199,7 +173,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
           Character Tracking
         </Typography>
         
-        {!supportsExtended && <ActoneBanner saveFileAs={saveFileAs} />}
+        {!supportsExtended && <ActoneBanner message="Workspace features require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />}
 
         <TextField
           value={characterFilter}
@@ -482,7 +456,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
           <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
             Parking
           </Typography>
-          <ActoneBanner saveFileAs={saveFileAs} />
+          <ActoneBanner message="Workspace features require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />
         </Box>
       );
     }

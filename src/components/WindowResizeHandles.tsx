@@ -1,4 +1,5 @@
 import React, { useCallback } from "react";
+import { logger } from "../utils/logger";
 
 type Dir = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
@@ -86,7 +87,7 @@ export const WindowResizeHandles: React.FC<WindowResizeHandlesProps> = ({ showDr
     ensureTauri().then((win) => {
       if (win && typeof win.startResizeDragging === "function") {
         win.startResizeDragging(tauriDirections[dir]).catch((err: any) => {
-          console.error("Failed to start native resize dragging:", err);
+          logger.error("window", "Failed to start native resize dragging:", err);
         });
       }
     });

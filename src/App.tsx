@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { AppProviders, useFile, useUI, useEditor, ThemeProvider, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals } from "./hooks";
 import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary } from "./components";
+import { logger } from "./utils/logger";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
@@ -90,7 +91,7 @@ function AppInner() {
             openFilePath(p);
           }
         });
-      } catch (e) { console.error("Failed to listen for file-opened events", e); }
+      } catch (e) { logger.error("app", "Failed to listen for file-opened events", e); }
     };
     if (files.length > 0) setup();
     return () => { if (unlisten) unlisten(); };
@@ -157,7 +158,7 @@ function AppInner() {
           await win.close();
         }
       } catch (e) {
-        console.error("Error in close handler:", e);
+        logger.error("app", "Error in close handler:", e);
       }
     };
 
@@ -172,7 +173,7 @@ function AppInner() {
           handleCloseRequest();
         });
       } catch (e) {
-        console.error("Failed to setup close handler:", e);
+        logger.error("app", "Failed to setup close handler:", e);
       }
     };
     setupCloseListener();
@@ -212,7 +213,7 @@ function AppInner() {
       const win = getCurrentWindow();
       await win.destroy();
     } catch (e) {
-      console.error("Failed to reopen welcome window:", e);
+      logger.error("app", "Failed to reopen welcome window:", e);
     }
   };
 
@@ -221,7 +222,9 @@ function AppInner() {
     return (
       <>
         <WindowResizeHandles resizeEnabled={false} showDragHandle />
-        <WelcomeScreenWindow standalone />
+        <ErrorBoundary name="welcome">
+          <WelcomeScreenWindow standalone />
+        </ErrorBoundary>
       </>
     );
   }
@@ -235,14 +238,16 @@ function AppInner() {
     <>
       <WindowResizeHandles />
       <div style={{ height: "100%", display: "flex", flexDirection: "column", zoom: `${appScale}%` }}>
-        <MainLayout
-          isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}
-          onOpenSettingsModal={() => setShowSettingsModal(true)}
-          onOpenPalette={() => setIsPaletteOpen(true)}
-          onOpenBreakdownModal={() => setShowBreakdownModal(true)}
-          onOpenThemeManagerModal={() => setShowThemeManagerModal(true)}
-        />
+        <ErrorBoundary name="main-layout">
+          <MainLayout
+            isSidebarOpen={isSidebarOpen}
+            setIsSidebarOpen={setIsSidebarOpen}
+            onOpenSettingsModal={() => setShowSettingsModal(true)}
+            onOpenPalette={() => setIsPaletteOpen(true)}
+            onOpenBreakdownModal={() => setShowBreakdownModal(true)}
+            onOpenThemeManagerModal={() => setShowThemeManagerModal(true)}
+          />
+        </ErrorBoundary>
       <ModalManager
         isPaletteOpen={isPaletteOpen}
         setIsPaletteOpen={setIsPaletteOpen}

@@ -4,26 +4,8 @@ import { useCodeMirror } from "../editor";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, AutoAwesomeIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
-
-
-
-const CATEGORIES = [
-  { key: "cast", label: "Cast (Character)", color: "var(--cat-cast)" },
-  { key: "prop", label: "Prop", color: "var(--cat-prop)" },
-  { key: "vfx", label: "VFX", color: "var(--cat-vfx)" },
-  { key: "sfx", label: "SFX (Special Effect)", color: "var(--cat-sfx)" },
-  { key: "camera", label: "Camera", color: "var(--cat-camera)" },
-  { key: "animal", label: "Animal", color: "var(--cat-animal)" },
-  { key: "extras", label: "Extras", color: "var(--cat-extras)" },
-  { key: "vehicle", label: "Vehicle", color: "var(--cat-vehicle)" },
-  { key: "costume", label: "Costume", color: "var(--cat-costume)" },
-  { key: "makeup", label: "Makeup", color: "var(--cat-makeup)" },
-  { key: "music", label: "Music", color: "var(--cat-music)" },
-  { key: "sound", label: "Sound", color: "var(--cat-sound)" },
-  { key: "stunt", label: "Stunt", color: "var(--cat-stunt)" },
-  { key: "setDesign", label: "Set Design", color: "var(--cat-setDesign)" },
-  { key: "other", label: "Other (Generic)", color: "var(--cat-other)" }
-];
+import { logger } from "../utils/logger";
+import { CATEGORIES } from "../constants";
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -93,7 +75,7 @@ export const FountainEditor: React.FC = () => {
           return { index: i, line };
         }
       }
-    } catch (e) { console.warn("Failed to find current scene line", e); }
+    } catch (e) { logger.warn("editor", "Failed to find current scene line", e); }
     return null;
   }, [parsedDoc?.lines, view, selection]);
 

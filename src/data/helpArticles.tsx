@@ -1,0 +1,952 @@
+﻿export interface HelpArticle {
+  id: string;
+  title: string;
+  category: string;
+  content: string;
+  tags: string[];
+  relatedIds: string[];
+}
+
+export const articles: HelpArticle[] = [
+  // ===== GETTING STARTED =====
+  {
+    id: "welcome-screen",
+    title: "Welcome Screen",
+    category: "Getting Started",
+    tags: ["welcome", "launch", "start"],
+    relatedIds: ["new-screenplay", "open-file", "recent-files"],
+    content: `When you launch ActOne with no files open, the Welcome screen appears. From here you can:
+
+- **New Project** — Create a blank untitled screenplay. In standalone mode this opens a new editor window.
+- **Open Project** — Browse for a .fountain, .txt, or .actone file via the native file dialog.
+- **Templates** — Import a screenplay structure template (Three-Act, Save the Cat, Hero's Journey, etc.).
+- **Recent Projects** — Quick-open recently used files (up to 6 displayed). Click the X to remove from the list. Stored in localStorage (up to 10 entries).
+
+The footer includes a Help button, a version display, a theme switcher, and a rotating random writing quote from famous screenwriters.`,
+  },
+  {
+    id: "new-screenplay",
+    title: "Creating a New Screenplay",
+    category: "Getting Started",
+    tags: ["new", "create", "untitled"],
+    relatedIds: ["welcome-screen", "open-file", "file-tabs"],
+    content: `Press <kbd>Ctrl+N</kbd> or open the Command Palette (<kbd>Ctrl+K</kbd>) and choose "New Screenplay" to create a new untitled tab. You can have multiple tabs open simultaneously. Each new file is created as a single-script .actone bundle.`,
+  },
+  {
+    id: "open-file",
+    title: "Opening Files",
+    category: "Getting Started",
+    tags: ["open", "file", "fountain", "actone", "txt"],
+    relatedIds: ["welcome-screen", "new-screenplay", "file-tabs", "recent-files"],
+    content: `Press <kbd>Ctrl+O</kbd> or use the Command Palette (<kbd>Ctrl+K</kbd>) → "Open Screenplay…" to open .fountain, .txt, or .actone files via the native file dialog.
+
+When launched from the command line, ActOne accepts file paths as arguments. The app also listens for OS-level file-open events (e.g., double-clicking a .fountain or .actone file).`,
+  },
+  {
+    id: "recent-files",
+    title: "Recent Files",
+    category: "Getting Started",
+    tags: ["recent", "history", "quick open"],
+    relatedIds: ["open-file", "welcome-screen"],
+    content: `The Welcome screen shows your most recently opened files (up to 6) as clickable chips. Click one to re-open it. Hover and click the X to remove an entry from the list. Recent files are stored in localStorage (up to 10 entries). In Tauri, stale entries are auto-validated against the filesystem on startup.`,
+  },
+  {
+    id: "keyboard-shortcuts",
+    title: "Keyboard Shortcuts Reference",
+    category: "Getting Started",
+    tags: ["shortcuts", "keys", "hotkeys", "keyboard"],
+    relatedIds: ["command-palette"],
+    content: `ActOne is designed for keyboard-driven writing. Below is the complete list of shortcuts.
+
+**File Operations**
+
+| Action | Shortcut |
+|--------|----------|
+| New screenplay tab | <kbd>Ctrl+N</kbd> |
+| Open file | <kbd>Ctrl+O</kbd> |
+| Save | <kbd>Ctrl+S</kbd> |
+| Save as | <kbd>Ctrl+Shift+S</kbd> |
+| Close active tab | <kbd>Alt+Q</kbd> |
+| Export dialog | <kbd>Ctrl+P</kbd> |
+| Next tab | <kbd>Ctrl+Tab</kbd> / <kbd>Ctrl+PageDown</kbd> |
+| Previous tab | <kbd>Ctrl+Shift+Tab</kbd> / <kbd>Ctrl+PageUp</kbd> |
+
+**Editing & Formatting**
+
+| Action | Shortcut |
+|--------|----------|
+| Undo | <kbd>Ctrl+Z</kbd> |
+| Redo | <kbd>Ctrl+Y</kbd> |
+| Cut | <kbd>Ctrl+X</kbd> |
+| Copy | <kbd>Ctrl+C</kbd> |
+| Paste | <kbd>Ctrl+V</kbd> |
+| Select all | <kbd>Ctrl+A</kbd> |
+| Bold (\`**\`) | <kbd>Ctrl+B</kbd> |
+| Italic (\`*\`) | <kbd>Ctrl+I</kbd> |
+| Underline (\code{\_\`}) | <kbd>Ctrl+U</kbd> |
+| Clean screenplay spaces | <kbd>Shift+Alt+C</kbd> |
+| Cycle line prefixes | <kbd>Tab</kbd> |
+
+**View & Navigation**
+
+| Action | Shortcut |
+|--------|----------|
+| Toggle search panel | <kbd>Ctrl+F</kbd> |
+| Toggle sidebar | <kbd>Ctrl+\\\\</kbd> |
+| Command palette | <kbd>Ctrl+K</kbd> / <kbd>Ctrl+Shift+P</kbd> |
+| Settings | <kbd>Ctrl+,</kbd> |
+| Toggle Zen Mode | <kbd>Ctrl+Alt+Enter</kbd> |
+| Focus editor | <kbd>Escape</kbd> |
+| Zoom in | <kbd>Ctrl+=</kbd> |
+| Zoom out | <kbd>Ctrl+-</kbd> |
+| Reset zoom | <kbd>Ctrl+0</kbd> |`,
+  },
+  {
+    id: "command-palette",
+    title: "Command Palette",
+    category: "Getting Started",
+    tags: ["commands", "palette", "ctrl+k", "search"],
+    relatedIds: ["keyboard-shortcuts"],
+    content: `Press <kbd>Ctrl+K</kbd> or <kbd>Ctrl+Shift+P</kbd> to open the Command Palette. Type to filter commands across six categories:
+
+**File:** New Screenplay, Open Screenplay, Save, Save As, Close Active File, Export.
+
+**Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, Replace.
+
+**View:** Toggle Sidebar, Switch Sidebar Tab (Outline/Notepad/Characters/Statistics), Typewriter Mode, Zen Mode, Focus Mode, Zoom In/Out/Reset, Show/Hide Fountain Markup.
+
+**Format:** Production Breakdown, Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers, Clean Spaces.
+
+**Settings:** Open Settings, Set Font (Courier Prime / Courier Prime Sans), Set Paper Size (Letter / A4), Theme Manager.
+
+**Help:** Help Guide, Fountain Syntax Guide, Report a Bug.
+
+Each command shows its keyboard shortcut when available. Navigate with arrow keys and press Enter to execute. Press Escape to close. Available even when modals are open.`,
+  },
+
+  // ===== FOUNTAIN SYNTAX =====
+  {
+    id: "scene-headings",
+    title: "Scene Headings / Sluglines",
+    category: "Fountain Syntax",
+    tags: ["scene heading", "slugline", "int", "ext", "interior", "exterior"],
+    relatedIds: ["character-names", "action", "sections", "scene-numbers"],
+    content: `Scene headings indicate time and location changes. Start a line with \`INT\`, \`EXT\`, \`INT/EXT\`, \`EXT/INT\`, \`I/E\`, or \`E/I\` followed by a location and time of day separated by a dash.
+
+Example: \`INT. WRITING STUDIO - DAY\`
+
+To force any line to be a scene heading, begin it with a period: \`.SECRET HIDEOUT\`
+
+The parser extracts the shooting location (e.g., "WRITING STUDIO") and time of day automatically. Scene numbers can be added with \`#1#\` syntax at the end of the heading. Use the Command Palette to auto-renumber or clear scene numbers.`,
+  },
+  {
+    id: "character-names",
+    title: "Character Names",
+    category: "Fountain Syntax",
+    tags: ["character", "@", "name", "all caps"],
+    relatedIds: ["dialogue", "parentheticals", "character-tracker", "autocomplete"],
+    content: `Introduce a character by typing their name in ALL CAPS on a line preceded by a blank line. Names with lowercase letters can be forced with the \`@\` prefix: \`@McQueen\`
+
+Character names with parenthetical extensions like \`JOHN (V.O.)\` are supported — 29 built-in extensions including \`(V.O.)\`, \`(O.S.)\`, \`(O.C.)\`, \`(CONT'D)\`, \`(PHONE)\`, \`(NARRATOR)\`, and more.
+
+ActOne automatically recognizes character lines and formats the following text as dialogue. Character names are tracked in the Character Tracker sidebar with dialogue line counts.`,
+  },
+  {
+    id: "dialogue",
+    title: "Dialogue",
+    category: "Fountain Syntax",
+    tags: ["dialogue", "speech", "speaking"],
+    relatedIds: ["character-names", "parentheticals", "dual-dialogue"],
+    content: `Place dialogue text directly underneath a character name line, with no blank lines between them. Dialogue automatically gets the correct screenplay indentation (roughly 2 inches from the left margin). Lines following a parenthetical also render as dialogue.`,
+  },
+  {
+    id: "parentheticals",
+    title: "Parentheticals (Wrylies)",
+    category: "Fountain Syntax",
+    tags: ["parenthetical", "wryly", "delivery", "parentheses"],
+    relatedIds: ["character-names", "dialogue"],
+    content: `Add actor directions by wrapping text in parentheses on a line between the character name and dialogue: \`(whispering)\`
+
+Pressing \`(\` on a blank line after a character name automatically creates a parenthetical line (removes the blank line). If Auto-Match Parentheses is enabled, typing \`(\` inserts \`()\` and places the cursor between them.`,
+  },
+  {
+    id: "action",
+    title: "Action & Scene Descriptions",
+    category: "Fountain Syntax",
+    tags: ["action", "description", "!", "exclamation"],
+    relatedIds: ["scene-headings", "transitions"],
+    content: `Write action in standard mixed-case paragraphs. Any line that doesn't trigger another Fountain rule is treated as action. Force a line as action by starting it with \`!\`: \`!He exits through the window.\``,
+  },
+  {
+    id: "transitions",
+    title: "Transitions",
+    category: "Fountain Syntax",
+    tags: ["transition", "cut to", "fade in", ">", "TO"],
+    relatedIds: ["action"],
+    content: `Write transitions like \`CUT TO:\` or \`FADE OUT.\` in ALL CAPS ending with \`TO:\`. Force a transition on any line by starting with \`>\`: \`> FADE IN:\`
+
+Transitions render right-aligned in PDF exports.`,
+  },
+  {
+    id: "centered-lyrics",
+    title: "Centered Text & Lyrics",
+    category: "Fountain Syntax",
+    tags: ["centered", "lyrics", "~", "> <", "music"],
+    relatedIds: ["action"],
+    content: `Center text by wrapping it in \`>\` and \`<\`: \`> THE END <\`. Start a line with \`~\` for lyrics (rendered in italics): \`~ Sing a song\``,
+  },
+  {
+    id: "shot-lines",
+    title: "Shot Lines (Camera Directions)",
+    category: "Fountain Syntax",
+    tags: ["shot", "camera", "!!", "direction"],
+    relatedIds: ["action", "transitions"],
+    content: `Force a line as a camera direction by starting it with \`!!\`: \`!!CLOSE UP ON THE LETTER\`. Shot lines render in bold uppercase in exports.`,
+  },
+  {
+    id: "page-breaks",
+    title: "Page Breaks",
+    category: "Fountain Syntax",
+    tags: ["page break", "===", "new page"],
+    relatedIds: ["export-pdf"],
+    content: `Force a page break in PDF exports by typing exactly \`===\` on a line by itself. The editor shows a visual page break indicator. The pagination engine also handles smart orphan/widow protection — headings that would appear alone at a page bottom are pushed to the next page, and dialogue blocks are kept together.`,
+  },
+  {
+    id: "dual-dialogue",
+    title: "Dual Dialogue",
+    category: "Fountain Syntax",
+    tags: ["dual dialogue", "^", "simultaneous", "side by side"],
+    relatedIds: ["dialogue", "character-names"],
+    content: `Create side-by-side dialogue by appending \`^\` (carat) to the second character's name: \`BOB ^\`. Both characters' dialogue renders in parallel columns in PDF exports.`,
+  },
+  {
+    id: "synopsis",
+    title: "Synopsis Outline Notes",
+    category: "Fountain Syntax",
+    tags: ["synopsis", "=", "outline", "notes", "invisible"],
+    relatedIds: ["sections", "outline-navigator"],
+    content: `Add outline summaries by starting a line with \`=\`: \`= Introduce the villain\`. Synopsis lines appear in the Outline Navigator and are invisible in exported PDFs (unless toggled on in export settings).`,
+  },
+  {
+    id: "sections",
+    title: "Sections & Hierarchy",
+    category: "Fountain Syntax",
+    tags: ["section", "#", "act", "sequence", "header"],
+    relatedIds: ["synopsis", "outline-navigator", "structure-templates"],
+    content: `Organize your script with Fountain section headers. Use \`#\` for major blocks (e.g., \`# Act I\`) and \`##\` for sub-sequences. These structure the Outline Navigator hierarchy with collapsible sections. At most two levels of depth are supported.`,
+  },
+  {
+    id: "inline-formatting",
+    title: "Inline Text Formatting",
+    category: "Fountain Syntax",
+    tags: ["bold", "italic", "underline", "**", "format"],
+    relatedIds: ["transform-case"],
+    content: `Select text and use <kbd>Ctrl+B</kbd> for bold (\`**text**\`), <kbd>Ctrl+I</kbd> for italic (\`*text*\`), <kbd>Ctrl+U</kbd> for underline (\`_text_\`). Press the same shortcut again to remove formatting. Also accessible via right-click → Format.`,
+  },
+  {
+    id: "boneyard-comments",
+    title: "Boneyard Comments",
+    category: "Fountain Syntax",
+    tags: ["boneyard", "comments", "/*", "hidden"],
+    relatedIds: ["notes-markers"],
+    content: `Wrap text in \`/*\` and \`*/\` to create boneyard comments — sections that are completely ignored by the parser and invisible in exports. Useful for hiding alternate lines or notes.`,
+  },
+
+  // ===== WRITING TOOLS =====
+  {
+    id: "tab-cycle",
+    title: "Tab-to-Cycle Line Prefixes",
+    category: "Writing Tools",
+    tags: ["tab", "prefix", "@", ".", ">", "cycle"],
+    relatedIds: ["character-names", "scene-headings", "transitions"],
+    content: `Press <kbd>Tab</kbd> at the start of a line to cycle through Fountain prefixes: \`@\` (forced character) → \`.\` (forced heading) → \`>\` (forced transition) → back to normal. Each press advances to the next in the cycle. On lines with existing text, the prefix is prepended; on empty lines, the prefix is set directly.`,
+  },
+  {
+    id: "smart-newline",
+    title: "Smart Newline Handling",
+    category: "Writing Tools",
+    tags: ["enter", "newline", "spacing", "auto spacing"],
+    relatedIds: ["tab-cycle", "auto-parentheses"],
+    content: `When you press <kbd>Enter</kbd> after a scene heading, character name, parenthetical, dialogue, transition, or shot line, ActOne automatically inserts the correct blank line spacing required by Fountain syntax. No need to manually add blank lines.
+
+Additionally, pressing \`(\` on a blank line after a character name automatically converts it into a parenthetical line for you.`,
+  },
+  {
+    id: "autocomplete",
+    title: "Autocomplete & Ghost Text",
+    category: "Writing Tools",
+    tags: ["autocomplete", "suggestions", "character", "location", "ghost"],
+    relatedIds: ["smart-quotes", "smart-newline", "character-names"],
+    content: `ActOne provides inline ghost text suggestions as you type:
+
+- On **character lines**: suggests character names from previously used characters.
+- On **heading lines**: suggests location names from previously used scene headings.
+- On **character lines with \`(\`**: suggests 29 character extensions like \`(V.O.)\`, \`(O.S.)\`, \`(CONT'D)\`, \`(NARRATOR)\`, etc.
+- On **action lines**: suggests character names if the text is ALL-CAPS.
+
+Press <kbd>Tab</kbd> to accept the ghost suggestion, or <kbd>ArrowDown</kbd> to open the full autocomplete dropdown. Toggle in Settings → Editor → Character/Scene Autocomplete.`,
+  },
+  {
+    id: "smart-quotes",
+    title: "Smart Quotes",
+    category: "Writing Tools",
+    tags: ["smart quotes", "curly quotes", "quotes", "typography"],
+    relatedIds: ["autocomplete", "auto-parentheses"],
+    content: `Straight quotation marks (\`"\` and \`'\`) are automatically converted to smart curly quotes (\`"\` and \`"\`) as you type based on the preceding character (open vs. close detection). Toggle in Settings → Editor → Smart Quotes.`,
+  },
+  {
+    id: "auto-parentheses",
+    title: "Auto-Match Parentheses",
+    category: "Writing Tools",
+    tags: ["parentheses", "auto", "match"],
+    relatedIds: ["smart-quotes", "parentheticals"],
+    content: `When enabled, typing \`(\` inserts \`()\` and places the cursor between them. If the next character is already \`)\`, it jumps over it instead. Toggle in Settings → Editor → Auto-Match Parentheses.`,
+  },
+  {
+    id: "typewriter-mode",
+    title: "Typewriter Mode",
+    category: "Writing Tools",
+    tags: ["typewriter", "scroll", "center cursor"],
+    relatedIds: ["hide-syntax", "editor-zoom", "focus-mode"],
+    content: `Keeps your active editing line vertically centered on screen. As you type, the page scrolls around your line instead of your cursor moving down. Uses a CodeMirror ViewPlugin that measures cursor position relative to the container center on every document change. Toggle via Quick Settings in the Activity Bar, the Command Palette, or Settings → Editor.`,
+  },
+  {
+    id: "hide-syntax",
+    title: "Hide Fountain Markup",
+    category: "Writing Tools",
+    tags: ["hide syntax", "clean view", "reading view", "prefixes"],
+    relatedIds: ["typewriter-mode", "zen-mode", "focus-mode"],
+    content: `Toggle "Hide Fountain Markup" via Command Palette or Quick Settings to hide syntax prefixes (\`.\`, \`@\`, \`!\`, \`>\`, \`~\`, \`#\`, \`=\`, \`^\`, \`!!\`, \`[[…]]\`) from view on non-active lines. The active (cursor) line always shows prefixes so you can edit. Gives a clean manuscript-like reading experience.`,
+  },
+  {
+    id: "focus-mode",
+    title: "Focus Mode (Line Focus)",
+    category: "Writing Tools",
+    tags: ["focus", "line focus", "fade", "concentration"],
+    relatedIds: ["hide-syntax", "typewriter-mode", "zen-mode"],
+    content: `Toggle Focus Mode via Settings or Command Palette to fade out all lines except the one your cursor is on. The active line stays fully visible while every other line is dimmed. Helps you concentrate on one line at a time. Combine with Typewriter Mode and Hide Syntax for a truly distraction-free experience.`,
+  },
+  {
+    id: "editor-zoom",
+    title: "Editor Zoom",
+    category: "Writing Tools",
+    tags: ["zoom", "font size", "ctrl+=", "ctrl+-"],
+    relatedIds: ["typewriter-mode", "interface-scale"],
+    content: `Zoom the editor text from **50% to 400%** using <kbd>Ctrl+=</kbd> (zoom in), <kbd>Ctrl+-</kbd> (zoom out), and <kbd>Ctrl+0</kbd> (reset to 100%). Step size is 10%. Also adjustable via Quick Settings slider or Settings → Editor → Editor Zoom. Persisted in localStorage.`,
+  },
+  {
+    id: "clean-spaces",
+    title: "Clean Screenplay Spaces",
+    category: "Writing Tools",
+    tags: ["clean spaces", "formatting", "blank lines", "Shift+Alt+C"],
+    relatedIds: ["smart-newline", "transform-case"],
+    content: `Press <kbd>Shift+Alt+C</kbd> or use the Command Palette → "Clean Spaces" to normalize your screenplay formatting. This:
+
+- Strips extra spaces after syntax prefixes (\`.\`, \`#\`, \`=\`, \`@\`, \`!\`, \`~\`)
+- Strips spaces inside \`[[ … ]]\` note brackets
+- Collapses consecutive empty lines inside dialogue blocks
+- Removes empty lines between consecutive outline elements
+- Ensures single blank line spacing between distinct semantic elements`,
+  },
+  {
+    id: "transform-case",
+    title: "Transform Case",
+    category: "Writing Tools",
+    tags: ["uppercase", "lowercase", "title case", "case"],
+    relatedIds: ["clean-spaces", "inline-formatting"],
+    content: `Right-click a selection and choose Transform Case to convert between UPPERCASE, Title Case, or lowercase. Useful for normalizing character names and scene headings.
+
+- **UPPERCASE**: All caps via \`toUpperCase()\`
+- **Title Case**: First letter of each word capitalized
+- **lowercase**: All lowercase via \`toLowerCase()\``,
+  },
+  {
+    id: "look-up",
+    title: "Look Up Word",
+    category: "Writing Tools",
+    tags: ["look up", "google", "search", "research"],
+    relatedIds: ["context-menu"],
+    content: `Right-click any selected word and choose "Look Up" to search it on Google in your default browser via Tauri's opener API. Quick for researching terms, names, or locations without leaving ActOne. Falls back to \`window.open\` outside Tauri.`,
+  },
+  {
+    id: "search-replace",
+    title: "Search & Replace",
+    category: "Writing Tools",
+    tags: ["search", "replace", "ctrl+f", "regex", "preserve case"],
+    relatedIds: ["look-up"],
+    content: `Press <kbd>Ctrl+F</kbd> to open the floating, draggable search panel (positioned at top-right). Features:
+
+- **Find input** — auto-populates from selected text when opened
+- **Match Case** (\`Aa\`) toggle — case-sensitive search
+- **Whole Word** (\`ab\`) toggle — match only whole words
+- **Regex** (\`.*\`) toggle — treat search as regular expression
+- **Match counter** — shows \`currentMatch/totalMatches\` with prev/next navigation (\`↑\`/\`↓\`)
+- **Close** — \`×\` button or <kbd>Esc</kbd>
+
+**Replace** (collapsible section):
+
+- **Replace input** — text field for replacement
+- **Preserve Case** (\`AB\`) toggle — intelligently adapts replacement case (ALL CAPS → ALL CAPS, Capitalized → Capitalized, lowercase → lowercase)
+- **Replace** — replaces current match and moves to next
+- **Replace All** — replaces all matches simultaneously (sorted end-to-start)
+
+The panel is draggable — click and drag the header to reposition it anywhere in the editor.`,
+  },
+  {
+    id: "scene-numbers",
+    title: "Scene Numbers",
+    category: "Writing Tools",
+    tags: ["scene numbers", "renumber", "#", "clear"],
+    relatedIds: ["scene-headings", "export-pdf"],
+    content: `The Command Palette provides two scene number commands:
+
+- **Renumber Scene Headings** — Appends sequential \`#1#\`, \`#2#\`, etc. to every scene heading (removes existing numbers first). Prompts for confirmation.
+- **Clear Scene Numbers** — Removes all \`#...#\` markers from scene headings. Prompts for confirmation.
+
+Scene numbers display in the editor margins and as badges in the Outline Navigator. PDF export can include them on the left side or mirrored on both sides.`,
+  },
+
+  // ===== WORKSPACE & VIEWS =====
+  {
+    id: "activity-bar",
+    title: "Activity Bar",
+    category: "Workspace & Views",
+    tags: ["activity bar", "sidebar", "tabs", "icons"],
+    relatedIds: ["outline-navigator", "sidebar-panels", "zen-mode", "quick-settings"],
+    content: `The Activity Bar on the left side of the window provides access to all sidebar panels. Click an icon to open that view; click again to close the sidebar. An accent-colored left indicator bar shows which panel is active.
+
+**Tabs available (for .actone bundles):** Outline, Scripts, Characters, Statistics, Notepad, Markers, Tasks, Sprint, Parking.
+
+**For plain .fountain files:** only Outline and Statistics tabs are shown; other panels show a conversion banner.
+
+The bottom of the Activity Bar has a **Command Palette** button and a **Quick Settings** button with sliders for Interface Scale, Editor Zoom, Typewriter Mode, Hide Fountain Markup, Theme switching, Paper Size, and a link to full Settings.`,
+  },
+  {
+    id: "outline-navigator",
+    title: "Outline Navigator",
+    category: "Workspace & Views",
+    tags: ["outline", "navigator", "sidebar", "tree", "hierarchy"],
+    relatedIds: ["sections", "synopsis", "scene-reorder", "activity-bar", "scene-highlighting", "storylines"],
+    content: `The Outline sidebar (first tab) displays a hierarchical tree of your sections (\`#\`), scenes (headings), and synopses (\`=\`). Features:
+
+- Click an item to scroll the editor to that line.
+- Collapsible section headers — click the chevron, double-click, or use <kbd>←</kbd>/<kbd>→</kbd> to expand/collapse.
+- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>←</kbd><kbd>→</kbd> to collapse/expand sections, <kbd>Enter</kbd> to jump to line.
+- Search/filter field to find items by text.
+- Visibility toggles: show/hide **Sections**, **Scenes**, **Synopses**, and **Storylines**.
+- Color filter popover: filter by scene color with count badges, "Clear All" to reset.
+- Storyline filter popover: filter by storyline label with count badges.
+- Scene color dots, scene number badges, and storyline chips displayed per item.
+- Outline font size: Small / Normal / Large (persisted in localStorage).
+- Drag-and-drop scene reordering (six-dot grab handle).`,
+  },
+  {
+    id: "sidebar-panels",
+    title: "Sidebar Panels Overview",
+    category: "Workspace & Views",
+    tags: ["sidebar", "panels", "workspace", "bundle"],
+    relatedIds: ["activity-bar", "outline-navigator", "actone-bundle"],
+    content: `ActOne provides several sidebar panels to support your writing workflow:
+
+| Panel | Requires .actone bundle? |
+|-------|--------------------------|
+| Outline | No |
+| Scripts | Yes |
+| Characters | Yes* |
+| Statistics | No |
+| Notepad | Yes* |
+| Markers | No |
+| Tasks | Yes* |
+| Sprint | No |
+| Parking | Yes* |
+
+**\* Panels marked with an asterisk are visible but show a conversion banner for plain .fountain files, with editing disabled.**`,
+  },
+  {
+    id: "notepad",
+    title: "Document Notepad",
+    category: "Workspace & Views",
+    tags: ["notepad", "notes", "brainstorm", "outline"],
+    relatedIds: ["sidebar-panels", "actone-bundle"],
+    content: `A freeform text area in the sidebar for jotting down outline notes, beat sheets, character ideas, or draft goals. Content persists inside .actone bundles. Plain .fountain files show a conversion banner prompting save-as-bundle.`,
+  },
+  {
+    id: "character-tracker",
+    title: "Character Tracker & Gender Analyzer",
+    category: "Workspace & Views",
+    tags: ["characters", "gender", "tracker", "dialogue counts"],
+    relatedIds: ["sidebar-panels", "statistics", "character-names"],
+    content: `The Characters panel scans your script and lists every character name with their dialogue line count, sorted by frequency. Features:
+
+- Filter characters by name with the search field.
+- Set gender by clicking the colored pill — cycles through **Unknown → Male → Female → Non-Binary**.
+- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move between characters.
+- Gender data feeds into the Statistics dashboard's "Dialogue by Gender" chart (4 rows: male, female, nonbinary, unknown).
+
+Requires .actone bundle to persist gender assignments.`,
+  },
+  {
+    id: "statistics",
+    title: "Statistics Dashboard",
+    category: "Workspace & Views",
+    tags: ["stats", "statistics", "word count", "pages", "locations"],
+    relatedIds: ["character-tracker", "sidebar-panels"],
+    content: `The Statistics panel shows a live dashboard of your screenplay metrics:
+
+- **Stat Cards** (2×2 grid): Estimated Pages (page break count + 1), total Words (formatted with locale separators), Scene Count, total Lines.
+- **Dialogue vs Action**: Horizontal percentage bar showing word distribution between dialogue and action text.
+- **Dialogue by Gender**: 4-row horizontal bar chart (Male, Female, Non-Binary, Unknown) using gender assignments from the Characters panel.
+- **Top Locations**: Top 5 most frequent shooting locations parsed from scene headings, with rank numbers and occurrence counts.`,
+  },
+  {
+    id: "tasks",
+    title: "To-Do Tasks",
+    category: "Workspace & Views",
+    tags: ["tasks", "todo", "checklist", "revisions"],
+    relatedIds: ["sidebar-panels", "sprint-timer"],
+    content: `The Tasks panel helps you track screenplay revisions and to-do items:
+
+- Type a task in the input and press <kbd>Enter</kbd> or click the add button to add it.
+- Click the circle icon or press <kbd>Space</kbd>/<kbd>Enter</kbd> to toggle completion (moves to collapsible "Completed (N)" section with strikethrough text).
+- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to select, <kbd>Enter</kbd>/<kbd>Space</kbd> to toggle, <kbd>Delete</kbd>/<kbd>Backspace</kbd> to remove.
+- Right-click selected text in the editor → **Create Task** to add it as a new task.
+- Each task has an individual delete (X) button.
+
+Persists in .actone bundles as \`todos\` in settings.`,
+  },
+  {
+    id: "sprint-timer",
+    title: "Writing Sprint Timer",
+    category: "Workspace & Views",
+    tags: ["sprint", "timer", "writing", "wpm", "countdown"],
+    relatedIds: ["tasks", "sidebar-panels", "statistics"],
+    content: `The Sprint panel provides a countdown writing timer to boost productivity:
+
+- **Preset durations**: 5, 15, 25, 45, 60 minutes — click pill buttons to set.
+- **Custom duration**: Text field for 1–999 minutes.
+- **Active sprint**: Circular progress indicator, remaining time (MM:SS), words written so far (net from sprint start), live WPM calculation.
+- **Finish Sprint** — saves session to history. **Cancel** — discards session.
+- Status bar shows active sprint with remaining time and WPM.
+
+**History tab:** All completed sprints with word count, date, duration, WPM, and file name. Delete individual entries or "Clear Global History".
+
+**Leaderboard tab:** Top 10 sprints ranked by word count with Gold (\#1, \`#d4af37\`), Silver (\#2, \`#c0c0c0\`), Bronze (\#3, \`#cd7f32\`) badges.
+
+**Stats banner:** Personal Best WPM and Total Words Sprinted.
+
+Sprint data syncs to .actone bundles and localStorage.`,
+  },
+  {
+    id: "parking",
+    title: "Text Parking",
+    category: "Workspace & Views",
+    tags: ["parking", "clipboard", "text storage", "temporary"],
+    relatedIds: ["sidebar-panels", "context-menu"],
+    content: `The Parking panel works as a temporary clipboard for storing text snippets:
+
+- Select text in the editor and click "Park Selection" to store it (cuts from editor).
+- Click a parked card to re-insert at cursor and auto-remove it.
+- Right-click → **Park Selection** stores text and deletes it from the editor.
+- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to select, <kbd>Enter</kbd> to insert.
+- Individual delete (X) button on each card.
+- Empty state shows instructional text.
+
+Persists in .actone bundle settings.`,
+  },
+  {
+    id: "markers-list",
+    title: "Markers List",
+    category: "Workspace & Views",
+    tags: ["markers", "notes", "inline", "filter"],
+    relatedIds: ["notes-markers", "sidebar-panels"],
+    content: `The Markers sidebar shows all \`[[marker …]]\` notes from your script. Features:
+
+- Filter by text search (matches description and scene context).
+- Color filter popover: lists all marker colors in use with count badges; click to filter.
+- Each item shows: colored dot, scene number badge (if available), marker description text, storyline chips, scene context (italic), and line number.
+- Click a marker to scroll the editor to its position.
+- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>Enter</kbd> to jump.`,
+  },
+  {
+    id: "scripts-manager",
+    title: "Scripts Manager (Multi-Script Bundles)",
+    category: "Workspace & Views",
+    tags: ["scripts", "multi-script", "bundle", "manage"],
+    relatedIds: ["actone-bundle", "sidebar-panels", "export-all"],
+    content: `The Scripts sidebar lets you manage multiple Fountain scripts inside a single .actone bundle (hidden for plain .fountain files):
+
+- **Add**: "+" button creates a new "Untitled" script. **Import**: folder icon opens native file dialog for .fountain/.txt files.
+- **Rename**: Double-click a script name for inline edit; press <kbd>Enter</kbd> to save, <kbd>Escape</kbd> to cancel.
+- **Reorder**: Drag-and-drop scripts within the list, or use the three-dot menu → Move Up / Move Down.
+- **Delete**: Three-dot menu → Delete (with confirmation). Last script cannot be deleted.
+- Click a script name to load it into the editor. The Status Bar shows the active script name — click it to quickly switch.
+- **Export All** button at the bottom opens an export dialog for all scripts at once (PDF, Fountain, or FDX).`,
+  },
+  {
+    id: "zen-mode",
+    title: "Zen Mode (Distraction-Free)",
+    category: "Workspace & Views",
+    tags: ["zen mode", "fullscreen", "distraction free", "focus"],
+    relatedIds: ["activity-bar", "hide-syntax", "typewriter-mode", "focus-mode"],
+    content: `Press <kbd>Ctrl+Alt+Enter</kbd> to toggle Zen Mode. This hides the Header Bar, Activity Bar, Sidebar, and Status Bar with staggered collapse animations, expanding the editor into a distraction-free view. Uses Tauri fullscreen API with HTML5 Fullscreen API as fallback outside Tauri. Zoom shortcuts (<kbd>Ctrl+=</kbd>, <kbd>Ctrl+-</kbd>) and Search (<kbd>Ctrl+F</kbd>) still work in Zen Mode.`,
+  },
+  {
+    id: "context-menu",
+    title: "Editor Context Menu",
+    category: "Workspace & Views",
+    tags: ["right click", "context menu", "menu"],
+    relatedIds: ["scene-highlighting", "production-breakdown", "transform-case", "parking", "notes-markers"],
+    content: `Right-click anywhere in the editor for quick access. Press <kbd>Ctrl</kbd> while right-clicking for **Quick Tag Mode** (direct access to production tags).
+
+**Normal mode:**
+
+- **Selection Stats** (if text selected): word count and character count.
+- **Cut / Copy / Paste** — standard clipboard (disabled without selection).
+- **Tag** → submenu with 15 production categories: Cast, Prop, VFX, SFX, Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other. If cursor is on an existing tag, shows **Remove Tag**.
+- **Highlight Scene** → 7 colors: Red, Orange, Yellow, Green, Blue, Purple, Pink, plus Clear.
+- **Drop Marker** → submenu with 11 colors (Blue, Brown, Cyan, Green, Magenta, Orange, Pink, Purple, Red, Yellow, Default Orange). Prompts for a description.
+- **Format** → Bold, Italic, Underline, Clean Spaces.
+- **Transform Case** → UPPERCASE, Title Case, lowercase.
+- **Look Up Word** → Google search selection.
+- **Create Task** → adds selected text as a to-do item.
+- **Park Selection** → cuts selected text and stores in Parking sidebar.`,
+  },
+  {
+    id: "status-bar",
+    title: "Status Bar",
+    category: "Workspace & Views",
+    tags: ["status bar", "info", "stats", "mode"],
+    relatedIds: ["statistics", "sprint-timer", "scripts-manager"],
+    content: `The Status Bar at the bottom of the window shows left-aligned and right-aligned info:
+
+**Left side:**
+- **Script Name** — clickable to switch scripts in multi-script bundles.
+- **Save Status** — "Saving…" spinner or "Saved" checkmark (auto-hides after 2 seconds).
+
+**Right side:**
+- **Active Sprint** (when running): colored dot + "Sprint: MM:SS / Nm (WPM)".
+- **Scenes** — count of scene headings (hidden on small screens).
+- **Words** — total word count (hidden on small screens).
+- **Page** — "Page: currentPage of totalPages" (always visible).
+
+In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
+  },
+  {
+    id: "file-tabs",
+    title: "File Tabs",
+    category: "Workspace & Views",
+    tags: ["tabs", "files", "multi-tab", "close"],
+    relatedIds: ["open-file", "new-screenplay", "scripts-manager"],
+    content: `Open multiple scripts simultaneously in tabs in the header bar. Features:
+
+- **Dirty indicator**: a circular dot appears when unsaved changes exist (primary colored for active tab, text-secondary for inactive).
+- Close with <kbd>Alt+Q</kbd>, click the X, or middle-click the tab header.
+- Right-click a tab for **Close / Close Others / Close All** (dirty files prompt a Save & Close / Discard / Cancel dialog).
+- Scroll horizontally through tabs using the mouse wheel on the tab bar.
+- Navigate: <kbd>Ctrl+Tab</kbd> / <kbd>Ctrl+PageDown</kbd> (next), <kbd>Ctrl+Shift+Tab</kbd> / <kbd>Ctrl+PageUp</kbd> (previous). Both wrap around.
+- "+" button at the end creates a new untitled tab.`,
+  },
+  {
+    id: "quick-settings",
+    title: "Quick Settings Menu",
+    category: "Workspace & Views",
+    tags: ["quick settings", "gear", "activity bar"],
+    relatedIds: ["activity-bar", "settings-overview", "interface-scale", "editor-zoom", "theme-manager"],
+    content: `The gear icon at the bottom of the Activity Bar opens the Quick Settings menu with:
+
+**View & Scale**
+- Interface Scale slider (75%–300%, step 5).
+- Editor Zoom slider (50%–400%, step 10).
+- "Reset View" button (sets zoom + scale to 100%).
+
+**Editor Preferences**
+- Typewriter Mode toggle.
+- Hide Fountain Markup toggle.
+
+**Theme**
+- Theme selector dropdown (all built-in + custom themes).
+- "Manage Themes…" link to open the Theme Manager modal.
+
+**Layout & Page**
+- Paper Size toggle: Letter / A4.
+
+**Full Settings** link at the bottom opens the full Settings modal.`,
+  },
+
+  // ===== PRODUCTION FEATURES =====
+  {
+    id: "scene-highlighting",
+    title: "Scene Highlighting (Color Coding)",
+    category: "Production Features",
+    tags: ["highlight", "color", "scene", "color code"],
+    relatedIds: ["production-breakdown", "notes-markers", "outline-navigator"],
+    content: `Right-click a scene heading and choose **Highlight Scene** → pick a color (Red, Orange, Yellow, Green, Blue, Purple, Pink) or **Clear Highlight** to remove it. Color is stored as \`[[color name]]\` on the scene heading line. Hex codes also work: \`[[#ff0000]]\`
+
+**11 supported named colors:** blue, brown, cyan, green, magenta, orange, pink, purple, red, yellow, none.
+
+Highlighted scenes show a colored left border in the editor, a colored dot in the Outline Navigator, and are exported as color-tagged elements in FDX format. The Outline Navigator's filter popover lets you filter by scene color with count badges.`,
+  },
+  {
+    id: "production-breakdown",
+    title: "Production Breakdown & Tagging",
+    category: "Production Features",
+    tags: ["breakdown", "tag", "props", "cast", "vfx", "production"],
+    relatedIds: ["scene-highlighting", "notes-markers", "context-menu"],
+    content: `Tag production elements directly in your script without cluttering the text. Select text, right-click → **Tag**, and choose a category (or <kbd>Ctrl</kbd>+right-click for Quick Tag Mode):
+
+**15 categories:** Cast (Character), Prop, VFX, SFX (Special Effect), Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other.
+
+Character names are automatically tagged as Cast. Tags are serialized in .actone bundles as \`production_tags.json\`.
+
+Open the **Production Breakdown** modal (Command Palette → "Show Production Breakdown…") to view a matrix of all scenes and their tags, grouped by category. Each tag shows occurrence count — click to jump to that scene. Export the breakdown as CSV.`,
+  },
+  {
+    id: "notes-markers",
+    title: "Color Markers & Notes",
+    category: "Production Features",
+    tags: ["markers", "notes", "[[ ]]", "inline comments", "color"],
+    relatedIds: ["markers-list", "production-breakdown"],
+    content: `Insert inline notes anywhere using double-bracket syntax: \`[[marker color: description]]\`
+
+**Example:** \`[[marker red: Fix description here]]\`
+
+**11 supported marker colors:** blue, brown, cyan, green, magenta, orange (default), pink, purple, red, yellow, none. Hex codes also work: \`[[marker #ff6600: Note]]\`
+
+Use the right-click menu → **Drop Marker** to insert markers without remembering syntax. View and filter all markers in the Markers sidebar (filter by text or color). Markers are visible in the editor with a colored indicator but are stripped from Fountain exports.`,
+  },
+  {
+    id: "storylines",
+    title: "Storyline Tags",
+    category: "Production Features",
+    tags: ["storyline", "plot", "tag", "arc"],
+    relatedIds: ["scene-highlighting", "outline-navigator"],
+    content: `Tag scene headings with storyline labels using \`[[storyline Label]]\` syntax on a heading line. Multiple storylines are comma-separated: \`[[storyline Plot A, Romance]]\`
+
+Storyline labels appear as uppercase pill badges in the Outline Navigator per scene. The Outline Navigator's filter popover lets you filter by storyline with count badges.`,
+  },
+  {
+    id: "structure-templates",
+    title: "Structure Templates",
+    category: "Production Features",
+    tags: ["template", "structure", "three act", "save the cat", "beat sheet"],
+    relatedIds: ["production-breakdown", "sections", "outline-navigator"],
+    content: `Open the Command Palette → "Import Structure Template" to browse and insert predefined screenplay structures. 8 built-in templates:
+
+1. **Three-Act Structure** (10 beats) — Classical Western filmmaking.
+2. **Save the Cat!** (15 beats) — Blake Snyder's beat sheet.
+3. **The Hero's Journey** (11 beats) — Joseph Campbell's monomyth.
+4. **The Story Circle** (6 beats) — Dan Harmon's story circle.
+5. **Freytag's Pyramid** (5 beats) — Gustav Freytag's dramatic arc.
+6. **John Truby's 7 Key Steps** — From "The Anatomy of Story".
+7. **Michael Hauge's 6-Stage Journey** (10 beats) — Inner + outer journey.
+8. **The Sequence Approach** (8 beats) — Frank Daniel's 8 sequences.
+
+The import modal shows a detailed preview of each beat. Choose insertion mode: **Insert at Cursor**, **Append to End**, or **Overwrite** (with confirmation). Templates insert as \`## Beat\` section headers and \`= Description\` synopsis lines.`,
+  },
+  {
+    id: "scene-reorder",
+    title: "Scene Drag-and-Drop Reordering",
+    category: "Production Features",
+    tags: ["reorder", "drag", "drop", "scene", "outline"],
+    relatedIds: ["outline-navigator", "structure-templates"],
+    content: `In the Outline Navigator, drag scenes by the six-dot grab handle to reorder them. A floating blue ghost follows your cursor and a 2px blue insertion indicator line shows where the scene will land. The editor text updates automatically to reflect the new scene order via \`reorderScenes()\` which manipulates the raw Fountain text and re-parses — all formatting is preserved.`,
+  },
+
+  // ===== FILES & PROJECTS =====
+  {
+    id: "actone-bundle",
+    title: "ActOne Bundle Format (.actone)",
+    category: "Files & Projects",
+    tags: ["actone", "bundle", "zip", "portable"],
+    relatedIds: ["scripts-manager", "sidebar-panels", "save"],
+    content: `The **.actone** format is a ZIP archive (using the \`fflate\` library) that packages everything together. While standard .fountain files only save raw script text, .actone bundles include:
+
+- All script files as plain \`.fountain\` text inside the archive.
+- Character gender assignments (\`characters.json\`).
+- Task checklists (\`todos.json\`).
+- Notepad contents (\`notepad.json\`).
+- Sprint session history (\`sprint_data.json\`).
+- Marker categories (\`marker.json\`).
+- Production tags and definitions (\`production_tags.json\`).
+- Parked text snippets (\`parking.json\`).
+- A manifest (\`fountain.json\`) mapping script names to their archive filenames.
+
+**Extremely portable**: rename any .actone file to .zip and extract it to find your screenplay as a regular .fountain file alongside all data as readable JSON files.`,
+  },
+  {
+    id: "save",
+    title: "Saving Files",
+    category: "Files & Projects",
+    tags: ["save", "save as", "ctrl+s", "autosave"],
+    relatedIds: ["actone-bundle", "file-tabs", "auto-save"],
+    content: `<kbd>Ctrl+S</kbd> saves the active file. For .actone bundles, this packs all scripts and settings into a ZIP archive. For plain .fountain files, it writes the Fountain text directly.
+
+<kbd>Ctrl+Shift+S</kbd> opens the native Save As dialog. You can save as .actone (recommended for full features) or .fountain.
+
+When the Tauri window close is requested, ActOne checks all open files for unsaved changes and prompts you to save, discard, or cancel.`,
+  },
+  {
+    id: "title-page-editor",
+    title: "Title Page Editor",
+    category: "Files & Projects",
+    tags: ["title page", "cover", "author", "draft date"],
+    relatedIds: ["export-pdf", "actone-bundle"],
+    content: `Open the Command Palette → "Edit Title Page" to set your screenplay's metadata. Two views:
+
+**Form View:** Fields for Title, Author, Credit, Source, Contact (multi-line, 3 rows), and Draft Date.
+
+**Fountain View:** Raw Fountain title page syntax in a monospace text area. Changes sync bidirectionally with the Form view.
+
+Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\`, \`Credit:\`, \`Source:\`, \`Contact:\`, \`Draft date:\`). The title page appears in PDF exports. "Apply to Document" merges the edited title page back into the full screenplay text.`,
+  },
+
+  // ===== EXPORT =====
+  {
+    id: "export-overview",
+    title: "Export Overview",
+    category: "Export",
+    tags: ["export", "pdf", "fountain", "fdx", "print"],
+    relatedIds: ["export-pdf", "export-fountain", "export-fdx", "export-all"],
+    content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the Export dialog. ActOne supports three export formats, each with format-specific options. The export is handled by the Rust backend for native performance.`,
+  },
+  {
+    id: "export-pdf",
+    title: "PDF Export",
+    category: "Export",
+    tags: ["pdf", "print", "export"],
+    relatedIds: ["export-overview", "export-fountain", "theme-manager"],
+    content: `Export your screenplay as a professionally formatted PDF using the krilla and cosmic-text Rust engine. Options:
+
+- **Include Title Page** — export the title page if defined.
+- **Bold Scene Headings** — make scene headings bold.
+- **Scene Numbers** — Off, Left Side Only, or Mirror on Both Sides.
+- **Font** — Courier Prime or Courier Prime Sans.
+- **Include Sections** — render \`#\` section headers.
+- **Include Synopsis** — render \`=\` synopsis lines.
+
+Paper Size (Letter or A4) is inherited from Settings. PDF includes page numbering after the title page and proper screenplay formatting (dialogue indentation, dual dialogue columns, right-aligned transitions, smart page breaks with orphan/widow protection).`,
+  },
+  {
+    id: "export-fountain",
+    title: "Fountain Export",
+    category: "Export",
+    tags: ["fountain", "export", "plain text"],
+    relatedIds: ["export-overview", "actone-bundle"],
+    content: `Exports a clean .fountain file with all app-specific tags stripped (\`[[marker …]]\`, \`[[color …]]\`, \`[[storyline …]]\`, settings block, etc.). Options:
+
+- Include Title Page.
+- Include Sections.
+- Include Synopsis.`,
+  },
+  {
+    id: "export-fdx",
+    title: "FDX (Final Draft) Export",
+    category: "Export",
+    tags: ["fdx", "final draft", "fade in", "compatibility"],
+    relatedIds: ["export-overview"],
+    content: `Export your screenplay as Final Draft XML (.fdx) for compatibility with Final Draft, Fade In, and other professional screenwriting applications. Scene colors are preserved using Final Draft's color format. No toggle options — the title page is always included; sections and synopses are stripped.`,
+  },
+  {
+    id: "export-all",
+    title: "Export All Scripts (Multi-Script Bundles)",
+    category: "Export",
+    tags: ["export", "batch", "all scripts", "bundle"],
+    relatedIds: ["scripts-manager", "export-overview"],
+    content: `In the Scripts sidebar (only available for .actone bundles), the "Export All" button exports every script in the bundle at once. The same format options as single export (PDF, Fountain, or FDX) are available. Files are named \`{bundleName}_{scriptName}.ext\`. In Tauri, a directory picker dialog is shown; in the browser, files are downloaded individually.`,
+  },
+
+  // ===== SETTINGS & CUSTOMIZATION =====
+  {
+    id: "settings-overview",
+    title: "Settings Overview",
+    category: "Settings & Customization",
+    tags: ["settings", "ctrl+,", "configuration"],
+    relatedIds: ["theme-manager", "auto-save", "font-paper", "interface-scale", "editor-settings"],
+    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings dialog. Two tabs:
+
+**General:** Visual Theme, Paper Size (Letter / A4), Interface Scale (75%–300%), Auto-Save toggle and interval.
+
+**Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Hide Fountain Markup, Focus Mode.
+
+Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full modal.`,
+  },
+  {
+    id: "theme-manager",
+    title: "Theme Manager & Custom Themes",
+    category: "Settings & Customization",
+    tags: ["theme", "colors", "dark", "light", "custom"],
+    relatedIds: ["settings-overview", "font-paper"],
+    content: `ActOne ships with **6 built-in themes**:
+
+| Theme | Mode | Description |
+|-------|------|-------------|
+| Studio Light | Light | Clean light theme |
+| Midnight | Dark | Clean dark theme |
+| Warm Sepia | Light | Cream-colored comfort for writing |
+| Matrix Charcoal | Dark | Dark charcoal with green accents |
+| Pitch Black | Dark | Pure black background |
+| Pitch White | Light | Pure white e-ink style |
+
+**Create your own** via Settings → Theme Manager. Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, and see a live preview of a rendered miniature screenplay with activity bar, sidebar, and editor.
+
+**5 preset starting points:** Noir, Ocean, Sunset, Forest, Lavender. Custom themes persist in localStorage (\`actone-custom-themes\`).
+
+Quick-switch themes from the Activity Bar's Quick Settings menu or the Welcome screen footer.`,
+  },
+  {
+    id: "font-paper",
+    title: "Font & Paper Settings",
+    category: "Settings & Customization",
+    tags: ["font", "courier prime", "paper", "letter", "a4"],
+    relatedIds: ["settings-overview", "export-pdf"],
+    content: `Two settings available in Settings → General and Editor:
+
+**Font Style:** **Courier Prime** (serif, traditional screenplay look) or **Courier Prime Sans** (sans-serif, clean modern look). Also switchable via Command Palette. Default: Courier Prime Sans.
+
+**Paper Size:** **US Letter** or **A4** (Standard). This affects PDF export formatting (A4: 58 lines/page, Letter: 54 lines/page) and editor page width. Also switchable via Quick Settings. Default: A4.`,
+  },
+  {
+    id: "interface-scale",
+    title: "Interface Scale",
+    category: "Settings & Customization",
+    tags: ["scale", "ui size", "zoom", "dpi"],
+    relatedIds: ["settings-overview", "editor-zoom"],
+    content: `Adjust the entire UI from **75% to 300%** in 5% increments via the Quick Settings slider or Settings → General → Interface Scale. All dialogs and modals respect this scaling so they never overflow on small screens. Persisted in localStorage.`,
+  },
+  {
+    id: "auto-save",
+    title: "Auto-Save",
+    category: "Settings & Customization",
+    tags: ["autosave", "save", "interval"],
+    relatedIds: ["save", "settings-overview"],
+    content: `Toggle auto-save in Settings → General and choose an interval: 30 seconds, 1 minute, 2 minutes, or 5 minutes. Default: 1 minute. Only triggers for files that have an existing file path and have unsaved changes. Uses \`setInterval\` with refs to avoid stale closures.`,
+  },
+  {
+    id: "editor-settings",
+    title: "Editor Preferences",
+    category: "Settings & Customization",
+    tags: ["editor", "preferences", "autocomplete", "quotes", "parentheses"],
+    relatedIds: ["settings-overview", "autocomplete", "smart-quotes", "auto-parentheses", "typewriter-mode", "hide-syntax", "focus-mode"],
+    content: `The Editor tab in Settings controls:
+
+- **Font Style**: Courier Prime (Serif) or Courier Prime Sans.
+- **Editor Zoom**: 50%–400% slider (step 10).
+- **Typewriter Mode**: Keep active line centered.
+- **Character/Scene Autocomplete**: Inline ghost text suggestions.
+- **Smart Quotes**: Auto-convert to curly quotes.
+- **Auto-Match Parentheses**: Auto-insert closing \`)\`.
+- **Hide Fountain Markup**: Clean reading view (hide prefixes on non-active lines).
+- **Focus Mode**: Dim all lines except the active cursor line.`,
+  },
+];
+
+export const categories = [
+  "Getting Started",
+  "Fountain Syntax",
+  "Writing Tools",
+  "Workspace & Views",
+  "Production Features",
+  "Files & Projects",
+  "Export",
+  "Settings & Customization",
+];

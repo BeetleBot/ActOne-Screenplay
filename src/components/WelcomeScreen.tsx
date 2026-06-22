@@ -18,6 +18,7 @@ import {
 import { alpha } from "@mui/material/styles";
 import { useTheme } from "../context";
 import { themes } from "../theme";
+import { logger } from "../utils/logger";
 
 interface Quote {
   text: string;
@@ -154,7 +155,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           if (created) closeWelcome();
         });
       }
-    }).catch(console.error);
+    }).catch(e => logger.error("welcome", "get_cli_args failed", e));
   }, []);
 
   // Listen for OS file open events (from Rust backend)
@@ -173,7 +174,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             if (created) closeWelcome();
           });
         });
-      } catch (e) { console.error("Failed to listen for file-opened events:", e); }
+      } catch (e) { logger.error("welcome", "Failed to listen for file-opened events", e); }
     };
     setup();
     return () => { if (unlisten) unlisten(); };
@@ -196,7 +197,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
       ]);
       return true;
     } catch (e) {
-      console.error("Failed to create editor window:", e);
+      logger.error("welcome", "Failed to create editor window", e);
       return false;
     }
   };
@@ -205,7 +206,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     try {
       await getCurrentWindow().close();
     } catch (e) {
-      console.error(e);
+      logger.error("welcome", "closeWelcome failed", e);
     }
   };
 
@@ -215,7 +216,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         localStorage.setItem("pending-action", "new");
         const created = await createEditorWindow("new");
         if (created) { closeWelcome(); return; }
-      } catch (e) { console.error(e); }
+      } catch (e) { logger.error("welcome", "handleNew failed", e); }
     }
     newFile();
   };
@@ -230,7 +231,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           const created = await createEditorWindow("open");
           if (created) { closeWelcome(); return; }
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { logger.error("welcome", "handleOpen failed", e); }
     }
     await openFile();
   };
@@ -241,7 +242,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         localStorage.setItem("pending-action", "template");
         const created = await createEditorWindow("template");
         if (created) { closeWelcome(); return; }
-      } catch (e) { console.error(e); }
+      } catch (e) { logger.error("welcome", "handleTemplates failed", e); }
     }
     newFile();
   };
@@ -253,7 +254,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         localStorage.setItem("pending-action", "open");
         const created = await createEditorWindow("open");
         if (created) { closeWelcome(); return; }
-      } catch (e) { console.error(e); }
+      } catch (e) { logger.error("welcome", "handleOpenRecent failed", e); }
     }
     openFilePath(path);
   };

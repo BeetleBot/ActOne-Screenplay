@@ -6,6 +6,7 @@ import { search } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
 import { LineType } from "../parser";
+import { CATEGORIES } from "../constants";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource } from "./inlineAutocomplete";
 import { 
   fountainHighlightField, 
@@ -294,23 +295,6 @@ const activeLineAlwaysPlugin = ViewPlugin.fromClass(
   }
 );
 
-const CATEGORIES = [
-  { key: "cast", label: "Cast (Character)" },
-  { key: "prop", label: "Prop" },
-  { key: "vfx", label: "VFX" },
-  { key: "sfx", label: "SFX (Special Effect)" },
-  { key: "camera", label: "Camera" },
-  { key: "animal", label: "Animal" },
-  { key: "extras", label: "Extras" },
-  { key: "vehicle", label: "Vehicle" },
-  { key: "costume", label: "Costume" },
-  { key: "makeup", label: "Makeup" },
-  { key: "music", label: "Music" },
-  { key: "sound", label: "Sound" },
-  { key: "stunt", label: "Stunt" },
-  { key: "setDesign", label: "Set Design" },
-  { key: "other", label: "Other (Generic)" }
-];
 
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);

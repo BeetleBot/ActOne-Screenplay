@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFile, useEditor, useUI } from "../context";
 
 import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon } from "./Icons";
+import { logger } from "../utils/logger";
 
 
 
@@ -100,7 +101,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     try {
       import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url));
     } catch (e) {
-      console.warn("Failed to open URL via Tauri opener, falling back to window.open", e);
+      logger.warn("palette", "Failed to open URL via Tauri opener, falling back to window.open", e);
       window.open(url, "_blank");
     }
   };
@@ -166,7 +167,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       if (undoBtn) {
         undoBtn.dispatchEvent(new KeyboardEvent("keydown", { key: "z", code: "KeyZ", ctrlKey: true, bubbles: true }));
       }
-    } catch (e) { console.warn("Undo failed", e); }
+    } catch (e) { logger.warn("palette", "Undo failed", e); }
     onClose();
   };
 
@@ -177,7 +178,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       if (redoBtn) {
         redoBtn.dispatchEvent(new KeyboardEvent("keydown", { key: "y", code: "KeyY", ctrlKey: true, bubbles: true }));
       }
-    } catch (e) { console.warn("Redo failed", e); }
+    } catch (e) { logger.warn("palette", "Redo failed", e); }
     onClose();
   };
 

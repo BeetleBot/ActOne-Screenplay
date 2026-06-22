@@ -30,20 +30,6 @@ function syncVersion() {
     }
   }
 
-  const msixVersion = version.replace(/^(\d+\.\d+\.\d+).*$/, '$1.0');
-  const manifestPath = path.join(rootDir, 'winapp', 'Package.appxmanifest');
-  if (fs.existsSync(manifestPath)) {
-    let manifest = fs.readFileSync(manifestPath, 'utf8');
-    const msixRegex = /(Version=")([^"]+)(")/;
-    if (msixRegex.test(manifest)) {
-      const oldVersion = manifest.match(msixRegex)[2];
-      if (oldVersion !== msixVersion) {
-        manifest = manifest.replace(msixRegex, `$1${msixVersion}$3`);
-        fs.writeFileSync(manifestPath, manifest, 'utf8');
-        console.log(`Updated winapp/Package.appxmanifest to ${msixVersion}`);
-      }
-    }
-  }
 }
 
 try {

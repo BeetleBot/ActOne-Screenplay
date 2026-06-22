@@ -1,4 +1,5 @@
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
+import { logger } from "./logger";
 
 export interface ScriptInfo {
   name: string;
@@ -25,28 +26,28 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   let productionTagsData: { tags: unknown[]; definitions: unknown[] } = { tags: [], definitions: [] };
 
   if (unzipped["settings.json"]) {
-    try { parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"])); } catch (e) { console.warn("Failed to parse settings.json", e); }
+    try { parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"])); } catch (e) { logger.warn("actone", "Failed to parse settings.json", e); }
   }
   if (unzipped["characters.json"]) {
-    try { const chars = JSON.parse(strFromU8(unzipped["characters.json"])); genders = chars.genders || {}; } catch (e) { console.warn("Failed to parse characters.json", e); }
+    try { const chars = JSON.parse(strFromU8(unzipped["characters.json"])); genders = chars.genders || {}; } catch (e) { logger.warn("actone", "Failed to parse characters.json", e); }
   }
   if (unzipped["todos.json"]) {
-    try { todosData = JSON.parse(strFromU8(unzipped["todos.json"])); } catch (e) { console.warn("Failed to parse todos.json", e); }
+    try { todosData = JSON.parse(strFromU8(unzipped["todos.json"])); } catch (e) { logger.warn("actone", "Failed to parse todos.json", e); }
   }
   if (unzipped["parking.json"]) {
-    try { parkingData = JSON.parse(strFromU8(unzipped["parking.json"])); } catch (e) { console.warn("Failed to parse parking.json", e); }
+    try { parkingData = JSON.parse(strFromU8(unzipped["parking.json"])); } catch (e) { logger.warn("actone", "Failed to parse parking.json", e); }
   }
   if (unzipped["notepad.json"]) {
-    try { notepadData = JSON.parse(strFromU8(unzipped["notepad.json"])); } catch (e) { console.warn("Failed to parse notepad.json", e); }
+    try { notepadData = JSON.parse(strFromU8(unzipped["notepad.json"])); } catch (e) { logger.warn("actone", "Failed to parse notepad.json", e); }
   }
   if (unzipped["sprint_data.json"]) {
-    try { sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"])); } catch (e) { console.warn("Failed to parse sprint_data.json", e); }
+    try { sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"])); } catch (e) { logger.warn("actone", "Failed to parse sprint_data.json", e); }
   }
   if (unzipped["marker.json"]) {
-    try { markerData = JSON.parse(strFromU8(unzipped["marker.json"])); } catch (e) { console.warn("Failed to parse marker.json", e); }
+    try { markerData = JSON.parse(strFromU8(unzipped["marker.json"])); } catch (e) { logger.warn("actone", "Failed to parse marker.json", e); }
   }
   if (unzipped["production_tags.json"]) {
-    try { productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"])); } catch (e) { console.warn("Failed to parse production_tags.json", e); }
+    try { productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"])); } catch (e) { logger.warn("actone", "Failed to parse production_tags.json", e); }
   }
 
   const settings = {

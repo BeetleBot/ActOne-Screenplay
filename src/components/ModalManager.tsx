@@ -7,6 +7,7 @@ import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { HelpModal } from './HelpModal';
 import { ProductionBreakdownModal } from './ProductionBreakdownModal';
 import { ThemeManagerModal } from './ThemeManagerModal';
+import { ErrorBoundary } from './ErrorBoundary';
 
 export interface ModalManagerProps {
   isPaletteOpen: boolean;
@@ -51,26 +52,28 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
 }) => {
   return (
     <>
-      <CommandPalette
-        isOpen={isPaletteOpen}
-        onClose={() => setIsPaletteOpen(false)}
-        onExportPDF={() => setShowExportModal(true)}
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={isSidebarOpen}
-        onOpenStructureModal={() => setShowStructureModal(true)}
-        onOpenSettingsModal={() => setShowSettingsModal(true)}
-        onOpenTitlePageModal={() => setShowTitlePageModal(true)}
-        onOpenHelpModal={() => setShowHelpModal(true)}
-        onOpenBreakdownModal={() => setShowBreakdownModal(true)}
-        onOpenThemeManagerModal={() => setShowThemeManagerModal(true)}
-      />
-      {showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}
-      {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
-      {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}
-      {showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}
-      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
-      {showBreakdownModal && <ProductionBreakdownModal onClose={() => setShowBreakdownModal(false)} />}
-      {showThemeManagerModal && <ThemeManagerModal onClose={() => setShowThemeManagerModal(false)} />}
+      <ErrorBoundary name="command-palette">
+        <CommandPalette
+          isOpen={isPaletteOpen}
+          onClose={() => setIsPaletteOpen(false)}
+          onExportPDF={() => setShowExportModal(true)}
+          toggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+          onOpenStructureModal={() => setShowStructureModal(true)}
+          onOpenSettingsModal={() => setShowSettingsModal(true)}
+          onOpenTitlePageModal={() => setShowTitlePageModal(true)}
+          onOpenHelpModal={() => setShowHelpModal(true)}
+          onOpenBreakdownModal={() => setShowBreakdownModal(true)}
+          onOpenThemeManagerModal={() => setShowThemeManagerModal(true)}
+        />
+      </ErrorBoundary>
+      <ErrorBoundary name="export-modal">{showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="settings-modal">{showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="help-modal">{showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="breakdown-modal">{showBreakdownModal && <ProductionBreakdownModal onClose={() => setShowBreakdownModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="theme-modal">{showThemeManagerModal && <ThemeManagerModal onClose={() => setShowThemeManagerModal(false)} />}</ErrorBoundary>
     </>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useFile, useEditor } from "../context";
-import { PILL_RADIUS } from "../constants";
+import { ActoneBanner } from "./ActoneBanner";
 import { RadioButtonUncheckedIcon, CheckCircleIcon, KeyboardArrowDownIcon, AddIcon, CloseIcon } from "./Icons";
 
 import {
@@ -13,8 +13,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Alert,
-  AlertTitle,
   Button,
   Collapse,
 } from "@mui/material";
@@ -31,29 +29,6 @@ interface TodoViewProps {
   disabled?: boolean;
   saveFileAs?: () => Promise<string | null>;
 }
-
-const ActoneBanner: React.FC<{ saveFileAs?: () => Promise<string | null> }> = ({ saveFileAs }) => (
-  <Alert
-    severity="warning"
-    sx={{ mb: 2, borderRadius: '12px' }}
-    action={
-      saveFileAs && (
-        <Button
-          color="warning"
-          size="small"
-          variant="contained"
-          onClick={() => saveFileAs()}
-          sx={{ fontWeight: 600, textTransform: "none", borderRadius: PILL_RADIUS }}
-        >
-          Save as .actone
-        </Button>
-      )
-    }
-  >
-    <AlertTitle sx={{ fontWeight: 700 }}>Only available on .actone</AlertTitle>
-    Tasks require saving the screenplay as an ActOne Bundle (.actone).
-  </Alert>
-);
 
 export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
   const { parsedDoc } = useFile();
@@ -135,7 +110,7 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
         Tasks
       </Typography>
 
-      {disabled && <ActoneBanner saveFileAs={saveFileAs} />}
+      {disabled && <ActoneBanner message="Tasks require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />}
 
       <Box sx={{ display: "flex", gap: 1, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? "none" : "auto" }}>
         <TextField
