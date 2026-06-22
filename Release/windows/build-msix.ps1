@@ -7,6 +7,20 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# Self-elevate to admin if SelfSign is requested and we're not admin
+$IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if ((-not $IsAdmin) -and $SelfSign) {
+    $myArgs = "-NoExit -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    foreach ($key in $MyInvocation.BoundParameters.Keys) {
+        $val = $MyInvocation.BoundParameters[$key]
+        if ($val -is [switch]) { $myArgs += " -$key" }
+        else { $myArgs += " -$key `"$val`"" }
+    }
+    Start-Process -Verb RunAs -FilePath "powershell" -ArgumentList $myArgs
+    exit
+}
+
 $ProjectRoot = Resolve-Path "$PSScriptRoot\..\.."
 $ArtifactsDir = "$ProjectRoot\Release\artifacts"
 
@@ -69,7 +83,7 @@ if ($LASTEXITCODE -ne 0) { throw "MakeAppx failed" }
 # --- Step 5: Sign ---
 $Signed = $false
 if ($SkipSigning) {
-    Write-Step "Skipping signing (unsigned — Store will sign)"
+    Write-Step "Skipping signing (unsigned - Store will sign)"
 } elseif ($SelfSign) {
     Write-Step "Self-signing with matching certificate"
     $Subject = "CN=A5C810D1-3C33-4DED-95DA-33D6BC28A3B0"
@@ -129,5 +143,5 @@ Write-Step "Done! Artifacts in: $ArtifactsDir"
 Write-Host "  MSIX:       $MsixFile" -ForegroundColor Green
 Write-Host "  Portable:   $PortableExe" -ForegroundColor Green
 if (-not $Signed -and -not $SkipSigning -and -not $PfxPath -and -not $SelfSign) {
-    Write-Host "  NOTE: MSIX is unsigned. Skip with -SkipSigning or sign with -SelfSign / -PfxPath" -ForegroundColor Yellow
+    Write-Host "  NOTE: MSIX is unsigned. Use -SkipSigning or -SelfSign or -PfxPath" -ForegroundColor Yellow
 }

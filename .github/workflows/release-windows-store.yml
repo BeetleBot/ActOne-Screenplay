@@ -57,7 +57,7 @@ jobs:
           $layout = "target/msix/layout"
           New-Item -ItemType Directory -Path "$layout/Assets" -Force | Out-Null
           Copy-Item src-tauri/target/release/actone.exe $layout/
-          Copy-Item packaging/msix/AppxManifest.xml $layout/
+          Copy-Item Release/windows/AppxManifest.xml $layout/
           Copy-Item src-tauri/icons/StoreLogo.png "$layout/Assets/"
           Copy-Item src-tauri/icons/Square44x44Logo.png "$layout/Assets/"
           Copy-Item src-tauri/icons/Square150x150Logo.png "$layout/Assets/"
