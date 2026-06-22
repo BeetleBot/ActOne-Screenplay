@@ -13,7 +13,7 @@ $sizes = @{
   "Square44x44Logo" = 44
   "Square150x150Logo" = 150
   "Wide310x150Logo" = @(310, 150)
-  "LargeSquareLogo" = 310
+  "Square310x310Logo" = 310
 }
 
 $source = [System.Drawing.Image]::FromFile($SourceIcon)
