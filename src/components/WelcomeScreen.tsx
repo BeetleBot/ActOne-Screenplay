@@ -3,7 +3,7 @@ import { useFile } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { getVersion } from "@tauri-apps/api/app";
+
 import { HelpModal } from "./HelpModal";
 import {
   Box,
@@ -137,12 +137,12 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const { theme, setTheme, customThemes } = useTheme();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
   const [showHelp, setShowHelp] = useState(false);
-  const [appVersion, setAppVersion] = useState("");
+  const appVersion = __APP_VERSION__;
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     setQuote(getDynamicQuote());
-    getVersion().then(setAppVersion).catch(() => setAppVersion("0.1.0"));
+
 
     // Check if double-clicked file was passed as CLI argument on startup
     invoke<string[]>("get_cli_args").then((paths) => {

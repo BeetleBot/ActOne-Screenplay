@@ -12,3 +12,13 @@ packaging/msix/staging/
 packaging/msix/Assets/
 packaging/msix/*.msix
 packaging/msix/*.appx
+
+# VS user files
+.vs/
+
+# Build artifacts
+*.rlib
+
+# WinApp output
+target/msix/
+winapp/Assets/

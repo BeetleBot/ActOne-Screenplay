@@ -323,10 +323,10 @@ fn get_cli_args() -> Vec<String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .setup(|app| {
-            // Handle file paths passed as CLI arguments (Linux, Windows)
+        .setup(move |app| {
+
             let args: Vec<String> = std::env::args().skip(1).collect();
             let filtered: Vec<String> = args.into_iter()
                 .filter(|p| {
@@ -361,7 +361,9 @@ pub fn run() {
             get_cli_args,
             generate_fdx_string,
             import_fountain_dialog
-        ])
+        ]);
+
+    builder
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app_handle, _event| {

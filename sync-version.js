@@ -4,13 +4,11 @@ import path from 'path';
 const rootDir = process.cwd();
 
 function syncVersion() {
-  // 1. Read version from package.json
   const packageJsonPath = path.join(rootDir, 'package.json');
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   const version = packageJson.version;
   console.log(`Syncing version: ${version}`);
 
-  // 2. Update src-tauri/tauri.conf.json
   const tauriConfPath = path.join(rootDir, 'src-tauri', 'tauri.conf.json');
   if (fs.existsSync(tauriConfPath)) {
     const tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, 'utf8'));
@@ -21,7 +19,6 @@ function syncVersion() {
     }
   }
 
-  // 3. Update src-tauri/Cargo.toml
   const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
   if (fs.existsSync(cargoTomlPath)) {
     let cargoToml = fs.readFileSync(cargoTomlPath, 'utf8');
@@ -32,6 +29,21 @@ function syncVersion() {
       console.log(`Updated src-tauri/Cargo.toml to ${version}`);
     }
   }
+
+  const msixVersion = version.replace(/^(\d+\.\d+\.\d+).*$/, '$1.0');
+  const manifestPath = path.join(rootDir, 'winapp', 'Package.appxmanifest');
+  if (fs.existsSync(manifestPath)) {
+    let manifest = fs.readFileSync(manifestPath, 'utf8');
+    const msixRegex = /(Version=")([^"]+)(")/;
+    if (msixRegex.test(manifest)) {
+      const oldVersion = manifest.match(msixRegex)[2];
+      if (oldVersion !== msixVersion) {
+        manifest = manifest.replace(msixRegex, `$1${msixVersion}$3`);
+        fs.writeFileSync(manifestPath, manifest, 'utf8');
+        console.log(`Updated winapp/Package.appxmanifest to ${msixVersion}`);
+      }
+    }
+  }
 }
 
 try {
@@ -40,3 +52,4 @@ try {
   console.error('Failed to sync version:', error);
   process.exit(1);
 }
+
