@@ -48,58 +48,8 @@ Write-Step "Building ActOne v$Version"
 # --- Step 1: Build Tauri app ---
 Write-Step "Building Tauri app (release, no bundle)"
 Push-Location $ProjectRoot
-
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = "cmd.exe"
-$psi.Arguments = "/c npm run tauri build -- --no-bundle --ignore-version-mismatches"
-$psi.WorkingDirectory = $ProjectRoot
-$psi.RedirectStandardOutput = $true
-$psi.RedirectStandardError = $true
-$psi.UseShellExecute = $false
-
-$process = New-Object System.Diagnostics.Process
-$process.StartInfo = $psi
-$process.Start() | Out-Null
-
-$lastOutputTime = [DateTime]::Now
-
-while (-not $process.HasExited) {
-    # Stream stdout
-    while ($process.StandardOutput.Peek() -ne -1) {
-        $line = $process.StandardOutput.ReadLine()
-        Write-Host $line
-        $lastOutputTime = [DateTime]::Now
-    }
-    # Stream stderr
-    while ($process.StandardError.Peek() -ne -1) {
-        $line = $process.StandardError.ReadLine()
-        Write-Host $line -ForegroundColor Yellow
-        $lastOutputTime = [DateTime]::Now
-    }
-    
-    # Calculate elapsed time
-    $elapsed = [Math]::Round(([DateTime]::Now - $process.StartTime).TotalSeconds)
-    $idleTime = ([DateTime]::Now - $lastOutputTime).TotalSeconds
-    
-    if ($idleTime -gt 3) {
-        Write-Progress -Activity "Building Tauri App" -Status "Compiling Rust or linking binary (elapsed: ${elapsed}s) - Please wait..." -PercentComplete -1
-    } else {
-        Write-Progress -Activity "Building Tauri App" -Status "Running build steps (elapsed: ${elapsed}s)..." -PercentComplete -1
-    }
-    
-    Start-Sleep -Milliseconds 100
-}
-
-# Flush remaining output
-while ($process.StandardOutput.Peek() -ne -1) { Write-Host $process.StandardOutput.ReadLine() }
-while ($process.StandardError.Peek() -ne -1) { Write-Host $process.StandardError.ReadLine() -ForegroundColor Yellow }
-
-Write-Progress -Activity "Building Tauri App" -Completed
-
-if ($process.ExitCode -ne 0) { 
-    Pop-Location
-    throw "Tauri build failed" 
-}
+npm run tauri build -- --no-bundle
+if ($LASTEXITCODE -ne 0) { throw "Tauri build failed" }
 Pop-Location
 
 
