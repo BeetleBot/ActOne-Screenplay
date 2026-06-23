@@ -65,7 +65,7 @@ function AppInner() {
         if (!isLicenseActive) {
           await confirm({
             title: "License Verification Failed",
-            message: "This copy of ActOne did not pass Microsoft Store license validation. Please ensure you downloaded it from the official Microsoft Store.",
+            message: "This copy of ActOne did not pass Microsoft Store license validation. Please uninstall this application and download it again from the official Microsoft Store.",
             buttons: [{ value: "exit", label: "Close Application", variant: "contained", color: "error" }]
           });
           try {
