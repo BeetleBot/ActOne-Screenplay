@@ -32,7 +32,7 @@ if (-not $Version) {
         # Update version in package.json
         $packageJsonPath = "$ProjectRoot\package.json"
         $content = Get-Content $packageJsonPath -Raw
-        $content = $content -replace '("version"\s*:\s*")[^"]+(")', "`$1$Version`$2"
+        $content = $content -replace '(?<="version"\s*:\s*")[^"]+(?=")', $Version
         [System.IO.File]::WriteAllText($packageJsonPath, $content)
         
         # Run sync-version.js to update Cargo.toml and tauri.conf.json
