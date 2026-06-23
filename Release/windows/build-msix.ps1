@@ -24,10 +24,26 @@ function Write-Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
 # --- Detect version ---
 if (-not $Version) {
     $pkg = Get-Content "$ProjectRoot\package.json" | ConvertFrom-Json
-    $Version = $pkg.version
+    $currentVersion = $pkg.version
+    $Version = Read-Host "Enter version number (current is $currentVersion, press Enter to keep)"
+    if (-not $Version) {
+        $Version = $currentVersion
+    } else {
+        # Update version in package.json
+        $packageJsonPath = "$ProjectRoot\package.json"
+        $content = Get-Content $packageJsonPath -Raw
+        $content = $content -replace '("version"\s*:\s*")[^"]+(")', "`$1$Version`$2"
+        [System.IO.File]::WriteAllText($packageJsonPath, $content)
+        
+        # Run sync-version.js to update Cargo.toml and tauri.conf.json
+        Push-Location $ProjectRoot
+        node sync-version.js
+        Pop-Location
+    }
 }
 $MsixVersion = "$Version.0"
 Write-Step "Building ActOne v$Version"
+
 
 # --- Step 1: Build Tauri app ---
 Write-Step "Building Tauri app (release, no bundle)"
