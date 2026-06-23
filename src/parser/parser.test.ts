@@ -65,7 +65,7 @@ describe("Fountain Screenplay Parser", () => {
 
     it("should strip spaces after Fountain syntax prefixes and around notes", () => {
       const input = ". INT. HOUSE - DAY\n\n# ACT 1\n\n## SCENE 1\n\n= Synopsis of scene\n\n@ John\nHello [[ Note ]].\n\n! Action forced\n\n~ Lyrics here";
-      const expected = ".INT. HOUSE - DAY\n\n#ACT 1\n##SCENE 1\n=Synopsis of scene\n\n@John\nHello [[Note]].\n\n!Action forced\n\n~Lyrics here";
+      const expected = ".INT. HOUSE - DAY\n\n#ACT 1\n\n##SCENE 1\n\n=Synopsis of scene\n\n@John\nHello [[Note]].\n\n!Action forced\n\n~Lyrics here";
       expect(formatScreenplaySpaces(input)).toBe(expected);
     });
 
@@ -75,9 +75,9 @@ describe("Fountain Screenplay Parser", () => {
       expect(formatScreenplaySpaces(input)).toBe(expected);
     });
 
-    it("should remove all empty lines between outline elements", () => {
+    it("should preserve blank lines between outline elements (from Enter)", () => {
       const input = "# ACT 1\n\n= Synopsis 1\n\n## SCENE 1\n\n= Synopsis 2";
-      const expected = "#ACT 1\n=Synopsis 1\n##SCENE 1\n=Synopsis 2";
+      const expected = "#ACT 1\n\n=Synopsis 1\n\n##SCENE 1\n\n=Synopsis 2";
       expect(formatScreenplaySpaces(input)).toBe(expected);
     });
 

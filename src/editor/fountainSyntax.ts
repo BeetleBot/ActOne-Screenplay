@@ -42,7 +42,7 @@ export const isDualType = (t: number) =>
 export const needsBlankAfterEnter = (t: number) =>
   t === LINE_HEADING || t === LINE_ACTION || t === LINE_DIALOGUE ||
   t === LINE_DUAL_DIALOGUE || t === LINE_TRANSITION ||
-  t === LINE_SHOT;
+  t === LINE_SHOT || t === LINE_SECTION || t === LINE_SYNOPSE;
 
 export const classifyLines = (doc: { line: (n: number) => { text: string }; lines: number }): number[] => {
   const types: number[] = [];

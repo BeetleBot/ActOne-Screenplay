@@ -670,10 +670,6 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
     }))
     .filter(line => line.type !== LineType.empty);
 
-  const isOutlineLine = (line: any) => {
-    return line.type === LineType.section || line.type === LineType.synopse || !!line.marker;
-  };
-
   const isDialogueType = (type: LineType) => {
     return (
       type === LineType.character ||
@@ -712,12 +708,7 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
       resultLines.push(curr.text);
     } else {
       let spacing = 1;
-      const prevIsOutline = isOutlineLine(prevElement);
-      const currIsOutline = isOutlineLine(curr);
-
-      if (prevIsOutline && currIsOutline) {
-        spacing = 0;
-      } else if (isDialogueSubElement(curr.type) && isDialogueType(prevElement.type)) {
+      if (isDialogueSubElement(curr.type) && isDialogueType(prevElement.type)) {
         spacing = 0;
       } else if (curr.type === LineType.action && prevElement.type === LineType.action) {
         spacing = hasEmptyBetween(prevElement.originalIndex, curr.originalIndex) ? 1 : 0;

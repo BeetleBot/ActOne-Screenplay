@@ -142,12 +142,15 @@ describe("isDualType", () => {
 });
 
 describe("needsBlankAfterEnter", () => {
-  it("returns true for heading, action, dialogue, transition", () => {
+  it("returns true for heading, action, dialogue, transition, shot, section, synopsis", () => {
     expect(needsBlankAfterEnter(LINE_HEADING)).toBe(true);
     expect(needsBlankAfterEnter(LINE_ACTION)).toBe(true);
     expect(needsBlankAfterEnter(LINE_DIALOGUE)).toBe(true);
     expect(needsBlankAfterEnter(LINE_DUAL_DIALOGUE)).toBe(true);
     expect(needsBlankAfterEnter(LINE_TRANSITION)).toBe(true);
+    expect(needsBlankAfterEnter(LINE_SHOT)).toBe(true);
+    expect(needsBlankAfterEnter(LINE_SECTION)).toBe(true);
+    expect(needsBlankAfterEnter(LINE_SYNOPSE)).toBe(true);
   });
 
   it("returns false for other types", () => {
