@@ -124,7 +124,7 @@ export const ScriptsView: React.FC = () => {
       return;
     }
 
-    let dir: string | null = null;
+    let dir: string | null;
     try {
       dir = await invoke<string | null>("pick_directory");
     } catch (e) {

@@ -6,7 +6,7 @@ import { search } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
 import { LineType } from "../parser";
-import { CATEGORIES } from "../constants";
+import { CATEGORIES, STORAGE_KEYS } from "../constants";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource } from "./inlineAutocomplete";
 import { 
   fountainHighlightField, 
@@ -271,7 +271,7 @@ const activeLineAlwaysPlugin = ViewPlugin.fromClass(
       const state = view.state;
       const pos = state.selection.main.head;
       const activeLine = state.doc.lineAt(pos);
-      const focusEnabled = localStorage.getItem("actone-line-focus-enabled") === "true";
+      const focusEnabled = localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true";
       const builder = new RangeSetBuilder<Decoration>();
 
       if (focusEnabled) {

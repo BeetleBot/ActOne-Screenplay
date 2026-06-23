@@ -1207,7 +1207,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (((e.key === "Tab" || e.keyCode === 9) && e.ctrlKey) || (e.key === "PageDown" && e.ctrlKey) || (e.key === "PageUp" && e.ctrlKey)) {
+      if ((e.key === "Tab" && (e.ctrlKey || e.metaKey)) || (e.key === "PageDown" && e.ctrlKey) || (e.key === "PageUp" && e.ctrlKey)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();

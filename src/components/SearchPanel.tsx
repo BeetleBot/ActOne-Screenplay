@@ -123,7 +123,7 @@ export const SearchPanel: React.FC = () => {
     }
 
     try {
-      let escapedQuery = searchText.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedQuery = searchText.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
       let pattern = isRegex ? searchText : escapedQuery;
       if (isWholeWord) {
         pattern = `\\b${pattern}\\b`;
@@ -152,7 +152,7 @@ export const SearchPanel: React.FC = () => {
       editorView.dispatch({
         effects: setSearchQuery.of(query),
       });
-    } catch (e) {
+    } catch {
       setMatches([]);
     }
   }, [searchText, replaceText, isCaseSensitive, isWholeWord, isRegex, editorView]);

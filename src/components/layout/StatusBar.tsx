@@ -8,7 +8,7 @@ import { useEditor } from "../../context";
 
 export const StatusBar: React.FC = () => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
-  const { isZenMode } = useUI();
+  const { isZenMode, viewMode, setViewMode } = useUI();
   const { activeLineId } = useEditor();
   const { activeSprints } = useSprint();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -214,6 +214,18 @@ export const StatusBar: React.FC = () => {
         )}
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
+          <Box
+            onClick={() => setViewMode(viewMode === "board" ? "editor" : "board")}
+            sx={{
+              fontSize: 11, color: "text.secondary", cursor: "pointer", whiteSpace: "nowrap",
+              px: 0.6, py: 0.2, borderRadius: "4px",
+              bgcolor: viewMode === "board" ? "action.selected" : "transparent",
+              fontWeight: viewMode === "board" ? 600 : 400,
+              "&:hover": { bgcolor: "action.hover" },
+            }}
+          >
+            <strong style={{ color: "var(--text-main)" }}>{viewMode === "board" ? "Editor" : "Board"}</strong>
+          </Box>
           <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
             Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
           </Typography>

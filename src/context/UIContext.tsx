@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { STORAGE_KEYS } from "../constants";
 import { logger } from "../utils/logger";
 
@@ -12,6 +11,8 @@ export interface UIContextProps {
   setIsZenMode: (enabled: boolean) => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
+  viewMode: 'editor' | 'board';
+  setViewMode: (mode: 'editor' | 'board') => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   zoomLevel: number;
@@ -57,6 +58,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
     return (localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) as 'letter' | 'a4' | null) ?? "a4";
   });
+  const [viewMode, setViewMode] = useState<'editor' | 'board'>('editor');
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ZOOM_LEVEL);
@@ -98,13 +100,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [isZenMode, setIsZenModeState] = useState(false);
 
   const [lineFocusEnabled, setLineFocusEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem("actone-line-focus-enabled") === "true";
+    return localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true";
   });
 
   useEffect(() => {
     const applyZenMode = async () => {
       let tauriSuccess = false;
       try {
+        const { getCurrentWindow } = await import("@tauri-apps/api/window");
         const win = getCurrentWindow();
         if (win) {
           await win.setFullscreen(isZenMode);
@@ -198,7 +201,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const setLineFocusEnabled = (enabled: boolean) => {
     setLineFocusEnabledState(enabled);
-    localStorage.setItem("actone-line-focus-enabled", enabled ? "true" : "false");
+    localStorage.setItem(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
   };
 
   return (
@@ -212,6 +215,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setIsZenMode,
         typewriterMode,
         setTypewriterMode,
+        viewMode,
+        setViewMode,
         activeTab,
         setActiveTab,
         zoomLevel,

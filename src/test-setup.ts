@@ -27,3 +27,11 @@ Object.defineProperty(window, "matchMedia", {
 });
 
 (window as any).__TAURI_INTERNALS__ = undefined;
+
+Element.prototype.scrollIntoView = () => {};
+
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};

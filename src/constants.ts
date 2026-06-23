@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
   ACTIVE_SPRINTS: "actone-active-sprints",
   SPRINT_HISTORY: "actone-sprint-history",
   HIDE_SYNTAX_ENABLED: "actone-hide-syntax-enabled",
+  LINE_FOCUS_ENABLED: "actone-line-focus-enabled",
 } as const;
 
 export const PILL_RADIUS = "9999px";

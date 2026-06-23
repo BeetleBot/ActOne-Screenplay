@@ -513,6 +513,7 @@ export const OutlineView: React.FC = () => {
               <KeyboardArrowDownIcon sx={{ fontSize: 12 }} />
             </IconButton>
             <ListItemText
+              slotProps={{ secondary: { component: 'span' as const } }}
               primary={
                   <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--button-color)", fontSize: fontSizes.section, fontFamily: "var(--font-ui)", letterSpacing: "0.02em" }}>
                   {line.text.replace(/^[.#= ]+/, "").trim()}
@@ -635,6 +636,7 @@ export const OutlineView: React.FC = () => {
         )}
         {!isScene && <Box sx={{ width: 20, flexShrink: 0 }} />}
         <ListItemText
+          slotProps={{ secondary: { component: 'span' as const } }}
           primary={
             <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
               <Box
