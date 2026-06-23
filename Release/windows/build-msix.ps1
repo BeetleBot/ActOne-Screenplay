@@ -82,9 +82,9 @@ while (-not $process.HasExited) {
     $idleTime = ([DateTime]::Now - $lastOutputTime).TotalSeconds
     
     if ($idleTime -gt 3) {
-        Write-Progress -Activity "Building Tauri App" -Status "Linking binary & optimizing via LTO (elapsed: ${elapsed}s) - Please wait..." -PercentComplete -1
+        Write-Progress -Activity "Building Tauri App" -Status "Compiling Rust or linking binary (elapsed: ${elapsed}s) - Please wait..." -PercentComplete -1
     } else {
-        Write-Progress -Activity "Building Tauri App" -Status "Compiling backend (elapsed: ${elapsed}s)..." -PercentComplete -1
+        Write-Progress -Activity "Building Tauri App" -Status "Running build steps (elapsed: ${elapsed}s)..." -PercentComplete -1
     }
     
     Start-Sleep -Milliseconds 100

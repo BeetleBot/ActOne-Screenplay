@@ -132,7 +132,7 @@ npm run tauri build 2>&1 | while true; do
     elif [ $status -gt 128 ]; then
         current_time=$(date +%s)
         elapsed=$((current_time - start_time))
-        echo -e "\e[1;36m==> Linking binary & optimizing via LTO (elapsed: ${elapsed}s)... \e[0m" >&2
+        echo -e "\e[1;36m==> Compiling Rust or linking binary (elapsed: ${elapsed}s)... \e[0m" >&2
     else
         break
     fi
