@@ -29,6 +29,8 @@ bitflags = "2"
 cosmic-text = "0.12.1"
 unicode-properties = "0.1"
 font-kit = "0.14"
+
+[target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58", features = ["Services_Store", "Foundation"] }
 
 [profile.release]
