@@ -119,7 +119,25 @@ fi
 echo "==> Building Tauri app"
 cd "$PROJECT_ROOT"
 npm ci
-npm run tauri build
+
+# Build with LTO/linking progress indicator
+start_time=$(date +%s)
+last_output=$(date +%s)
+npm run tauri build 2>&1 | while true; do
+    read -r -t 3 line
+    status=$?
+    if [ $status -eq 0 ]; then
+        echo "$line"
+        last_output=$(date +%s)
+    elif [ $status -gt 128 ]; then
+        current_time=$(date +%s)
+        elapsed=$((current_time - start_time))
+        echo -e "\e[1;36m==> Linking binary & optimizing via LTO (elapsed: ${elapsed}s)... \e[0m" >&2
+    else
+        break
+    fi
+done
+
 
 # --- Package tarball ---
 echo "==> Packaging tarball"
