@@ -56,6 +56,36 @@ function AppInner() {
     isDisabled: isModalActive,
   });
 
+  // Microsoft Store license verification check
+  useEffect(() => {
+    async function verifyLicense() {
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const isLicenseActive = await invoke<boolean>("check_microsoft_store_license");
+        if (!isLicenseActive) {
+          await confirm({
+            title: "License Verification Failed",
+            message: "This copy of ActOne did not pass Microsoft Store license validation. Please ensure you downloaded it from the official Microsoft Store.",
+            buttons: [{ value: "exit", label: "Close Application", variant: "contained", color: "error" }]
+          });
+          try {
+            const { getCurrentWindow } = await import("@tauri-apps/api/window");
+            await getCurrentWindow().close();
+          } catch (e) {
+            window.close();
+          }
+        }
+      } catch (error) {
+        logger.error("app", "Failed to query Microsoft Store license:", error);
+      }
+    }
+    
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) {
+      verifyLicense();
+    }
+  }, [confirm]);
+
   // Editor window: handle the action param on mount (once only)
   const initialActionHandled = useRef(false);
   useEffect(() => {

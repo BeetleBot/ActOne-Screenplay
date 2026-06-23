@@ -321,6 +321,27 @@ fn get_cli_args() -> Vec<String> {
         .collect()
 }
 
+#[tauri::command]
+async fn check_microsoft_store_license() -> Result<bool, String> {
+    #[cfg(all(target_os = "windows", not(debug_assertions)))]
+    {
+        use windows::Services::Store::StoreContext;
+        let context = StoreContext::GetDefault().map_err(|e| e.to_string())?;
+        let app_license = context.GetAppLicenseAsync()
+            .map_err(|e| e.to_string())?
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let is_active = app_license.IsActive().map_err(|e| e.to_string())?;
+        Ok(is_active)
+    }
+
+    #[cfg(any(not(target_os = "windows"), debug_assertions))]
+    {
+        Ok(true)
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -360,7 +381,8 @@ pub fn run() {
             get_page_breaks,
             get_cli_args,
             generate_fdx_string,
-            import_fountain_dialog
+            import_fountain_dialog,
+            check_microsoft_store_license
         ]);
 
     builder
