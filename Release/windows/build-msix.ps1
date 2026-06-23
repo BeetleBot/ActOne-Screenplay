@@ -51,7 +51,7 @@ Push-Location $ProjectRoot
 
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = "cmd.exe"
-$psi.Arguments = "/c npm run tauri build -- --no-bundle"
+$psi.Arguments = "/c npm run tauri build -- --no-bundle --ignore-version-mismatches"
 $psi.WorkingDirectory = $ProjectRoot
 $psi.RedirectStandardOutput = $true
 $psi.RedirectStandardError = $true

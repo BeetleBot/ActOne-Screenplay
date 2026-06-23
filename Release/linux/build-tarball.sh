@@ -123,7 +123,7 @@ npm ci
 # Build with LTO/linking progress indicator
 start_time=$(date +%s)
 last_output=$(date +%s)
-npm run tauri build 2>&1 | while true; do
+npm run tauri build -- --ignore-version-mismatches 2>&1 | while true; do
     read -r -t 3 line
     status=$?
     if [ $status -eq 0 ]; then
