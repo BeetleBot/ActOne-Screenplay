@@ -61,7 +61,7 @@ function getDynamicQuote(): Quote {
 }
 
 import logoImage from "../assets/logo.png";
-import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, ColorLensIcon, CheckIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, ColorLensIcon, CheckIcon, DiscordIcon } from "./Icons";
 
 const ActionCard: React.FC<{
   icon: React.ReactNode;
@@ -458,6 +458,25 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           >
             Help
           </Button>
+          <Button
+            size="small"
+            startIcon={<DiscordIcon sx={{ fontSize: 13 }} />}
+            onClick={() => {
+              import("@tauri-apps/plugin-opener")
+                .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
+                .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
+            }}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: 11,
+              color: "text.secondary",
+              opacity: 0.4,
+              "&:hover": { opacity: 1, color: "text.primary" },
+            }}
+          >
+            Discord
+          </Button>
           <Typography
             sx={{
               fontSize: 9.5,
@@ -473,7 +492,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               fontSize: 9,
               fontWeight: 500,
               color: "text.secondary",
-              opacity: 0.15,
+              opacity: 0.35,
               userSelect: "none",
             }}
           >
