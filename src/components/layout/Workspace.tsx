@@ -5,7 +5,7 @@ import Paper from "@mui/material/Paper";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { FountainEditor } from "../FountainEditor";
-import { PlanningBoard } from "../PlanningBoard";
+
 import { ErrorBoundary } from "../ErrorBoundary";
 
 interface WorkspaceProps {
@@ -17,7 +17,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, viewMode } = useUI();
+  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
@@ -105,26 +105,20 @@ export const Workspace: React.FC<WorkspaceProps> = ({
         </>
       )}
 
-      {viewMode === "board" ? (
-        <ErrorBoundary name="planning-board">
-          <PlanningBoard />
-        </ErrorBoundary>
-      ) : (
-        <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-          <ErrorBoundary name="search-panel"><SearchPanel /></ErrorBoundary>
-          <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
-            <Box
-              className={`editor-paper paper-${paperSize}`}
-              sx={{
-                zoom: zoomLevel / 100,
-                transition: 'zoom 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-              }}
-            >
-              <ErrorBoundary name="editor"><FountainEditor /></ErrorBoundary>
-            </Box>
+      <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <ErrorBoundary name="search-panel"><SearchPanel /></ErrorBoundary>
+        <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
+          <Box
+            className={`editor-paper paper-${paperSize}`}
+            sx={{
+              zoom: zoomLevel / 100,
+              transition: 'zoom 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          >
+            <ErrorBoundary name="editor"><FountainEditor /></ErrorBoundary>
           </Box>
         </Box>
-      )}
+      </Box>
     </Box>
   );
 };
