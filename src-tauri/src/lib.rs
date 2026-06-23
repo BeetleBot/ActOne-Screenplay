@@ -329,7 +329,7 @@ async fn check_microsoft_store_license() -> Result<bool, String> {
         let context = StoreContext::GetDefault().map_err(|e| e.to_string())?;
         let app_license = context.GetAppLicenseAsync()
             .map_err(|e| e.to_string())?
-            .await
+            .get()
             .map_err(|e| e.to_string())?;
 
         let is_active = app_license.IsActive().map_err(|e| e.to_string())?;
@@ -347,6 +347,31 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
+            #[cfg(all(target_os = "windows", not(debug_assertions)))]
+            {
+                use windows::Services::Store::StoreContext;
+                let check_license = || -> Result<bool, String> {
+                    let context = StoreContext::GetDefault().map_err(|e| e.to_string())?;
+                    let app_license = context.GetAppLicenseAsync()
+                        .map_err(|e| e.to_string())?
+                        .get()
+                        .map_err(|e| e.to_string())?;
+                    let is_active = app_license.IsActive().map_err(|e| e.to_string())?;
+                    Ok(is_active)
+                };
+
+                match check_license() {
+                    Ok(false) | Err(_) => {
+                        rfd::MessageDialog::new()
+                            .set_title("License Verification Failed")
+                            .set_description("This copy of ActOne did not pass Microsoft Store license validation. Please uninstall this application and download it again from the official Microsoft Store.")
+                            .set_level(rfd::MessageLevel::Error)
+                            .show();
+                        std::process::exit(1);
+                    }
+                    _ => {}
+                }
+            }
 
             let args: Vec<String> = std::env::args().skip(1).collect();
             let filtered: Vec<String> = args.into_iter()
