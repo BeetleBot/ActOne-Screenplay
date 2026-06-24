@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
-import { CloseIcon, SearchIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon } from "./Icons";
+import { CloseIcon, SearchIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon, LibraryBooksIcon } from "./Icons";
 import { logger } from "../utils/logger";
 
 import {
@@ -120,18 +120,33 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}>
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Screenplay Structure Outlines</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <LibraryBooksIcon sx={{ fontSize: 18 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Screenplay Structure Outlines</Typography>
+        </Box>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: 2.5, py: 2, maxHeight: `${(60 * 100) / appScale}vh`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
+      <DialogContent dividers sx={{ px: 2, py: 1.5, maxHeight: `${(60 * 100) / appScale}vh`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <Box sx={{ display: "flex", flex: 1, minHeight: 0, gap: 1.5 }}>
           {/* Left Panel: Search & List */}
-          <Box sx={{ width: "42%", borderRight: 1, borderColor: "divider", display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <Box sx={{
+            width: "42%",
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            p: 1.5,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0
+          }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+              TEMPLATES
+            </Typography>
             <Box sx={{ mb: 1.5 }}>
               <TextField
                 placeholder="Search templates..."
@@ -141,20 +156,28 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                 fullWidth
                 slotProps={{
                   input: {
+                    sx: {
+                      fontSize: 12,
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                      bgcolor: 'action.hover',
+                      borderRadius: '6px',
+                      '&:hover': { bgcolor: 'action.selected' },
+                      '& .MuiOutlinedInput-input': { py: 0.6, px: 1.25 },
+                    },
                     startAdornment: (
                       <InputAdornment position="start">
-                        <SearchIcon sx={{ fontSize: 16 }} />
+                        <SearchIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                       </InputAdornment>
                     ),
                   },
                 }}
               />
             </Box>
-            <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, px: 1 }}>
+            <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, px: 0.5 }}>
               {loading ? (
-                <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 13 }}>Loading structures...</Typography>
+                <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 12 }}>Loading structures...</Typography>
               ) : filteredStructures.length === 0 ? (
-                <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 13 }}>No structures found</Typography>
+                <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 12 }}>No structures found</Typography>
               ) : (
                 <List disablePadding>
                   {filteredStructures.map((s) => (
@@ -162,11 +185,11 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                       key={s.name}
                       onClick={() => setSelectedStructure(s)}
                       selected={selectedStructure?.name === s.name}
-                      sx={{ borderRadius: 1, mb: 0.5 }}
+                      sx={{ borderRadius: 1, mb: 0.5, py: 0.5, px: 1 }}
                     >
                       <ListItemText
-                        primary={<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{s.name}</Typography>}
-                        secondary={<Typography variant="caption" color="text.secondary" sx={{ display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{s.description}</Typography>}
+                        primary={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>{s.name}</Typography>}
+                        secondary={<Typography variant="caption" color="text.secondary" sx={{ display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: 10.5 }}>{s.description}</Typography>}
                       />
                     </ListItemButton>
                   ))}
@@ -176,24 +199,36 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
           </Box>
 
           {/* Right Panel: Detail Preview */}
-          <Box sx={{ width: "58%", display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <Box sx={{
+            width: "58%",
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            p: 1.5,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0
+          }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+              PREVIEW
+            </Typography>
             {selectedStructure ? (
-              <Box sx={{ p: 3, flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 1.5, pr: 0.5 }}>
                 <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{selectedStructure.name}</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{selectedStructure.description}</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13 }}>{selectedStructure.name}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block" }}>{selectedStructure.description}</Typography>
                 </Box>
                 <Divider />
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pl: 1, position: "relative" }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, pl: 0.5, position: "relative" }}>
                   {selectedStructure.beats.map((beat, idx) => (
-                    <Box key={idx} sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
-                      <Box sx={{ width: 22, height: 22, borderRadius: "50%", bgcolor: "primary.main", color: "primary.contrastText", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                    <Box key={idx} sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+                      <Box sx={{ width: 18, height: 18, borderRadius: "50%", bgcolor: "primary.main", color: "primary.contrastText", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
                         {idx + 1}
                       </Box>
                       <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: 13.5 }}>{beat.label}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>{beat.label}</Typography>
                         {beat.description && (
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block", fontSize: 10.5 }}>
                             {beat.description}
                           </Typography>
                         )}
@@ -204,26 +239,27 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
               </Box>
             ) : (
               <Box sx={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", color: "text.secondary" }}>
-                <Typography variant="body2">Select a structure template to view details</Typography>
+                <Typography variant="caption" sx={{ fontSize: 11 }}>Select a structure template to view details</Typography>
               </Box>
             )}
           </Box>
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
-        <Typography variant="caption" color="text.secondary" sx={{ maxWidth: "40%" }}>
+      <DialogActions sx={{ px: 2, py: 1, justifyContent: "space-between" }}>
+        <Typography variant="caption" color="text.secondary" sx={{ maxWidth: "40%", fontSize: 10 }}>
           Inserts Section headers (##) and Synopsis (=).
         </Typography>
-        <Box sx={{ display: "flex", gap: 0.5 }}>
-          <Button onClick={onClose} variant="outlined" size="small" color="inherit">Cancel</Button>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button onClick={onClose} variant="outlined" size="small" color="inherit" sx={{ fontSize: 11 }}>Cancel</Button>
           <Button
             variant="outlined"
             onClick={handleOverwrite}
             disabled={!selectedStructure}
-            startIcon={<RestartAltIcon sx={{ fontSize: 14 }} />}
+            startIcon={<RestartAltIcon sx={{ fontSize: 13 }} />}
             size="small"
             color="error"
+            sx={{ fontSize: 11 }}
           >
             Overwrite
           </Button>
@@ -231,8 +267,9 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
             variant="outlined"
             onClick={handleAppendToEnd}
             disabled={!selectedStructure}
-            startIcon={<ArrowCircleDownIcon sx={{ fontSize: 14 }} />}
+            startIcon={<ArrowCircleDownIcon sx={{ fontSize: 13 }} />}
             size="small"
+            sx={{ fontSize: 11 }}
           >
             Append
           </Button>
@@ -240,8 +277,9 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
             variant="contained"
             onClick={handleInsertAtCursor}
             disabled={!selectedStructure}
-            startIcon={<AddCircleIcon sx={{ fontSize: 14 }} />}
+            startIcon={<AddCircleIcon sx={{ fontSize: 13 }} />}
             size="small"
+            sx={{ fontSize: 11 }}
           >
             Insert
           </Button>

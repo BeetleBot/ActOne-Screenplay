@@ -104,11 +104,12 @@ fn export_pdf(
     fountain_text: String,
     paper_size: String,
     font_family: String,
-    bold_scene_headings: bool,
+    element_formats: String,
     mirror_scene_numbers: String,
     export_sections: bool,
     export_synopses: bool,
     export_title_page: bool,
+    export_scene_colors: Option<bool>,
     revised_lines: Vec<bool>,
 ) -> Option<String> {
     let file = rfd::FileDialog::new()
@@ -132,15 +133,17 @@ fn export_pdf(
         "mirror" => pdf::MirrorOption::Mirror,
         _ => pdf::MirrorOption::Off,
     };
+    let formats: pdf::ElementFormats = serde_json::from_str(&element_formats).unwrap_or_default();
     let config = pdf::PdfExportConfig {
         paper_size: paper,
-        bold_scene_headings,
+        element_formats: formats,
         mirror_scene_numbers: mirror,
         export_sections,
         export_synopses,
         export_font,
         revised_lines,
         export_title_page,
+        export_scene_colors: export_scene_colors.unwrap_or(false),
     };
     if pdf::export_to_pdf(&fountain_text, &file, config).is_ok() {
         return Some(file.to_string_lossy().to_string());
@@ -154,11 +157,12 @@ fn get_page_breaks(
     fountain_text: String,
     paper_size: String,
     font_family: String,
-    bold_scene_headings: bool,
+    element_formats: String,
     mirror_scene_numbers: String,
     export_sections: bool,
     export_synopses: bool,
     export_title_page: bool,
+    export_scene_colors: Option<bool>,
     revised_lines: Vec<bool>,
 ) -> Option<Vec<usize>> {
     let paper = if paper_size == "letter" {
@@ -178,15 +182,17 @@ fn get_page_breaks(
         "mirror" => pdf::MirrorOption::Mirror,
         _ => pdf::MirrorOption::Off,
     };
+    let formats: pdf::ElementFormats = serde_json::from_str(&element_formats).unwrap_or_default();
     let config = pdf::PdfExportConfig {
         paper_size: paper,
-        bold_scene_headings,
+        element_formats: formats,
         mirror_scene_numbers: mirror,
         export_sections,
         export_synopses,
         export_font,
         revised_lines,
         export_title_page,
+        export_scene_colors: export_scene_colors.unwrap_or(false),
     };
     pdf::get_page_breaks(&fountain_text, config).ok()
 }
@@ -203,11 +209,12 @@ fn generate_pdf_bytes(
     fountain_text: String,
     paper_size: String,
     font_family: String,
-    bold_scene_headings: bool,
+    element_formats: String,
     mirror_scene_numbers: String,
     export_sections: bool,
     export_synopses: bool,
     export_title_page: bool,
+    export_scene_colors: Option<bool>,
     revised_lines: Vec<bool>,
 ) -> Option<Vec<u8>> {
     let paper = if paper_size == "letter" {
@@ -227,15 +234,17 @@ fn generate_pdf_bytes(
         "mirror" => pdf::MirrorOption::Mirror,
         _ => pdf::MirrorOption::Off,
     };
+    let formats: pdf::ElementFormats = serde_json::from_str(&element_formats).unwrap_or_default();
     let config = pdf::PdfExportConfig {
         paper_size: paper,
-        bold_scene_headings,
+        element_formats: formats,
         mirror_scene_numbers: mirror,
         export_sections,
         export_synopses,
         export_font,
         revised_lines,
         export_title_page,
+        export_scene_colors: export_scene_colors.unwrap_or(false),
     };
     pdf::generate_pdf_bytes(&fountain_text, config).ok()
 }
@@ -300,7 +309,7 @@ fn get_system_fonts() -> Result<Vec<String>, String> {
     let source = SystemSource::new();
     match source.all_families() {
         Ok(mut families) => {
-            families.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+            families.sort_by_key(|a| a.to_lowercase());
             Ok(families)
         }
         Err(e) => Err(e.to_string()),

@@ -49,7 +49,7 @@ impl<'a> Parser<'a> {
                 }
 
                 let mut color = None;
-                if let Some(start) = inner.trim_end().strip_suffix(']')
+                if let Some(start) = inner.trim_end().strip_suffix("]]")
                     && let Some((new_inner, tag)) = start.rsplit_once("[[")
                 {
                     let tag = tag.trim();

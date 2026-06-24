@@ -10,12 +10,12 @@
 * \[x] Fix keyboard scrolling in Navigator
 * \[x] Underline shortcut works for just one letter.
 * \[x] When command palette opens, editor scrolls to the top visually (restores on close). Need to prevent the visual scroll entirely.
-* \[ ] Improve the Index cards, redesign it completely with Sections and Synopsis Visible.
 * \[x] Implement Marker's features.
 * \[x] Find a way to include all Indian languages(Figure out the fonts) for the editor and export options.
 * \[x] Make sure that the pagination is right.
 * \[x] Hide fountain markup.
-* \[ ] Figure out how Production Breakdown modal displays the data. I want more structured and scene wise list. Like a Excel data. With an option to export it to CSV.
+* \[x] Figure out how Production Breakdown modal displays the data. I want more structured and scene wise list. Like a Excel data. With an option to export it to CSV.
+* \[ ] Fix the small orphan issues in the pdf output.
 * \[x] And I want quick tagging context menu. Like when I select a word or sentence and Hold ctrl + right click, then the app should show me tagging options only.
 
 ## Features to Implement
@@ -24,7 +24,8 @@
 * \[x] Add zoom-in / zoom-out feature for editor.
 * \[x] Rewrite the whole theming stuff. Remove all hardcoded colors, add a lot of themes.
 * \[x] Search / Replace / Replace All
-* \[x] Revision mode.
+* \[ ] Revision mode.
+* \[ ] Index cards or some sort of planning board
 * \[ ] screenplay Preview feature.
 * \[x] Markers and tags.
 * \[ ] X-Ray or Analysis stuffs.

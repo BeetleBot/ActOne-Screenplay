@@ -17,11 +17,55 @@ import {
   FormControlLabel,
   Select,
   MenuItem,
-  FormControl,
-  InputLabel,
+  Radio,
+  RadioGroup,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 
 type ExportFormat = "pdf" | "fountain" | "fdx";
+
+interface ElementFormat {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+}
+
+interface ElementFormats {
+  scene_heading: ElementFormat;
+  action: ElementFormat;
+  character: ElementFormat;
+  parenthetical: ElementFormat;
+  dialogue: ElementFormat;
+  lyrics: ElementFormat;
+  transition: ElementFormat;
+  shot: ElementFormat;
+  centered_text: ElementFormat;
+}
+
+const FORMAT_LABELS: Record<keyof ElementFormats, string> = {
+  scene_heading: "Scene Heading",
+  action: "Action",
+  character: "Character",
+  parenthetical: "Parenthetical",
+  dialogue: "Dialogue",
+  lyrics: "Lyrics",
+  transition: "Transition",
+  shot: "Shot",
+  centered_text: "Centered Text",
+};
+
+const DEFAULT_ELEMENT_FORMATS: ElementFormats = {
+  scene_heading: { bold: true, italic: false, underline: false },
+  action:          { bold: false, italic: false, underline: false },
+  character:      { bold: false, italic: false, underline: false },
+  parenthetical:  { bold: false, italic: false, underline: false },
+  dialogue:       { bold: false, italic: false, underline: false },
+  lyrics:         { bold: false, italic: false, underline: false },
+  transition:     { bold: false, italic: false, underline: false },
+  shot:           { bold: true, italic: false, underline: false },
+  centered_text:   { bold: false, italic: false, underline: false },
+};
 
 interface ExportModalProps {
   onClose: () => void;
@@ -92,17 +136,53 @@ function stripFountainForExport(
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
-  const { rawText, isBundle, activeScriptName, filePath } = useFile();
+  const { rawText, isBundle, activeScriptName, filePath, updateSettings, parsedDoc } = useFile();
   const { fontFamily, paperSize, appScale } = useUI();
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
-  const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
-  const [mirrorSceneNumbers, setMirrorSceneNumbers] = useState("off");
+  const [showFormatPanel, setShowFormatPanel] = useState(false);
+
+  const savedFormats = parsedDoc?.settings?.elementFormats as ElementFormats | undefined;
+  const [elementFormats, setElementFormats] = useState<ElementFormats>(
+    savedFormats ?? DEFAULT_ELEMENT_FORMATS
+  );
+
+  const savedSceneNumberMode = parsedDoc?.settings?.sceneNumberMode as string | undefined;
+  const [sceneNumberMode, setSceneNumberMode] = useState<"off" | "left_side" | "mirror">(
+    (savedSceneNumberMode as "off" | "left_side" | "mirror") ?? "left_side"
+  );
+
   const [exportSections, setExportSections] = useState(false);
   const [exportSynopses, setExportSynopses] = useState(false);
   const [exportTitlePage, setExportTitlePage] = useState(true);
-
+  const [exportSceneColors, setExportSceneColors] = useState(false);
   const [selectedFont, setSelectedFont] = useState<string>(fontFamily);
+
+  const handleFormatChange = (_: React.MouseEvent<HTMLElement>, newFormat: ExportFormat | null) => {
+    if (newFormat !== null) {
+      setFormat(newFormat);
+      setShowFormatPanel(false);
+    }
+  };
+
+  const handleFormatToggle = (element: keyof ElementFormats, attr: "bold" | "italic" | "underline") => {
+    const next: ElementFormats = {
+      ...elementFormats,
+      [element]: { ...elementFormats[element], [attr]: !elementFormats[element][attr] },
+    };
+    setElementFormats(next);
+    updateSettings((prev: Record<string, any>) => ({ ...prev, elementFormats: next }));
+  };
+
+  const handleSceneNumberChange = (mode: "off" | "left_side" | "mirror") => {
+    setSceneNumberMode(mode);
+    updateSettings((prev: Record<string, any>) => ({ ...prev, sceneNumberMode: mode }));
+  };
+
+  const handleSceneColorToggle = (checked: boolean) => {
+    setExportSceneColors(checked);
+    updateSettings((prev: Record<string, any>) => ({ ...prev, exportSceneColors: checked }));
+  };
 
   const handleExportPDF = async () => {
     try {
@@ -114,11 +194,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           fountainText: rawText,
           paperSize,
           fontFamily: selectedFont,
-          boldSceneHeadings,
-          mirrorSceneNumbers,
+          elementFormats: JSON.stringify(elementFormats),
+          mirrorSceneNumbers: sceneNumberMode,
           exportSections,
           exportSynopses,
           exportTitlePage,
+          exportSceneColors,
           revisedLines,
         });
       } else {
@@ -201,19 +282,26 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+    <Dialog
+      open onClose={onClose} fullWidth
+      maxWidth="xs"
+      disableScrollLock
+      transitionDuration={200}
+      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px', maxHeight: '85vh' } }}
+    >
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <DownloadIcon sx={{ fontSize: 18 }} />
-          <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 15 }}>Export Screenplay</Typography>
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 14 }}>Export Screenplay</Typography>
         </Box>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: 2.5, py: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 2, px: 1.5, py: 1, bgcolor: "action.hover", borderRadius: 1 }}>
+      <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto", display: "flex", flexDirection: "column", gap: 1.5 }}>
+        {/* Exporting Indicator */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.6, bgcolor: "action.hover", borderRadius: 1 }}>
           <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, color: "text.secondary" }}>
             Exporting
           </Typography>
@@ -230,160 +318,234 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
             {activeScriptName}
           </Typography>
         </Box>
-        <FormControl fullWidth size="small" sx={{ mb: 3 }}>
-          <InputLabel id="export-format-label">Export Format</InputLabel>
-          <Select
-            labelId="export-format-label"
-            value={format}
-            label="Export Format"
-            onChange={(e) => setFormat(e.target.value as ExportFormat)}
-          >
-            <MenuItem value="pdf">PDF</MenuItem>
-            <MenuItem value="fountain">Fountain</MenuItem>
-            <MenuItem value="fdx">FDX (Final Draft)</MenuItem>
-          </Select>
-        </FormControl>
 
-        {format === "pdf" ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5, bgcolor: "action.hover", borderRadius: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>Summary Settings</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {paperSize === "letter" ? "US Letter" : "A4"} • {selectedFont === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}
+        {/* Toggle Button for Formats */}
+        <ToggleButtonGroup
+          value={format}
+          exclusive
+          onChange={handleFormatChange}
+          fullWidth
+          size="small"
+          sx={{ mb: 0.5 }}
+        >
+          <ToggleButton value="pdf" sx={{ fontSize: 12, py: 0.3 }}>PDF</ToggleButton>
+          <ToggleButton value="fountain" sx={{ fontSize: 12, py: 0.3 }}>Fountain</ToggleButton>
+          <ToggleButton value="fdx" sx={{ fontSize: 12, py: 0.3 }}>FDX</ToggleButton>
+        </ToggleButtonGroup>
+
+        {/* Conditional Panes based on Format */}
+        {format === "pdf" && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                SUMMARY SETTINGS
               </Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Dimensions & Style</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
+                  {paperSize === "letter" ? "US Letter" : "A4"} • {selectedFont === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}
+                </Typography>
+              </Box>
             </Box>
 
-            <FormControlLabel
-              control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
-              label={
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Title Page</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Export the title page if it is defined</Typography>
-                </Box>
-              }
-            />
-
-            <FormControlLabel
-              control={<Switch checked={boldSceneHeadings} onChange={(e) => setBoldSceneHeadings(e.target.checked)} />}
-              label={
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Bold Scene Headings</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Make scene headings bold in the PDF</Typography>
-                </Box>
-              }
-            />
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel id="scene-numbers-label">Scene Numbers</InputLabel>
-                <Select
-                  labelId="scene-numbers-label"
-                  value={mirrorSceneNumbers}
-                  label="Scene Numbers"
-                  onChange={(e) => setMirrorSceneNumbers(e.target.value)}
-                >
-                  <MenuItem value="off">Disabled</MenuItem>
-                  <MenuItem value="left_side">Left Side Only</MenuItem>
-                  <MenuItem value="mirror">Mirror on Both Sides</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth size="small">
-                <InputLabel id="export-font-label">Export Font</InputLabel>
-                <Select
-                  labelId="export-font-label"
-                  value={selectedFont}
-                  label="Export Font"
-                  onChange={(e) => setSelectedFont(e.target.value)}
-                >
-                  <MenuItem value="courier-prime">Courier Prime</MenuItem>
-                  <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
-                </Select>
-              </FormControl>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+                FORMATTING OPTIONS
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1.5, mb: 1 }}>
+                <FormControlLabel
+                  control={<Switch size="small" checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Title Page</Typography>}
+                  sx={{ mx: 0, flex: 1 }}
+                />
+                <FormControlLabel
+                  control={<Switch size="small" checked={exportSceneColors} onChange={(e) => handleSceneColorToggle(e.target.checked)} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Scene Colors</Typography>}
+                  sx={{ mx: 0, flex: 1 }}
+                />
+              </Box>
+              <Box sx={{ display: "flex", gap: 1.5 }}>
+                <FormControlLabel
+                  control={<Switch size="small" checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Sections (#)</Typography>}
+                  sx={{ mx: 0, flex: 1 }}
+                />
+                <FormControlLabel
+                  control={<Switch size="small" checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Synopsis (=)</Typography>}
+                  sx={{ mx: 0, flex: 1 }}
+                />
+              </Box>
             </Box>
 
-            <FormControlLabel
-              control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
-              label={
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Sections</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Render section headings (#) in export</Typography>
-                </Box>
-              }
-            />
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, display: 'block' }}>
+                EXPORT FONT
+              </Typography>
+              <Select
+                size="small"
+                value={selectedFont}
+                onChange={(e) => setSelectedFont(e.target.value)}
+                sx={{
+                  fontSize: 12,
+                  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                  bgcolor: 'action.hover', borderRadius: '6px',
+                  '&:hover': { bgcolor: 'action.selected' },
+                  '& .MuiSelect-select': { py: 0.6, px: 1.25 },
+                }}
+                MenuProps={{ slotProps: { paper: { sx: { '& .MuiMenuItem-root': { fontSize: 12, py: 0.4, minHeight: 30 } } } } }}
+              >
+                <MenuItem value="courier-prime">Courier Prime</MenuItem>
+                <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
+              </Select>
 
-            <FormControlLabel
-              control={<Switch checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
-              label={
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Synopsis</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Render synopses (=) in export</Typography>
-                </Box>
-              }
-            />
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setShowFormatPanel(true)}
+                sx={{ fontSize: 11, py: 0.5, borderRadius: '6px' }}
+              >
+                Format Elements
+              </Button>
+            </Box>
           </Box>
-        ) : format === "fdx" ? (
-          <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
-            <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-              Export as FDX (Final Draft)
+        )}
+
+        {format === "fdx" && (
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+              FINAL DRAFT XML
             </Typography>
-            <Typography variant="caption" color="text.secondary" component="div">
+            <Typography variant="caption" color="text.secondary" component="div" sx={{ fontSize: 11, lineHeight: 1.4 }}>
               Exports the screenplay as a Final Draft XML (.fdx) file, compatible with Final Draft, Fade In, and other professional screenwriting apps.
             </Typography>
           </Box>
-        ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>Clean Fountain File Export</Typography>
-              <Typography variant="caption" color="text.secondary" component="div">
-                Exports a standard Fountain file without ActOne-specific metadata or draft variables.
-                <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
-                  <li>Markers and note tags will be removed</li>
-                  <li>ActOne settings block will be stripped</li>
-                  <li>Color and storyline tags will be removed</li>
-                </Box>
+        )}
+
+        {format === "fountain" && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                CLEAN FOUNTAIN EXPORT
+              </Typography>
+              <Typography variant="caption" color="text.secondary" component="div" sx={{ fontSize: 11, lineHeight: 1.4 }}>
+                Exports a standard Fountain file without ActOne-specific metadata or draft variables. Markers, note tags, and storyline metadata will be stripped.
               </Typography>
             </Box>
 
-            <FormControlLabel
-              control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
-              label={
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Title Page</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Export the title page if it is defined</Typography>
-                </Box>
-              }
-            />
-
-            <FormControlLabel
-              control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
-              label={
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Sections</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Keep section lines (#) in the exported file</Typography>
-                </Box>
-              }
-            />
-
-            <FormControlLabel
-              control={<Switch checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
-              label={
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Synopsis</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Keep synopsis lines (=) in the exported file</Typography>
-                </Box>
-              }
-            />
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+                EXPORT SECTIONS
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1.5, mb: 1 }}>
+                <FormControlLabel
+                  control={<Switch size="small" checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Title Page</Typography>}
+                  sx={{ mx: 0, flex: 1 }}
+                />
+                <FormControlLabel
+                  control={<Switch size="small" checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Sections (#)</Typography>}
+                  sx={{ mx: 0, flex: 1 }}
+                />
+              </Box>
+              <FormControlLabel
+                control={<Switch size="small" checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
+                label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Synopsis (=)</Typography>}
+                sx={{ mx: 0 }}
+              />
+            </Box>
           </Box>
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
-        <Button onClick={onClose} color="inherit" variant="outlined" size="small">Cancel</Button>
-        <Button onClick={handleExport} variant="contained" color="primary" size="small">
-          Export to {format === "pdf" ? "PDF" : "Fountain"}
+      <DialogActions sx={{ px: 2, py: 1, justifyContent: "space-between" }}>
+        <Button onClick={onClose} color="inherit" variant="outlined" size="small" sx={{ fontSize: 11 }}>Cancel</Button>
+        <Button onClick={handleExport} variant="contained" color="primary" size="small" sx={{ fontSize: 11 }}>
+          Export to {format === "pdf" ? "PDF" : format === "fdx" ? "FDX" : "Fountain"}
         </Button>
       </DialogActions>
+
+      {/* Nested Dialog for Format Elements */}
+      <Dialog
+        open={showFormatPanel}
+        onClose={() => setShowFormatPanel(false)}
+        fullWidth
+        maxWidth="xs"
+        disableScrollLock
+        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Format Elements</Typography>
+          <IconButton aria-label="close" onClick={() => setShowFormatPanel(false)} sx={{ color: "text.secondary" }}>
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto" }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, mb: 0.5, display: "block" }}>
+              SCENE NUMBERS
+            </Typography>
+            <RadioGroup
+              value={sceneNumberMode}
+              onChange={(e) => handleSceneNumberChange(e.target.value as "off" | "left_side" | "mirror")}
+            >
+              <FormControlLabel value="off" control={<Radio size="small" />} label={<Typography variant="caption" sx={{ fontSize: 11 }}>No scene numbers</Typography>} />
+              <FormControlLabel value="left_side" control={<Radio size="small" />} label={<Typography variant="caption" sx={{ fontSize: 11 }}>Left side</Typography>} />
+              <FormControlLabel value="mirror" control={<Radio size="small" />} label={<Typography variant="caption" sx={{ fontSize: 11 }}>Mirror on both sides</Typography>} />
+            </RadioGroup>
+          </Box>
+
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, mb: 0.75, display: "block" }}>
+              ELEMENT FORMATTING
+            </Typography>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 0.25, alignItems: "center" }}>
+              {(Object.keys(FORMAT_LABELS) as (keyof ElementFormats)[]).map((key) => (
+                <React.Fragment key={key}>
+                  <Typography variant="caption" sx={{ fontSize: 11, py: 0.3 }}>{FORMAT_LABELS[key]}</Typography>
+                  <Box sx={{ display: "flex", gap: 0.25 }}>
+                    {(["bold", "italic", "underline"] as const).map((attr) => (
+                      <ToggleButton
+                        key={attr}
+                        value={attr}
+                        size="small"
+                        selected={elementFormats[key][attr]}
+                        onChange={() => handleFormatToggle(key, attr)}
+                        sx={{
+                          width: 28, height: 24, p: 0,
+                          border: "1px solid",
+                          borderColor: elementFormats[key][attr] ? "primary.main" : "divider",
+                          borderRadius: "4px",
+                          bgcolor: elementFormats[key][attr] ? "primary.main" : "transparent",
+                          color: elementFormats[key][attr] ? "primary.contrastText" : "text.secondary",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          '&:hover': {
+                            bgcolor: elementFormats[key][attr] ? "primary.dark" : "action.hover",
+                          },
+                          transition: "all 0.1s ease",
+                        }}
+                      >
+                        {attr === "bold" ? "B" : attr === "italic" ? "I" : "U"}
+                      </ToggleButton>
+                    ))}
+                  </Box>
+                </React.Fragment>
+              ))}
+            </Box>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2, py: 1, justifyContent: "flex-end" }}>
+          <Button onClick={() => setShowFormatPanel(false)} variant="contained" size="small" sx={{ fontSize: 11 }}>
+            Done
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

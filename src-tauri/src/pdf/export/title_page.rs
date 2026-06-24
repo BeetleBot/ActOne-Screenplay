@@ -19,7 +19,7 @@ pub fn write_titlepage(
     font_cache: &mut HashMap<cosmic_text::fontdb::ID, krilla::text::Font>,
 ) -> std::io::Result<()> {
     let mut page = document.start_page_with(
-        PageSettings::from_wh(layout_info.size.x as f32, layout_info.size.y as f32)
+        PageSettings::from_wh(layout_info.size.x, layout_info.size.y)
             .ok_or_else(|| std::io::Error::other("invalid page dimensions"))?,
     );
     let mut surface = page.surface();

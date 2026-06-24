@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useFile, useUI } from "../context";
-import { CloseIcon } from "./Icons";
+import { CloseIcon, TextFieldsIcon } from "./Icons";
 
 import {
   Dialog,
@@ -8,13 +8,12 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
-  Tabs,
-  Tab,
   Box,
   Typography,
   Button,
   TextField,
-  Alert,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 
 interface TitlePageEditorModalProps {
@@ -81,7 +80,7 @@ function extractTitlePage(text: string): { header: string; body: string; fields:
 
 function buildTitlePage(fields: Record<string, string>): string {
   const lines: string[] = [];
-  const order = ["title", "credit", "author", "source", "contact", "draft date", "date"];
+  const order = ["title", "credit", "author", "source", "notes", "contact", "draft date", "date"];
 
   for (const key of order) {
     const val = fields[key];
@@ -110,6 +109,25 @@ function buildTitlePage(fields: Record<string, string>): string {
 
   return lines.join("\n") + "\n\n";
 }
+
+const FIELD_DEFS: { key: string; label: string; rows?: number }[] = [
+  { key: "title", label: "Title" },
+  { key: "author", label: "Author" },
+  { key: "credit", label: "Credit" },
+  { key: "source", label: "Source" },
+  { key: "notes", label: "Notes" },
+  { key: "contact", label: "Contact" },
+  { key: "draft date", label: "Draft Date" },
+];
+
+const inputSx = {
+  fontSize: 12,
+  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+  bgcolor: 'action.hover',
+  borderRadius: '6px',
+  '&:hover': { bgcolor: 'action.selected' },
+  '& .MuiOutlinedInput-input': { py: 0.6, px: 1.25 },
+};
 
 export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onClose }) => {
   const { rawText, setRawText } = useFile();
@@ -147,66 +165,102 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
   const hasTitlePage = Object.values(fields).some(v => v.trim().length > 0);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}>
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Title Page Editor</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <TextFieldsIcon sx={{ fontSize: 18 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Title Page Editor</Typography>
+        </Box>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)} variant="fullWidth">
-          <Tab label="Form View" />
-          <Tab label="Fountain View" />
-        </Tabs>
+      <Box sx={{ px: 2, py: 1 }}>
+        <ToggleButtonGroup
+          value={activeTab}
+          exclusive
+          onChange={(_, val) => val !== null && setActiveTab(val as number)}
+          fullWidth
+          size="small"
+        >
+          <ToggleButton value={0} sx={{ fontSize: 12, py: 0.3 }}>Form</ToggleButton>
+          <ToggleButton value={1} sx={{ fontSize: 12, py: 0.3 }}>Raw</ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
-      <DialogContent dividers sx={{ px: 2.5, py: 2, maxHeight: `${(55 * 100) / appScale}vh`, overflowY: "auto" }}>
+      <DialogContent dividers sx={{ px: 2, py: 1.5, maxHeight: `${(65 * 100) / appScale}vh` }}>
         {activeTab === 0 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {!hasTitlePage && (
-              <Alert severity="warning">
-                No title page found. Fill in the fields below to create one.
-              </Alert>
-            )}
-            <TextField label="Title" value={fields["title"] || ""} onChange={(e) => handleFieldChange("title", e.target.value)} size="small" fullWidth />
-            <TextField label="Author" value={fields["author"] || ""} onChange={(e) => handleFieldChange("author", e.target.value)} size="small" fullWidth />
-            <TextField label="Credit" value={fields["credit"] || ""} onChange={(e) => handleFieldChange("credit", e.target.value)} size="small" fullWidth />
-            <TextField label="Source" value={fields["source"] || ""} onChange={(e) => handleFieldChange("source", e.target.value)} size="small" fullWidth />
-            <TextField label="Contact" value={fields["contact"] || ""} onChange={(e) => handleFieldChange("contact", e.target.value)} size="small" multiline rows={3} fullWidth />
-            <TextField label="Draft Date" value={fields["draft date"] || ""} onChange={(e) => handleFieldChange("draft date", e.target.value)} size="small" fullWidth />
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+              METADATA FIELDS
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+              {!hasTitlePage && (
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11, fontStyle: "italic", px: 0.5 }}>
+                  No title page found. Fill in the fields below to create one.
+                </Typography>
+              )}
+
+              {FIELD_DEFS.map(({ key, label, rows }) => (
+                <Box key={key} sx={{ display: "flex", alignItems: rows && rows > 1 ? "flex-start" : "center", gap: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 11, minWidth: 80, flexShrink: 0, color: "text.secondary", pt: rows && rows > 1 ? 0.5 : 0 }}>
+                    {label.toUpperCase()}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    value={fields[key] || ""}
+                    onChange={(e) => handleFieldChange(key, e.target.value)}
+                    multiline={!!rows}
+                    rows={rows}
+                    fullWidth
+                    sx={rows ? { ...inputSx, '& .MuiOutlinedInput-input': { ...inputSx['& .MuiOutlinedInput-input'], py: rows ? 0.5 : 0.6 } } : inputSx}
+                  />
+                </Box>
+              ))}
+            </Box>
           </Box>
         )}
 
         {activeTab === 1 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            <Typography variant="caption" color="text.secondary">
-              Edit the raw Fountain title page syntax below. Changes sync with the Form view.
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+              RAW FOUNTAIN SYNTAX
             </Typography>
-            <TextField
-              value={fountainText}
-              onChange={(e) => handleFountainChange(e.target.value)}
-              multiline
-              rows={12}
-              fullWidth
-              slotProps={{
-                input: {
-                  sx: {
-                    fontFamily: "monospace",
-                    fontSize: 13,
-                    lineHeight: 1.5,
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10.5 }}>
+                Edit the raw Fountain title page syntax. Changes sync with the Form view.
+              </Typography>
+              <TextField
+                value={fountainText}
+                onChange={(e) => handleFountainChange(e.target.value)}
+                multiline
+                rows={12}
+                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                  bgcolor: 'action.hover',
+                  borderRadius: '6px',
+                }}
+                slotProps={{
+                  input: {
+                    sx: {
+                      fontFamily: "monospace",
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      py: 0.5, px: 1.25,
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            </Box>
           </Box>
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
-        <Button onClick={onClose} variant="outlined" color="inherit" size="small">Cancel</Button>
-        <Button onClick={handleApply} variant="contained" color="primary" size="small">
+      <DialogActions sx={{ px: 2, py: 1, justifyContent: "space-between" }}>
+        <Button onClick={onClose} color="inherit" variant="outlined" size="small" sx={{ fontSize: 11 }}>Cancel</Button>
+        <Button onClick={handleApply} variant="contained" color="primary" size="small" sx={{ fontSize: 11 }}>
           Apply to Document
         </Button>
       </DialogActions>

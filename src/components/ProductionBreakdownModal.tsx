@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { LineType } from "../parser";
 import { EditorView } from "@codemirror/view";
-import { SearchIcon, CloseIcon, DownloadIcon } from "./Icons";
+import { SearchIcon, CloseIcon, DownloadIcon, BarChartIcon } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 import { CATEGORIES } from "../constants";
@@ -268,19 +268,24 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
       fullWidth
       maxWidth="lg"
       disableScrollLock
-      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}
+      transitionDuration={200}
+      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}
     >
-      <DialogTitle sx={{ m: 0, px: 2.5, py: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 16 }}>Production Breakdown Matrix</Typography>
+      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <BarChartIcon sx={{ fontSize: 18 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Production Breakdown Matrix</Typography>
+        </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Button
             variant="outlined"
             size="small"
+            color="inherit"
             onClick={handleExportCSV}
-            startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
+            startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
             sx={{
               borderRadius: "6px",
-              fontSize: "0.75rem",
+              fontSize: "11px",
               textTransform: "none",
               px: 1.5,
               py: 0.5,
@@ -295,12 +300,12 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
             Export CSV
           </Button>
           <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", p: 0.5 }}>
-            <CloseIcon sx={{ fontSize: 20 }} />
+            <CloseIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: 2.5, py: 2, display: "flex", flexDirection: "column", gap: 2, maxHeight: "80vh" }}>
+      <DialogContent dividers sx={{ px: 2, py: 1.5, display: "flex", flexDirection: "column", gap: 1.5, maxHeight: "80vh" }}>
         <TextField
           placeholder="Search by scene name, number, or tag content..."
           value={searchQuery}
@@ -310,12 +315,12 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
           slotProps={{
             input: {
               sx: {
-                bgcolor: "action.hover",
-                fontSize: "0.8rem",
-                "& fieldset": { border: "none" },
-                "&:hover fieldset": { border: "none" },
-                "&.Mui-focused fieldset": { border: "none" },
-                borderRadius: "8px",
+                fontSize: 12,
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                bgcolor: 'action.hover',
+                borderRadius: '6px',
+                '&:hover': { bgcolor: 'action.selected' },
+                '& .MuiOutlinedInput-input': { py: 0.6, px: 1.25 },
               },
               startAdornment: (
                 <Box sx={{ display: "flex", color: "text.secondary", mr: 1 }}>
@@ -330,10 +335,10 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, bgcolor: "background.paper", width: 80 }}>Scene #</TableCell>
-                <TableCell sx={{ fontWeight: 700, bgcolor: "background.paper", minWidth: 200 }}>Scene Title</TableCell>
+                <TableCell sx={{ fontWeight: 700, bgcolor: "background.paper", width: 80, fontSize: 11 }}>Scene #</TableCell>
+                <TableCell sx={{ fontWeight: 700, bgcolor: "background.paper", minWidth: 200, fontSize: 11 }}>Scene Title</TableCell>
                 {activeHeaders.map(header => (
-                  <TableCell key={header.key} sx={{ fontWeight: 700, bgcolor: "background.paper", minWidth: 150 }}>
+                  <TableCell key={header.key} sx={{ fontWeight: 700, bgcolor: "background.paper", minWidth: 150, fontSize: 11 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: header.color }} />
                       {header.label}
@@ -345,17 +350,17 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
             <TableBody>
               {finalScenes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={activeHeaders.length + 2} align="center" sx={{ py: 4, color: "text.secondary", fontStyle: "italic" }}>
+                  <TableCell colSpan={activeHeaders.length + 2} align="center" sx={{ py: 4, color: "text.secondary", fontStyle: "italic", fontSize: 11 }}>
                     No matching scenes or tags found.
                   </TableCell>
                 </TableRow>
               ) : (
                 finalScenes.map((scene) => (
                   <TableRow key={scene.index === 0 ? "preamble" : scene.name} hover>
-                    <TableCell sx={{ fontSize: "0.8rem", color: "text.secondary", fontWeight: 600 }}>
+                    <TableCell sx={{ fontSize: "11px", color: "text.secondary", fontWeight: 600 }}>
                       {scene.sceneNumber}
                     </TableCell>
-                    <TableCell sx={{ fontSize: "0.8rem", fontWeight: 600 }}>
+                    <TableCell sx={{ fontSize: "11px", fontWeight: 600 }}>
                       {scene.name}
                     </TableCell>
                     {activeHeaders.map(header => {
@@ -371,7 +376,7 @@ export const ProductionBreakdownModal: React.FC<ProductionBreakdownModalProps> =
                                   onClose();
                                 }}
                                 sx={{
-                                  fontSize: "0.7rem",
+                                  fontSize: "10px",
                                   bgcolor: `${header.color}15`,
                                   color: header.color,
                                   border: `1px solid ${header.color}30`,

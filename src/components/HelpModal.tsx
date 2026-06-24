@@ -3,7 +3,8 @@ import Fuse from "fuse.js";
 import { List } from "react-window";
 import { articles, categories, HelpArticle } from "../data/helpArticles";
 import { HelpMarkdown } from "./HelpMarkdown";
-import { CloseIcon, SearchIcon, ClearIcon, OpenInNewIcon } from "./Icons";
+import { useUI } from "../context";
+import { CloseIcon, SearchIcon, ClearIcon, OpenInNewIcon, LibraryBooksIcon } from "./Icons";
 import {
   Dialog,
   DialogTitle,
@@ -29,7 +30,7 @@ const fuse = new Fuse(articles, {
   minMatchCharLength: 1,
 });
 
-const ITEM_HEIGHT = 36;
+const ITEM_HEIGHT = 30;
 
 interface ArticleRowData {
   articles: HelpArticle[];
@@ -56,7 +57,7 @@ const ArticleRow = (props: {
         bgcolor: isActive ? "action.selected" : "transparent",
         color: isActive ? "primary.main" : "text.secondary",
         fontWeight: isActive ? 600 : 400,
-        fontSize: "0.8rem",
+        fontSize: "12px",
         borderLeft: isActive ? "2px solid" : "2px solid transparent",
         borderColor: isActive ? "primary.main" : "transparent",
         "&:hover": { bgcolor: "action.hover", color: "text.primary" },
@@ -82,6 +83,7 @@ const openFountainGuide = () => {
 
 export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
   const theme = useTheme();
+  const { appScale } = useUI();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArticleId, setSelectedArticleId] = useState("welcome-screen");
@@ -142,23 +144,24 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
       open
       onClose={onClose}
       fullWidth
-      maxWidth={false}
+      maxWidth="md"
       disableScrollLock
+      transitionDuration={200}
       sx={{
         "& .MuiDialog-paper": {
-          width: "95vw",
-          height: "92vh",
-          maxHeight: "92vh",
+          height: "70vh",
+          maxHeight: "70vh",
           borderRadius: "12px",
           overflow: "hidden",
+          zoom: `${appScale}%`,
         },
       }}
     >
       <DialogTitle
         sx={{
           m: 0,
-          px: 2.5,
-          py: 1.5,
+          px: 2,
+          py: 1,
           display: "flex",
           alignItems: "center",
           gap: 2,
@@ -168,13 +171,14 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 16, whiteSpace: "nowrap" }}>
+          <LibraryBooksIcon sx={{ fontSize: 18 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap" }}>
             ActOne Help Wiki
           </Typography>
           <Chip
             label={`${articles.length} articles`}
             size="small"
-            sx={{ fontSize: 10, height: 20, borderRadius: "6px", fontWeight: 600 }}
+            sx={{ fontSize: 9.5, height: 18, borderRadius: "4px", fontWeight: 600 }}
           />
         </Box>
         <TextField
@@ -184,22 +188,22 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
           onChange={(e) => setSearchQuery(e.target.value)}
           sx={{
             flex: 1,
-            maxWidth: 420,
+            maxWidth: 320,
             "& .MuiOutlinedInput-root": {
-              borderRadius: "20px",
-              height: 34,
-              fontSize: "0.8rem",
+              borderRadius: "6px",
+              height: 28,
+              fontSize: 12,
               bgcolor: "action.hover",
-              "& fieldset": { borderColor: "transparent" },
-              "&:hover fieldset": { borderColor: "divider" },
-              "&.Mui-focused fieldset": { borderColor: "primary.main" },
+              "& fieldset": { border: "none" },
+              "&:hover fieldset": { border: "none" },
+              "&.Mui-focused fieldset": { border: "none" },
             },
           }}
           slotProps={{
             input: {
               startAdornment: (
-                <InputAdornment position="start" sx={{ color: "text.secondary" }}>
-                  <SearchIcon sx={{ fontSize: 16 }} />
+                <InputAdornment position="start" sx={{ color: "text.secondary", mr: 0.5 }}>
+                  <SearchIcon sx={{ fontSize: 15 }} />
                 </InputAdornment>
               ),
               endAdornment: isSearching ? (
@@ -209,14 +213,14 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                     onClick={handleClearSearch}
                     sx={{ color: "text.secondary", p: "2px" }}
                   >
-                    <ClearIcon sx={{ fontSize: 14 }} />
+                    <ClearIcon sx={{ fontSize: 13 }} />
                   </IconButton>
                 </InputAdornment>
               ) : null,
             },
           }}
         />
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", ml: "auto" }}>
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", ml: "auto", p: 0.5 }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
@@ -225,7 +229,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
         {/* Left Sidebar */}
         <Box
           sx={{
-            width: 260,
+            width: 240,
             flexShrink: 0,
             borderRight: 1,
             borderColor: "divider",
@@ -242,10 +246,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                 size="small"
                 onClick={() => setSelectedCategory(null)}
                 sx={{
-                  fontSize: 10.5,
-                  height: 24,
+                  fontSize: 10,
+                  height: 22,
                   fontWeight: 600,
-                  borderRadius: "6px",
+                  borderRadius: "4px",
                   bgcolor: selectedCategory === null ? "primary.main" : "action.hover",
                   color: selectedCategory === null ? "primary.contrastText" : "text.secondary",
                   "&:hover": { bgcolor: selectedCategory === null ? "primary.dark" : "action.selected" },
@@ -258,10 +262,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                   size="small"
                   onClick={() => setSelectedCategory(cat)}
                   sx={{
-                    fontSize: 10.5,
-                    height: 24,
+                    fontSize: 10,
+                    height: 22,
                     fontWeight: 600,
-                    borderRadius: "6px",
+                    borderRadius: "4px",
                     bgcolor: selectedCategory === cat ? "primary.main" : "action.hover",
                     color: selectedCategory === cat ? "primary.contrastText" : "text.secondary",
                     "&:hover": { bgcolor: selectedCategory === cat ? "primary.dark" : "action.selected" },
@@ -272,20 +276,20 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
           )}
 
           {/* Result count */}
-          <Box sx={{ px: 1.5, py: 0.8 }}>
+          <Box sx={{ px: 1.5, py: 1 }}>
             <Typography
               variant="caption"
               sx={{
-                fontSize: 10,
                 fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                color: "text.disabled",
+                fontSize: 10,
+                color: 'text.secondary',
+                letterSpacing: 0.5,
+                display: 'block'
               }}
             >
               {isSearching
-                ? `Results (${displayedArticles.length})`
-                : selectedCategory || "All Articles"}
+                ? `RESULTS (${displayedArticles.length})`
+                : (selectedCategory || "ALL ARTICLES").toUpperCase()}
             </Typography>
           </Box>
 
@@ -302,12 +306,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                   selectedArticleId,
                   onSelect: handleSelectArticle,
                 }}
-                style={{ height: window.innerHeight * 0.8 - 160, width: 260 }}
+                style={{ height: "100%", width: 240 }}
                 overscanCount={10}
               />
             ) : (
               <Box sx={{ p: 3, textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", fontSize: 12 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: 11 }}>
                   No matching articles found.
                 </Typography>
               </Box>
@@ -332,7 +336,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
               >
                 {selectedArticle.category}
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, fontSize: 22, mb: 2 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, fontSize: 20, mb: 1.5 }}>
                 {selectedArticle.title}
               </Typography>
 
@@ -344,10 +348,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                     size="small"
                     onClick={() => handleTagClick(tag)}
                     sx={{
-                      fontSize: 10.5,
+                      fontSize: 10,
                       fontWeight: 600,
                       cursor: "pointer",
-                      borderRadius: "6px",
+                      borderRadius: "4px",
                       bgcolor: "action.hover",
                       "&:hover": { bgcolor: "action.selected" },
                     }}
@@ -360,10 +364,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
               {relatedArticles.length > 0 && (
                 <Box sx={{ mt: 5, pt: 3, borderTop: 1, borderColor: "divider" }}>
                   <Typography
-                    variant="subtitle2"
-                    sx={{ fontWeight: 700, fontSize: 12, mb: 1.5, color: "text.secondary" }}
+                    variant="caption"
+                    sx={{ fontWeight: 700, fontSize: 10, mb: 1.5, color: "text.secondary", letterSpacing: 0.5, display: "block" }}
                   >
-                    Related Articles
+                    RELATED ARTICLES
                   </Typography>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                     {relatedArticles.map((rel) => (
@@ -381,11 +385,11 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
                       >
                         <Typography
                           variant="body2"
-                          sx={{ fontWeight: 600, fontSize: 12.5, color: "primary.main" }}
+                          sx={{ fontWeight: 600, fontSize: 12, color: "primary.main" }}
                         >
                           {rel.title}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10.5 }}>
                           {rel.category}
                         </Typography>
                       </Box>
@@ -402,22 +406,22 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
         sx={{
           borderTop: 1,
           borderColor: "divider",
-          px: 2.5,
-          py: 1,
+          px: 2,
+          py: 0.75,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexShrink: 0,
         }}
       >
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10.5, fontWeight: 500 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, fontWeight: 500 }}>
           ActOne v{__APP_VERSION__} &copy; 2026 Write Up Film Service Company
         </Typography>
         <Button
           onClick={openFountainGuide}
-          endIcon={<OpenInNewIcon sx={{ fontSize: 13 }} />}
+          endIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
           size="small"
-          sx={{ textTransform: "none", fontWeight: 600, fontSize: 12 }}
+          sx={{ textTransform: "none", fontWeight: 600, fontSize: 11, py: 0.25 }}
         >
           Fountain Syntax Guide
         </Button>

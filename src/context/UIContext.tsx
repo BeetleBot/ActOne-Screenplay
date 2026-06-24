@@ -11,8 +11,6 @@ export interface UIContextProps {
   setIsZenMode: (enabled: boolean) => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
-  viewMode: 'editor' | 'board';
-  setViewMode: (mode: 'editor' | 'board') => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   zoomLevel: number;
@@ -58,7 +56,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
     return (localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) as 'letter' | 'a4' | null) ?? "a4";
   });
-  const [viewMode, setViewMode] = useState<'editor' | 'board'>('editor');
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ZOOM_LEVEL);
@@ -215,8 +212,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setIsZenMode,
         typewriterMode,
         setTypewriterMode,
-        viewMode,
-        setViewMode,
         activeTab,
         setActiveTab,
         zoomLevel,

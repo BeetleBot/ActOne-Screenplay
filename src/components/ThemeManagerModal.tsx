@@ -6,7 +6,7 @@ import {
   Button, TextField, Switch,
 } from "@mui/material";
 import {
-  CloseIcon, AddIcon, DeleteIcon, CheckIcon,
+  CloseIcon, AddIcon, DeleteIcon, CheckIcon, SettingsIcon
 } from "./Icons";
 
 interface ThemeManagerModalProps {
@@ -48,15 +48,15 @@ const BUILTIN_THEMES = [
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="caption" sx={{ minWidth: 56, fontWeight: 600, fontSize: '0.7rem', color: 'text.secondary' }}>{label}</Typography>
+      <Typography variant="caption" sx={{ minWidth: 56, fontWeight: 600, fontSize: '0.7rem', color: 'text.secondary' }}>{label.toUpperCase()}</Typography>
       <Box
         component="input" type="color" value={value}
         onChange={(e) => onChange(e.target.value)}
         sx={{
-          width: 36, height: 36, p: 0, border: '2px solid', borderColor: 'divider',
-          borderRadius: '10px', cursor: 'pointer', bgcolor: 'transparent',
+          width: 28, height: 28, p: 0, border: '1px solid', borderColor: 'divider',
+          borderRadius: '6px', cursor: 'pointer', bgcolor: 'transparent',
           '&::-webkit-color-swatch-wrapper': { p: 0 },
-          '&::-webkit-color-swatch': { border: 'none', borderRadius: '8px' },
+          '&::-webkit-color-swatch': { border: 'none', borderRadius: '5px' },
         }}
       />
       <TextField
@@ -64,7 +64,11 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
         onChange={(e) => onChange(e.target.value)}
         sx={{
           flex: 1,
-          '& input': { fontSize: '0.75rem', fontFamily: 'monospace', py: 0.5, px: 1 },
+          '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+          bgcolor: 'action.hover',
+          borderRadius: '6px',
+          '&:hover': { bgcolor: 'action.selected' },
+          '& input': { fontSize: '11px', fontFamily: 'monospace', py: 0.5, px: 1 },
         }}
       />
     </Box>
@@ -79,7 +83,7 @@ function accentRgb(hex: string) {
 function ThemePreview({ colors, isDark }: { colors: ThemeColors; isDark: boolean }) {
   return (
     <Box sx={{
-      display: 'flex', height: '100%', borderRadius: '12px', overflow: 'hidden',
+      display: 'flex', height: '100%', borderRadius: '8px', overflow: 'hidden',
       border: '1px solid', borderColor: colors.border,
       fontFamily: '"Courier Prime", Courier, monospace',
       fontSize: '11px',
@@ -291,41 +295,59 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
   })();
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}>
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 15 }}>Theme Manager</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <SettingsIcon sx={{ fontSize: 18 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Theme Manager</Typography>
+        </Box>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: 'text.secondary' }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ px: 2.5, py: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, maxHeight: `${(65 * 100) / appScale}vh` }}>
+      <DialogContent sx={{ px: 2, py: 1.5 }}>
+        <Box sx={{ display: 'flex', gap: 1.5, maxHeight: `${(65 * 100) / appScale}vh` }}>
           {/* ── Left pane: list or form ── */}
           <Box sx={{
-            width: 340, flexShrink: 0, display: 'flex', flexDirection: 'column',
-            borderRadius: '12px', border: '1px solid', borderColor: 'divider',
-            overflow: 'hidden',
+            width: 340,
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            p: 1.5,
+            minHeight: 0,
           }}>
             {showForm ? (
               /* ── Form view ── */
-              <Box sx={{ p: 2, flex: 1, overflow: 'auto' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
-                  {editingId ? 'Edit Theme' : 'Create Theme'}
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+                  {editingId ? 'EDIT THEME' : 'CREATE THEME'}
                 </Typography>
 
-                <TextField
-                  label="Name" size="small" fullWidth
-                  value={formName} onChange={(e) => setFormName(e.target.value)}
-                  sx={{ mb: 1.5 }}
-                />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.5 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 11, color: "text.secondary" }}>THEME NAME</Typography>
+                  <TextField
+                    size="small" fullWidth
+                    value={formName} onChange={(e) => setFormName(e.target.value)}
+                    sx={{
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                      bgcolor: 'action.hover',
+                      borderRadius: '6px',
+                      '&:hover': { bgcolor: 'action.selected' },
+                      '& .MuiOutlinedInput-input': { py: 0.6, px: 1.25, fontSize: 12 },
+                    }}
+                  />
+                </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Dark Theme</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Dark Theme</Typography>
                   <Switch size="small" checked={formIsDark} onChange={(e) => updateFormIsDark(e.target.checked)} />
                 </Box>
 
-                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 1, color: 'text.secondary', fontSize: '0.6rem', letterSpacing: '0.05em' }}>
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 1, color: 'text.secondary', fontSize: '10px', letterSpacing: '0.05em' }}>
                   PRESETS
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 0.75, mb: 2, flexWrap: 'wrap' }}>
@@ -347,7 +369,7 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                   ))}
                 </Box>
 
-                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 1.5, color: 'text.secondary', fontSize: '0.6rem', letterSpacing: '0.05em' }}>
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 1.5, color: 'text.secondary', fontSize: '10px', letterSpacing: '0.05em' }}>
                   COLORS
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
@@ -357,17 +379,17 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2.5 }}>
-                  <Button size="small" onClick={resetForm}>Cancel</Button>
-                  <Button size="small" variant="contained" onClick={handleSave} disabled={!formName.trim()}>
+                  <Button size="small" variant="outlined" color="inherit" onClick={resetForm} sx={{ fontSize: 11 }}>Cancel</Button>
+                  <Button size="small" variant="contained" color="primary" onClick={handleSave} disabled={!formName.trim()} sx={{ fontSize: 11 }}>
                     {editingId ? 'Update' : 'Save'}
                   </Button>
                 </Box>
               </Box>
             ) : (
               /* ── List view ── */
-              <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
-                <Typography variant="overline" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', mb: 1 }}>
-                  Built-in
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', pr: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+                  BUILT-IN THEMES
                 </Typography>
                 {BUILTIN_THEMES.map(t => {
                   const isActive = theme === t.id;
@@ -376,8 +398,8 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                     <Box
                       key={t.id} onClick={() => setTheme(t.id)}
                       sx={{
-                        display: 'flex', alignItems: 'center', gap: 1.5, p: 1.25, mb: 0.75,
-                        borderRadius: '10px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 1.5, p: 1, mb: 0.75,
+                        borderRadius: '8px', cursor: 'pointer',
                         border: '2px solid', borderColor: isActive ? 'primary.main' : 'divider',
                         bgcolor: isActive ? 'action.selected' : 'transparent',
                         '&:hover': { bgcolor: 'action.hover' },
@@ -395,7 +417,7 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                         </Box>
                       </Box>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 12 }}>
                           {isActive && <CheckIcon sx={{ fontSize: 14, color: 'primary.main' }} />}
                           {t.name}
                         </Typography>
@@ -405,16 +427,16 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                 })}
 
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, mb: 1 }}>
-                  <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>
-                    Custom
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, display: 'block' }}>
+                    CUSTOM THEMES
                   </Typography>
-                  <Button size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />} onClick={startCreate}>
+                  <Button size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />} onClick={startCreate} sx={{ fontSize: 11 }}>
                     Create
                   </Button>
                 </Box>
 
                 {customThemes.length === 0 && (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2, fontSize: '0.8rem' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2, fontSize: '0.8rem', fontStyle: 'italic' }}>
                     No custom themes yet.
                   </Typography>
                 )}
@@ -426,7 +448,7 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                       key={ct.id}
                       sx={{
                         display: 'flex', alignItems: 'center', gap: 1, p: 1, mb: 0.5,
-                        borderRadius: '10px', cursor: 'pointer',
+                        borderRadius: '8px', cursor: 'pointer',
                         border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                         bgcolor: isActive ? 'action.selected' : 'transparent',
                         '&:hover': { bgcolor: 'action.hover' },
@@ -445,11 +467,11 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
                         </Box>
                       </Box>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 12 }}>
                           {isActive && <CheckIcon sx={{ fontSize: 14, color: 'primary.main' }} />}
                           {ct.name}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10.5 }}>
                           {ct.isDark ? 'Dark' : 'Light'}
                         </Typography>
                       </Box>
@@ -467,11 +489,20 @@ export const ThemeManagerModal: React.FC<ThemeManagerModalProps> = ({ onClose })
           </Box>
 
           {/* ── Right pane: big screenplay preview ── */}
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', mb: 1, ml: 0.5 }}>
-              Preview
+          <Box sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            p: 1.5,
+            minHeight: 0
+          }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
+              THEME PREVIEW
             </Typography>
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ flex: 1, minHeight: 0 }}>
               <ThemePreview colors={previewColors.colors} isDark={previewColors.isDark} />
             </Box>
           </Box>

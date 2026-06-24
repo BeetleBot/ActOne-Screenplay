@@ -96,7 +96,7 @@ pub struct ShapedRun {
 pub struct ShapedLine {
     pub runs: Vec<ShapedRun>,
     pub width: f32,
-    pub is_underline: bool,
+    pub underline_ranges: Vec<(f32, f32)>,
 }
 
 pub struct ShapedParagraph {
@@ -194,7 +194,7 @@ fn shape_rich_string(
         let mut current_font_id = None;
         let mut current_glyphs = Vec::new();
         let mut current_start_x = 0.0;
-        let mut line_has_underline = false;
+        let mut underline_x_ranges: Vec<(f32, f32)> = Vec::new();
 
         for glyph in run.glyphs.iter() {
             if current_font_id.is_none() {
@@ -220,13 +220,11 @@ fn shape_rich_string(
             }
 
             // Check if this glyph falls within any underline span
-            if !line_has_underline {
-                for (ul_start, ul_end) in &underline_spans {
-                    if start < *ul_end && end > *ul_start {
-                        line_has_underline = true;
-                        break;
-                    }
-                }
+            let glyph_is_underlined = underline_spans.iter().any(|(ul_start, ul_end)| {
+                start < *ul_end && end > *ul_start
+            });
+            if glyph_is_underlined {
+                underline_x_ranges.push((glyph.x, glyph.w));
             }
 
             current_glyphs.push(KrillaGlyphWrapper {
@@ -244,10 +242,26 @@ fn shape_rich_string(
             runs_in_line.push(run_obj);
         }
 
+        // Merge overlapping/adjacent underline x-ranges
+        underline_x_ranges.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        let mut merged: Vec<(f32, f32)> = Vec::new();
+        for (x, w) in underline_x_ranges {
+            if let Some(last) = merged.last_mut() {
+                let last_end = last.0 + last.1;
+                if x <= last_end + 0.5 {
+                    last.1 = (x + w - last.0).max(last.1);
+                } else {
+                    merged.push((x, w));
+                }
+            } else {
+                merged.push((x, w));
+            }
+        }
+
         lines.push(ShapedLine {
             runs: runs_in_line,
             width: line_width,
-            is_underline: line_has_underline,
+            underline_ranges: merged,
         });
     }
 
@@ -261,7 +275,7 @@ fn shape_rich_string(
                 x_offset: 0.0,
             }],
             width: 0.0,
-            is_underline: false,
+            underline_ranges: vec![],
         });
     }
 
@@ -372,7 +386,6 @@ fn draw_shaped_line(
     for run in &line.runs {
         if let Some(face_info) = ctx.font_system.db().face(run.font_id) {
             let krilla_font = get_krilla_font(face_info, ctx.layout_info.fonts, ctx.font_cache, &run.text);
-            
             let run_start_x = x + run.x_offset;
             ctx.surface.draw_glyphs(
                 Point::from_xy(run_start_x, y),
@@ -385,15 +398,16 @@ fn draw_shaped_line(
         }
     }
 
-    if line.is_underline {
-        if let Some(r) = Rect::from_xywh(x, y + 1.2, line.width, 0.5) {
-            let mut pb = PathBuilder::new();
-            pb.push_rect(r);
-            pb.close();
-            if let Some(path) = pb.finish() {
-                ctx.surface.draw_path(&path);
+    for (ul_x, ul_width) in &line.underline_ranges {
+        if *ul_width > 0.0
+            && let Some(r) = Rect::from_xywh(x + ul_x, y + 1.2, *ul_width, 0.5) {
+                let mut pb = PathBuilder::new();
+                pb.push_rect(r);
+                pb.close();
+                if let Some(path) = pb.finish() {
+                    ctx.surface.draw_path(&path);
+                }
             }
-        }
     }
 }
 
@@ -437,13 +451,12 @@ pub fn split_rich_string_into_sentences(rs: &RichString) -> Vec<RichString> {
     let mut i = 0;
     while i < chars.len() {
         let c = chars[i];
-        if c == '.' || c == '?' || c == '!' || c == '…' {
-            if i + 1 == chars.len() || chars[i + 1].is_whitespace() {
+        if (c == '.' || c == '?' || c == '!' || c == '…')
+            && (i + 1 == chars.len() || chars[i + 1].is_whitespace()) {
                 let end_idx = i + 1;
                 sentences.push(rich_string_substring(rs, start_idx, end_idx));
                 start_idx = end_idx;
             }
-        }
         i += 1;
     }
     if start_idx < chars.len() {
@@ -453,11 +466,10 @@ pub fn split_rich_string_into_sentences(rs: &RichString) -> Vec<RichString> {
 }
 
 fn line_ends_with_sentence_punctuation(line: &ShapedLine) -> bool {
-    if let Some(last_run) = line.runs.last() {
-        if let Some(last_char) = last_run.text.trim_end().chars().last() {
+    if let Some(last_run) = line.runs.last()
+        && let Some(last_char) = last_run.text.trim_end().chars().last() {
             return last_char == '.' || last_char == '?' || last_char == '!' || last_char == '…';
         }
-    }
     false
 }
 
@@ -884,8 +896,9 @@ pub fn write_dialogue(
     }
 
     if start_element == 0 && start_line == 0 {
-        let first_el_height = if let Some(first_el) = dialogue.elements.first() {
-            match first_el {
+        let mut total_block_height = name_height;
+        for el in &dialogue.elements {
+            total_block_height += match el {
                 DialogueElement::Parenthetical(s) => {
                     measure_element_height(
                         ctx.font_system,
@@ -895,16 +908,54 @@ pub fn write_dialogue(
                         ctx.layout_info.export_font,
                     )
                 }
-                DialogueElement::Line(_) => {
-                    LINE_HEIGHT
+                DialogueElement::Line(s) => {
+                    measure_element_height(
+                        ctx.font_system,
+                        s,
+                        &dialogue_margins.line,
+                        ctx.layout_info.size,
+                        ctx.layout_info.export_font,
+                    )
                 }
-            }
-        } else {
-            0.0
-        };
+            };
+        }
 
-        if *ctx.y_position + name_height + first_el_height >= ctx.max_y {
-            return Ok(true);
+        let fits_entirely = *ctx.y_position + total_block_height <= ctx.max_y;
+
+        if !fits_entirely {
+            let min_el_height = if let Some(first_el) = dialogue.elements.first() {
+                match first_el {
+                    DialogueElement::Parenthetical(s) => {
+                        measure_element_height(
+                            ctx.font_system,
+                            s,
+                            &dialogue_margins.parenthetical,
+                            ctx.layout_info.size,
+                            ctx.layout_info.export_font,
+                        )
+                    }
+                    DialogueElement::Line(s) => {
+                        let first_line_height = measure_element_height(
+                            ctx.font_system,
+                            s,
+                            &dialogue_margins.line,
+                            ctx.layout_info.size,
+                            ctx.layout_info.export_font,
+                        );
+                        if first_line_height <= 3.0 * LINE_HEIGHT {
+                            first_line_height
+                        } else {
+                            2.0 * LINE_HEIGHT
+                        }
+                    }
+                }
+            } else {
+                0.0
+            };
+
+            if *ctx.y_position + name_height + min_el_height + LINE_HEIGHT > ctx.max_y {
+                return Ok(true);
+            }
         }
 
         let mut temp_res = None;
@@ -917,8 +968,75 @@ pub fn write_dialogue(
             &mut temp_res,
         )?;
     } else {
-        if *ctx.y_position + name_height + LINE_HEIGHT >= ctx.max_y {
-            return Ok(true);
+        let mut total_block_height = name_height;
+        for (idx, el) in dialogue.elements.iter().enumerate().skip(start_element) {
+            let el_height = match el {
+                DialogueElement::Parenthetical(s) => {
+                    measure_element_height(
+                        ctx.font_system,
+                        s,
+                        &dialogue_margins.parenthetical,
+                        ctx.layout_info.size,
+                        ctx.layout_info.export_font,
+                    )
+                }
+                DialogueElement::Line(s) => {
+                    measure_element_height(
+                        ctx.font_system,
+                        s,
+                        &dialogue_margins.line,
+                        ctx.layout_info.size,
+                        ctx.layout_info.export_font,
+                    )
+                }
+            };
+            if idx == start_element && start_line > 0 {
+                let total_lines = (el_height / LINE_HEIGHT).round() as usize;
+                let remaining_lines = total_lines.saturating_sub(start_line);
+                total_block_height += remaining_lines as f32 * LINE_HEIGHT;
+            } else {
+                total_block_height += el_height;
+            }
+        }
+
+        let fits_entirely = *ctx.y_position + total_block_height <= ctx.max_y;
+
+        if !fits_entirely {
+            let min_el_height = if let Some(curr_el) = dialogue.elements.get(start_element) {
+                match curr_el {
+                    DialogueElement::Parenthetical(s) => {
+                        measure_element_height(
+                            ctx.font_system,
+                            s,
+                            &dialogue_margins.parenthetical,
+                            ctx.layout_info.size,
+                            ctx.layout_info.export_font,
+                        )
+                    }
+                    DialogueElement::Line(s) => {
+                        let full_line_height = measure_element_height(
+                            ctx.font_system,
+                            s,
+                            &dialogue_margins.line,
+                            ctx.layout_info.size,
+                            ctx.layout_info.export_font,
+                        );
+                        let total_lines = (full_line_height / LINE_HEIGHT).round() as usize;
+                        let remaining_lines = total_lines.saturating_sub(start_line);
+                        if remaining_lines <= 3 {
+                            remaining_lines as f32 * LINE_HEIGHT
+                        } else {
+                            2.0 * LINE_HEIGHT
+                        }
+                    }
+                }
+            } else {
+                0.0
+            };
+
+            if *ctx.y_position + name_height + min_el_height + LINE_HEIGHT > ctx.max_y {
+                return Ok(true);
+            }
         }
 
         let mut temp_res = None;

@@ -12,7 +12,7 @@ use krilla::{
 };
 
 use crate::pdf::{
-    Exporter, Screenplay, MirrorOption,
+    Exporter, Screenplay, MirrorOption, ElementFormat, ElementFormats,
     rich_string::RichString,
     screenplay::{Element, Span},
 };
@@ -55,11 +55,12 @@ pub struct PdfExporter {
     pub synopses: bool,
     pub sections: bool,
     pub paper_size: PaperSize,
-    pub bold_scene_headings: bool,
+    pub element_formats: ElementFormats,
     pub mirror_scene_numbers: MirrorOption,
     pub export_font: String,
     pub revised_lines: Vec<bool>,
     pub title_page: bool,
+    pub scene_colors: bool,
 }
 
 impl Default for PdfExporter {
@@ -68,11 +69,12 @@ impl Default for PdfExporter {
             synopses: false,
             sections: false,
             paper_size: PaperSize::default(),
-            bold_scene_headings: false,
+            element_formats: ElementFormats::default(),
             mirror_scene_numbers: MirrorOption::default(),
             export_font: String::new(),
             revised_lines: Vec::new(),
             title_page: true,
+            scene_colors: false,
         }
     }
 }
@@ -176,7 +178,55 @@ impl Exporter for PdfExporter {
     }
 }
 
+fn parse_hex_color(s: &str) -> Option<(u8, u8, u8)> {
+    let s = s.trim();
+    if !s.starts_with('#') {
+        return None;
+    }
+    let hex = &s[1..];
+    if hex.len() == 3 {
+        let r = u8::from_str_radix(&hex[0..1], 16).ok()? * 17;
+        let g = u8::from_str_radix(&hex[1..2], 16).ok()? * 17;
+        let b = u8::from_str_radix(&hex[2..3], 16).ok()? * 17;
+        Some((r, g, b))
+    } else if hex.len() == 6 {
+        let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
+        let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
+        let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
+        Some((r, g, b))
+    } else {
+        None
+    }
+}
+
+fn color_name_to_rgb(name: &str) -> Option<(u8, u8, u8)> {
+    match name.trim().to_lowercase().as_str() {
+        "red" => Some((255, 0, 0)),
+        "blue" => Some((0, 0, 255)),
+        "green" => Some((0, 128, 0)),
+        "pink" => Some((255, 192, 203)),
+        "magenta" => Some((255, 0, 255)),
+        "gray" => Some((128, 128, 128)),
+        "purple" => Some((128, 0, 128)),
+        "cyan" => Some((0, 255, 255)),
+        "teal" => Some((0, 128, 128)),
+        "yellow" => Some((255, 255, 0)),
+        "orange" => Some((255, 165, 0)),
+        "brown" => Some((165, 42, 42)),
+        hex if hex.starts_with('#') => parse_hex_color(hex),
+        _ => None,
+    }
+}
+
 impl PdfExporter {
+    fn apply_format(&self, rs: &mut RichString, format: &ElementFormat) {
+        for element in &mut rs.elements {
+            if format.bold { element.set_bold(); }
+            if format.italic { element.set_italic(); }
+            if format.underline { element.set_underline(); }
+        }
+    }
+
     fn is_element_skipped(&self, element: &Element) -> bool {
         matches!(
             (element, self.synopses, self.sections),
@@ -212,24 +262,23 @@ impl PdfExporter {
             write_titlepage(t, layout_info, document, font_system, &mut font_cache)?;
         }
 
-        if has_title_page {
-            if let Some(Span { start_line, .. }) = element_iter.peek() {
+        if has_title_page
+            && let Some(Span { start_line, .. }) = element_iter.peek() {
                 page_breaks.push(*start_line);
             }
-        }
 
         let mut content_page_idx = 0;
 
         while element_iter.peek().is_some() {
             let mut page = document.start_page_with(
-                PageSettings::from_wh(layout_info.size.x as f32, layout_info.size.y as f32)
+                PageSettings::from_wh(layout_info.size.x, layout_info.size.y)
                     .ok_or_else(|| std::io::Error::other("invalid page dimensions"))?,
             );
             let mut surface = page.surface();
             let mut y_pos = top;
 
-            if content_page_idx > 0 {
-                if let Some(Span { start_line, .. }) = element_iter.peek() {
+            if content_page_idx > 0
+                && let Some(Span { start_line, .. }) = element_iter.peek() {
                     let mut break_line = *start_line;
                     if let Some(res_idx) = residual_element_idx {
                         break_line = start_line + res_idx;
@@ -242,7 +291,6 @@ impl PdfExporter {
                     }
                     page_breaks.push(break_line);
                 }
-            }
             content_page_idx += 1;
 
             if (has_title_page && page_idx > 1) || (!has_title_page && page_idx > 0) {
@@ -344,7 +392,7 @@ impl PdfExporter {
                 };
 
                 match &element {
-                    Element::Heading { slug, number, color: _ } => {
+                    Element::Heading { slug, number, color } => {
                         let heading_height = measure_element_height(
                             ctx.font_system,
                             slug,
@@ -376,6 +424,19 @@ impl PdfExporter {
                         let remaining = max_y - *ctx.y_position;
                         if remaining < heading_height + min_next_height {
                             break;
+                        }
+
+                        let mut custom_color_applied = false;
+                        if self.scene_colors
+                            && let Some(c_name) = color
+                            && let Some((r, g, b)) = color_name_to_rgb(c_name)
+                        {
+                            ctx.surface.set_fill(Some(krilla::paint::Fill {
+                                paint: krilla::color::rgb::Color::new(r, g, b).into(),
+                                opacity: krilla::num::NormalizedF32::new(1.0).unwrap(),
+                                rule: Default::default(),
+                            }));
+                            custom_color_applied = true;
                         }
 
                         if number.is_some() && self.mirror_scene_numbers != MirrorOption::Off {
@@ -432,11 +493,7 @@ impl PdfExporter {
 
                         let mut slug_to_print = slug.clone();
                         slug_to_print.make_uppercase();
-                        if self.bold_scene_headings {
-                            for element in &mut slug_to_print.elements {
-                                element.set_bold();
-                            }
-                        }
+                        self.apply_format(&mut slug_to_print, &self.element_formats.scene_heading);
 
                         let mut temp_res = None;
                         write_element(
@@ -447,11 +504,21 @@ impl PdfExporter {
                             false,
                             &mut temp_res,
                         )?;
+
+                        if custom_color_applied {
+                            ctx.surface.set_fill(Some(krilla::paint::Fill {
+                                paint: krilla::color::rgb::Color::new(0, 0, 0).into(),
+                                opacity: krilla::num::NormalizedF32::new(1.0).unwrap(),
+                                rule: Default::default(),
+                            }));
+                        }
                     }
                     Element::Action(s) => {
+                        let mut s_styled = s.clone();
+                        self.apply_format(&mut s_styled, &self.element_formats.action);
                         let overflowed = write_element(
                             &mut ctx,
-                            s,
+                            &s_styled,
                             &layout_info.margins.action,
                             Alignment::LeftToRight,
                             true,
@@ -462,9 +529,24 @@ impl PdfExporter {
                         }
                     }
                     Element::Dialogue(dialogue) => {
+                        let mut dialogue_styled = dialogue.clone();
+                        self.apply_format(&mut dialogue_styled.character, &self.element_formats.character);
+                        if let Some(ext) = &mut dialogue_styled.extension {
+                            self.apply_format(ext, &self.element_formats.character);
+                        }
+                        for el in &mut dialogue_styled.elements {
+                            match el {
+                                crate::pdf::screenplay::DialogueElement::Parenthetical(s) => {
+                                    self.apply_format(s, &self.element_formats.parenthetical);
+                                }
+                                crate::pdf::screenplay::DialogueElement::Line(s) => {
+                                    self.apply_format(s, &self.element_formats.dialogue);
+                                }
+                            }
+                        }
                         let premature_exit = write_dialogue(
                             &mut ctx,
-                            dialogue,
+                            &dialogue_styled,
                             &mut residual_dialogue_idx,
                             &layout_info.margins.dialogue,
                         )?;
@@ -475,6 +557,38 @@ impl PdfExporter {
                     Element::DualDialogue(dialogue0, dialogue1) => {
                         let saved_y = *ctx.y_position;
                         let mut premature_exit = false;
+
+                        let mut d0_styled = dialogue0.clone();
+                        self.apply_format(&mut d0_styled.character, &self.element_formats.character);
+                        if let Some(ext) = &mut d0_styled.extension {
+                            self.apply_format(ext, &self.element_formats.character);
+                        }
+                        for el in &mut d0_styled.elements {
+                            match el {
+                                crate::pdf::screenplay::DialogueElement::Parenthetical(s) => {
+                                    self.apply_format(s, &self.element_formats.parenthetical);
+                                }
+                                crate::pdf::screenplay::DialogueElement::Line(s) => {
+                                    self.apply_format(s, &self.element_formats.dialogue);
+                                }
+                            }
+                        }
+
+                        let mut d1_styled = dialogue1.clone();
+                        self.apply_format(&mut d1_styled.character, &self.element_formats.character);
+                        if let Some(ext) = &mut d1_styled.extension {
+                            self.apply_format(ext, &self.element_formats.character);
+                        }
+                        for el in &mut d1_styled.elements {
+                            match el {
+                                crate::pdf::screenplay::DialogueElement::Parenthetical(s) => {
+                                    self.apply_format(s, &self.element_formats.parenthetical);
+                                }
+                                crate::pdf::screenplay::DialogueElement::Line(s) => {
+                                    self.apply_format(s, &self.element_formats.dialogue);
+                                }
+                            }
+                        }
 
                         if residual_dual_dialogue_idx.0.is_none()
                             && residual_dual_dialogue_idx.1.is_none()
@@ -503,7 +617,7 @@ impl PdfExporter {
                             premature_exit = premature_exit
                                 || write_dialogue(
                                     &mut ctx,
-                                    dialogue0,
+                                    &d0_styled,
                                     &mut residual_dual_dialogue_idx.0,
                                     &layout_info.margins.dual_dialogue.left,
                                 )?;
@@ -518,7 +632,7 @@ impl PdfExporter {
                             premature_exit = premature_exit
                                 || write_dialogue(
                                     &mut ctx,
-                                    dialogue1,
+                                    &d1_styled,
                                     &mut residual_dual_dialogue_idx.1,
                                     &layout_info.margins.dual_dialogue.right,
                                 )?;
@@ -534,9 +648,7 @@ impl PdfExporter {
                     }
                     Element::Lyrics(s) => {
                         let mut s_styled = s.clone();
-                        for element in &mut s_styled.elements {
-                            element.set_italic();
-                        }
+                        self.apply_format(&mut s_styled, &self.element_formats.lyrics);
                         let overflowed = write_element(
                             &mut ctx,
                             &s_styled,
@@ -552,6 +664,7 @@ impl PdfExporter {
                     Element::Transition(s) => {
                         let mut s_styled = s.clone();
                         s_styled.make_uppercase();
+                        self.apply_format(&mut s_styled, &self.element_formats.transition);
                         let mut temp_res = None;
                         let overflowed = write_element(
                             &mut ctx,
@@ -566,9 +679,11 @@ impl PdfExporter {
                         }
                     }
                     Element::CenteredText(s) => {
+                        let mut s_styled = s.clone();
+                        self.apply_format(&mut s_styled, &self.element_formats.centered_text);
                         let overflowed = write_element(
                             &mut ctx,
-                            s,
+                            &s_styled,
                             &layout_info.margins.centered,
                             Alignment::Centered,
                             true,
@@ -614,9 +729,7 @@ impl PdfExporter {
 
                         let mut s_styled = s.clone();
                         s_styled.make_uppercase();
-                        for element in &mut s_styled.elements {
-                            element.set_bold();
-                        }
+                        self.apply_format(&mut s_styled, &self.element_formats.shot);
                         let mut temp_res = None;
                         let overflowed = write_element(
                             &mut ctx,
@@ -654,7 +767,7 @@ impl PdfExporter {
                             }
                         }
                     }
-                    Element::Section { text, .. } => {
+                    Element::Section { text, depth } => {
                         if self.sections {
                             let section_height = measure_element_height(
                                 ctx.font_system,
@@ -693,6 +806,9 @@ impl PdfExporter {
                             s_styled.make_uppercase();
                             for element in &mut s_styled.elements {
                                 element.set_bold();
+                                if depth == &1 {
+                                    element.set_underline();
+                                }
                             }
                             if self.export_font == "courier_prime_sans" {
                                 for element in &mut s_styled.elements {
@@ -783,7 +899,9 @@ This is a test of parenthetical and normal text:
         };
         let mut out = Vec::new();
         let res = exporter.export(&screenplay, &mut out);
-        assert!(res.is_ok());
+        if let Err(e) = res {
+            panic!("test_indic_pdf_export failed with error: {:?}", e);
+        }
     }
 
     #[test]
@@ -851,6 +969,34 @@ Action line 50.
         };
         let page_breaks = exporter.get_page_breaks(&screenplay);
         assert!(page_breaks.is_ok());
+    }
+
+    #[test]
+    fn test_scene_color_export() {
+        let fountain_text = r#"
+.SCENE 1 [[red]]
+
+This is action.
+"#;
+        let screenplay = crate::pdf::parse(fountain_text);
+        
+        // Assert parser extracted the color
+        match &screenplay.elements[0].inner {
+            crate::pdf::screenplay::Element::Heading { color, slug, .. } => {
+                assert_eq!(color.as_deref(), Some("red"));
+                assert_eq!(slug.to_plain_string(), "SCENE 1");
+            }
+            _ => panic!("Expected heading"),
+        }
+
+        let exporter = PdfExporter {
+            title_page: false,
+            scene_colors: true,
+            ..Default::default()
+        };
+        let mut out = Vec::new();
+        let res = exporter.export(&screenplay, &mut out);
+        assert!(res.is_ok());
     }
 }
 

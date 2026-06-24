@@ -147,6 +147,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
         else if (key === "source") type = LineType.titlePageSource;
         else if (key === "contact") type = LineType.titlePageContact;
         else if (key === "draft date" || key === "date") type = LineType.titlePageDraftDate;
+        else if (key === "notes") type = LineType.titlePageUnknown;
 
         lastTitlePageType = type;
         parsedLines.push({
