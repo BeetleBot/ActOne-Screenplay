@@ -5,6 +5,7 @@ import { CloseIcon, DownloadIcon } from "./Icons";
 import { logger } from "../utils/logger";
 
 import {
+  Checkbox,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -164,13 +165,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   const [showWatermarkPanel, setShowWatermarkPanel] = useState(false);
   const [watermarkHeaderEnabled, setWatermarkHeaderEnabled] = useState(!!savedWatermarks?.headerEnabled);
   const [watermarkHeaderText, setWatermarkHeaderText] = useState(savedWatermarks?.headerText || "");
+  const [watermarkHeaderOpacity, setWatermarkHeaderOpacity] = useState<number>(savedWatermarks?.headerOpacity ?? 100);
   const [watermarkFooterEnabled, setWatermarkFooterEnabled] = useState(!!savedWatermarks?.footerEnabled);
   const [watermarkFooterText, setWatermarkFooterText] = useState(savedWatermarks?.footerText || "");
+  const [watermarkFooterOpacity, setWatermarkFooterOpacity] = useState<number>(savedWatermarks?.footerOpacity ?? 100);
   const [watermarkCenterEnabled, setWatermarkCenterEnabled] = useState(!!savedWatermarks?.centerEnabled);
   const [watermarkCenterType, setWatermarkCenterType] = useState<"text" | "image">(savedWatermarks?.centerType || "text");
   const [watermarkCenterText, setWatermarkCenterText] = useState(savedWatermarks?.centerText || "");
   const [watermarkCenterImagePath, setWatermarkCenterImagePath] = useState(savedWatermarks?.centerImagePath || "");
   const [watermarkCenterOpacity, setWatermarkCenterOpacity] = useState<number>(savedWatermarks?.centerOpacity ?? 40);
+  const [watermarkCenterGrayscale, setWatermarkCenterGrayscale] = useState(!!savedWatermarks?.centerGrayscale);
 
   const updateWatermarkSettings = (updates: Partial<any>) => {
     updateSettings((prev: Record<string, any>) => ({
@@ -227,13 +231,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           revisedLines,
           watermarkHeaderEnabled,
           watermarkHeaderText,
+          watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
           watermarkFooterEnabled,
           watermarkFooterText,
+          watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
           watermarkCenterEnabled,
           watermarkCenterType,
           watermarkCenterText,
           watermarkCenterImagePath,
           watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
+          watermarkCenterGrayscale,
         });
       } else {
         alert("PDF export is only supported in the desktop app.");
@@ -600,13 +607,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           updateWatermarkSettings({
             headerEnabled: watermarkHeaderEnabled,
             headerText: watermarkHeaderText,
+            headerOpacity: watermarkHeaderOpacity,
             footerEnabled: watermarkFooterEnabled,
             footerText: watermarkFooterText,
+            footerOpacity: watermarkFooterOpacity,
             centerEnabled: watermarkCenterEnabled,
             centerType: watermarkCenterType,
             centerText: watermarkCenterText,
             centerImagePath: watermarkCenterImagePath,
             centerOpacity: watermarkCenterOpacity,
+            centerGrayscale: watermarkCenterGrayscale,
           });
         }}
         fullWidth
@@ -653,15 +663,31 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
               sx={{ m: 0, mb: watermarkHeaderEnabled ? 1 : 0 }}
             />
             {watermarkHeaderEnabled && (
-              <TextField
-                fullWidth
-                size="small"
-                label="Watermark Text"
-                variant="outlined"
-                value={watermarkHeaderText}
-                onChange={(e) => setWatermarkHeaderText(e.target.value)}
-                slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } } }}
-              />
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Watermark Text"
+                  variant="outlined"
+                  value={watermarkHeaderText}
+                  onChange={(e) => setWatermarkHeaderText(e.target.value)}
+                  slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } } }}
+                />
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
+                    Opacity: {watermarkHeaderOpacity}%
+                  </Typography>
+                  <Slider
+                    size="small"
+                    value={watermarkHeaderOpacity}
+                    min={10}
+                    max={100}
+                    step={5}
+                    onChange={(_, val) => setWatermarkHeaderOpacity(val as number)}
+                    valueLabelDisplay="auto"
+                  />
+                </Box>
+              </Box>
             )}
           </Box>
 
@@ -679,15 +705,31 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
               sx={{ m: 0, mb: watermarkFooterEnabled ? 1 : 0 }}
             />
             {watermarkFooterEnabled && (
-              <TextField
-                fullWidth
-                size="small"
-                label="Watermark Text"
-                variant="outlined"
-                value={watermarkFooterText}
-                onChange={(e) => setWatermarkFooterText(e.target.value)}
-                slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } } }}
-              />
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Watermark Text"
+                  variant="outlined"
+                  value={watermarkFooterText}
+                  onChange={(e) => setWatermarkFooterText(e.target.value)}
+                  slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } } }}
+                />
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
+                    Opacity: {watermarkFooterOpacity}%
+                  </Typography>
+                  <Slider
+                    size="small"
+                    value={watermarkFooterOpacity}
+                    min={10}
+                    max={100}
+                    step={5}
+                    onChange={(_, val) => setWatermarkFooterOpacity(val as number)}
+                    valueLabelDisplay="auto"
+                  />
+                </Box>
+              </Box>
             )}
           </Box>
 
@@ -726,33 +768,42 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                     slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } } }}
                   />
                 ) : (
-                  <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                    <TextField
-                      fullWidth
-                      readOnly
-                      size="small"
-                      label="Image Path"
-                      variant="outlined"
-                      value={watermarkCenterImagePath}
-                      slotProps={{ input: { style: { fontSize: 12 }, readOnly: true }, inputLabel: { style: { fontSize: 12 } } }}
-                    />
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={async () => {
-                        try {
-                          const selected = await invoke<string | null>("select_watermark_image");
-                          if (selected) {
-                            setWatermarkCenterImagePath(selected);
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                      <TextField
+                        fullWidth
+                        readOnly
+                        size="small"
+                        label="Image Path"
+                        variant="outlined"
+                        value={watermarkCenterImagePath}
+                        slotProps={{ input: { style: { fontSize: 12 }, readOnly: true }, inputLabel: { style: { fontSize: 12 } } }}
+                      />
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={async () => {
+                          try {
+                            const selected = await invoke<string | null>("select_watermark_image");
+                            if (selected) {
+                              setWatermarkCenterImagePath(selected);
+                            }
+                          } catch (e) {
+                            logger.error("export", "select_watermark_image failed", e);
                           }
-                        } catch (e) {
-                          logger.error("export", "select_watermark_image failed", e);
-                        }
-                      }}
-                      sx={{ fontSize: 11, py: 1 }}
-                    >
-                      Browse
-                    </Button>
+                        }}
+                        sx={{ fontSize: 11, py: 1 }}
+                      >
+                        Browse
+                      </Button>
+                    </Box>
+                    <FormControlLabel
+                      control={<Checkbox size="small" checked={watermarkCenterGrayscale} onChange={(e) => setWatermarkCenterGrayscale(e.target.checked)} />}
+                      label={<Typography variant="caption" sx={{ fontSize: 11 }}>Grayscale (Black & White)</Typography>}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
+                      Accepted: PNG, JPG, BMP, GIF, WebP
+                    </Typography>
                   </Box>
                 )}
 
@@ -799,6 +850,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
     </Dialog>
   );
 };

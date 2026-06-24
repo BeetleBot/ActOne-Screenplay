@@ -113,13 +113,16 @@ fn export_pdf(
     revised_lines: Vec<bool>,
     watermark_header_enabled: Option<bool>,
     watermark_header_text: Option<String>,
+    watermark_header_opacity: Option<f32>,
     watermark_footer_enabled: Option<bool>,
     watermark_footer_text: Option<String>,
+    watermark_footer_opacity: Option<f32>,
     watermark_center_enabled: Option<bool>,
     watermark_center_type: Option<String>,
     watermark_center_text: Option<String>,
     watermark_center_image_path: Option<String>,
     watermark_center_opacity: Option<f32>,
+    watermark_center_grayscale: Option<bool>,
 ) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("PDF Document", &["pdf"])
@@ -155,13 +158,16 @@ fn export_pdf(
         export_scene_colors: export_scene_colors.unwrap_or(false),
         watermark_header_enabled: watermark_header_enabled.unwrap_or(false),
         watermark_header_text: watermark_header_text.unwrap_or_default(),
+        watermark_header_opacity: watermark_header_opacity.unwrap_or(1.0),
         watermark_footer_enabled: watermark_footer_enabled.unwrap_or(false),
         watermark_footer_text: watermark_footer_text.unwrap_or_default(),
+        watermark_footer_opacity: watermark_footer_opacity.unwrap_or(1.0),
         watermark_center_enabled: watermark_center_enabled.unwrap_or(false),
         watermark_center_type: watermark_center_type.unwrap_or_else(|| "text".to_string()),
         watermark_center_text: watermark_center_text.unwrap_or_default(),
         watermark_center_image_path: watermark_center_image_path.unwrap_or_default(),
         watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
+        watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
     };
     if pdf::export_to_pdf(&fountain_text, &file, config).is_ok() {
         return Some(file.to_string_lossy().to_string());
@@ -184,13 +190,16 @@ fn get_page_breaks(
     revised_lines: Vec<bool>,
     watermark_header_enabled: Option<bool>,
     watermark_header_text: Option<String>,
+    watermark_header_opacity: Option<f32>,
     watermark_footer_enabled: Option<bool>,
     watermark_footer_text: Option<String>,
+    watermark_footer_opacity: Option<f32>,
     watermark_center_enabled: Option<bool>,
     watermark_center_type: Option<String>,
     watermark_center_text: Option<String>,
     watermark_center_image_path: Option<String>,
     watermark_center_opacity: Option<f32>,
+    watermark_center_grayscale: Option<bool>,
 ) -> Option<Vec<usize>> {
     let paper = if paper_size == "letter" {
         pdf::LETTER
@@ -222,13 +231,16 @@ fn get_page_breaks(
         export_scene_colors: export_scene_colors.unwrap_or(false),
         watermark_header_enabled: watermark_header_enabled.unwrap_or(false),
         watermark_header_text: watermark_header_text.unwrap_or_default(),
+        watermark_header_opacity: watermark_header_opacity.unwrap_or(1.0),
         watermark_footer_enabled: watermark_footer_enabled.unwrap_or(false),
         watermark_footer_text: watermark_footer_text.unwrap_or_default(),
+        watermark_footer_opacity: watermark_footer_opacity.unwrap_or(1.0),
         watermark_center_enabled: watermark_center_enabled.unwrap_or(false),
         watermark_center_type: watermark_center_type.unwrap_or_else(|| "text".to_string()),
         watermark_center_text: watermark_center_text.unwrap_or_default(),
         watermark_center_image_path: watermark_center_image_path.unwrap_or_default(),
         watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
+        watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
     };
     pdf::get_page_breaks(&fountain_text, config).ok()
 }
@@ -262,13 +274,16 @@ fn generate_pdf_bytes(
     revised_lines: Vec<bool>,
     watermark_header_enabled: Option<bool>,
     watermark_header_text: Option<String>,
+    watermark_header_opacity: Option<f32>,
     watermark_footer_enabled: Option<bool>,
     watermark_footer_text: Option<String>,
+    watermark_footer_opacity: Option<f32>,
     watermark_center_enabled: Option<bool>,
     watermark_center_type: Option<String>,
     watermark_center_text: Option<String>,
     watermark_center_image_path: Option<String>,
     watermark_center_opacity: Option<f32>,
+    watermark_center_grayscale: Option<bool>,
 ) -> Option<Vec<u8>> {
     let paper = if paper_size == "letter" {
         pdf::LETTER
@@ -300,13 +315,16 @@ fn generate_pdf_bytes(
         export_scene_colors: export_scene_colors.unwrap_or(false),
         watermark_header_enabled: watermark_header_enabled.unwrap_or(false),
         watermark_header_text: watermark_header_text.unwrap_or_default(),
+        watermark_header_opacity: watermark_header_opacity.unwrap_or(1.0),
         watermark_footer_enabled: watermark_footer_enabled.unwrap_or(false),
         watermark_footer_text: watermark_footer_text.unwrap_or_default(),
+        watermark_footer_opacity: watermark_footer_opacity.unwrap_or(1.0),
         watermark_center_enabled: watermark_center_enabled.unwrap_or(false),
         watermark_center_type: watermark_center_type.unwrap_or_else(|| "text".to_string()),
         watermark_center_text: watermark_center_text.unwrap_or_default(),
         watermark_center_image_path: watermark_center_image_path.unwrap_or_default(),
         watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
+        watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
     };
     pdf::generate_pdf_bytes(&fountain_text, config).ok()
 }

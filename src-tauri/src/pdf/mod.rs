@@ -70,13 +70,16 @@ pub struct PdfExportConfig {
     pub export_scene_colors: bool,
     pub watermark_header_enabled: bool,
     pub watermark_header_text: String,
+    pub watermark_header_opacity: f32,
     pub watermark_footer_enabled: bool,
     pub watermark_footer_text: String,
+    pub watermark_footer_opacity: f32,
     pub watermark_center_enabled: bool,
     pub watermark_center_type: String,
     pub watermark_center_text: String,
     pub watermark_center_image_path: String,
     pub watermark_center_opacity: f32,
+    pub watermark_center_grayscale: bool,
 }
 
 pub fn parse(src: &str) -> Screenplay {
@@ -101,13 +104,16 @@ pub fn export_to_pdf(
         scene_colors: config.export_scene_colors,
         watermark_header_enabled: config.watermark_header_enabled,
         watermark_header_text: config.watermark_header_text,
+        watermark_header_opacity: config.watermark_header_opacity,
         watermark_footer_enabled: config.watermark_footer_enabled,
         watermark_footer_text: config.watermark_footer_text,
+        watermark_footer_opacity: config.watermark_footer_opacity,
         watermark_center_enabled: config.watermark_center_enabled,
         watermark_center_type: config.watermark_center_type,
         watermark_center_text: config.watermark_center_text,
         watermark_center_image_path: config.watermark_center_image_path,
         watermark_center_opacity: config.watermark_center_opacity,
+        watermark_center_grayscale: config.watermark_center_grayscale,
     };
     exporter.export_to_file(&screenplay, path)
 }
@@ -129,13 +135,16 @@ pub fn generate_pdf_bytes(
         scene_colors: config.export_scene_colors,
         watermark_header_enabled: config.watermark_header_enabled,
         watermark_header_text: config.watermark_header_text,
+        watermark_header_opacity: config.watermark_header_opacity,
         watermark_footer_enabled: config.watermark_footer_enabled,
         watermark_footer_text: config.watermark_footer_text,
+        watermark_footer_opacity: config.watermark_footer_opacity,
         watermark_center_enabled: config.watermark_center_enabled,
         watermark_center_type: config.watermark_center_type,
         watermark_center_text: config.watermark_center_text,
         watermark_center_image_path: config.watermark_center_image_path,
         watermark_center_opacity: config.watermark_center_opacity,
+        watermark_center_grayscale: config.watermark_center_grayscale,
     };
     let mut bytes = std::io::Cursor::new(Vec::new());
     exporter.export(&screenplay, &mut bytes)?;
@@ -159,13 +168,16 @@ pub fn get_page_breaks(
         scene_colors: config.export_scene_colors,
         watermark_header_enabled: config.watermark_header_enabled,
         watermark_header_text: config.watermark_header_text,
+        watermark_header_opacity: config.watermark_header_opacity,
         watermark_footer_enabled: config.watermark_footer_enabled,
         watermark_footer_text: config.watermark_footer_text,
+        watermark_footer_opacity: config.watermark_footer_opacity,
         watermark_center_enabled: config.watermark_center_enabled,
         watermark_center_type: config.watermark_center_type,
         watermark_center_text: config.watermark_center_text,
         watermark_center_image_path: config.watermark_center_image_path,
         watermark_center_opacity: config.watermark_center_opacity,
+        watermark_center_grayscale: config.watermark_center_grayscale,
     };
     exporter.get_page_breaks(&screenplay)
 }

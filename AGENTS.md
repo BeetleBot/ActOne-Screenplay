@@ -2,9 +2,11 @@
 
 ## Project Overview
 
-ActOne is a cross-platform screenplay editor built with:
+ActOne is a cross-platform (Windows + Linux) screenplay editor built with:
 - **React 19** + **TypeScript** + **Material UI 9**
 - **Tauri v2** (Rust backend) — targets Windows (NSIS), Linux (deb/rpm)
+
+**IMPORTANT: This app targets both Windows and Linux. Any code you write must work on both platforms.** Do not use platform-specific APIs, file paths, or behaviors without providing cross-platform alternatives. Test your assumptions against both WebView2 (Windows) and webkitgtk (Linux).
 - **CodeMirror 6** — screenplay text editor with Fountain syntax highlighting
 - **Vite 7** — build tool
 - **Vitest 4** — test runner with jsdom environment
