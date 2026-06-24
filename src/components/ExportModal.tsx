@@ -21,6 +21,8 @@ import {
   RadioGroup,
   ToggleButtonGroup,
   ToggleButton,
+  TextField,
+  Slider,
 } from "@mui/material";
 
 type ExportFormat = "pdf" | "fountain" | "fdx";
@@ -157,6 +159,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   const [exportTitlePage, setExportTitlePage] = useState(true);
   const [exportSceneColors, setExportSceneColors] = useState(false);
   const [selectedFont, setSelectedFont] = useState<string>(fontFamily);
+  
+  const savedWatermarks = parsedDoc?.settings?.watermarkSettings;
+  const [showWatermarkPanel, setShowWatermarkPanel] = useState(false);
+  const [watermarkHeaderEnabled, setWatermarkHeaderEnabled] = useState(!!savedWatermarks?.headerEnabled);
+  const [watermarkHeaderText, setWatermarkHeaderText] = useState(savedWatermarks?.headerText || "");
+  const [watermarkFooterEnabled, setWatermarkFooterEnabled] = useState(!!savedWatermarks?.footerEnabled);
+  const [watermarkFooterText, setWatermarkFooterText] = useState(savedWatermarks?.footerText || "");
+  const [watermarkCenterEnabled, setWatermarkCenterEnabled] = useState(!!savedWatermarks?.centerEnabled);
+  const [watermarkCenterType, setWatermarkCenterType] = useState<"text" | "image">(savedWatermarks?.centerType || "text");
+  const [watermarkCenterText, setWatermarkCenterText] = useState(savedWatermarks?.centerText || "");
+  const [watermarkCenterImagePath, setWatermarkCenterImagePath] = useState(savedWatermarks?.centerImagePath || "");
+  const [watermarkCenterOpacity, setWatermarkCenterOpacity] = useState<number>(savedWatermarks?.centerOpacity ?? 40);
+
+  const updateWatermarkSettings = (updates: Partial<any>) => {
+    updateSettings((prev: Record<string, any>) => ({
+      ...prev,
+      watermarkSettings: {
+        ...(prev.watermarkSettings || {}),
+        ...updates,
+      }
+    }));
+  };
 
   const handleFormatChange = (_: React.MouseEvent<HTMLElement>, newFormat: ExportFormat | null) => {
     if (newFormat !== null) {
@@ -201,6 +225,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           exportTitlePage,
           exportSceneColors,
           revisedLines,
+          watermarkHeaderEnabled,
+          watermarkHeaderText,
+          watermarkFooterEnabled,
+          watermarkFooterText,
+          watermarkCenterEnabled,
+          watermarkCenterType,
+          watermarkCenterText,
+          watermarkCenterImagePath,
+          watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
         });
       } else {
         alert("PDF export is only supported in the desktop app.");
@@ -399,14 +432,26 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
               </Select>
 
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setShowFormatPanel(true)}
-                sx={{ fontSize: 11, py: 0.5, borderRadius: '6px' }}
-              >
-                Format Elements
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  onClick={() => setShowFormatPanel(true)}
+                  sx={{ fontSize: 11, py: 0.5, borderRadius: '6px' }}
+                >
+                  Format Elements
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  onClick={() => setShowWatermarkPanel(true)}
+                  sx={{ fontSize: 11, py: 0.5, borderRadius: '6px' }}
+                >
+                  Watermark Options
+                </Button>
+              </Box>
             </Box>
           </Box>
         )}
@@ -542,6 +587,214 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
 
         <DialogActions sx={{ px: 2, py: 1, justifyContent: "flex-end" }}>
           <Button onClick={() => setShowFormatPanel(false)} variant="contained" size="small" sx={{ fontSize: 11 }}>
+            Done
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Nested Dialog for Watermark Options */}
+      <Dialog
+        open={showWatermarkPanel}
+        onClose={() => {
+          setShowWatermarkPanel(false);
+          updateWatermarkSettings({
+            headerEnabled: watermarkHeaderEnabled,
+            headerText: watermarkHeaderText,
+            footerEnabled: watermarkFooterEnabled,
+            footerText: watermarkFooterText,
+            centerEnabled: watermarkCenterEnabled,
+            centerType: watermarkCenterType,
+            centerText: watermarkCenterText,
+            centerImagePath: watermarkCenterImagePath,
+            centerOpacity: watermarkCenterOpacity,
+          });
+        }}
+        fullWidth
+        maxWidth="xs"
+        disableScrollLock
+        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Watermark Options</Typography>
+          <IconButton
+            aria-label="close"
+            onClick={() => {
+              setShowWatermarkPanel(false);
+              updateWatermarkSettings({
+                headerEnabled: watermarkHeaderEnabled,
+                headerText: watermarkHeaderText,
+                footerEnabled: watermarkFooterEnabled,
+                footerText: watermarkFooterText,
+                centerEnabled: watermarkCenterEnabled,
+                centerType: watermarkCenterType,
+                centerText: watermarkCenterText,
+                centerImagePath: watermarkCenterImagePath,
+                centerOpacity: watermarkCenterOpacity,
+              });
+            }}
+            sx={{ color: "text.secondary" }}
+          >
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Header Watermark */}
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={watermarkHeaderEnabled}
+                  onChange={(e) => setWatermarkHeaderEnabled(e.target.checked)}
+                />
+              }
+              label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Header Watermark (Above Page)</Typography>}
+              sx={{ m: 0, mb: watermarkHeaderEnabled ? 1 : 0 }}
+            />
+            {watermarkHeaderEnabled && (
+              <TextField
+                fullWidth
+                size="small"
+                label="Watermark Text"
+                variant="outlined"
+                value={watermarkHeaderText}
+                onChange={(e) => setWatermarkHeaderText(e.target.value)}
+                slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } } }}
+              />
+            )}
+          </Box>
+
+          {/* Footer Watermark */}
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={watermarkFooterEnabled}
+                  onChange={(e) => setWatermarkFooterEnabled(e.target.checked)}
+                />
+              }
+              label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Footer Watermark (Below Page)</Typography>}
+              sx={{ m: 0, mb: watermarkFooterEnabled ? 1 : 0 }}
+            />
+            {watermarkFooterEnabled && (
+              <TextField
+                fullWidth
+                size="small"
+                label="Watermark Text"
+                variant="outlined"
+                value={watermarkFooterText}
+                onChange={(e) => setWatermarkFooterText(e.target.value)}
+                slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } } }}
+              />
+            )}
+          </Box>
+
+          {/* Center Watermark */}
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={watermarkCenterEnabled}
+                  onChange={(e) => setWatermarkCenterEnabled(e.target.checked)}
+                />
+              }
+              label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Center Watermark (Diagonal/Large)</Typography>}
+              sx={{ m: 0, mb: watermarkCenterEnabled ? 1.5 : 0 }}
+            />
+            {watermarkCenterEnabled && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <RadioGroup
+                  row
+                  value={watermarkCenterType}
+                  onChange={(e) => setWatermarkCenterType(e.target.value as "text" | "image")}
+                >
+                  <FormControlLabel value="text" control={<Radio size="small" />} label={<Typography variant="caption" sx={{ fontSize: 11 }}>Text</Typography>} />
+                  <FormControlLabel value="image" control={<Radio size="small" />} label={<Typography variant="caption" sx={{ fontSize: 11 }}>Image</Typography>} />
+                </RadioGroup>
+
+                {watermarkCenterType === "text" ? (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Center Text"
+                    variant="outlined"
+                    value={watermarkCenterText}
+                    onChange={(e) => setWatermarkCenterText(e.target.value)}
+                    slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } } }}
+                  />
+                ) : (
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                    <TextField
+                      fullWidth
+                      readOnly
+                      size="small"
+                      label="Image Path"
+                      variant="outlined"
+                      value={watermarkCenterImagePath}
+                      slotProps={{ input: { style: { fontSize: 12 }, readOnly: true }, inputLabel: { style: { fontSize: 12 } } }}
+                    />
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={async () => {
+                        try {
+                          const selected = await invoke<string | null>("select_watermark_image");
+                          if (selected) {
+                            setWatermarkCenterImagePath(selected);
+                          }
+                        } catch (e) {
+                          logger.error("export", "select_watermark_image failed", e);
+                        }
+                      }}
+                      sx={{ fontSize: 11, py: 1 }}
+                    >
+                      Browse
+                    </Button>
+                  </Box>
+                )}
+
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
+                    Opacity: {watermarkCenterOpacity}%
+                  </Typography>
+                  <Slider
+                    size="small"
+                    value={watermarkCenterOpacity}
+                    min={10}
+                    max={100}
+                    step={5}
+                    onChange={(_, val) => setWatermarkCenterOpacity(val as number)}
+                    valueLabelDisplay="auto"
+                  />
+                </Box>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2, py: 1, justifyContent: "flex-end" }}>
+          <Button
+            onClick={() => {
+              setShowWatermarkPanel(false);
+              updateWatermarkSettings({
+                headerEnabled: watermarkHeaderEnabled,
+                headerText: watermarkHeaderText,
+                footerEnabled: watermarkFooterEnabled,
+                footerText: watermarkFooterText,
+                centerEnabled: watermarkCenterEnabled,
+                centerType: watermarkCenterType,
+                centerText: watermarkCenterText,
+                centerImagePath: watermarkCenterImagePath,
+                centerOpacity: watermarkCenterOpacity,
+              });
+            }}
+            variant="contained"
+            size="small"
+            sx={{ fontSize: 11 }}
+          >
             Done
           </Button>
         </DialogActions>

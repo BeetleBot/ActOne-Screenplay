@@ -61,6 +61,15 @@ pub struct PdfExporter {
     pub revised_lines: Vec<bool>,
     pub title_page: bool,
     pub scene_colors: bool,
+    pub watermark_header_enabled: bool,
+    pub watermark_header_text: String,
+    pub watermark_footer_enabled: bool,
+    pub watermark_footer_text: String,
+    pub watermark_center_enabled: bool,
+    pub watermark_center_type: String,
+    pub watermark_center_text: String,
+    pub watermark_center_image_path: String,
+    pub watermark_center_opacity: f32,
 }
 
 impl Default for PdfExporter {
@@ -75,6 +84,15 @@ impl Default for PdfExporter {
             revised_lines: Vec::new(),
             title_page: true,
             scene_colors: false,
+            watermark_header_enabled: false,
+            watermark_header_text: String::new(),
+            watermark_footer_enabled: false,
+            watermark_footer_text: String::new(),
+            watermark_center_enabled: false,
+            watermark_center_type: "text".to_string(),
+            watermark_center_text: String::new(),
+            watermark_center_image_path: String::new(),
+            watermark_center_opacity: 0.4,
         }
     }
 }
@@ -848,6 +866,7 @@ impl PdfExporter {
                 element_iter.next();
             }
 
+            draw_watermarks(&mut surface, font_system, layout_info, self);
             surface.finish();
             page.finish();
             page_idx += 1;
@@ -876,9 +895,157 @@ impl PdfExporter {
     }
 }
 
+fn measure_text_width(font_system: &mut FontSystem, text: &str, font_size: f32) -> f32 {
+    use cosmic_text::{Attrs, Buffer, Family, Metrics, Shaping};
+    let metrics = Metrics::new(font_size, font_size);
+    let mut buffer = Buffer::new(font_system, metrics);
+    let mut buffer = buffer.borrow_with(font_system);
+    buffer.set_size(Some(f32::MAX), Some(font_size * 2.0));
+    let attrs = Attrs::new().family(Family::Name("Courier Prime"));
+    buffer.set_text(text, attrs, Shaping::Advanced);
+
+    let mut width = 0.0_f32;
+    for run in buffer.layout_runs() {
+        for glyph in run.glyphs.iter() {
+            width = width.max(glyph.x + glyph.w);
+        }
+    }
+    width
+}
+
+fn draw_watermarks(
+    surface: &mut krilla::surface::Surface,
+    font_system: &mut FontSystem,
+    layout_info: &LayoutInfo,
+    exporter: &PdfExporter,
+) {
+    let page_width = layout_info.size.x;
+    let page_height = layout_info.size.y;
+    let font_size = 10.0;
+
+    // 1. Header Watermark
+    if exporter.watermark_header_enabled && !exporter.watermark_header_text.is_empty() {
+        let font = layout_info.fonts.courier.regular.clone();
+        let width = measure_text_width(font_system, &exporter.watermark_header_text, font_size);
+        let x_pos = (page_width - width) / 2.0;
+        let y_pos = 36.0; // 0.5 inches from top
+        surface.draw_text(
+            Point::from_xy(x_pos, y_pos),
+            font,
+            font_size,
+            &exporter.watermark_header_text,
+            false,
+            krilla::text::TextDirection::LeftToRight,
+        );
+    }
+
+    // 2. Footer Watermark
+    if exporter.watermark_footer_enabled && !exporter.watermark_footer_text.is_empty() {
+        let font = layout_info.fonts.courier.regular.clone();
+        let width = measure_text_width(font_system, &exporter.watermark_footer_text, font_size);
+        let x_pos = (page_width - width) / 2.0;
+        let y_pos = page_height - 36.0; // 0.5 inches from bottom
+        surface.draw_text(
+            Point::from_xy(x_pos, y_pos),
+            font,
+            font_size,
+            &exporter.watermark_footer_text,
+            false,
+            krilla::text::TextDirection::LeftToRight,
+        );
+    }
+
+    // 3. Center Watermark
+    if exporter.watermark_center_enabled {
+        let opacity = exporter.watermark_center_opacity; // normalized f32 0.1 to 1.0
+        if let Some(opacity_normalized) = krilla::num::NormalizedF32::new(opacity) {
+            surface.push_opacity(opacity_normalized);
+
+            if exporter.watermark_center_type == "image" && !exporter.watermark_center_image_path.is_empty() {
+                // Draw Image Center Watermark
+                if let Ok(img_bytes) = std::fs::read(&exporter.watermark_center_image_path) {
+                    let is_png = exporter.watermark_center_image_path.to_lowercase().ends_with(".png");
+                    let image_res = if is_png {
+                        krilla::image::Image::from_png(img_bytes.into(), false)
+                    } else {
+                        krilla::image::Image::from_jpeg(img_bytes.into(), false)
+                    };
+                    if let Ok(image) = image_res {
+                        let img_size = image.size(); // (u32, u32)
+                        let max_w = 300.0;
+                        let max_h = 300.0;
+                        let aspect = img_size.0 as f32 / img_size.1 as f32;
+                        let (w, h) = if aspect > 1.0 {
+                            (max_w, max_w / aspect)
+                        } else {
+                            (max_h * aspect, max_h)
+                        };
+                        let x = (page_width - w) / 2.0;
+                        let y = (page_height - h) / 2.0;
+                        if let Some(size) = krilla::geom::Size::from_wh(w, h) {
+                            surface.push_transform(&krilla::geom::Transform::from_translate(x, y));
+                            surface.draw_image(image, size);
+                            surface.pop();
+                        }
+                    }
+                }
+            } else if exporter.watermark_center_type == "text" && !exporter.watermark_center_text.is_empty() {
+                // Draw Text Center Watermark
+                let font = layout_info.fonts.courier.bold.clone();
+                let center_font_size = 48.0;
+                let width = measure_text_width(font_system, &exporter.watermark_center_text, center_font_size);
+                
+                let x = (page_width - width) / 2.0;
+                let y = page_height / 2.0;
+
+                let cx = page_width / 2.0;
+                let cy = page_height / 2.0;
+                
+                let transform = krilla::geom::Transform::from_rotate_at(-45.0, cx, cy);
+
+                surface.push_transform(&transform);
+                surface.draw_text(
+                    Point::from_xy(x, y),
+                    font,
+                    center_font_size,
+                    &exporter.watermark_center_text,
+                    false,
+                    krilla::text::TextDirection::LeftToRight,
+                );
+                surface.pop();
+            }
+
+            surface.pop(); // Pop opacity
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_logo_png_decode() {
+        let fountain_text = r#"
+.SCENE 1
+CHARACTER
+Hello world.
+"#;
+        let screenplay = crate::pdf::parse(fountain_text);
+        let exporter = PdfExporter {
+            watermark_center_enabled: true,
+            watermark_center_type: "image".to_string(),
+            watermark_center_image_path: "C:\\Users\\nkr\\Documents\\Projects\\ActOne Family\\ActOneCode\\src\\assets\\logo.png".to_string(),
+            watermark_center_opacity: 0.4,
+            ..Default::default()
+        };
+        let mut out = Vec::new();
+        let res = exporter.export(&screenplay, &mut out);
+        eprintln!("Full export with PNG result: {:?}", res.is_ok());
+        if let Err(e) = res {
+            eprintln!("Export Error details: {:?}", e);
+        }
+    }
 
     #[test]
     fn test_indic_pdf_export() {
