@@ -210,9 +210,14 @@ pub struct IndicFonts {
     pub noto_sans_tamil_bold: Font,
 }
 
+pub struct SymbolFonts {
+    pub regular: Font,
+}
+
 pub struct AllFonts {
     pub courier: CourierFonts,
     pub indic: IndicFonts,
+    pub symbols: SymbolFonts,
 }
 
 pub struct LayoutInfo<'a> {

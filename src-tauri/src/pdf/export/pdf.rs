@@ -19,7 +19,7 @@ use crate::pdf::{
     screenplay::{Element, Span},
 };
 
-use super::layout::{PaperSize, CourierFonts, IndicFonts, AllFonts, LayoutInfo, Margin, get_margins, LINE_HEIGHT};
+use super::layout::{PaperSize, CourierFonts, IndicFonts, SymbolFonts, AllFonts, LayoutInfo, Margin, get_margins, LINE_HEIGHT};
 use super::elements::{Alignment, DrawContext, write_dialogue, write_element, measure_element_height};
 use super::title_page::write_titlepage;
 
@@ -34,7 +34,7 @@ const FONTS: [&[u8]; 8] = [
     include_bytes!("fonts/CourierPrimeSans-BoldItalic.ttf"),
 ];
 
-const NOTO_FONTS: [&[u8]; 34] = [
+const NOTO_FONTS: [&[u8]; 35] = [
     // 0-15: Existing fonts (kept for backward compatibility)
     include_bytes!("fonts/MuktaMalar-Regular.ttf"),     // 0 - Tamil
     include_bytes!("fonts/MuktaMalar-Bold.ttf"),        // 1
@@ -71,6 +71,7 @@ const NOTO_FONTS: [&[u8]; 34] = [
     include_bytes!("fonts/BalooBhaina2-Bold.ttf"),      // 31
     include_bytes!("fonts/NotoSansTamil-Regular.ttf"),  // 32 - Tamil alt (user preference)
     include_bytes!("fonts/NotoSansTamil-Bold.ttf"),     // 33
+    include_bytes!("fonts/NotoSansSymbols2-Regular.ttf"), // 34 - Symbol fallback
 ];
 
 pub struct PdfExporter {
@@ -233,6 +234,13 @@ fn load_indic_fonts() -> std::io::Result<IndicFonts> {
     })
 }
 
+fn load_symbol_fonts() -> std::io::Result<SymbolFonts> {
+    Ok(SymbolFonts {
+        regular: Font::new(NOTO_FONTS[34].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load symbol font"))?,
+    })
+}
+
 impl Exporter for PdfExporter {
     fn file_extension(&self) -> &'static str {
         "pdf"
@@ -243,8 +251,9 @@ impl Exporter for PdfExporter {
         let mut font_system = build_font_system();
         let courier = load_courier_fonts()?;
         let indic = load_indic_fonts()?;
+        let symbols = load_symbol_fonts()?;
 
-        let all_fonts = AllFonts { courier, indic };
+        let all_fonts = AllFonts { courier, indic, symbols };
 
         let layout_info = LayoutInfo {
             size: &self.paper_size,
@@ -259,7 +268,10 @@ impl Exporter for PdfExporter {
 
         let pdf = document
             .finish()
-            .map_err(|_| std::io::Error::other("failed to create pdf"))?;
+            .map_err(|e| {
+                eprintln!("document.finish() failed with error: {:?}", e);
+                std::io::Error::other("failed to create pdf")
+            })?;
         writer.write_all(&pdf)
     }
 }
@@ -982,7 +994,8 @@ impl PdfExporter {
         let mut font_system = build_font_system();
         let courier = load_courier_fonts()?;
         let indic = load_indic_fonts()?;
-        let all_fonts = AllFonts { courier, indic };
+        let symbols = load_symbol_fonts()?;
+        let all_fonts = AllFonts { courier, indic, symbols };
 
         let layout_info = LayoutInfo {
             size: &self.paper_size,
@@ -1264,6 +1277,22 @@ This is action.
         let mut out = Vec::new();
         let res = exporter.export(&screenplay, &mut out);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_bee_detective_export() {
+        let path = "/home/nkr/Projects/ACTOneFamily/ActOneCode/Test-Files/BeeDetective.fountain";
+        let content = std::fs::read_to_string(path).expect("Read BeeDetective.fountain failed");
+        let screenplay = crate::pdf::parse(&content);
+        let exporter = PdfExporter {
+            title_page: true,
+            ..Default::default()
+        };
+        let mut out = Vec::new();
+        let res = exporter.export(&screenplay, &mut out);
+        if let Err(e) = res {
+            panic!("test_bee_detective_export failed with error: {:?}", e);
+        }
     }
 }
 

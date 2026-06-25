@@ -552,16 +552,26 @@ pub fn get_krilla_font(
         "Noto Sans Tamil" => {
             if is_bold { all_fonts.indic.noto_sans_tamil_bold.clone() } else { all_fonts.indic.noto_sans_tamil_regular.clone() }
         }
+        "Noto Sans Symbols 2" => {
+            all_fonts.symbols.regular.clone()
+        }
         _ => {
             let loaded = match &face_info.source {
                 cosmic_text::fontdb::Source::File(path) => {
-                    std::fs::read(path).ok().and_then(|bytes| {
-                        krilla::text::Font::new(bytes.into(), face_info.index)
-                    })
+                    let is_unsupported_format = path.to_string_lossy().contains(".ttc") || path.to_string_lossy().contains(".otc");
+                    if is_unsupported_format {
+                        None
+                    } else {
+                        std::fs::read(path).ok().and_then(|bytes| {
+                            krilla::text::Font::new(bytes.into(), face_info.index)
+                        })
+                    }
                 }
                 _ => None,
             };
-            loaded.unwrap_or_else(|| all_fonts.courier.regular.clone())
+            loaded.unwrap_or_else(|| {
+                all_fonts.symbols.regular.clone()
+            })
         }
     };
 
