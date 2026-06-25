@@ -1,6 +1,9 @@
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { logger } from "./logger";
 
+const ACTONE_MAGIC = new Uint8Array([0x41, 0x43, 0x54, 0x31]); // "ACT1"
+const MAGIC_LENGTH = 4;
+
 export interface ScriptInfo {
   name: string;
   fileName: string;
@@ -14,7 +17,11 @@ export interface ActoneBundle {
 }
 
 export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): ActoneBundle {
-  const unzipped = unzipSync(bytes);
+  const hasMagic = bytes.length >= MAGIC_LENGTH &&
+    bytes[0] === ACTONE_MAGIC[0] && bytes[1] === ACTONE_MAGIC[1] &&
+    bytes[2] === ACTONE_MAGIC[2] && bytes[3] === ACTONE_MAGIC[3];
+  const zipBytes = hasMagic ? bytes.slice(MAGIC_LENGTH) : bytes;
+  const unzipped = unzipSync(zipBytes);
 
   let parsedSettings: Record<string, any> = {};
   let genders: Record<string, string> = {};
@@ -105,5 +112,9 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     entries[script.fileName] = strToU8(script.content);
   }
 
-  return zipSync(entries);
+  const zipped = zipSync(entries);
+  const result = new Uint8Array(MAGIC_LENGTH + zipped.length);
+  result.set(ACTONE_MAGIC);
+  result.set(zipped, MAGIC_LENGTH);
+  return result;
 }

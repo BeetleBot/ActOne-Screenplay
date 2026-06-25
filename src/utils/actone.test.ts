@@ -89,10 +89,22 @@ describe("actone bundle", () => {
     const scripts = makeScripts([{ name: "Main", content: "Test." }]);
     const packed = packActoneBundle(scripts, {});
     const { unzipSync, strFromU8 } = require("fflate");
-    const unzipped = unzipSync(packed);
+    const zipBytes = packed.slice(4);
+    const unzipped = unzipSync(zipBytes);
     expect(unzipped["fountain.json"]).toBeDefined();
     const manifest = JSON.parse(strFromU8(unzipped["fountain.json"]));
     expect(manifest).toEqual([{ name: "Main", file: "Main.fountain" }]);
+  });
+
+  it("prepends magic header to packed bundles", () => {
+    const scripts = makeScripts([{ name: "Main", content: "Test." }]);
+    const packed = packActoneBundle(scripts, {});
+    expect(packed[0]).toBe(0x41);
+    expect(packed[1]).toBe(0x43);
+    expect(packed[2]).toBe(0x54);
+    expect(packed[3]).toBe(0x31);
+    expect(packed[4]).toBe(0x50);
+    expect(packed[5]).toBe(0x4B);
   });
 
   it("throws for non-zipped bytes", () => {
