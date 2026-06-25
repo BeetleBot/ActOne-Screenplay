@@ -19,7 +19,7 @@ use crate::pdf::{
     screenplay::{Element, Span},
 };
 
-use super::layout::{PaperSize, CourierFonts, NotoFonts, AllFonts, LayoutInfo, Margin, get_margins, LINE_HEIGHT};
+use super::layout::{PaperSize, CourierFonts, IndicFonts, AllFonts, LayoutInfo, Margin, get_margins, LINE_HEIGHT};
 use super::elements::{Alignment, DrawContext, write_dialogue, write_element, measure_element_height};
 use super::title_page::write_titlepage;
 
@@ -34,23 +34,43 @@ const FONTS: [&[u8]; 8] = [
     include_bytes!("fonts/CourierPrimeSans-BoldItalic.ttf"),
 ];
 
-const NOTO_FONTS: [&[u8]; 16] = [
-    include_bytes!("fonts/MuktaMalar-Regular.ttf"),
-    include_bytes!("fonts/MuktaMalar-Bold.ttf"),
-    include_bytes!("fonts/Mukta-Regular.ttf"),
-    include_bytes!("fonts/Mukta-Bold.ttf"),
-    include_bytes!("fonts/NotoSansTelugu-Regular.ttf"),
-    include_bytes!("fonts/NotoSansTelugu-Bold.ttf"),
-    include_bytes!("fonts/NotoSansMalayalam-Regular.ttf"),
-    include_bytes!("fonts/NotoSansMalayalam-Bold.ttf"),
-    include_bytes!("fonts/NotoSansKannada-Regular.ttf"),
-    include_bytes!("fonts/NotoSansKannada-Bold.ttf"),
-    include_bytes!("fonts/NotoSansBengali-Regular.ttf"),
-    include_bytes!("fonts/NotoSansBengali-Bold.ttf"),
-    include_bytes!("fonts/MuktaVaani-Regular.ttf"),
-    include_bytes!("fonts/MuktaVaani-Bold.ttf"),
-    include_bytes!("fonts/MuktaMahee-Regular.ttf"),
-    include_bytes!("fonts/MuktaMahee-Bold.ttf"),
+const NOTO_FONTS: [&[u8]; 34] = [
+    // 0-15: Existing fonts (kept for backward compatibility)
+    include_bytes!("fonts/MuktaMalar-Regular.ttf"),     // 0 - Tamil
+    include_bytes!("fonts/MuktaMalar-Bold.ttf"),        // 1
+    include_bytes!("fonts/Mukta-Regular.ttf"),          // 2 - Hindi
+    include_bytes!("fonts/Mukta-Bold.ttf"),             // 3
+    include_bytes!("fonts/NotoSansTelugu-Regular.ttf"), // 4 - Telugu
+    include_bytes!("fonts/NotoSansTelugu-Bold.ttf"),    // 5
+    include_bytes!("fonts/NotoSansMalayalam-Regular.ttf"), // 6 - Malayalam
+    include_bytes!("fonts/NotoSansMalayalam-Bold.ttf"), // 7
+    include_bytes!("fonts/NotoSansKannada-Regular.ttf"), // 8 - Kannada
+    include_bytes!("fonts/NotoSansKannada-Bold.ttf"),   // 9
+    include_bytes!("fonts/NotoSansBengali-Regular.ttf"), // 10 - Bengali
+    include_bytes!("fonts/NotoSansBengali-Bold.ttf"),   // 11
+    include_bytes!("fonts/MuktaVaani-Regular.ttf"),     // 12 - Gujarati
+    include_bytes!("fonts/MuktaVaani-Bold.ttf"),        // 13
+    include_bytes!("fonts/MuktaMahee-Regular.ttf"),     // 14 - Punjabi
+    include_bytes!("fonts/MuktaMahee-Bold.ttf"),        // 15
+    // 16-33: New Scrite-aligned fonts
+    include_bytes!("fonts/HindMadurai-Regular.ttf"),    // 16 - Tamil (Scrite default)
+    include_bytes!("fonts/HindMadurai-Bold.ttf"),       // 17
+    include_bytes!("fonts/HindGuntur-Regular.ttf"),     // 18 - Telugu (Scrite default)
+    include_bytes!("fonts/HindGuntur-Bold.ttf"),        // 19
+    include_bytes!("fonts/HindSiliguri-Regular.ttf"),   // 20 - Bengali (Scrite default)
+    include_bytes!("fonts/HindSiliguri-Bold.ttf"),      // 21
+    include_bytes!("fonts/HindVadodara-Regular.ttf"),   // 22 - Gujarati (Scrite default)
+    include_bytes!("fonts/HindVadodara-Bold.ttf"),      // 23
+    include_bytes!("fonts/BalooTamma2-Regular.ttf"),    // 24 - Kannada (Scrite default)
+    include_bytes!("fonts/BalooTamma2-Bold.ttf"),       // 25
+    include_bytes!("fonts/BalooChettan2-Regular.ttf"),  // 26 - Malayalam (Scrite default)
+    include_bytes!("fonts/BalooChettan2-Bold.ttf"),     // 27
+    include_bytes!("fonts/BalooPaaji2-Regular.ttf"),    // 28 - Punjabi (Scrite default)
+    include_bytes!("fonts/BalooPaaji2-Bold.ttf"),       // 29
+    include_bytes!("fonts/BalooBhaina2-Regular.ttf"),   // 30 - Oriya (Scrite default)
+    include_bytes!("fonts/BalooBhaina2-Bold.ttf"),      // 31
+    include_bytes!("fonts/NotoSansTamil-Regular.ttf"),  // 32 - Tamil alt (user preference)
+    include_bytes!("fonts/NotoSansTamil-Bold.ttf"),     // 33
 ];
 
 pub struct PdfExporter {
@@ -75,6 +95,7 @@ pub struct PdfExporter {
     pub watermark_center_image_path: String,
     pub watermark_center_opacity: f32,
     pub watermark_center_grayscale: bool,
+    pub script_fonts: HashMap<String, String>,
 }
 
 impl Default for PdfExporter {
@@ -101,6 +122,7 @@ impl Default for PdfExporter {
             watermark_center_image_path: String::new(),
             watermark_center_opacity: 0.4,
             watermark_center_grayscale: false,
+            script_fonts: HashMap::new(),
         }
     }
 }
@@ -113,6 +135,7 @@ fn build_font_system() -> FontSystem {
     for data in NOTO_FONTS {
         db.load_font_data(data.to_vec());
     }
+    db.load_system_fonts();
     FontSystem::new_with_locale_and_db("en-US".to_string(), db)
 }
 
@@ -137,40 +160,76 @@ fn load_courier_fonts() -> std::io::Result<CourierFonts> {
     })
 }
 
-fn load_noto_fonts() -> std::io::Result<NotoFonts> {
-    Ok(NotoFonts {
-        tamil_regular: Font::new(NOTO_FONTS[0].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load tamil regular font"))?,
-        tamil_bold: Font::new(NOTO_FONTS[1].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load tamil bold font"))?,
-        devanagari_regular: Font::new(NOTO_FONTS[2].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load devanagari regular font"))?,
-        devanagari_bold: Font::new(NOTO_FONTS[3].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load devanagari bold font"))?,
-        telugu_regular: Font::new(NOTO_FONTS[4].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load telugu regular font"))?,
-        telugu_bold: Font::new(NOTO_FONTS[5].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load telugu bold font"))?,
-        malayalam_regular: Font::new(NOTO_FONTS[6].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load malayalam regular font"))?,
-        malayalam_bold: Font::new(NOTO_FONTS[7].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load malayalam bold font"))?,
-        kannada_regular: Font::new(NOTO_FONTS[8].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load kannada regular font"))?,
-        kannada_bold: Font::new(NOTO_FONTS[9].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load kannada bold font"))?,
-        bengali_regular: Font::new(NOTO_FONTS[10].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load bengali regular font"))?,
-        bengali_bold: Font::new(NOTO_FONTS[11].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load bengali bold font"))?,
-        gujarati_regular: Font::new(NOTO_FONTS[12].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load gujarati regular font"))?,
-        gujarati_bold: Font::new(NOTO_FONTS[13].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load gujarati bold font"))?,
-        gurmukhi_regular: Font::new(NOTO_FONTS[14].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load gurmukhi regular font"))?,
-        gurmukhi_bold: Font::new(NOTO_FONTS[15].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load gurmukhi bold font"))?,
+fn load_indic_fonts() -> std::io::Result<IndicFonts> {
+    Ok(IndicFonts {
+        mukta_malar_regular: Font::new(NOTO_FONTS[0].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load mukta malar regular"))?,
+        mukta_malar_bold: Font::new(NOTO_FONTS[1].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load mukta malar bold"))?,
+        mukta_regular: Font::new(NOTO_FONTS[2].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load mukta regular"))?,
+        mukta_bold: Font::new(NOTO_FONTS[3].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load mukta bold"))?,
+        noto_sans_telugu_regular: Font::new(NOTO_FONTS[4].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans telugu regular"))?,
+        noto_sans_telugu_bold: Font::new(NOTO_FONTS[5].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans telugu bold"))?,
+        noto_sans_malayalam_regular: Font::new(NOTO_FONTS[6].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans malayalam regular"))?,
+        noto_sans_malayalam_bold: Font::new(NOTO_FONTS[7].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans malayalam bold"))?,
+        noto_sans_kannada_regular: Font::new(NOTO_FONTS[8].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans kannada regular"))?,
+        noto_sans_kannada_bold: Font::new(NOTO_FONTS[9].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans kannada bold"))?,
+        noto_sans_bengali_regular: Font::new(NOTO_FONTS[10].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans bengali regular"))?,
+        noto_sans_bengali_bold: Font::new(NOTO_FONTS[11].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans bengali bold"))?,
+        noto_sans_gujarati_regular: Font::new(NOTO_FONTS[12].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans gujarati regular"))?,
+        noto_sans_gujarati_bold: Font::new(NOTO_FONTS[13].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans gujarati bold"))?,
+        noto_sans_gurmukhi_regular: Font::new(NOTO_FONTS[14].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans gurmukhi regular"))?,
+        noto_sans_gurmukhi_bold: Font::new(NOTO_FONTS[15].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans gurmukhi bold"))?,
+        hind_madurai_regular: Font::new(NOTO_FONTS[16].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load hind madurai regular"))?,
+        hind_madurai_bold: Font::new(NOTO_FONTS[17].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load hind madurai bold"))?,
+        hind_guntur_regular: Font::new(NOTO_FONTS[18].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load hind guntur regular"))?,
+        hind_guntur_bold: Font::new(NOTO_FONTS[19].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load hind guntur bold"))?,
+        hind_siliguri_regular: Font::new(NOTO_FONTS[20].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load hind siliguri regular"))?,
+        hind_siliguri_bold: Font::new(NOTO_FONTS[21].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load hind siliguri bold"))?,
+        hind_vadodara_regular: Font::new(NOTO_FONTS[22].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load hind vadodara regular"))?,
+        hind_vadodara_bold: Font::new(NOTO_FONTS[23].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load hind vadodara bold"))?,
+        baloo_tamma_2_regular: Font::new(NOTO_FONTS[24].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load baloo tamma 2 regular"))?,
+        baloo_tamma_2_bold: Font::new(NOTO_FONTS[25].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load baloo tamma 2 bold"))?,
+        baloo_chettan_2_regular: Font::new(NOTO_FONTS[26].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load baloo chettan 2 regular"))?,
+        baloo_chettan_2_bold: Font::new(NOTO_FONTS[27].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load baloo chettan 2 bold"))?,
+        baloo_paaji_2_regular: Font::new(NOTO_FONTS[28].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load baloo paaji 2 regular"))?,
+        baloo_paaji_2_bold: Font::new(NOTO_FONTS[29].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load baloo paaji 2 bold"))?,
+        baloo_bhaina_2_regular: Font::new(NOTO_FONTS[30].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load baloo bhaina 2 regular"))?,
+        baloo_bhaina_2_bold: Font::new(NOTO_FONTS[31].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load baloo bhaina 2 bold"))?,
+        noto_sans_tamil_regular: Font::new(NOTO_FONTS[32].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans tamil regular"))?,
+        noto_sans_tamil_bold: Font::new(NOTO_FONTS[33].into(), 0)
+            .ok_or_else(|| std::io::Error::other("failed to load noto sans tamil bold"))?,
     })
 }
 
@@ -183,9 +242,9 @@ impl Exporter for PdfExporter {
         let mut document = Document::new();
         let mut font_system = build_font_system();
         let courier = load_courier_fonts()?;
-        let noto = load_noto_fonts()?;
+        let indic = load_indic_fonts()?;
 
-        let all_fonts = AllFonts { courier, noto };
+        let all_fonts = AllFonts { courier, indic };
 
         let layout_info = LayoutInfo {
             size: &self.paper_size,
@@ -193,6 +252,7 @@ impl Exporter for PdfExporter {
             export_font: &self.export_font,
             revised_lines: &self.revised_lines,
             margins: get_margins(&self.paper_size),
+            script_fonts: &self.script_fonts,
         };
 
         self.generate_pdf(&mut document, &layout_info, screenplay, &mut font_system).map(|_| ())?;
@@ -418,6 +478,7 @@ impl PdfExporter {
                         &layout_info.margins.transition,
                         layout_info.size,
                         layout_info.export_font,
+                        layout_info.script_fonts,
                     );
                     let remaining = max_y - y_pos;
                     if y_pos > top && remaining < current_height + trans_height {
@@ -454,6 +515,7 @@ impl PdfExporter {
                             &layout_info.margins.heading,
                             layout_info.size,
                             layout_info.export_font,
+                            layout_info.script_fonts,
                         );
                         let mut peek_next_iter = element_iter.clone();
                         peek_next_iter.next();
@@ -755,6 +817,7 @@ impl PdfExporter {
                             &layout_info.margins.action,
                             layout_info.size,
                             layout_info.export_font,
+                            layout_info.script_fonts,
                         );
                         let mut peek_next_iter = element_iter.clone();
                         peek_next_iter.next();
@@ -830,6 +893,7 @@ impl PdfExporter {
                                 &layout_info.margins.action,
                                 layout_info.size,
                                 layout_info.export_font,
+                                layout_info.script_fonts,
                             );
                             let mut peek_next_iter = element_iter.clone();
                             peek_next_iter.next();
@@ -917,8 +981,8 @@ impl PdfExporter {
         let mut document = Document::new();
         let mut font_system = build_font_system();
         let courier = load_courier_fonts()?;
-        let noto = load_noto_fonts()?;
-        let all_fonts = AllFonts { courier, noto };
+        let indic = load_indic_fonts()?;
+        let all_fonts = AllFonts { courier, indic };
 
         let layout_info = LayoutInfo {
             size: &self.paper_size,
@@ -926,6 +990,7 @@ impl PdfExporter {
             export_font: &self.export_font,
             revised_lines: &self.revised_lines,
             margins: get_margins(&self.paper_size),
+            script_fonts: &self.script_fonts,
         };
 
         self.generate_pdf(&mut document, &layout_info, screenplay, &mut font_system)

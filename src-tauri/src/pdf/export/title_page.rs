@@ -136,6 +136,7 @@ pub fn write_titlepage(
                 &left_margin,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             );
         }
     }
@@ -149,6 +150,7 @@ pub fn write_titlepage(
                 &right_margin,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             );
         }
     }

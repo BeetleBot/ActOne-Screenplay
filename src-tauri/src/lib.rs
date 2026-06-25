@@ -1,11 +1,14 @@
 use std::fs;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use tauri::Emitter;
+use tauri::Manager;
 
 static CLI_ARGS_READ: AtomicBool = AtomicBool::new(false);
 
 pub mod pdf;
 mod structures;
+mod font_cache;
 
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
@@ -123,6 +126,7 @@ fn export_pdf(
     watermark_center_image_path: Option<String>,
     watermark_center_opacity: Option<f32>,
     watermark_center_grayscale: Option<bool>,
+    script_fonts: Option<String>,
 ) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("PDF Document", &["pdf"])
@@ -168,6 +172,7 @@ fn export_pdf(
         watermark_center_image_path: watermark_center_image_path.unwrap_or_default(),
         watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
         watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
+        script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
     };
     if pdf::export_to_pdf(&fountain_text, &file, config).is_ok() {
         return Some(file.to_string_lossy().to_string());
@@ -200,6 +205,7 @@ fn get_page_breaks(
     watermark_center_image_path: Option<String>,
     watermark_center_opacity: Option<f32>,
     watermark_center_grayscale: Option<bool>,
+    script_fonts: Option<String>,
 ) -> Option<Vec<usize>> {
     let paper = if paper_size == "letter" {
         pdf::LETTER
@@ -241,6 +247,7 @@ fn get_page_breaks(
         watermark_center_image_path: watermark_center_image_path.unwrap_or_default(),
         watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
         watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
+        script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
     };
     pdf::get_page_breaks(&fountain_text, config).ok()
 }
@@ -257,6 +264,19 @@ fn select_watermark_image() -> Option<String> {
 fn pick_directory() -> Option<String> {
     let dir = rfd::FileDialog::new().pick_folder()?;
     Some(dir.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn get_fonts_for_script(
+    state: tauri::State<'_, Mutex<font_cache::FontCache>>,
+    script: String,
+) -> Vec<String> {
+    state.lock().map(|mut cache| cache.fonts_for_script(&script)).unwrap_or_default()
+}
+
+#[tauri::command]
+fn get_detected_scripts(text: String) -> Vec<String> {
+    font_cache::detect_scripts(&text)
 }
 
 #[tauri::command]
@@ -284,6 +304,7 @@ fn generate_pdf_bytes(
     watermark_center_image_path: Option<String>,
     watermark_center_opacity: Option<f32>,
     watermark_center_grayscale: Option<bool>,
+    script_fonts: Option<String>,
 ) -> Option<Vec<u8>> {
     let paper = if paper_size == "letter" {
         pdf::LETTER
@@ -325,6 +346,7 @@ fn generate_pdf_bytes(
         watermark_center_image_path: watermark_center_image_path.unwrap_or_default(),
         watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
         watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
+        script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
     };
     pdf::generate_pdf_bytes(&fountain_text, config).ok()
 }
@@ -472,6 +494,7 @@ pub fn run() {
             if !filtered.is_empty() {
                 let _ = app.emit("file-opened", filtered);
             }
+            app.manage(Mutex::new(font_cache::FontCache::new()));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -497,7 +520,9 @@ pub fn run() {
             generate_fdx_string,
             import_fountain_dialog,
             check_microsoft_store_license,
-            select_watermark_image
+            select_watermark_image,
+            get_fonts_for_script,
+            get_detected_scripts,
         ]);
 
     builder

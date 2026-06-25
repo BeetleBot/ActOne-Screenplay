@@ -16,6 +16,7 @@ export { SidebarViews } from './SidebarViews';
 export { SprintView } from './SprintView';
 export { StructureImportModal } from './StructureImportModal';
 export { ThemeManagerModal } from './ThemeManagerModal';
+export { SystemFontPicker } from './SystemFontPicker';
 export { TitlePageEditorModal } from './TitlePageEditorModal';
 export { TodoView } from './TodoView';
 export { WelcomeScreenWindow } from './WelcomeScreen';

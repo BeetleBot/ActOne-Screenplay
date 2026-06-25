@@ -6,6 +6,8 @@ pub mod rich_string;
 pub mod screenplay;
 pub use self::screenplay::Screenplay;
 
+use std::collections::HashMap;
+
 pub use self::export::Exporter;
 pub use self::export::ExporterExt;
 pub use self::export::layout::A4;
@@ -80,6 +82,7 @@ pub struct PdfExportConfig {
     pub watermark_center_image_path: String,
     pub watermark_center_opacity: f32,
     pub watermark_center_grayscale: bool,
+    pub script_fonts: HashMap<String, String>,
 }
 
 pub fn parse(src: &str) -> Screenplay {
@@ -114,6 +117,7 @@ pub fn export_to_pdf(
         watermark_center_image_path: config.watermark_center_image_path,
         watermark_center_opacity: config.watermark_center_opacity,
         watermark_center_grayscale: config.watermark_center_grayscale,
+        script_fonts: config.script_fonts.clone(),
     };
     exporter.export_to_file(&screenplay, path)
 }
@@ -145,6 +149,7 @@ pub fn generate_pdf_bytes(
         watermark_center_image_path: config.watermark_center_image_path,
         watermark_center_opacity: config.watermark_center_opacity,
         watermark_center_grayscale: config.watermark_center_grayscale,
+        script_fonts: config.script_fonts.clone(),
     };
     let mut bytes = std::io::Cursor::new(Vec::new());
     exporter.export(&screenplay, &mut bytes)?;
@@ -178,6 +183,7 @@ pub fn get_page_breaks(
         watermark_center_image_path: config.watermark_center_image_path,
         watermark_center_opacity: config.watermark_center_opacity,
         watermark_center_grayscale: config.watermark_center_grayscale,
+        script_fonts: config.script_fonts.clone(),
     };
     exporter.get_page_breaks(&screenplay)
 }

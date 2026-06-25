@@ -395,12 +395,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           fountainText: rawText,
           paperSize,
           fontFamily,
-          boldSceneHeadings: false,
+          elementFormats: JSON.stringify(parsedDoc.settings?.elementFormats || {}),
           mirrorSceneNumbers: "off",
           exportSections: false,
           exportSynopses: false,
           exportTitlePage: true,
           revisedLines,
+          scriptFonts: JSON.stringify(parsedDoc.settings?.scriptFonts || {}),
         });
 
         if (breaks) {
@@ -423,7 +424,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 1000);
 
     return () => clearTimeout(handler);
-  }, [rawText, paperSize, fontFamily, activeFileId, isTauri]);
+  }, [rawText, paperSize, fontFamily, activeFileId, isTauri, parsedDoc.settings?.elementFormats, parsedDoc.settings?.scriptFonts]);
 
   useEffect(() => {
     if (isTauri) return;

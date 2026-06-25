@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFile, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { CloseIcon, DownloadIcon } from "./Icons";
+import { SystemFontPicker } from "./SystemFontPicker";
 import { logger } from "../utils/logger";
 
 import {
@@ -176,6 +177,35 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   const [watermarkCenterOpacity, setWatermarkCenterOpacity] = useState<number>(savedWatermarks?.centerOpacity ?? 40);
   const [watermarkCenterGrayscale, setWatermarkCenterGrayscale] = useState(!!savedWatermarks?.centerGrayscale);
 
+  const [detectedScripts, setDetectedScripts] = useState<string[]>([]);
+  const [scriptFontOptions, setScriptFontOptions] = useState<Record<string, string[]>>({});
+  const [scriptFonts, setScriptFonts] = useState<Record<string, string>>({});
+  const [systemFontPickerScript, setSystemFontPickerScript] = useState<string | null>(null);
+
+  const CHOOSE_OTHER = "___choose_other___";
+
+  useEffect(() => {
+    const initScriptFonts = async () => {
+      try {
+        const scripts = await invoke<string[]>("get_detected_scripts", { text: rawText });
+        setDetectedScripts(scripts);
+        const options: Record<string, string[]> = {};
+        const selected: Record<string, string> = {};
+        for (const s of scripts) {
+          const fonts = await invoke<string[]>("get_fonts_for_script", { script: s });
+          options[s] = fonts;
+          selected[s] = fonts[0] || "";
+        }
+        setScriptFontOptions(options);
+        setScriptFonts(selected);
+      } catch (e) {
+        logger.error("export", "Failed to load script fonts", e);
+      }
+    };
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) initScriptFonts();
+  }, [rawText]);
+
   const updateWatermarkSettings = (updates: Partial<any>) => {
     updateSettings((prev: Record<string, any>) => ({
       ...prev,
@@ -241,6 +271,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           watermarkCenterImagePath,
           watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
           watermarkCenterGrayscale,
+          scriptFonts: JSON.stringify(scriptFonts),
         });
       } else {
         alert("PDF export is only supported in the desktop app.");
@@ -438,6 +469,63 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 <MenuItem value="courier-prime">Courier Prime</MenuItem>
                 <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
               </Select>
+            </Box>
+
+            {detectedScripts.length > 0 && (
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, display: 'block' }}>
+                  SCRIPT FONTS
+                </Typography>
+                {detectedScripts.map((script) => (
+                  <Box key={script}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, display: 'block', mb: 0.25, textTransform: 'capitalize' }}>
+                      {script}
+                    </Typography>
+                    <Select
+                      size="small"
+                      value={scriptFonts[script] || ""}
+                      onChange={(e) => {
+                        if (e.target.value === CHOOSE_OTHER) {
+                          setSystemFontPickerScript(script);
+                        } else {
+                          setScriptFonts(prev => ({ ...prev, [script]: e.target.value }));
+                        }
+                      }}
+                      renderValue={(value) => {
+                        if (!value) return <Typography variant="body2" sx={{ fontSize: 12, color: 'text.disabled' }}>Select</Typography>;
+                        return <Typography variant="body2" sx={{ fontSize: 12, fontFamily: `"${value}"` }}>{value}</Typography>;
+                      }}
+                      sx={{
+                        fontSize: 12,
+                        '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                        bgcolor: 'action.hover', borderRadius: '6px',
+                        '&:hover': { bgcolor: 'action.selected' },
+                        '& .MuiSelect-select': { py: 0.6, px: 1.25 },
+                      }}
+                      MenuProps={{ slotProps: { paper: { sx: { maxHeight: 300, '& .MuiMenuItem-root': { fontSize: 12, py: 0.4, minHeight: 30 } } } } }}
+                    >
+                      {(scriptFontOptions[script] || []).map((font) => {
+                        if (font === CHOOSE_OTHER) {
+                          return [
+                            <MenuItem disabled key="sep" sx={{ fontSize: 12, opacity: 0.3, minHeight: 20, '&.Mui-disabled': { opacity: 0.3 } }}>
+                              ──────────
+                            </MenuItem>,
+                            <MenuItem key={CHOOSE_OTHER} value={CHOOSE_OTHER} sx={{ fontSize: 12, color: 'primary.main', fontWeight: 500 }}>
+                              ☰ Choose other fonts…
+                            </MenuItem>,
+                          ];
+                        }
+                        return (
+                          <MenuItem key={font} value={font} sx={{ fontFamily: `"${font}"`, fontSize: 12 }}>
+                            {font}
+                          </MenuItem>
+                        );
+                      })}
+                    </Select>
+                  </Box>
+                ))}
+              </Box>
+            )}
 
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button
@@ -460,7 +548,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 </Button>
               </Box>
             </Box>
-          </Box>
         )}
 
         {format === "fdx" && (
@@ -772,12 +859,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       <TextField
                         fullWidth
-                        readOnly
                         size="small"
                         label="Image Path"
                         variant="outlined"
                         value={watermarkCenterImagePath}
-                        slotProps={{ input: { style: { fontSize: 12 }, readOnly: true }, inputLabel: { style: { fontSize: 12 } } }}
+                        slotProps={{ input: { style: { fontSize: 12 } }, inputLabel: { style: { fontSize: 12 } }, htmlInput: { readOnly: true } }}
                       />
                       <Button
                         variant="contained"
@@ -851,6 +937,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         </DialogActions>
       </Dialog>
 
+      {/* System Font Picker Dialog */}
+      {systemFontPickerScript && (
+        <SystemFontPicker
+          open={!!systemFontPickerScript}
+          script={systemFontPickerScript}
+          onSelect={(font) => {
+            setScriptFonts(prev => ({ ...prev, [systemFontPickerScript]: font }));
+          }}
+          onClose={() => setSystemFontPickerScript(null)}
+        />
+      )}
     </Dialog>
   );
 };

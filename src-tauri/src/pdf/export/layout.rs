@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use krilla::text::Font;
 
 pub const FONT_SIZE: f32 = 12.0;
@@ -172,28 +173,46 @@ pub struct CourierFonts {
     pub sans_bold_italic: Font,
 }
 
-pub struct NotoFonts {
-    pub tamil_regular: Font,
-    pub tamil_bold: Font,
-    pub devanagari_regular: Font,
-    pub devanagari_bold: Font,
-    pub telugu_regular: Font,
-    pub telugu_bold: Font,
-    pub malayalam_regular: Font,
-    pub malayalam_bold: Font,
-    pub kannada_regular: Font,
-    pub kannada_bold: Font,
-    pub bengali_regular: Font,
-    pub bengali_bold: Font,
-    pub gujarati_regular: Font,
-    pub gujarati_bold: Font,
-    pub gurmukhi_regular: Font,
-    pub gurmukhi_bold: Font,
+pub struct IndicFonts {
+    pub mukta_malar_regular: Font,
+    pub mukta_malar_bold: Font,
+    pub mukta_regular: Font,
+    pub mukta_bold: Font,
+    pub noto_sans_telugu_regular: Font,
+    pub noto_sans_telugu_bold: Font,
+    pub noto_sans_malayalam_regular: Font,
+    pub noto_sans_malayalam_bold: Font,
+    pub noto_sans_kannada_regular: Font,
+    pub noto_sans_kannada_bold: Font,
+    pub noto_sans_bengali_regular: Font,
+    pub noto_sans_bengali_bold: Font,
+    pub noto_sans_gujarati_regular: Font,
+    pub noto_sans_gujarati_bold: Font,
+    pub noto_sans_gurmukhi_regular: Font,
+    pub noto_sans_gurmukhi_bold: Font,
+    pub hind_madurai_regular: Font,
+    pub hind_madurai_bold: Font,
+    pub hind_guntur_regular: Font,
+    pub hind_guntur_bold: Font,
+    pub hind_siliguri_regular: Font,
+    pub hind_siliguri_bold: Font,
+    pub hind_vadodara_regular: Font,
+    pub hind_vadodara_bold: Font,
+    pub baloo_tamma_2_regular: Font,
+    pub baloo_tamma_2_bold: Font,
+    pub baloo_chettan_2_regular: Font,
+    pub baloo_chettan_2_bold: Font,
+    pub baloo_paaji_2_regular: Font,
+    pub baloo_paaji_2_bold: Font,
+    pub baloo_bhaina_2_regular: Font,
+    pub baloo_bhaina_2_bold: Font,
+    pub noto_sans_tamil_regular: Font,
+    pub noto_sans_tamil_bold: Font,
 }
 
 pub struct AllFonts {
     pub courier: CourierFonts,
-    pub noto: NotoFonts,
+    pub indic: IndicFonts,
 }
 
 pub struct LayoutInfo<'a> {
@@ -202,4 +221,5 @@ pub struct LayoutInfo<'a> {
     pub export_font: &'a str,
     pub revised_lines: &'a [bool],
     pub margins: Margins,
+    pub script_fonts: &'a HashMap<String, String>,
 }

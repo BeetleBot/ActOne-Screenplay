@@ -10,7 +10,7 @@ use crate::pdf::{
     screenplay::{Dialogue, DialogueElement, Element},
 };
 
-use super::layout::{AllFonts, LayoutInfo, Margin, DialogueMargins, FONT_SIZE, LINE_HEIGHT, PaperSize};
+use super::layout::{AllFonts, LayoutInfo, Margin, DialogueMargins, FONT_SIZE, PaperSize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Alignment {
@@ -91,6 +91,7 @@ pub struct ShapedRun {
     pub glyphs: Vec<KrillaGlyphWrapper>,
     pub text: String,
     pub x_offset: f32,
+    pub paragraph_family: String,
 }
 
 pub struct ShapedLine {
@@ -108,6 +109,7 @@ fn adjust_and_rebuild_run(
     font_id: cosmic_text::fontdb::ID,
     mut glyphs: Vec<KrillaGlyphWrapper>,
     x_offset: f32,
+    paragraph_family: &str,
 ) -> ShapedRun {
     if glyphs.is_empty() {
         return ShapedRun {
@@ -115,6 +117,7 @@ fn adjust_and_rebuild_run(
             glyphs,
             text: String::new(),
             x_offset,
+            paragraph_family: paragraph_family.to_string(),
         };
     }
     let min_start = glyphs.iter().map(|g| g.start).min().unwrap();
@@ -131,6 +134,7 @@ fn adjust_and_rebuild_run(
         glyphs,
         text,
         x_offset,
+        paragraph_family: paragraph_family.to_string(),
     }
 }
 
@@ -139,12 +143,116 @@ pub fn contains_indic(s: &str) -> bool {
     s.chars().any(|c| matches!(c as u32, 0x0900..=0x0D7F))
 }
 
+fn script_family_for_text(text: &str) -> Option<&'static str> {
+    for c in text.chars() {
+        let val = c as u32;
+        match val {
+            0x0B80..=0x0BFF => return Some("Mukta Malar"),
+            0x0C00..=0x0C7F => return Some("Noto Sans Telugu"),
+            0x0980..=0x09FF => return Some("Noto Sans Bengali"),
+            0x0A80..=0x0AFF => return Some("Mukta Vaani"),
+            0x0C80..=0x0CFF => return Some("Noto Sans Kannada"),
+            0x0D00..=0x0D7F => return Some("Noto Sans Malayalam"),
+            0x0A00..=0x0A7F => return Some("Mukta Mahee"),
+            0x0B00..=0x0B7F => return Some("Baloo Bhaina 2"),
+            0x0900..=0x097F => return Some("Mukta"),
+            _ => {}
+        }
+    }
+    None
+}
+
+fn user_family_for_text(text: &str, script_fonts: &HashMap<String, String>) -> Option<String> {
+    for c in text.chars() {
+        let val = c as u32;
+        let script = match val {
+            0x0B80..=0x0BFF => "tamil",
+            0x0C00..=0x0C7F => "telugu",
+            0x0980..=0x09FF => "bengali",
+            0x0A80..=0x0AFF => "gujarati",
+            0x0C80..=0x0CFF => "kannada",
+            0x0D00..=0x0D7F => "malayalam",
+            0x0A00..=0x0A7F => "gurmukhi",
+            0x0B00..=0x0B7F => "oriya",
+            0x0900..=0x097F => "devanagari",
+            _ => continue,
+        };
+        if let Some(font) = script_fonts.get(script) {
+            if !font.is_empty() {
+                return Some(font.clone());
+            }
+        }
+    }
+    None
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ScriptType {
+    English,
+    Indic,
+    Neutral,
+}
+
+fn split_indices_by_script(text: &str) -> Vec<(usize, usize, bool)> {
+    if text.is_empty() {
+        return vec![];
+    }
+
+    let chars: Vec<char> = text.chars().collect();
+    let mut char_indices: Vec<usize> = text.char_indices().map(|(idx, _)| idx).collect();
+    char_indices.push(text.len());
+
+    let mut types = vec![ScriptType::Neutral; chars.len()];
+
+    for (i, &c) in chars.iter().enumerate() {
+        let val = c as u32;
+        if c.is_ascii_alphabetic() {
+            types[i] = ScriptType::English;
+        } else if (0x0900..=0x0D7F).contains(&val) {
+            types[i] = ScriptType::Indic;
+        }
+    }
+
+    let first_non_neutral = types.iter().find(|&&t| t != ScriptType::Neutral).copied();
+    let default_type = first_non_neutral.unwrap_or(ScriptType::English);
+
+    let mut last_type = default_type;
+    for i in 0..chars.len() {
+        if types[i] == ScriptType::Neutral {
+            types[i] = last_type;
+        } else {
+            last_type = types[i];
+        }
+    }
+
+    let mut ranges = Vec::new();
+    if chars.is_empty() {
+        return ranges;
+    }
+
+    let mut start_idx = 0;
+    let mut current_is_english = types[0] == ScriptType::English;
+
+    for i in 1..chars.len() {
+        let is_eng = types[i] == ScriptType::English;
+        if is_eng != current_is_english {
+            ranges.push((char_indices[start_idx], char_indices[i], current_is_english));
+            start_idx = i;
+            current_is_english = is_eng;
+        }
+    }
+    ranges.push((char_indices[start_idx], char_indices[chars.len()], current_is_english));
+
+    ranges
+}
+
 fn shape_rich_string(
     font_system: &mut FontSystem,
     content: &RichString,
     max_width: f32,
     font_size: f32,
     export_font: &str,
+    script_fonts: &HashMap<String, String>,
 ) -> ShapedParagraph {
     let plain = content.to_plain_string();
     if plain.is_empty() {
@@ -153,7 +261,10 @@ fn shape_rich_string(
 
     let is_sans = export_font == "courier_prime_sans"
         || content.elements.iter().any(|e| e.is_sans());
-    let family_name = if is_sans { "Courier Prime Sans" } else { "Courier Prime" };
+    let base_family = if is_sans { "Courier Prime Sans" } else { "Courier Prime" };
+    let family_name = user_family_for_text(&plain, script_fonts)
+        .or_else(|| script_family_for_text(&plain).map(String::from))
+        .unwrap_or_else(|| base_family.to_string());
 
     // Build underline span map: (byte_start, byte_end) for each underlined region
     let mut underline_spans: Vec<(usize, usize)> = Vec::new();
@@ -171,19 +282,31 @@ fn shape_rich_string(
     let mut buffer = buffer.borrow_with(font_system);
     buffer.set_size(Some(max_width), None);
 
-    let default_attrs = Attrs::new().family(Family::Name(family_name));
+    let default_attrs = Attrs::new().family(Family::Name(&family_name));
 
     // Per-element formatting using set_rich_text
-    let spans: Vec<(&str, Attrs)> = content.elements.iter().map(|element| {
-        let mut attrs = default_attrs;
+    let mut spans: Vec<(&str, Attrs)> = Vec::new();
+    for element in &content.elements {
+        let mut base_attrs = default_attrs;
         if element.is_bold() {
-            attrs = attrs.weight(Weight::BOLD);
+            base_attrs = base_attrs.weight(Weight::BOLD);
         }
         if element.is_italic() {
-            attrs = attrs.style(cosmic_text::Style::Italic);
+            base_attrs = base_attrs.style(cosmic_text::Style::Italic);
         }
-        (element.text.as_str(), attrs)
-    }).collect();
+
+        let ranges = split_indices_by_script(&element.text);
+        for (start, end, is_eng) in ranges {
+            let substring = &element.text[start..end];
+            let mut attrs = base_attrs;
+            if is_eng {
+                attrs = attrs.family(Family::Name(base_family));
+            } else {
+                attrs = attrs.family(Family::Name(&family_name));
+            }
+            spans.push((substring, attrs));
+        }
+    }
     buffer.set_rich_text(spans, default_attrs, Shaping::Advanced);
 
     let mut lines = Vec::new();
@@ -202,7 +325,7 @@ fn shape_rich_string(
                 current_start_x = glyph.x;
             } else if Some(glyph.font_id) != current_font_id {
                 let font_id = current_font_id.unwrap();
-                let run_obj = adjust_and_rebuild_run(&plain, font_id, current_glyphs, current_start_x);
+                let run_obj = adjust_and_rebuild_run(&plain, font_id, current_glyphs, current_start_x, &family_name);
                 runs_in_line.push(run_obj);
 
                 current_font_id = Some(glyph.font_id);
@@ -238,7 +361,7 @@ fn shape_rich_string(
         }
 
         if let Some(font_id) = current_font_id {
-            let run_obj = adjust_and_rebuild_run(&plain, font_id, current_glyphs, current_start_x);
+            let run_obj = adjust_and_rebuild_run(&plain, font_id, current_glyphs, current_start_x, &family_name);
             runs_in_line.push(run_obj);
         }
 
@@ -273,6 +396,7 @@ fn shape_rich_string(
                 glyphs: vec![],
                 text: plain,
                 x_offset: 0.0,
+                paragraph_family: family_name.clone(),
             }],
             width: 0.0,
             underline_ranges: vec![],
@@ -287,36 +411,78 @@ pub fn get_krilla_font(
     all_fonts: &AllFonts,
     font_cache: &mut HashMap<cosmic_text::fontdb::ID, krilla::text::Font>,
     text: &str,
+    script_fonts: &HashMap<String, String>,
+    paragraph_family: &str,
 ) -> krilla::text::Font {
     let is_bold = face_info.weight.0 >= 700;
+    let is_italic = face_info.style == cosmic_text::fontdb::Style::Italic || face_info.style == cosmic_text::fontdb::Style::Oblique;
 
-    for c in text.chars() {
+    let is_neutral_run = !text.is_empty() && text.chars().all(|c| {
         let val = c as u32;
-        if val >= 0x0B80 && val <= 0x0BFF {
-            return if is_bold { all_fonts.noto.tamil_bold.clone() } else { all_fonts.noto.tamil_regular.clone() };
-        } else if val >= 0x0C80 && val <= 0x0CFF {
-            return if is_bold { all_fonts.noto.kannada_bold.clone() } else { all_fonts.noto.kannada_regular.clone() };
-        } else if val >= 0x0900 && val <= 0x097F {
-            return if is_bold { all_fonts.noto.devanagari_bold.clone() } else { all_fonts.noto.devanagari_regular.clone() };
-        } else if val >= 0x0C00 && val <= 0x0C7F {
-            return if is_bold { all_fonts.noto.telugu_bold.clone() } else { all_fonts.noto.telugu_regular.clone() };
-        } else if val >= 0x0D00 && val <= 0x0D7F {
-            return if is_bold { all_fonts.noto.malayalam_bold.clone() } else { all_fonts.noto.malayalam_regular.clone() };
-        } else if val >= 0x0980 && val <= 0x09FF {
-            return if is_bold { all_fonts.noto.bengali_bold.clone() } else { all_fonts.noto.bengali_regular.clone() };
-        } else if val >= 0x0A80 && val <= 0x0AFF {
-            return if is_bold { all_fonts.noto.gujarati_bold.clone() } else { all_fonts.noto.gujarati_regular.clone() };
-        } else if val >= 0x0A00 && val <= 0x0A7F {
-            return if is_bold { all_fonts.noto.gurmukhi_bold.clone() } else { all_fonts.noto.gurmukhi_regular.clone() };
+        !c.is_ascii_alphabetic() && !((0x0900..=0x0D7F).contains(&val))
+    });
+
+    let is_indic_para = paragraph_family != "Courier Prime"
+        && paragraph_family != "Courier Prime Sans"
+        && !paragraph_family.is_empty();
+
+    let family = if is_neutral_run && is_indic_para {
+        paragraph_family
+    } else {
+        face_info.families.first().map(|f| f.0.as_str()).unwrap_or("")
+    };
+
+    if !(is_neutral_run && is_indic_para) {
+        if let Some(font) = font_cache.get(&face_info.id) {
+            return font.clone();
         }
     }
 
-    if let Some(font) = font_cache.get(&face_info.id) {
-        return font.clone();
-    }
+    let user_override = text.chars().find_map(|c| {
+        let val = c as u32;
+        let script = match val {
+            0x0B80..=0x0BFF => "tamil",
+            0x0C80..=0x0CFF => "kannada",
+            0x0900..=0x097F => "devanagari",
+            0x0C00..=0x0C7F => "telugu",
+            0x0D00..=0x0D7F => "malayalam",
+            0x0980..=0x09FF => "bengali",
+            0x0A80..=0x0AFF => "gujarati",
+            0x0A00..=0x0A7F => "gurmukhi",
+            0x0B00..=0x0B7F => "oriya",
+            _ => return None,
+        };
+        if script_fonts.contains_key(script) {
+            Some(script)
+        } else {
+            None
+        }
+    });
 
-    let family = face_info.families.first().map(|f| f.0.as_str()).unwrap_or("");
-    let is_italic = face_info.style == cosmic_text::fontdb::Style::Italic || face_info.style == cosmic_text::fontdb::Style::Oblique;
+    if user_override.is_none() && !(is_neutral_run && is_indic_para) {
+        for c in text.chars() {
+            let val = c as u32;
+            if val >= 0x0B80 && val <= 0x0BFF {
+                return if is_bold { all_fonts.indic.mukta_malar_bold.clone() } else { all_fonts.indic.mukta_malar_regular.clone() };
+            } else if val >= 0x0C80 && val <= 0x0CFF {
+                return if is_bold { all_fonts.indic.baloo_tamma_2_bold.clone() } else { all_fonts.indic.baloo_tamma_2_regular.clone() };
+            } else if val >= 0x0900 && val <= 0x097F {
+                return if is_bold { all_fonts.indic.mukta_bold.clone() } else { all_fonts.indic.mukta_regular.clone() };
+            } else if val >= 0x0C00 && val <= 0x0C7F {
+                return if is_bold { all_fonts.indic.hind_guntur_bold.clone() } else { all_fonts.indic.hind_guntur_regular.clone() };
+            } else if val >= 0x0D00 && val <= 0x0D7F {
+                return if is_bold { all_fonts.indic.baloo_chettan_2_bold.clone() } else { all_fonts.indic.baloo_chettan_2_regular.clone() };
+            } else if val >= 0x0980 && val <= 0x09FF {
+                return if is_bold { all_fonts.indic.hind_siliguri_bold.clone() } else { all_fonts.indic.hind_siliguri_regular.clone() };
+            } else if val >= 0x0A80 && val <= 0x0AFF {
+                return if is_bold { all_fonts.indic.hind_vadodara_bold.clone() } else { all_fonts.indic.hind_vadodara_regular.clone() };
+            } else if val >= 0x0A00 && val <= 0x0A7F {
+                return if is_bold { all_fonts.indic.baloo_paaji_2_bold.clone() } else { all_fonts.indic.baloo_paaji_2_regular.clone() };
+            } else if val >= 0x0B00 && val <= 0x0B7F {
+                return if is_bold { all_fonts.indic.baloo_bhaina_2_bold.clone() } else { all_fonts.indic.baloo_bhaina_2_regular.clone() };
+            }
+        }
+    }
 
     let font = match family {
         "Courier Prime" => {
@@ -335,29 +501,56 @@ pub fn get_krilla_font(
                 (true, true) => all_fonts.courier.sans_bold_italic.clone(),
             }
         }
-        "Noto Sans Tamil" | "Mukta Malar" => {
-            if is_bold { all_fonts.noto.tamil_bold.clone() } else { all_fonts.noto.tamil_regular.clone() }
+        "Mukta Malar" => {
+            if is_bold { all_fonts.indic.mukta_malar_bold.clone() } else { all_fonts.indic.mukta_malar_regular.clone() }
         }
         "Noto Sans Devanagari" | "Mukta" => {
-            if is_bold { all_fonts.noto.devanagari_bold.clone() } else { all_fonts.noto.devanagari_regular.clone() }
+            if is_bold { all_fonts.indic.mukta_bold.clone() } else { all_fonts.indic.mukta_regular.clone() }
         }
         "Noto Sans Telugu" => {
-            if is_bold { all_fonts.noto.telugu_bold.clone() } else { all_fonts.noto.telugu_regular.clone() }
+            if is_bold { all_fonts.indic.noto_sans_telugu_bold.clone() } else { all_fonts.indic.noto_sans_telugu_regular.clone() }
         }
         "Noto Sans Malayalam" => {
-            if is_bold { all_fonts.noto.malayalam_bold.clone() } else { all_fonts.noto.malayalam_regular.clone() }
+            if is_bold { all_fonts.indic.noto_sans_malayalam_bold.clone() } else { all_fonts.indic.noto_sans_malayalam_regular.clone() }
         }
         "Noto Sans Kannada" => {
-            if is_bold { all_fonts.noto.kannada_bold.clone() } else { all_fonts.noto.kannada_regular.clone() }
+            if is_bold { all_fonts.indic.noto_sans_kannada_bold.clone() } else { all_fonts.indic.noto_sans_kannada_regular.clone() }
         }
         "Noto Sans Bengali" => {
-            if is_bold { all_fonts.noto.bengali_bold.clone() } else { all_fonts.noto.bengali_regular.clone() }
+            if is_bold { all_fonts.indic.noto_sans_bengali_bold.clone() } else { all_fonts.indic.noto_sans_bengali_regular.clone() }
         }
         "Noto Sans Gujarati" | "Mukta Vaani" => {
-            if is_bold { all_fonts.noto.gujarati_bold.clone() } else { all_fonts.noto.gujarati_regular.clone() }
+            if is_bold { all_fonts.indic.noto_sans_gujarati_bold.clone() } else { all_fonts.indic.noto_sans_gujarati_regular.clone() }
         }
         "Noto Sans Gurmukhi" | "Mukta Mahee" => {
-            if is_bold { all_fonts.noto.gurmukhi_bold.clone() } else { all_fonts.noto.gurmukhi_regular.clone() }
+            if is_bold { all_fonts.indic.noto_sans_gurmukhi_bold.clone() } else { all_fonts.indic.noto_sans_gurmukhi_regular.clone() }
+        }
+        "Hind Madurai" => {
+            if is_bold { all_fonts.indic.hind_madurai_bold.clone() } else { all_fonts.indic.hind_madurai_regular.clone() }
+        }
+        "Hind Guntur" => {
+            if is_bold { all_fonts.indic.hind_guntur_bold.clone() } else { all_fonts.indic.hind_guntur_regular.clone() }
+        }
+        "Hind Siliguri" => {
+            if is_bold { all_fonts.indic.hind_siliguri_bold.clone() } else { all_fonts.indic.hind_siliguri_regular.clone() }
+        }
+        "Hind Vadodara" => {
+            if is_bold { all_fonts.indic.hind_vadodara_bold.clone() } else { all_fonts.indic.hind_vadodara_regular.clone() }
+        }
+        "Baloo Tamma 2" => {
+            if is_bold { all_fonts.indic.baloo_tamma_2_bold.clone() } else { all_fonts.indic.baloo_tamma_2_regular.clone() }
+        }
+        "Baloo Chettan 2" => {
+            if is_bold { all_fonts.indic.baloo_chettan_2_bold.clone() } else { all_fonts.indic.baloo_chettan_2_regular.clone() }
+        }
+        "Baloo Paaji 2" => {
+            if is_bold { all_fonts.indic.baloo_paaji_2_bold.clone() } else { all_fonts.indic.baloo_paaji_2_regular.clone() }
+        }
+        "Baloo Bhaina 2" => {
+            if is_bold { all_fonts.indic.baloo_bhaina_2_bold.clone() } else { all_fonts.indic.baloo_bhaina_2_regular.clone() }
+        }
+        "Noto Sans Tamil" => {
+            if is_bold { all_fonts.indic.noto_sans_tamil_bold.clone() } else { all_fonts.indic.noto_sans_tamil_regular.clone() }
         }
         _ => {
             let loaded = match &face_info.source {
@@ -372,7 +565,9 @@ pub fn get_krilla_font(
         }
     };
 
-    font_cache.insert(face_info.id, font.clone());
+    if !(is_neutral_run && is_indic_para) {
+        font_cache.insert(face_info.id, font.clone());
+    }
     font
 }
 
@@ -385,7 +580,14 @@ fn draw_shaped_line(
 ) {
     for run in &line.runs {
         if let Some(face_info) = ctx.font_system.db().face(run.font_id) {
-            let krilla_font = get_krilla_font(face_info, ctx.layout_info.fonts, ctx.font_cache, &run.text);
+            let krilla_font = get_krilla_font(
+                face_info,
+                ctx.layout_info.fonts,
+                ctx.font_cache,
+                &run.text,
+                ctx.layout_info.script_fonts,
+                &run.paragraph_family,
+            );
             let run_start_x = x + run.x_offset;
             ctx.surface.draw_glyphs(
                 Point::from_xy(run_start_x, y),
@@ -486,6 +688,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.heading,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::Action(s) => {
@@ -495,6 +698,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.action,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::Dialogue(d) => {
@@ -510,6 +714,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.dialogue.character,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             );
             let mut elements_height = 0.0;
             for first_el in &d.elements {
@@ -521,6 +726,7 @@ pub fn measure_full_element_height(
                             &layout_info.margins.dialogue.parenthetical,
                             layout_info.size,
                             layout_info.export_font,
+                            layout_info.script_fonts,
                         )
                     }
                     DialogueElement::Line(s) => {
@@ -530,6 +736,7 @@ pub fn measure_full_element_height(
                             &layout_info.margins.dialogue.line,
                             layout_info.size,
                             layout_info.export_font,
+                            layout_info.script_fonts,
                         )
                     }
                 };
@@ -548,6 +755,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.lyrics,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::Transition(s) => {
@@ -557,6 +765,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.transition,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::CenteredText(s) => {
@@ -566,6 +775,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.centered,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::Shot(s) => {
@@ -575,6 +785,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.action,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::Synopsis(s) => {
@@ -584,6 +795,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.synopsis,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::Section { text, .. } => {
@@ -593,6 +805,7 @@ pub fn measure_full_element_height(
                 &layout_info.margins.action,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::PageBreak => 0.0,
@@ -612,6 +825,7 @@ pub fn min_required_height_for_lookahead(
                 &layout_info.margins.heading,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::Action(s) => {
@@ -622,9 +836,13 @@ pub fn min_required_height_for_lookahead(
                 max_width,
                 FONT_SIZE,
                 layout_info.export_font,
+                layout_info.script_fonts,
             );
-            let lines = std::cmp::min(2, shaped.lines.len());
-            lines as f32 * LINE_HEIGHT
+            let mut total_h = 0.0;
+            for line in shaped.lines.iter().take(2) {
+                total_h += line_height_for_line(line, font_system, FONT_SIZE);
+            }
+            total_h
         }
         Element::Dialogue(d) => {
             let mut name = d.character.clone();
@@ -639,6 +857,7 @@ pub fn min_required_height_for_lookahead(
                 &layout_info.margins.dialogue.character,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             );
             let first_el_height = if let Some(first_el) = d.elements.first() {
                 match first_el {
@@ -649,10 +868,19 @@ pub fn min_required_height_for_lookahead(
                             &layout_info.margins.dialogue.parenthetical,
                             layout_info.size,
                             layout_info.export_font,
+                            layout_info.script_fonts,
                         )
                     }
-                    DialogueElement::Line(_) => {
-                        LINE_HEIGHT
+                    DialogueElement::Line(s) => {
+                        let shaped = shape_rich_string(
+                            font_system,
+                            s,
+                            layout_info.margins.dialogue.line.content_width(layout_info.size),
+                            FONT_SIZE,
+                            layout_info.export_font,
+                            layout_info.script_fonts,
+                        );
+                        shaped.lines.first().map(|l| line_height_for_line(l, font_system, FONT_SIZE)).unwrap_or(FONT_SIZE)
                     }
                 }
             } else {
@@ -673,9 +901,13 @@ pub fn min_required_height_for_lookahead(
                 max_width,
                 FONT_SIZE,
                 layout_info.export_font,
+                layout_info.script_fonts,
             );
-            let lines = std::cmp::min(2, shaped.lines.len());
-            lines as f32 * LINE_HEIGHT
+            let mut total_h = 0.0;
+            for line in shaped.lines.iter().take(2) {
+                total_h += line_height_for_line(line, font_system, FONT_SIZE);
+            }
+            total_h
         }
         Element::Transition(s) => {
             measure_element_height(
@@ -684,6 +916,7 @@ pub fn min_required_height_for_lookahead(
                 &layout_info.margins.transition,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::CenteredText(s) => {
@@ -694,9 +927,13 @@ pub fn min_required_height_for_lookahead(
                 max_width,
                 FONT_SIZE,
                 layout_info.export_font,
+                layout_info.script_fonts,
             );
-            let lines = std::cmp::min(2, shaped.lines.len());
-            lines as f32 * LINE_HEIGHT
+            let mut total_h = 0.0;
+            for line in shaped.lines.iter().take(2) {
+                total_h += line_height_for_line(line, font_system, FONT_SIZE);
+            }
+            total_h
         }
         Element::Synopsis(s) => {
             let max_width = layout_info.margins.synopsis.content_width(layout_info.size);
@@ -706,9 +943,13 @@ pub fn min_required_height_for_lookahead(
                 max_width,
                 FONT_SIZE,
                 layout_info.export_font,
+                layout_info.script_fonts,
             );
-            let lines = std::cmp::min(2, shaped.lines.len());
-            lines as f32 * LINE_HEIGHT
+            let mut total_h = 0.0;
+            for line in shaped.lines.iter().take(2) {
+                total_h += line_height_for_line(line, font_system, FONT_SIZE);
+            }
+            total_h
         }
         Element::Section { text, .. } => {
             measure_element_height(
@@ -717,6 +958,7 @@ pub fn min_required_height_for_lookahead(
                 &layout_info.margins.action,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::Shot(s) => {
@@ -726,6 +968,7 @@ pub fn min_required_height_for_lookahead(
                 &layout_info.margins.action,
                 layout_info.size,
                 layout_info.export_font,
+                layout_info.script_fonts,
             )
         }
         Element::PageBreak => 0.0,
@@ -748,6 +991,7 @@ pub fn write_element(
         max_width,
         font_size,
         ctx.layout_info.export_font,
+        ctx.layout_info.script_fonts,
     );
 
     let start_line = residual.unwrap_or(0);
@@ -758,16 +1002,31 @@ pub fn write_element(
         return Ok(false);
     }
 
-    let remaining_lines = total_lines - start_line;
-    let total_height = remaining_lines as f32 * LINE_HEIGHT;
+    let mut total_height = 0.0;
+    for line in shaped.lines.iter().skip(start_line) {
+        total_height += line_height_for_line(line, ctx.font_system, font_size);
+    }
     let fits = *ctx.y_position + total_height <= ctx.max_y;
 
+    let remaining_lines = total_lines - start_line;
     let lines_to_draw = if fits {
         remaining_lines
     } else if !can_split {
         0
     } else {
-        let mut available = ((ctx.max_y - *ctx.y_position) / LINE_HEIGHT) as usize;
+        let mut available = 0;
+        let mut accumulated_h = 0.0;
+        let remaining_space = ctx.max_y - *ctx.y_position;
+        for line in shaped.lines.iter().skip(start_line) {
+            let lh = line_height_for_line(line, ctx.font_system, font_size);
+            if accumulated_h + lh <= remaining_space {
+                accumulated_h += lh;
+                available += 1;
+            } else {
+                break;
+            }
+        }
+
         if remaining_lines <= 3 {
             0
         } else if available < 2 {
@@ -819,7 +1078,8 @@ pub fn write_element(
             );
         }
 
-        *ctx.y_position += LINE_HEIGHT;
+        let lh = line_height_for_line(line, ctx.font_system, font_size);
+        *ctx.y_position += lh;
     }
 
     if fits || start_line + lines_to_draw >= total_lines {
@@ -830,6 +1090,28 @@ pub fn write_element(
         Ok(true)
     }
 }
+pub fn line_height_for_line(line: &ShapedLine, font_system: &cosmic_text::FontSystem, font_size: f32) -> f32 {
+    let mut max_lh = font_size;
+    for run in &line.runs {
+        let run_lh = font_system.db().with_face_data(run.font_id, |data, index| {
+            if let Ok(parsed) = cosmic_text::ttf_parser::Face::parse(data, index) {
+                let asc = parsed.ascender() as f32;
+                let desc = parsed.descender() as f32;
+                let gap = parsed.line_gap() as f32;
+                let upem = parsed.units_per_em() as f32;
+                if upem > 0.0 {
+                    let factor = (asc.max(0.0) - desc.min(0.0) + gap.max(0.0)) / upem;
+                    return factor * 0.72 * font_size;
+                }
+            }
+            font_size
+        }).unwrap_or(font_size);
+        if run_lh > max_lh {
+            max_lh = run_lh;
+        }
+    }
+    max_lh
+}
 
 pub fn measure_element_height(
     font_system: &mut FontSystem,
@@ -837,11 +1119,16 @@ pub fn measure_element_height(
     margin: &Margin,
     size: &PaperSize,
     export_font: &str,
+    script_fonts: &HashMap<String, String>,
 ) -> f32 {
     let max_width = margin.content_width(size);
     let font_size = FONT_SIZE;
-    let shaped = shape_rich_string(font_system, content, max_width, font_size, export_font);
-    shaped.lines.len() as f32 * LINE_HEIGHT
+    let shaped = shape_rich_string(font_system, content, max_width, font_size, export_font, script_fonts);
+    let mut total_height = 0.0;
+    for line in &shaped.lines {
+        total_height += line_height_for_line(line, font_system, font_size);
+    }
+    total_height
 }
 
 fn write_more_indicator(
@@ -849,7 +1136,16 @@ fn write_more_indicator(
     dialogue_margins: &DialogueMargins,
 ) -> std::io::Result<()> {
     let saved_max = ctx.max_y;
-    ctx.max_y = saved_max + LINE_HEIGHT;
+    let shaped = shape_rich_string(
+        ctx.font_system,
+        &"(MORE)".into(),
+        dialogue_margins.character.content_width(ctx.layout_info.size),
+        FONT_SIZE,
+        ctx.layout_info.export_font,
+        ctx.layout_info.script_fonts,
+    );
+    let first_lh = shaped.lines.first().map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE)).unwrap_or(FONT_SIZE);
+    ctx.max_y = saved_max + first_lh;
     let mut temp_res = None;
     write_element(
         ctx,
@@ -886,6 +1182,7 @@ pub fn write_dialogue(
         &dialogue_margins.character,
         ctx.layout_info.size,
         ctx.layout_info.export_font,
+        ctx.layout_info.script_fonts,
     );
 
     if name_height >= ctx.max_y - ctx.layout_info.size.top_margin() {
@@ -906,6 +1203,7 @@ pub fn write_dialogue(
                         &dialogue_margins.parenthetical,
                         ctx.layout_info.size,
                         ctx.layout_info.export_font,
+                        ctx.layout_info.script_fonts,
                     )
                 }
                 DialogueElement::Line(s) => {
@@ -915,6 +1213,7 @@ pub fn write_dialogue(
                         &dialogue_margins.line,
                         ctx.layout_info.size,
                         ctx.layout_info.export_font,
+                        ctx.layout_info.script_fonts,
                     )
                 }
             };
@@ -923,16 +1222,27 @@ pub fn write_dialogue(
         let fits_entirely = *ctx.y_position + total_block_height <= ctx.max_y;
 
         if !fits_entirely {
-            let min_el_height = if let Some(first_el) = dialogue.elements.first() {
+            let (min_el_height, first_lh) = if let Some(first_el) = dialogue.elements.first() {
                 match first_el {
                     DialogueElement::Parenthetical(s) => {
-                        measure_element_height(
+                        let h = measure_element_height(
                             ctx.font_system,
                             s,
                             &dialogue_margins.parenthetical,
                             ctx.layout_info.size,
                             ctx.layout_info.export_font,
-                        )
+                            ctx.layout_info.script_fonts,
+                        );
+                        let shaped = shape_rich_string(
+                            ctx.font_system,
+                            s,
+                            dialogue_margins.parenthetical.content_width(ctx.layout_info.size),
+                            FONT_SIZE,
+                            ctx.layout_info.export_font,
+                            ctx.layout_info.script_fonts,
+                        );
+                        let first_lh = shaped.lines.first().map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE)).unwrap_or(FONT_SIZE);
+                        (h, first_lh)
                     }
                     DialogueElement::Line(s) => {
                         let first_line_height = measure_element_height(
@@ -941,19 +1251,30 @@ pub fn write_dialogue(
                             &dialogue_margins.line,
                             ctx.layout_info.size,
                             ctx.layout_info.export_font,
+                            ctx.layout_info.script_fonts,
                         );
-                        if first_line_height <= 3.0 * LINE_HEIGHT {
+                        let shaped = shape_rich_string(
+                            ctx.font_system,
+                            s,
+                            dialogue_margins.line.content_width(ctx.layout_info.size),
+                            FONT_SIZE,
+                            ctx.layout_info.export_font,
+                            ctx.layout_info.script_fonts,
+                        );
+                        let first_lh = shaped.lines.first().map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE)).unwrap_or(FONT_SIZE);
+                        let min_h = if first_line_height <= 3.0 * first_lh {
                             first_line_height
                         } else {
-                            2.0 * LINE_HEIGHT
-                        }
+                            2.0 * first_lh
+                        };
+                        (min_h, first_lh)
                     }
                 }
             } else {
-                0.0
+                (0.0, FONT_SIZE)
             };
 
-            if *ctx.y_position + name_height + min_el_height + LINE_HEIGHT > ctx.max_y {
+            if *ctx.y_position + name_height + min_el_height + first_lh > ctx.max_y {
                 return Ok(true);
             }
         }
@@ -970,30 +1291,32 @@ pub fn write_dialogue(
     } else {
         let mut total_block_height = name_height;
         for (idx, el) in dialogue.elements.iter().enumerate().skip(start_element) {
-            let el_height = match el {
-                DialogueElement::Parenthetical(s) => {
-                    measure_element_height(
-                        ctx.font_system,
-                        s,
-                        &dialogue_margins.parenthetical,
-                        ctx.layout_info.size,
-                        ctx.layout_info.export_font,
-                    )
-                }
-                DialogueElement::Line(s) => {
-                    measure_element_height(
-                        ctx.font_system,
-                        s,
-                        &dialogue_margins.line,
-                        ctx.layout_info.size,
-                        ctx.layout_info.export_font,
-                    )
-                }
+            let (s, margin) = match el {
+                DialogueElement::Parenthetical(s) => (s, &dialogue_margins.parenthetical),
+                DialogueElement::Line(s) => (s, &dialogue_margins.line),
             };
+            let el_height = measure_element_height(
+                ctx.font_system,
+                s,
+                margin,
+                ctx.layout_info.size,
+                ctx.layout_info.export_font,
+                ctx.layout_info.script_fonts,
+            );
             if idx == start_element && start_line > 0 {
-                let total_lines = (el_height / LINE_HEIGHT).round() as usize;
-                let remaining_lines = total_lines.saturating_sub(start_line);
-                total_block_height += remaining_lines as f32 * LINE_HEIGHT;
+                let shaped = shape_rich_string(
+                    ctx.font_system,
+                    s,
+                    margin.content_width(ctx.layout_info.size),
+                    FONT_SIZE,
+                    ctx.layout_info.export_font,
+                    ctx.layout_info.script_fonts,
+                );
+                let mut remaining_lines_height = 0.0;
+                for line in shaped.lines.iter().skip(start_line) {
+                    remaining_lines_height += line_height_for_line(line, ctx.font_system, FONT_SIZE);
+                }
+                total_block_height += remaining_lines_height;
             } else {
                 total_block_height += el_height;
             }
@@ -1002,39 +1325,56 @@ pub fn write_dialogue(
         let fits_entirely = *ctx.y_position + total_block_height <= ctx.max_y;
 
         if !fits_entirely {
-            let min_el_height = if let Some(curr_el) = dialogue.elements.get(start_element) {
+            let (min_el_height, first_lh) = if let Some(curr_el) = dialogue.elements.get(start_element) {
                 match curr_el {
                     DialogueElement::Parenthetical(s) => {
-                        measure_element_height(
+                        let h = measure_element_height(
                             ctx.font_system,
                             s,
                             &dialogue_margins.parenthetical,
                             ctx.layout_info.size,
                             ctx.layout_info.export_font,
-                        )
-                    }
-                    DialogueElement::Line(s) => {
-                        let full_line_height = measure_element_height(
+                            ctx.layout_info.script_fonts,
+                        );
+                        let shaped = shape_rich_string(
                             ctx.font_system,
                             s,
-                            &dialogue_margins.line,
-                            ctx.layout_info.size,
+                            dialogue_margins.parenthetical.content_width(ctx.layout_info.size),
+                            FONT_SIZE,
                             ctx.layout_info.export_font,
+                            ctx.layout_info.script_fonts,
                         );
-                        let total_lines = (full_line_height / LINE_HEIGHT).round() as usize;
-                        let remaining_lines = total_lines.saturating_sub(start_line);
-                        if remaining_lines <= 3 {
-                            remaining_lines as f32 * LINE_HEIGHT
-                        } else {
-                            2.0 * LINE_HEIGHT
+                        let first_lh = shaped.lines.first().map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE)).unwrap_or(FONT_SIZE);
+                        (h, first_lh)
+                    }
+                    DialogueElement::Line(s) => {
+                        let shaped = shape_rich_string(
+                            ctx.font_system,
+                            s,
+                            dialogue_margins.line.content_width(ctx.layout_info.size),
+                            FONT_SIZE,
+                            ctx.layout_info.export_font,
+                            ctx.layout_info.script_fonts,
+                        );
+                        let mut remaining_lines_height = 0.0;
+                        for line in shaped.lines.iter().skip(start_line) {
+                            remaining_lines_height += line_height_for_line(line, ctx.font_system, FONT_SIZE);
                         }
+                        let remaining_count = shaped.lines.len().saturating_sub(start_line);
+                        let first_lh = shaped.lines.first().map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE)).unwrap_or(FONT_SIZE);
+                        let min_h = if remaining_count <= 3 {
+                            remaining_lines_height
+                        } else {
+                            2.0 * first_lh
+                        };
+                        (min_h, first_lh)
                     }
                 }
             } else {
-                0.0
+                (0.0, FONT_SIZE)
             };
 
-            if *ctx.y_position + name_height + min_el_height + LINE_HEIGHT > ctx.max_y {
+            if *ctx.y_position + name_height + min_el_height + first_lh > ctx.max_y {
                 return Ok(true);
             }
         }
