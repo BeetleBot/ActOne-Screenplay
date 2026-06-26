@@ -457,14 +457,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 size="small"
                 value={selectedFont}
                 onChange={(e) => setSelectedFont(e.target.value)}
-                sx={{
-                  fontSize: 12,
-                  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                  bgcolor: 'action.hover', borderRadius: '6px',
-                  '&:hover': { bgcolor: 'action.selected' },
-                  '& .MuiSelect-select': { py: 0.6, px: 1.25 },
-                }}
-                MenuProps={{ slotProps: { paper: { sx: { '& .MuiMenuItem-root': { fontSize: 12, py: 0.4, minHeight: 30 } } } } }}
               >
                 <MenuItem value="courier-prime">Courier Prime</MenuItem>
                 <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
@@ -495,14 +487,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                         if (!value) return <Typography variant="body2" sx={{ fontSize: 12, color: 'text.disabled' }}>Select</Typography>;
                         return <Typography variant="body2" sx={{ fontSize: 12, fontFamily: `"${value}"` }}>{value}</Typography>;
                       }}
-                      sx={{
-                        fontSize: 12,
-                        '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                        bgcolor: 'action.hover', borderRadius: '6px',
-                        '&:hover': { bgcolor: 'action.selected' },
-                        '& .MuiSelect-select': { py: 0.6, px: 1.25 },
-                      }}
-                      MenuProps={{ slotProps: { paper: { sx: { maxHeight: 300, '& .MuiMenuItem-root': { fontSize: 12, py: 0.4, minHeight: 30 } } } } }}
                     >
                       {(scriptFontOptions[script] || []).map((font) => {
                         if (font === CHOOSE_OTHER) {

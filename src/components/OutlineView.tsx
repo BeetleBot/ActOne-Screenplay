@@ -510,7 +510,7 @@ export const OutlineView: React.FC = () => {
                 transition: "transform 0.15s ease",
               }}
             >
-              <KeyboardArrowDownIcon sx={{ fontSize: 12 }} />
+              <KeyboardArrowDownIcon  />
             </IconButton>
             <ListItemText
               slotProps={{ secondary: { component: 'span' as const } }}
@@ -747,7 +747,7 @@ export const OutlineView: React.FC = () => {
           </Box>
           <MenuItem
             onClick={() => { setShowSections(p => !p); }}
-            sx={{ fontSize: 12 }}
+            
           >
             <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSections ? "primary.main" : "text.disabled" }}>
               {showSections ? "✓" : "○"}
@@ -756,7 +756,7 @@ export const OutlineView: React.FC = () => {
           </MenuItem>
           <MenuItem
             onClick={() => { setShowScenes(p => !p); }}
-            sx={{ fontSize: 12 }}
+            
           >
             <Box component="span" sx={{ mr: 1, fontSize: 10, color: showScenes ? "primary.main" : "text.disabled" }}>
               {showScenes ? "✓" : "○"}
@@ -765,7 +765,7 @@ export const OutlineView: React.FC = () => {
           </MenuItem>
           <MenuItem
             onClick={() => { setShowSynopses(p => !p); }}
-            sx={{ fontSize: 12 }}
+            
           >
             <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSynopses ? "primary.main" : "text.disabled" }}>
               {showSynopses ? "✓" : "○"}
@@ -774,7 +774,7 @@ export const OutlineView: React.FC = () => {
           </MenuItem>
           <MenuItem
             onClick={() => { setShowStorylines(p => !p); }}
-            sx={{ fontSize: 12 }}
+            
           >
             <Box component="span" sx={{ mr: 1, fontSize: 10, color: showStorylines ? "primary.main" : "text.disabled" }}>
               {showStorylines ? "✓" : "○"}
@@ -795,7 +795,7 @@ export const OutlineView: React.FC = () => {
                 setOutlineFontSize(size as 'small' | 'normal' | 'large');
                 setMenuAnchor(null);
               }}
-              sx={{ textTransform: "capitalize", fontSize: 12 }}
+              sx={{ textTransform: "capitalize" }}
             >
               {size}
             </MenuItem>
@@ -821,12 +821,12 @@ export const OutlineView: React.FC = () => {
               },
               startAdornment: (
                 <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
-                  <SearchIcon sx={{ fontSize: 12 }} />
+                  <SearchIcon  />
                 </Box>
               ),
               endAdornment: searchQuery && (
                 <IconButton size="small" onClick={() => setSearchQuery("")}>
-                  <CloseIcon sx={{ fontSize: 12 }} />
+                  <CloseIcon  />
                 </IconButton>
               )
             }

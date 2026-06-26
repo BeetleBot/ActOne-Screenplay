@@ -23,8 +23,6 @@ import {
   Switch,
   FormControlLabel,
   Select,
-  FormControl,
-  InputLabel,
 } from "@mui/material";
 
 export const ScriptsView: React.FC = () => {
@@ -390,12 +388,12 @@ export const ScriptsView: React.FC = () => {
         transformOrigin={{ vertical: "top", horizontal: "right" }}
         slotProps={{ paper: { sx: { minWidth: 130 } } }}
       >
-        <MenuItem onClick={handleRenameOpen} dense sx={{ fontSize: 13 }}>Rename</MenuItem>
+        <MenuItem onClick={handleRenameOpen} dense>Rename</MenuItem>
         <Divider />
-        <MenuItem onClick={handleMoveUp} dense disabled={!menuState || menuState.index <= 0} sx={{ fontSize: 13 }}>Move Up</MenuItem>
-        <MenuItem onClick={handleMoveDown} dense disabled={!menuState || menuState.index >= scripts.length - 1} sx={{ fontSize: 13 }}>Move Down</MenuItem>
+        <MenuItem onClick={handleMoveUp} dense disabled={!menuState || menuState.index <= 0}>Move Up</MenuItem>
+        <MenuItem onClick={handleMoveDown} dense disabled={!menuState || menuState.index >= scripts.length - 1}>Move Down</MenuItem>
         <Divider />
-        <MenuItem onClick={handleDelete} dense sx={{ color: "error.main", fontSize: 13 }}>Delete</MenuItem>
+        <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
       </Menu>
 
 
@@ -416,19 +414,21 @@ export const ScriptsView: React.FC = () => {
           </DialogTitle>
 
           <DialogContent dividers sx={{ px: 2.5, py: 2 }}>
-            <FormControl fullWidth size="small" sx={{ mb: 2.5 }}>
-              <InputLabel id="export-format-label">Export Format</InputLabel>
+            <Box sx={{ mb: 2.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 0.5, display: 'block' }}>
+                Export Format
+              </Typography>
               <Select
-                labelId="export-format-label"
+                fullWidth
+                size="small"
                 value={exportFormat}
-                label="Export Format"
                 onChange={(e) => setExportFormat(e.target.value as "fountain" | "pdf" | "fdx")}
               >
                 <MenuItem value="pdf">PDF</MenuItem>
                 <MenuItem value="fountain">Fountain</MenuItem>
                 <MenuItem value="fdx">FDX (Final Draft)</MenuItem>
               </Select>
-            </FormControl>
+            </Box>
 
             {exportFormat === "pdf" && (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -451,31 +451,35 @@ export const ScriptsView: React.FC = () => {
                   }
                 />
                 <Box sx={{ display: "flex", gap: 2 }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel id="scene-numbers-label">Scene Numbers</InputLabel>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 0.5, display: 'block' }}>
+                      Scene Numbers
+                    </Typography>
                     <Select
-                      labelId="scene-numbers-label"
+                      fullWidth
+                      size="small"
                       value={mirrorSceneNumbers}
-                      label="Scene Numbers"
                       onChange={(e) => setMirrorSceneNumbers(e.target.value)}
                     >
                       <MenuItem value="off">Disabled</MenuItem>
                       <MenuItem value="left_side">Left Side Only</MenuItem>
                       <MenuItem value="mirror">Mirror on Both Sides</MenuItem>
                     </Select>
-                  </FormControl>
-                  <FormControl fullWidth size="small">
-                    <InputLabel id="export-font-label">Export Font</InputLabel>
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 0.5, display: 'block' }}>
+                      Export Font
+                    </Typography>
                     <Select
-                      labelId="export-font-label"
+                      fullWidth
+                      size="small"
                       value={selectedFont}
-                      label="Export Font"
                       onChange={(e) => setSelectedFont(e.target.value)}
                     >
                       <MenuItem value="courier-prime">Courier Prime</MenuItem>
                       <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
                     </Select>
-                  </FormControl>
+                  </Box>
                 </Box>
                 <FormControlLabel
                   control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}

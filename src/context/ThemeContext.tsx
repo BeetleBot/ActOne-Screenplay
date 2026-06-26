@@ -64,7 +64,12 @@ function completeCustomColors(colors: Partial<ThemeColors>, isDark: boolean): Th
   return deriveAllColors(core, isDark);
 }
 
-function getCurrentThemeConfig(themeId: string, customThemes: CustomTheme[]): ThemeConfig {
+function getCurrentThemeConfig(themeId: string, customThemes: CustomTheme[], systemDark: boolean): ThemeConfig {
+  if (themeId === "adaptive") {
+    const id = systemDark ? "dark" : "light";
+    const theme = themes.find(x => x.id === id);
+    if (theme) return theme;
+  }
   const builtin = themes.find(x => x.id === themeId);
   if (builtin) return builtin;
   const custom = customThemes.find(x => x.id === themeId);
@@ -73,6 +78,7 @@ function getCurrentThemeConfig(themeId: string, customThemes: CustomTheme[]): Th
       id: custom.id,
       name: custom.name,
       desc: "",
+      category: "custom" as const,
       isDark: custom.isDark,
       colors: completeCustomColors(custom.colors, custom.isDark),
     };
@@ -83,12 +89,26 @@ function getCurrentThemeConfig(themeId: string, customThemes: CustomTheme[]): Th
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<string>(() => {
     const saved = localStorage.getItem(THEME_ID_KEY);
-    if (saved === "light" || saved === "dark") return saved;
-    const customs = loadCustomThemes();
-    if (saved && customs.some(t => t.id === saved)) return saved;
+    if (saved) {
+      if (saved === "adaptive") return saved;
+      if (themes.some(t => t.id === saved)) return saved;
+      const customs = loadCustomThemes();
+      if (customs.some(t => t.id === saved)) return saved;
+    }
     const isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     return isSystemDark ? "dark" : "light";
   });
+
+  const [systemDark, setSystemDark] = useState<boolean>(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(loadCustomThemes);
 
@@ -98,15 +118,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const currentThemeConfig = useMemo(
-    () => getCurrentThemeConfig(theme, customThemes),
-    [theme, customThemes]
+    () => getCurrentThemeConfig(theme, customThemes, systemDark),
+    [theme, customThemes, systemDark]
   );
 
   const mode: ThemeMode = currentThemeConfig.isDark ? "dark" : "light";
 
   const toggleMode = useCallback(() => {
-    setTheme(mode === "light" ? "dark" : "light");
-  }, [mode, setTheme]);
+    if (theme === "adaptive") {
+      setTheme(systemDark ? "light" : "dark");
+    } else {
+      setTheme(mode === "light" ? "dark" : "light");
+    }
+  }, [theme, mode, systemDark, setTheme]);
 
   useEffect(() => {
     document.body.classList.toggle("dark-theme", mode === "dark");
@@ -145,9 +169,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCustomThemes(updated);
     saveCustomThemes(updated);
     if (theme === id) {
-      setTheme(mode === "dark" ? "dark" : "light");
+      setTheme(systemDark ? "dark" : "light");
     }
-  }, [customThemes, theme, mode, setTheme]);
+  }, [customThemes, theme, systemDark, setTheme]);
 
   return (
     <ThemeContext.Provider value={{

@@ -69,8 +69,10 @@ export const useFile = () => {
   return context;
 };
 
-const sanitizeFileName = (name: string): string =>
-  name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").trim() || "Untitled";
+const sanitizeFileName = (name: string): string => {
+  const ctrl = new RegExp("[" + String.fromCharCode(0) + "-" + String.fromCharCode(31) + "]", "g");
+  return name.replace(/[<>:"/\\|?*]/g, "").replace(ctrl, "").trim() || "Untitled";
+};
 
 const getUniqueName = (base: string, existing: ScriptInfo[]): string => {
   let name = base;

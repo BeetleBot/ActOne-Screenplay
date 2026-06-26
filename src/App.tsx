@@ -85,6 +85,7 @@ function AppInner() {
     zoomOut: useCallback(() => setZoomLevel(zoomLevel - 10), [zoomLevel, setZoomLevel]),
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
     openSettings: useCallback(() => setShowSettingsModal(true), []),
+    openHelp: useCallback(() => setShowHelpModal(true), []),
     toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
     cleanExtraSpace,
     isDisabled: isModalActive,
@@ -310,7 +311,6 @@ function AppInner() {
             onOpenSettingsModal={() => setShowSettingsModal(true)}
             onOpenPalette={() => setIsPaletteOpen(true)}
             onOpenBreakdownModal={() => setShowBreakdownModal(true)}
-            onOpenThemeManagerModal={() => setShowThemeManagerModal(true)}
           />
         </ErrorBoundary>
       <ModalManager

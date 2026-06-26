@@ -148,7 +148,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
     const type = lineTypes[i - 1];
     const className = TYPE_TO_CLASS[type];
 
-    let lineDecos: { from: number, to: number, dec: Decoration }[] = [];
+    const lineDecos: { from: number, to: number, dec: Decoration }[] = [];
 
 
 
@@ -216,7 +216,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       lineDecos.push({ from: line.from, to: line.from + line.text.indexOf("@") + 1, dec: syntaxDeco });
     }
 
-    let noteTagRegex = /\[\[(.*?)\]\]/g;
+    const noteTagRegex = /\[\[(.*?)\]\]/g;
     let noteM;
     while ((noteM = noteTagRegex.exec(line.text)) !== null) {
       const noteContent = noteM[1].trim().toLowerCase();
@@ -272,6 +272,12 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
 
     const prodTags = docObj?.settings?.productionTags;
     if (prodTags && prodTags.tags) {
+      const tagDefMap = new Map<string, string>();
+      if (prodTags.definitions) {
+        for (const def of prodTags.definitions) {
+          tagDefMap.set(def.id, def.type);
+        }
+      }
       for (const tag of prodTags.tags) {
         if (tag.range) {
           const [start, len] = tag.range;
@@ -279,10 +285,11 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
           const tagFrom = Math.max(line.from, start);
           const tagTo = Math.min(line.to, end);
           if (tagFrom < tagTo) {
+            const type = tag.type || tagDefMap.get(tag.definitionId) || "";
             lineDecos.push({
               from: tagFrom,
               to: tagTo,
-              dec: Decoration.mark({ class: `cm-tag-${tag.type}` })
+              dec: Decoration.mark({ class: `cm-tag-${type}` })
             });
           }
         }
@@ -290,33 +297,33 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
     }
 
     // Markdown Parsing
-    let text = line.text;
+    const text = line.text;
     
     // Bold
-    let boldRegex = /\*\*([^*]+)\*\*/g;
+    const boldRegex = /\*\*([^*]+)\*\*/g;
     let m;
     while ((m = boldRegex.exec(text)) !== null) {
-      let start = line.from + m.index;
+      const start = line.from + m.index;
       lineDecos.push({ from: start, to: start + 2, dec: syntaxDeco });
       lineDecos.push({ from: start + 2, to: start + m[0].length - 2, dec: Decoration.mark({ class: "cm-fountain-bold" }) });
       lineDecos.push({ from: start + m[0].length - 2, to: start + m[0].length, dec: syntaxDeco });
     }
 
     // Italic
-    let italicRegex = /(^|[^*])\*([^*]+)\*(?=[^*]|$)/g;
+    const italicRegex = /(^|[^*])\*([^*]+)\*(?=[^*]|$)/g;
     while ((m = italicRegex.exec(text)) !== null) {
-      let offset = m[1].length;
-      let start = line.from + m.index + offset;
-      let matchLen = m[0].length - offset;
+      const offset = m[1].length;
+      const start = line.from + m.index + offset;
+      const matchLen = m[0].length - offset;
       lineDecos.push({ from: start, to: start + 1, dec: syntaxDeco });
       lineDecos.push({ from: start + 1, to: start + matchLen - 1, dec: Decoration.mark({ class: "cm-fountain-italic" }) });
       lineDecos.push({ from: start + matchLen - 1, to: start + matchLen, dec: syntaxDeco });
     }
 
     // Underline
-    let underlineRegex = /_([^_]+)_/g;
+    const underlineRegex = /_([^_]+)_/g;
     while ((m = underlineRegex.exec(text)) !== null) {
-      let start = line.from + m.index;
+      const start = line.from + m.index;
       lineDecos.push({ from: start, to: start + 1, dec: syntaxDeco });
       lineDecos.push({ from: start + 1, to: start + m[0].length - 1, dec: Decoration.mark({ class: "cm-fountain-underline" }) });
       lineDecos.push({ from: start + m[0].length - 1, to: start + m[0].length, dec: syntaxDeco });
@@ -326,9 +333,9 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
     lineDecos.sort((a, b) => a.from - b.from || a.to - b.to);
 
     // Prevent overlapping ranges
-    let validDecos = [];
+    const validDecos = [];
     let lastTo = -1;
-    for (let d of lineDecos) {
+    for (const d of lineDecos) {
       if (d.from === line.from && d.from === d.to) {
         validDecos.push(d);
         continue;
@@ -339,7 +346,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       }
     }
 
-    for (let d of validDecos) {
+    for (const d of validDecos) {
       builder.add(d.from, d.to, d.dec);
     }
   }
@@ -369,7 +376,7 @@ export const fountainHighlightField = StateField.define<{
     let hideSyntaxEnabled = value.hideSyntaxEnabled;
     let hideSyntaxChanged = false;
 
-    for (let effect of tr.effects) {
+    for (const effect of tr.effects) {
       if (effect.is(updateParsedDocEffect)) {
         doc = effect.value;
       }

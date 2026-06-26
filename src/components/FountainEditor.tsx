@@ -93,7 +93,8 @@ export const FountainEditor: React.FC = () => {
     
     if (tag) {
       const def = prodTags.definitions?.find((d: any) => d.id === tag.definitionId);
-      const catLabel = CATEGORIES.find(c => c.key === tag.type)?.label || tag.type;
+      if (!def) return null;
+      const catLabel = CATEGORIES.find(c => c.key === def.type)?.label || def.type;
       return { tag, def, catLabel };
     }
     return null;

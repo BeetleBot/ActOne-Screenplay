@@ -18,6 +18,7 @@ interface ShortcutActions {
   openSettings?: () => void;
   toggleSearch: () => void;
   cleanExtraSpace: () => void;
+  openHelp?: () => void;
   isDisabled?: boolean;
 }
 
@@ -65,6 +66,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (e.shiftKey && e.altKey && e.key.toLowerCase() === "c") {
         e.preventDefault();
         actionsRef.current.cleanExtraSpace();
+        return;
+      }
+
+      if (e.key === "F1") {
+        e.preventDefault();
+        actionsRef.current.openHelp?.();
         return;
       }
 

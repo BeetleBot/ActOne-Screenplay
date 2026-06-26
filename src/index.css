@@ -39,6 +39,25 @@
   --accent-rgb: 25,118,210;
   --titlebar-bg: #f8f9fa;
   --editor-cursor: #1a1a1a;
+
+  --cat-cast: #00ACC1;
+  --cat-prop: #FF9800;
+  --cat-costume: #E91E63;
+  --cat-makeup: #4CAF50;
+  --cat-vfx: #9C27B0;
+  --cat-camera: #00BFA5;
+  --cat-sfx: #795548;
+  --cat-animal: #FFC107;
+  --cat-extras: #F06292;
+  --cat-vehicle: #009688;
+  --cat-music: #8BC34A;
+  --cat-sound: #FF5252;
+  --cat-stunt: #448AFF;
+  --cat-setDesign: #A1887F;
+  --cat-other: #90A4AE;
+  --cat-location: #26A69A;
+  --cat-storyline: #7E57C2;
+  --cat-sceneType: #B0BEC5;
 }
 
 * {
@@ -603,6 +622,18 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
 .cm-tag-other {
   border-bottom: 2px solid #9e9e9e;
   background-color: rgba(158, 158, 158, 0.08);
+}
+.cm-tag-location {
+  border-bottom: 2px solid #26a69a;
+  background-color: rgba(38, 166, 154, 0.08);
+}
+.cm-tag-storyline {
+  border-bottom: 2px solid #7e57c2;
+  background-color: rgba(126, 87, 194, 0.08);
+}
+.cm-tag-scene_type {
+  border-bottom: 2px solid #b0bec5;
+  background-color: rgba(176, 190, 197, 0.08);
 }
 
 .cm-tooltip .cm-tag-tooltip {

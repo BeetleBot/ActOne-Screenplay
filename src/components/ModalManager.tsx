@@ -5,7 +5,7 @@ import { SettingsModal } from './SettingsModal';
 import { CommandPalette } from './CommandPalette';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { HelpModal } from './HelpModal';
-import { ProductionBreakdownModal } from './ProductionBreakdownModal';
+import { TagManager } from './TagManager';
 import { ThemeManagerModal } from './ThemeManagerModal';
 import { ErrorBoundary } from './ErrorBoundary';
 
@@ -72,7 +72,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       <ErrorBoundary name="settings-modal">{showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="help-modal">{showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}</ErrorBoundary>
-      <ErrorBoundary name="breakdown-modal">{showBreakdownModal && <ProductionBreakdownModal onClose={() => setShowBreakdownModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="tag-manager">{showBreakdownModal && <TagManager onClose={() => setShowBreakdownModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="theme-modal">{showThemeManagerModal && <ThemeManagerModal onClose={() => setShowThemeManagerModal(false)} />}</ErrorBoundary>
     </>
   );

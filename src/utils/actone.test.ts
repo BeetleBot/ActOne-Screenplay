@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { packActoneBundle, unpackActoneBundle } from "./actone";
 import type { ScriptInfo } from "./actone";
+import { zipSync, strToU8, unzipSync, strFromU8 } from "fflate";
 
 const makeScripts = (arr: { name: string; content: string }[]): ScriptInfo[] =>
   arr.map((s) => ({ name: s.name, fileName: `${s.name}.fountain`, content: s.content, savedContent: s.content }));
@@ -42,7 +43,6 @@ describe("actone bundle", () => {
   });
 
   it("handles legacy document.fountain bundles", () => {
-    const { zipSync, strToU8 } = require("fflate");
     const legacy = zipSync({ "document.fountain": strToU8("INT. TEST - DAY\n\nHello.") });
     const unpacked = unpackActoneBundle(legacy, "MyScript");
     expect(unpacked.scripts).toHaveLength(1);
@@ -88,7 +88,6 @@ describe("actone bundle", () => {
   it("fountain.json exists in new bundles", () => {
     const scripts = makeScripts([{ name: "Main", content: "Test." }]);
     const packed = packActoneBundle(scripts, {});
-    const { unzipSync, strFromU8 } = require("fflate");
     const zipBytes = packed.slice(0, -4);
     const unzipped = unzipSync(zipBytes);
     expect(unzipped["fountain.json"]).toBeDefined();

@@ -7,5 +7,10 @@ export default defineConfig({
     setupFiles: ["./src/test-setup.ts"],
     css: false,
     exclude: [...configDefaults.exclude, "ref/**"],
+    server: {
+      deps: {
+        inline: ["@material/material-color-utilities"],
+      },
+    },
   },
 });

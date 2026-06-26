@@ -13,12 +13,11 @@ export interface MainLayoutProps {
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
   onOpenBreakdownModal: () => void;
-  onOpenThemeManagerModal: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
   isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
-  onOpenBreakdownModal, onOpenThemeManagerModal,
+  onOpenBreakdownModal,
 }) => {
   const { activeTab, setActiveTab } = useUI();
 
@@ -34,7 +33,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onOpenSettingsModal={onOpenSettingsModal}
           onOpenPalette={onOpenPalette}
           onOpenBreakdownModal={onOpenBreakdownModal}
-          onOpenThemeManagerModal={onOpenThemeManagerModal}
         />
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <Workspace

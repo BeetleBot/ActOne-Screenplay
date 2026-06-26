@@ -92,21 +92,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   size="small"
                   value={theme}
                   onChange={(e) => setTheme(e.target.value as string)}
-                  sx={{
-                    fontSize: 12,
-                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                    bgcolor: 'action.hover', borderRadius: '6px',
-                    '&:hover': { bgcolor: 'action.selected' },
-                    '& .MuiSelect-select': { py: 0.6, px: 1.25 },
-                  }}
-                  MenuProps={{
-                    slotProps: {
-                      paper: { sx: { '& .MuiMenuItem-root': { fontSize: 12, py: 0.4, minHeight: 30 } } }
-                    }
-                  }}
                 >
                   {themes.map((t) => (
-                    <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+                    <MenuItem key={t.id} value={t.id} sx={{ gap: 1.5 }}>
+                      <Box sx={{ width: 18, height: 18, borderRadius: '5px', bgcolor: t.colors.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                        <Box sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: t.colors.accent }} />
+                      </Box>
+                      {t.name}
+                    </MenuItem>
                   ))}
                 </Select>
                 <Select
@@ -114,18 +107,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   size="small"
                   value={paperSize}
                   onChange={(e) => setPaperSize(e.target.value as 'letter' | 'a4')}
-                  sx={{
-                    fontSize: 12,
-                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                    bgcolor: 'action.hover', borderRadius: '6px',
-                    '&:hover': { bgcolor: 'action.selected' },
-                    '& .MuiSelect-select': { py: 0.6, px: 1.25 },
-                  }}
-                  MenuProps={{
-                    slotProps: {
-                      paper: { sx: { '& .MuiMenuItem-root': { fontSize: 12, py: 0.4, minHeight: 30 } } }
-                    }
-                  }}
                 >
                   <MenuItem value="letter">Letter</MenuItem>
                   <MenuItem value="a4">A4</MenuItem>
@@ -163,18 +144,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   size="small"
                   value={String(autoSaveInterval)}
                   onChange={(e) => setAutoSaveInterval(parseInt(e.target.value, 10))}
-                  sx={{
-                    fontSize: 12, mt: 0.75,
-                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                    bgcolor: 'action.hover', borderRadius: '6px',
-                    '&:hover': { bgcolor: 'action.selected' },
-                    '& .MuiSelect-select': { py: 0.6, px: 1.25 },
-                  }}
-                  MenuProps={{
-                    slotProps: {
-                      paper: { sx: { '& .MuiMenuItem-root': { fontSize: 12, py: 0.4, minHeight: 30 } } }
-                    }
-                  }}
+                  sx={{ mt: 0.75 }}
                 >
                   <MenuItem value="30000">30 seconds</MenuItem>
                   <MenuItem value="60000">1 minute</MenuItem>
@@ -197,18 +167,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 size="small"
                 value={fontFamily}
                 onChange={(e) => setFontFamily(e.target.value as 'courier-prime' | 'courier-prime-sans')}
-                sx={{
-                  fontSize: 12,
-                  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                  bgcolor: 'action.hover', borderRadius: '6px',
-                  '&:hover': { bgcolor: 'action.selected' },
-                  '& .MuiSelect-select': { py: 0.6, px: 1.25 },
-                }}
-                MenuProps={{
-                  slotProps: {
-                    paper: { sx: { '& .MuiMenuItem-root': { fontSize: 12, py: 0.4, minHeight: 30 } } }
-                  }
-                }}
               >
                 <MenuItem value="courier-prime">Courier Prime</MenuItem>
                 <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>

@@ -33,8 +33,8 @@ describe("FileContext", () => {
         {}
       )
     );
-    vi.mocked(invoke).mockImplementation(async (cmd, args: any) => {
-      if (cmd === "read_file_binary" && args.path.endsWith(".actOne")) {
+    vi.mocked(invoke).mockImplementation(async (cmd, _args: any) => {
+      if (cmd === "read_file_binary" && _args.path.endsWith(".actOne")) {
         return mockedBytes;
       }
       return null;
@@ -53,7 +53,7 @@ describe("FileContext", () => {
   });
 
   it("normalizes .actOne path to .actone when saving a file via saveFileAs", async () => {
-    vi.mocked(invoke).mockImplementation(async (cmd, args: any) => {
+    vi.mocked(invoke).mockImplementation(async (cmd, _args: any) => {
       if (cmd === "save_file_dialog") {
         return "C:/scripts/new_movie.actOne";
       }
@@ -80,7 +80,7 @@ describe("FileContext", () => {
   });
 
   it("manages saveStatus transition during file saving", async () => {
-    vi.mocked(invoke).mockImplementation(async (cmd, args: any) => {
+    vi.mocked(invoke).mockImplementation(async (cmd, _args: any) => {
       if (cmd === "save_file_dialog") {
         return "C:/scripts/new_movie.actone";
       }

@@ -170,8 +170,8 @@ function handleTab(view: EditorView): boolean {
   const text = line.text;
   const trim = text.trim();
   
-  let newText = text;
-  let newCursor = selection.head;
+  let newText: string;
+  let newCursor: number;
   
   if (trim === "") {
     newText = "@";
@@ -418,7 +418,8 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           if (pos >= start && pos <= start + len) {
             const def = prodTags.definitions?.find((d: Record<string, unknown>) => d.id === tag.definitionId);
             const name = def ? def.name : view.state.sliceDoc(start, start + len);
-            const categoryLabel = CATEGORIES.find(c => c.key === tag.type)?.label || tag.type;
+            const type = tag.type || (def?.type as string) || "";
+            const categoryLabel = CATEGORIES.find(c => c.key === type)?.label || type;
             
             return {
               pos: start,
@@ -479,7 +480,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
                     ...tag,
                     range: [newStart, newLen]
                   };
-                } catch (e) {
+                } catch {
                   return tag;
                 }
               }).filter(Boolean);
@@ -583,7 +584,9 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       try {
         const coords = view.coordsAtPos(view.state.selection.main.head);
         if (coords) prevCursorY = coords.top;
-      } catch (e) {}
+          } catch {
+            void 0;
+          }
 
       view.dispatch({
         effects: updateParsedDocEffect.of(parsedDoc)
@@ -599,7 +602,9 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
                 view.scrollDOM.scrollTop += diff;
               }
             }
-          } catch (e) {}
+      } catch {
+        void 0;
+      }
         });
       }
     }

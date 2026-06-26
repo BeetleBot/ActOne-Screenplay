@@ -6,7 +6,7 @@ export type { UIContextProps } from './UIContext';
 export { EditorProvider, useEditor } from './EditorContext';
 export type { EditorContextProps } from './EditorContext';
 export { ThemeProvider, useTheme } from './ThemeContext';
-export type { CustomTheme, ThemeContextProps } from './ThemeContext';
+export type { ThemeContextProps, CustomTheme } from './ThemeContext';
 export { ParkingProvider, useParking } from './ParkingContext';
 export type { ParkedItem } from './ParkingContext';
 export { SprintProvider, useSprint } from './SprintContext';

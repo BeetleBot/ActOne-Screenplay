@@ -61,7 +61,7 @@ function getDynamicQuote(): Quote {
 }
 
 import logoImage from "../assets/logo.png";
-import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, ColorLensIcon, CheckIcon, DiscordIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, ColorLensIcon, DiscordIcon } from "./Icons";
 
 const ActionCard: React.FC<{
   icon: React.ReactNode;
@@ -525,11 +525,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             <MenuItem
               key={t.id}
               selected={theme === t.id}
-              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
-              sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
-            >
-              <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
+              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
+              <Box sx={{ width: 18, height: 18, borderRadius: '5px', bgcolor: t.colors.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: t.colors.accent }} />
               </Box>
               {t.name}
             </MenuItem>
@@ -542,11 +540,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             <MenuItem
               key={t.id}
               selected={theme === t.id}
-              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
-              sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
-            >
-              <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
+              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
+              <Box sx={{ width: 18, height: 18, borderRadius: '5px', bgcolor: t.colors.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: t.colors.accent }} />
               </Box>
               {t.name}
             </MenuItem>
@@ -561,13 +557,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 <MenuItem
                   key={t.id}
                   selected={theme === t.id}
-                  onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
-                  sx={{ fontSize: '0.85rem', py: 0.6, gap: 1.5 }}
-                >
-                  <Box sx={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {theme === t.id && <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
-                  </Box>
-                  {t.name}
+              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
+              <Box sx={{ width: 18, height: 18, borderRadius: '5px', bgcolor: t.colors.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: t.colors.accent }} />
+              </Box>
+              {t.name}
                 </MenuItem>
               ))}
             </>

@@ -22,7 +22,7 @@ export const articles: HelpArticle[] = [
 - **Templates** — Import a screenplay structure template (Three-Act, Save the Cat, Hero's Journey, etc.).
 - **Recent Projects** — Quick-open recently used files (up to 6 displayed). Click the X to remove from the list. Stored in localStorage (up to 10 entries).
 
-The footer includes a Help button, a version display, a theme switcher, and a rotating random writing quote from famous screenwriters.`,
+The footer includes a Help button, a version display, a theme palette, and a rotating random writing quote from famous screenwriters.`,
   },
   {
     id: "new-screenplay",
@@ -83,9 +83,11 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 | Select all | <kbd>Ctrl+A</kbd> |
 | Bold (\`**\`) | <kbd>Ctrl+B</kbd> |
 | Italic (\`*\`) | <kbd>Ctrl+I</kbd> |
-| Underline (\code{\_\`}) | <kbd>Ctrl+U</kbd> |
+| Underline (\`_\`) | <kbd>Ctrl+U</kbd> |
 | Clean screenplay spaces | <kbd>Shift+Alt+C</kbd> |
 | Cycle line prefixes | <kbd>Tab</kbd> |
+| Accept autocomplete ghost | <kbd>Tab</kbd> |
+| Force autocomplete dropdown | <kbd>ArrowDown</kbd> |
 
 **View & Navigation**
 
@@ -115,7 +117,7 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 
 **View:** Toggle Sidebar, Switch Sidebar Tab (Outline/Notepad/Characters/Statistics), Typewriter Mode, Zen Mode, Focus Mode, Zoom In/Out/Reset, Show/Hide Fountain Markup.
 
-**Format:** Production Breakdown, Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers, Clean Spaces.
+**Format:** Tag Manager, Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers, Clean Spaces.
 
 **Settings:** Open Settings, Set Font (Courier Prime / Courier Prime Sans), Set Paper Size (Letter / A4), Theme Manager.
 
@@ -419,7 +421,7 @@ Scene numbers display in the editor margins and as badges in the Outline Navigat
 
 **For plain .fountain files:** only Outline and Statistics tabs are shown; other panels show a conversion banner.
 
-The bottom of the Activity Bar has a **Command Palette** button and a **Quick Settings** button with sliders for Interface Scale, Editor Zoom, Typewriter Mode, Hide Fountain Markup, Theme switching, Paper Size, and a link to full Settings.`,
+The bottom of the Activity Bar has a **Command Palette** button and a **Quick Settings** button. To add a tag to selected text, you can also click the **Tags** area at the bottom of the Activity Bar.`,
   },
   {
     id: "outline-navigator",
@@ -460,7 +462,7 @@ The bottom of the Activity Bar has a **Command Palette** button and a **Quick Se
 | Sprint | No |
 | Parking | Yes* |
 
-**\* Panels marked with an asterisk are visible but show a conversion banner for plain .fountain files, with editing disabled.**`,
+**Panels marked with an asterisk are visible but show a conversion banner for plain .fountain files, with editing disabled.**`,
   },
   {
     id: "notepad",
@@ -530,7 +532,7 @@ Persists in .actone bundles as \`todos\` in settings.`,
 
 **History tab:** All completed sprints with word count, date, duration, WPM, and file name. Delete individual entries or "Clear Global History".
 
-**Leaderboard tab:** Top 10 sprints ranked by word count with Gold (\#1, \`#d4af37\`), Silver (\#2, \`#c0c0c0\`), Bronze (\#3, \`#cd7f32\`) badges.
+**Leaderboard tab:** Top 10 sprints ranked by word count with Gold (#1, \`#d4af37\`), Silver (#2, \`#c0c0c0\`), Bronze (#3, \`#cd7f32\`) badges.
 
 **Stats banner:** Personal Best WPM and Total Words Sprinted.
 
@@ -595,21 +597,25 @@ Persists in .actone bundle settings.`,
     title: "Editor Context Menu",
     category: "Workspace & Views",
     tags: ["right click", "context menu", "menu"],
-    relatedIds: ["scene-highlighting", "production-breakdown", "transform-case", "parking", "notes-markers"],
-    content: `Right-click anywhere in the editor for quick access. Press <kbd>Ctrl</kbd> while right-clicking for **Quick Tag Mode** (direct access to production tags).
+    relatedIds: ["scene-highlighting", "tag-manager", "transform-case", "parking", "notes-markers"],
+    content: `Right-click anywhere in the editor for quick access. Press <kbd>Ctrl</kbd> while right-clicking for **Quick Tag Mode** (direct access to production tags without the submenu).
 
 **Normal mode:**
 
 - **Selection Stats** (if text selected): word count and character count.
 - **Cut / Copy / Paste** — standard clipboard (disabled without selection).
-- **Tag** → submenu with 15 production categories: Cast, Prop, VFX, SFX, Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other. If cursor is on an existing tag, shows **Remove Tag**.
+- **Tag** → submenu with 15 production categories: Cast (Character), Prop, VFX, SFX (Special Effect), Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other. If cursor is on an existing tag, shows **Remove Tag**.
 - **Highlight Scene** → 7 colors: Red, Orange, Yellow, Green, Blue, Purple, Pink, plus Clear.
 - **Drop Marker** → submenu with 11 colors (Blue, Brown, Cyan, Green, Magenta, Orange, Pink, Purple, Red, Yellow, Default Orange). Prompts for a description.
 - **Format** → Bold, Italic, Underline, Clean Spaces.
 - **Transform Case** → UPPERCASE, Title Case, lowercase.
 - **Look Up Word** → Google search selection.
 - **Create Task** → adds selected text as a to-do item.
-- **Park Selection** → cuts selected text and stores in Parking sidebar.`,
+- **Park Selection** → cuts selected text and stores in Parking sidebar.
+
+**Quick Tag Mode (<kbd>Ctrl</kbd>+right-click):**
+
+Shows clickable colored dots for each category. Click a dot to tag the selected text directly without navigating a submenu. If the cursor is already on a tagged word, shows a "Remove" option.`,
   },
   {
     id: "status-bar",
@@ -664,7 +670,7 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
 - Hide Fountain Markup toggle.
 
 **Theme**
-- Theme selector dropdown (all built-in + custom themes).
+- Theme color swatch grid — click any built-in theme's swatch to switch instantly.
 - "Manage Themes…" link to open the Theme Manager modal.
 
 **Layout & Page**
@@ -679,33 +685,40 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
     title: "Scene Highlighting (Color Coding)",
     category: "Production Features",
     tags: ["highlight", "color", "scene", "color code"],
-    relatedIds: ["production-breakdown", "notes-markers", "outline-navigator"],
+    relatedIds: ["tag-manager", "notes-markers", "outline-navigator"],
     content: `Right-click a scene heading and choose **Highlight Scene** → pick a color (Red, Orange, Yellow, Green, Blue, Purple, Pink) or **Clear Highlight** to remove it. Color is stored as \`[[color name]]\` on the scene heading line. Hex codes also work: \`[[#ff0000]]\`
 
-**11 supported named colors:** blue, brown, cyan, green, magenta, orange, pink, purple, red, yellow, none.
+**7 supported named colors:** red, orange, yellow, green, blue, purple, pink.
 
 Highlighted scenes show a colored left border in the editor, a colored dot in the Outline Navigator, and are exported as color-tagged elements in FDX format. The Outline Navigator's filter popover lets you filter by scene color with count badges.`,
   },
   {
-    id: "production-breakdown",
-    title: "Production Breakdown & Tagging",
+    id: "tag-manager",
+    title: "Tag Manager",
     category: "Production Features",
-    tags: ["breakdown", "tag", "props", "cast", "vfx", "production"],
+    tags: ["tag", "breakdown", "props", "cast", "vfx", "production"],
     relatedIds: ["scene-highlighting", "notes-markers", "context-menu"],
     content: `Tag production elements directly in your script without cluttering the text. Select text, right-click → **Tag**, and choose a category (or <kbd>Ctrl</kbd>+right-click for Quick Tag Mode):
 
 **15 categories:** Cast (Character), Prop, VFX, SFX (Special Effect), Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other.
 
-Character names are automatically tagged as Cast. Tags are serialized in .actone bundles as \`production_tags.json\`.
+Character names are automatically detected and tagged as Cast. Tags are serialized in .actone bundles as \`production_tags.json\`.
 
-Open the **Production Breakdown** modal (Command Palette → "Show Production Breakdown…") to view a matrix of all scenes and their tags, grouped by category. Each tag shows occurrence count — click to jump to that scene. Export the breakdown as CSV.`,
+Open the **Tag Manager** (Command Palette → "Open Tag Manager…") with two tabs:
+
+- **Tag Reports** — Two views:
+  - **Scene by Scene**: a dense table showing all scenes with their tags in category columns. Filter by category and search by scene or tag name. Click any tag to jump directly to that scene. Export the breakdown as CSV.
+  - **List by Tag**: accordion list grouped by category → definition → scene list. Each definition shows its usage count and clickable scene entries.
+- **Edit Tags** — Browse all tag definitions organized by category. Select a definition to view a detail panel with rename (inline text field + save/cancel), two-click delete confirmation, and a table of all tagged scenes with clickable navigation.
+
+Quick-tag from the editor with <kbd>Ctrl</kbd>+right-click to bypass the tag type menu.`,
   },
   {
     id: "notes-markers",
     title: "Color Markers & Notes",
     category: "Production Features",
     tags: ["markers", "notes", "[[ ]]", "inline comments", "color"],
-    relatedIds: ["markers-list", "production-breakdown"],
+    relatedIds: ["markers-list", "tag-manager"],
     content: `Insert inline notes anywhere using double-bracket syntax: \`[[marker color: description]]\`
 
 **Example:** \`[[marker red: Fix description here]]\`
@@ -729,7 +742,7 @@ Storyline labels appear as uppercase pill badges in the Outline Navigator per sc
     title: "Structure Templates",
     category: "Production Features",
     tags: ["template", "structure", "three act", "save the cat", "beat sheet"],
-    relatedIds: ["production-breakdown", "sections", "outline-navigator"],
+    relatedIds: ["tag-manager", "sections", "outline-navigator"],
     content: `Open the Command Palette → "Import Structure Template" to browse and insert predefined screenplay structures. 8 built-in templates:
 
 1. **Three-Act Structure** (10 beats) — Classical Western filmmaking.
@@ -738,7 +751,7 @@ Storyline labels appear as uppercase pill badges in the Outline Navigator per sc
 4. **The Story Circle** (6 beats) — Dan Harmon's story circle.
 5. **Freytag's Pyramid** (5 beats) — Gustav Freytag's dramatic arc.
 6. **John Truby's 7 Key Steps** — From "The Anatomy of Story".
-7. **Michael Hauge's 6-Stage Journey** (10 beats) — Inner + outer journey.
+7. **Michael Hauge's 6 Stage Journey** (10 beats) — Inner + outer journey.
 8. **The Sequence Approach** (8 beats) — Frank Daniel's 8 sequences.
 
 The import modal shows a detailed preview of each beat. Choose insertion mode: **Insert at Cursor**, **Append to End**, or **Overwrite** (with confirmation). Templates insert as \`## Beat\` section headers and \`= Description\` synopsis lines.`,
@@ -823,6 +836,9 @@ Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\
 - **Font** — Courier Prime or Courier Prime Sans.
 - **Include Sections** — render \`#\` section headers.
 - **Include Synopsis** — render \`=\` synopsis lines.
+- **Script Fonts** — per-script language font detection with a system font picker for multi-script bundles.
+- **Element Formatting** — per-element B/I/U toggles for Scene Heading, Action, Character, Parenthetical, Dialogue, Lyrics, Transition, Shot, and Centered Text.
+- **Watermark Options** — Header watermark (text + opacity), Footer watermark (text + opacity), Center watermark (text or image type with image path browser, grayscale toggle, opacity slider; accepts PNG/JPG/BMP/GIF/WebP).
 
 Paper Size (Letter or A4) is inherited from Settings. PDF includes page numbering after the title page and proper screenplay formatting (dialogue indentation, dual dialogue columns, right-aligned transitions, smart page breaks with orphan/widow protection).`,
   },
@@ -876,22 +892,28 @@ Quick Settings are also available from the Activity Bar gear icon for common adj
     category: "Settings & Customization",
     tags: ["theme", "colors", "dark", "light", "custom"],
     relatedIds: ["settings-overview", "font-paper"],
-    content: `ActOne ships with **6 built-in themes**:
+    content: `ActOne ships with **9 built-in themes** organized into sections, plus an **Adaptive** mode:
 
-| Theme | Mode | Description |
-|-------|------|-------------|
-| Studio Light | Light | Clean light theme |
-| Midnight | Dark | Clean dark theme |
-| Warm Sepia | Light | Cream-colored comfort for writing |
-| Matrix Charcoal | Dark | Dark charcoal with green accents |
-| Pitch Black | Dark | Pure black background |
-| Pitch White | Light | Pure white e-ink style |
+| Section | Theme | Mode | Description |
+|---------|-------|------|-------------|
+| ADAPTIVE | Adaptive | Auto | Follows system light/dark preference |
+| CLASSIC | Classic Light | Light | Clean light theme |
+| CLASSIC | Classic Dark | Dark | Clean dark theme |
+| PITCH | Pitch Black | Dark | Pure black with grey tones |
+| PITCH | Pitch White | Light | Pure white with dark tones |
+| OTHER | Noir | Dark | Dark blue with red accent |
+| OTHER | Ocean | Dark | Navy with cyan accent |
+| OTHER | Sunset | Dark | Maroon with orange accent |
+| OTHER | Forest | Dark | Green with olive accent |
+| OTHER | Lavender | Dark | Purple with lavender accent |
 
-**Create your own** via Settings → Theme Manager. Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, and see a live preview of a rendered miniature screenplay with activity bar, sidebar, and editor.
+**Adaptive** mode automatically switches between Classic Light and Classic Dark based on your system's appearance setting (<code>prefers-color-scheme</code>). The transition happens instantly — no refresh needed. Select it from the Quick Settings theme grid or the Theme Manager.
 
-**5 preset starting points:** Noir, Ocean, Sunset, Forest, Lavender. Custom themes persist in localStorage (\`actone-custom-themes\`).
+Quick-switch between any theme from the **Quick Settings** menu in the Activity Bar — a color swatch grid shows all themes plus Adaptive. Each swatch shows the sidebar and accent colors, with the active theme highlighted.
 
-Quick-switch themes from the Activity Bar's Quick Settings menu or the Welcome screen footer.`,
+**Create your own themes** via Settings → Theme Manager. Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, name it, and see a live preview of a rendered miniature screenplay with activity bar, sidebar, and editor.
+
+**5 dark presets** (Noir, Ocean, Sunset, Forest, Lavender) are available as clickable starting points in the creation form. Custom themes persist in localStorage and appear under a "CUSTOM" section in the Theme Manager.`,
   },
   {
     id: "font-paper",

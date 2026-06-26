@@ -202,7 +202,7 @@ function computeSuggestion(state: EditorState): SuggestionData | null {
   if (type === LINE_ACTION) {
     const hasForceMarker = trimmed.startsWith("@");
     const prefix = hasForceMarker ? trimmed.substring(1).trimStart() : trimmed;
-    if (!hasForceMarker && (!/^[A-Z][A-Z\s.'\-]*$/.test(prefix) || prefix.length < 2)) return null;
+    if (!hasForceMarker && (!/^[A-Z][A-Z\s.'-]*$/.test(prefix) || prefix.length < 2)) return null;
     const upperPrefix = prefix.toUpperCase();
     const chars = computeCharacters(state, currentLine);
     let best: string | null = null;
@@ -354,7 +354,7 @@ export function fountainCompletionSource(context: CompletionContext): Completion
     const hasForceMarker = trimmed.startsWith("@");
     const prefix = hasForceMarker ? trimmed.substring(1).trimStart() : trimmed;
     if (!prefix) return null;
-    if (!hasForceMarker && (!/^[A-Z][A-Z\s.'\-]*$/.test(prefix) || prefix.length < 2)) return null;
+    if (!hasForceMarker && (!/^[A-Z][A-Z\s.'-]*$/.test(prefix) || prefix.length < 2)) return null;
     const upperPrefix = prefix.toUpperCase();
     const chars = computeCharacters(state, line.number);
     const options = [...chars]

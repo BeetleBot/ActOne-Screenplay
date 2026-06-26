@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import { useUI, useFile, useTheme } from "../../context";
-import { themes } from "../../theme";
+import React, { useState, useCallback } from "react";
+import { useUI, useFile } from "../../context";
 import { PILL_RADIUS } from "../../constants";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
@@ -11,13 +10,13 @@ import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
-import Select from "@mui/material/Select";
 import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
 import {
   FormatListBulletedIcon, LibraryBooksIcon, PersonIcon, BarChartIcon,
   AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CheckIcon,
   RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon, NoteAddIcon,
+  KeyboardArrowDownIcon,
 } from "../Icons";
 
 interface ActivityBarProps {
@@ -28,12 +27,11 @@ interface ActivityBarProps {
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
   onOpenBreakdownModal: () => void;
-  onOpenThemeManagerModal: () => void;
 }
 
 export const ActivityBar: React.FC<ActivityBarProps> = ({
   activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen,
-  onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal, onOpenThemeManagerModal,
+  onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal,
 }) => {
   const {
     paperSize, setPaperSize,
@@ -43,9 +41,17 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
     isZenMode,
   } = useUI();
   const { filePath } = useFile();
-  const { theme, setTheme, customThemes } = useTheme();
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const toggleSection = useCallback((key: string) => {
+    setCollapsedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   const handleClick = (tab: string) => {
     if (tab === "tags") {
@@ -146,7 +152,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { minWidth: 240, ml: 1 } } }}
+        slotProps={{ paper: { sx: { minWidth: 260, ml: 1 } } }}
       >
         <Box sx={{ px: 2, py: 1.5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'primary.main' }}>
@@ -156,122 +162,141 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
 
         <Divider sx={{ mb: 0.5 }} />
 
-        <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>View & Scale</Typography>
-        
-        <Box sx={{ px: 2, py: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-            <Typography variant="caption" sx={{ fontWeight: 600 }}>Interface Scale</Typography>
-            <Typography variant="caption" color="primary">{appScale}%</Typography>
-          </Box>
-          <Slider
-            size="small"
-            min={75}
-            max={150}
-            step={5}
-            value={appScale}
-            onChange={(_, val) => setAppScale(val as number)}
-            aria-label="Interface Scale"
-          />
+        {/* ── View & Scale ── */}
+        <Box
+          sx={{ px: 2, pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+          onClick={() => toggleSection('view')}
+        >
+          <Typography variant="overline" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>
+            View & Scale
+          </Typography>
+          <KeyboardArrowDownIcon sx={{
+            fontSize: 16, color: 'text.disabled',
+            transform: collapsedSections.has('view') ? 'rotate(-90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s',
+          }} />
         </Box>
 
-        <Box sx={{ px: 2, py: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-            <Typography variant="caption" sx={{ fontWeight: 600 }}>Editor Zoom</Typography>
-            <Typography variant="caption" color="primary">{zoomLevel}%</Typography>
-          </Box>
-          <Slider
-            size="small"
-            min={50}
-            max={200}
-            step={10}
-            value={zoomLevel}
-            onChange={(_, val) => setZoomLevel(val as number)}
-            aria-label="Editor Zoom"
-          />
+        {!collapsedSections.has('view') && (
+          <>
+            <Box sx={{ px: 2, py: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600 }}>Interface Scale</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="caption" color="primary">{appScale}%</Typography>
+                  <IconButton
+                    size="small" onClick={() => { setZoomLevel(100); setAppScale(100); }}
+                    sx={{ p: 0.2, color: (appScale !== 100 || zoomLevel !== 100) ? 'primary.main' : 'text.disabled' }}
+                  >
+                    <RestartAltIcon sx={{ fontSize: 12 }} />
+                  </IconButton>
+                </Box>
+              </Box>
+              <Slider size="small" min={50} max={300} step={5} value={appScale}
+                onChange={(_, val) => setAppScale(val as number)} aria-label="Interface Scale" />
+            </Box>
+
+            <Box sx={{ px: 2, py: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600 }}>Editor Zoom</Typography>
+                <Typography variant="caption" color="primary">{zoomLevel}%</Typography>
+              </Box>
+              <Slider size="small" min={50} max={400} step={10} value={zoomLevel}
+                onChange={(_, val) => setZoomLevel(val as number)} aria-label="Editor Zoom" />
+            </Box>
+          </>
+        )}
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* ── Editor Preferences ── */}
+        <Box
+          sx={{ px: 2, pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+          onClick={() => toggleSection('editor')}
+        >
+          <Typography variant="overline" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>
+            Editor Preferences
+          </Typography>
+          <KeyboardArrowDownIcon sx={{
+            fontSize: 16, color: 'text.disabled',
+            transform: collapsedSections.has('editor') ? 'rotate(-90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s',
+          }} />
         </Box>
 
-        <MenuItem onClick={() => { setZoomLevel(100); setAppScale(100); }} dense sx={{ py: 1 }}>
-          <ListItemIcon><RestartAltIcon sx={{ fontSize: 18 }} /></ListItemIcon>
-          <ListItemText primary={<Typography variant="body2">Reset View</Typography>} />
-        </MenuItem>
+        {!collapsedSections.has('editor') && (
+          <>
+            <MenuItem onClick={() => setTypewriterMode(!typewriterMode)} dense>
+              <ListItemIcon>
+                <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {typewriterMode ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
+                </Box>
+              </ListItemIcon>
+              <ListItemText primary={<Typography variant="body2">Typewriter Mode</Typography>} />
+            </MenuItem>
 
-        <Divider sx={{ my: 0.5 }} />
+            <MenuItem onClick={() => setHideSyntaxEnabled(!hideSyntaxEnabled)} dense>
+              <ListItemIcon>
+                <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {hideSyntaxEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
+                </Box>
+              </ListItemIcon>
+              <ListItemText primary={<Typography variant="body2">Hide Fountain Markup</Typography>} />
+            </MenuItem>
+          </>
+        )}
 
-        <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Editor Preferences</Typography>
-        
-        <MenuItem onClick={() => setTypewriterMode(!typewriterMode)} dense>
-          <ListItemIcon>
-            <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {typewriterMode ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
-            </Box>
-          </ListItemIcon>
-          <ListItemText primary={<Typography variant="body2">Typewriter Mode</Typography>} />
-        </MenuItem>
-
-        <MenuItem onClick={() => setHideSyntaxEnabled(!hideSyntaxEnabled)} dense>
-          <ListItemIcon>
-            <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {hideSyntaxEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
-            </Box>
-          </ListItemIcon>
-          <ListItemText primary={<Typography variant="body2">Hide Fountain Markup</Typography>} />
-        </MenuItem>
-
-        <Divider sx={{ my: 0.5 }} />
-
-        <Typography variant="overline" sx={{ px: 2, pt: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Theme</Typography>
-        <MenuItem onClick={() => {}} sx={{ cursor: 'default', '&:hover': { bgcolor: 'transparent' } }}>
-          <Select
-            value={theme}
-            onChange={(e) => { setTheme(e.target.value); setAnchorEl(null); }}
-            size="small"
-            fullWidth
-            variant="outlined"
-            sx={{ fontSize: '0.8rem' }}
-          >
-            {themes.map(t => (
-              <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.8rem' }}>
-                {t.name}
-              </MenuItem>
-            ))}
-            {customThemes.map(t => (
-              <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.8rem' }}>
-                {t.name} (Custom)
-              </MenuItem>
-            ))}
-          </Select>
-        </MenuItem>
-        <MenuItem onClick={() => { setAnchorEl(null); onOpenThemeManagerModal(); }} dense sx={{ py: 0.5 }}>
-          <Typography variant="caption" color="primary" sx={{ fontWeight: 600, pl: 2 }}>Manage Themes...</Typography>
-        </MenuItem>
-
-        <Divider sx={{ my: 0.5 }} />
-        <Typography variant="overline" sx={{ px: 2, pt: 1, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>Layout & Page</Typography>
-        
-        <MenuItem onClick={() => {}} sx={{ cursor: 'default', '&:hover': { bgcolor: 'transparent' } }}>
-          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-             <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button 
-                  size="small" 
-                  variant={paperSize === "letter" ? "contained" : "outlined"}
-                  fullWidth
-                  onClick={() => setPaperSize("letter")}
-                   sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: PILL_RADIUS }}
-                 >
-                   Letter
-                 </Button>
-                 <Button 
-                   size="small" 
-                   variant={paperSize === "a4" ? "contained" : "outlined"}
-                   fullWidth
-                   onClick={() => setPaperSize("a4")}
-                   sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: PILL_RADIUS }}
-                >
-                  A4
-                </Button>
-             </Box>
+        {collapsedSections.has('editor') && (
+          <Box sx={{ px: 2, py: 0.6 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+              {[typewriterMode && 'Typewriter', hideSyntaxEnabled && 'Markup hidden'].filter(Boolean).join(' • ') || 'All off'}
+            </Typography>
           </Box>
-        </MenuItem>
+        )}
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* ── Layout & Page ── */}
+        <Box
+          sx={{ px: 2, pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+          onClick={() => toggleSection('layout')}
+        >
+          <Typography variant="overline" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>
+            Layout & Page
+          </Typography>
+          <KeyboardArrowDownIcon sx={{
+            fontSize: 16, color: 'text.disabled',
+            transform: collapsedSections.has('layout') ? 'rotate(-90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s',
+          }} />
+        </Box>
+
+        {!collapsedSections.has('layout') && (
+          <MenuItem onClick={() => {}} sx={{ cursor: 'default', '&:hover': { bgcolor: 'transparent' } }}>
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+               <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    size="small"
+                    variant={paperSize === "letter" ? "contained" : "outlined"}
+                    fullWidth
+                    onClick={() => setPaperSize("letter")}
+                     sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: PILL_RADIUS }}
+                   >
+                    Letter
+                  </Button>
+                  <Button
+                    size="small"
+                    variant={paperSize === "a4" ? "contained" : "outlined"}
+                    fullWidth
+                    onClick={() => setPaperSize("a4")}
+                    sx={{ fontSize: '0.65rem', py: 0.5, borderRadius: PILL_RADIUS }}
+                  >
+                    A4
+                  </Button>
+               </Box>
+            </Box>
+          </MenuItem>
+        )}
 
         <Divider sx={{ my: 0.5 }} />
 

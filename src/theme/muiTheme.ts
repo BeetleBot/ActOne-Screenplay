@@ -1,7 +1,7 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { PILL_RADIUS } from '../constants';
 
-export type ThemeId = 'light' | 'dark' | 'sepia' | 'charcoal' | 'pitch-black' | 'pitch-white';
+export type ThemeId = 'adaptive' | 'light' | 'dark' | 'pitch-black' | 'pitch-white' | 'noir' | 'ocean' | 'sunset' | 'forest' | 'lavender';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -25,6 +25,7 @@ export interface ThemeConfig {
   desc: string;
   isDark: boolean;
   colors: ThemeColors;
+  category: "classic" | "pitch" | "other" | "custom";
 }
 
 export function deriveAllColors(colors: {
@@ -54,9 +55,10 @@ export function deriveAllColors(colors: {
 export const themes: ThemeConfig[] = [
   {
     id: "light",
-    name: "Studio Light",
+    name: "Classic Light",
     desc: "Clean light theme",
     isDark: false,
+    category: "classic",
     colors: deriveAllColors({
       editor: "#ffffff",
       text: "#1a1c1e",
@@ -67,9 +69,10 @@ export const themes: ThemeConfig[] = [
   },
   {
     id: "dark",
-    name: "Midnight",
+    name: "Classic Dark",
     desc: "Clean dark theme",
     isDark: true,
+    category: "classic",
     colors: deriveAllColors({
       editor: "#111416",
       text: "#e2e2e6",
@@ -79,36 +82,11 @@ export const themes: ThemeConfig[] = [
     }, true),
   },
   {
-    id: "sepia",
-    name: "Warm Sepia",
-    desc: "Comfortable cream colors for writing",
-    isDark: false,
-    colors: deriveAllColors({
-      editor: "#f4ecd8",
-      text: "#433422",
-      accent: "#b45309",
-      sidebar: "#eadcb9",
-      button: "#b45309",
-    }, false),
-  },
-  {
-    id: "charcoal",
-    name: "Matrix Charcoal",
-    desc: "Dark charcoal with neon green accents",
-    isDark: true,
-    colors: deriveAllColors({
-      editor: "#1a1a1a",
-      text: "#e0e0e0",
-      accent: "#10b981",
-      sidebar: "#262626",
-      button: "#10b981",
-    }, true),
-  },
-  {
     id: "pitch-black",
     name: "Pitch Black",
     desc: "Pure black background with grey tones",
     isDark: true,
+    category: "pitch",
     colors: deriveAllColors({
       editor: "#000000",
       text: "#deddda",
@@ -122,6 +100,7 @@ export const themes: ThemeConfig[] = [
     name: "Pitch White",
     desc: "Pure white e-ink style, only black and white",
     isDark: false,
+    category: "pitch",
     colors: deriveAllColors({
       editor: "#ffffff",
       text: "#000000",
@@ -129,7 +108,77 @@ export const themes: ThemeConfig[] = [
       sidebar: "#ffffff",
       button: "#000000",
     }, false),
-  }
+  },
+  {
+    id: "noir",
+    name: "Noir",
+    desc: "Dark with gold accents",
+    isDark: true,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#111416",
+      text: "#e2e2e6",
+      accent: "#c8a05c",
+      sidebar: "#1a1a1e",
+      button: "#c8a05c",
+    }, true),
+  },
+  {
+    id: "ocean",
+    name: "Ocean",
+    desc: "Deep blue with teal accents",
+    isDark: true,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#0a1628",
+      text: "#e0f0ff",
+      accent: "#4ecdc4",
+      sidebar: "#0d1b2a",
+      button: "#4ecdc4",
+    }, true),
+  },
+  {
+    id: "sunset",
+    name: "Sunset",
+    desc: "Warm cream with coral accents",
+    isDark: false,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#fffaf5",
+      text: "#2d1b14",
+      accent: "#e8634a",
+      sidebar: "#fff5ee",
+      button: "#e8634a",
+    }, false),
+  },
+  {
+    id: "forest",
+    name: "Forest",
+    desc: "Dark green with spring green accents",
+    isDark: true,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#162416",
+      text: "#d4e6d4",
+      accent: "#7ec850",
+      sidebar: "#1a2e1a",
+      button: "#7ec850",
+    }, true),
+  },
+  {
+    id: "lavender",
+    name: "Lavender",
+    desc: "Soft purple with violet accents",
+    isDark: false,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#faf7ff",
+      text: "#2a1a3e",
+      accent: "#b088d6",
+      sidebar: "#f5f0ff",
+      button: "#b088d6",
+    }, false),
+  },
 ];
 
 const shared: ThemeOptions = {
@@ -298,26 +347,35 @@ export function createActOneTheme(t: ThemeConfig, appScale: number) {
             borderRadius: '10px',
             backgroundColor: c.dropdown,
             color: c.dropdownText,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+            padding: '4px 0',
           },
           list: {
-            paddingTop: '4px',
-            paddingBottom: '4px',
+            paddingTop: 0,
+            paddingBottom: 0,
           },
         },
       },
       MuiMenuItem: {
         styleOverrides: {
           root: {
-            fontSize: '12.5px',
-            paddingTop: '3px',
-            paddingBottom: '3px',
-            paddingLeft: '8px',
-            paddingRight: '8px',
-            minHeight: '26px',
+            fontSize: '12px',
+            paddingTop: '5px',
+            paddingBottom: '5px',
+            paddingLeft: '10px',
+            paddingRight: '10px',
+            minHeight: '28px',
             borderRadius: '6px',
-            margin: '1px 4px',
+            margin: '2px 6px',
+            transition: 'background-color 0.1s',
+            '&.Mui-selected': {
+              backgroundColor: 'action.selected',
+            },
+            '&.Mui-selected:hover': {
+              backgroundColor: 'action.selected',
+            },
             '& .MuiListItemText-primary': {
-              fontSize: '12.5px',
+              fontSize: '12px',
             },
             '& .MuiListItemText-secondary': {
               fontSize: '10.5px',
@@ -333,16 +391,45 @@ export function createActOneTheme(t: ThemeConfig, appScale: number) {
           },
         },
       },
-      MuiSelect: {
+      MuiInputLabel: {
         styleOverrides: {
-          select: {
-            backgroundColor: c.dropdown,
+          root: {
+            fontSize: '12px',
+            color: 'text.secondary',
+            '&.Mui-focused': {
+              color: 'primary.main',
+            },
           },
         },
       },
       MuiOutlinedInput: {
         styleOverrides: {
           root: { borderRadius: '12px' },
+        },
+      },
+      MuiSelect: {
+        defaultProps: {
+          MenuProps: {
+            slotProps: {
+              paper: { sx: { mt: '2px' } },
+            },
+          },
+        },
+        styleOverrides: {
+          root: {
+            fontSize: '12px',
+            borderRadius: '6px',
+            '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+            backgroundColor: c.dropdown,
+            '&:hover': { backgroundColor: 'action.hover' },
+            '&.Mui-focused': { backgroundColor: 'action.hover' },
+          },
+          select: {
+            padding: '7.2px 10px',
+          },
+          icon: {
+            color: 'text.secondary',
+          },
         },
       },
       MuiAutocomplete: {

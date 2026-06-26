@@ -88,7 +88,7 @@ export function parseSceneHeading(headingText: string): ParsedSceneHeading {
 
   if (parts.length > 1) {
     const rawTime = parts[parts.length - 1].trim();
-    const cleanTime = rawTime.replace(/[\[\(].*?[\]\)]/g, "").trim().toUpperCase();
+    const cleanTime = rawTime.replace(/[[(].*?[\])]/g, "").trim().toUpperCase();
     if (cleanTime) {
       timeOfDay = cleanTime;
     }
@@ -110,8 +110,8 @@ export function parseSceneHeading(headingText: string): ParsedSceneHeading {
 }
 
 export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'letter'): FountainDocument {
-  let screenplayText = rawText;
-  let settings: any = {};
+  const screenplayText = rawText;
+  const settings: any = {};
 
   const rawLines = screenplayText.split(/\r?\n/);
   const parsedLines: ParsedLine[] = [];
@@ -708,7 +708,7 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
     if (prevElement === null) {
       resultLines.push(curr.text);
     } else {
-      let spacing = 1;
+      let spacing: number;
       if (isDialogueSubElement(curr.type) && isDialogueType(prevElement.type)) {
         spacing = 0;
       } else if (curr.type === LineType.action && prevElement.type === LineType.action) {
