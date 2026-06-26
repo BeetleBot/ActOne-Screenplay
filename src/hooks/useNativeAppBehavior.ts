@@ -1,6 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-export function useNativeAppBehavior() {
+const ACCEPTED_EXTENSIONS = new Set([".fountain", ".txt", ".actone"]);
+
+export function useNativeAppBehavior(
+  onDropFiles?: (paths: string[]) => void,
+  onDragStateChange?: (isDragging: boolean) => void
+) {
+  const onDropFilesRef = useRef(onDropFiles);
+  onDropFilesRef.current = onDropFiles;
+  const onDragStateChangeRef = useRef(onDragStateChange);
+  onDragStateChangeRef.current = onDragStateChange;
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
@@ -78,8 +87,6 @@ export function useNativeAppBehavior() {
       }
     };
 
-    // Prevent browser navigation on external file drops (harmless for in-app DnD
-    // since child element drop handlers run before this bubbles up to window)
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
     };
@@ -89,11 +96,41 @@ export function useNativeAppBehavior() {
     window.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("drop", handleDrop);
 
+    let unlistenDragDrop: (() => void) | undefined;
+
+    const setupDragDrop = async () => {
+      try {
+        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        unlistenDragDrop = await getCurrentWebview().onDragDropEvent((event) => {
+          const payload = event.payload;
+          if (payload.type === "enter") {
+            onDragStateChangeRef.current?.(true);
+          } else if (payload.type === "leave") {
+            onDragStateChangeRef.current?.(false);
+          } else if (payload.type === "drop") {
+            onDragStateChangeRef.current?.(false);
+            const valid = payload.paths.filter((p) => {
+              const ext = p.slice(p.lastIndexOf(".")).toLowerCase();
+              return ACCEPTED_EXTENSIONS.has(ext);
+            });
+            if (valid.length > 0) {
+              onDropFilesRef.current?.(valid);
+            }
+          }
+        });
+      } catch {
+        // Not in Tauri — no-op, native drop is already prevented
+      }
+    };
+
+    setupDragDrop();
+
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("drop", handleDrop);
+      unlistenDragDrop?.();
     };
   }, []);
 }

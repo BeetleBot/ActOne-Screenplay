@@ -3,14 +3,49 @@ import { AppProviders, useFile, useUI, useEditor, ThemeProvider, SprintProvider,
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals } from "./hooks";
 import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary } from "./components";
 import { logger } from "./utils/logger";
+import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
 const isEditorWindow = action === "new" || action === "open" || action === "template";
 
 function AppInner() {
-  useNativeAppBehavior();
+  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath } = useFile();
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const { confirm } = useCustomModal();
+
+  const isStandalone = !isEditorWindow;
+
+  const handleDropFiles = useCallback((paths: string[]) => {
+    if (isStandalone) {
+      const path = paths[0];
+      if (!path) return;
+      localStorage.setItem("pending-open-path", path);
+      localStorage.setItem("pending-action", "open");
+      (async () => {
+        try {
+          const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+          const { getCurrentWindow } = await import("@tauri-apps/api/window");
+          const webview = new WebviewWindow("main", {
+            url: "/?action=open",
+            title: "ActOne",
+            width: 1000,
+            height: 700,
+            decorations: false,
+          });
+          await Promise.race([
+            new Promise<void>((resolve) => webview.once("tauri://created", () => resolve())),
+            new Promise<void>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+          ]);
+          await getCurrentWindow().close();
+        } catch {}
+      })();
+    } else {
+      paths.forEach((p) => openFilePath(p));
+    }
+  }, [isStandalone, openFilePath]);
+
+  useNativeAppBehavior(handleDropFiles, setIsDraggingOver);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -24,7 +59,6 @@ function AppInner() {
     togglePalette
   } = useModals();
 
-  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath } = useFile();
   const { editorView, cleanExtraSpace } = useEditor();
   const {
     zoomLevel,
@@ -255,6 +289,7 @@ function AppInner() {
         <ErrorBoundary name="welcome">
           <WelcomeScreenWindow standalone />
         </ErrorBoundary>
+        {isDraggingOver && <DropOverlay />}
       </>
     );
   }
@@ -299,6 +334,7 @@ function AppInner() {
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
     </div>
+    {isDraggingOver && <DropOverlay />}
     </>
   );
 }
@@ -314,6 +350,44 @@ function App() {
         </ThemeProvider>
       </AppProviders>
     </ErrorBoundary>
+  );
+}
+
+function DropOverlay() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        background: "rgba(0,0,0,0.55)",
+        backdropFilter: "blur(4px)",
+        color: "white",
+      }}
+    >
+      <FolderOpenIcon sx={{ fontSize: 48 }} />
+      <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "0.02em" }}>
+        Drop to open
+      </span>
+      <div style={{ display: "flex", gap: 8, opacity: 0.6, fontSize: 12, fontWeight: 500 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <DescriptionIcon sx={{ fontSize: 14 }} /> .fountain
+        </span>
+        <span style={{ opacity: 0.35 }}>|</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <DescriptionIcon sx={{ fontSize: 14 }} /> .txt
+        </span>
+        <span style={{ opacity: 0.35 }}>|</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <DescriptionIcon sx={{ fontSize: 14 }} /> .actone
+        </span>
+      </div>
+    </div>
   );
 }
 

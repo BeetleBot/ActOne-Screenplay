@@ -18,9 +18,11 @@ export interface ActoneBundle {
 
 export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): ActoneBundle {
   const hasMagic = bytes.length >= MAGIC_LENGTH &&
-    bytes[0] === ACTONE_MAGIC[0] && bytes[1] === ACTONE_MAGIC[1] &&
-    bytes[2] === ACTONE_MAGIC[2] && bytes[3] === ACTONE_MAGIC[3];
-  const zipBytes = hasMagic ? bytes.slice(MAGIC_LENGTH) : bytes;
+    bytes[bytes.length - 4] === ACTONE_MAGIC[0] &&
+    bytes[bytes.length - 3] === ACTONE_MAGIC[1] &&
+    bytes[bytes.length - 2] === ACTONE_MAGIC[2] &&
+    bytes[bytes.length - 1] === ACTONE_MAGIC[3];
+  const zipBytes = hasMagic ? bytes.slice(0, bytes.length - MAGIC_LENGTH) : bytes;
   const unzipped = unzipSync(zipBytes);
 
   let parsedSettings: Record<string, any> = {};
@@ -113,8 +115,8 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
   }
 
   const zipped = zipSync(entries);
-  const result = new Uint8Array(MAGIC_LENGTH + zipped.length);
-  result.set(ACTONE_MAGIC);
-  result.set(zipped, MAGIC_LENGTH);
+  const result = new Uint8Array(zipped.length + MAGIC_LENGTH);
+  result.set(zipped);
+  result.set(ACTONE_MAGIC, zipped.length);
   return result;
 }
