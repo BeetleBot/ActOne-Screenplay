@@ -20,7 +20,9 @@ if [ -n "$NEW_VERSION" ]; then
     VERSION="$NEW_VERSION"
     echo "==> Updating version to $VERSION"
     sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/package.json"
-    node "$PROJECT_ROOT/sync-version.js"
+    cd "$PROJECT_ROOT"
+    node sync-version.js
+    cd "$OLDPWD"
     echo "==> Version updated"
 fi
 
