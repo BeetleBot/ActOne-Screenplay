@@ -12,6 +12,18 @@ if [ -z "${VERSION:-}" ]; then
 fi
 echo "==> Building ActOne v$VERSION (Linux Tarball)"
 
+# --- Version prompt ---
+echo ""
+echo -n "Enter version number (current is $VERSION, press Enter to keep): "
+read -r NEW_VERSION
+if [ -n "$NEW_VERSION" ]; then
+    VERSION="$NEW_VERSION"
+    echo "==> Updating version to $VERSION"
+    sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" "$PROJECT_ROOT/package.json"
+    node "$PROJECT_ROOT/sync-version.js"
+    echo "==> Version updated"
+fi
+
 # --- Detect or prompt for distro ---
 detect_distro() {
     if [ -f /etc/os-release ]; then
