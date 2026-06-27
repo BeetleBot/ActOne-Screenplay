@@ -52,22 +52,22 @@ const NOTO_FONTS: [&[u8]; 35] = [
     include_bytes!("fonts/MuktaVaani-Bold.ttf"),        // 13
     include_bytes!("fonts/MuktaMahee-Regular.ttf"),     // 14 - Punjabi
     include_bytes!("fonts/MuktaMahee-Bold.ttf"),        // 15
-    // 16-33: New Scrite-aligned fonts
-    include_bytes!("fonts/HindMadurai-Regular.ttf"),    // 16 - Tamil (Scrite default)
+    // 16-33: Indian language fonts
+    include_bytes!("fonts/HindMadurai-Regular.ttf"),    // 16 - Tamil
     include_bytes!("fonts/HindMadurai-Bold.ttf"),       // 17
-    include_bytes!("fonts/HindGuntur-Regular.ttf"),     // 18 - Telugu (Scrite default)
+    include_bytes!("fonts/HindGuntur-Regular.ttf"),     // 18 - Telugu
     include_bytes!("fonts/HindGuntur-Bold.ttf"),        // 19
-    include_bytes!("fonts/HindSiliguri-Regular.ttf"),   // 20 - Bengali (Scrite default)
+    include_bytes!("fonts/HindSiliguri-Regular.ttf"),   // 20 - Bengali
     include_bytes!("fonts/HindSiliguri-Bold.ttf"),      // 21
-    include_bytes!("fonts/HindVadodara-Regular.ttf"),   // 22 - Gujarati (Scrite default)
+    include_bytes!("fonts/HindVadodara-Regular.ttf"),   // 22 - Gujarati
     include_bytes!("fonts/HindVadodara-Bold.ttf"),      // 23
-    include_bytes!("fonts/BalooTamma2-Regular.ttf"),    // 24 - Kannada (Scrite default)
+    include_bytes!("fonts/BalooTamma2-Regular.ttf"),    // 24 - Kannada
     include_bytes!("fonts/BalooTamma2-Bold.ttf"),       // 25
-    include_bytes!("fonts/BalooChettan2-Regular.ttf"),  // 26 - Malayalam (Scrite default)
+    include_bytes!("fonts/BalooChettan2-Regular.ttf"),  // 26 - Malayalam
     include_bytes!("fonts/BalooChettan2-Bold.ttf"),     // 27
-    include_bytes!("fonts/BalooPaaji2-Regular.ttf"),    // 28 - Punjabi (Scrite default)
+    include_bytes!("fonts/BalooPaaji2-Regular.ttf"),    // 28 - Punjabi
     include_bytes!("fonts/BalooPaaji2-Bold.ttf"),       // 29
-    include_bytes!("fonts/BalooBhaina2-Regular.ttf"),   // 30 - Oriya (Scrite default)
+    include_bytes!("fonts/BalooBhaina2-Regular.ttf"),   // 30 - Oriya
     include_bytes!("fonts/BalooBhaina2-Bold.ttf"),      // 31
     include_bytes!("fonts/NotoSansTamil-Regular.ttf"),  // 32 - Tamil alt (user preference)
     include_bytes!("fonts/NotoSansTamil-Bold.ttf"),     // 33
