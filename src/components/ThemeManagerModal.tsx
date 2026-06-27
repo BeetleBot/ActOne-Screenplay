@@ -41,7 +41,7 @@ const THEME_SECTIONS: ThemeSection[] = [
   },
   {
     label: "OTHER",
-    ids: ["noir", "ocean", "sunset", "forest", "lavender"],
+    ids: ["noir", "ocean", "sunrise", "forest", "lavender"],
   },
 ];
 

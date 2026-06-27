@@ -1,16 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { AppProviders, useFile, useUI, useEditor, ThemeProvider, SprintProvider, useCustomModal } from "./context";
-import { useKeyboardShortcuts, useNativeAppBehavior, useModals } from "./hooks";
+import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
 import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary } from "./components";
 import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
+import { STORAGE_KEYS } from "./constants";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
 const isEditorWindow = action === "new" || action === "open" || action === "template";
 
 function AppInner() {
-  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath } = useFile();
+  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc } = useFile();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const { confirm } = useCustomModal();
 
@@ -59,7 +60,7 @@ function AppInner() {
     togglePalette
   } = useModals();
 
-  const { editorView, cleanExtraSpace } = useEditor();
+  const { editorView, cleanExtraSpace, updateSettings } = useEditor();
   const {
     zoomLevel,
     setZoomLevel,
@@ -69,6 +70,13 @@ function AppInner() {
     showSearchPanel,
     setShowSearchPanel,
   } = useUI();
+
+  const modalWindows = useModalWindows({
+    openSettingsDialog: () => setShowSettingsModal(true),
+    openHelpDialog: () => setShowHelpModal(true),
+    openTagManagerDialog: () => setShowBreakdownModal(true),
+    openThemeManagerDialog: () => setShowThemeManagerModal(true),
+  });
 
   useKeyboardShortcuts({
     newFile,
@@ -84,8 +92,8 @@ function AppInner() {
     zoomIn: useCallback(() => setZoomLevel(zoomLevel + 10), [zoomLevel, setZoomLevel]),
     zoomOut: useCallback(() => setZoomLevel(zoomLevel - 10), [zoomLevel, setZoomLevel]),
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
-    openSettings: useCallback(() => setShowSettingsModal(true), []),
-    openHelp: useCallback(() => setShowHelpModal(true), []),
+    openSettings: useCallback(() => { modalWindows.openSettingsWindow(); }, [modalWindows]),
+    openHelp: useCallback(() => { modalWindows.openHelpWindow(); }, [modalWindows]),
     toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
     cleanExtraSpace,
     isDisabled: isModalActive,
@@ -120,6 +128,91 @@ function AppInner() {
       verifyLicense();
     }
   }, [confirm]);
+
+  useEffect(() => {
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (!isTauri) return;
+
+    let unlisteners: (() => void)[] = [];
+
+    const setup = async () => {
+      try {
+        const { listen, emit } = await import("@tauri-apps/api/event");
+        const { EditorView } = await import("@codemirror/view");
+
+        const u1 = await listen("modal:settings:ready", () => {
+          emit("modal:settings:init", {
+            themeId: localStorage.getItem(STORAGE_KEYS.THEME_ID) ?? "light",
+            fontFamily: localStorage.getItem(STORAGE_KEYS.FONT_FAMILY) ?? "courier-prime-sans",
+            paperSize: localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) ?? "a4",
+            typewriterMode: localStorage.getItem(STORAGE_KEYS.TYPEWRITER_MODE) === "true",
+            zoomLevel: parseInt(localStorage.getItem(STORAGE_KEYS.ZOOM_LEVEL) ?? "100", 10),
+            appScale: parseInt(localStorage.getItem(STORAGE_KEYS.APP_SCALE) ?? "100", 10),
+            autocompleteEnabled: localStorage.getItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED) !== "false",
+            smartQuotesEnabled: localStorage.getItem(STORAGE_KEYS.SMART_QUOTES_ENABLED) !== "false",
+            matchParenthesesEnabled: localStorage.getItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED) !== "false",
+            autoSaveEnabled: localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_ENABLED) !== "false",
+            autoSaveInterval: parseInt(localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL) ?? "60000", 10),
+            hideSyntaxEnabled: localStorage.getItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED) === "true",
+            lineFocusEnabled: localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true",
+          });
+        });
+
+        const u2 = await listen<{ key: string; value: string | boolean | number }>("modal:settings:update", (event) => {
+          const { key, value } = event.payload;
+          localStorage.setItem(key === "themeId" ? STORAGE_KEYS.THEME_ID : key as any, String(value));
+          window.dispatchEvent(new CustomEvent("settings-changed", { detail: { key, value } }));
+        });
+
+        const u3 = await listen("modal:tag-manager:ready", () => {
+          const activeFile = filesRef.current.find(f => f.id === activeFileIdRef.current);
+          emit("modal:tag-manager:init", {
+            parsedDoc: parsedDocRef.current,
+            filePath: activeFile?.filePath || "",
+            activeScriptName: "",
+          });
+        });
+
+        const u5 = await listen<{ pos: number }>("modal:tag-manager:scroll-to", (event) => {
+          if (editorViewRef.current) {
+            const ev = editorViewRef.current;
+            ev.dispatch({
+              selection: { anchor: event.payload.pos },
+              effects: EditorView.scrollIntoView(event.payload.pos, { y: "center" }),
+            });
+            ev.focus();
+          }
+        });
+
+        const u6 = await listen<{ action: string; defId: string; newName?: string }>("modal:tag-manager:update-settings", (event) => {
+          const { action, defId, newName } = event.payload;
+          if (action === "rename" && newName) {
+            updateSettingsRef.current((prev: any) => {
+              const prevProdTags = prev.productionTags || { tags: [], definitions: [] };
+              const definitions = (prevProdTags.definitions || []).map((d: any) =>
+                d.id === defId ? { ...d, name: newName } : d
+              );
+              return { ...prev, productionTags: { ...prevProdTags, definitions } };
+            });
+          } else if (action === "delete") {
+            updateSettingsRef.current((prev: any) => {
+              const prevProdTags = prev.productionTags || { tags: [], definitions: [] };
+              const definitions = (prevProdTags.definitions || []).filter((d: any) => d.id !== defId);
+              const tags = (prevProdTags.tags || []).filter((t: any) => t.definitionId !== defId);
+              return { ...prev, productionTags: { tags, definitions } };
+            });
+          }
+        });
+
+        unlisteners = [u1, u2, u3, u5, u6].filter(Boolean) as (() => void)[];
+      } catch (e) {
+        logger.error("app", "Failed to set up modal event listeners:", e);
+      }
+    };
+
+    setup();
+    return () => { unlisteners.forEach(fn => fn()); };
+  }, []);
 
   // Editor window: handle the action param on mount (once only)
   const initialActionHandled = useRef(false);
@@ -166,13 +259,21 @@ function AppInner() {
   const saveFileRef = useRef(saveFile);
   const selectFileRef = useRef(selectFile);
   const confirmRef = useRef(confirm);
+  const editorViewRef = useRef(editorView);
+  const parsedDocRef = useRef(parsedDoc);
+  const updateSettingsRef = useRef(updateSettings);
+  const activeFileIdRef = useRef(activeFileId);
 
   useEffect(() => {
     filesRef.current = files;
     saveFileRef.current = saveFile;
     selectFileRef.current = selectFile;
     confirmRef.current = confirm;
-  }, [files, saveFile, selectFile, confirm]);
+    editorViewRef.current = editorView;
+    parsedDocRef.current = parsedDoc;
+    updateSettingsRef.current = updateSettings;
+    activeFileIdRef.current = activeFileId;
+  }, [files, saveFile, selectFile, confirm, editorView, parsedDoc, updateSettings, activeFileId]);
 
   const isExitingRef = useRef(false);
 
@@ -308,9 +409,10 @@ function AppInner() {
           <MainLayout
             isSidebarOpen={isSidebarOpen}
             setIsSidebarOpen={setIsSidebarOpen}
-            onOpenSettingsModal={() => setShowSettingsModal(true)}
+            onOpenSettingsModal={() => modalWindows.openSettingsWindow()}
             onOpenPalette={() => setIsPaletteOpen(true)}
-            onOpenBreakdownModal={() => setShowBreakdownModal(true)}
+            onOpenBreakdownModal={() => modalWindows.openTagManagerWindow()}
+            onOpenThemeManagerModal={() => modalWindows.openThemeManagerWindow()}
           />
         </ErrorBoundary>
       <ModalManager
@@ -332,6 +434,10 @@ function AppInner() {
         setShowThemeManagerModal={setShowThemeManagerModal}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        openSettingsWindow={modalWindows.openSettingsWindow}
+        openHelpWindow={modalWindows.openHelpWindow}
+        openTagManagerWindow={modalWindows.openTagManagerWindow}
+        openThemeManagerWindow={modalWindows.openThemeManagerWindow}
       />
     </div>
     {isDraggingOver && <DropOverlay />}

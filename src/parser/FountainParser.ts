@@ -37,6 +37,9 @@ export interface ParsedLine {
   collapsed?: boolean;
   marker?: { color: string; description: string };
   storylines?: string[];
+  setting?: string | null;
+  location?: string | null;
+  timeOfDay?: string | null;
 }
 
 export interface FountainDocument {
@@ -177,6 +180,9 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
     let color: string | undefined;
     let marker: { color: string; description: string } | undefined;
     let storylines: string[] | undefined;
+    let setting: string | null | undefined;
+    let location: string | null | undefined;
+    let timeOfDay: string | null | undefined;
 
     if (trimmed === "") {
       type = LineType.empty;
@@ -311,6 +317,10 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
       if (matchNum) {
         sceneNumber = matchNum[1];
       }
+      const parsed = parseSceneHeading(trimmed);
+      setting = parsed.setting;
+      location = parsed.location;
+      timeOfDay = parsed.timeOfDay;
     }
 
     const line: ParsedLine = {
@@ -324,6 +334,9 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
     };
     if (marker) line.marker = marker;
     if (storylines && storylines.length > 0) line.storylines = storylines;
+    if (setting !== undefined) line.setting = setting;
+    if (location !== undefined) line.location = location;
+    if (timeOfDay !== undefined) line.timeOfDay = timeOfDay;
     parsedLines.push(line);
   }
 

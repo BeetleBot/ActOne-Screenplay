@@ -3,6 +3,7 @@ import { renderHook, act } from "@testing-library/react";
 import React from "react";
 import { ThemeProvider, useTheme } from "./ThemeContext";
 import { UIProvider } from "./UIContext";
+import { resetThemeEngine } from "../theme/ThemeEngine";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return React.createElement(UIProvider, null, React.createElement(ThemeProvider, null, children));
@@ -11,6 +12,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
 describe("ThemeContext", () => {
   beforeEach(() => {
     localStorage.clear();
+    resetThemeEngine();
   });
 
   it("provides default theme values", () => {

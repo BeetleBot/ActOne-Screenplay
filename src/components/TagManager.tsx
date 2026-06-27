@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { LineType } from "../parser";
 import { EditorView } from "@codemirror/view";
@@ -29,6 +29,8 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 interface TagManagerProps {
@@ -58,6 +60,9 @@ interface SceneInfo {
   index: number;
   sceneNumber: string;
   name: string;
+  setting?: string;
+  location?: string;
+  timeOfDay?: string;
   startPos: number;
   endPos: number;
   tags: { [categoryKey: string]: SceneTag[] };
@@ -67,6 +72,8 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
   const { parsedDoc, filePath, activeScriptName } = useFile();
   const { editorView, updateSettings } = useEditor();
   const { appScale } = useUI();
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down("md"));
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilters, setCategoryFilters] = useState<Set<string>>(new Set());
   const [filterMenuAnchor, setFilterMenuAnchor] = useState<HTMLElement | null>(null);
@@ -139,6 +146,9 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
           index: headingCount,
           sceneNumber: line.sceneNumber || String(headingCount),
           name: sceneName,
+          setting: line.setting || undefined,
+          location: line.location || undefined,
+          timeOfDay: line.timeOfDay || undefined,
           startPos: accum,
           endPos: accum + lineLen,
           tags: {}
@@ -287,6 +297,14 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
     };
   }, [parsedDoc, prodTags, searchQuery, categoryFilters]);
 
+  const initRef = useRef(false);
+  useEffect(() => {
+    if (!initRef.current && activeHeaders.length > 0) {
+      setCategoryFilters(new Set(activeHeaders.map(h => h.key)));
+      initRef.current = true;
+    }
+  }, [activeHeaders]);
+
   const selectedDef = useMemo(() => {
     if (!selectedDefId) return null;
     return tagDefMap.get(selectedDefId) || null;
@@ -347,13 +365,16 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
   };
 
   const handleExportCSV = async () => {
-    const headers = ["Scene #", "Scene Title", ...activeHeaders.map(h => h.label)];
+    const headers = ["Scene #", "Scene Title", "Setting", "Location", "Time", ...activeHeaders.map(h => h.label)];
     const csvRows = [headers.join(",")];
 
     finalScenes.forEach(scene => {
       const row = [
         escapeCSV(scene.sceneNumber),
         escapeCSV(scene.name),
+        escapeCSV(scene.setting || ""),
+        escapeCSV(scene.location || ""),
+        escapeCSV(scene.timeOfDay || ""),
         ...activeHeaders.map(cat => {
           const tags = scene.tags[cat.key] || [];
           return escapeCSV(tags.map(t => t.name).join("; "));
@@ -392,10 +413,11 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
       open
       onClose={onClose}
       fullWidth
-      maxWidth="lg"
+      maxWidth={isSmall ? false : "lg"}
+      fullScreen={isSmall}
       disableScrollLock
       transitionDuration={200}
-      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}
+      sx={{ '& .MuiDialog-paper': Object.assign({ borderRadius: '12px' }, isSmall ? {} : { zoom: `${appScale}%` }) }}
     >
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -415,12 +437,13 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
         </ToggleButtonGroup>
       </Box>
 
-      <DialogContent dividers sx={{ px: 2, py: 1.5, display: "flex", flexDirection: "column", gap: 1.5, maxHeight: "80vh" }}>
+      <DialogContent dividers sx={{ px: isSmall ? 1 : 2, py: 1.5, display: "flex", flexDirection: "column", gap: isSmall ? 1 : 1.5, flex: 1 }}>
 
         {tabIndex === 0 && (
-          <Box sx={{ display: "flex", gap: 1.5, flex: 1, minHeight: 0 }}>
+          <Box sx={{ display: "flex", flexDirection: isSmall ? "column" : "row", gap: 1.5, flex: 1, minHeight: 0 }}>
             <Box sx={{
-              width: 260,
+              width: isSmall ? "100%" : 260,
+              maxHeight: isSmall ? 140 : "none",
               flexShrink: 0,
               border: "0.5px solid",
               borderColor: "divider",
@@ -662,7 +685,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
 
         {tabIndex === 1 && (
           <>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: isSmall ? "wrap" : "nowrap" }}>
               <ToggleButtonGroup value={reportType} exclusive size="small"
                 onChange={(_, val) => val !== null && setReportType(val as number)}>
                 <ToggleButton value={0} sx={{ fontSize: 9, py: 0.25, px: 1, textTransform: "none" }}>
@@ -679,7 +702,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 size="small"
                 fullWidth
-                sx={{ maxWidth: 360 }}
+                sx={{ maxWidth: isSmall ? "100%" : 360 }}
                 slotProps={{
                   input: {
                     sx: {
@@ -743,7 +766,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
                         </MenuItem>
                       );
                     })}
-                    {categoryFilters.size > 0 && (
+                    {activeHeaders.length > 1 && (
                       <>
                         <Divider sx={{ my: 0.25 }} />
                         <MenuItem
@@ -806,7 +829,10 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
                     })}>
                       <TableCell sx={{ width: 56 }}>#</TableCell>
                       <TableCell>Scene</TableCell>
-                      {activeHeaders.map(h => (
+                      <TableCell sx={{ width: 56 }}>Setting</TableCell>
+                      <TableCell sx={{ width: 100 }}>Location</TableCell>
+                      <TableCell sx={{ width: 56 }}>Time</TableCell>
+                      {activeHeaders.filter(h => !categoryFilters.size || categoryFilters.has(h.key)).map(h => (
                         <TableCell key={h.key}>{h.label}</TableCell>
                       ))}
                     </TableRow>
@@ -814,8 +840,8 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
                   <TableBody>
                     {finalScenes.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={2 + activeHeaders.length} align="center" sx={{ py: 4, color: "text.disabled", fontSize: 11 }}>
-                          No matching scenes or tags found.
+                        <TableCell colSpan={5 + activeHeaders.filter(h => !categoryFilters.size || categoryFilters.has(h.key)).length} align="center" sx={{ py: 4, color: "text.disabled", fontSize: 11 }}>
+                          No matching scenes found.
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -826,7 +852,10 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
                         >
                           <TableCell sx={{ color: "text.secondary", fontWeight: 500 }}>{scene.sceneNumber}</TableCell>
                           <TableCell sx={{ fontWeight: 500 }}>{scene.name}</TableCell>
-                          {activeHeaders.map(h => {
+                          <TableCell sx={{ color: "text.secondary", fontSize: 9 }}>{scene.setting || "—"}</TableCell>
+                          <TableCell sx={{ color: "text.secondary", fontSize: 9, maxWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{scene.location || "—"}</TableCell>
+                          <TableCell sx={{ color: "text.secondary", fontSize: 9 }}>{scene.timeOfDay || "—"}</TableCell>
+                          {activeHeaders.filter(h => !categoryFilters.size || categoryFilters.has(h.key)).map(h => {
                             const tags: SceneTag[] = scene.tags[h.key] || [];
                             return (
                               <TableCell key={h.key} sx={{ py: 0.35 }}>
@@ -834,7 +863,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
                                   {tags.map((tag, tIdx) => (
                                     <Box
                                       key={`${tag.name}-${tIdx}`}
-                                      onClick={() => { scrollToPosition(tag.pos); onClose(); }}
+                                      onDoubleClick={() => scrollToPosition(tag.pos)}
                                       sx={{
                                         fontSize: "9px",
                                         bgcolor: `${h.color}12`,
@@ -908,7 +937,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
                           {scenes.map(scene => (
                             <Box
                               key={`${def.id}-${scene.index}`}
-                              onClick={() => { scrollToPosition(scene.startPos); onClose(); }}
+                              onDoubleClick={() => scrollToPosition(scene.startPos)}
                               sx={{
                                 display: "flex", alignItems: "center", gap: 1,
                                 px: 1.5, py: 0.3, pl: 5,

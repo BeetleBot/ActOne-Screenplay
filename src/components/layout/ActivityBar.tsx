@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
-import { useUI, useFile } from "../../context";
+import { useUI, useFile, useTheme } from "../../context";
 import { PILL_RADIUS } from "../../constants";
+import { themes } from "../../theme";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -27,11 +28,12 @@ interface ActivityBarProps {
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
   onOpenBreakdownModal: () => void;
+  onOpenThemeManagerModal?: () => void;
 }
 
 export const ActivityBar: React.FC<ActivityBarProps> = ({
   activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen,
-  onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal,
+  onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal, onOpenThemeManagerModal,
 }) => {
   const {
     paperSize, setPaperSize,
@@ -40,6 +42,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
     hideSyntaxEnabled, setHideSyntaxEnabled,
     isZenMode,
   } = useUI();
+  const { theme, setTheme } = useTheme();
   const { filePath } = useFile();
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -251,6 +254,57 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
               {[typewriterMode && 'Typewriter', hideSyntaxEnabled && 'Markup hidden'].filter(Boolean).join(' • ') || 'All off'}
             </Typography>
+          </Box>
+        )}
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* ── Theme ── */}
+        <Box
+          sx={{ px: 2, pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+          onClick={() => toggleSection('theme')}
+        >
+          <Typography variant="overline" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>
+            Theme
+          </Typography>
+          <KeyboardArrowDownIcon sx={{
+            fontSize: 16, color: 'text.disabled',
+            transform: collapsedSections.has('theme') ? 'rotate(-90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s',
+          }} />
+        </Box>
+
+        {!collapsedSections.has('theme') && (
+          <Box sx={{ px: 2, py: 1 }}>
+            <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 1 }}>
+              {themes.slice(0, 9).map((t) => {
+                const isActive = theme === t.id;
+                return (
+                  <Tooltip key={t.id} title={t.name} placement="top">
+                    <Box
+                      onClick={() => setTheme(t.id)}
+                      sx={{
+                        width: 32, height: 32, borderRadius: '8px', cursor: 'pointer',
+                        border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
+                        display: 'flex', overflow: 'hidden',
+                        '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
+                        transition: 'border-color 0.12s ease',
+                      }}
+                    >
+                      <Box sx={{ width: 8, bgcolor: t.colors.sidebar }} />
+                      <Box sx={{ flex: 1, bgcolor: t.colors.editor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: t.colors.accent }} />
+                      </Box>
+                    </Box>
+                  </Tooltip>
+                );
+              })}
+            </Box>
+            {onOpenThemeManagerModal && (
+              <Button size="small" fullWidth onClick={onOpenThemeManagerModal} sx={{ fontSize: '0.65rem', py: 0.3 }}>
+                Open Theme Manager
+              </Button>
+            )}
           </Box>
         )}
 

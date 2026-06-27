@@ -28,6 +28,10 @@ export interface ModalManagerProps {
   setShowThemeManagerModal: (open: boolean) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+  openSettingsWindow?: () => void;
+  openHelpWindow?: () => void;
+  openTagManagerWindow?: () => void;
+  openThemeManagerWindow?: () => void;
 }
 
 export const ModalManager: React.FC<ModalManagerProps> = ({
@@ -49,6 +53,10 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   setShowThemeManagerModal,
   isSidebarOpen,
   toggleSidebar,
+  openSettingsWindow,
+  openHelpWindow,
+  openTagManagerWindow,
+  openThemeManagerWindow,
 }) => {
   return (
     <>
@@ -60,11 +68,11 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
           onOpenStructureModal={() => setShowStructureModal(true)}
-          onOpenSettingsModal={() => setShowSettingsModal(true)}
+          onOpenSettingsModal={openSettingsWindow || (() => setShowSettingsModal(true))}
           onOpenTitlePageModal={() => setShowTitlePageModal(true)}
-          onOpenHelpModal={() => setShowHelpModal(true)}
-          onOpenBreakdownModal={() => setShowBreakdownModal(true)}
-          onOpenThemeManagerModal={() => setShowThemeManagerModal(true)}
+          onOpenHelpModal={openHelpWindow || (() => setShowHelpModal(true))}
+          onOpenBreakdownModal={openTagManagerWindow || (() => setShowBreakdownModal(true))}
+          onOpenThemeManagerModal={openThemeManagerWindow || (() => setShowThemeManagerModal(true))}
         />
       </ErrorBoundary>
       <ErrorBoundary name="export-modal">{showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}</ErrorBoundary>

@@ -17,10 +17,15 @@ export { SprintView } from './SprintView';
 export { StructureImportModal } from './StructureImportModal';
 export { ThemeManagerModal } from './ThemeManagerModal';
 export { SystemFontPicker } from './SystemFontPicker';
+export { TitleBar } from './TitleBar';
 export { TitlePageEditorModal } from './TitlePageEditorModal';
 export { TodoView } from './TodoView';
 export { WelcomeScreenWindow } from './WelcomeScreen';
 export { WindowResizeHandles } from './WindowResizeHandles';
+export { SettingsWindow } from './SettingsWindow';
+export { HelpWindow } from './HelpWindow';
+export { TagManagerWindow } from './TagManagerWindow';
+export { ThemeManagerWindow } from './ThemeManagerWindow';
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,
   ArrowDownwardIcon, ArrowUpwardIcon, AssignmentIcon, AutoAwesomeIcon,

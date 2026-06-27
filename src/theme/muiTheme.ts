@@ -1,7 +1,7 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { PILL_RADIUS } from '../constants';
 
-export type ThemeId = 'adaptive' | 'light' | 'dark' | 'pitch-black' | 'pitch-white' | 'noir' | 'ocean' | 'sunset' | 'forest' | 'lavender';
+export type ThemeId = 'adaptive' | 'light' | 'dark' | 'pitch-black' | 'pitch-white' | 'noir' | 'ocean' | 'sunrise' | 'forest' | 'lavender';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -138,8 +138,8 @@ export const themes: ThemeConfig[] = [
     }, true),
   },
   {
-    id: "sunset",
-    name: "Sunset",
+    id: "sunrise",
+    name: "Sunrise",
     desc: "Warm cream with coral accents",
     isDark: false,
     category: "other",

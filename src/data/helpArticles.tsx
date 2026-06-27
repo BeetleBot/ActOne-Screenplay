@@ -903,7 +903,7 @@ Quick Settings are also available from the Activity Bar gear icon for common adj
 | PITCH | Pitch White | Light | Pure white with dark tones |
 | OTHER | Noir | Dark | Dark blue with red accent |
 | OTHER | Ocean | Dark | Navy with cyan accent |
-| OTHER | Sunset | Dark | Maroon with orange accent |
+| OTHER | Sunrise | Light | Warm cream with coral accents |
 | OTHER | Forest | Dark | Green with olive accent |
 | OTHER | Lavender | Dark | Purple with lavender accent |
 

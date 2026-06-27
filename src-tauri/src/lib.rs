@@ -1,8 +1,66 @@
 use std::fs;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use serde::{Deserialize, Serialize};
 use tauri::Emitter;
 use tauri::Manager;
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ThemeState {
+    theme_id: String,
+    app_scale: u32,
+    custom_themes: String,
+}
+
+impl Default for ThemeState {
+    fn default() -> Self {
+        Self {
+            theme_id: "light".to_string(),
+            app_scale: 100,
+            custom_themes: "[]".to_string(),
+        }
+    }
+}
+
+struct ThemeConfig(Mutex<ThemeState>);
+
+fn theme_file_path(app: &tauri::AppHandle) -> PathBuf {
+    app.path().app_data_dir()
+        .unwrap_or_else(|_| PathBuf::from("."))
+        .join("actone-theme.json")
+}
+
+#[tauri::command]
+fn get_theme_state(state: tauri::State<'_, ThemeConfig>) -> ThemeState {
+    state.0.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn set_theme_state(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, ThemeConfig>,
+    theme_id: Option<String>,
+    app_scale: Option<u32>,
+    custom_themes: Option<String>,
+) -> Result<(), String> {
+    let mut current = state.0.lock().map_err(|e| e.to_string())?;
+    if let Some(id) = theme_id { current.theme_id = id; }
+    if let Some(scale) = app_scale { current.app_scale = scale; }
+    if let Some(themes) = custom_themes { current.custom_themes = themes; }
+    let saved = current.clone();
+    drop(current);
+
+    let file_path = theme_file_path(&app);
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let json = serde_json::to_string(&saved).map_err(|e| e.to_string())?;
+    std::fs::write(&file_path, json).map_err(|e| e.to_string())?;
+
+    app.emit("theme:state-changed", saved).map_err(|e| e.to_string())?;
+    Ok(())
+}
 
 static CLI_ARGS_READ: AtomicBool = AtomicBool::new(false);
 
@@ -495,6 +553,19 @@ pub fn run() {
                 let _ = app.emit("file-opened", filtered);
             }
             app.manage(Mutex::new(font_cache::FontCache::new()));
+
+            let handle = app.handle();
+            let theme_path = theme_file_path(handle);
+            let theme_state = if theme_path.exists() {
+                std::fs::read_to_string(&theme_path)
+                    .ok()
+                    .and_then(|s| serde_json::from_str(&s).ok())
+                    .unwrap_or_default()
+            } else {
+                ThemeState::default()
+            };
+            app.manage(ThemeConfig(Mutex::new(theme_state)));
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -514,6 +585,8 @@ pub fn run() {
             save_file_binary,
             structures::get_structures,
             structures::get_structure_template,
+            get_theme_state,
+            set_theme_state,
             get_system_fonts,
             get_page_breaks,
             get_cli_args,

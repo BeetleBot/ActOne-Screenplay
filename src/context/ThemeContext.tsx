@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { createActOneTheme, deriveAllColors, type ThemeMode, type ThemeConfig, type ThemeColors, themes } from "../theme";
 import { STORAGE_KEYS } from "../constants";
 import { useUI } from "./UIContext";
+import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
 
 export interface CustomTheme {
   id: string;
@@ -98,6 +99,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     return isSystemDark ? "dark" : "light";
   });
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
 
   const [systemDark, setSystemDark] = useState<boolean>(
     () => window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -111,10 +114,35 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(loadCustomThemes);
+  const customThemesRef = useRef(customThemes);
+  customThemesRef.current = customThemes;
+
+  useEffect(() => {
+    initThemeEngine().then((state) => {
+      if (state.themeId !== themeRef.current) {
+        engineSetTheme({ themeId: themeRef.current });
+      }
+    });
+    return onThemeChanged((state) => {
+      if (state.themeId !== themeRef.current) {
+        setThemeState(state.themeId);
+        localStorage.setItem(THEME_ID_KEY, state.themeId);
+      }
+      try {
+        const parsed = JSON.parse(state.customThemes);
+        const localRaw = JSON.stringify(customThemesRef.current);
+        if (JSON.stringify(parsed) !== localRaw) {
+          setCustomThemes(parsed);
+          saveCustomThemes(parsed);
+        }
+      } catch { /* ignore parse errors */ }
+    });
+  }, []);
 
   const setTheme = useCallback((t: string) => {
     setThemeState(t);
     localStorage.setItem(THEME_ID_KEY, t);
+    engineSetTheme({ themeId: t });
   }, []);
 
   const currentThemeConfig = useMemo(
@@ -150,6 +178,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const updated = [...customThemes, newTheme];
     setCustomThemes(updated);
     saveCustomThemes(updated);
+    engineSetTheme({ customThemes: JSON.stringify(updated) });
     return id;
   }, [customThemes]);
 
@@ -162,12 +191,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const updated = customThemes.map(t => t.id === id ? { ...t, name, isDark, colors } : t);
     setCustomThemes(updated);
     saveCustomThemes(updated);
+    engineSetTheme({ customThemes: JSON.stringify(updated) });
   }, [customThemes]);
 
   const deleteCustomTheme = useCallback((id: string) => {
     const updated = customThemes.filter(t => t.id !== id);
     setCustomThemes(updated);
     saveCustomThemes(updated);
+    engineSetTheme({ customThemes: JSON.stringify(updated) });
     if (theme === id) {
       setTheme(systemDark ? "dark" : "light");
     }

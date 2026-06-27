@@ -143,6 +143,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const newScale = Math.min(Math.max(scale, 50), 300);
     setAppScaleState(newScale);
     localStorage.setItem(STORAGE_KEYS.APP_SCALE, String(newScale));
+    import("../theme/ThemeEngine").then(({ setThemeState }) => {
+      setThemeState({ appScale: newScale });
+    }).catch(() => {});
   };
 
   const setIsZenMode = (enabled: boolean) => {
