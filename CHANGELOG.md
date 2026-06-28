@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.9] - 2026-06-29
+
+### Added
+- **Fade In (.fadein) Export**: Native OSF v5.0 XML exporter with correct `<style basestyle="..."/>` format, DEFLATE-ZIP packaging, and proper settings units (1/100 cm). Supports all element types (scene headings, action, character, parenthetical, dialogue, dual dialogue, transitions, lyrics, shots, centered text), scene numbers, inline bold/italic/underline, and title page metadata. 21 unit tests covering ZIP round-trip and format correctness.
+- **Batch Export (Export All)**: New "Export All" button in the ScriptsView pane opens the same Export Modal. On export, prompts for a target folder and writes all scripts in the bundle as individual files using each script's name as the filename with the chosen format extension (.fdx, .fadein, .fountain, .pdf).
+- **Export Modal Header**: Batch mode displays all script names comma-separated; export button text updates accordingly ("Export All as PDF" vs "Export to PDF").
+
+### Changed
+- **Export Formats**: Export Modal toggle group expanded from 3 (PDF / Fountain / FDX) to 4 (PDF / Fountain / FDX / Fade In).
+- **FDX Export**: Added `generate_fdx_string` and `generate_fadein_bytes` Rust commands for generating export content without save dialogs (used by batch export).
+
+### Internals
+- Added `zip = "2"` crate dependency for `.fadein` archive packaging and `.actone` bundle read/write.
+
 ## [0.2.6] - 2026-06-28
 
 ### Added

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { useFile } from "../context";
-import { AddIcon, DownloadIcon, DragHandleIcon } from "./Icons";
+import { AddIcon, DownloadIcon, DragHandleIcon, SaveIcon } from "./Icons";
+import { ExportModal } from "./ExportModal";
 
 import {
   Box,
@@ -26,6 +27,7 @@ export const ScriptsView = React.memo(() => {
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [showExportAll, setShowExportAll] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
   const mouseDragRef = useRef<number | null>(null);
   const mouseOverRef = useRef<number | null>(null);
@@ -172,6 +174,9 @@ export const ScriptsView = React.memo(() => {
           <IconButton size="small" onClick={handleAdd} title="Add Script">
             <AddIcon sx={{ fontSize: 16 }} />
           </IconButton>
+          <IconButton size="small" onClick={() => setShowExportAll(true)} title="Export All Scripts" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
+            <SaveIcon sx={{ fontSize: 16 }} />
+          </IconButton>
         </Box>
       </Box>
 
@@ -296,7 +301,7 @@ export const ScriptsView = React.memo(() => {
         <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
       </Menu>
 
-
+      {showExportAll && <ExportModal batchExport onClose={() => setShowExportAll(false)} />}
 
     </Box>
   );

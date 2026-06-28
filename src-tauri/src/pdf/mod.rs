@@ -1,5 +1,5 @@
 mod export;
-mod fadein;
+pub mod fadein;
 pub mod fadein_pack;
 mod fdx;
 mod parser;

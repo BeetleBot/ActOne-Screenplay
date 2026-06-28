@@ -9,7 +9,7 @@ fn generate_uuid() -> String {
         .as_nanos();
     let time_low = (nanos & 0xFFFFFFFF) as u32;
     let time_mid = ((nanos >> 32) & 0xFFFF) as u16;
-    let time_hi_and_version = (0x4000 | ((nanos >> 48) & 0x0FFF) as u16);
+    let time_hi_and_version = 0x4000 | ((nanos >> 48) & 0x0FFF) as u16;
     let clock_seq_hi_and_reserved = (0x8000 | (nanos >> 60 & 0x3FFF) as u16) as u8;
     let clock_seq_low = ((nanos >> 74) & 0xFF) as u8;
     let node = (nanos >> 82) as u64 & 0xFFFFFFFFFFFF;

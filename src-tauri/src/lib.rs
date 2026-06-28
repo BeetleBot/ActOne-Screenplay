@@ -72,8 +72,8 @@ mod app_prefs;
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
     let file = rfd::FileDialog::new()
-        .add_filter("ActOne Bundle", &["actone"])
-        .add_filter("Fountain Screenplays", &["fountain", "txt"])
+        .add_filter("ActOne & Fountain", &["actone", "fountain", "txt"])
+        .add_filter("All Files", &["*"])
         .pick_file()?;
 
     let path_str = file.to_string_lossy().to_string();
@@ -469,6 +469,13 @@ fn export_fadein(fountain_text: String) -> Option<String> {
 }
 
 #[tauri::command]
+fn generate_fadein_bytes(fountain_text: String) -> Vec<u8> {
+    let screenplay = pdf::parse(&fountain_text);
+    let fadein_xml = pdf::export_to_fadein(&screenplay);
+    pdf::fadein_pack::pack(&fadein_xml)
+}
+
+#[tauri::command]
 fn generate_fdx_string(fountain_text: String) -> String {
     let screenplay = pdf::parse(&fountain_text);
     pdf::export_to_fdx(&screenplay)
@@ -611,6 +618,7 @@ pub fn run() {
             get_page_breaks,
             get_cli_args,
             generate_fdx_string,
+            generate_fadein_bytes,
             import_fountain_dialog,
             check_microsoft_store_license,
             select_watermark_image,
