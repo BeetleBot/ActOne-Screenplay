@@ -31,7 +31,7 @@ interface TodoViewProps {
   saveFileAs?: () => Promise<string | null>;
 }
 
-export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
+export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => {
   const { parsedDoc, scriptFileName } = useFile();
   const { updateSettings } = useEditor();
   const [input, setInput] = useState("");
@@ -265,5 +265,5 @@ export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
       )}
     </Box>
   );
-};
+});
 

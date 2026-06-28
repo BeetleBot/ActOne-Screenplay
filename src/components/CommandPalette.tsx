@@ -116,15 +116,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const el = scrollAreaRef.current;
     if (el) {
       scrollPosRef.current = el.scrollTop;
-      el.style.overflow = 'hidden';
     }
   }
 
   if (!isOpen && prevOpen.current) {
-    const el = scrollAreaRef.current || document.querySelector('.editor-scroll-area');
-    if (el) {
-      el.style.overflow = 'hidden';
-    }
+    // no-op
   }
 
   useEffect(() => {
@@ -133,7 +129,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       setSelectedIndex(0);
       const el = scrollAreaRef.current || document.querySelector('.editor-scroll-area');
       if (el) {
-        el.style.overflow = '';
         el.scrollTop = scrollPosRef.current;
       }
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -144,13 +139,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     if (prevOpen.current && !isOpen) {
       const el = scrollAreaRef.current || document.querySelector('.editor-scroll-area');
       if (el) {
-        el.style.overflow = 'hidden';
-      }
-      editorView?.dom.focus({ preventScroll: true });
-      if (el) {
-        el.style.overflow = '';
         el.scrollTop = scrollPosRef.current;
       }
+      setTimeout(() => editorView?.dom.focus({ preventScroll: true }), 0);
     }
     prevOpen.current = isOpen;
   }, [isOpen, editorView]);
@@ -239,7 +230,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenStructureModal(); onClose(); } },
     { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
     { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <DeleteIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },
-    { id: "format-clean-space", name: "Clean Screenplay Spaces", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { cleanExtraSpace(); onClose(); } },
+    { id: "format-clean-space", name: "Clean Screenplay Spaces", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, shortcut: "Shift+Alt+C", action: () => { cleanExtraSpace(); onClose(); } },
 
     // Settings
 
@@ -253,7 +244,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
 
     // Help
-    { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, action: () => { onOpenHelpModal(); onClose(); } },
+    { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, shortcut: "F1", action: () => { onOpenHelpModal(); onClose(); } },
     { id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } },
     { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://github.com/beetlebot/ActOne/issues"); onClose(); } },
   ];

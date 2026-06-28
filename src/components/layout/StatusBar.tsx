@@ -6,7 +6,7 @@ import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 
 import { useEditor } from "../../context";
 
-export const StatusBar: React.FC = () => {
+export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
   const { isZenMode } = useUI();
   const { activeLineNumber } = useEditor();
@@ -229,4 +229,4 @@ export const StatusBar: React.FC = () => {
       </Box>
     </Box>
   );
-};
+});

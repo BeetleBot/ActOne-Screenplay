@@ -141,6 +141,32 @@ describe("isDualType", () => {
   });
 });
 
+describe("classifyLines caching", () => {
+  it("returns cached result on repeated call with same doc", () => {
+    const text = "EXT. HOUSE - DAY\n\nJOHN\nHello.";
+    const doc1 = EditorState.create({ doc: text }).doc;
+    const doc2 = EditorState.create({ doc: text }).doc;
+
+    const result1 = classifyLines(doc1);
+    const result2 = classifyLines(doc2);
+
+    expect(result1).toStrictEqual(result2);
+    expect(result1).toBe(result2);
+  });
+
+  it("re-computes when doc content changes", () => {
+    const doc1 = EditorState.create({ doc: "EXT. HOUSE - DAY" }).doc;
+    const doc2 = EditorState.create({ doc: "INT. HOUSE - NIGHT" }).doc;
+
+    const result1 = classifyLines(doc1);
+    const result2 = classifyLines(doc2);
+
+    expect(result1[0]).toBe(LINE_HEADING);
+    expect(result2[0]).toBe(LINE_HEADING);
+    expect(result1).not.toBe(result2);
+  });
+});
+
 describe("needsBlankAfterEnter", () => {
   it("returns true for heading, action, dialogue, transition, shot, section, synopsis", () => {
     expect(needsBlankAfterEnter(LINE_HEADING)).toBe(true);

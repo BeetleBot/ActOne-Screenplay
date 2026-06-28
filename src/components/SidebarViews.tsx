@@ -41,7 +41,7 @@ interface SidebarViewProps {
   activeTab: string;
 }
 
-export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
+export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
   const { parsedDoc, filePath, saveFileAs, scriptFileName } = useFile();
   const { updateSettings, editorView } = useEditor();
   const parking = useParking();
@@ -571,5 +571,5 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   }
 
   return null;
-};
+});
 

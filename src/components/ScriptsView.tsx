@@ -1,13 +1,10 @@
 import React, { useState, useRef, useCallback } from "react";
 import { useFile } from "../context";
-import { invoke } from "@tauri-apps/api/core";
-import { AddIcon, DownloadIcon, FolderOpenIcon, DragHandleIcon, CloseIcon } from "./Icons";
-import { logger } from "../utils/logger";
+import { AddIcon, DownloadIcon, DragHandleIcon } from "./Icons";
 
 import {
   Box,
   Typography,
-  Button,
   IconButton,
   List,
   ListItemButton,
@@ -16,25 +13,17 @@ import {
   MenuItem,
   Divider,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Switch,
-  FormControlLabel,
-  Select,
 } from "@mui/material";
 
-export const ScriptsView: React.FC = () => {
+export const ScriptsView = React.memo(() => {
   const {
-    scripts, activeScriptIndex, isBundle, filePath,
-    setActiveScript, addScript, importScript, renameScript, deleteScript, moveScript,
+    scripts, activeScriptIndex, isBundle,
+    setActiveScript, addScript, importScript, renameScript, duplicateScript, deleteScript, moveScript,
   } = useFile();
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
-  const [exportDialog, setExportDialog] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -42,19 +31,7 @@ export const ScriptsView: React.FC = () => {
   const mouseOverRef = useRef<number | null>(null);
   const ghostRef = useRef<HTMLDivElement | null>(null);
 
-  const [exportFormat, setExportFormat] = useState<"fountain" | "pdf" | "fdx">("pdf");
-  const [boldSceneHeadings, setBoldSceneHeadings] = useState(false);
-  const [mirrorSceneNumbers, setMirrorSceneNumbers] = useState("off");
-  const [exportSections, setExportSections] = useState(false);
-  const [exportSynopses, setExportSynopses] = useState(false);
-  const [exportTitlePage, setExportTitlePage] = useState(true);
-  const [selectedFont, setSelectedFont] = useState("courier-prime");
-
   if (!isBundle) return null;
-
-  const bundleName = filePath
-    ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"
-    : "Untitled";
 
   const handleAdd = async () => {
     const newIndex = scripts.length;
@@ -86,6 +63,16 @@ export const ScriptsView: React.FC = () => {
     setMenuState(null);
   };
 
+  const handleDuplicate = async () => {
+    if (!menuState) return;
+    const newName = await duplicateScript(menuState.index);
+    if (newName) {
+      setEditingIndex(menuState.index + 1);
+      setEditingValue(newName);
+    }
+    setMenuState(null);
+  };
+
   const handleMoveUp = () => {
     if (!menuState || menuState.index <= 0) return;
     moveScript(menuState.index, menuState.index - 1);
@@ -96,78 +83,6 @@ export const ScriptsView: React.FC = () => {
     if (!menuState || menuState.index >= scripts.length - 1) return;
     moveScript(menuState.index, menuState.index + 1);
     setMenuState(null);
-  };
-
-  const handleExportAll = async () => {
-    if (!scripts.length) return;
-    setExportDialog(false);
-
-    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-
-    if (!isTauri) {
-      if (exportFormat === "pdf" || exportFormat === "fdx") {
-        alert(exportFormat === "pdf" ? "PDF export is only supported in the desktop app." : "FDX export is only supported in the desktop app.");
-        return;
-      }
-      for (const script of scripts) {
-        const fileName = `${bundleName}_${script.name}.fountain`;
-        const blob = new Blob([script.content], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-      return;
-    }
-
-    let dir: string | null;
-    try {
-      dir = await invoke<string | null>("pick_directory");
-    } catch (e) {
-      logger.error("export", "Failed to pick directory", e);
-      return;
-    }
-    if (!dir) return;
-
-    const revisedLines: boolean[] = [];
-    const pdfParams = {
-      paperSize: "letter",
-      fontFamily: selectedFont,
-      boldSceneHeadings,
-      mirrorSceneNumbers,
-      exportSections,
-      exportSynopses,
-      exportTitlePage,
-      revisedLines,
-    };
-
-    for (const script of scripts) {
-      try {
-        const safeName = script.name.replace(/[<>:"/\\|?*]/g, "_");
-        const sep = dir.includes("\\") ? "\\" : "/";
-        if (exportFormat === "fountain") {
-          const filePath = `${dir}${sep}${bundleName}_${safeName}.fountain`;
-          await invoke("save_file_content", { path: filePath, content: script.content });
-        } else if (exportFormat === "fdx") {
-          const fdxContent = await invoke<string>("generate_fdx_string", { fountainText: script.content });
-          const filePath = `${dir}${sep}${bundleName}_${safeName}.fdx`;
-          await invoke("save_file_content", { path: filePath, content: fdxContent });
-        } else {
-          const bytes = await invoke<number[] | null>("generate_pdf_bytes", {
-            fountainText: script.content,
-            ...pdfParams,
-          });
-          if (bytes) {
-            const filePath = `${dir}${sep}${bundleName}_${safeName}.pdf`;
-            await invoke("save_file_binary", { path: filePath, bytes: Array.from(bytes) });
-          }
-        }
-      } catch (e) {
-        logger.error("export", `Failed to export script "${script.name}"`, e);
-      }
-    }
   };
 
   const handleHandleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
@@ -252,7 +167,7 @@ export const ScriptsView: React.FC = () => {
         </Typography>
         <Box sx={{ display: "flex", gap: 0.25 }}>
           <IconButton size="small" onClick={importScript} title="Import Fountain File" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
-            <FolderOpenIcon sx={{ fontSize: 16 }} />
+            <DownloadIcon sx={{ fontSize: 16 }} />
           </IconButton>
           <IconButton size="small" onClick={handleAdd} title="Add Script">
             <AddIcon sx={{ fontSize: 16 }} />
@@ -364,22 +279,6 @@ export const ScriptsView: React.FC = () => {
         )}
       </Box>
 
-      <Divider sx={{ mx: 1.5 }} />
-
-      <Box sx={{ p: 1.5 }}>
-        <Button
-          variant="outlined"
-          size="small"
-          fullWidth
-          startIcon={<DownloadIcon sx={{ fontSize: 13 }} />}
-          onClick={() => setExportDialog(true)}
-          disabled={scripts.length === 0}
-          sx={{ textTransform: "none", fontSize: 10.5, fontWeight: 600, borderRadius: "6px" }}
-        >
-          Export All Scripts
-        </Button>
-      </Box>
-
       <Menu
         anchorEl={menuState?.anchorEl}
         open={!!menuState}
@@ -392,182 +291,13 @@ export const ScriptsView: React.FC = () => {
         <Divider />
         <MenuItem onClick={handleMoveUp} dense disabled={!menuState || menuState.index <= 0}>Move Up</MenuItem>
         <MenuItem onClick={handleMoveDown} dense disabled={!menuState || menuState.index >= scripts.length - 1}>Move Down</MenuItem>
+        <MenuItem onClick={handleDuplicate} dense>Duplicate</MenuItem>
         <Divider />
         <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
       </Menu>
 
 
 
-      {exportDialog && (
-        <Dialog open onClose={() => setExportDialog(false)} fullWidth maxWidth="sm" disableScrollLock
-          sx={{ '& .MuiDialog-paper': { borderRadius: '10px' } }}>
-          <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <DownloadIcon sx={{ fontSize: 18 }} />
-              <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 15 }}>
-                Export All Scripts ({scripts.length})
-              </Typography>
-            </Box>
-            <IconButton aria-label="close" onClick={() => setExportDialog(false)} sx={{ color: "text.secondary" }}>
-              <CloseIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </DialogTitle>
-
-          <DialogContent dividers sx={{ px: 2.5, py: 2 }}>
-            <Box sx={{ mb: 2.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 0.5, display: 'block' }}>
-                Export Format
-              </Typography>
-              <Select
-                fullWidth
-                size="small"
-                value={exportFormat}
-                onChange={(e) => setExportFormat(e.target.value as "fountain" | "pdf" | "fdx")}
-              >
-                <MenuItem value="pdf">PDF</MenuItem>
-                <MenuItem value="fountain">Fountain</MenuItem>
-                <MenuItem value="fdx">FDX (Final Draft)</MenuItem>
-              </Select>
-            </Box>
-
-            {exportFormat === "pdf" && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <FormControlLabel
-                  control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
-                  label={
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Title Page</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Export the title page if it is defined</Typography>
-                    </Box>
-                  }
-                />
-                <FormControlLabel
-                  control={<Switch checked={boldSceneHeadings} onChange={(e) => setBoldSceneHeadings(e.target.checked)} />}
-                  label={
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Bold Scene Headings</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Make scene headings bold in the PDF</Typography>
-                    </Box>
-                  }
-                />
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 0.5, display: 'block' }}>
-                      Scene Numbers
-                    </Typography>
-                    <Select
-                      fullWidth
-                      size="small"
-                      value={mirrorSceneNumbers}
-                      onChange={(e) => setMirrorSceneNumbers(e.target.value)}
-                    >
-                      <MenuItem value="off">Disabled</MenuItem>
-                      <MenuItem value="left_side">Left Side Only</MenuItem>
-                      <MenuItem value="mirror">Mirror on Both Sides</MenuItem>
-                    </Select>
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 0.5, display: 'block' }}>
-                      Export Font
-                    </Typography>
-                    <Select
-                      fullWidth
-                      size="small"
-                      value={selectedFont}
-                      onChange={(e) => setSelectedFont(e.target.value)}
-                    >
-                      <MenuItem value="courier-prime">Courier Prime</MenuItem>
-                      <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
-                    </Select>
-                  </Box>
-                </Box>
-                <FormControlLabel
-                  control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
-                  label={
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Sections</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Render section headings (#) in export</Typography>
-                    </Box>
-                  }
-                />
-                <FormControlLabel
-                  control={<Switch checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
-                  label={
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Synopsis</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Render synopses (=) in export</Typography>
-                    </Box>
-                  }
-                />
-              </Box>
-            )}
-
-            {exportFormat === "fdx" && (
-              <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5, fontSize: 13 }}>
-                  Export {scripts.length} Script{scripts.length !== 1 ? "s" : ""} as FDX Files
-                </Typography>
-                <Typography variant="caption" color="text.secondary" component="div" sx={{ fontSize: 11.5 }}>
-                  Each script is saved as a separate .fdx (Final Draft XML) file.
-                  <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
-                    <li>Files are named: <strong>{bundleName}_ScriptName.fdx</strong></li>
-                  </Box>
-                </Typography>
-              </Box>
-            )}
-
-            {exportFormat === "fountain" && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5, fontSize: 13 }}>
-                    Export {scripts.length} Script{scripts.length !== 1 ? "s" : ""} as Clean Fountain Files
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" component="div" sx={{ fontSize: 11.5 }}>
-                    Each script is saved as a separate .fountain file in your chosen directory.
-                    <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
-                      <li>Files are named: <strong>{bundleName}_ScriptName.fountain</strong></li>
-                    </Box>
-                  </Typography>
-                </Box>
-                <FormControlLabel
-                  control={<Switch checked={exportTitlePage} onChange={(e) => setExportTitlePage(e.target.checked)} />}
-                  label={
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Title Page</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Export the title page if it is defined</Typography>
-                    </Box>
-                  }
-                />
-                <FormControlLabel
-                  control={<Switch checked={exportSections} onChange={(e) => setExportSections(e.target.checked)} />}
-                  label={
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Sections</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Keep section lines (#) in the exported file</Typography>
-                    </Box>
-                  }
-                />
-                <FormControlLabel
-                  control={<Switch checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
-                  label={
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Include Synopsis</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Keep synopsis lines (=) in the exported file</Typography>
-                    </Box>
-                  }
-                />
-              </Box>
-            )}
-          </DialogContent>
-
-          <DialogActions sx={{ px: 2.5, py: 1.25, justifyContent: "space-between" }}>
-            <Button onClick={() => setExportDialog(false)} color="inherit" variant="outlined" size="small">Cancel</Button>
-            <Button onClick={handleExportAll} variant="contained" color="primary" size="small">
-              Export All
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
     </Box>
   );
-};
+});

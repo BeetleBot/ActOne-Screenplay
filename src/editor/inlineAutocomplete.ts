@@ -85,7 +85,7 @@ function computeCharacters(state: EditorState, excludeLine?: number): Set<string
     if (i === excludeLine) continue;
     if (types[i - 1] === LINE_CHARACTER || types[i - 1] === LINE_DUAL_CHARACTER) {
       const lineText = state.doc.line(i).text;
-      const name = lineText.trim().replace(/\s*\^$/, "").replace(/\s*\(.*\)$/, "").trim();
+      const name = lineText.trim().replace(/^@/, "").replace(/\s*\^$/, "").replace(/\s*\(.*\)$/, "").trim();
       if (name.length > 1) chars.add(name.toUpperCase());
     }
   }

@@ -12,7 +12,7 @@ interface WorkspaceProps {
   isSidebarOpen: boolean;
 }
 
-export const Workspace: React.FC<WorkspaceProps> = ({
+export const Workspace = React.memo<WorkspaceProps>(({
   isSidebarOpen,
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
@@ -121,4 +121,4 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       </Box>
     </Box>
   );
-};
+});

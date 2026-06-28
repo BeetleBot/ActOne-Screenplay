@@ -27,7 +27,7 @@ import {
   EmojiEventsIcon 
 } from "./Icons";
 
-export const SprintView: React.FC = () => {
+export const SprintView = React.memo(() => {
   const { 
     activeSprints, 
     sprintHistory, 
@@ -507,4 +507,4 @@ export const SprintView: React.FC = () => {
       </Box>
     </Box>
   );
-};
+});

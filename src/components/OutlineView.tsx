@@ -107,7 +107,7 @@ export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
   return result;
 }
 
-export const OutlineView: React.FC = () => {
+export const OutlineView = React.memo(() => {
   const { parsedDoc } = useFile();
   const { scrollToLine, activeLineNumber, setSelectedSceneId, reorderScenes } = useEditor();
 
@@ -987,5 +987,5 @@ export const OutlineView: React.FC = () => {
       </Box>
     </Box>
   );
-};
+});
 

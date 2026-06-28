@@ -28,7 +28,7 @@ interface MarkerItem {
   sceneStorylines?: string[];
 }
 
-export const MarkerView: React.FC = () => {
+export const MarkerView = React.memo(() => {
   const { parsedDoc } = useFile();
   const { scrollToLine } = useEditor();
   const [searchQuery, setSearchQuery] = useState("");
@@ -418,4 +418,4 @@ export const MarkerView: React.FC = () => {
       </List>
     </Box>
   );
-};
+});

@@ -33,7 +33,7 @@ const MARKER_COLORS = [
   { key: "none", label: "Default (Orange)", color: "var(--cat-other)" }
 ];
 
-export const FountainEditor: React.FC = () => {
+export const FountainEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { fontFamily } = useUI();
   const { parsedDoc, scriptFileName } = useFile();
@@ -757,4 +757,4 @@ export const FountainEditor: React.FC = () => {
       </Menu>
     </div>
   );
-};
+});

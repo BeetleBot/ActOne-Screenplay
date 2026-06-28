@@ -341,6 +341,9 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     scriptFileNameRef.current = scriptFileName;
   }, [scriptFileName]);
 
+  const pendingScrollToRef = useRef<number | null>(null);
+  const lastDispatchedTextRef = useRef("");
+
   useEffect(() => {
     if (viewRef.current) {
       viewRef.current.dispatch({
@@ -584,14 +587,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         if (isDifferentScript) {
           view.dispatch({
             changes: { from: 0, to: view.state.doc.length, insert: rawText },
-            selection: { anchor: 0 },
-            scrollIntoView: true,
           });
-          const scroller = view.scrollDOM;
-          if (scroller) {
-            scroller.scrollTop = 0;
-            scroller.scrollLeft = 0;
-          }
         } else {
           const cursor = view.state.selection.main.head;
           view.dispatch({
@@ -600,12 +596,23 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           });
         }
       }
+
+      if (isDifferentScript) {
+        const targetPos = view.state.selection.main.head;
+        pendingScrollToRef.current = targetPos;
+        view.focus();
+      }
     }
   }, [rawText, currentScriptKey]);
 
   useEffect(() => {
     if (viewRef.current) {
       const view = viewRef.current;
+      const screenText = parsedDoc.screenplayText;
+      const pendingTarget = pendingScrollToRef.current;
+
+      if (screenText === lastDispatchedTextRef.current && pendingTarget === null) return;
+
       let prevCursorY: number | null = null;
       try {
         const coords = view.coordsAtPos(view.state.selection.main.head);
@@ -614,12 +621,15 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
             void 0;
           }
 
-      view.dispatch({
-        effects: [
-          updateParsedDocEffect.of(parsedDoc),
-          updateScriptFileNameEffect.of(scriptFileName),
-        ]
-      });
+      if (screenText !== lastDispatchedTextRef.current) {
+        lastDispatchedTextRef.current = screenText;
+        view.dispatch({
+          effects: [
+            updateParsedDocEffect.of(parsedDoc),
+            updateScriptFileNameEffect.of(scriptFileName),
+          ]
+        });
+      }
 
       if (prevCursorY !== null) {
         requestAnimationFrame(() => {
@@ -628,13 +638,45 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
             if (coords) {
               const diff = coords.top - (prevCursorY as number);
               if (Math.abs(diff) > 0.5) {
-                view.scrollDOM.scrollTop += diff;
+                const scrollArea = view.dom.closest('.editor-scroll-area') as HTMLElement | null;
+                if (scrollArea) {
+                  scrollArea.scrollTop += diff;
+                }
               }
             }
       } catch {
         void 0;
       }
+          const pendingTarget = pendingScrollToRef.current;
+          if (pendingTarget !== null) {
+            pendingScrollToRef.current = null;
+            try {
+              const coords = view.coordsAtPos(pendingTarget);
+              const scrollArea = view.dom.closest('.editor-scroll-area') as HTMLElement | null;
+              if (coords && scrollArea) {
+                const areaRect = scrollArea.getBoundingClientRect();
+                const targetY = scrollArea.scrollTop + coords.top - areaRect.top - areaRect.height * 0.3;
+                scrollArea.scrollTo({ top: targetY, behavior: 'smooth' });
+              }
+            } catch { void 0; }
+          }
         });
+      } else {
+        const pendingTarget = pendingScrollToRef.current;
+        if (pendingTarget !== null) {
+          pendingScrollToRef.current = null;
+          requestAnimationFrame(() => {
+            try {
+              const coords = view.coordsAtPos(pendingTarget);
+              const scrollArea = view.dom.closest('.editor-scroll-area') as HTMLElement | null;
+              if (coords && scrollArea) {
+                const areaRect = scrollArea.getBoundingClientRect();
+                const targetY = scrollArea.scrollTop + coords.top - areaRect.top - areaRect.height * 0.3;
+                scrollArea.scrollTo({ top: targetY, behavior: 'smooth' });
+              }
+            } catch { void 0; }
+          });
+        }
       }
     }
   }, [parsedDoc]);

@@ -31,7 +31,7 @@ interface ActivityBarProps {
   onOpenThemeManagerModal?: () => void;
 }
 
-export const ActivityBar: React.FC<ActivityBarProps> = ({
+export const ActivityBar = React.memo<ActivityBarProps>(({
   activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen,
   onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal, onOpenThemeManagerModal,
 }) => {
@@ -458,4 +458,4 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
       </Menu>
     </Box>
   );
-};
+});

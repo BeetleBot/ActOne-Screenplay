@@ -428,7 +428,7 @@ impl PdfExporter {
                     }
                 )
                 .into();
-                let mut pn_y = top - LINE_HEIGHT;
+                let mut pn_y = top - (LINE_HEIGHT * 2.0);
                 let mut pn_ctx = DrawContext {
                     layout_info,
                     surface: &mut surface,

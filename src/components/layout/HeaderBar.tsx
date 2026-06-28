@@ -12,7 +12,7 @@ import ListItemText from "@mui/material/ListItemText";
 import { CloseIcon, AddIcon } from "../Icons";
 import { logger } from "../../utils/logger";
 
-export const HeaderBar: React.FC = () => {
+export const HeaderBar = React.memo(() => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
   const { isZenMode } = useUI();
   const [isMaximized, setIsMaximized] = useState(false);
@@ -278,4 +278,4 @@ export const HeaderBar: React.FC = () => {
       </Menu>
     </AppBar>
   );
-};
+});

@@ -46,7 +46,13 @@ export const needsBlankAfterEnter = (t: number) =>
   t === LINE_DUAL_DIALOGUE || t === LINE_TRANSITION ||
   t === LINE_SHOT || t === LINE_SECTION || t === LINE_SYNOPSE;
 
+let classifyLinesCacheKey = "";
+let classifyLinesCacheResult: number[] = [];
+
 export const classifyLines = (doc: { line: (n: number) => { text: string }; lines: number }): number[] => {
+  const key = doc.lines + "|" + (doc.lines > 0 ? doc.line(1).text : "") + "|" + (doc.lines > 0 ? doc.line(doc.lines).text : "");
+  if (key === classifyLinesCacheKey) return classifyLinesCacheResult;
+
   const types: number[] = [];
   let inTitlePage = true;
 
@@ -114,6 +120,8 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
     types.push(type);
   }
 
+  classifyLinesCacheKey = key;
+  classifyLinesCacheResult = types;
   return types;
 };
 
@@ -139,7 +147,11 @@ const TYPE_TO_CLASS: Record<number, string> = {
 const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, scriptFileName: string): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const doc = state.doc;
-  const lineTypes = classifyLines(doc);
+  const parsedDocLines = docObj?.lines;
+  const lineTypesFallback = (parsedDocLines && parsedDocLines.length === doc.lines)
+    ? parsedDocLines.map(p => p.type)
+    : null;
+  const lineTypes = lineTypesFallback ?? classifyLines(doc);
   const activeLineNum = state.selection ? state.doc.lineAt(state.selection.main.head).number : -1;
 
 

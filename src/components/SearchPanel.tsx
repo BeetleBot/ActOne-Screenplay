@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 
-export const SearchPanel: React.FC = () => {
+export const SearchPanel = React.memo(() => {
   const { showSearchPanel, setShowSearchPanel, showReplacePanel, setShowReplacePanel } = useUI();
   const { editorView } = useEditor();
 
@@ -461,5 +461,5 @@ export const SearchPanel: React.FC = () => {
       )}
     </Paper>
   );
-};
+});
 

@@ -95,10 +95,11 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 |--------|----------|
 | Toggle search panel | <kbd>Ctrl+F</kbd> |
 | Toggle sidebar | <kbd>Ctrl+\\\\</kbd> |
-| Command palette | <kbd>Ctrl+K</kbd> / <kbd>Ctrl+Shift+P</kbd> |
+| Command palette | <kbd>Ctrl+K</kbd> |
 | Settings | <kbd>Ctrl+,</kbd> |
 | Toggle Zen Mode | <kbd>Ctrl+Alt+Enter</kbd> |
 | Focus editor | <kbd>Escape</kbd> |
+| Open help guide | <kbd>F1</kbd> |
 | Zoom in | <kbd>Ctrl+=</kbd> |
 | Zoom out | <kbd>Ctrl+-</kbd> |
 | Reset zoom | <kbd>Ctrl+0</kbd> |`,
@@ -109,7 +110,7 @@ When launched from the command line, ActOne accepts file paths as arguments. The
     category: "Getting Started",
     tags: ["commands", "palette", "ctrl+k", "search"],
     relatedIds: ["keyboard-shortcuts"],
-    content: `Press <kbd>Ctrl+K</kbd> or <kbd>Ctrl+Shift+P</kbd> to open the Command Palette. Type to filter commands across six categories:
+    content: `Press <kbd>Ctrl+K</kbd> to open the Command Palette. Type to filter commands across six categories:
 
 **File:** New Screenplay, Open Screenplay, Save, Save As, Close Active File, Export.
 
@@ -574,15 +575,15 @@ Persists in .actone bundle settings.`,
     title: "Scripts Manager (Multi-Script Bundles)",
     category: "Workspace & Views",
     tags: ["scripts", "multi-script", "bundle", "manage"],
-    relatedIds: ["actone-bundle", "sidebar-panels", "export-all"],
+    relatedIds: ["actone-bundle", "sidebar-panels"],
     content: `The Scripts sidebar lets you manage multiple Fountain scripts inside a single .actone bundle (hidden for plain .fountain files):
 
-- **Add**: "+" button creates a new "Untitled" script. **Import**: folder icon opens native file dialog for .fountain/.txt files.
+- **Add**: "+" button creates a new "Untitled" script. **Import**: download icon opens native file dialog for .fountain/.txt files.
 - **Rename**: Double-click a script name for inline edit; press <kbd>Enter</kbd> to save, <kbd>Escape</kbd> to cancel.
+- **Duplicate**: Three-dot menu → Duplicate creates a copy with a unique name and auto-selects the name for renaming.
 - **Reorder**: Drag-and-drop scripts within the list, or use the three-dot menu → Move Up / Move Down.
 - **Delete**: Three-dot menu → Delete (with confirmation). Last script cannot be deleted.
-- Click a script name to load it into the editor. The Status Bar shows the active script name — click it to quickly switch.
-- **Export All** button at the bottom opens an export dialog for all scripts at once (PDF, Fountain, or FDX).`,
+- Click a script name to load it into the editor. The Status Bar shows the active script name — click it to quickly switch.`,
   },
   {
     id: "zen-mode",
@@ -819,7 +820,7 @@ Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\
     title: "Export Overview",
     category: "Export",
     tags: ["export", "pdf", "fountain", "fdx", "print"],
-    relatedIds: ["export-pdf", "export-fountain", "export-fdx", "export-all"],
+    relatedIds: ["export-pdf", "export-fountain", "export-fdx"],
     content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the Export dialog. ActOne supports three export formats, each with format-specific options. The export is handled by the Rust backend for native performance.`,
   },
   {
@@ -862,15 +863,6 @@ Paper Size (Letter or A4) is inherited from Settings. PDF includes page numberin
     relatedIds: ["export-overview"],
     content: `Export your screenplay as Final Draft XML (.fdx) for compatibility with Final Draft, Fade In, and other professional screenwriting applications. Scene colors are preserved using Final Draft's color format. No toggle options — the title page is always included; sections and synopses are stripped.`,
   },
-  {
-    id: "export-all",
-    title: "Export All Scripts (Multi-Script Bundles)",
-    category: "Export",
-    tags: ["export", "batch", "all scripts", "bundle"],
-    relatedIds: ["scripts-manager", "export-overview"],
-    content: `In the Scripts sidebar (only available for .actone bundles), the "Export All" button exports every script in the bundle at once. The same format options as single export (PDF, Fountain, or FDX) are available. Files are named \`{bundleName}_{scriptName}.ext\`. In Tauri, a directory picker dialog is shown; in the browser, files are downloaded individually.`,
-  },
-
   // ===== SETTINGS & CUSTOMIZATION =====
   {
     id: "settings-overview",

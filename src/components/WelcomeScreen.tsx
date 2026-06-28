@@ -9,11 +9,11 @@ import {
   Box,
   Typography,
   Button,
-  Chip,
   Menu,
   MenuItem,
   IconButton,
   Divider,
+  Tooltip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useTheme } from "../context";
@@ -140,6 +140,12 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const [showHelp, setShowHelp] = useState(false);
   const appVersion = __APP_VERSION__;
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
+
+  const getDirPath = (path: string): string => {
+    const normalized = path.replace(/\\/g, "/");
+    const idx = normalized.lastIndexOf("/");
+    return idx === -1 ? "" : normalized.slice(0, idx);
+  };
 
   useEffect(() => {
     setQuote(getDynamicQuote());
@@ -402,30 +408,52 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               Recent Projects
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
-              {recentFiles.slice(0, 6).map((item: any) => (
-                <Chip
-                  key={item.path}
-                  icon={<DescriptionIcon sx={{ fontSize: 14, ml: 0.5 }} />}
-                  label={item.name}
-                  onDelete={() => removeFromRecent(item.path)}
-                  deleteIcon={<DeleteIcon sx={{ fontSize: 13, opacity: 0.4, "&:hover": { opacity: 1, color: "error.main" } }} />}
-                  onClick={() => handleOpenRecent(item.path)}
-                  sx={{
-                    maxWidth: 200,
-                    fontWeight: 600,
-                    fontSize: 11.5,
-                    height: 32,
-                    bgcolor: "background.paper",
-                    border: 1,
-                    borderColor: "divider",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      bgcolor: "action.hover",
-                    },
-                    "& .MuiChip-icon": { color: "text.secondary", opacity: 0.5 },
-                  }}
-                />
-              ))}
+               {recentFiles.slice(0, 6).map((item: any) => {
+                const dir = getDirPath(item.path);
+                return (
+                  <Tooltip key={item.path} title={item.path}>
+                    <Box
+                      onClick={() => handleOpenRecent(item.path)}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        maxWidth: 300,
+                        py: 0.75,
+                        px: 1.25,
+                        bgcolor: "background.paper",
+                        border: 1,
+                        borderColor: "divider",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        "&:hover": {
+                          borderColor: "primary.main",
+                          bgcolor: "action.hover",
+                        },
+                      }}
+                    >
+                      <DescriptionIcon sx={{ fontSize: 16, color: "text.secondary", opacity: 0.5, flexShrink: 0 }} />
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.name}
+                        </Typography>
+                        {dir && (
+                          <Typography variant="caption" sx={{ fontSize: 10, color: "text.secondary", opacity: 0.65, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {dir}
+                          </Typography>
+                        )}
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); removeFromRecent(item.path); }}
+                        sx={{ color: "text.disabled", "&:hover": { color: "error.main" }, p: 0.2, flexShrink: 0 }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 13 }} />
+                      </IconButton>
+                    </Box>
+                  </Tooltip>
+                );
+              })}
             </Box>
           </Box>
         )}

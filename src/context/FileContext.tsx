@@ -57,6 +57,7 @@ export interface FileContextProps {
   addScript: (name?: string) => Promise<string | null>;
   importScript: () => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
+  duplicateScript: (index: number) => Promise<string | null>;
   deleteScript: (index: number) => Promise<boolean>;
   moveScript: (fromIndex: number, toIndex: number) => Promise<void>;
   saveStatus: "idle" | "saving" | "saved";
@@ -135,6 +136,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSaving, setIsSaving] = useState(false);
   const [scriptsState, setScriptsState] = useState<ScriptInfo[]>([]);
   const [activeScriptIndex, setActiveScriptIndexState] = useState<number>(0);
+  const parseRafRef = useRef<number | null>(null);
 
   const isBundleDirty = useCallback((scripts: ScriptInfo[]): boolean => {
     return scripts.some(s => s.content !== s.savedContent);
@@ -305,40 +307,46 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const normalized = text.replace(/\r\n/g, "\n");
     setRawTextState(normalized);
 
-    const doc = parseScreenplay(normalized, paperSize);
-    setFiles(prev => prev.map(f => {
-      if (f.id === activeFileId) {
+    if (parseRafRef.current !== null) {
+      cancelAnimationFrame(parseRafRef.current);
+    }
+    parseRafRef.current = requestAnimationFrame(() => {
+      parseRafRef.current = null;
+      const doc = parseScreenplay(normalized, paperSize);
+      setFiles(prev => prev.map(f => {
+        if (f.id === activeFileId) {
+          const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+            ? doc.settings
+            : f.parsedDoc.settings;
+
+          let updatedScripts = f.scripts;
+          if (updatedScripts && updatedScripts.length > 0) {
+            const idx = f.activeScriptIndex ?? 0;
+            updatedScripts = updatedScripts.map((s, i) =>
+              i === idx ? { ...s, content: normalized } : s
+            );
+          }
+
+          const isDirty = updatedScripts && updatedScripts.length > 0
+            ? isBundleDirty(updatedScripts)
+            : normalized !== f.savedText;
+
+          return {
+            ...f,
+            rawText: normalized,
+            isDirty,
+            parsedDoc: { ...doc, settings: mergedSettings },
+            scripts: updatedScripts,
+          };
+        }
+        return f;
+      }));
+      setParsedDoc(prevDoc => {
         const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
           ? doc.settings
-          : f.parsedDoc.settings;
-
-        let updatedScripts = f.scripts;
-        if (updatedScripts && updatedScripts.length > 0) {
-          const idx = f.activeScriptIndex ?? 0;
-          updatedScripts = updatedScripts.map((s, i) =>
-            i === idx ? { ...s, content: normalized } : s
-          );
-        }
-
-        const isDirty = updatedScripts && updatedScripts.length > 0
-          ? isBundleDirty(updatedScripts)
-          : normalized !== f.savedText;
-
-        return {
-          ...f,
-          rawText: normalized,
-          isDirty,
-          parsedDoc: { ...doc, settings: mergedSettings },
-          scripts: updatedScripts,
-        };
-      }
-      return f;
-    }));
-    setParsedDoc(prevDoc => {
-      const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-        ? doc.settings
-        : prevDoc.settings;
-      return { ...doc, settings: mergedSettings };
+          : prevDoc.settings;
+        return { ...doc, settings: mergedSettings };
+      });
     });
   };
 
@@ -1013,6 +1021,42 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [files, activeFileId, confirm]);
 
+  const duplicateScript = useCallback(async (index: number): Promise<string | null> => {
+    const file = files.find(f => f.id === activeFileId);
+    if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return null;
+
+    const source = file.scripts[index];
+    const newName = getUniqueName(source.name, file.scripts);
+    const newFileName = `${sanitizeFileName(newName)}.fountain`;
+    const newScript: ScriptInfo = {
+      name: newName,
+      fileName: newFileName,
+      content: source.content,
+      savedContent: source.savedContent,
+    };
+
+    const insertAt = index + 1;
+    const updatedScripts = [...file.scripts.slice(0, insertAt), newScript, ...file.scripts.slice(insertAt)];
+    const newActiveIndex = insertAt;
+
+    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+      ...f,
+      scripts: updatedScripts,
+      activeScriptIndex: newActiveIndex,
+      rawText: newScript.content,
+      savedText: newScript.savedContent,
+      isDirty: true,
+      parsedDoc: parseScreenplay(newScript.content, paperSize),
+    } : f));
+
+    setScriptsState(updatedScripts);
+    setActiveScriptIndexState(newActiveIndex);
+    setRawTextState(newScript.content);
+    setParsedDoc(parseScreenplay(newScript.content, paperSize));
+
+    return newName;
+  }, [files, activeFileId, paperSize]);
+
   const deleteScript = useCallback(async (index: number): Promise<boolean> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return false;
@@ -1230,6 +1274,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (parseRafRef.current !== null) {
+        cancelAnimationFrame(parseRafRef.current);
+      }
+    };
+  }, []);
+
   const activeScriptName = scriptsState[activeScriptIndex]?.name || "";
   const scriptFileName = scriptsState[activeScriptIndex]?.fileName || "";
 
@@ -1264,6 +1316,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addScript,
         importScript,
         renameScript,
+        duplicateScript,
         deleteScript,
         moveScript,
         saveStatus,
