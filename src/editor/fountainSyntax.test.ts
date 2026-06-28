@@ -141,8 +141,8 @@ describe("isDualType", () => {
   });
 });
 
-describe("classifyLines caching", () => {
-  it("returns cached result on repeated call with same doc", () => {
+describe("classifyLines", () => {
+  it("returns same classification for same content", () => {
     const text = "EXT. HOUSE - DAY\n\nJOHN\nHello.";
     const doc1 = EditorState.create({ doc: text }).doc;
     const doc2 = EditorState.create({ doc: text }).doc;
@@ -151,18 +151,15 @@ describe("classifyLines caching", () => {
     const result2 = classifyLines(doc2);
 
     expect(result1).toStrictEqual(result2);
-    expect(result1).toBe(result2);
   });
 
-  it("re-computes when doc content changes", () => {
-    const doc1 = EditorState.create({ doc: "EXT. HOUSE - DAY" }).doc;
-    const doc2 = EditorState.create({ doc: "INT. HOUSE - NIGHT" }).doc;
+  it("returns different arrays for separate calls (no stale cache)", () => {
+    const doc = EditorState.create({ doc: "EXT. HOUSE - DAY\n\nJOHN\nHello." }).doc;
 
-    const result1 = classifyLines(doc1);
-    const result2 = classifyLines(doc2);
+    const result1 = classifyLines(doc);
+    const result2 = classifyLines(doc);
 
-    expect(result1[0]).toBe(LINE_HEADING);
-    expect(result2[0]).toBe(LINE_HEADING);
+    expect(result1).toStrictEqual(result2);
     expect(result1).not.toBe(result2);
   });
 });

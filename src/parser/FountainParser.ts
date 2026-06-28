@@ -216,7 +216,6 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
       type = LineType.transitionLine;
     } else {
       const prevLine = i > 0 ? parsedLines[i - 1] : null;
-      const nextLineStr = i + 1 < rawLines.length ? rawLines[i + 1].trim() : "";
 
       const uppercaseTrimmed = trimmed.toUpperCase();
       const isAllCaps = trimmed === uppercaseTrimmed && /[A-Z]/.test(trimmed);
@@ -229,7 +228,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
         isOutlineElement = true;
       } else if (isAllCaps && trimmed.endsWith("TO:") && (!prevLine || prevLine.type === LineType.empty)) {
         type = LineType.transitionLine;
-      } else if ((isAllCaps || isForcedCharacter) && (!prevLine || prevLine.type === LineType.empty) && nextLineStr !== "") {
+      } else if ((isForcedCharacter || isAllCaps) && (!prevLine || prevLine.type === LineType.empty)) {
         if (trimmed.endsWith("^")) {
           type = LineType.dualDialogueCharacter;
         } else {

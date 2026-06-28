@@ -46,13 +46,7 @@ export const needsBlankAfterEnter = (t: number) =>
   t === LINE_DUAL_DIALOGUE || t === LINE_TRANSITION ||
   t === LINE_SHOT || t === LINE_SECTION || t === LINE_SYNOPSE;
 
-let classifyLinesCacheKey = "";
-let classifyLinesCacheResult: number[] = [];
-
 export const classifyLines = (doc: { line: (n: number) => { text: string }; lines: number }): number[] => {
-  const key = doc.lines + "|" + (doc.lines > 0 ? doc.line(1).text : "") + "|" + (doc.lines > 0 ? doc.line(doc.lines).text : "");
-  if (key === classifyLinesCacheKey) return classifyLinesCacheResult;
-
   const types: number[] = [];
   let inTitlePage = true;
 
@@ -63,7 +57,7 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
 
     if (inTitlePage) {
       if (trimmed === "") {
-        if (i > 1) inTitlePage = false;
+        inTitlePage = false;
         types.push(LINE_EMPTY);
         continue;
       }
@@ -72,7 +66,7 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
         types.push(LINE_TITLE_PAGE);
         continue;
       }
-      if (trimmed.startsWith(" ") || trimmed.startsWith("\t") || i > 1) {
+      if (trimmed.startsWith(" ") || trimmed.startsWith("\t")) {
         types.push(LINE_TITLE_PAGE);
         continue;
       }
@@ -120,8 +114,6 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
     types.push(type);
   }
 
-  classifyLinesCacheKey = key;
-  classifyLinesCacheResult = types;
   return types;
 };
 
@@ -151,8 +143,12 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
   const lineTypesFallback = (parsedDocLines && parsedDocLines.length === doc.lines)
     ? parsedDocLines.map(p => p.type)
     : null;
-  const lineTypes = lineTypesFallback ?? classifyLines(doc);
   const activeLineNum = state.selection ? state.doc.lineAt(state.selection.main.head).number : -1;
+  const lineTypes = lineTypesFallback ? [...lineTypesFallback] : classifyLines(doc);
+  if (lineTypesFallback && activeLineNum > 0 && activeLineNum <= lineTypes.length) {
+    const realTimeTypes = classifyLines(doc);
+    lineTypes[activeLineNum - 1] = realTimeTypes[activeLineNum - 1];
+  }
 
 
 
