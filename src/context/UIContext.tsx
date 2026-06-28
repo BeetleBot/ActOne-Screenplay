@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { STORAGE_KEYS } from "../constants";
 import { logger } from "../utils/logger";
+import { setPrefs } from "../theme/AppPrefsEngine";
+import { setThemeState } from "../theme/ThemeEngine";
 
 export interface UIContextProps {
   fontFamily: 'courier-prime' | 'courier-prime-sans';
@@ -47,6 +49,57 @@ export const useUI = () => {
 };
 
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { key, value } = (e as CustomEvent).detail as { key: string; value: string };
+      const strVal = String(value);
+      switch (key) {
+        case STORAGE_KEYS.FONT_FAMILY:
+          setFontFamilyState(strVal as "courier-prime" | "courier-prime-sans");
+          break;
+        case STORAGE_KEYS.PAPER_SIZE:
+          setPaperSizeState(strVal as "letter" | "a4");
+          break;
+        case STORAGE_KEYS.TYPEWRITER_MODE:
+          setTypewriterModeState(strVal === "true");
+          break;
+        case STORAGE_KEYS.ZOOM_LEVEL:
+          setZoomLevelState(parseInt(strVal, 10) || 100);
+          break;
+        case STORAGE_KEYS.APP_SCALE:
+          setAppScaleState(parseInt(strVal, 10) || 100);
+          break;
+        case STORAGE_KEYS.AUTOCOMPLETE_ENABLED:
+          setAutocompleteEnabledState(strVal !== "false");
+          break;
+        case STORAGE_KEYS.SMART_QUOTES_ENABLED:
+          setSmartQuotesEnabledState(strVal !== "false");
+          break;
+        case STORAGE_KEYS.MATCH_PARENTHESES_ENABLED:
+          setMatchParenthesesEnabledState(strVal !== "false");
+          break;
+        case STORAGE_KEYS.AUTO_SAVE_ENABLED:
+          setAutoSaveEnabledState(strVal !== "false");
+          break;
+        case STORAGE_KEYS.AUTO_SAVE_INTERVAL:
+          setAutoSaveIntervalState(parseInt(strVal, 10) || 60000);
+          break;
+        case STORAGE_KEYS.HIDE_SYNTAX_ENABLED:
+          setHideSyntaxEnabledState(strVal === "true");
+          break;
+        case STORAGE_KEYS.LINE_FOCUS_ENABLED:
+          setLineFocusEnabledState(strVal === "true");
+          break;
+        case STORAGE_KEYS.THEME_ID:
+          forceUpdate(n => n + 1);
+          break;
+      }
+    };
+    window.addEventListener("settings-changed", handler);
+    return () => window.removeEventListener("settings-changed", handler);
+  }, []);
   const [fontFamily, setFontFamilyState] = useState<'courier-prime' | 'courier-prime-sans'>(() => {
     return (localStorage.getItem(STORAGE_KEYS.FONT_FAMILY) as 'courier-prime' | 'courier-prime-sans' | null) ?? "courier-prime-sans";
   });
@@ -133,19 +186,23 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     applyZenMode();
   }, [isZenMode]);
 
+  function broadcastSetting(key: string, value: string) {
+    setPrefs({ [key]: value });
+  }
+
   const setZoomLevel = (zoom: number) => {
     const newZoom = Math.min(Math.max(zoom, 50), 400);
     setZoomLevelState(newZoom);
     localStorage.setItem(STORAGE_KEYS.ZOOM_LEVEL, String(newZoom));
+    broadcastSetting(STORAGE_KEYS.ZOOM_LEVEL, String(newZoom));
   };
 
   const setAppScale = (scale: number) => {
     const newScale = Math.min(Math.max(scale, 50), 300);
     setAppScaleState(newScale);
     localStorage.setItem(STORAGE_KEYS.APP_SCALE, String(newScale));
-    import("../theme/ThemeEngine").then(({ setThemeState }) => {
-      setThemeState({ appScale: newScale });
-    }).catch(() => {});
+    broadcastSetting(STORAGE_KEYS.APP_SCALE, String(newScale));
+    setThemeState({ appScale: newScale });
   };
 
   const setIsZenMode = (enabled: boolean) => {
@@ -155,53 +212,61 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const setFontFamily = (font: 'courier-prime' | 'courier-prime-sans') => {
     setFontFamilyState(font);
     localStorage.setItem(STORAGE_KEYS.FONT_FAMILY, font);
+    broadcastSetting(STORAGE_KEYS.FONT_FAMILY, font);
   };
 
   const setTypewriterMode = (enabled: boolean) => {
     setTypewriterModeState(enabled);
     localStorage.setItem(STORAGE_KEYS.TYPEWRITER_MODE, String(enabled));
+    broadcastSetting(STORAGE_KEYS.TYPEWRITER_MODE, String(enabled));
   };
 
   const setPaperSize = (size: 'letter' | 'a4') => {
     setPaperSizeState(size);
     localStorage.setItem(STORAGE_KEYS.PAPER_SIZE, size);
+    broadcastSetting(STORAGE_KEYS.PAPER_SIZE, size);
   };
 
   const setAutocompleteEnabled = (enabled: boolean) => {
     setAutocompleteEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, String(enabled));
+    broadcastSetting(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, String(enabled));
   };
 
   const setSmartQuotesEnabled = (enabled: boolean) => {
     setSmartQuotesEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.SMART_QUOTES_ENABLED, String(enabled));
+    broadcastSetting(STORAGE_KEYS.SMART_QUOTES_ENABLED, String(enabled));
   };
 
   const setMatchParenthesesEnabled = (enabled: boolean) => {
     setMatchParenthesesEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, String(enabled));
+    broadcastSetting(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, String(enabled));
   };
-
-
 
   const setAutoSaveEnabled = (enabled: boolean) => {
     setAutoSaveEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_ENABLED, String(enabled));
+    broadcastSetting(STORAGE_KEYS.AUTO_SAVE_ENABLED, String(enabled));
   };
 
   const setAutoSaveInterval = (interval: number) => {
     setAutoSaveIntervalState(interval);
     localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL, String(interval));
+    broadcastSetting(STORAGE_KEYS.AUTO_SAVE_INTERVAL, String(interval));
   };
 
   const setHideSyntaxEnabled = (enabled: boolean) => {
     setHideSyntaxEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, String(enabled));
+    broadcastSetting(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, String(enabled));
   };
 
   const setLineFocusEnabled = (enabled: boolean) => {
     setLineFocusEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
   };
 
   return (

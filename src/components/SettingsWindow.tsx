@@ -13,8 +13,10 @@ import {
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
-import { createActOneTheme, themes } from "../theme";
+import { createActOneTheme } from "../theme";
+import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
+import { initPrefsEngine, setPrefs, onPrefsChanged } from "../theme/AppPrefsEngine";
 import { STORAGE_KEYS } from "../constants";
 import { logger } from "../utils/logger";
 
@@ -43,8 +45,20 @@ export const SettingsWindow: React.FC = () => {
   const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, false));
   const [lineFocusEnabled, setLineFocusEnabled] = useState(() => readLocalBool(STORAGE_KEYS.LINE_FOCUS_ENABLED, false));
   const [activeTab, setActiveTab] = useState(0);
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_THEMES) ?? "[]"); } catch { return []; }
+  });
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const prefsApplied = useRef(false);
 
   const initialLoadDone = useRef(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(() => {
     const setup = async () => {
@@ -81,17 +95,76 @@ export const SettingsWindow: React.FC = () => {
     const unsub = onThemeChanged((state) => {
       setThemeId(state.themeId);
       setAppScale(state.appScale);
+      try {
+        const parsed = JSON.parse(state.customThemes);
+        setCustomThemes(parsed);
+        localStorage.setItem(STORAGE_KEYS.CUSTOM_THEMES, state.customThemes);
+      } catch {}
     });
     return () => { if (cleanup) cleanup(); unsub(); };
   }, []);
 
-  const emitUpdate = (key: string, value: string | number | boolean) => {
+  useEffect(() => {
+    initPrefsEngine().then((prefs) => {
+      if (prefsApplied.current) return;
+      prefsApplied.current = true;
+      applyPrefs(prefs);
+    });
+    return onPrefsChanged((prefs) => {
+      applyPrefs(prefs);
+    });
+  }, []);
+
+  function applyPrefs(prefs: Record<string, string>) {
+    if (prefs[STORAGE_KEYS.THEME_ID] !== undefined && prefs[STORAGE_KEYS.THEME_ID] !== themeId) {
+      setThemeId(prefs[STORAGE_KEYS.THEME_ID]);
+    }
+    if (prefs[STORAGE_KEYS.FONT_FAMILY] !== undefined && prefs[STORAGE_KEYS.FONT_FAMILY] !== fontFamily) {
+      setFontFamily(prefs[STORAGE_KEYS.FONT_FAMILY] as "courier-prime" | "courier-prime-sans");
+    }
+    if (prefs[STORAGE_KEYS.PAPER_SIZE] !== undefined && prefs[STORAGE_KEYS.PAPER_SIZE] !== paperSize) {
+      setPaperSize(prefs[STORAGE_KEYS.PAPER_SIZE]);
+    }
+    if (prefs[STORAGE_KEYS.TYPEWRITER_MODE] !== undefined && prefs[STORAGE_KEYS.TYPEWRITER_MODE] !== String(typewriterMode)) {
+      setTypewriterMode(prefs[STORAGE_KEYS.TYPEWRITER_MODE] === "true");
+    }
+    if (prefs[STORAGE_KEYS.ZOOM_LEVEL] !== undefined && prefs[STORAGE_KEYS.ZOOM_LEVEL] !== String(zoomLevel)) {
+      setZoomLevel(parseInt(prefs[STORAGE_KEYS.ZOOM_LEVEL], 10));
+    }
+    if (prefs[STORAGE_KEYS.APP_SCALE] !== undefined && prefs[STORAGE_KEYS.APP_SCALE] !== String(appScale)) {
+      setAppScale(parseInt(prefs[STORAGE_KEYS.APP_SCALE], 10));
+    }
+    if (prefs[STORAGE_KEYS.AUTOCOMPLETE_ENABLED] !== undefined && prefs[STORAGE_KEYS.AUTOCOMPLETE_ENABLED] !== String(autocompleteEnabled)) {
+      setAutocompleteEnabled(prefs[STORAGE_KEYS.AUTOCOMPLETE_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.SMART_QUOTES_ENABLED] !== undefined && prefs[STORAGE_KEYS.SMART_QUOTES_ENABLED] !== String(smartQuotesEnabled)) {
+      setSmartQuotesEnabled(prefs[STORAGE_KEYS.SMART_QUOTES_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED] !== undefined && prefs[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED] !== String(matchParenthesesEnabled)) {
+      setMatchParenthesesEnabled(prefs[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.AUTO_SAVE_ENABLED] !== undefined && prefs[STORAGE_KEYS.AUTO_SAVE_ENABLED] !== String(autoSaveEnabled)) {
+      setAutoSaveEnabled(prefs[STORAGE_KEYS.AUTO_SAVE_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.AUTO_SAVE_INTERVAL] !== undefined && prefs[STORAGE_KEYS.AUTO_SAVE_INTERVAL] !== String(autoSaveInterval)) {
+      setAutoSaveInterval(parseInt(prefs[STORAGE_KEYS.AUTO_SAVE_INTERVAL], 10));
+    }
+    if (prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] !== undefined && prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] !== String(hideSyntaxEnabled)) {
+      setHideSyntaxEnabled(prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== undefined && prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== String(lineFocusEnabled)) {
+      setLineFocusEnabled(prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] === "true");
+    }
+  }
+
+  const emitUpdate = (storageKey: string, value: string | number | boolean) => {
     (async () => {
       try {
         const { emit } = await import("@tauri-apps/api/event");
-        emit("modal:settings:update", { key, value });
+        emit("modal:settings:update", { key: storageKey, value });
       } catch {}
     })();
+    setPrefs({ [storageKey]: String(value) });
   };
 
   const handleClose = async () => {
@@ -103,7 +176,7 @@ export const SettingsWindow: React.FC = () => {
     }
   };
 
-  const currentThemeConfig = themes.find(t => t.id === themeId) || themes[0];
+  const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
   const muiTheme = createActOneTheme(currentThemeConfig, appScale);
 
   return (
@@ -128,29 +201,14 @@ export const SettingsWindow: React.FC = () => {
             <Box>
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
-                  DISPLAY
+                  LAYOUT & SCALE
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1.5 }}>
                   <Select
                     fullWidth
                     size="small"
-                    value={themeId}
-                    onChange={(e) => { const v = e.target.value as string; setThemeId(v); localStorage.setItem(STORAGE_KEYS.THEME_ID, v); emitUpdate("themeId", v); engineSetTheme({ themeId: v }); }}
-                  >
-                    {themes.map((t) => (
-                      <MenuItem key={t.id} value={t.id} sx={{ gap: 1.5 }}>
-                        <Box sx={{ width: 18, height: 18, borderRadius: '5px', bgcolor: t.colors.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                          <Box sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: t.colors.accent }} />
-                        </Box>
-                        {t.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <Select
-                    fullWidth
-                    size="small"
                     value={paperSize}
-                    onChange={(e) => { const v = e.target.value as string; setPaperSize(v); localStorage.setItem(STORAGE_KEYS.PAPER_SIZE, v); emitUpdate("paperSize", v); }}
+                    onChange={(e) => { const v = e.target.value as string; setPaperSize(v); localStorage.setItem(STORAGE_KEYS.PAPER_SIZE, v); emitUpdate(STORAGE_KEYS.PAPER_SIZE, v); }}
                   >
                     <MenuItem value="letter">Letter</MenuItem>
                     <MenuItem value="a4">A4</MenuItem>
@@ -167,7 +225,7 @@ export const SettingsWindow: React.FC = () => {
                     max={300}
                     step={5}
                     value={appScale}
-                    onChange={(_, val) => { const v = val as number; setAppScale(v); localStorage.setItem(STORAGE_KEYS.APP_SCALE, String(v)); emitUpdate("appScale", v); engineSetTheme({ appScale: v }); }}
+                    onChange={(_, val) => { const v = val as number; setAppScale(v); localStorage.setItem(STORAGE_KEYS.APP_SCALE, String(v)); emitUpdate(STORAGE_KEYS.APP_SCALE, v); engineSetTheme({ appScale: v }); }}
                     aria-label="Interface Scale"
                   />
                 </Box>
@@ -178,7 +236,7 @@ export const SettingsWindow: React.FC = () => {
                 </Typography>
                 <FormControlLabel
                   control={<Switch size="small" checked={autoSaveEnabled}
-                    onChange={(e) => { const v = e.target.checked; setAutoSaveEnabled(v); localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_ENABLED, String(v)); emitUpdate("autoSaveEnabled", v); }}
+                    onChange={(e) => { const v = e.target.checked; setAutoSaveEnabled(v); localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.AUTO_SAVE_ENABLED, v); }}
                   />}
                   label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Auto-save</Typography>}
                   sx={{ mx: 0 }}
@@ -188,7 +246,7 @@ export const SettingsWindow: React.FC = () => {
                     fullWidth
                     size="small"
                     value={String(autoSaveInterval)}
-                    onChange={(e) => { const v = parseInt(e.target.value, 10); setAutoSaveInterval(v); localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL, String(v)); emitUpdate("autoSaveInterval", v); }}
+                    onChange={(e) => { const v = parseInt(e.target.value, 10); setAutoSaveInterval(v); localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL, String(v)); emitUpdate(STORAGE_KEYS.AUTO_SAVE_INTERVAL, v); }}
                     sx={{ mt: 0.75 }}
                   >
                     <MenuItem value="30000">30 seconds</MenuItem>
@@ -210,7 +268,7 @@ export const SettingsWindow: React.FC = () => {
                   fullWidth
                   size="small"
                   value={fontFamily}
-                  onChange={(e) => { const v = e.target.value as string; setFontFamily(v); localStorage.setItem(STORAGE_KEYS.FONT_FAMILY, v); emitUpdate("fontFamily", v); }}
+                  onChange={(e) => { const v = e.target.value as string; setFontFamily(v); localStorage.setItem(STORAGE_KEYS.FONT_FAMILY, v); emitUpdate(STORAGE_KEYS.FONT_FAMILY, v); }}
                 >
                   <MenuItem value="courier-prime">Courier Prime</MenuItem>
                   <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
@@ -230,7 +288,7 @@ export const SettingsWindow: React.FC = () => {
                   max={400}
                   step={10}
                   value={zoomLevel}
-                  onChange={(_, val) => { const v = val as number; setZoomLevel(v); localStorage.setItem(STORAGE_KEYS.ZOOM_LEVEL, String(v)); emitUpdate("zoomLevel", v); }}
+                  onChange={(_, val) => { const v = val as number; setZoomLevel(v); localStorage.setItem(STORAGE_KEYS.ZOOM_LEVEL, String(v)); emitUpdate(STORAGE_KEYS.ZOOM_LEVEL, v); }}
                   aria-label="Editor Zoom"
                 />
               </Box>
@@ -241,14 +299,14 @@ export const SettingsWindow: React.FC = () => {
                 <Box sx={{ display: 'flex', gap: 1.5, mb: 0.5 }}>
                   <FormControlLabel
                     control={<Switch size="small" checked={typewriterMode}
-                      onChange={(e) => { const v = e.target.checked; setTypewriterMode(v); localStorage.setItem(STORAGE_KEYS.TYPEWRITER_MODE, String(v)); emitUpdate("typewriterMode", v); }}
+                      onChange={(e) => { const v = e.target.checked; setTypewriterMode(v); localStorage.setItem(STORAGE_KEYS.TYPEWRITER_MODE, String(v)); emitUpdate(STORAGE_KEYS.TYPEWRITER_MODE, v); }}
                     />}
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Typewriter Mode</Typography>}
                     sx={{ mx: 0, flex: 1 }}
                   />
                   <FormControlLabel
                     control={<Switch size="small" checked={autocompleteEnabled}
-                      onChange={(e) => { const v = e.target.checked; setAutocompleteEnabled(v); localStorage.setItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, String(v)); emitUpdate("autocompleteEnabled", v); }}
+                      onChange={(e) => { const v = e.target.checked; setAutocompleteEnabled(v); localStorage.setItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, v); }}
                     />}
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Autocomplete</Typography>}
                     sx={{ mx: 0, flex: 1 }}
@@ -257,14 +315,14 @@ export const SettingsWindow: React.FC = () => {
                 <Box sx={{ display: 'flex', gap: 1.5 }}>
                   <FormControlLabel
                     control={<Switch size="small" checked={smartQuotesEnabled}
-                      onChange={(e) => { const v = e.target.checked; setSmartQuotesEnabled(v); localStorage.setItem(STORAGE_KEYS.SMART_QUOTES_ENABLED, String(v)); emitUpdate("smartQuotesEnabled", v); }}
+                      onChange={(e) => { const v = e.target.checked; setSmartQuotesEnabled(v); localStorage.setItem(STORAGE_KEYS.SMART_QUOTES_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.SMART_QUOTES_ENABLED, v); }}
                     />}
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Smart Quotes</Typography>}
                     sx={{ mx: 0, flex: 1 }}
                   />
                   <FormControlLabel
                     control={<Switch size="small" checked={matchParenthesesEnabled}
-                      onChange={(e) => { const v = e.target.checked; setMatchParenthesesEnabled(v); localStorage.setItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, String(v)); emitUpdate("matchParenthesesEnabled", v); }}
+                      onChange={(e) => { const v = e.target.checked; setMatchParenthesesEnabled(v); localStorage.setItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, v); }}
                     />}
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Auto-match ( )</Typography>}
                     sx={{ mx: 0, flex: 1 }}
@@ -278,14 +336,14 @@ export const SettingsWindow: React.FC = () => {
                 <Box sx={{ display: 'flex', gap: 1.5 }}>
                   <FormControlLabel
                     control={<Switch size="small" checked={hideSyntaxEnabled}
-                      onChange={(e) => { const v = e.target.checked; setHideSyntaxEnabled(v); localStorage.setItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, String(v)); emitUpdate("hideSyntaxEnabled", v); }}
+                      onChange={(e) => { const v = e.target.checked; setHideSyntaxEnabled(v); localStorage.setItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, v); }}
                     />}
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Hide Markup</Typography>}
                     sx={{ mx: 0, flex: 1 }}
                   />
                   <FormControlLabel
                     control={<Switch size="small" checked={lineFocusEnabled}
-                      onChange={(e) => { const v = e.target.checked; setLineFocusEnabled(v); localStorage.setItem(STORAGE_KEYS.LINE_FOCUS_ENABLED, String(v)); emitUpdate("lineFocusEnabled", v); }}
+                      onChange={(e) => { const v = e.target.checked; setLineFocusEnabled(v); localStorage.setItem(STORAGE_KEYS.LINE_FOCUS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.LINE_FOCUS_ENABLED, v); }}
                     />}
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Focus Mode</Typography>}
                     sx={{ mx: 0, flex: 1 }}

@@ -1,17 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { createActOneTheme, deriveAllColors, type ThemeMode, type ThemeConfig, type ThemeColors, themes } from "../theme";
+import { createActOneTheme, themes, type ThemeMode, type ThemeColors } from "../theme";
+import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { STORAGE_KEYS } from "../constants";
 import { useUI } from "./UIContext";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
 
-export interface CustomTheme {
-  id: string;
-  name: string;
-  isDark: boolean;
-  colors: ThemeColors;
-}
+export type { CustomTheme };
 
 export interface ThemeContextProps {
   theme: string;
@@ -48,43 +44,6 @@ function loadCustomThemes(): CustomTheme[] {
 
 function saveCustomThemes(t: CustomTheme[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(t));
-}
-
-const DEFAULT_LIGHT = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
-const DEFAULT_DARK = { editor: "#111416", text: "#e2e2e6", accent: "#a0caff", sidebar: "#1a1c1e", button: "#a0caff" };
-
-function completeCustomColors(colors: Partial<ThemeColors>, isDark: boolean): ThemeColors {
-  const def = isDark ? DEFAULT_DARK : DEFAULT_LIGHT;
-  const core = {
-    editor: colors.editor ?? (colors as Record<string, string | undefined>).bg ?? def.editor,
-    text: colors.text ?? def.text,
-    accent: colors.accent ?? def.accent,
-    sidebar: colors.sidebar ?? def.sidebar,
-    button: colors.button ?? colors.accent ?? def.accent,
-  };
-  return deriveAllColors(core, isDark);
-}
-
-function getCurrentThemeConfig(themeId: string, customThemes: CustomTheme[], systemDark: boolean): ThemeConfig {
-  if (themeId === "adaptive") {
-    const id = systemDark ? "dark" : "light";
-    const theme = themes.find(x => x.id === id);
-    if (theme) return theme;
-  }
-  const builtin = themes.find(x => x.id === themeId);
-  if (builtin) return builtin;
-  const custom = customThemes.find(x => x.id === themeId);
-  if (custom) {
-    return {
-      id: custom.id,
-      name: custom.name,
-      desc: "",
-      category: "custom" as const,
-      isDark: custom.isDark,
-      colors: completeCustomColors(custom.colors, custom.isDark),
-    };
-  }
-  return themes[0];
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -146,7 +105,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const currentThemeConfig = useMemo(
-    () => getCurrentThemeConfig(theme, customThemes, systemDark),
+    () => resolveThemeConfig(theme, customThemes, systemDark),
     [theme, customThemes, systemDark]
   );
 

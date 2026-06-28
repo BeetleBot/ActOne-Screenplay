@@ -4,7 +4,8 @@ import { List } from "react-window";
 import { articles, categories, HelpArticle } from "../data/helpArticles";
 import { HelpMarkdown } from "./HelpMarkdown";
 import { CloseIcon, SearchIcon, ClearIcon, OpenInNewIcon, LibraryBooksIcon } from "./Icons";
-import { createActOneTheme, themes } from "../theme";
+import { createActOneTheme } from "../theme";
+import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, onThemeChanged } from "../theme/ThemeEngine";
 import {
   Box,
@@ -80,19 +81,30 @@ const openFountainGuide = () => {
 export const HelpWindow: React.FC = () => {
   const [themeId, setThemeId] = useState("light");
   const [appScale, setAppScale] = useState(100);
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(() => {
     initThemeEngine().then((state) => {
       setThemeId(state.themeId);
       setAppScale(state.appScale);
+      try { setCustomThemes(JSON.parse(state.customThemes)); } catch { setCustomThemes([]); }
     });
     return onThemeChanged((state) => {
       setThemeId(state.themeId);
       setAppScale(state.appScale);
+      try { setCustomThemes(JSON.parse(state.customThemes)); } catch { setCustomThemes([]); }
     });
   }, []);
 
-  const currentThemeConfig = themes.find(t => t.id === themeId) || themes[0];
+  const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
   const muiTheme = createActOneTheme(currentThemeConfig, appScale);
 
   const handleClose = async () => {

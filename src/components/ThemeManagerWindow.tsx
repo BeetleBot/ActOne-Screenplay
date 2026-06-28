@@ -4,6 +4,7 @@ import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
 import { createActOneTheme, deriveAllColors, themes, type ThemeColors } from "../theme";
+import { resolveThemeConfig } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
 import { AddIcon, DeleteIcon, CheckIcon } from "./Icons";
 
@@ -129,11 +130,19 @@ export const ThemeManagerWindow: React.FC = () => {
   const [themeId, setThemeId] = useState("light");
   const [appScale, setAppScale] = useState(100);
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ThemeColors>({ ...EMPTY_COLORS });
   const [formName, setFormName] = useState("");
   const [formIsDark, setFormIsDark] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(() => {
     initThemeEngine().then((state) => {
@@ -233,7 +242,7 @@ export const ThemeManagerWindow: React.FC = () => {
     return { colors: themes[0].colors, isDark: false };
   })();
 
-  const currentThemeConfig = themes.find(t => t.id === themeId) || themes[0];
+  const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
   const muiTheme = createActOneTheme(currentThemeConfig, appScale);
 
   const handleClose = async () => {

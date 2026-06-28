@@ -5,6 +5,7 @@ import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, Err
 import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
+import { setPrefs } from "./theme/AppPrefsEngine";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
@@ -160,8 +161,9 @@ function AppInner() {
 
         const u2 = await listen<{ key: string; value: string | boolean | number }>("modal:settings:update", (event) => {
           const { key, value } = event.payload;
-          localStorage.setItem(key === "themeId" ? STORAGE_KEYS.THEME_ID : key as any, String(value));
+          localStorage.setItem(key, String(value));
           window.dispatchEvent(new CustomEvent("settings-changed", { detail: { key, value } }));
+          setPrefs({ [key]: String(value) });
         });
 
         const u3 = await listen("modal:tag-manager:ready", () => {

@@ -42,7 +42,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
     hideSyntaxEnabled, setHideSyntaxEnabled,
     isZenMode,
   } = useUI();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, customThemes } = useTheme();
   const { filePath } = useFile();
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -276,32 +276,129 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
 
         {!collapsedSections.has('theme') && (
           <Box sx={{ px: 2, py: 1 }}>
-            <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 1 }}>
-              {themes.slice(0, 9).map((t) => {
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
+              Light
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+              {themes.filter(t => !t.isDark).map((t) => {
                 const isActive = theme === t.id;
                 return (
                   <Tooltip key={t.id} title={t.name} placement="top">
                     <Box
                       onClick={() => setTheme(t.id)}
                       sx={{
-                        width: 32, height: 32, borderRadius: '8px', cursor: 'pointer',
+                        width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
                         border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                         display: 'flex', overflow: 'hidden',
                         '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
                         transition: 'border-color 0.12s ease',
                       }}
                     >
-                      <Box sx={{ width: 8, bgcolor: t.colors.sidebar }} />
+                      <Box sx={{ width: 7, bgcolor: t.colors.sidebar }} />
                       <Box sx={{ flex: 1, bgcolor: t.colors.editor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: t.colors.accent }} />
+                        <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: t.colors.accent }} />
                       </Box>
                     </Box>
                   </Tooltip>
                 );
               })}
             </Box>
+
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
+              Dark
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+              {themes.filter(t => t.isDark).map((t) => {
+                const isActive = theme === t.id;
+                return (
+                  <Tooltip key={t.id} title={t.name} placement="top">
+                    <Box
+                      onClick={() => setTheme(t.id)}
+                      sx={{
+                        width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                        border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
+                        display: 'flex', overflow: 'hidden',
+                        '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
+                        transition: 'border-color 0.12s ease',
+                      }}
+                    >
+                      <Box sx={{ width: 7, bgcolor: t.colors.sidebar }} />
+                      <Box sx={{ flex: 1, bgcolor: t.colors.editor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: t.colors.accent }} />
+                      </Box>
+                    </Box>
+                  </Tooltip>
+                );
+              })}
+            </Box>
+
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
+              Adaptive
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+              {(() => {
+                const isActive = theme === 'adaptive';
+                return (
+                  <Tooltip title="Adaptive (follows system)" placement="top">
+                    <Box
+                      onClick={() => setTheme('adaptive')}
+                      sx={{
+                        width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                        border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
+                        display: 'flex', overflow: 'hidden',
+                        '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
+                        transition: 'border-color 0.12s ease',
+                      }}
+                    >
+                      <Box sx={{ width: 7, bgcolor: 'text.disabled' }} />
+                      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        <Box sx={{ flex: 1, bgcolor: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#1976d2' }} />
+                        </Box>
+                        <Box sx={{ flex: 1, bgcolor: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#90caf9' }} />
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Tooltip>
+                );
+              })()}
+            </Box>
+
+            {customThemes.length > 0 && (
+              <>
+                <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
+                  Custom
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                  {customThemes.map((t) => {
+                    const isActive = theme === t.id;
+                    return (
+                      <Tooltip key={t.id} title={t.name} placement="top">
+                        <Box
+                          onClick={() => setTheme(t.id)}
+                          sx={{
+                            width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                            border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
+                            display: 'flex', overflow: 'hidden',
+                            '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
+                            transition: 'border-color 0.12s ease',
+                          }}
+                        >
+                          <Box sx={{ width: 7, bgcolor: t.colors.sidebar }} />
+                          <Box sx={{ flex: 1, bgcolor: t.colors.editor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: t.colors.accent }} />
+                          </Box>
+                        </Box>
+                      </Tooltip>
+                    );
+                  })}
+                </Box>
+              </>
+            )}
+
             {onOpenThemeManagerModal && (
-              <Button size="small" fullWidth onClick={onOpenThemeManagerModal} sx={{ fontSize: '0.65rem', py: 0.3 }}>
+              <Button size="small" fullWidth onClick={onOpenThemeManagerModal} sx={{ fontSize: '0.65rem', py: 0.3, mt: 0.5 }}>
                 Open Theme Manager
               </Button>
             )}

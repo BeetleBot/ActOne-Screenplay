@@ -67,6 +67,7 @@ static CLI_ARGS_READ: AtomicBool = AtomicBool::new(false);
 pub mod pdf;
 mod structures;
 mod font_cache;
+mod app_prefs;
 
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
@@ -566,6 +567,9 @@ pub fn run() {
             };
             app.manage(ThemeConfig(Mutex::new(theme_state)));
 
+            let prefs = app_prefs::load_prefs(handle);
+            app.manage(app_prefs::AppPrefsState(Mutex::new(prefs)));
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -596,6 +600,8 @@ pub fn run() {
             select_watermark_image,
             get_fonts_for_script,
             get_detected_scripts,
+            app_prefs::get_app_prefs,
+            app_prefs::set_app_prefs,
         ]);
 
     builder
