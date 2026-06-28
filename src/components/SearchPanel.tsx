@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useUI, useEditor } from "../context";
-import { EditorView } from "@codemirror/view";
 import { ChevronRightIcon, KeyboardArrowDownIcon, ArrowUpwardIcon, ArrowDownwardIcon, CloseIcon, FindReplaceIcon, DoneAllIcon } from "./Icons";
 
 import {
@@ -205,10 +204,14 @@ export const SearchPanel = React.memo(() => {
     if (editorView) {
       findNext(editorView);
       const pos = editorView.state.selection.main.head;
-      editorView.dispatch({
-        effects: EditorView.scrollIntoView(pos, { y: "center" }),
-      });
-      editorView.focus();
+      const coords = editorView.coordsAtPos(pos);
+      const scrollContainer = editorView.dom.closest('.editor-scroll-area') as HTMLElement | null;
+      if (coords && scrollContainer) {
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const cursorY = (coords.top + coords.bottom) / 2;
+        const containerCenterY = containerRect.top + containerRect.height / 2;
+        scrollContainer.scrollTop += cursorY - containerCenterY;
+      }
     }
   };
 
@@ -216,10 +219,14 @@ export const SearchPanel = React.memo(() => {
     if (editorView) {
       findPrevious(editorView);
       const pos = editorView.state.selection.main.head;
-      editorView.dispatch({
-        effects: EditorView.scrollIntoView(pos, { y: "center" }),
-      });
-      editorView.focus();
+      const coords = editorView.coordsAtPos(pos);
+      const scrollContainer = editorView.dom.closest('.editor-scroll-area') as HTMLElement | null;
+      if (coords && scrollContainer) {
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const cursorY = (coords.top + coords.bottom) / 2;
+        const containerCenterY = containerRect.top + containerRect.height / 2;
+        scrollContainer.scrollTop += cursorY - containerCenterY;
+      }
     }
   };
 

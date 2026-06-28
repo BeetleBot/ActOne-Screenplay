@@ -40,6 +40,9 @@
   --titlebar-bg: #f8f9fa;
   --editor-cursor: #1a1a1a;
 
+  --skeleton-base: rgba(0, 0, 0, 0.06);
+  --skeleton-shine: rgba(0, 0, 0, 0.12);
+
   --cat-cast: #00ACC1;
   --cat-prop: #FF9800;
   --cat-costume: #E91E63;
@@ -93,6 +96,10 @@ textarea,
 
 :focus:not(:focus-visible) {
   outline: none;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -154,6 +161,7 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  animation: editor-fade-in 0.25s ease-out;
 }
 
 .editor-paper.paper-a4 {
@@ -212,6 +220,27 @@ body {
 
 .cm-editor ::selection {
   background: rgba(var(--accent-rgb), 0.3) !important;
+}
+
+.cm-searchMatch {
+  background-color: rgba(255, 200, 0, 0.35);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 180, 0, 0.25);
+}
+
+.cm-selectionMatch {
+  background-color: rgba(255, 140, 0, 0.55) !important;
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.4);
+}
+
+.cm-editor:not(.cm-focused) .cm-searchMatch {
+  background-color: rgba(255, 200, 0, 0.35);
+}
+
+.cm-editor:not(.cm-focused) .cm-selectionMatch {
+  background-color: rgba(255, 140, 0, 0.55) !important;
+  box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.4);
 }
 
 .cm-activeLine,
@@ -440,10 +469,15 @@ body {
   flex-shrink: 0;
 }
 
-/* Custom Scrollbars */
+body.dark-theme {
+  --skeleton-base: rgba(255, 255, 255, 0.04);
+  --skeleton-shine: rgba(255, 255, 255, 0.08);
+}
+
+/* Custom Scrollbars — VS Code style */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -451,20 +485,33 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: var(--radius-xs);
+  background: rgba(128, 128, 128, 0.28);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  min-height: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(128, 128, 128, 0.45);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 body.dark-theme ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 body.dark-theme ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.32);
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 /* Print Styles */
@@ -703,6 +750,12 @@ button:active,
   }
 }
 
+/* Modal Backdrop Blur */
+.MuiBackdrop-root {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
 .MuiTab-root {
   transition: all var(--duration-normal) var(--easing-spring) !important;
 }
@@ -712,5 +765,41 @@ button:active,
 .MuiTab-root:active {
   transform: translateY(0);
 }
+
+/* Loading Skeleton */
+@keyframes skeleton-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes editor-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.skeleton-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 40px 60px;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.skeleton-line {
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 50%, var(--skeleton-base) 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+.skeleton-line.short { width: 60%; }
+.skeleton-line.medium { width: 80%; }
+.skeleton-line.long { width: 100%; }
+.skeleton-line.heading { height: 20px; width: 70%; margin-top: 24px; }
+.skeleton-line.character { height: 16px; width: 35%; margin-top: 16px; margin-left: 120px; }
+.skeleton-line.parenthetical { height: 14px; width: 40%; margin-left: 100px; }
+.skeleton-line.dialogue { height: 16px; width: 70%; margin-left: 60px; }
 
 
