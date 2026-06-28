@@ -9,6 +9,7 @@ export interface ModalState {
   showHelpModal: boolean;
   showBreakdownModal: boolean;
   showThemeManagerModal: boolean;
+  showXrayModal: boolean;
 }
 
 export interface ModalActions {
@@ -20,6 +21,7 @@ export interface ModalActions {
   setShowHelpModal: (v: boolean) => void;
   setShowBreakdownModal: (v: boolean) => void;
   setShowThemeManagerModal: (v: boolean) => void;
+  setShowXrayModal: (v: boolean) => void;
 }
 
 export function useModals() {
@@ -31,14 +33,15 @@ export function useModals() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showBreakdownModal, setShowBreakdownModal] = useState(false);
   const [showThemeManagerModal, setShowThemeManagerModal] = useState(false);
+  const [showXrayModal, setShowXrayModal] = useState(false);
 
   const isModalActive = useMemo(
     () => isPaletteOpen || showExportModal || showStructureModal || showSettingsModal ||
          showTitlePageModal || showHelpModal || showBreakdownModal ||
-         showThemeManagerModal,
+         showThemeManagerModal || showXrayModal,
     [isPaletteOpen, showExportModal, showStructureModal, showSettingsModal,
      showTitlePageModal, showHelpModal, showBreakdownModal,
-     showThemeManagerModal]
+     showThemeManagerModal, showXrayModal]
   );
 
   const togglePalette = useCallback(() => setIsPaletteOpen(p => !p), []);
@@ -46,15 +49,15 @@ export function useModals() {
   const state: ModalState = useMemo(() => ({
     isPaletteOpen, showExportModal, showStructureModal, showSettingsModal,
     showTitlePageModal, showHelpModal, showBreakdownModal,
-    showThemeManagerModal
+    showThemeManagerModal, showXrayModal
   }), [isPaletteOpen, showExportModal, showStructureModal, showSettingsModal,
       showTitlePageModal, showHelpModal, showBreakdownModal,
-      showThemeManagerModal]);
+      showThemeManagerModal, showXrayModal]);
 
   const actions: ModalActions = {
     setIsPaletteOpen, setShowExportModal, setShowStructureModal, setShowSettingsModal,
     setShowTitlePageModal, setShowHelpModal, setShowBreakdownModal,
-    setShowThemeManagerModal
+    setShowThemeManagerModal, setShowXrayModal
   };
 
   return { ...state, ...actions, isModalActive, togglePalette };

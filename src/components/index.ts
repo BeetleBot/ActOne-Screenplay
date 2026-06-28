@@ -26,6 +26,7 @@ export { SettingsWindow } from './SettingsWindow';
 export { HelpWindow } from './HelpWindow';
 export { TagManagerWindow } from './TagManagerWindow';
 export { ThemeManagerWindow } from './ThemeManagerWindow';
+export { XrayWindow, XrayModal } from './XrayWindow';
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,
   ArrowDownwardIcon, ArrowUpwardIcon, AssignmentIcon, AutoAwesomeIcon,

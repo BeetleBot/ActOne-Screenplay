@@ -5,6 +5,7 @@ import { SettingsWindow } from "./components/SettingsWindow";
 import { HelpWindow } from "./components/HelpWindow";
 import { TagManagerWindow } from "./components/TagManagerWindow";
 import { ThemeManagerWindow } from "./components/ThemeManagerWindow";
+import { XrayWindow } from "./components/XrayWindow";
 import "./index.css";
 import { logger } from "./utils/logger";
 
@@ -27,8 +28,10 @@ if (modalParam === "settings") {
 } else if (modalParam === "tag-manager") {
   rootElement = <TagManagerWindow />;
 } else if (modalParam === "theme-manager") {
-  rootElement = <ThemeManagerWindow />;
-} else {
+    rootElement = <ThemeManagerWindow />;
+  } else if (modalParam === "xray") {
+    rootElement = <XrayWindow />;
+  } else {
   rootElement = <App />;
 }
 

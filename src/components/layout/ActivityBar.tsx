@@ -14,7 +14,7 @@ import Typography from "@mui/material/Typography";
 import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
 import {
-  FormatListBulletedIcon, LibraryBooksIcon, PersonIcon, BarChartIcon,
+  FormatListBulletedIcon, LibraryBooksIcon,
   AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CheckIcon,
   RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon, NoteAddIcon,
   KeyboardArrowDownIcon,
@@ -68,15 +68,13 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   const allTabs = [
     { id: "outline", icon: <FormatListBulletedIcon sx={{ fontSize: 20 }} />, title: "Outline" },
     { id: "scripts", icon: <LibraryBooksIcon sx={{ fontSize: 20 }} />, title: "Scripts" },
-    { id: "characters", icon: <PersonIcon sx={{ fontSize: 20 }} />, title: "Characters" },
-    { id: "stats", icon: <BarChartIcon sx={{ fontSize: 20 }} />, title: "Statistics" },
     { id: "notepad", icon: <NoteAddIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
     { id: "markers", icon: <BookmarkIcon sx={{ fontSize: 20 }} />, title: "Markers" },
     { id: "todo", icon: <AssignmentIcon sx={{ fontSize: 20 }} />, title: "Tasks" },
     { id: "sprint", icon: <TimerIcon sx={{ fontSize: 20 }} />, title: "Sprint" },
     { id: "parking", icon: <ArchiveIcon sx={{ fontSize: 20 }} />, title: "Parking" },
   ];
-  const tabs = supportsExtended ? allTabs : allTabs.filter(t => t.id === "outline" || t.id === "stats");
+  const tabs = supportsExtended ? allTabs : allTabs.filter(t => t.id === "outline");
 
   return (
     <Box

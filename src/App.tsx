@@ -55,10 +55,10 @@ function AppInner() {
   const {
     isModalActive, isPaletteOpen, showExportModal, showStructureModal,
     showSettingsModal, showTitlePageModal, showHelpModal,
-    showBreakdownModal, showThemeManagerModal,
+    showBreakdownModal, showThemeManagerModal, showXrayModal,
     setIsPaletteOpen, setShowExportModal, setShowStructureModal,
     setShowSettingsModal, setShowTitlePageModal,
-    setShowHelpModal, setShowBreakdownModal, setShowThemeManagerModal,
+    setShowHelpModal, setShowBreakdownModal, setShowThemeManagerModal, setShowXrayModal,
     togglePalette
   } = useModals();
 
@@ -78,6 +78,7 @@ function AppInner() {
     openHelpDialog: () => setShowHelpModal(true),
     openTagManagerDialog: () => setShowBreakdownModal(true),
     openThemeManagerDialog: () => setShowThemeManagerModal(true),
+    openXrayDialog: () => setShowXrayModal(true),
   });
 
   useKeyboardShortcuts({
@@ -213,7 +214,63 @@ function AppInner() {
           }
         });
 
-        unlisteners = [u1, u2, u3, u5, u6].filter(Boolean) as (() => void)[];
+        const u7 = await listen("modal:xray:ready", () => {
+          emit("modal:xray:init", {
+            parsedDoc: parsedDocRef.current,
+            scriptFileName: scriptFileNameRef.current,
+            settings: parsedDocRef.current?.settings || {},
+          });
+        });
+
+        const u8 = await listen<{ characterName: string; profile: any }>("modal:xray:save-profile", (event) => {
+          const { characterName, profile } = event.payload;
+          const sf = scriptFileNameRef.current;
+          updateSettingsRef.current((prev: any) => {
+            const prevProfiles = getPerScriptSetting("characterProfiles", prev, sf) || {};
+            const updatedProfiles = {
+              ...prevProfiles,
+              [characterName]: profile,
+            };
+
+            const prevGenders = getPerScriptSetting("genders", prev, sf) || {};
+            const updatedGenders = {
+              ...prevGenders,
+              [characterName]: profile.gender || "unknown",
+            };
+
+            const updatedSettings = {
+              ...prev,
+              ...updatePerScriptSetting(prev, "characterProfiles", sf, updatedProfiles),
+              ...updatePerScriptSetting(prev, "genders", sf, updatedGenders),
+            };
+
+            emit("modal:xray:init", {
+              parsedDoc: parsedDocRef.current ? { ...parsedDocRef.current, settings: updatedSettings } : null,
+              scriptFileName: sf,
+              settings: updatedSettings,
+            });
+
+            return updatedSettings;
+          });
+        });
+
+        const u9 = await listen<{ lineIndex: number }>("modal:xray:scroll-to-line", (event) => {
+          if (editorViewRef.current) {
+            const ev = editorViewRef.current;
+            try {
+              const line = ev.state.doc.line(event.payload.lineIndex + 1);
+              ev.dispatch({
+                selection: { anchor: line.from },
+                effects: EditorView.scrollIntoView(line.from, { y: "center" }),
+              });
+              ev.focus();
+            } catch (err) {
+              console.error("Failed to scroll to scene line:", err);
+            }
+          }
+        });
+
+        unlisteners = [u1, u2, u3, u5, u6, u7, u8, u9].filter(Boolean) as (() => void)[];
       } catch (e) {
         logger.error("app", "Failed to set up modal event listeners:", e);
       }
@@ -222,6 +279,25 @@ function AppInner() {
     setup();
     return () => { unlisteners.forEach(fn => fn()); };
   }, []);
+
+  // Broadcast updates to the xray modal when parsedDoc or scriptFileName changes
+  useEffect(() => {
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (!isTauri) return;
+    (async () => {
+      try {
+        const { emit } = await import("@tauri-apps/api/event");
+        emit("modal:xray:init", {
+          parsedDoc,
+          scriptFileName,
+          settings: parsedDoc?.settings || {},
+        });
+      } catch (e) {
+        // Ignored
+      }
+    })();
+  }, [parsedDoc, scriptFileName]);
+
 
   // Editor window: handle the action param on mount (once only)
   const initialActionHandled = useRef(false);
@@ -424,6 +500,7 @@ function AppInner() {
             onOpenPalette={() => setIsPaletteOpen(true)}
             onOpenBreakdownModal={() => modalWindows.openTagManagerWindow()}
             onOpenThemeManagerModal={() => modalWindows.openThemeManagerWindow()}
+            onOpenXray={() => modalWindows.openXrayWindow()}
           />
         </ErrorBoundary>
       <ModalManager
@@ -443,6 +520,8 @@ function AppInner() {
         setShowBreakdownModal={setShowBreakdownModal}
         showThemeManagerModal={showThemeManagerModal}
         setShowThemeManagerModal={setShowThemeManagerModal}
+        showXrayModal={showXrayModal}
+        setShowXrayModal={setShowXrayModal}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         openSettingsWindow={modalWindows.openSettingsWindow}

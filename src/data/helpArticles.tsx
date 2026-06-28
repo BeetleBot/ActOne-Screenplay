@@ -1,4 +1,4 @@
-﻿export interface HelpArticle {
+export interface HelpArticle {
   id: string;
   title: string;
   category: string;
@@ -500,6 +500,25 @@ Requires .actone bundle to persist gender assignments.`,
 - **Dialogue vs Action**: Horizontal percentage bar showing word distribution between dialogue and action text.
 - **Dialogue by Gender**: 4-row horizontal bar chart (Male, Female, Non-Binary, Unknown) using gender assignments from the Characters panel.
 - **Top Locations**: Top 5 most frequent shooting locations parsed from scene headings, with rank numbers and occurrence counts.`,
+  },
+  {
+    id: "xray-analysis",
+    title: "X-Ray Screenplay Analyzer",
+    category: "Workspace & Views",
+    tags: ["xray", "x-ray", "analysis", "timing", "connections", "pacing"],
+    relatedIds: ["statistics", "character-tracker"],
+    content: `The X-Ray window is a comprehensive screenplay analysis tool. Launch it from the activity bar to open a live-updating window with four analysis modes:
+
+- **Statistics:** View dialogue vs action ratios, day vs night pie charts, top locations, and scene length distribution counts.
+- **Timing Report:** See estimated screen durations per scene (calculated by word count and pacing), along with cumulative runtimes. Scene headings are sanitized to display only clear, capitalized locations.
+- **Characters:** View and edit character details (gender and role) in a data-dense list, outside of the secondary details modal.
+- **Connections:** Analyze character interactions via two analytical modes:
+  - **Network Graph:** A circular node diagram linking characters who speak in the same scenes. Click a node to view single character co-occurrences.
+  - **Ctrl+Click Double Selection:** Hold <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd>) and click a second character node to show connection data and shared scenes between both characters.
+  - **Matrix Heatmap:** A grid map of characters where cell colors reflect interaction frequency. Set column headers style to fit the window with proportional sizing.
+- **Pacing Chart:** A line/area chart showing Dialogue vs Action pacing per scene. 
+  - **Fit-to-Window:** Reacts to window resizing by default to fit the space.
+  - **Scroll and Zoom:** Hold <kbd>Ctrl</kbd> + scroll your mouse wheel on the chart to zoom in (up to 500%) or zoom out. Zooming in lets you pan the pacing chart horizontally.`,
   },
   {
     id: "tasks",

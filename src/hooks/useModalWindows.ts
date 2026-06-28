@@ -6,6 +6,7 @@ interface ModalWindowsCallbacks {
   openHelpDialog: () => void;
   openTagManagerDialog: () => void;
   openThemeManagerDialog: () => void;
+  openXrayDialog: () => void;
 }
 
 interface ModalWindowsHook {
@@ -13,6 +14,7 @@ interface ModalWindowsHook {
   openHelpWindow: () => void;
   openTagManagerWindow: () => void;
   openThemeManagerWindow: () => void;
+  openXrayWindow: () => void;
 }
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -110,5 +112,19 @@ export function useModalWindows(callbacks: ModalWindowsCallbacks): ModalWindowsH
     }
   }, [callbacks]);
 
-  return { openSettingsWindow, openHelpWindow, openTagManagerWindow, openThemeManagerWindow };
+  const openXrayWindow = useCallback(async () => {
+    if (!isTauri) {
+      callbacks.openXrayDialog();
+      return;
+    }
+    if (windowsRef.current.get("xray")) return;
+    windowsRef.current.set("xray", true);
+    const ok = await createTauriWindow("xray", "/?modal=xray", "ActOne – X-Ray", 700, 580, true, () => windowsRef.current.delete("xray"));
+    if (!ok) {
+      windowsRef.current.delete("xray");
+      callbacks.openXrayDialog();
+    }
+  }, [callbacks]);
+
+  return { openSettingsWindow, openHelpWindow, openTagManagerWindow, openThemeManagerWindow, openXrayWindow };
 }

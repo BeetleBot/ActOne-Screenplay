@@ -7,6 +7,7 @@ import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { HelpModal } from './HelpModal';
 import { TagManager } from './TagManager';
 import { ThemeManagerModal } from './ThemeManagerModal';
+import { XrayModal } from './XrayWindow';
 import { ErrorBoundary } from './ErrorBoundary';
 
 export interface ModalManagerProps {
@@ -26,12 +27,15 @@ export interface ModalManagerProps {
   setShowBreakdownModal: (open: boolean) => void;
   showThemeManagerModal: boolean;
   setShowThemeManagerModal: (open: boolean) => void;
+  showXrayModal: boolean;
+  setShowXrayModal: (open: boolean) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
   openSettingsWindow?: () => void;
   openHelpWindow?: () => void;
   openTagManagerWindow?: () => void;
   openThemeManagerWindow?: () => void;
+  openXrayWindow?: () => void;
 }
 
 export const ModalManager: React.FC<ModalManagerProps> = ({
@@ -51,12 +55,15 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   setShowBreakdownModal,
   showThemeManagerModal,
   setShowThemeManagerModal,
+  showXrayModal,
+  setShowXrayModal,
   isSidebarOpen,
   toggleSidebar,
   openSettingsWindow,
   openHelpWindow,
   openTagManagerWindow,
   openThemeManagerWindow,
+  openXrayWindow,
 }) => {
   return (
     <>
@@ -73,6 +80,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onOpenHelpModal={openHelpWindow || (() => setShowHelpModal(true))}
           onOpenBreakdownModal={openTagManagerWindow || (() => setShowBreakdownModal(true))}
           onOpenThemeManagerModal={openThemeManagerWindow || (() => setShowThemeManagerModal(true))}
+          onOpenXrayModal={openXrayWindow || (() => setShowXrayModal(true))}
         />
       </ErrorBoundary>
       <ErrorBoundary name="export-modal">{showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}</ErrorBoundary>
@@ -82,6 +90,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       <ErrorBoundary name="help-modal">{showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="tag-manager">{showBreakdownModal && <TagManager onClose={() => setShowBreakdownModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="theme-modal">{showThemeManagerModal && <ThemeManagerModal onClose={() => setShowThemeManagerModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="xray-modal">{showXrayModal && <XrayModal onClose={() => setShowXrayModal(false)} />}</ErrorBoundary>
     </>
   );
 };
