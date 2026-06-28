@@ -9,7 +9,7 @@ import { useEditor } from "../../context";
 export const StatusBar: React.FC = () => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
   const { isZenMode } = useUI();
-  const { activeLineId } = useEditor();
+  const { activeLineNumber } = useEditor();
   const { activeSprints } = useSprint();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [tick, setTick] = useState(0);
@@ -32,17 +32,19 @@ export const StatusBar: React.FC = () => {
     const pages = parsedDoc?.pageBreaks ? parsedDoc.pageBreaks.length + 1 : 1;
 
     let currentPage = 1;
-    if (parsedDoc?.lines) {
-      const activeLineIndex = parsedDoc.lines.findIndex(l => l.id === activeLineId);
-      if (activeLineIndex !== -1 && parsedDoc.pageBreaks) {
-        currentPage = parsedDoc.pageBreaks.filter(b => b <= activeLineIndex).length + 1;
+    if (parsedDoc?.lines && parsedDoc.pageBreaks) {
+      const idx = activeLineNumber >= 0 && activeLineNumber < parsedDoc.lines.length
+        ? activeLineNumber
+        : -1;
+      if (idx !== -1) {
+        currentPage = parsedDoc.pageBreaks.filter(b => b <= idx).length + 1;
       }
     }
 
     const sceneCount = parsedDoc?.lines ? parsedDoc.lines.filter(l => l.type === LineType.heading).length : 0;
 
     return { words, chars, pages, currentPage, sceneCount };
-  }, [rawText, parsedDoc, activeLineId]);
+  }, [rawText, parsedDoc, activeLineNumber]);
 
   const sprintDetails = useMemo(() => {
     if (!currentSprint) return null;

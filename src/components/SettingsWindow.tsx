@@ -43,6 +43,7 @@ export const SettingsWindow: React.FC = () => {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTO_SAVE_ENABLED, true));
   const [autoSaveInterval, setAutoSaveInterval] = useState(() => readLocalNum(STORAGE_KEYS.AUTO_SAVE_INTERVAL, 60000));
   const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, false));
+  const [hideTagsEnabled, setHideTagsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_TAGS_ENABLED, false));
   const [lineFocusEnabled, setLineFocusEnabled] = useState(() => readLocalBool(STORAGE_KEYS.LINE_FOCUS_ENABLED, false));
   const [activeTab, setActiveTab] = useState(0);
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => {
@@ -81,6 +82,7 @@ export const SettingsWindow: React.FC = () => {
           setAutoSaveEnabled(d.autoSaveEnabled);
           setAutoSaveInterval(d.autoSaveInterval);
           setHideSyntaxEnabled(d.hideSyntaxEnabled);
+          setHideTagsEnabled(d.hideTagsEnabled);
           setLineFocusEnabled(d.lineFocusEnabled);
         });
         return unlisten;
@@ -151,6 +153,9 @@ export const SettingsWindow: React.FC = () => {
     }
     if (prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] !== undefined && prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] !== String(hideSyntaxEnabled)) {
       setHideSyntaxEnabled(prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.HIDE_TAGS_ENABLED] !== undefined && prefs[STORAGE_KEYS.HIDE_TAGS_ENABLED] !== String(hideTagsEnabled)) {
+      setHideTagsEnabled(prefs[STORAGE_KEYS.HIDE_TAGS_ENABLED] === "true");
     }
     if (prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== undefined && prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== String(lineFocusEnabled)) {
       setLineFocusEnabled(prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] === "true");
@@ -349,6 +354,15 @@ export const SettingsWindow: React.FC = () => {
                     sx={{ mx: 0, flex: 1 }}
                   />
                 </Box>
+                <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5 }}>
+                  <FormControlLabel
+                    control={<Switch size="small" checked={hideTagsEnabled}
+                      onChange={(e) => { const v = e.target.checked; setHideTagsEnabled(v); localStorage.setItem(STORAGE_KEYS.HIDE_TAGS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.HIDE_TAGS_ENABLED, v); }}
+                    />}
+                    label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Hide the Tags</Typography>}
+                    sx={{ mx: 0 }}
+                  />
+                </Box>
               </Box>
             </Box>
           )}
@@ -371,5 +385,6 @@ interface SettingsInitData {
   autoSaveEnabled: boolean;
   autoSaveInterval: number;
   hideSyntaxEnabled: boolean;
+  hideTagsEnabled: boolean;
   lineFocusEnabled: boolean;
 }

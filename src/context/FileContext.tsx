@@ -51,6 +51,7 @@ export interface FileContextProps {
   scripts: ScriptInfo[];
   activeScriptIndex: number;
   activeScriptName: string;
+  scriptFileName: string;
   isBundle: boolean;
   setActiveScript: (index: number) => void;
   addScript: (name?: string) => Promise<string | null>;
@@ -149,14 +150,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
           ? doc.settings
           : f.parsedDoc.settings;
-        return { ...f, parsedDoc: { ...doc, pageBreaks: undefined, settings: mergedSettings } };
+        return { ...f, parsedDoc: { ...doc, settings: mergedSettings } };
       }));
       setParsedDoc(prevDoc => {
         const doc = parseScreenplay(rawText, paperSize);
         const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
           ? doc.settings
           : prevDoc.settings;
-        return { ...doc, pageBreaks: undefined, settings: mergedSettings };
+        return { ...doc, settings: mergedSettings };
       });
     };
     updateAll();
@@ -224,8 +225,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           selectFile(id);
         }
         await saveFile();
-        const updated = files.find(f => f.id === id);
-        if (updated && updated.isDirty) return;
       }
     }
 
@@ -266,8 +265,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (confirmClose === "save") {
         selectFile(f.id);
         await saveFile();
-        const updated = files.find(file => file.id === f.id);
-        if (updated && updated.isDirty) return;
       }
     }
     const fileToKeep = files.find(f => f.id === id);
@@ -293,8 +290,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (confirmClose === "save") {
         selectFile(f.id);
         await saveFile();
-        const updated = files.find(file => file.id === f.id);
-        if (updated && updated.isDirty) return;
       }
     }
     setFiles([]);
@@ -333,7 +328,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...f,
           rawText: normalized,
           isDirty,
-          parsedDoc: { ...doc, pageBreaks: undefined, settings: mergedSettings },
+          parsedDoc: { ...doc, settings: mergedSettings },
           scripts: updatedScripts,
         };
       }
@@ -343,7 +338,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
         ? doc.settings
         : prevDoc.settings;
-      return { ...doc, pageBreaks: undefined, settings: mergedSettings };
+      return { ...doc, settings: mergedSettings };
     });
   };
 
@@ -1236,6 +1231,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const activeScriptName = scriptsState[activeScriptIndex]?.name || "";
+  const scriptFileName = scriptsState[activeScriptIndex]?.fileName || "";
 
   return (
     <FileContext.Provider
@@ -1262,6 +1258,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         scripts: scriptsState,
         activeScriptIndex,
         activeScriptName,
+        scriptFileName,
         isBundle,
         setActiveScript,
         addScript,

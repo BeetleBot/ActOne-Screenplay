@@ -6,6 +6,7 @@ import { alpha } from "@mui/material/styles";
 import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, AutoAwesomeIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
 import { logger } from "../utils/logger";
 import { CATEGORIES } from "../constants";
+import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -35,7 +36,7 @@ const MARKER_COLORS = [
 export const FountainEditor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { fontFamily } = useUI();
-  const { parsedDoc } = useFile();
+  const { parsedDoc, scriptFileName } = useFile();
   const { updateSettings, cleanExtraSpace } = useEditor();
   const parking = useParking();
   const { prompt: showPrompt } = useCustomModal();
@@ -81,7 +82,7 @@ export const FountainEditor: React.FC = () => {
 
   const existingTag = useMemo(() => {
     if (!view || !selection) return null;
-    const prodTags = parsedDoc.settings?.productionTags;
+    const prodTags = getPerScriptSetting("productionTags", parsedDoc.settings, scriptFileName);
     if (!prodTags || !prodTags.tags) return null;
     
     const cursor = selection.from;
@@ -98,7 +99,7 @@ export const FountainEditor: React.FC = () => {
       return { tag, def, catLabel };
     }
     return null;
-  }, [parsedDoc.settings?.productionTags, view, selection]);
+  }, [parsedDoc.settings?.productionTags, view, selection, scriptFileName]);
 
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -122,14 +123,14 @@ export const FountainEditor: React.FC = () => {
   const handleRemoveTag = () => {
     if (!existingTag) return;
     updateSettings((prev: any) => {
-      const prodTags = prev.productionTags || { tags: [], definitions: [] };
+      const prodTags = getPerScriptSetting("productionTags", prev, scriptFileName) || { tags: [], definitions: [] };
       const tags = (prodTags.tags || []).filter((t: any) => t !== existingTag.tag);
       return {
         ...prev,
-        productionTags: {
+        ...updatePerScriptSetting(prev, "productionTags", scriptFileName, {
           ...prodTags,
           tags
-        }
+        }),
       };
     });
     handleClose();
@@ -143,7 +144,7 @@ export const FountainEditor: React.FC = () => {
     if (!text) return;
 
     updateSettings((prev: any) => {
-      const prodTags = prev.productionTags || { tags: [], definitions: [] };
+      const prodTags = getPerScriptSetting("productionTags", prev, scriptFileName) || { tags: [], definitions: [] };
       const tags = [...(prodTags.tags || [])];
       const definitions = [...(prodTags.definitions || [])];
 
@@ -176,10 +177,10 @@ export const FountainEditor: React.FC = () => {
 
       return {
         ...prev,
-        productionTags: {
+        ...updatePerScriptSetting(prev, "productionTags", scriptFileName, {
           tags,
           definitions
-        }
+        }),
       };
     });
 
@@ -314,10 +315,27 @@ export const FountainEditor: React.FC = () => {
     import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url)).catch(() => window.open(url, "_blank"));
   };
 
-  const handleEditorAction = (cmd: string) => {
+  const handleEditorAction = async (cmd: string) => {
     if (!view) return;
     view.focus();
-    document.execCommand(cmd);
+    const state = view.state;
+    const sel = state.selection.main;
+    if (cmd === "copy" || cmd === "cut") {
+      const text = state.sliceDoc(sel.from, sel.to - sel.from);
+      try { await navigator.clipboard.writeText(text); } catch {}
+      if (cmd === "cut" && !sel.empty) {
+        view.dispatch({ changes: { from: sel.from, to: sel.to } });
+      }
+    } else if (cmd === "paste") {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!sel.empty) {
+          view.dispatch({ changes: { from: sel.from, to: sel.to, insert: text } });
+        } else {
+          view.dispatch({ changes: { from: sel.from, insert: text } });
+        }
+      } catch {}
+    }
     handleClose();
   };
 

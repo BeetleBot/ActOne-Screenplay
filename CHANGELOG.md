@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.6] - 2026-06-28
+
+### Added
+- **Cross-Window Settings Sync**: Rust `AppPrefs` backend (`app_prefs.rs`) with cross-window `app-prefs:changed` broadcast event, paired with a frontend `AppPrefsEngine` mirroring the `ThemeEngine` pattern. Changing a setting in any window propagates automatically to all open windows (SettingsWindow, HelpWindow, ThemeManagerWindow, TagManagerWindow, and main editor).
+- **"Hide the Tags" Toggle**: New setting hides production breakdown tag markers (`=`) in the editor for a cleaner reading view. Toggle via Settings/Quick Settings or Command Palette.
+- **Quick Settings Theme Picker**: Redesigned theme section with color swatches grouped by Light / Dark / Adaptive / Custom, matching the Welcome Screen pattern.
+- **Per-Script Settings**: New `perScriptSettings.ts` utility enables script-specific settings in multi-script `.actone` bundles. Production tags, parking items, todos, notepad, and character genders are now stored and retrieved per individual script rather than globally.
+
+### Changed
+- **Theme Resolution**: Introduced shared `resolveThemeConfig()` in `themeUtils.ts` for consistent theme resolution across all windows, including custom themes and adaptive (system dark/light) mode.
+- **SettingsWindow**: Removed theme dropdown; theme selection is now exclusively in Quick Settings. The window now respects cross-window pref changes.
+- **TagManagerWindow**: Removed Edit Tags tab. The window now receives resolved per-script production tag settings on init.
+- **.actone Bundle Format**: Multi-script bundles now store `characters.json`, `todos.json`, `parking.json`, and `notepad.json` as per-script maps. Removed `marker.json` entirely from the bundle.
+- **Editor Line Tracking**: Active line tracking switched from ID-based to index-based (`activeLineNumber`), improving OutlineView scroll synchronization and scene selection accuracy.
+- **Smart Clipboard**: Copy, cut, and paste in Command Palette now use `navigator.clipboard` API instead of deprecated `document.execCommand`.
+- **Chunk Splitting**: Improved Rollup chunk partitioning in `vite.config.ts` for smaller async bundles.
+
+### Fixed
+- **HelpWindow & ThemeManagerWindow**: Now correctly load custom themes and respect `appScale` / `systemDark` from the broadcast state.
+- **Page Breaks**: Removed stale `pageBreaks: undefined` spread from `FileContext` when merging parsed document settings.
+
+### Removed
+- **Scrite References**: Removed residual Scrite-related comments from the PDF exporter Rust source.
+- **marker.json**: Removed from `.actone` bundle read/write (legacy artifact; marker data was never actually used).
+
 ## [0.1.16] - 2026-06-22
 
 ### Changed

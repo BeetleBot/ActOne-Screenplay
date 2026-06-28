@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { useFile, useEditor } from "../context";
 import { ActoneBanner } from "./ActoneBanner";
 import { RadioButtonUncheckedIcon, CheckCircleIcon, KeyboardArrowDownIcon, AddIcon, CloseIcon } from "./Icons";
+import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
 
 import {
   Box,
@@ -31,19 +32,19 @@ interface TodoViewProps {
 }
 
 export const TodoView: React.FC<TodoViewProps> = ({ disabled, saveFileAs }) => {
-  const { parsedDoc } = useFile();
+  const { parsedDoc, scriptFileName } = useFile();
   const { updateSettings } = useEditor();
   const [input, setInput] = useState("");
   const [showCompleted, setShowCompleted] = useState(true);
 
-  const todos: Todo[] = parsedDoc.settings?.todos || [];
+  const todos: Todo[] = getPerScriptSetting("todos", parsedDoc.settings, scriptFileName) || [];
 
   const saveTodos = useCallback((newTodos: Todo[]) => {
     updateSettings((prev: any) => ({
       ...prev,
-      todos: newTodos,
+      ...updatePerScriptSetting(prev, "todos", scriptFileName, newTodos),
     }));
-  }, [updateSettings]);
+  }, [updateSettings, scriptFileName]);
 
   const addTodo = () => {
     if (disabled) return;

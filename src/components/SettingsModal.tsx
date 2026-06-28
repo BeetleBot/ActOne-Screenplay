@@ -48,6 +48,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     setAutoSaveInterval,
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
+    hideTagsEnabled,
+    setHideTagsEnabled,
     lineFocusEnabled,
     setLineFocusEnabled,
   } = useUI();
@@ -235,6 +237,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 <FormControlLabel
                   control={<Switch size="small" checked={lineFocusEnabled} onChange={(e) => setLineFocusEnabled(e.target.checked)} />}
                   label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Focus Mode</Typography>}
+                  sx={{ mx: 0, flex: 1 }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5 }}>
+                <FormControlLabel
+                  control={<Switch size="small" checked={hideTagsEnabled} onChange={(e) => setHideTagsEnabled(e.target.checked)} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Hide the Tags</Typography>}
                   sx={{ mx: 0, flex: 1 }}
                 />
               </Box>

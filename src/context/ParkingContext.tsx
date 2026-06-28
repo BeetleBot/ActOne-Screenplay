@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback } from "react";
 import { useFile } from "./FileContext";
 import { useEditor } from "./EditorContext";
+import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
 
 export interface ParkedItem {
   id: string;
@@ -23,9 +24,9 @@ export const useParking = () => {
 };
 
 export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { parsedDoc } = useFile();
+  const { parsedDoc, scriptFileName } = useFile();
   const { updateSettings } = useEditor();
-  const items: ParkedItem[] = (parsedDoc.settings?.parking as ParkedItem[]) ?? [];
+  const items: ParkedItem[] = (getPerScriptSetting("parking", parsedDoc.settings, scriptFileName) as ParkedItem[]) ?? [];
 
   const addItem = useCallback((text: string) => {
     if (!text.trim()) return;
@@ -37,16 +38,16 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     updateSettings((prev: any) => ({
       ...prev,
-      parking: [item, ...(prev.parking || [])],
+      ...updatePerScriptSetting(prev, "parking", scriptFileName, [item, ...(getPerScriptSetting("parking", prev, scriptFileName) || [])]),
     }));
-  }, [updateSettings]);
+  }, [updateSettings, scriptFileName]);
 
   const removeItem = useCallback((id: string) => {
     updateSettings((prev: any) => ({
       ...prev,
-      parking: (prev.parking || []).filter((i: ParkedItem) => i.id !== id),
+      ...updatePerScriptSetting(prev, "parking", scriptFileName, (getPerScriptSetting("parking", prev, scriptFileName) || []).filter((i: ParkedItem) => i.id !== id)),
     }));
-  }, [updateSettings]);
+  }, [updateSettings, scriptFileName]);
 
   return (
     <ParkingContext.Provider value={{ items, addItem, removeItem }}>

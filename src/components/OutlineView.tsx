@@ -109,7 +109,7 @@ export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
 
 export const OutlineView: React.FC = () => {
   const { parsedDoc } = useFile();
-  const { scrollToLine, selectedSceneId, setSelectedSceneId, reorderScenes } = useEditor();
+  const { scrollToLine, activeLineNumber, setSelectedSceneId, reorderScenes } = useEditor();
 
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [searchQuery, setSearchQuery] = useState("");
@@ -257,8 +257,14 @@ export const OutlineView: React.FC = () => {
   const selectable = useMemo(() => flattenSelectable(tree), [tree]);
 
   let activeSelectableIdx = -1;
-  if (selectedSceneId) {
-    activeSelectableIdx = selectable.findIndex((g) => g.item.line.id === selectedSceneId);
+  if (activeLineNumber >= 0 && activeLineNumber < parsedDoc.lines.length) {
+    for (let i = activeLineNumber; i >= 0; i--) {
+      const line = parsedDoc.lines[i];
+      if (line.isOutlineElement && line.type !== LineType.synopse) {
+        const found = selectable.findIndex((g) => g.item.line.id === line.id);
+        if (found !== -1) { activeSelectableIdx = found; break; }
+      }
+    }
   }
   if (activeSelectableIdx === -1 && selectable.length > 0) activeSelectableIdx = 0;
 
@@ -267,7 +273,7 @@ export const OutlineView: React.FC = () => {
     if (activeItemRef.current) {
       activeItemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [selectedSceneId]);
+  }, [activeSelectableIdx]);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -475,7 +481,7 @@ export const OutlineView: React.FC = () => {
     const isScene = !isSection && !isSynopsis;
     const isSelectable = isSection || isScene;
     const isActive = isSelectable && (
-      line.id === selectable[activeSelectableIdx]?.item.line.id || line.id === selectedSceneId
+      line.id === selectable[activeSelectableIdx]?.item.line.id
     );
     const sceneColor = getSceneColor(line);
     const sceneIndex = isScene ? scenesItems.findIndex((s) => s.line.id === line.id) : -1;
@@ -539,7 +545,7 @@ export const OutlineView: React.FC = () => {
     }
 
     if (isSynopsis) {
-      const isActive = line.id === selectable[activeSelectableIdx]?.item.line.id || line.id === selectedSceneId;
+      const isActive = line.id === selectable[activeSelectableIdx]?.item.line.id;
       return (
         <ListItemButton
           key={line.id}

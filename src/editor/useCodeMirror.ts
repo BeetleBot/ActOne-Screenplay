@@ -5,13 +5,15 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { search } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
-import { LineType } from "../parser";
+import { getPerScriptSetting } from "../utils/perScriptSettings";
 import { CATEGORIES, STORAGE_KEYS } from "../constants";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource } from "./inlineAutocomplete";
 import { 
   fountainHighlightField, 
   updateParsedDocEffect,
   updateHideSyntaxEffect,
+  updateHideTagsEffect,
+  updateScriptFileNameEffect,
   classifyLines,
   needsBlankAfterEnter,
   LINE_CHARACTER,
@@ -298,9 +300,9 @@ const activeLineAlwaysPlugin = ViewPlugin.fromClass(
 
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId } = useFile();
-  const { typewriterMode, hideSyntaxEnabled, lineFocusEnabled } = useUI();
-  const { setActiveLineId, setSelectedSceneId, setEditorView } = useEditor();
+  const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId, scriptFileName } = useFile();
+  const { typewriterMode, hideSyntaxEnabled, hideTagsEnabled, lineFocusEnabled } = useUI();
+  const { setActiveLineId, setActiveLineNumber, setSelectedSceneId, setEditorView } = useEditor();
   const lastScriptKeyRef = useRef("");
   const currentScriptKey = `${activeFileId}-${activeScriptIndex}`;
 
@@ -319,6 +321,11 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     setActiveLineIdRef.current = setActiveLineId;
   }, [setActiveLineId]);
 
+  const setActiveLineNumberRef = useRef(setActiveLineNumber);
+  useEffect(() => {
+    setActiveLineNumberRef.current = setActiveLineNumber;
+  }, [setActiveLineNumber]);
+
   const setSelectedSceneIdRef = useRef(setSelectedSceneId);
   useEffect(() => {
     setSelectedSceneIdRef.current = setSelectedSceneId;
@@ -328,6 +335,11 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
   useEffect(() => {
     updateSettingsRef.current = updateSettings;
   }, [updateSettings]);
+
+  const scriptFileNameRef = useRef(scriptFileName);
+  useEffect(() => {
+    scriptFileNameRef.current = scriptFileName;
+  }, [scriptFileName]);
 
   useEffect(() => {
     if (viewRef.current) {
@@ -361,6 +373,22 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       });
     }
   }, [hideSyntaxEnabled]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: updateHideTagsEffect.of(hideTagsEnabled)
+      });
+    }
+  }, [hideTagsEnabled]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: updateScriptFileNameEffect.of(scriptFileName)
+      });
+    }
+  }, [scriptFileName]);
 
   useEffect(() => {
     if (viewRef.current) {
@@ -409,7 +437,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
     const prodTagsTooltip = hoverTooltip((view, pos) => {
       const settings = parsedDocRef.current.settings;
-      const prodTags = settings?.productionTags;
+      const prodTags = getPerScriptSetting("productionTags", settings, scriptFileNameRef.current);
       if (!prodTags || !prodTags.tags) return null;
 
       for (const tag of prodTags.tags) {
@@ -459,7 +487,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setRawTextRef.current(update.state.doc.toString());
-            const prodTags = parsedDocRef.current.settings?.productionTags;
+            const prodTags = getPerScriptSetting("productionTags", parsedDocRef.current.settings, scriptFileNameRef.current);
             if (prodTags && prodTags.tags && prodTags.tags.length > 0) {
               let changed = false;
               const mappedTags = prodTags.tags.map((tag: { range?: [number, number]; definitionId?: string; type?: string; sceneId?: string }) => {
@@ -503,16 +531,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
             const pos = update.state.selection.main.head;
             const lineNum = update.state.doc.lineAt(pos).number;
             const idx = lineNum - 1;
-            if (idx >= 0 && idx < parsedDocRef.current.lines.length) {
-              setActiveLineIdRef.current(parsedDocRef.current.lines[idx].id);
-              const lines = parsedDocRef.current.lines;
-              for (let i = idx; i >= 0; i--) {
-                if (lines[i].isOutlineElement && lines[i].type !== LineType.synopse) {
-                  setSelectedSceneIdRef.current(lines[i].id);
-                  break;
-                }
-              }
-            }
+            setActiveLineNumberRef.current(idx);
           }
         }),
       ],
@@ -525,6 +544,13 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
     viewRef.current = view;
     setEditorView(view);
+
+    view.dispatch({
+      effects: [
+        updateHideTagsEffect.of(hideTagsEnabled),
+        updateHideSyntaxEffect.of(hideSyntaxEnabled),
+      ]
+    });
 
     if (typewriterMode) {
       setTimeout(() => {
@@ -589,7 +615,10 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           }
 
       view.dispatch({
-        effects: updateParsedDocEffect.of(parsedDoc)
+        effects: [
+          updateParsedDocEffect.of(parsedDoc),
+          updateScriptFileNameEffect.of(scriptFileName),
+        ]
       });
 
       if (prevCursorY !== null) {

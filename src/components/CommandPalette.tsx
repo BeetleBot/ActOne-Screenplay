@@ -93,6 +93,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     appScale,
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
+    hideTagsEnabled,
+    setHideTagsEnabled,
     lineFocusEnabled,
     setLineFocusEnabled,
   } = useUI();
@@ -153,10 +155,27 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     prevOpen.current = isOpen;
   }, [isOpen, editorView]);
 
-  const handleEditorAction = (cmd: string) => {
+  const handleEditorAction = async (cmd: string) => {
     if (!editorView) return;
     editorView.dom.focus({ preventScroll: true });
-    document.execCommand(cmd);
+    const state = editorView.state;
+    const sel = state.selection.main;
+    if (cmd === "copy" || cmd === "cut") {
+      const text = state.sliceDoc(sel.from, sel.to - sel.from);
+      try { await navigator.clipboard.writeText(text); } catch {}
+      if (cmd === "cut" && !sel.empty) {
+        editorView.dispatch({ changes: { from: sel.from, to: sel.to } });
+      }
+    } else if (cmd === "paste") {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!sel.empty) {
+          editorView.dispatch({ changes: { from: sel.from, to: sel.to, insert: text } });
+        } else {
+          editorView.dispatch({ changes: { from: sel.from, insert: text } });
+        }
+      } catch {}
+    }
     onClose();
   };
 
@@ -213,6 +232,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
     { id: "view-zoom-reset", name: `Reset Zoom (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
     { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
+    { id: "view-hide-tags", name: hideTagsEnabled ? "Show Tags" : "Hide the Tags", category: "View", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { setHideTagsEnabled(!hideTagsEnabled); onClose(); } },
     // Format
     { id: "format-tag-manager", name: "Open Tag Manager...", category: "Format", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBreakdownModal(); onClose(); } },
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },

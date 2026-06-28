@@ -8,6 +8,7 @@ import { MarkerView } from "./MarkerView";
 import { ScriptsView } from "./ScriptsView";
 import { ActoneBanner } from "./ActoneBanner";
 import { AddIcon, CloseIcon, SearchIcon } from "./Icons";
+import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
 import {
   Box,
   Typography,
@@ -41,7 +42,7 @@ interface SidebarViewProps {
 }
 
 export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
-  const { parsedDoc, filePath, saveFileAs } = useFile();
+  const { parsedDoc, filePath, saveFileAs, scriptFileName } = useFile();
   const { updateSettings, editorView } = useEditor();
   const parking = useParking();
   const supportsExtended = !filePath || filePath.toLowerCase().endsWith(".actone");
@@ -66,13 +67,13 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
   }
 
   if (activeTab === "notepad") {
-    const notepadText = parsedDoc.settings.notepad || "";
+    const notepadText = getPerScriptSetting("notepad", parsedDoc.settings, scriptFileName) || "";
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const val = e.target.value;
       updateSettings((prev) => ({
         ...prev,
-        notepad: val,
+        ...updatePerScriptSetting(prev, "notepad", scriptFileName, val),
       }));
     };
 
@@ -136,16 +137,16 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
       name.toLowerCase().includes(characterFilter.toLowerCase())
     );
 
-    const genders = parsedDoc.settings.genders || {};
+    const genders = getPerScriptSetting("genders", parsedDoc.settings, scriptFileName) || {};
 
     const handleGenderChange = (name: string, gender: string) => {
-      updateSettings((prev) => ({
-        ...prev,
-        genders: {
-          ...(prev.genders || {}),
-          [name]: gender,
-        },
-      }));
+      updateSettings((prev) => {
+        const currentGenders = getPerScriptSetting("genders", prev, scriptFileName) || {};
+        return {
+          ...prev,
+          ...updatePerScriptSetting(prev, "genders", scriptFileName, { ...currentGenders, [name]: gender }),
+        };
+      });
     };
 
     const cycleGender = (name: string, current: string) => {
@@ -275,7 +276,7 @@ export const SidebarViews: React.FC<SidebarViewProps> = ({ activeTab }) => {
 
     const locationCounts: { [loc: string]: number } = {};
     const genderDialogueLines: { [gender: string]: number } = { male: 0, female: 0, nonbinary: 0, unknown: 0 };
-    const genders = parsedDoc.settings.genders || {};
+    const genders = getPerScriptSetting("genders", parsedDoc.settings, scriptFileName) || {};
 
     let currentSpeaker = "";
 

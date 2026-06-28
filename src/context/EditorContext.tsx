@@ -7,11 +7,13 @@ import { useUI } from "./UIContext";
 
 export interface EditorContextProps {
   activeLineId: string | null;
+  activeLineNumber: number;
   selectedSceneId: string | null;
   editorView: EditorView | null;
   setActiveLineId: (id: string | null) => void;
+  setActiveLineNumber: (num: number) => void;
   setSelectedSceneId: (id: string | null) => void;
-  updateLineText: (lineId: string, newText: string) => void;
+  updateLineText: (lineIndex: number, newText: string) => void;
   updateSettings: (updater: SettingsUpdater) => void;
   reorderScenes: (startIndex: number, endIndex: number) => void;
   setEditorView: (view: EditorView | null) => void;
@@ -34,6 +36,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { paperSize } = useUI();
   
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const [activeLineNumber, setActiveLineNumber] = useState<number>(-1);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [editorView, setEditorViewState] = useState<EditorView | null>(null);
 
@@ -54,9 +57,10 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 
 
-  const updateLineText = (lineId: string, newText: string) => {
-    const updatedLines = parsedDoc.lines.map((line) =>
-      line.id === lineId ? { ...line, text: newText } : line
+  const updateLineText = (lineIndex: number, newText: string) => {
+    if (lineIndex < 0 || lineIndex >= parsedDoc.lines.length) return;
+    const updatedLines = parsedDoc.lines.map((line, i) =>
+      i === lineIndex ? { ...line, text: newText } : line
     );
     const serialized = updatedLines.map(l => l.text).join("\n");
     setRawText(serialized);
@@ -68,9 +72,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     let currentScene: ParsedLine[] = [];
     let currentStart = -1;
 
+    const isSceneStart = (line: ParsedLine) =>
+      line.type === LineType.heading || (line.isOutlineElement && line.type !== LineType.section && line.type !== LineType.synopse);
+
     for (let i = 0; i < parsedDoc.lines.length; i++) {
       const line = parsedDoc.lines[i];
-      if (line.type === 10) { // LineType.heading is 10
+      if (isSceneStart(line)) {
         if (currentScene.length > 0) {
           scenes.push({ lineIndex: currentStart, lines: currentScene });
         }
@@ -140,9 +147,11 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <EditorContext.Provider
       value={{
         activeLineId,
+        activeLineNumber,
         selectedSceneId,
         editorView,
         setActiveLineId,
+        setActiveLineNumber,
         setSelectedSceneId,
         updateLineText,
         updateSettings,

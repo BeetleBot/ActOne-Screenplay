@@ -6,6 +6,7 @@ import { SearchIcon, CloseIcon, DownloadIcon, LocalOfferIcon, TuneIcon, EditIcon
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 import { CATEGORIES } from "../constants";
+import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
 
 import {
   Box,
@@ -69,7 +70,7 @@ interface SceneInfo {
 }
 
 export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
-  const { parsedDoc, filePath, activeScriptName } = useFile();
+  const { parsedDoc, filePath, activeScriptName, scriptFileName } = useFile();
   const { editorView, updateSettings } = useEditor();
   const { appScale } = useUI();
   const theme = useTheme();
@@ -85,7 +86,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
   const [editName, setEditName] = useState("");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<string | null>(null);
 
-  const prodTags = parsedDoc.settings?.productionTags || { tags: [], definitions: [] };
+  const prodTags = getPerScriptSetting("productionTags", parsedDoc.settings, scriptFileName) || { tags: [], definitions: [] };
 
   const toggleCategoryFilter = (key: string) => {
     setCategoryFilters(prev => {
@@ -334,11 +335,11 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
     if (!editingDefId || !editName.trim()) return;
     const newName = editName.trim();
     updateSettings((prev: any) => {
-      const prevProdTags = prev.productionTags || { tags: [], definitions: [] };
+      const prevProdTags = getPerScriptSetting("productionTags", prev, scriptFileName) || { tags: [], definitions: [] };
       const definitions = (prevProdTags.definitions || []).map((d: ProdDefinition) =>
         d.id === editingDefId ? { ...d, name: newName } : d
       );
-      return { ...prev, productionTags: { ...prevProdTags, definitions } };
+      return { ...prev, ...updatePerScriptSetting(prev, "productionTags", scriptFileName, { ...prevProdTags, definitions }) };
     });
     setEditingDefId(null);
     setEditName("");
@@ -346,10 +347,10 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
 
   const handleDeleteDef = (defId: string) => {
     updateSettings((prev: any) => {
-      const prevProdTags = prev.productionTags || { tags: [], definitions: [] };
+      const prevProdTags = getPerScriptSetting("productionTags", prev, scriptFileName) || { tags: [], definitions: [] };
       const definitions = (prevProdTags.definitions || []).filter((d: ProdDefinition) => d.id !== defId);
       const tags = (prevProdTags.tags || []).filter((t: ProdTag) => t.definitionId !== defId);
-      return { ...prev, productionTags: { tags, definitions } };
+      return { ...prev, ...updatePerScriptSetting(prev, "productionTags", scriptFileName, { tags, definitions }) };
     });
     setSelectedDefId(null);
     setConfirmDeleteOpen(null);

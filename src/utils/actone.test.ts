@@ -73,7 +73,6 @@ describe("actone bundle", () => {
       todos: [{ id: "1", text: "Fix this", completed: false }],
       parking: [{ id: "p1", text: "Parked text", createdAt: 100 }],
       sprintHistory: [{ id: "s1", startTime: 0, endTime: 1, durationMinutes: 5, wordCount: 100, content: "" }],
-      markers: [{ id: "m1", color: "red", description: "Fix this" }],
       productionTags: { tags: [], definitions: [] },
     };
     const packed = packActoneBundle(scripts, settings);
@@ -81,7 +80,6 @@ describe("actone bundle", () => {
     expect(unpacked.settings.todos).toHaveLength(1);
     expect(unpacked.settings.parking).toHaveLength(1);
     expect(unpacked.settings.sprintHistory).toHaveLength(1);
-    expect(unpacked.settings.markers).toHaveLength(1);
     expect(unpacked.settings.productionTags).toEqual({ tags: [], definitions: [] });
   });
 

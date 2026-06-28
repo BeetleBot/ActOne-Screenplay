@@ -1,7 +1,7 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
 import { FountainDocument } from "../parser";
-
+import { getPerScriptSetting } from "../utils/perScriptSettings";
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
 
@@ -12,6 +12,8 @@ export interface PageBreakDisplaySettings {
 
 export const updatePageBreakDisplayEffect = StateEffect.define<PageBreakDisplaySettings>();
 export const updateHideSyntaxEffect = StateEffect.define<boolean>();
+export const updateHideTagsEffect = StateEffect.define<boolean>();
+export const updateScriptFileNameEffect = StateEffect.define<string>();
 
 
 
@@ -134,7 +136,7 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_SHOT]: "cm-fountain-shot",
 };
 
-const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean): DecorationSet => {
+const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, scriptFileName: string): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const doc = state.doc;
   const lineTypes = classifyLines(doc);
@@ -270,8 +272,8 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       }
     }
 
-    const prodTags = docObj?.settings?.productionTags;
-    if (prodTags && prodTags.tags) {
+    const prodTags = getPerScriptSetting("productionTags", docObj?.settings, scriptFileName);
+    if (!hideTagsEnabled && prodTags && prodTags.tags) {
       const tagDefMap = new Map<string, string>();
       if (prodTags.definitions) {
         for (const def of prodTags.definitions) {
@@ -361,20 +363,28 @@ export const fountainHighlightField = StateField.define<{
   doc: FountainDocument | null;
   displaySettings: PageBreakDisplaySettings;
   hideSyntaxEnabled: boolean;
+  hideTagsEnabled: boolean;
+  scriptFileName: string;
 }>({
   create(state) {
     return {
-      decorations: computeFountainDecorations(state, null, false),
+      decorations: computeFountainDecorations(state, null, false, false, ""),
       doc: null,
       displaySettings: defaultDisplaySettings,
       hideSyntaxEnabled: false,
+      hideTagsEnabled: false,
+      scriptFileName: "",
     };
   },
   update(value, tr) {
     let doc = value.doc;
     let displaySettings = value.displaySettings;
     let hideSyntaxEnabled = value.hideSyntaxEnabled;
+    let hideTagsEnabled = value.hideTagsEnabled;
+    let scriptFileName = value.scriptFileName;
     let hideSyntaxChanged = false;
+    let hideTagsChanged = false;
+    let scriptFileNameChanged = false;
 
     for (const effect of tr.effects) {
       if (effect.is(updateParsedDocEffect)) {
@@ -387,13 +397,23 @@ export const fountainHighlightField = StateField.define<{
         hideSyntaxEnabled = effect.value;
         hideSyntaxChanged = true;
       }
+      if (effect.is(updateHideTagsEffect)) {
+        hideTagsEnabled = effect.value;
+        hideTagsChanged = true;
+      }
+      if (effect.is(updateScriptFileNameEffect)) {
+        scriptFileName = effect.value;
+        scriptFileNameChanged = true;
+      }
     }
-    if (tr.docChanged || tr.selection || doc !== value.doc || displaySettings !== value.displaySettings || hideSyntaxChanged) {
+    if (tr.docChanged || tr.selection || doc !== value.doc || displaySettings !== value.displaySettings || hideSyntaxChanged || hideTagsChanged || scriptFileNameChanged) {
       return {
-        decorations: computeFountainDecorations(tr.state, doc, hideSyntaxEnabled),
+        decorations: computeFountainDecorations(tr.state, doc, hideSyntaxEnabled, hideTagsEnabled, scriptFileName),
         doc,
         displaySettings,
         hideSyntaxEnabled,
+        hideTagsEnabled,
+        scriptFileName,
       };
     }
     return value;

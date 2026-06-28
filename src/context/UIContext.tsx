@@ -36,6 +36,8 @@ export interface UIContextProps {
   setAutoSaveInterval: (interval: number) => void;
   hideSyntaxEnabled: boolean;
   setHideSyntaxEnabled: (enabled: boolean) => void;
+  hideTagsEnabled: boolean;
+  setHideTagsEnabled: (enabled: boolean) => void;
   lineFocusEnabled: boolean;
   setLineFocusEnabled: (enabled: boolean) => void;
 }
@@ -88,6 +90,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           break;
         case STORAGE_KEYS.HIDE_SYNTAX_ENABLED:
           setHideSyntaxEnabledState(strVal === "true");
+          break;
+        case STORAGE_KEYS.HIDE_TAGS_ENABLED:
+          setHideTagsEnabledState(strVal === "true");
           break;
         case STORAGE_KEYS.LINE_FOCUS_ENABLED:
           setLineFocusEnabledState(strVal === "true");
@@ -142,6 +147,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   });
   const [hideSyntaxEnabled, setHideSyntaxEnabledState] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED) === "true";
+  });
+
+  const [hideTagsEnabled, setHideTagsEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEYS.HIDE_TAGS_ENABLED) === "true";
   });
 
   const [showSearchPanel, setShowSearchPanel] = useState<boolean>(false);
@@ -263,6 +272,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, String(enabled));
   };
 
+  const setHideTagsEnabled = (enabled: boolean) => {
+    setHideTagsEnabledState(enabled);
+    localStorage.setItem(STORAGE_KEYS.HIDE_TAGS_ENABLED, String(enabled));
+    broadcastSetting(STORAGE_KEYS.HIDE_TAGS_ENABLED, String(enabled));
+  };
+
   const setLineFocusEnabled = (enabled: boolean) => {
     setLineFocusEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
@@ -303,6 +318,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAutoSaveInterval,
         hideSyntaxEnabled,
         setHideSyntaxEnabled,
+        hideTagsEnabled,
+        setHideTagsEnabled,
         lineFocusEnabled,
         setLineFocusEnabled,
       }}

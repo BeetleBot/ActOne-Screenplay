@@ -6,13 +6,14 @@ import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
 import { setPrefs } from "./theme/AppPrefsEngine";
+import { getPerScriptSetting, updatePerScriptSetting } from "./utils/perScriptSettings";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
 const isEditorWindow = action === "new" || action === "open" || action === "template";
 
 function AppInner() {
-  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc } = useFile();
+  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName } = useFile();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const { confirm } = useCustomModal();
 
@@ -168,8 +169,13 @@ function AppInner() {
 
         const u3 = await listen("modal:tag-manager:ready", () => {
           const activeFile = filesRef.current.find(f => f.id === activeFileIdRef.current);
+          const doc = parsedDocRef.current;
+          const resolvedSet = {
+            ...(doc?.settings || {}),
+            productionTags: getPerScriptSetting("productionTags", doc?.settings, scriptFileNameRef.current),
+          };
           emit("modal:tag-manager:init", {
-            parsedDoc: parsedDocRef.current,
+            parsedDoc: { ...doc, settings: resolvedSet },
             filePath: activeFile?.filePath || "",
             activeScriptName: "",
           });
@@ -188,20 +194,21 @@ function AppInner() {
 
         const u6 = await listen<{ action: string; defId: string; newName?: string }>("modal:tag-manager:update-settings", (event) => {
           const { action, defId, newName } = event.payload;
+          const sf = scriptFileNameRef.current;
           if (action === "rename" && newName) {
             updateSettingsRef.current((prev: any) => {
-              const prevProdTags = prev.productionTags || { tags: [], definitions: [] };
+              const prevProdTags = getPerScriptSetting("productionTags", prev, sf) || { tags: [], definitions: [] };
               const definitions = (prevProdTags.definitions || []).map((d: any) =>
                 d.id === defId ? { ...d, name: newName } : d
               );
-              return { ...prev, productionTags: { ...prevProdTags, definitions } };
+              return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { ...prevProdTags, definitions }) };
             });
           } else if (action === "delete") {
             updateSettingsRef.current((prev: any) => {
-              const prevProdTags = prev.productionTags || { tags: [], definitions: [] };
+              const prevProdTags = getPerScriptSetting("productionTags", prev, sf) || { tags: [], definitions: [] };
               const definitions = (prevProdTags.definitions || []).filter((d: any) => d.id !== defId);
               const tags = (prevProdTags.tags || []).filter((t: any) => t.definitionId !== defId);
-              return { ...prev, productionTags: { tags, definitions } };
+              return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { tags, definitions }) };
             });
           }
         });
@@ -265,6 +272,7 @@ function AppInner() {
   const parsedDocRef = useRef(parsedDoc);
   const updateSettingsRef = useRef(updateSettings);
   const activeFileIdRef = useRef(activeFileId);
+  const scriptFileNameRef = useRef(scriptFileName);
 
   useEffect(() => {
     filesRef.current = files;
@@ -275,7 +283,8 @@ function AppInner() {
     parsedDocRef.current = parsedDoc;
     updateSettingsRef.current = updateSettings;
     activeFileIdRef.current = activeFileId;
-  }, [files, saveFile, selectFile, confirm, editorView, parsedDoc, updateSettings, activeFileId]);
+    scriptFileNameRef.current = scriptFileName;
+  }, [files, saveFile, selectFile, confirm, editorView, parsedDoc, updateSettings, activeFileId, scriptFileName]);
 
   const isExitingRef = useRef(false);
 
