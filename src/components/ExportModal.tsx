@@ -27,7 +27,7 @@ import {
   Slider,
 } from "@mui/material";
 
-type ExportFormat = "pdf" | "fountain" | "fdx";
+type ExportFormat = "pdf" | "fountain" | "fdx" | "fadein";
 
 interface ElementFormat {
   bold: boolean;
@@ -342,11 +342,37 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     }
   };
 
+  const handleExportFadeIn = async () => {
+    try {
+      const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+      if (isTauri) {
+        await invoke("export_fadein", { fountainText: rawText });
+      } else {
+        const bundleName = filePath
+          ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"
+          : "Untitled";
+        const scriptSuffix = isBundle ? `_${activeScriptName}` : "";
+        const blob = new Blob([rawText], { type: "application/octet-stream" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${bundleName}${scriptSuffix}.fadein`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      onClose();
+    } catch (e) {
+      logger.error("export", "handleExportFadeIn failed", e);
+    }
+  };
+
   const handleExport = () => {
     if (format === "pdf") {
       handleExportPDF();
     } else if (format === "fdx") {
       handleExportFDX();
+    } else if (format === "fadein") {
+      handleExportFadeIn();
     } else {
       handleExportFountain();
     }
@@ -402,6 +428,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           <ToggleButton value="pdf" sx={{ fontSize: 12, py: 0.3 }}>PDF</ToggleButton>
           <ToggleButton value="fountain" sx={{ fontSize: 12, py: 0.3 }}>Fountain</ToggleButton>
           <ToggleButton value="fdx" sx={{ fontSize: 12, py: 0.3 }}>FDX</ToggleButton>
+          <ToggleButton value="fadein" sx={{ fontSize: 12, py: 0.3 }}>Fade In</ToggleButton>
         </ToggleButtonGroup>
 
         {/* Conditional Panes based on Format */}
@@ -545,6 +572,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           </Box>
         )}
 
+        {format === "fadein" && (
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+              FADE IN PROFESSIONAL
+            </Typography>
+            <Typography variant="caption" color="text.secondary" component="div" sx={{ fontSize: 11, lineHeight: 1.4 }}>
+              Exports the screenplay as a native Fade In (.fadein) file, compatible with Fade In Professional Screenwriting Software on Windows, macOS, and Linux.
+            </Typography>
+          </Box>
+        )}
+
         {format === "fountain" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
@@ -585,7 +623,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       <DialogActions sx={{ px: 2, py: 1, justifyContent: "space-between" }}>
         <Button onClick={onClose} color="inherit" variant="outlined" size="small" sx={{ fontSize: 11 }}>Cancel</Button>
         <Button onClick={handleExport} variant="contained" color="primary" size="small" sx={{ fontSize: 11 }}>
-          Export to {format === "pdf" ? "PDF" : format === "fdx" ? "FDX" : "Fountain"}
+          Export to {format === "pdf" ? "PDF" : format === "fdx" ? "FDX" : format === "fadein" ? "Fade In" : "Fountain"}
         </Button>
       </DialogActions>
 

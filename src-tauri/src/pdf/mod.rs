@@ -1,4 +1,6 @@
 mod export;
+mod fadein;
+pub mod fadein_pack;
 mod fdx;
 mod parser;
 
@@ -14,6 +16,7 @@ pub use self::export::layout::A4;
 pub use self::export::layout::LETTER;
 pub use self::export::layout::PaperSize;
 pub use self::export::pdf::PdfExporter;
+pub use self::fadein::export as export_to_fadein;
 pub use self::fdx::export as export_to_fdx;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]

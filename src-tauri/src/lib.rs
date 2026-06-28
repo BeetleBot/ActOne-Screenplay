@@ -454,6 +454,21 @@ fn export_fdx(fountain_text: String) -> Option<String> {
 }
 
 #[tauri::command]
+fn export_fadein(fountain_text: String) -> Option<String> {
+    let file = rfd::FileDialog::new()
+        .add_filter("Fade In File", &["fadein"])
+        .save_file()?;
+
+    let screenplay = pdf::parse(&fountain_text);
+    let fadein_xml = pdf::export_to_fadein(&screenplay);
+    let packed = pdf::fadein_pack::pack(&fadein_xml);
+    if fs::write(&file, &packed).is_ok() {
+        return Some(file.to_string_lossy().to_string());
+    }
+    None
+}
+
+#[tauri::command]
 fn generate_fdx_string(fountain_text: String) -> String {
     let screenplay = pdf::parse(&fountain_text);
     pdf::export_to_fdx(&screenplay)
@@ -581,6 +596,7 @@ pub fn run() {
             export_fountain,
             export_csv,
             export_fdx,
+            export_fadein,
             pick_directory,
             generate_pdf_bytes,
             read_file_content,
