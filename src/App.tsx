@@ -528,6 +528,7 @@ function AppInner() {
         openHelpWindow={modalWindows.openHelpWindow}
         openTagManagerWindow={modalWindows.openTagManagerWindow}
         openThemeManagerWindow={modalWindows.openThemeManagerWindow}
+        openXrayWindow={modalWindows.openXrayWindow}
       />
     </div>
     {isDraggingOver && <DropOverlay />}
