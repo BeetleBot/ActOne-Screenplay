@@ -85,6 +85,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
   const [editingDefId, setEditingDefId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<string | null>(null);
+  const [confirmRemoveAllOpen, setConfirmRemoveAllOpen] = useState(false);
 
   const prodTags = getPerScriptSetting("productionTags", parsedDoc.settings, scriptFileName) || { tags: [], definitions: [] };
 
@@ -354,6 +355,13 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
     });
     setSelectedDefId(null);
     setConfirmDeleteOpen(null);
+  };
+
+  const handleRemoveAllTags = () => {
+    updateSettings((prev: any) => {
+      return { ...prev, ...updatePerScriptSetting(prev, "productionTags", scriptFileName, { tags: [], definitions: [] }) };
+    });
+    setConfirmRemoveAllOpen(false);
   };
 
   const escapeCSV = (val: string) => {
@@ -809,6 +817,31 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
                   Export CSV
                 </Button>
               )}
+              {(prodTags.tags?.length > 0 || prodTags.definitions?.length > 0) && (
+                <Button
+                  size="small"
+                  onClick={() => setConfirmRemoveAllOpen(true)}
+                  startIcon={<DeleteIcon sx={{ fontSize: 12 }} />}
+                  sx={{
+                    borderRadius: "4px",
+                    fontSize: "10px",
+                    textTransform: "none",
+                    px: 1,
+                    py: 0.25,
+                    minHeight: 24,
+                    color: "error.main",
+                    border: "0.5px solid",
+                    borderColor: "error.main",
+                    flexShrink: 0,
+                    '&:hover': {
+                      bgcolor: "error.main",
+                      color: "#fff",
+                    }
+                  }}
+                >
+                  Remove All Tags
+                </Button>
+              )}
             </Box>
 
             {reportType === 0 && (
@@ -967,6 +1000,32 @@ export const TagManager: React.FC<TagManagerProps> = ({ onClose }) => {
         )}
 
       </DialogContent>
+
+      <Dialog open={confirmRemoveAllOpen} onClose={() => setConfirmRemoveAllOpen(false)} maxWidth="xs">
+        <DialogTitle sx={{ fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
+          <DeleteIcon sx={{ fontSize: 18, color: "error.main" }} />
+          Remove All Production Tags?
+        </DialogTitle>
+        <DialogContent sx={{ fontSize: 11 }}>
+          <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
+            This will permanently delete <strong>all production tags and tag definitions</strong> across this script. This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, px: 3, pb: 2 }}>
+          <Button size="small" onClick={() => setConfirmRemoveAllOpen(false)} sx={{ fontSize: 10, textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            size="small"
+            variant="contained"
+            color="error"
+            onClick={handleRemoveAllTags}
+            sx={{ fontSize: 10, textTransform: "none" }}
+          >
+            Remove All
+          </Button>
+        </Box>
+      </Dialog>
     </Dialog>
   );
 };

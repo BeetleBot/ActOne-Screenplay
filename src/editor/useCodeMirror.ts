@@ -343,6 +343,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
   const pendingScrollToRef = useRef<number | null>(null);
   const lastDispatchedTextRef = useRef("");
+  const lastDispatchedParsedDocRef = useRef<any>(null);
 
   useEffect(() => {
     if (viewRef.current) {
@@ -611,7 +612,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       const screenText = parsedDoc.screenplayText;
       const pendingTarget = pendingScrollToRef.current;
 
-      if (screenText === lastDispatchedTextRef.current && pendingTarget === null) return;
+      if (screenText === lastDispatchedTextRef.current && parsedDoc === lastDispatchedParsedDocRef.current && pendingTarget === null) return;
 
       let prevCursorY: number | null = null;
       try {
@@ -623,6 +624,15 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
       if (screenText !== lastDispatchedTextRef.current) {
         lastDispatchedTextRef.current = screenText;
+        lastDispatchedParsedDocRef.current = parsedDoc;
+        view.dispatch({
+          effects: [
+            updateParsedDocEffect.of(parsedDoc),
+            updateScriptFileNameEffect.of(scriptFileName),
+          ]
+        });
+      } else if (parsedDoc !== lastDispatchedParsedDocRef.current) {
+        lastDispatchedParsedDocRef.current = parsedDoc;
         view.dispatch({
           effects: [
             updateParsedDocEffect.of(parsedDoc),

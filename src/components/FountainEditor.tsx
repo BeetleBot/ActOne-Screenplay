@@ -348,6 +348,9 @@ export const FountainEditor = React.memo(() => {
       dense: true,
     },
     slotProps: {
+      backdrop: {
+        sx: { backdropFilter: "none", WebkitBackdropFilter: "none" }
+      },
       paper: {
         sx: (theme: any) => ({
           borderRadius: "8px",

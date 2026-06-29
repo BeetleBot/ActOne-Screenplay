@@ -2,14 +2,14 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Box, Typography, TextField, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, ToggleButtonGroup, ToggleButton, useMediaQuery, useTheme } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { SearchIcon, CloseIcon, DownloadIcon, LocalOfferIcon, TuneIcon } from "./Icons";
+import { SearchIcon, CloseIcon, DownloadIcon, LocalOfferIcon, TuneIcon, DeleteIcon } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 import { CATEGORIES } from "../constants";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, onThemeChanged } from "../theme/ThemeEngine";
-import { Button, Menu, MenuItem, Checkbox, Divider } from "@mui/material";
+import { Button, Menu, MenuItem, Checkbox, Divider, Dialog, DialogTitle, DialogContent } from "@mui/material";
 import { LineType } from "../parser";
 
 interface ProdTag {
@@ -133,6 +133,7 @@ const TagManagerWindowContentInner: React.FC<{
   const [categoryFilters, setCategoryFilters] = useState<Set<string>>(new Set());
   const [filterMenuAnchor, setFilterMenuAnchor] = useState<HTMLElement | null>(null);
   const [reportType, setReportType] = useState(0);
+  const [confirmRemoveAllOpen, setConfirmRemoveAllOpen] = useState(false);
 
   const prodTags = parsedDoc?.settings?.productionTags || { tags: [], definitions: [] };
 
@@ -387,6 +388,14 @@ const TagManagerWindowContentInner: React.FC<{
     }
   };
 
+  const handleRemoveAllTags = async () => {
+    try {
+      const { emit } = await import("@tauri-apps/api/event");
+      emit("modal:tag-manager:update-settings", { action: "remove-all" });
+    } catch {}
+    setConfirmRemoveAllOpen(false);
+  };
+
   const handleClose = async () => {
     try {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
@@ -537,6 +546,31 @@ const TagManagerWindowContentInner: React.FC<{
                     }}
                   >
                     Export CSV
+                  </Button>
+                )}
+                {(prodTags.tags?.length > 0 || prodTags.definitions?.length > 0) && (
+                  <Button
+                    size="small"
+                    onClick={() => setConfirmRemoveAllOpen(true)}
+                    startIcon={<DeleteIcon sx={{ fontSize: 12 }} />}
+                    sx={{
+                      borderRadius: "4px",
+                      fontSize: "10px",
+                      textTransform: "none",
+                      px: 1,
+                      py: 0.25,
+                      minHeight: 24,
+                      color: "error.main",
+                      border: "0.5px solid",
+                      borderColor: "error.main",
+                      flexShrink: 0,
+                      '&:hover': {
+                        bgcolor: "error.main",
+                        color: "#fff",
+                      }
+                    }}
+                  >
+                    Remove All Tags
                   </Button>
                 )}
               </Box>
@@ -696,6 +730,32 @@ const TagManagerWindowContentInner: React.FC<{
           </>
         )}
       </Box>
+
+      <Dialog open={confirmRemoveAllOpen} onClose={() => setConfirmRemoveAllOpen(false)} maxWidth="xs">
+        <DialogTitle sx={{ fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
+          <DeleteIcon sx={{ fontSize: 18, color: "error.main" }} />
+          Remove All Production Tags?
+        </DialogTitle>
+        <DialogContent sx={{ fontSize: 11 }}>
+          <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
+            This will permanently delete <strong>all production tags and tag definitions</strong> across this script. This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, px: 3, pb: 2 }}>
+          <Button size="small" onClick={() => setConfirmRemoveAllOpen(false)} sx={{ fontSize: 10, textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            size="small"
+            variant="contained"
+            color="error"
+            onClick={handleRemoveAllTags}
+            sx={{ fontSize: 10, textTransform: "none" }}
+          >
+            Remove All
+          </Button>
+        </Box>
+      </Dialog>
     </>
   );
 };

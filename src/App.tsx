@@ -193,7 +193,7 @@ function AppInner() {
           }
         });
 
-        const u6 = await listen<{ action: string; defId: string; newName?: string }>("modal:tag-manager:update-settings", (event) => {
+        const u6 = await listen<{ action: string; defId?: string; newName?: string }>("modal:tag-manager:update-settings", (event) => {
           const { action, defId, newName } = event.payload;
           const sf = scriptFileNameRef.current;
           if (action === "rename" && newName) {
@@ -210,6 +210,10 @@ function AppInner() {
               const definitions = (prevProdTags.definitions || []).filter((d: any) => d.id !== defId);
               const tags = (prevProdTags.tags || []).filter((t: any) => t.definitionId !== defId);
               return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { tags, definitions }) };
+            });
+          } else if (action === "remove-all") {
+            updateSettingsRef.current((prev: any) => {
+              return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { tags: [], definitions: [] }) };
             });
           }
         });
