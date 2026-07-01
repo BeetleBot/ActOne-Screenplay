@@ -559,6 +559,35 @@ Persists in .actone bundles as \`todos\` in settings.`,
 Sprint data syncs to .actone bundles and localStorage.`,
   },
   {
+    id: "snapshots",
+    title: "Snapshots (Version History)",
+    category: "Workspace & Views",
+    tags: ["snapshots", "version", "backup", "history", "restore"],
+    relatedIds: ["sidebar-panels", "settings-overview"],
+    content: `The Snapshots panel saves point-in-time copies of your screenplay for easy rollback. Enable via Settings → Snapshots.
+
+**Creating Snapshots:**
+- **Manual**: Add an optional comment and tag in the panel header, then click "New Snapshot".
+- **Auto-snapshot**: Enable in Settings to take snapshots at regular intervals (1–60 min).
+- **On save**: Automatically snapshot every time you save the file.
+
+**Managing Snapshots:**
+- Each snapshot shows the date/time, file size, comment, and a colored tag (MANUAL, SAVE, AUTO, or custom).
+- Filter by tag type using the clickable pills (MANUAL / SAVE / AUTO / custom tags).
+- Three-dot menu on each snapshot:
+  - **Restore** — replaces the current file with the snapshot. A fresh snapshot is taken first so you never lose your current state.
+  - **Open as File** — opens the snapshot content as a separate read-only tab.
+  - **Delete** — removes the snapshot permanently.
+
+**Storage:**
+- **Project folder** (.snapshots/ subdirectory in the same folder as the .actone file) — default.
+- **App data folder** (platform-specific application data directory).
+- **Custom folder** — choose any location on your filesystem.
+- Max auto-snapshots retention: 5–100 (default 20). Oldest auto-snapshots are pruned when the limit is exceeded.
+
+Snapshots are stored as separate files with metadata in \`snapshots_index.json\`. The panel also has an "Open Snapshots Folder" button to browse stored files directly.`,
+  },
+  {
     id: "parking",
     title: "Text Parking",
     category: "Workspace & Views",
@@ -690,7 +719,7 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
 - Hide Fountain Markup toggle.
 
 **Theme**
-- Theme color swatch grid — click any built-in theme's swatch to switch instantly.
+- Theme color swatch grid — each theme shown as a 2×2 color cube (editor, sidebar, accent, dropdown). Click any swatch to switch instantly.
 - "Manage Themes…" link to open the Theme Manager modal.
 
 **Layout & Page**
@@ -903,15 +932,17 @@ Quick Settings are also available from the Activity Bar gear icon for common adj
     category: "Settings & Customization",
     tags: ["theme", "colors", "dark", "light", "custom"],
     relatedIds: ["settings-overview", "font-paper"],
-    content: `ActOne ships with **9 built-in themes** organized into sections, plus an **Adaptive** mode:
+    content: `ActOne ships with **14 built-in themes** (7 light + 7 dark) organized into sections, plus an **Adaptive** mode. Each pair shares a complementary design language:
 
 | Section | Theme | Mode | Description |
 |---------|-------|------|-------------|
 | ADAPTIVE | Adaptive | Auto | Follows system light/dark preference |
 | CLASSIC | Classic Light | Light | Clean light theme |
 | CLASSIC | Classic Dark | Dark | Clean dark theme |
-| OTHER | Ocean | Dark | Navy with cyan accent |
+| PITCH | Pitch Light | Light | Pure white e-ink style |
+| PITCH | Pitch Dark | Dark | Pure black background with grey tones |
 | OTHER | Sunrise | Light | Warm cream with coral accents |
+| OTHER | Ocean | Dark | Deep blue with teal accents |
 | PASTEL | Blush | Light | Soft peachy pastel with rose accents |
 | PASTEL | Mauve | Dark | Dark pastel purple with lavender accents |
 | PASTEL | Lilac | Light | Soft purple pastel with violet accents |
@@ -923,11 +954,11 @@ Quick Settings are also available from the Activity Bar gear icon for common adj
 
 **Adaptive** mode automatically switches between Classic Light and Classic Dark based on your system's appearance setting (<code>prefers-color-scheme</code>). The transition happens instantly — no refresh needed. Select it from the Quick Settings theme grid or the Theme Manager.
 
-Quick-switch between any theme from the **Quick Settings** menu in the Activity Bar — a color swatch grid shows all themes plus Adaptive. Each swatch shows the sidebar and accent colors, with the active theme highlighted.
+Quick-switch between any theme from the **Quick Settings** menu in the Activity Bar — a theme grid shows 2×2 color cubes (editor, sidebar, accent, dropdown) for every built-in theme plus Adaptive. The active theme is highlighted with a primary-colored border.
 
 **Create your own themes** via Settings → Theme Manager. Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, name it, and see a live preview of a rendered miniature screenplay with activity bar, sidebar, and editor.
 
-**6 light + 6 dark presets** (Classic Light/Dark, Sunrise, Ocean, and 8 pastel themes) are available as clickable starting points in the creation form. Custom themes persist in localStorage and appear under a "CUSTOM" section in the Theme Manager.`,
+**14 built-in themes** (7 light + 7 dark) are available as clickable starting points in the creation form. Custom themes persist in localStorage and appear under a "CUSTOM" section in the Theme Manager.`,
   },
   {
     id: "font-paper",
