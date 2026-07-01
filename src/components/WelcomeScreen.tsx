@@ -553,8 +553,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               key={t.id}
               selected={theme === t.id}
               onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
-              <Box sx={{ width: 18, height: 18, borderRadius: '5px', bgcolor: t.colors.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                <Box sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: t.colors.accent }} />
+              <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0 }}>
+                <Box sx={{ bgcolor: t.colors.editor }} />
+                <Box sx={{ bgcolor: t.colors.sidebar }} />
+                <Box sx={{ bgcolor: t.colors.accent }} />
+                <Box sx={{ bgcolor: t.colors.dropdown }} />
               </Box>
               {t.name}
             </MenuItem>
@@ -568,8 +571,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               key={t.id}
               selected={theme === t.id}
               onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
-              <Box sx={{ width: 18, height: 18, borderRadius: '5px', bgcolor: t.colors.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                <Box sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: t.colors.accent }} />
+              <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0 }}>
+                <Box sx={{ bgcolor: t.colors.editor }} />
+                <Box sx={{ bgcolor: t.colors.sidebar }} />
+                <Box sx={{ bgcolor: t.colors.accent }} />
+                <Box sx={{ bgcolor: t.colors.dropdown }} />
               </Box>
               {t.name}
             </MenuItem>
@@ -585,8 +591,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                   key={t.id}
                   selected={theme === t.id}
               onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
-              <Box sx={{ width: 18, height: 18, borderRadius: '5px', bgcolor: t.colors.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                <Box sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: t.colors.accent }} />
+              <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0 }}>
+                <Box sx={{ bgcolor: t.colors.editor }} />
+                <Box sx={{ bgcolor: t.colors.sidebar }} />
+                <Box sx={{ bgcolor: t.colors.accent }} />
+                <Box sx={{ bgcolor: t.colors.dropdown }} />
               </Box>
               {t.name}
                 </MenuItem>

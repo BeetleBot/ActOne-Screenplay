@@ -1,7 +1,7 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { PILL_RADIUS } from '../constants';
 
-export type ThemeId = 'adaptive' | 'light' | 'dark' | 'pitch-black' | 'pitch-white' | 'noir' | 'ocean' | 'sunrise' | 'forest' | 'lavender';
+export type ThemeId = 'adaptive' | 'light' | 'dark' | 'pitch-black' | 'pitch-white' | 'sunrise' | 'ocean' | 'blush' | 'mauve' | 'lilac' | 'sage' | 'mint' | 'teal' | 'butter' | 'plum';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -82,22 +82,8 @@ export const themes: ThemeConfig[] = [
     }, true),
   },
   {
-    id: "pitch-black",
-    name: "Pitch Black",
-    desc: "Pure black background with grey tones",
-    isDark: true,
-    category: "pitch",
-    colors: deriveAllColors({
-      editor: "#000000",
-      text: "#deddda",
-      accent: "#9a9996",
-      sidebar: "#000000",
-      button: "#c3c3c3",
-    }, true),
-  },
-  {
     id: "pitch-white",
-    name: "Pitch White",
+    name: "Pitch Light",
     desc: "Pure white e-ink style, only black and white",
     isDark: false,
     category: "pitch",
@@ -110,31 +96,17 @@ export const themes: ThemeConfig[] = [
     }, false),
   },
   {
-    id: "noir",
-    name: "Noir",
-    desc: "Dark with gold accents",
+    id: "pitch-black",
+    name: "Pitch Dark",
+    desc: "Pure black background with grey tones",
     isDark: true,
-    category: "other",
+    category: "pitch",
     colors: deriveAllColors({
-      editor: "#111416",
-      text: "#e2e2e6",
-      accent: "#c8a05c",
-      sidebar: "#1a1a1e",
-      button: "#c8a05c",
-    }, true),
-  },
-  {
-    id: "ocean",
-    name: "Ocean",
-    desc: "Deep blue with teal accents",
-    isDark: true,
-    category: "other",
-    colors: deriveAllColors({
-      editor: "#0a1628",
-      text: "#e0f0ff",
-      accent: "#4ecdc4",
-      sidebar: "#0d1b2a",
-      button: "#4ecdc4",
+      editor: "#000000",
+      text: "#deddda",
+      accent: "#9a9996",
+      sidebar: "#000000",
+      button: "#c3c3c3",
     }, true),
   },
   {
@@ -152,32 +124,130 @@ export const themes: ThemeConfig[] = [
     }, false),
   },
   {
-    id: "forest",
-    name: "Forest",
-    desc: "Dark green with spring green accents",
+    id: "ocean",
+    name: "Ocean",
+    desc: "Deep blue with teal accents",
     isDark: true,
     category: "other",
     colors: deriveAllColors({
-      editor: "#162416",
-      text: "#d4e6d4",
-      accent: "#7ec850",
-      sidebar: "#1a2e1a",
-      button: "#7ec850",
+      editor: "#0a1628",
+      text: "#e0f0ff",
+      accent: "#4ecdc4",
+      sidebar: "#0d1b2a",
+      button: "#4ecdc4",
     }, true),
   },
   {
-    id: "lavender",
-    name: "Lavender",
-    desc: "Soft purple with violet accents",
+    id: "blush",
+    name: "Blush",
+    desc: "Soft peachy pastel with rose accents",
     isDark: false,
     category: "other",
     colors: deriveAllColors({
-      editor: "#faf7ff",
-      text: "#2a1a3e",
-      accent: "#b088d6",
-      sidebar: "#f5f0ff",
-      button: "#b088d6",
+      editor: "#fdf6f0",
+      text: "#3d2c2e",
+      accent: "#e8a0b4",
+      sidebar: "#faf0ec",
+      button: "#e8a0b4",
     }, false),
+  },
+  {
+    id: "mauve",
+    name: "Mauve",
+    desc: "Dark pastel purple with soft lavender accents",
+    isDark: true,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#1a1628",
+      text: "#e0d6f0",
+      accent: "#c4a8e8",
+      sidebar: "#221e32",
+      button: "#c4a8e8",
+    }, true),
+  },
+  {
+    id: "lilac",
+    name: "Lilac",
+    desc: "Soft purple pastel with violet accents",
+    isDark: false,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#f8f6fe",
+      text: "#2d2b3e",
+      accent: "#b8a9e8",
+      sidebar: "#f4f0fc",
+      button: "#b8a9e8",
+    }, false),
+  },
+  {
+    id: "sage",
+    name: "Sage",
+    desc: "Dark pastel sage with soft green accents",
+    isDark: true,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#16201a",
+      text: "#d0e8d8",
+      accent: "#88c8a0",
+      sidebar: "#1a2e24",
+      button: "#88c8a0",
+    }, true),
+  },
+  {
+    id: "mint",
+    name: "Mint",
+    desc: "Soft mint pastel with teal accents",
+    isDark: false,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#f2faf5",
+      text: "#2a3d35",
+      accent: "#7ec8a8",
+      sidebar: "#eef8f2",
+      button: "#7ec8a8",
+    }, false),
+  },
+  {
+    id: "teal",
+    name: "Teal",
+    desc: "Dark pastel teal with mint accents",
+    isDark: true,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#121e24",
+      text: "#d0e8ee",
+      accent: "#7ec8d8",
+      sidebar: "#182830",
+      button: "#7ec8d8",
+    }, true),
+  },
+  {
+    id: "butter",
+    name: "Butter",
+    desc: "Warm cream pastel with amber accents",
+    isDark: false,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#fefcf0",
+      text: "#3d392a",
+      accent: "#e8d07e",
+      sidebar: "#fcf8ea",
+      button: "#e8d07e",
+    }, false),
+  },
+  {
+    id: "plum",
+    name: "Plum",
+    desc: "Dark pastel plum with soft rose accents",
+    isDark: true,
+    category: "other",
+    colors: deriveAllColors({
+      editor: "#241620",
+      text: "#e8d0e0",
+      accent: "#d4a0c0",
+      sidebar: "#2e1a28",
+      button: "#d4a0c0",
+    }, true),
   },
 ];
 
@@ -323,14 +393,44 @@ export function createActOneTheme(t: ThemeConfig, appScale: number) {
           }
         `,
       },
+      MuiButtonBase: {
+        defaultProps: {
+          disableRipple: true,
+          disableTouchRipple: true,
+        },
+      },
       MuiButton: {
+        defaultProps: {
+          disableRipple: true,
+          disableTouchRipple: true,
+          disableElevation: true,
+        },
         styleOverrides: {
           root: { borderRadius: PILL_RADIUS },
         },
       },
+      MuiIconButton: {
+        defaultProps: {
+          disableRipple: true,
+          disableTouchRipple: true,
+        },
+      },
+      MuiToggleButton: {
+        defaultProps: {
+          disableRipple: true,
+          disableTouchRipple: true,
+        },
+      },
       MuiDialog: {
         styleOverrides: {
-          paper: { borderRadius: '10px', outline: 'none', '&:focus-visible': { outline: 'none' } },
+          paper: {
+            borderRadius: '10px',
+            outline: 'none',
+            border: '1px solid',
+            borderColor: c.border,
+            boxShadow: 'none',
+            '&:focus-visible': { outline: 'none' },
+          },
         },
       },
       MuiPaper: {
@@ -338,16 +438,40 @@ export function createActOneTheme(t: ThemeConfig, appScale: number) {
           root: { backgroundImage: 'none' },
         },
       },
+      MuiPopover: {
+        defaultProps: {
+          slotProps: {
+            paper: {
+              sx: {
+                border: '1px solid',
+                borderColor: c.border,
+                boxShadow: 'none',
+                backgroundImage: 'none',
+              },
+            },
+          },
+        },
+      },
       MuiTooltip: {
         defaultProps: { arrow: true },
       },
       MuiMenu: {
+        defaultProps: {
+          slotProps: {
+            paper: {
+              sx: {
+                border: '1px solid',
+                borderColor: c.border,
+                boxShadow: 'none',
+              },
+            },
+          },
+        },
         styleOverrides: {
           paper: {
-            borderRadius: '10px',
+            borderRadius: '8px',
             backgroundColor: c.dropdown,
             color: c.dropdownText,
-            boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
             padding: '4px 0',
           },
           list: {
@@ -357,6 +481,10 @@ export function createActOneTheme(t: ThemeConfig, appScale: number) {
         },
       },
       MuiMenuItem: {
+        defaultProps: {
+          disableRipple: true,
+          disableTouchRipple: true,
+        },
         styleOverrides: {
           root: {
             fontSize: '12px',
@@ -404,7 +532,33 @@ export function createActOneTheme(t: ThemeConfig, appScale: number) {
       },
       MuiOutlinedInput: {
         styleOverrides: {
-          root: { borderRadius: '12px' },
+          root: {
+            borderRadius: '6px',
+            backgroundColor: c.dropdown,
+            '& fieldset': { border: 'none' },
+            '&:hover': { backgroundColor: 'action.hover' },
+            '&.Mui-focused': {
+              backgroundColor: c.dropdown,
+              boxShadow: `0 0 0 1px ${c.accent} inset`,
+            },
+          },
+          notchedOutline: {
+            border: 'none',
+          },
+        },
+      },
+      MuiInput: {
+        styleOverrides: {
+          root: {
+            '&:before, &:after': { display: 'none' },
+          },
+        },
+      },
+      MuiFilledInput: {
+        styleOverrides: {
+          root: {
+            '&:before, &:after': { display: 'none' },
+          },
         },
       },
       MuiSelect: {
@@ -422,7 +576,10 @@ export function createActOneTheme(t: ThemeConfig, appScale: number) {
             '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
             backgroundColor: c.dropdown,
             '&:hover': { backgroundColor: 'action.hover' },
-            '&.Mui-focused': { backgroundColor: 'action.hover' },
+            '&.Mui-focused': {
+              backgroundColor: c.dropdown,
+              boxShadow: `0 0 0 1px ${c.accent} inset`,
+            },
           },
           select: {
             padding: '7.2px 10px',
@@ -437,6 +594,98 @@ export function createActOneTheme(t: ThemeConfig, appScale: number) {
           paper: {
             backgroundColor: c.dropdown,
             color: c.dropdownText,
+          },
+        },
+      },
+      MuiSlider: {
+        styleOverrides: {
+          root: {
+            height: 2,
+            padding: '13px 0',
+            color: c.accent,
+          },
+          rail: {
+            opacity: 0.24,
+            backgroundColor: c.border,
+          },
+          track: {
+            height: 2,
+            border: 'none',
+          },
+          thumb: {
+            width: 12,
+            height: 12,
+            boxShadow: 'none',
+            border: '1.5px solid',
+            borderColor: c.accent,
+            backgroundColor: c.dropdown,
+            transition: 'transform 0.15s, box-shadow 0.15s',
+            '&:hover, &.Mui-focusVisible': {
+              boxShadow: `0 0 0 6px color-mix(in srgb, ${c.accent} 16%, transparent)`,
+            },
+            '&.Mui-active': {
+              transform: 'scale(1.15)',
+              boxShadow: `0 0 0 8px color-mix(in srgb, ${c.accent} 20%, transparent)`,
+            },
+          },
+          valueLabel: {
+            backgroundColor: c.dropdown,
+            color: c.text,
+            border: '1px solid',
+            borderColor: c.border,
+            borderRadius: '4px',
+            fontSize: '10px',
+            padding: '2px 6px',
+            boxShadow: 'none',
+          },
+          mark: {
+            backgroundColor: c.border,
+            height: 6,
+            width: 1,
+          },
+          markActive: {
+            backgroundColor: c.accent,
+            opacity: 0.6,
+          },
+        },
+      },
+      MuiSwitch: {
+        styleOverrides: {
+          root: {
+            padding: 6,
+          },
+          track: {
+            borderRadius: 11,
+            border: '1px solid',
+            borderColor: c.border,
+            backgroundColor: 'transparent',
+            opacity: 1,
+          },
+          thumb: {
+            boxShadow: 'none',
+            width: 14,
+            height: 14,
+            borderRadius: 7,
+            backgroundColor: c.textSecondary,
+            transition: 'transform 0.18s, background-color 0.18s',
+          },
+          switchBase: {
+            padding: 9,
+            '&.Mui-checked': {
+              transform: 'translateX(16px)',
+              color: '#fff',
+              '& + .MuiSwitch-track': {
+                backgroundColor: c.accent,
+                borderColor: c.accent,
+                opacity: 1,
+              },
+              '&.Mui-disabled + .MuiSwitch-track': {
+                opacity: 0.5,
+              },
+            },
+            '&.Mui-focusVisible .MuiSwitch-thumb': {
+              boxShadow: `0 0 0 6px color-mix(in srgb, ${c.accent} 16%, transparent)`,
+            },
           },
         },
       },

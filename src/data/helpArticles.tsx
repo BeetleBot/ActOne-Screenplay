@@ -910,13 +910,16 @@ Quick Settings are also available from the Activity Bar gear icon for common adj
 | ADAPTIVE | Adaptive | Auto | Follows system light/dark preference |
 | CLASSIC | Classic Light | Light | Clean light theme |
 | CLASSIC | Classic Dark | Dark | Clean dark theme |
-| PITCH | Pitch Black | Dark | Pure black with grey tones |
-| PITCH | Pitch White | Light | Pure white with dark tones |
-| OTHER | Noir | Dark | Dark blue with red accent |
 | OTHER | Ocean | Dark | Navy with cyan accent |
 | OTHER | Sunrise | Light | Warm cream with coral accents |
-| OTHER | Forest | Dark | Green with olive accent |
-| OTHER | Lavender | Dark | Purple with lavender accent |
+| PASTEL | Blush | Light | Soft peachy pastel with rose accents |
+| PASTEL | Mauve | Dark | Dark pastel purple with lavender accents |
+| PASTEL | Lilac | Light | Soft purple pastel with violet accents |
+| PASTEL | Sage | Dark | Dark pastel sage with soft green accents |
+| PASTEL | Mint | Light | Soft mint pastel with teal accents |
+| PASTEL | Teal | Dark | Dark pastel teal with mint accents |
+| PASTEL | Butter | Light | Warm cream pastel with amber accents |
+| PASTEL | Plum | Dark | Dark pastel plum with soft rose accents |
 
 **Adaptive** mode automatically switches between Classic Light and Classic Dark based on your system's appearance setting (<code>prefers-color-scheme</code>). The transition happens instantly — no refresh needed. Select it from the Quick Settings theme grid or the Theme Manager.
 
@@ -924,7 +927,7 @@ Quick-switch between any theme from the **Quick Settings** menu in the Activity 
 
 **Create your own themes** via Settings → Theme Manager. Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, name it, and see a live preview of a rendered miniature screenplay with activity bar, sidebar, and editor.
 
-**5 dark presets** (Noir, Ocean, Sunset, Forest, Lavender) are available as clickable starting points in the creation form. Custom themes persist in localStorage and appear under a "CUSTOM" section in the Theme Manager.`,
+**6 light + 6 dark presets** (Classic Light/Dark, Sunrise, Ocean, and 8 pastel themes) are available as clickable starting points in the creation form. Custom themes persist in localStorage and appear under a "CUSTOM" section in the Theme Manager.`,
   },
   {
     id: "font-paper",

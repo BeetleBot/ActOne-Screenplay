@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useFile, useEditor } from "../context";
-import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
 import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon } from "./Icons";
@@ -533,7 +532,7 @@ export const OutlineView = React.memo(() => {
               display: "flex",
               flexDirection: "column",
               borderLeft: "1px solid",
-              borderColor: "divider",
+              borderColor: "color-mix(in srgb, var(--text-main) 12%, transparent)",
               ml: 1.1,
               pl: 0,
             }}>
@@ -908,7 +907,7 @@ export const OutlineView = React.memo(() => {
                     sx={{
                       fontSize: 9.5,
                       height: 20,
-                      borderRadius: PILL_RADIUS,
+                      borderRadius: "4px",
                       fontWeight: isSelected ? 700 : 500,
                       border: `1.5px solid ${colorVal}`,
                       bgcolor: isSelected ? colorVal : "transparent",
@@ -942,7 +941,7 @@ export const OutlineView = React.memo(() => {
                       sx={{
                         fontSize: 9.5,
                         height: 20,
-                        borderRadius: PILL_RADIUS,
+                        borderRadius: "4px",
                         fontWeight: isSelected ? 700 : 500,
                         border: "1px solid",
                         borderColor: isSelected ? "primary.main" : "divider",

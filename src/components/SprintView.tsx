@@ -188,29 +188,35 @@ export const SprintView = React.memo(() => {
       {/* Main Timer Control Area */}
       <Box sx={{ px: 2, mb: 2 }}>
         {!currentSprint ? (
-          <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: "14px", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "var(--shadow-sm)" }}>
+          <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)" }}>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase", display: "block", mb: 1 }}>
                 Preset Duration
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                 {presets.map((p) => (
-                  <Button
+                  <Box
                     key={p}
-                    variant={sprintDuration === p ? "contained" : "outlined"}
-                    size="small"
                     onClick={() => setSprintDuration(p)}
                     sx={{
-                      borderRadius: "20px",
-                      textTransform: "none",
-                      fontWeight: 600,
-                      px: 2,
-                      minWidth: "60px",
-                      fontSize: "11.5px",
+                      px: 1.5,
+                      py: 0.4,
+                      borderRadius: "4px",
+                      border: "1px solid",
+                      borderColor: sprintDuration === p ? "primary.main" : "divider",
+                      bgcolor: sprintDuration === p ? "color-mix(in srgb, currentColor 12%, transparent)" : "transparent",
+                      color: sprintDuration === p ? "primary.main" : "text.secondary",
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      letterSpacing: "0.04em",
+                      cursor: "pointer",
+                      textTransform: "uppercase",
+                      transition: "all 0.12s",
+                      userSelect: "none",
                     }}
                   >
                     {p}m
-                  </Button>
+                  </Box>
                 ))}
               </Box>
             </Box>
@@ -234,49 +240,41 @@ export const SprintView = React.memo(() => {
                 sx={{
                   width: 90,
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: "8px",
+                    borderRadius: "6px",
                   }
                 }}
               />
             </Box>
 
-            <Button 
-              variant="contained" 
-              fullWidth 
-              startIcon={<PlayArrowIcon />} 
+            <Button
+              variant="contained"
+              fullWidth
+              startIcon={<PlayArrowIcon />}
               onClick={handleStart}
               disabled={!sprintDuration || sprintDuration <= 0}
-              sx={{ 
-                mt: 0.5, 
+              sx={{
+                mt: 0.5,
                 py: 1.25,
                 fontWeight: 700,
                 fontSize: "13px",
-                borderRadius: "12px", 
+                borderRadius: "6px",
                 textTransform: "none",
-                transition: "transform 0.2s",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                },
-                "&:active": {
-                  transform: "translateY(0)"
-                }
               }}
             >
               Start Sprint
             </Button>
           </Paper>
         ) : (
-          <Paper 
-            variant="outlined" 
-            sx={{ 
-              p: 2.5, 
-              display: "flex", 
-              flexDirection: "column", 
-              gap: 2.5, 
-              borderRadius: "14px", 
-              background: "linear-gradient(145deg, rgba(var(--accent-rgb), 0.04) 0%, rgba(var(--accent-rgb), 0.08) 100%)",
-              border: "1px solid rgba(var(--accent-rgb), 0.15)",
-              boxShadow: "var(--shadow-md)"
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2.5,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2.5,
+              borderRadius: "10px",
+              background: `color-mix(in srgb, var(--button-color) 6%, transparent)`,
+              border: `1px solid color-mix(in srgb, var(--button-color) 18%, transparent)`,
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -329,18 +327,17 @@ export const SprintView = React.memo(() => {
             </Box>
 
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Button 
-                variant="contained" 
-                color="error" 
-                fullWidth 
-                startIcon={<StopIcon />} 
+              <Button
+                variant="contained"
+                color="error"
+                fullWidth
+                startIcon={<StopIcon />}
                 onClick={handleStop}
-                sx={{ 
-                  borderRadius: "10px", 
-                  textTransform: "none", 
-                  fontWeight: 700, 
+                sx={{
+                  borderRadius: "10px",
+                  textTransform: "none",
+                  fontWeight: 700,
                   py: 1.25,
-                  boxShadow: "0 4px 12px rgba(211, 47, 47, 0.2)"
                 }}
               >
                 Finish Sprint

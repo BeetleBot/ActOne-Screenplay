@@ -319,7 +319,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       maxWidth="xs" 
       scroll="paper"
       disableScrollLock
-      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '10px' } }}
+      slotProps={{
+        paper: {
+          sx: {
+            zoom: `${appScale}%`,
+            borderRadius: '10px',
+            backgroundColor: "rgba(20, 20, 20, 0.8)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "none",
+            backgroundImage: "none",
+            color: "#e8e8e8",
+          },
+        },
+      }}
     >
       <Box sx={{ px: 2, py: 1 }}>
         <TextField
@@ -340,9 +354,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 "& fieldset": { border: "none" },
                 "&:hover fieldset": { border: "none" },
                 "&.Mui-focused fieldset": { border: "none" },
-                bgcolor: "action.hover",
+                bgcolor: "rgba(255, 255, 255, 0.08)",
                 borderRadius: "8px",
                 px: 1.5,
+                color: "#fff",
+                "& input": { color: "#fff" },
+                "& input::placeholder": { color: "rgba(255, 255, 255, 0.5)" },
               },
               startAdornment: (
                 <Box sx={{ display: "flex", color: "text.secondary", mr: 1 }}>
@@ -363,7 +380,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <List disablePadding>
             {Object.keys(groupedCommands).map((cat) => (
               <Box key={cat}>
-                <ListSubheader sx={{ bgcolor: "background.paper", fontSize: 10, fontWeight: 700, textTransform: "uppercase", py: 0.5, lineHeight: "24px" }}>
+                <ListSubheader sx={{ bgcolor: "transparent", color: "rgba(255, 255, 255, 0.5)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", py: 0.5, lineHeight: "24px" }}>
                   {cat}
                 </ListSubheader>
                 {groupedCommands[cat].map((cmd) => {
@@ -376,7 +393,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       selected={isSelected}
                       onClick={cmd.action}
                       onMouseEnter={() => setSelectedIndex(index)}
-                      sx={{ py: 1, px: 2, gap: 1 }}
+                      sx={{
+                        py: 1,
+                        px: 2,
+                        gap: 1,
+                        "&.Mui-selected": {
+                          backgroundColor: "rgba(255, 255, 255, 0.08)",
+                        },
+                        "&:hover": {
+                          backgroundColor: "rgba(255, 255, 255, 0.04)",
+                        },
+                      }}
                     >
                       <ListItemIcon sx={{ minWidth: "auto", color: isSelected ? "var(--button-color)" : "text.secondary" }}>
                         {cmd.icon}
@@ -403,16 +430,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
       <Divider />
 
-      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover" }}>
+      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "rgba(0, 0, 0, 0.3)", color: "rgba(255, 255, 255, 0.6)" }}>
         <Box sx={{ display: "flex", gap: 1.5 }}>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: "action.selected", px: 0.5, py: 0.2, borderRadius: 0.5 }}>↑↓</Typography> navigate
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: "rgba(255, 255, 255, 0.1)", color: "rgba(255, 255, 255, 0.7)", px: 0.5, py: 0.2, borderRadius: 0.5 }}>↑↓</Typography> navigate
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: "action.selected", px: 0.5, py: 0.2, borderRadius: 0.5 }}>Enter</Typography> run
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: "rgba(255, 255, 255, 0.1)", color: "rgba(255, 255, 255, 0.7)", px: 0.5, py: 0.2, borderRadius: 0.5 }}>Enter</Typography> run
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: "action.selected", px: 0.5, py: 0.2, borderRadius: 0.5 }}>Esc</Typography> close
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: "rgba(255, 255, 255, 0.1)", color: "rgba(255, 255, 255, 0.7)", px: 0.5, py: 0.2, borderRadius: 0.5 }}>Esc</Typography> close
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.7 }}>ActOne Palette</Typography>

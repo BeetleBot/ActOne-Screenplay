@@ -123,7 +123,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
           fullWidth
           slotProps={{
             input: {
-              sx: { borderRadius: '12px' },
+              sx: { borderRadius: '6px' },
               endAdornment: (
                 <IconButton size="small" onClick={addTodo} sx={{ p: 0.5 }}>
                   <AddIcon sx={{ fontSize: 16 }} />
@@ -162,31 +162,61 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                   <CloseIcon sx={{ fontSize: 12 }} />
                 </IconButton>
               }
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: '12px',
-                mb: 0.5,
-                bgcolor: isSelected ? "action.selected" : "transparent",
+              sx={(theme) => ({
+                borderRadius: '6px',
+                mb: 0.25,
+                bgcolor: isSelected
+                  ? `color-mix(in srgb, ${theme.palette.text.primary} 12%, transparent)`
+                  : `color-mix(in srgb, ${theme.palette.text.primary} 4%, transparent)`,
                 "&:hover": {
-                  bgcolor: isSelected ? "action.selected" : "action.hover",
+                  bgcolor: isSelected
+                    ? `color-mix(in srgb, ${theme.palette.text.primary} 12%, transparent)`
+                    : `color-mix(in srgb, ${theme.palette.text.primary} 8%, transparent)`,
                 }
-              }}
+              })}
             >
-              <ListItemButton 
+              <ListItemButton
                 onClick={(e) => {
                   setActiveTodoIdx(idx);
                   toggleTodo(todo.id);
                   e.currentTarget.closest("ul")?.focus();
-                }} 
-                sx={{ py: 1, px: 1.5, borderRadius: '12px' }}
+                }}
+                sx={{ py: 1, px: 1.5, borderRadius: '6px' }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
-                  <RadioButtonUncheckedIcon sx={{ fontSize: 16 }} />
+                  <Box
+                    component="span"
+                    sx={{
+                      opacity: 0.4,
+                      transition: "opacity 0.15s",
+                      ".MuiListItemButton-root:hover &": { opacity: 1 }
+                    }}
+                  >
+                    <RadioButtonUncheckedIcon sx={{ fontSize: 16 }} />
+                  </Box>
                 </ListItemIcon>
                 <ListItemText
                   primary={<Typography variant="body2" sx={{ fontSize: 13 }}>{todo.text}</Typography>}
                 />
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: "9px",
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    px: 0.8,
+                    py: 0.2,
+                    borderRadius: "4px",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    color: "text.secondary",
+                    textTransform: "uppercase",
+                    flexShrink: 0,
+                    ml: 'auto',
+                  }}
+                >
+                  Pending
+                </Box>
               </ListItemButton>
             </ListItem>
           );
@@ -236,18 +266,28 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                       <CloseIcon sx={{ fontSize: 12 }} />
                     </IconButton>
                   }
-                  sx={{
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: '12px',
-                    mb: 0.5,
-                    bgcolor: "action.selected",
+                  sx={(theme) => ({
+                    borderRadius: '6px',
+                    mb: 0.25,
                     opacity: 0.8,
-                  }}
+                    bgcolor: `color-mix(in srgb, ${theme.palette.text.primary} 4%, transparent)`,
+                    "&:hover": {
+                      bgcolor: `color-mix(in srgb, ${theme.palette.text.primary} 8%, transparent)`,
+                    }
+                  })}
                 >
-                  <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 0.8, px: 1.5, borderRadius: '12px' }}>
+                  <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 0.8, px: 1.5, borderRadius: '6px' }}>
                     <ListItemIcon sx={{ minWidth: 32, color: "text.secondary" }}>
-                      <CheckCircleIcon sx={{ fontSize: 16 }} />
+                      <Box
+                        component="span"
+                        sx={{
+                          opacity: 0.6,
+                          transition: "opacity 0.15s",
+                          ".MuiListItemButton-root:hover &": { opacity: 1 }
+                        }}
+                      >
+                        <CheckCircleIcon sx={{ fontSize: 16 }} />
+                      </Box>
                     </ListItemIcon>
                     <ListItemText
                       primary={
@@ -256,6 +296,25 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                         </Typography>
                       }
                     />
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        px: 0.8,
+                        py: 0.2,
+                        borderRadius: "4px",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        color: "text.secondary",
+                        textTransform: "uppercase",
+                        flexShrink: 0,
+                        ml: 'auto',
+                      }}
+                    >
+                      Completed
+                    </Box>
                   </ListItemButton>
                 </ListItem>
               ))}

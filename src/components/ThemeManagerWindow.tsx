@@ -32,7 +32,8 @@ type ThemeSection = { label: string; ids: string[] };
 const THEME_SECTIONS: ThemeSection[] = [
   { label: "CLASSIC", ids: ["light", "dark"] },
   { label: "PITCH", ids: ["pitch-black", "pitch-white"] },
-  { label: "OTHER", ids: ["noir", "ocean", "sunrise", "forest", "lavender"] },
+  { label: "PASTEL", ids: ["blush", "mauve", "lilac", "sage", "mint", "teal", "butter", "plum"] },
+  { label: "OTHER", ids: ["ocean", "sunrise"] },
 ];
 
 function accentRgb(hex: string) {
@@ -337,11 +338,11 @@ export const ThemeManagerWindow: React.FC = () => {
                       const tc = t.colors;
                       return (
                         <Box key={t.id} onClick={() => setTheme(t.id)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: "8px", cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
-                          <Box sx={{ width: 32, height: 32, borderRadius: "8px", overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
-                            <Box sx={{ width: 8, bgcolor: tc.sidebar }} />
-                            <Box sx={{ flex: 1, bgcolor: tc.editor, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: tc.accent }} />
-                            </Box>
+                          <Box sx={{ width: 32, height: 32, borderRadius: "8px", overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
+                            <Box sx={{ bgcolor: tc.editor }} />
+                            <Box sx={{ bgcolor: tc.sidebar }} />
+                            <Box sx={{ bgcolor: tc.accent }} />
+                            <Box sx={{ bgcolor: tc.dropdown }} />
                           </Box>
                           <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Typography variant="body2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5, fontSize: 12 }}>

@@ -289,28 +289,28 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
               Light
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-              {themes.filter(t => !t.isDark).map((t) => {
-                const isActive = theme === t.id;
-                return (
-                  <Tooltip key={t.id} title={t.name} placement="top">
-                    <Box
-                      onClick={() => setTheme(t.id)}
-                      sx={{
-                        width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
-                        border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
-                        display: 'flex', overflow: 'hidden',
-                        '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                        transition: 'border-color 0.12s ease',
-                      }}
-                    >
-                      <Box sx={{ width: 7, bgcolor: t.colors.sidebar }} />
-                      <Box sx={{ flex: 1, bgcolor: t.colors.editor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: t.colors.accent }} />
+                {themes.filter(t => !t.isDark).map((t) => {
+                  const isActive = theme === t.id;
+                  return (
+                    <Tooltip key={t.id} title={t.name} placement="top">
+                      <Box
+                        onClick={() => setTheme(t.id)}
+                        sx={{
+                          width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                          border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
+                          display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
+                          '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
+                          transition: 'border-color 0.12s ease',
+                        }}
+                      >
+                        <Box sx={{ bgcolor: t.colors.editor }} />
+                        <Box sx={{ bgcolor: t.colors.sidebar }} />
+                        <Box sx={{ bgcolor: t.colors.accent }} />
+                        <Box sx={{ bgcolor: t.colors.dropdown }} />
                       </Box>
-                    </Box>
-                  </Tooltip>
-                );
-              })}
+                    </Tooltip>
+                  );
+                })}
             </Box>
 
             <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
@@ -326,15 +326,15 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                       sx={{
                         width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
                         border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
-                        display: 'flex', overflow: 'hidden',
+                        display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                         '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
                         transition: 'border-color 0.12s ease',
                       }}
                     >
-                      <Box sx={{ width: 7, bgcolor: t.colors.sidebar }} />
-                      <Box sx={{ flex: 1, bgcolor: t.colors.editor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: t.colors.accent }} />
-                      </Box>
+                      <Box sx={{ bgcolor: t.colors.editor }} />
+                      <Box sx={{ bgcolor: t.colors.sidebar }} />
+                      <Box sx={{ bgcolor: t.colors.accent }} />
+                      <Box sx={{ bgcolor: t.colors.dropdown }} />
                     </Box>
                   </Tooltip>
                 );
@@ -354,20 +354,15 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                       sx={{
                         width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
                         border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
-                        display: 'flex', overflow: 'hidden',
+                        display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                         '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
                         transition: 'border-color 0.12s ease',
                       }}
                     >
-                      <Box sx={{ width: 7, bgcolor: 'text.disabled' }} />
-                      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <Box sx={{ flex: 1, bgcolor: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#1976d2' }} />
-                        </Box>
-                        <Box sx={{ flex: 1, bgcolor: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#90caf9' }} />
-                        </Box>
-                      </Box>
+                      <Box sx={{ bgcolor: '#e0e0e0' }} />
+                      <Box sx={{ bgcolor: '#333' }} />
+                      <Box sx={{ bgcolor: '#1976d2' }} />
+                      <Box sx={{ bgcolor: '#90caf9' }} />
                     </Box>
                   </Tooltip>
                 );
@@ -389,15 +384,15 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                           sx={{
                             width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
                             border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
-                            display: 'flex', overflow: 'hidden',
+                            display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                             '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
                             transition: 'border-color 0.12s ease',
                           }}
                         >
-                          <Box sx={{ width: 7, bgcolor: t.colors.sidebar }} />
-                          <Box sx={{ flex: 1, bgcolor: t.colors.editor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: t.colors.accent }} />
-                          </Box>
+                          <Box sx={{ bgcolor: t.colors.editor }} />
+                          <Box sx={{ bgcolor: t.colors.sidebar }} />
+                          <Box sx={{ bgcolor: t.colors.accent }} />
+                          <Box sx={{ bgcolor: t.colors.dropdown }} />
                         </Box>
                       </Tooltip>
                     );
