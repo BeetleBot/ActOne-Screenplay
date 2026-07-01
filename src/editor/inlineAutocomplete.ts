@@ -233,9 +233,12 @@ function acceptSuggestion(view: EditorView, sug: SuggestionData): boolean {
 
   if (sug.type === "character") {
     const lineStart = line.from;
+    const originalLine = view.state.doc.lineAt(sug.pos).text;
+    const startsWithAt = originalLine.trim().startsWith("@");
+    const insert = startsWithAt ? "@" + sug.acceptText : sug.acceptText;
     view.dispatch({
-      changes: { from: lineStart, to: line.to, insert: sug.acceptText },
-      selection: { anchor: lineStart + sug.acceptText.length },
+      changes: { from: lineStart, to: line.to, insert },
+      selection: { anchor: lineStart + insert.length },
     });
     return true;
   }
@@ -311,9 +314,11 @@ export function fountainCompletionSource(context: CompletionContext): Completion
         label: c,
         apply: (view: EditorView) => {
           const l = view.state.doc.lineAt(view.state.selection.main.head);
+          const startsWithAt = l.text.trim().startsWith("@");
+          const insert = startsWithAt ? "@" + c : c;
           view.dispatch({
-            changes: { from: l.from, to: l.to, insert: c },
-            selection: { anchor: l.from + c.length },
+            changes: { from: l.from, to: l.to, insert },
+            selection: { anchor: l.from + insert.length },
           });
         },
       }));
@@ -364,9 +369,11 @@ export function fountainCompletionSource(context: CompletionContext): Completion
         label: c,
         apply: (view: EditorView) => {
           const l = view.state.doc.lineAt(view.state.selection.main.head);
+          const startsWithAt = l.text.trim().startsWith("@");
+          const insert = startsWithAt ? "@" + c : c;
           view.dispatch({
-            changes: { from: l.from, to: l.to, insert: c },
-            selection: { anchor: l.from + c.length },
+            changes: { from: l.from, to: l.to, insert },
+            selection: { anchor: l.from + insert.length },
           });
         },
       }));
