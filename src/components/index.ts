@@ -3,19 +3,16 @@ export { CommandPalette } from './CommandPalette';
 export { ErrorBoundary } from './ErrorBoundary';
 export { ExportModal } from './ExportModal';
 export { FountainEditor } from './FountainEditor';
-export { HelpModal } from './HelpModal';
 export { MarkerView } from './MarkerView';
 export { ModalManager } from './ModalManager';
 export type { ModalManagerProps } from './ModalManager';
 export { OutlineView } from './OutlineView';
-export { TagManager } from './TagManager';
 export { ScriptsView } from './ScriptsView';
 export { SearchPanel } from './SearchPanel';
-export { SettingsModal } from './SettingsModal';
+export { SnapshotsPanel } from './SnapshotsPanel';
 export { SidebarViews } from './SidebarViews';
 export { SprintView } from './SprintView';
 export { StructureImportModal } from './StructureImportModal';
-export { ThemeManagerModal } from './ThemeManagerModal';
 export { SystemFontPicker } from './SystemFontPicker';
 export { TitleBar } from './TitleBar';
 export { TitlePageEditorModal } from './TitlePageEditorModal';
@@ -26,7 +23,7 @@ export { SettingsWindow } from './SettingsWindow';
 export { HelpWindow } from './HelpWindow';
 export { TagManagerWindow } from './TagManagerWindow';
 export { ThemeManagerWindow } from './ThemeManagerWindow';
-export { XrayWindow, XrayModal } from './XrayWindow';
+export { XrayWindow } from './XrayWindow';
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,
   ArrowDownwardIcon, ArrowUpwardIcon, AssignmentIcon, AutoAwesomeIcon,
@@ -42,5 +39,5 @@ export {
   PlayArrowIcon, RadioButtonUncheckedIcon, RestartAltIcon,
   SaveIcon, SearchIcon, SettingsIcon, StopIcon, TaskAltIcon,
   TextFieldsIcon, TimerIcon, TuneIcon, ViewSidebarIcon,
-  ZoomInIcon, ZoomOutIcon
+  ZoomInIcon, ZoomOutIcon, CameraIcon
 } from './Icons';

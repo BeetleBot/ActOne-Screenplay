@@ -253,13 +253,9 @@ export const SprintView = React.memo(() => {
                 fontSize: "13px",
                 borderRadius: "12px", 
                 textTransform: "none",
-                background: "linear-gradient(135deg, var(--accent-color) 0%, #1565c0 100%)",
-                boxShadow: "0 4px 12px rgba(var(--accent-rgb), 0.2)",
-                transition: "transform 0.2s, box-shadow 0.2s",
+                transition: "transform 0.2s",
                 "&:hover": {
-                  background: "linear-gradient(135deg, #1976d2 0%, var(--accent-color) 100%)",
                   transform: "translateY(-1px)",
-                  boxShadow: "0 6px 16px rgba(var(--accent-rgb), 0.35)",
                 },
                 "&:active": {
                   transform: "translateY(0)"

@@ -16,8 +16,8 @@ import Button from "@mui/material/Button";
 import {
   FormatListBulletedIcon, LibraryBooksIcon,
   AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CheckIcon,
-  RestartAltIcon, SettingsIcon, BookmarkIcon, TimerIcon, NoteAddIcon,
-  KeyboardArrowDownIcon,
+  SettingsIcon, BookmarkIcon, TimerIcon, NoteAddIcon,
+  KeyboardArrowDownIcon, CameraIcon,
 } from "../Icons";
 
 interface ActivityBarProps {
@@ -71,6 +71,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     { id: "notepad", icon: <NoteAddIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
     { id: "markers", icon: <BookmarkIcon sx={{ fontSize: 20 }} />, title: "Markers" },
     { id: "todo", icon: <AssignmentIcon sx={{ fontSize: 20 }} />, title: "Tasks" },
+    { id: "snapshots", icon: <CameraIcon sx={{ fontSize: 20 }} />, title: "Snapshots" },
     { id: "sprint", icon: <TimerIcon sx={{ fontSize: 20 }} />, title: "Sprint" },
     { id: "parking", icon: <ArchiveIcon sx={{ fontSize: 20 }} />, title: "Parking" },
   ];
@@ -183,15 +184,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
             <Box sx={{ px: 2, py: 1 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 600 }}>Interface Scale</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography variant="caption" color="primary">{appScale}%</Typography>
-                  <IconButton
-                    size="small" onClick={() => { setZoomLevel(100); setAppScale(100); }}
-                    sx={{ p: 0.2, color: (appScale !== 100 || zoomLevel !== 100) ? 'primary.main' : 'text.disabled' }}
-                  >
-                    <RestartAltIcon sx={{ fontSize: 12 }} />
-                  </IconButton>
-                </Box>
+                <Typography variant="caption" color="primary">{appScale}%</Typography>
               </Box>
               <Slider size="small" min={50} max={300} step={5} value={appScale}
                 onChange={(_, val) => setAppScale(val as number)} aria-label="Interface Scale" />
@@ -204,6 +197,24 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
               </Box>
               <Slider size="small" min={50} max={400} step={10} value={zoomLevel}
                 onChange={(_, val) => setZoomLevel(val as number)} aria-label="Editor Zoom" />
+            </Box>
+
+            <Box sx={{ px: 2, pb: 1, pt: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => { setZoomLevel(100); setAppScale(100); }}
+                disabled={appScale === 100 && zoomLevel === 100}
+                sx={{
+                  borderRadius: '6px',
+                  textTransform: 'none',
+                  fontSize: '0.75rem',
+                  py: 0.25,
+                  px: 1.5,
+                }}
+              >
+                Reset Scale & Zoom
+              </Button>
             </Box>
           </>
         )}

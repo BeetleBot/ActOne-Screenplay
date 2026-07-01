@@ -25,17 +25,20 @@ pub fn set_app_prefs(
     prefs: HashMap<String, String>,
 ) -> Result<(), String> {
     let mut current = state.0.lock().map_err(|e| e.to_string())?;
-    *current = prefs.clone();
+    for (k, v) in &prefs {
+        current.insert(k.clone(), v.clone());
+    }
+    let merged = current.clone();
     drop(current);
 
     let file_path = prefs_file_path(&app);
     if let Some(parent) = file_path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    let json = serde_json::to_string(&prefs).map_err(|e| e.to_string())?;
+    let json = serde_json::to_string(&merged).map_err(|e| e.to_string())?;
     fs::write(&file_path, json).map_err(|e| e.to_string())?;
 
-    app.emit("app-prefs:changed", prefs).map_err(|e| e.to_string())?;
+    app.emit("app-prefs:changed", merged).map_err(|e| e.to_string())?;
     Ok(())
 }
 

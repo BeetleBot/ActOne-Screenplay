@@ -68,6 +68,7 @@ pub mod pdf;
 mod structures;
 mod font_cache;
 mod app_prefs;
+mod snapshots;
 
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
@@ -626,6 +627,12 @@ pub fn run() {
             get_detected_scripts,
             app_prefs::get_app_prefs,
             app_prefs::set_app_prefs,
+            snapshots::create_snapshot,
+            snapshots::get_snapshots,
+            snapshots::delete_snapshot,
+            snapshots::restore_snapshot,
+            snapshots::get_snapshot_folder_path,
+            snapshots::open_folder,
         ]);
 
     builder

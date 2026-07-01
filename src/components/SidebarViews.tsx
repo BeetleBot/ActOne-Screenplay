@@ -5,6 +5,7 @@ import { OutlineView } from "./OutlineView";
 import { SprintView } from "./SprintView";
 import { MarkerView } from "./MarkerView";
 import { ScriptsView } from "./ScriptsView";
+import { SnapshotsPanel } from "./SnapshotsPanel";
 import { ActoneBanner } from "./ActoneBanner";
 import { AddIcon, CloseIcon } from "./Icons";
 import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
@@ -35,6 +36,10 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
 
   if (activeTab === "scripts") {
     return <ScriptsView />;
+  }
+
+  if (activeTab === "snapshots") {
+    return <SnapshotsPanel onClose={() => {}} />;
   }
 
   if (activeTab === "outline") {

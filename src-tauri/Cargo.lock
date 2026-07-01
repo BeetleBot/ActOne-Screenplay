@@ -8,6 +8,7 @@ version = "0.2.9"
 dependencies = [
  "bitflags 2.11.1",
  "cosmic-text",
+ "dunce",
  "font-kit",
  "image",
  "krilla",

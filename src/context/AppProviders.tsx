@@ -4,17 +4,20 @@ import { FileProvider } from "./FileContext";
 import { EditorProvider } from "./EditorContext";
 import { ParkingProvider } from "./ParkingContext";
 import { CustomModalProvider } from "./CustomModalContext";
+import { SnapshotProvider } from "./SnapshotContext";
 
 export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <UIProvider>
       <CustomModalProvider>
         <FileProvider>
-          <EditorProvider>
-            <ParkingProvider>
-              {children}
-            </ParkingProvider>
-          </EditorProvider>
+          <SnapshotProvider>
+            <EditorProvider>
+              <ParkingProvider>
+                {children}
+              </ParkingProvider>
+            </EditorProvider>
+          </SnapshotProvider>
         </FileProvider>
       </CustomModalProvider>
     </UIProvider>

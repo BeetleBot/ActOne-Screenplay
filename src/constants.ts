@@ -18,6 +18,13 @@ export const STORAGE_KEYS = {
   HIDE_SYNTAX_ENABLED: "actone-hide-syntax-enabled",
   HIDE_TAGS_ENABLED: "actone-hide-tags-enabled",
   LINE_FOCUS_ENABLED: "actone-line-focus-enabled",
+  SNAPSHOTS_ENABLED: "actone-snapshots-enabled",
+  SNAPSHOT_LOCATION: "actone-snapshot-location",
+  SNAPSHOT_CUSTOM_PATH: "actone-snapshot-custom-path",
+  SNAPSHOT_AUTO_ENABLED: "actone-snapshot-auto-enabled",
+  SNAPSHOT_AUTO_INTERVAL: "actone-snapshot-auto-interval",
+  SNAPSHOT_ON_SAVE: "actone-snapshot-on-save",
+  SNAPSHOT_MAX_RETENTION: "actone-snapshot-max-retention",
 } as const;
 
 export const PILL_RADIUS = "9999px";

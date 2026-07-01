@@ -25,7 +25,6 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, onThemeChanged } from "../theme/ThemeEngine";
-import { useFile } from "../context";
 import { LineType, type FountainDocument } from "../parser";
 import {
   extractCharacters,
@@ -2136,20 +2135,4 @@ export const XrayWindow: React.FC = () => {
   );
 };
 
-export const XrayModal: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
-  const { parsedDoc, scriptFileName } = useFile();
-  const data: XrayData = useMemo(
-    () => ({
-      parsedDoc,
-      scriptFileName,
-      settings: parsedDoc?.settings || {},
-    }),
-    [parsedDoc, scriptFileName]
-  );
 
-  return (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <XrayContent data={data} onClose={onClose} />
-    </Box>
-  );
-};

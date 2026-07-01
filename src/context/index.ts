@@ -13,3 +13,5 @@ export { SprintProvider, useSprint } from './SprintContext';
 export type { SprintSession } from './SprintContext';
 export { CustomModalProvider, useCustomModal } from './CustomModalContext';
 export type { ButtonOption, ConfirmOptions, PromptOptions } from './CustomModalContext';
+export { SnapshotProvider, useSnapshots } from './SnapshotContext';
+export type { SnapshotInfo, SnapshotSettings } from './SnapshotContext';

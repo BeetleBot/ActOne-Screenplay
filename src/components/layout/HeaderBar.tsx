@@ -132,6 +132,18 @@ export const HeaderBar = React.memo(() => {
                   e.stopPropagation();
                   if (e.button === 1) { e.preventDefault(); closeFile(file.id); }
                 }}
+                onMouseUp={(e) => {
+                  if (e.button === 1) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
+                onAuxClick={(e) => {
+                  if (e.button === 1) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 0.8,
                   px: 1.5, height: 30, borderTopLeftRadius: '6px', borderTopRightRadius: '6px',

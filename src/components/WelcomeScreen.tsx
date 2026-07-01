@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-import { HelpModal } from "./HelpModal";
+import { useModalWindows } from "../hooks";
 import {
   Box,
   Typography,
@@ -137,7 +137,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
   const { theme, setTheme, customThemes } = useTheme();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
-  const [showHelp, setShowHelp] = useState(false);
+  const { openHelpWindow } = useModalWindows();
   const appVersion = __APP_VERSION__;
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -266,12 +266,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   };
 
   const handleHelp = () => {
-    setShowHelp(true);
+    openHelpWindow();
   };
 
   return (
     <>
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     <Box
       sx={{
         height: "100%",

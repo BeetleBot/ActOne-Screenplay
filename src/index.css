@@ -750,8 +750,8 @@ button:active,
   }
 }
 
-/* Modal Backdrop Blur */
-.MuiBackdrop-root {
+/* Modal Backdrop Blur (Dialogs only, not context menus or popovers) */
+.MuiModal-root:not(.MuiPopover-root) .MuiBackdrop-root {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }

@@ -9,6 +9,8 @@ import {
   Slider,
   ToggleButtonGroup,
   ToggleButton,
+  TextField,
+  Button,
 } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -19,6 +21,7 @@ import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from
 import { initPrefsEngine, setPrefs, onPrefsChanged } from "../theme/AppPrefsEngine";
 import { STORAGE_KEYS } from "../constants";
 import { logger } from "../utils/logger";
+import { invoke } from "@tauri-apps/api/core";
 
 function readLocal(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -45,6 +48,14 @@ export const SettingsWindow: React.FC = () => {
   const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, false));
   const [hideTagsEnabled, setHideTagsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_TAGS_ENABLED, false));
   const [lineFocusEnabled, setLineFocusEnabled] = useState(() => readLocalBool(STORAGE_KEYS.LINE_FOCUS_ENABLED, false));
+  const [snapshotsEnabled, setSnapshotsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOTS_ENABLED, false));
+  const [snapshotLocation, setSnapshotLocation] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_LOCATION, "project") as "project" | "app_data" | "custom");
+  const [snapshotCustomPath, setSnapshotCustomPath] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, ""));
+  const [snapshotAutoEnabled, setSnapshotAutoEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED, false));
+  const [snapshotAutoIntervalMinutes, setSnapshotAutoIntervalMinutes] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL, 15));
+  const [snapshotOnSave, setSnapshotOnSave] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE, false));
+  const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, 20));
+  const activeFilePathRef = useRef<string>("");
   const [activeTab, setActiveTab] = useState(0);
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_THEMES) ?? "[]"); } catch { return []; }
@@ -84,6 +95,14 @@ export const SettingsWindow: React.FC = () => {
           setHideSyntaxEnabled(d.hideSyntaxEnabled);
           setHideTagsEnabled(d.hideTagsEnabled);
           setLineFocusEnabled(d.lineFocusEnabled);
+          setSnapshotsEnabled(d.snapshotsEnabled);
+          setSnapshotLocation(d.snapshotLocation);
+          setSnapshotCustomPath(d.snapshotCustomPath);
+          setSnapshotAutoEnabled(d.snapshotAutoEnabled);
+          setSnapshotAutoIntervalMinutes(d.snapshotAutoIntervalMinutes);
+          setSnapshotOnSave(d.snapshotOnSave);
+          setSnapshotMaxRetention(d.snapshotMaxRetention || 20);
+          activeFilePathRef.current = d.activeFilePath || "";
         });
         return unlisten;
       } catch (e) {
@@ -160,6 +179,27 @@ export const SettingsWindow: React.FC = () => {
     if (prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== undefined && prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== String(lineFocusEnabled)) {
       setLineFocusEnabled(prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] === "true");
     }
+    if (prefs[STORAGE_KEYS.SNAPSHOTS_ENABLED] !== undefined && prefs[STORAGE_KEYS.SNAPSHOTS_ENABLED] !== String(snapshotsEnabled)) {
+      setSnapshotsEnabled(prefs[STORAGE_KEYS.SNAPSHOTS_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.SNAPSHOT_LOCATION] !== undefined && prefs[STORAGE_KEYS.SNAPSHOT_LOCATION] !== snapshotLocation) {
+      setSnapshotLocation(prefs[STORAGE_KEYS.SNAPSHOT_LOCATION] as "project" | "app_data" | "custom");
+    }
+    if (prefs[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH] !== undefined && prefs[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH] !== snapshotCustomPath) {
+      setSnapshotCustomPath(prefs[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH]);
+    }
+    if (prefs[STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED] !== undefined && prefs[STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED] !== String(snapshotAutoEnabled)) {
+      setSnapshotAutoEnabled(prefs[STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL] !== undefined && prefs[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL] !== String(snapshotAutoIntervalMinutes)) {
+      setSnapshotAutoIntervalMinutes(parseInt(prefs[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL], 10));
+    }
+    if (prefs[STORAGE_KEYS.SNAPSHOT_ON_SAVE] !== undefined && prefs[STORAGE_KEYS.SNAPSHOT_ON_SAVE] !== String(snapshotOnSave)) {
+      setSnapshotOnSave(prefs[STORAGE_KEYS.SNAPSHOT_ON_SAVE] === "true");
+    }
+    if (prefs[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION] !== undefined && prefs[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION] !== String(snapshotMaxRetention)) {
+      setSnapshotMaxRetention(parseInt(prefs[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION], 10));
+    }
   }
 
   const emitUpdate = (storageKey: string, value: string | number | boolean) => {
@@ -199,6 +239,7 @@ export const SettingsWindow: React.FC = () => {
           >
             <ToggleButton value={0} sx={{ fontSize: 12, py: 0.3 }}>General</ToggleButton>
             <ToggleButton value={1} sx={{ fontSize: 12, py: 0.3 }}>Editor</ToggleButton>
+            <ToggleButton value={2} sx={{ fontSize: 12, py: 0.3 }}>Snapshots</ToggleButton>
           </ToggleButtonGroup>
         </Box>
         <Box sx={{ flex: 1, overflow: "auto", px: 2, py: 1.5 }}>
@@ -366,6 +407,118 @@ export const SettingsWindow: React.FC = () => {
               </Box>
             </Box>
           )}
+          {activeTab === 2 && (
+            <Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  GENERAL
+                </Typography>
+                <FormControlLabel
+                  control={<Switch size="small" checked={snapshotsEnabled} onChange={(e) => { const v = e.target.checked; setSnapshotsEnabled(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOTS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.SNAPSHOTS_ENABLED, v); }} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Enable Snapshots</Typography>}
+                  sx={{ mx: 0 }}
+                />
+              </Box>
+
+              {snapshotsEnabled && (
+                <>
+                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                      SAVE LOCATION
+                    </Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={snapshotLocation}
+                      onChange={(e) => { const v = e.target.value as "project" | "app_data" | "custom"; setSnapshotLocation(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOT_LOCATION, v); emitUpdate(STORAGE_KEYS.SNAPSHOT_LOCATION, v); }}
+                    >
+                      <MenuItem value="project">Project folder (.snapshots/)</MenuItem>
+                      <MenuItem value="app_data">App data folder</MenuItem>
+                      <MenuItem value="custom">Custom folder...</MenuItem>
+                    </Select>
+                    {snapshotLocation === "custom" && (
+                      <Box sx={{ display: 'flex', gap: 0.75, mt: 0.75 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={snapshotCustomPath}
+                          onChange={(e) => { const v = e.target.value; setSnapshotCustomPath(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, v); emitUpdate(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, v); }}
+                          placeholder="/path/to/snapshots"
+                          sx={{ '& input': { fontSize: 12, py: 0.6 } }}
+                        />
+                      </Box>
+                    )}
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={async () => {
+                        try {
+                          const path = await invoke<string>("get_snapshot_folder_path", { filePath: activeFilePathRef.current });
+                          await invoke("open_folder", { path });
+                        } catch (e) {
+                          logger.error("settingsWindow", "Failed to open snapshots folder", e);
+                        }
+                      }}
+                      sx={{ mt: 1.5, fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
+                    >
+                      Open Snapshots Folder
+                    </Button>
+                  </Box>
+
+                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                      AUTO-SNAPSHOT
+                    </Typography>
+                    <FormControlLabel
+                      control={<Switch size="small" checked={snapshotAutoEnabled} onChange={(e) => { const v = e.target.checked; setSnapshotAutoEnabled(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED, v); }} />}
+                      label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Auto-snapshot</Typography>}
+                      sx={{ mx: 0 }}
+                    />
+                    {snapshotAutoEnabled && (
+                      <Select
+                        fullWidth
+                        size="small"
+                        value={String(snapshotAutoIntervalMinutes)}
+                        onChange={(e) => { const v = parseInt(e.target.value, 10); setSnapshotAutoIntervalMinutes(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL, String(v)); emitUpdate(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL, v); }}
+                        sx={{ mt: 0.75 }}
+                      >
+                        <MenuItem value="1">Every 1 minute</MenuItem>
+                        <MenuItem value="5">Every 5 minutes</MenuItem>
+                        <MenuItem value="10">Every 10 minutes</MenuItem>
+                        <MenuItem value="15">Every 15 minutes</MenuItem>
+                        <MenuItem value="30">Every 30 minutes</MenuItem>
+                        <MenuItem value="60">Every 60 minutes</MenuItem>
+                      </Select>
+                    )}
+                    <FormControlLabel
+                      control={<Switch size="small" checked={snapshotOnSave} onChange={(e) => { const v = e.target.checked; setSnapshotOnSave(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOT_ON_SAVE, String(v)); emitUpdate(STORAGE_KEYS.SNAPSHOT_ON_SAVE, v); }} />}
+                      label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Snapshot on every save</Typography>}
+                      sx={{ mx: 0, mt: 0.5 }}
+                    />
+                    <Box sx={{ mt: 1.5 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Max auto-snapshots to keep</Typography>
+                        <Typography variant="body2" color="primary" sx={{ fontWeight: 600, fontSize: 12 }}>{snapshotMaxRetention}</Typography>
+                      </Box>
+                      <Slider
+                        size="small"
+                        min={5}
+                        max={100}
+                        step={5}
+                        value={snapshotMaxRetention}
+                        onChange={(_, val) => {
+                          const v = val as number;
+                          setSnapshotMaxRetention(v);
+                          localStorage.setItem(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, String(v));
+                          emitUpdate(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, v);
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </>
+              )}
+            </Box>
+          )}
         </Box>
       </Box>
     </MuiThemeProvider>
@@ -387,4 +540,12 @@ interface SettingsInitData {
   hideSyntaxEnabled: boolean;
   hideTagsEnabled: boolean;
   lineFocusEnabled: boolean;
+  snapshotsEnabled: boolean;
+  snapshotLocation: "project" | "app_data" | "custom";
+  snapshotCustomPath: string;
+  snapshotAutoEnabled: boolean;
+  snapshotAutoIntervalMinutes: number;
+  snapshotOnSave: boolean;
+  snapshotMaxRetention: number;
+  activeFilePath?: string;
 }

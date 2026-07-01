@@ -11,6 +11,8 @@ import { getPerScriptSetting, updatePerScriptSetting } from "./utils/perScriptSe
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
 const isEditorWindow = action === "new" || action === "open" || action === "template";
+const modalParam = params.get("modal");
+const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "tag-manager" || modalParam === "theme-manager" || modalParam === "xray";
 
 function AppInner() {
   const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName } = useFile();
@@ -54,11 +56,9 @@ function AppInner() {
 
   const {
     isModalActive, isPaletteOpen, showExportModal, showStructureModal,
-    showSettingsModal, showTitlePageModal, showHelpModal,
-    showBreakdownModal, showThemeManagerModal, showXrayModal,
+    showTitlePageModal,
     setIsPaletteOpen, setShowExportModal, setShowStructureModal,
-    setShowSettingsModal, setShowTitlePageModal,
-    setShowHelpModal, setShowBreakdownModal, setShowThemeManagerModal, setShowXrayModal,
+    setShowTitlePageModal,
     togglePalette
   } = useModals();
 
@@ -71,15 +71,11 @@ function AppInner() {
     setIsZenMode,
     showSearchPanel,
     setShowSearchPanel,
+    activeTab,
+    setActiveTab,
   } = useUI();
 
-  const modalWindows = useModalWindows({
-    openSettingsDialog: () => setShowSettingsModal(true),
-    openHelpDialog: () => setShowHelpModal(true),
-    openTagManagerDialog: () => setShowBreakdownModal(true),
-    openThemeManagerDialog: () => setShowThemeManagerModal(true),
-    openXrayDialog: () => setShowXrayModal(true),
-  });
+  const modalWindows = useModalWindows();
 
   useKeyboardShortcuts({
     newFile,
@@ -98,6 +94,14 @@ function AppInner() {
     openSettings: useCallback(() => { modalWindows.openSettingsWindow(); }, [modalWindows]),
     openHelp: useCallback(() => { modalWindows.openHelpWindow(); }, [modalWindows]),
     toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
+    toggleSnapshotsPanel: useCallback(() => {
+      if (isSidebarOpen && activeTab === "snapshots") {
+        setIsSidebarOpen(false);
+      } else {
+        setActiveTab("snapshots");
+        setIsSidebarOpen(true);
+      }
+    }, [isSidebarOpen, activeTab, setActiveTab, setIsSidebarOpen]),
     cleanExtraSpace,
     isDisabled: isModalActive,
   });
@@ -158,6 +162,13 @@ function AppInner() {
             autoSaveInterval: parseInt(localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL) ?? "60000", 10),
             hideSyntaxEnabled: localStorage.getItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED) === "true",
             lineFocusEnabled: localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true",
+            snapshotsEnabled: localStorage.getItem(STORAGE_KEYS.SNAPSHOTS_ENABLED) === "true",
+            snapshotLocation: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_LOCATION) ?? "project",
+            snapshotCustomPath: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH) ?? "",
+            snapshotAutoEnabled: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED) === "true",
+            snapshotAutoIntervalMinutes: parseInt(localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL) ?? "15", 10),
+            snapshotOnSave: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_ON_SAVE) === "true",
+            activeFilePath: activeFileIdRef.current || "",
           });
         });
 
@@ -474,8 +485,10 @@ function AppInner() {
     }
   };
 
-  // Standalone welcome window
-  if (!isEditorWindow && files.length === 0) {
+
+
+  // Standalone welcome window (skip for modal windows)
+  if (!isModalWindow && !isEditorWindow && files.length === 0) {
     return (
       <>
         <WindowResizeHandles resizeEnabled={false} showDragHandle />
@@ -488,7 +501,7 @@ function AppInner() {
   }
 
   // Editor window — will close and reopen welcome via useEffect when files hit 0
-  if (files.length === 0) {
+  if (!isModalWindow && files.length === 0) {
     return null;
   }
 
@@ -496,17 +509,19 @@ function AppInner() {
     <>
       <WindowResizeHandles />
       <div style={{ height: "100%", display: "flex", flexDirection: "column", zoom: `${appScale}%` }}>
-        <ErrorBoundary name="main-layout">
-          <MainLayout
-            isSidebarOpen={isSidebarOpen}
-            setIsSidebarOpen={setIsSidebarOpen}
-            onOpenSettingsModal={() => modalWindows.openSettingsWindow()}
-            onOpenPalette={() => setIsPaletteOpen(true)}
-            onOpenBreakdownModal={() => modalWindows.openTagManagerWindow()}
-            onOpenThemeManagerModal={() => modalWindows.openThemeManagerWindow()}
-            onOpenXray={() => modalWindows.openXrayWindow()}
-          />
-        </ErrorBoundary>
+        {!isModalWindow && (
+          <ErrorBoundary name="main-layout">
+            <MainLayout
+              isSidebarOpen={isSidebarOpen}
+              setIsSidebarOpen={setIsSidebarOpen}
+              onOpenSettingsModal={() => modalWindows.openSettingsWindow()}
+              onOpenPalette={() => setIsPaletteOpen(true)}
+              onOpenBreakdownModal={() => modalWindows.openTagManagerWindow()}
+              onOpenThemeManagerModal={() => modalWindows.openThemeManagerWindow()}
+              onOpenXray={() => modalWindows.openXrayWindow()}
+            />
+          </ErrorBoundary>
+        )}
       <ModalManager
         isPaletteOpen={isPaletteOpen}
         setIsPaletteOpen={setIsPaletteOpen}
@@ -514,25 +529,23 @@ function AppInner() {
         setShowExportModal={setShowExportModal}
         showStructureModal={showStructureModal}
         setShowStructureModal={setShowStructureModal}
-        showSettingsModal={showSettingsModal}
-        setShowSettingsModal={setShowSettingsModal}
         showTitlePageModal={showTitlePageModal}
         setShowTitlePageModal={setShowTitlePageModal}
-        showHelpModal={showHelpModal}
-        setShowHelpModal={setShowHelpModal}
-        showBreakdownModal={showBreakdownModal}
-        setShowBreakdownModal={setShowBreakdownModal}
-        showThemeManagerModal={showThemeManagerModal}
-        setShowThemeManagerModal={setShowThemeManagerModal}
-        showXrayModal={showXrayModal}
-        setShowXrayModal={setShowXrayModal}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        openSettingsWindow={modalWindows.openSettingsWindow}
-        openHelpWindow={modalWindows.openHelpWindow}
-        openTagManagerWindow={modalWindows.openTagManagerWindow}
-        openThemeManagerWindow={modalWindows.openThemeManagerWindow}
-        openXrayWindow={modalWindows.openXrayWindow}
+        toggleSnapshotsPanel={() => {
+          if (isSidebarOpen && activeTab === "snapshots") {
+            setIsSidebarOpen(false);
+          } else {
+            setActiveTab("snapshots");
+            setIsSidebarOpen(true);
+          }
+        }}
+        openSettingsWindow={isModalWindow ? undefined : modalWindows.openSettingsWindow}
+        openHelpWindow={isModalWindow ? undefined : modalWindows.openHelpWindow}
+        openTagManagerWindow={isModalWindow ? undefined : modalWindows.openTagManagerWindow}
+        openThemeManagerWindow={isModalWindow ? undefined : modalWindows.openThemeManagerWindow}
+        openXrayWindow={isModalWindow ? undefined : modalWindows.openXrayWindow}
       />
     </div>
     {isDraggingOver && <DropOverlay />}

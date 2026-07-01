@@ -15,3 +15,5 @@ Thumbs.db
 Release/artifacts/
 
 target/msix/
+
+Test-Files/.snapshots
