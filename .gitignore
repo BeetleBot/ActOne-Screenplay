@@ -16,4 +16,6 @@ Release/artifacts/
 
 target/msix/
 
-Test-Files/.snapshots
+Test-Files/.snapshots/
+.snapshots/
+**/.snapshots/
