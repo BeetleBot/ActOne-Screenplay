@@ -3,7 +3,7 @@ import { useFile, useEditor } from "../context";
 import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
-import { SearchIcon, CloseIcon, TuneIcon } from "./Icons";
+import { SearchIcon, CloseIcon, InfoOutlinedIcon } from "./Icons";
 
 import {
   Box,
@@ -11,13 +11,10 @@ import {
   IconButton,
   TextField,
   Chip,
-  Grid,
   List,
   ListItemButton,
   ListItemText,
-  Popover,
-  Badge,
-  Divider,
+  Tooltip,
 } from "@mui/material";
 
 interface MarkerItem {
@@ -33,8 +30,6 @@ export const MarkerView = React.memo(() => {
   const { scrollToLine } = useEditor();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-
-  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const markersList = useMemo(() => {
     const list: MarkerItem[] = [];
@@ -133,32 +128,28 @@ export const MarkerView = React.memo(() => {
     return `var(--scene-color-${color})`;
   };
 
-  const handleFilterClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setFilterAnchorEl(event.currentTarget);
-  };
-
-  const handleFilterClose = () => {
-    setFilterAnchorEl(null);
-  };
-
-  const openFilter = Boolean(filterAnchorEl);
-
-  const activeFilterCount = selectedColor ? 1 : 0;
-
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, gap: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Markers List
         </Typography>
-        <Chip
-          label={`${filteredMarkers.length} markers`}
-          size="small"
-          sx={{ height: 18, fontSize: 10, fontWeight: 600, borderRadius: PILL_RADIUS }}
-        />
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+          <Tooltip title="Markers displays bookmarks tagged at specific lines in your screenplay. Click to jump to the line, or filter by color.">
+            <span>
+              <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
+            </span>
+          </Tooltip>
+          <Chip
+            label={`${filteredMarkers.length} markers`}
+            size="small"
+            sx={{ height: 18, fontSize: 10, fontWeight: 600, borderRadius: PILL_RADIUS }}
+          />
+        </Box>
       </Box>
 
-      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, gap: 2, overflow: "hidden" }}>
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
         <TextField
           placeholder="Filter markers..."
           value={searchQuery}
@@ -190,92 +181,44 @@ export const MarkerView = React.memo(() => {
             },
           }}
         />
-        <IconButton
-          size="small"
-          onClick={handleFilterClick}
-          sx={{
-            border: "1px solid",
-            borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
-            bgcolor: activeFilterCount > 0 ? "action.selected" : "transparent",
-            p: 0.8,
-          }}
-        >
-          <Badge badgeContent={activeFilterCount} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}>
-            <TuneIcon sx={{ fontSize: 16 }} />
-          </Badge>
-        </IconButton>
       </Box>
 
-      <Popover
-        open={openFilter}
-        anchorEl={filterAnchorEl}
-        onClose={handleFilterClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        slotProps={{
-          paper: {
-            sx: { p: 2, width: 280, display: "flex", flexDirection: "column", gap: 1.5 },
-          },
-        }}
-      >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.75rem" }}>
-            Filters
-          </Typography>
-          {activeFilterCount > 0 && (
-            <Chip
-              label="Clear All"
-              size="small"
-              onClick={() => {
-                setSelectedColor(null);
-              }}
-              sx={{ height: 18, fontSize: 10, cursor: "pointer" }}
-            />
-          )}
+      {Object.keys(colorStats).length > 0 && (
+        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mt: -1 }}>
+          {Object.entries(colorStats).map(([color, count]) => {
+            const isSelected = selectedColor === color;
+            const colorVal = getMarkerColorValue(color);
+            return (
+              <Box
+                key={color}
+                onClick={() => setSelectedColor(isSelected ? null : color)}
+                sx={{
+                  fontSize: "8.5px",
+                  fontFamily: "var(--font-ui)",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  px: 1,
+                  py: 0.3,
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  userSelect: "none",
+                  border: "1px solid",
+                  borderColor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 30%, transparent)`,
+                  bgcolor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 8%, transparent)`,
+                  color: isSelected ? "#ffffff" : `color-mix(in srgb, ${colorVal} 85%, currentColor)`,
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    borderColor: colorVal,
+                    bgcolor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 15%, transparent)`,
+                  },
+                }}
+              >
+                {color.toUpperCase()} ({count})
+              </Box>
+            );
+          })}
         </Box>
-
-        <Divider />
-
-        <Box>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
-            Marker Color
-          </Typography>
-          <Grid container spacing={0.5}>
-            {Object.entries(colorStats).map(([color, count]) => {
-              const isSelected = selectedColor === color;
-              const colorVal = getMarkerColorValue(color);
-              return (
-                <Grid key={color}>
-                  <Chip
-                    label={`${color} (${count})`}
-                    size="small"
-                    onClick={() => setSelectedColor(isSelected ? null : color)}
-                    sx={{
-                      fontSize: 9.5,
-                      height: 20,
-                      borderRadius: PILL_RADIUS,
-                      fontWeight: isSelected ? 700 : 500,
-                      border: `1.5px solid ${colorVal}`,
-                      bgcolor: isSelected ? colorVal : "transparent",
-                      color: isSelected ? (theme) => theme.palette.common.white : "text.secondary",
-                      cursor: "pointer",
-                      "&:hover": {
-                        bgcolor: isSelected ? colorVal : "action.hover",
-                      },
-                    }}
-                  />
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Box>
-      </Popover>
+      )}
 
       <List 
         tabIndex={0}
@@ -311,11 +254,33 @@ export const MarkerView = React.memo(() => {
                 }}
                 sx={{
                   pl: 1.5,
-                  py: 0.25,
-                  borderRadius: '8px',
-                  mb: 0.1,
+                  py: 0.5,
+                  borderRadius: '6px',
+                  mb: 0.25,
                   alignItems: "center",
-                  transition: "background-color 0.12s ease",
+                  transition: "all 0.12s ease",
+                  bgcolor: isSelected
+                    ? (colorVal.startsWith("var")
+                        ? `color-mix(in srgb, ${colorVal} 20%, transparent)`
+                        : `${colorVal}30`)
+                    : (colorVal.startsWith("var")
+                        ? `color-mix(in srgb, ${colorVal} 8%, transparent)`
+                        : `${colorVal}12`),
+                  "&.Mui-selected": {
+                    bgcolor: colorVal.startsWith("var")
+                      ? `color-mix(in srgb, ${colorVal} 20%, transparent)`
+                      : `${colorVal}30`,
+                    "&:hover": {
+                      bgcolor: colorVal.startsWith("var")
+                        ? `color-mix(in srgb, ${colorVal} 25%, transparent)`
+                        : `${colorVal}38`,
+                    },
+                  },
+                  "&:hover": {
+                    bgcolor: colorVal.startsWith("var")
+                      ? `color-mix(in srgb, ${colorVal} 15%, transparent)`
+                      : `${colorVal}22`,
+                  },
                 }}
               >
                 <ListItemText
@@ -416,6 +381,7 @@ export const MarkerView = React.memo(() => {
           })
         )}
       </List>
+      </Box>
     </Box>
   );
 });

@@ -1145,19 +1145,19 @@ CHARACTER
 Hello world.
 "#;
         let screenplay = crate::pdf::parse(fountain_text);
+        let tmp = std::env::temp_dir().join("actone-test-logo.png");
+        std::fs::write(&tmp, include_bytes!("../../../../src/assets/logo.png")).unwrap();
         let exporter = PdfExporter {
             watermark_center_enabled: true,
             watermark_center_type: "image".to_string(),
-            watermark_center_image_path: "C:\\Users\\nkr\\Documents\\Projects\\ActOne Family\\ActOneCode\\src\\assets\\logo.png".to_string(),
+            watermark_center_image_path: tmp.to_string_lossy().to_string(),
             watermark_center_opacity: 0.4,
             ..Default::default()
         };
         let mut out = Vec::new();
         let res = exporter.export(&screenplay, &mut out);
-        eprintln!("Full export with PNG result: {:?}", res.is_ok());
-        if let Err(e) = res {
-            eprintln!("Export Error details: {:?}", e);
-        }
+        let _ = std::fs::remove_file(&tmp);
+        assert!(res.is_ok(), "logo watermark export failed: {:?}", res.err());
     }
 
     #[test]
@@ -1280,6 +1280,7 @@ This is action.
     }
 
     #[test]
+    #[ignore = "requires BeeDetective.fountain test file"]
     fn test_bee_detective_export() {
         let path = "/home/nkr/Projects/ACTOneFamily/ActOneCode/Test-Files/BeeDetective.fountain";
         let content = std::fs::read_to_string(path).expect("Read BeeDetective.fountain failed");

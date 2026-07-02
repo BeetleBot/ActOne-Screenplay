@@ -22,7 +22,6 @@ import {
   StopIcon, 
   DeleteIcon, 
   HistoryIcon, 
-  TimerIcon, 
   InfoOutlinedIcon, 
   EmojiEventsIcon 
 } from "./Icons";
@@ -176,17 +175,19 @@ export const SprintView = React.memo(() => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 0, gap: 0, overflow: "hidden" }}>
       {/* Header Panel */}
-      <Box sx={{ p: 2, pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.9, display: "flex", alignItems: "center", gap: 1 }}>
-          <TimerIcon sx={{ fontSize: 18, color: "primary.main" }} /> Writing Sprint
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+          Writing Sprint
         </Typography>
         <Tooltip title="Sprints track net word count gain in the active editor. Global history is stored locally; bundle data stays in .actone files.">
           <InfoOutlinedIcon sx={{ fontSize: 16, opacity: 0.6, cursor: "help" }} />
         </Tooltip>
       </Box>
 
-      {/* Main Timer Control Area */}
-      <Box sx={{ px: 2, mb: 2 }}>
+      {/* Content Area */}
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, gap: 2, overflowY: "auto" }}>
+        {/* Main Timer Control Area */}
+        <Box sx={{ mb: 0 }}>
         {!currentSprint ? (
           <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)" }}>
             <Box>
@@ -497,6 +498,7 @@ export const SprintView = React.memo(() => {
             </List>
           )}
         </Box>
+      </Box>
       </Box>
     </Box>
   );

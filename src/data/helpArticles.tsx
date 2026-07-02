@@ -18,11 +18,18 @@ export const articles: HelpArticle[] = [
     content: `When you launch ActOne with no files open, the Welcome screen appears. From here you can:
 
 - **New Project** — Create a blank untitled screenplay. In standalone mode this opens a new editor window.
-- **Open Project** — Browse for a .fountain, .txt, or .actone file via the native file dialog.
+- **Open Project** — Browse for a \`.fountain\`, \`.txt\`, or \`.actone\` file via the native file dialog.
 - **Templates** — Import a screenplay structure template (Three-Act, Save the Cat, Hero's Journey, etc.).
+- **Help Guide** — Opens the Help Wiki window with searchable documentation.
 - **Recent Projects** — Quick-open recently used files (up to 6 displayed). Click the X to remove from the list. Stored in localStorage (up to 10 entries).
 
-The footer includes a Help button, a version display, a theme palette, and a rotating random writing quote from famous screenwriters.`,
+**Footer actions:**
+- **Help** — Opens the Help Wiki window with searchable documentation.
+- **Discord** — Opens the ActOne Discord invite in your default browser.
+- **Theme palette** (palette icon) — Switch between built-in themes (7 light + 7 dark + Adaptive).
+- **App version** — Build number, useful when reporting bugs.
+
+The Welcome screen also shows a rotating random writing quote from famous screenwriters.`,
   },
   {
     id: "new-screenplay",
@@ -116,7 +123,7 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 
 **Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, Replace.
 
-**View:** Toggle Sidebar, Switch Sidebar Tab (Outline/Notepad/Characters/Statistics), Typewriter Mode, Zen Mode, Focus Mode, Zoom In/Out/Reset, Show/Hide Fountain Markup.
+**View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Reset Interface Scale, Show/Hide Fountain Markup, Show/Hide Tags, Open X-Ray Analysis, Show Snapshots.
 
 **Format:** Tag Manager, Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers, Clean Spaces.
 
@@ -147,12 +154,12 @@ The parser extracts the shooting location (e.g., "WRITING STUDIO") and time of d
     title: "Character Names",
     category: "Fountain Syntax",
     tags: ["character", "@", "name", "all caps"],
-    relatedIds: ["dialogue", "parentheticals", "character-tracker", "autocomplete"],
+    relatedIds: ["dialogue", "parentheticals", "xray-character-data", "autocomplete"],
     content: `Introduce a character by typing their name in ALL CAPS on a line preceded by a blank line. Names with lowercase letters can be forced with the \`@\` prefix: \`@McQueen\`
 
 Character names with parenthetical extensions like \`JOHN (V.O.)\` are supported — 29 built-in extensions including \`(V.O.)\`, \`(O.S.)\`, \`(O.C.)\`, \`(CONT'D)\`, \`(PHONE)\`, \`(NARRATOR)\`, and more.
 
-ActOne automatically recognizes character lines and formats the following text as dialogue. Character names are tracked in the Character Tracker sidebar with dialogue line counts.`,
+ActOne automatically recognizes character lines and formats the following text as dialogue. Character names are tracked in the **X-Ray Analysis** window (Status Bar bar-chart icon or Command Palette) with dialogue line counts, gender assignments, and connection data. See \`xray-character-data\`.`,
   },
   {
     id: "dialogue",
@@ -415,14 +422,27 @@ Scene numbers display in the editor margins and as badges in the Outline Navigat
     title: "Activity Bar",
     category: "Workspace & Views",
     tags: ["activity bar", "sidebar", "tabs", "icons"],
-    relatedIds: ["outline-navigator", "sidebar-panels", "zen-mode", "quick-settings"],
+    relatedIds: ["outline-navigator", "sidebar-panels", "zen-mode", "quick-settings", "command-palette"],
     content: `The Activity Bar on the left side of the window provides access to all sidebar panels. Click an icon to open that view; click again to close the sidebar. An accent-colored left indicator bar shows which panel is active.
 
-**Tabs available (for .actone bundles):** Outline, Scripts, Characters, Statistics, Notepad, Markers, Tasks, Sprint, Parking.
+**Tabs available:**
 
-**For plain .fountain files:** only Outline and Statistics tabs are shown; other panels show a conversion banner.
+| Tab | Purpose | Requires .actone bundle? |
+|-----|---------|--------------------------|
+| Outline | Hierarchical tree of sections, scenes, synopses | No |
+| Scripts | Multi-script bundle manager | Yes (hidden for plain .fountain) |
+| Notepad | Freeform outline / notes | Yes |
+| Markers | List of \`[[marker …]]\` notes | No |
+| Tasks | To-do checklist | Yes |
+| Snapshots | Version history & restore | No |
+| Sprint | Writing timer & history | No |
+| Parking | Temporary text storage | Yes |
 
-The bottom of the Activity Bar has a **Command Palette** button and a **Quick Settings** button. To add a tag to selected text, you can also click the **Tags** area at the bottom of the Activity Bar.`,
+For plain \`.fountain\` files, only the **Outline** tab is shown in the Activity Bar. Other tabs are hidden (not shown with a banner).
+
+The bottom of the Activity Bar has a **Command Palette** button (magnifying-glass icon, <kbd>Ctrl+K</kbd>) and a **Quick Settings** button (gear icon).
+
+For character data, statistics, and analysis charts, open the **X-Ray Analysis** window from the Status Bar bar-chart icon or Command Palette — see \`xray-analysis\`.`,
   },
   {
     id: "outline-navigator",
@@ -448,22 +468,23 @@ The bottom of the Activity Bar has a **Command Palette** button and a **Quick Se
     title: "Sidebar Panels Overview",
     category: "Workspace & Views",
     tags: ["sidebar", "panels", "workspace", "bundle"],
-    relatedIds: ["activity-bar", "outline-navigator", "actone-bundle"],
-    content: `ActOne provides several sidebar panels to support your writing workflow:
+    relatedIds: ["activity-bar", "outline-navigator", "actone-bundle", "xray-analysis"],
+    content: `ActOne provides several sidebar panels accessible from the **Activity Bar** (vertical icon strip on the left). Click an icon to open the corresponding panel; click again to close the sidebar.
 
-| Panel | Requires .actone bundle? |
-|-------|--------------------------|
-| Outline | No |
-| Scripts | Yes |
-| Characters | Yes* |
-| Statistics | No |
-| Notepad | Yes* |
-| Markers | No |
-| Tasks | Yes* |
-| Sprint | No |
-| Parking | Yes* |
+| Panel | Icon | Purpose | Requires .actone? |
+|-------|------|---------|-------------------|
+| Outline | List | Hierarchical tree of sections, scenes, synopses | No |
+| Scripts | Books | Multi-script bundle manager | Yes |
+| Notepad | Note+ | Freeform outline and notes | Yes |
+| Markers | Bookmark | List of \`[[marker …]]\` inline notes | No |
+| Tasks | Checkbox | To-do checklist for revisions | Yes |
+| Snapshots | Camera | Version history with restore | No |
+| Sprint | Timer | Countdown writing timer with history | No |
+| Parking | Archive | Temporary text clipboard | Yes |
 
-**Panels marked with an asterisk are visible but show a conversion banner for plain .fountain files, with editing disabled.**`,
+Panels that require the .actone bundle are hidden for plain \`.fountain\` files. Use <kbd>Ctrl+Shift+S</kbd> to save as a bundle and unlock them.
+
+**Character and statistical analysis** is available through the **X-Ray Analysis** window — open it from the bar-chart icon in the Status Bar or via Command Palette → "Open X-Ray Analysis…". See the \`xray-analysis\` article for details.`,
   },
   {
     id: "notepad",
@@ -471,43 +492,51 @@ The bottom of the Activity Bar has a **Command Palette** button and a **Quick Se
     category: "Workspace & Views",
     tags: ["notepad", "notes", "brainstorm", "outline"],
     relatedIds: ["sidebar-panels", "actone-bundle"],
-    content: `A freeform text area in the sidebar for jotting down outline notes, beat sheets, character ideas, or draft goals. Content persists inside .actone bundles. Plain .fountain files show a conversion banner prompting save-as-bundle.`,
+    content: `A freeform text area in the sidebar (Activity Bar → note-with-plus icon) for jotting down outline notes, beat sheets, character ideas, or draft goals. Content persists inside .actone bundles. The Notepad tab is hidden (not shown with a banner) for plain \`.fountain\` files — save as a bundle via <kbd>Ctrl+Shift+S</kbd> to unlock it.`,
   },
   {
-    id: "character-tracker",
-    title: "Character Tracker & Gender Analyzer",
+    id: "xray-character-data",
+    title: "Character Data",
     category: "Workspace & Views",
-    tags: ["characters", "gender", "tracker", "dialogue counts"],
-    relatedIds: ["sidebar-panels", "statistics", "character-names"],
-    content: `The Characters panel scans your script and lists every character name with their dialogue line count, sorted by frequency. Features:
+    tags: ["characters", "gender", "tracker", "dialogue counts", "xray"],
+    relatedIds: ["xray-analysis", "character-names", "statistics-overview"],
+    content: `Character tracking and gender data live inside the **X-Ray Analysis** window:
 
-- Filter characters by name with the search field.
-- Set gender by clicking the colored pill — cycles through **Unknown → Male → Female → Non-Binary**.
-- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move between characters.
-- Gender data feeds into the Statistics dashboard's "Dialogue by Gender" chart (4 rows: male, female, nonbinary, unknown).
+1. Open X-Ray (Status Bar bar-chart icon, or Command Palette → "Open X-Ray Analysis…").
+2. Switch to the **Characters** mode at the top of the X-Ray window.
+3. The list shows every character in the script with their dialogue line count, gender, and role, sorted by frequency.
+4. Click a row to edit gender and role inline; changes are persisted to the \`.actone\` bundle's \`characters.json\`.
 
-Requires .actone bundle to persist gender assignments.`,
+Gender data also feeds the **Dialogue by Gender** chart in X-Ray's Statistics mode (4 rows: male, female, non-binary, unknown).`,
   },
   {
-    id: "statistics",
-    title: "Statistics Dashboard",
+    id: "statistics-overview",
+    title: "Script Statistics",
     category: "Workspace & Views",
     tags: ["stats", "statistics", "word count", "pages", "locations"],
-    relatedIds: ["character-tracker", "sidebar-panels"],
-    content: `The Statistics panel shows a live dashboard of your screenplay metrics:
+    relatedIds: ["xray-analysis", "status-bar", "sidebar-panels"],
+    content: `Script statistics are available in two places:
 
-- **Stat Cards** (2×2 grid): Estimated Pages (page break count + 1), total Words (formatted with locale separators), Scene Count, total Lines.
-- **Dialogue vs Action**: Horizontal percentage bar showing word distribution between dialogue and action text.
-- **Dialogue by Gender**: 4-row horizontal bar chart (Male, Female, Non-Binary, Unknown) using gender assignments from the Characters panel.
-- **Top Locations**: Top 5 most frequent shooting locations parsed from scene headings, with rank numbers and occurrence counts.`,
+**1. Status Bar (bottom of the editor):**
+- **Scenes** — count of scene headings (hidden on small screens).
+- **Words** — total word count, formatted with locale separators (hidden on small screens).
+- **Page** — "Page: currentPage of totalPages" (always visible), updated as you move your cursor.
+
+**2. X-Ray Analysis window (Status Bar bar-chart icon or Command Palette → "Open X-Ray Analysis…"):**
+
+- **Statistics mode:** Dialogue vs Action ratio, day vs night pie charts, top locations, and scene length distribution.
+- **Timing Report mode:** Estimated screen durations per scene, with cumulative runtimes.
+- **Pacing Chart mode:** Line/area chart of Dialogue vs Action per scene. Hold <kbd>Ctrl</kbd> + scroll to zoom; pan horizontally when zoomed in.
+
+X-Ray data updates live as you type.`,
   },
   {
     id: "xray-analysis",
     title: "X-Ray Screenplay Analyzer",
     category: "Workspace & Views",
     tags: ["xray", "x-ray", "analysis", "timing", "connections", "pacing"],
-    relatedIds: ["statistics", "character-tracker"],
-    content: `The X-Ray window is a comprehensive screenplay analysis tool. Launch it from the activity bar to open a live-updating window with four analysis modes:
+    relatedIds: ["statistics-overview", "xray-character-data", "character-names"],
+    content: `The X-Ray window is a comprehensive screenplay analysis tool. Open it via the bar-chart icon on the right side of the **Status Bar** (bottom of the editor) or Command Palette → "Open X-Ray Analysis…". It is a live-updating window with several analysis modes:
 
 - **Statistics:** View dialogue vs action ratios, day vs night pie charts, top locations, and scene length distribution counts.
 - **Timing Report:** See estimated screen durations per scene (calculated by word count and pacing), along with cumulative runtimes. Scene headings are sanitized to display only clear, capitalized locations.
@@ -541,7 +570,7 @@ Persists in .actone bundles as \`todos\` in settings.`,
     title: "Writing Sprint Timer",
     category: "Workspace & Views",
     tags: ["sprint", "timer", "writing", "wpm", "countdown"],
-    relatedIds: ["tasks", "sidebar-panels", "statistics"],
+    relatedIds: ["tasks", "sidebar-panels", "statistics-overview"],
     content: `The Sprint panel provides a countdown writing timer to boost productivity:
 
 - **Preset durations**: 5, 15, 25, 45, 60 minutes — click pill buttons to set.
@@ -671,7 +700,7 @@ Shows clickable colored dots for each category. Click a dot to tag the selected 
     title: "Status Bar",
     category: "Workspace & Views",
     tags: ["status bar", "info", "stats", "mode"],
-    relatedIds: ["statistics", "sprint-timer", "scripts-manager"],
+    relatedIds: ["statistics-overview", "sprint-timer", "scripts-manager"],
     content: `The Status Bar at the bottom of the window shows left-aligned and right-aligned info:
 
 **Left side:**

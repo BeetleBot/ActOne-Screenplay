@@ -168,6 +168,7 @@ function AppInner() {
             snapshotAutoEnabled: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED) === "true",
             snapshotAutoIntervalMinutes: parseInt(localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL) ?? "15", 10),
             snapshotOnSave: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_ON_SAVE) === "true",
+            fountainColorsEnabled: localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED) !== "false",
             activeFilePath: activeFileIdRef.current || "",
           });
         });

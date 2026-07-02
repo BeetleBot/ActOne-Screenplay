@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
-import { CloseIcon, SearchIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon, LibraryBooksIcon } from "./Icons";
+import { CloseIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon, LibraryBooksIcon } from "./Icons";
 import { logger } from "../utils/logger";
 
 import {
@@ -13,12 +13,6 @@ import {
   Box,
   Typography,
   Button,
-  TextField,
-  List,
-  ListItemButton,
-  ListItemText,
-  InputAdornment,
-  Divider,
 } from "@mui/material";
 
 interface StructureBeat {
@@ -41,7 +35,6 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   const { editorView } = useEditor();
   const { appScale } = useUI();
   const [structures, setStructures] = useState<Structure[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,10 +55,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
     fetchStructures();
   }, []);
 
-  const filteredStructures = structures.filter(s =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+
 
   const buildFountainText = (s: Structure, includeHeader = true) => {
     let text = "";
@@ -77,7 +67,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
       text += "\n";
     }
     s.beats.forEach((beat) => {
-      text += `## ${beat.label}\n`;
+      text += `# ${beat.label}\n`;
       if (beat.description) {
         text += `= ${beat.description}\n`;
       }
@@ -120,170 +110,111 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="md" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}>
-      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}>
+      <DialogTitle sx={{ m: 0, px: 2.5, py: 1.75, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <LibraryBooksIcon sx={{ fontSize: 18 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Screenplay Structure Outlines</Typography>
+          <LibraryBooksIcon sx={{ fontSize: 16, color: "primary.main" }} />
+          <Typography sx={{ fontWeight: 700, fontSize: 13 }}>Screenplay Structures</Typography>
         </Box>
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 18 }} />
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", p: 0.5 }}>
+          <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: 2, py: 1.5, maxHeight: `${(60 * 100) / appScale}vh`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <Box sx={{ display: "flex", flex: 1, minHeight: 0, gap: 1.5 }}>
-          {/* Left Panel: Search & List */}
-          <Box sx={{
-            width: "42%",
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            p: 1.5,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0
-          }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
-              TEMPLATES
-            </Typography>
-            <Box sx={{ mb: 1.5 }}>
-              <TextField
-                placeholder="Search templates..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                size="small"
-                fullWidth
-                slotProps={{
-                  input: {
-                    sx: {
-                      fontSize: 12,
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                      bgcolor: 'action.hover',
-                      borderRadius: '6px',
-                      '&:hover': { bgcolor: 'action.selected' },
-                      '& .MuiOutlinedInput-input': { py: 0.6, px: 1.25 },
-                    },
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-            </Box>
-            <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, px: 0.5 }}>
-              {loading ? (
-                <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 12 }}>Loading structures...</Typography>
-              ) : filteredStructures.length === 0 ? (
-                <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 12 }}>No structures found</Typography>
-              ) : (
-                <List disablePadding>
-                  {filteredStructures.map((s) => (
-                    <ListItemButton
-                      key={s.name}
-                      onClick={() => setSelectedStructure(s)}
-                      selected={selectedStructure?.name === s.name}
-                      sx={{ borderRadius: 1, mb: 0.5, py: 0.5, px: 1 }}
-                    >
-                      <ListItemText
-                        primary={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>{s.name}</Typography>}
-                        secondary={<Typography variant="caption" color="text.secondary" sx={{ display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: 10.5 }}>{s.description}</Typography>}
-                      />
-                    </ListItemButton>
-                  ))}
-                </List>
-              )}
-            </Box>
-          </Box>
+      <DialogContent dividers sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5, overflow: "hidden" }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: 11 }}>
+          Select a screenplay structure template to insert into your script:
+        </Typography>
 
-          {/* Right Panel: Detail Preview */}
-          <Box sx={{
-            width: "58%",
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            p: 1.5,
+        {/* Single column templates list */}
+        <Box
+          sx={{
+            flex: 1,
+            maxHeight: 280,
+            overflowY: "auto",
             display: "flex",
             flexDirection: "column",
-            minHeight: 0
-          }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
-              PREVIEW
-            </Typography>
-            {selectedStructure ? (
-              <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 1.5, pr: 0.5 }}>
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13 }}>{selectedStructure.name}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block" }}>{selectedStructure.description}</Typography>
+            gap: 0.75,
+            pr: 0.5,
+            "&::-webkit-scrollbar": { width: 4 },
+            "&::-webkit-scrollbar-thumb": { bgcolor: "divider", borderRadius: 2 },
+          }}
+        >
+          {loading ? (
+            <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 12 }}>Loading...</Typography>
+          ) : (
+            structures.map((s) => {
+              const isSelected = selectedStructure?.name === s.name;
+              return (
+                <Box
+                  key={s.name}
+                  onClick={() => setSelectedStructure(s)}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: "8px",
+                    border: "1px solid",
+                    borderColor: isSelected ? "primary.main" : "divider",
+                    bgcolor: isSelected ? "action.selected" : "background.paper",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    "&:hover": {
+                      borderColor: isSelected ? "primary.main" : "text.secondary",
+                      bgcolor: isSelected ? "action.selected" : "action.hover",
+                    },
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 700, fontSize: 12, color: isSelected ? "primary.main" : "text.primary" }}>
+                    {s.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25, fontSize: 10.5, lineHeight: 1.3 }}>
+                    {s.description}
+                  </Typography>
                 </Box>
-                <Divider />
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, pl: 0.5, position: "relative" }}>
-                  {selectedStructure.beats.map((beat, idx) => (
-                    <Box key={idx} sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
-                      <Box sx={{ width: 18, height: 18, borderRadius: "50%", bgcolor: "primary.main", color: "primary.contrastText", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
-                        {idx + 1}
-                      </Box>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>{beat.label}</Typography>
-                        {beat.description && (
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block", fontSize: 10.5 }}>
-                            {beat.description}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            ) : (
-              <Box sx={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", color: "text.secondary" }}>
-                <Typography variant="caption" sx={{ fontSize: 11 }}>Select a structure template to view details</Typography>
-              </Box>
-            )}
-          </Box>
+              );
+            })
+          )}
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 2, py: 1, justifyContent: "space-between" }}>
-        <Typography variant="caption" color="text.secondary" sx={{ maxWidth: "40%", fontSize: 10 }}>
-          Inserts Section headers (##) and Synopsis (=).
-        </Typography>
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button onClick={onClose} variant="outlined" size="small" color="inherit" sx={{ fontSize: 11 }}>Cancel</Button>
-          <Button
-            variant="outlined"
-            onClick={handleOverwrite}
-            disabled={!selectedStructure}
-            startIcon={<RestartAltIcon sx={{ fontSize: 13 }} />}
-            size="small"
-            color="error"
-            sx={{ fontSize: 11 }}
-          >
-            Overwrite
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={handleAppendToEnd}
-            disabled={!selectedStructure}
-            startIcon={<ArrowCircleDownIcon sx={{ fontSize: 13 }} />}
-            size="small"
-            sx={{ fontSize: 11 }}
-          >
-            Append
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleInsertAtCursor}
-            disabled={!selectedStructure}
-            startIcon={<AddCircleIcon sx={{ fontSize: 13 }} />}
-            size="small"
-            sx={{ fontSize: 11 }}
-          >
-            Insert
-          </Button>
-        </Box>
+      <DialogActions sx={{ px: 2.5, py: 2, flexDirection: "column", gap: 1, alignItems: "stretch" }}>
+        {selectedStructure ? (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+              <Button
+                variant="contained"
+                onClick={handleInsertAtCursor}
+                startIcon={<AddCircleIcon sx={{ fontSize: 13 }} />}
+                size="small"
+                sx={{ fontSize: 11, borderRadius: "6px", py: 0.75, textTransform: "none", fontWeight: 600 }}
+              >
+                Insert at Cursor
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleAppendToEnd}
+                startIcon={<ArrowCircleDownIcon sx={{ fontSize: 13 }} />}
+                size="small"
+                sx={{ fontSize: 11, borderRadius: "6px", py: 0.75, textTransform: "none", fontWeight: 600 }}
+              >
+                Append to End
+              </Button>
+            </Box>
+            <Button
+              variant="outlined"
+              onClick={handleOverwrite}
+              startIcon={<RestartAltIcon sx={{ fontSize: 13 }} />}
+              size="small"
+              color="error"
+              sx={{ fontSize: 11, borderRadius: "6px", py: 0.75, textTransform: "none", fontWeight: 600 }}
+            >
+              Overwrite Screenplay
+            </Button>
+          </Box>
+        ) : (
+          <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", fontSize: 10.5, py: 1 }}>
+            Select a template above to see import options.
+          </Typography>
+        )}
       </DialogActions>
     </Dialog>
   );

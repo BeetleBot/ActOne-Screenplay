@@ -59,28 +59,27 @@ fn parse_structures(content: &str) -> Vec<Structure> {
             continue;
         }
 
-        if let Some(rest) = line.strip_prefix("##") {
+        if let Some(rest) = line.strip_prefix('#') {
             let rest = rest.trim_start();
-            if let (Some(beat), Some(s)) = (current_beat.take(), current_struct.as_mut()) {
-                s.beats.push(beat);
+            if current_struct.is_none() {
+                // First '#' is the structure name
+                current_struct = Some(Structure {
+                    name: rest.to_string(),
+                    description: String::new(),
+                    beats: Vec::new(),
+                });
+            } else {
+                // Subsequent '#' are beats
+                if let Some(beat) = current_beat.take() {
+                    if let Some(s) = current_struct.as_mut() {
+                        s.beats.push(beat);
+                    }
+                }
+                current_beat = Some(StructureBeat {
+                    label: rest.to_string(),
+                    description: String::new(),
+                });
             }
-            current_beat = Some(StructureBeat {
-                label: rest.to_string(),
-                description: String::new(),
-            });
-        } else if let Some(rest) = line.strip_prefix('#') {
-            let rest = rest.trim_start();
-            if let (Some(beat), Some(s)) = (current_beat.take(), current_struct.as_mut()) {
-                s.beats.push(beat);
-            }
-            if let Some(s) = current_struct.take() {
-                structures.push(s);
-            }
-            current_struct = Some(Structure {
-                name: rest.to_string(),
-                description: String::new(),
-                beats: Vec::new(),
-            });
         } else if let Some(rest) = line.strip_prefix('=') {
             let rest = rest.trim_start();
             let desc = rest.to_string();

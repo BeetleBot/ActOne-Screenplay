@@ -15,7 +15,7 @@ fn prefs_file_path(app: &tauri::AppHandle) -> PathBuf {
 
 #[tauri::command]
 pub fn get_app_prefs(state: tauri::State<'_, AppPrefsState>) -> HashMap<String, String> {
-    state.0.lock().unwrap().clone()
+    state.0.lock().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
 #[tauri::command]

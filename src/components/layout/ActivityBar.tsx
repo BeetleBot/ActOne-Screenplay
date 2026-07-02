@@ -14,10 +14,10 @@ import Typography from "@mui/material/Typography";
 import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
 import {
-  FormatListBulletedIcon, LibraryBooksIcon,
-  AssignmentIcon, ArchiveIcon, TuneIcon, SearchIcon, CheckIcon,
-  SettingsIcon, BookmarkIcon, TimerIcon, NoteAddIcon,
+  LibraryBooksIcon, CheckIcon, SettingsIcon, TimerIcon,
   KeyboardArrowDownIcon, CameraIcon,
+  ViewAgendaIcon, AddNotesIcon, BeenhereIcon, AssignmentAddIcon,
+  GarageIcon, ActionKeyIcon, MoreHorizIcon,
 } from "../Icons";
 
 interface ActivityBarProps {
@@ -41,6 +41,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     appScale, setAppScale,
     hideSyntaxEnabled, setHideSyntaxEnabled,
     isZenMode,
+    fountainColorsEnabled, setFountainColorsEnabled,
   } = useUI();
   const { theme, setTheme, customThemes } = useTheme();
   const { filePath } = useFile();
@@ -66,14 +67,14 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   };
 
   const allTabs = [
-    { id: "outline", icon: <FormatListBulletedIcon sx={{ fontSize: 20 }} />, title: "Outline" },
+    { id: "outline", icon: <ViewAgendaIcon sx={{ fontSize: 20 }} />, title: "Outline" },
     { id: "scripts", icon: <LibraryBooksIcon sx={{ fontSize: 20 }} />, title: "Scripts" },
-    { id: "notepad", icon: <NoteAddIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
-    { id: "markers", icon: <BookmarkIcon sx={{ fontSize: 20 }} />, title: "Markers" },
-    { id: "todo", icon: <AssignmentIcon sx={{ fontSize: 20 }} />, title: "Tasks" },
+    { id: "notepad", icon: <AddNotesIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
+    { id: "markers", icon: <BeenhereIcon sx={{ fontSize: 20 }} />, title: "Markers" },
+    { id: "todo", icon: <AssignmentAddIcon sx={{ fontSize: 20 }} />, title: "Tasks" },
     { id: "snapshots", icon: <CameraIcon sx={{ fontSize: 20 }} />, title: "Snapshots" },
     { id: "sprint", icon: <TimerIcon sx={{ fontSize: 20 }} />, title: "Sprint" },
-    { id: "parking", icon: <ArchiveIcon sx={{ fontSize: 20 }} />, title: "Parking" },
+    { id: "parking", icon: <GarageIcon sx={{ fontSize: 20 }} />, title: "Parking" },
   ];
   const tabs = supportsExtended ? allTabs : allTabs.filter(t => t.id === "outline");
 
@@ -130,7 +131,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
             '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
           }}
         >
-          <SearchIcon sx={{ fontSize: 20 }} />
+          <ActionKeyIcon sx={{ fontSize: 20 }} />
         </IconButton>
       </Tooltip>
 
@@ -144,7 +145,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
             '&:hover': { bgcolor: 'action.hover' },
           }}
         >
-          <TuneIcon sx={{ fontSize: 20 }} />
+          <MoreHorizIcon sx={{ fontSize: 20 }} />
         </IconButton>
       </Tooltip>
 
@@ -255,13 +256,22 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
               </ListItemIcon>
               <ListItemText primary={<Typography variant="body2">Hide Fountain Markup</Typography>} />
             </MenuItem>
+
+            <MenuItem onClick={() => setFountainColorsEnabled(!fountainColorsEnabled)} dense>
+              <ListItemIcon>
+                <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {fountainColorsEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
+                </Box>
+              </ListItemIcon>
+              <ListItemText primary={<Typography variant="body2">Syntax Colors</Typography>} />
+            </MenuItem>
           </>
         )}
 
         {collapsedSections.has('editor') && (
           <Box sx={{ px: 2, py: 0.6 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-              {[typewriterMode && 'Typewriter', hideSyntaxEnabled && 'Markup hidden'].filter(Boolean).join(' • ') || 'All off'}
+              {[typewriterMode && 'Typewriter', hideSyntaxEnabled && 'Markup hidden', fountainColorsEnabled && 'Colors'].filter(Boolean).join(' • ') || 'All off'}
             </Typography>
           </Box>
         )}

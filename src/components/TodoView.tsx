@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useFile, useEditor } from "../context";
 import { ActoneBanner } from "./ActoneBanner";
-import { RadioButtonUncheckedIcon, CheckCircleIcon, KeyboardArrowDownIcon, AddIcon, CloseIcon } from "./Icons";
+import { RadioButtonUncheckedIcon, CheckCircleIcon, KeyboardArrowDownIcon, AddIcon, CloseIcon, InfoOutlinedIcon } from "./Icons";
 import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
 
 import {
@@ -16,6 +16,7 @@ import {
   ListItemText,
   Button,
   Collapse,
+  Tooltip,
 } from "@mui/material";
 
 interface Todo {
@@ -106,10 +107,19 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, gap: 1.5 }}>
-      <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
-        Tasks
-      </Typography>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+          Tasks
+        </Typography>
+        <Tooltip title="Tasks (To-Do) helps you track tasks and action items for this screenplay bundle.">
+          <span>
+            <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
+          </span>
+        </Tooltip>
+      </Box>
+
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, gap: 1.5, overflow: "hidden" }}>
 
       {disabled && <ActoneBanner message="Tasks require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />}
 
@@ -123,7 +133,13 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
           fullWidth
           slotProps={{
             input: {
-              sx: { borderRadius: '6px' },
+              sx: {
+                bgcolor: "background.paper",
+                fontSize: "0.75rem",
+                "& fieldset": { borderColor: "divider" },
+                "&:hover fieldset": { borderColor: "text.secondary" },
+                "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+              },
               endAdornment: (
                 <IconButton size="small" onClick={addTodo} sx={{ p: 0.5 }}>
                   <AddIcon sx={{ fontSize: 16 }} />
@@ -322,6 +338,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
           </Collapse>
         </Box>
       )}
+      </Box>
     </Box>
   );
 });

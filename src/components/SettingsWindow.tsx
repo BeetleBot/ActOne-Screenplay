@@ -55,8 +55,16 @@ export const SettingsWindow: React.FC = () => {
   const [snapshotAutoIntervalMinutes, setSnapshotAutoIntervalMinutes] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL, 15));
   const [snapshotOnSave, setSnapshotOnSave] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE, false));
   const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, 20));
+  const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, true));
   const activeFilePathRef = useRef<string>("");
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "snapshots") return 2;
+    } catch {}
+    return 0;
+  });
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_THEMES) ?? "[]"); } catch { return []; }
   });
@@ -102,6 +110,7 @@ export const SettingsWindow: React.FC = () => {
           setSnapshotAutoIntervalMinutes(d.snapshotAutoIntervalMinutes);
           setSnapshotOnSave(d.snapshotOnSave);
           setSnapshotMaxRetention(d.snapshotMaxRetention || 20);
+          setFountainColorsEnabled(d.fountainColorsEnabled !== false);
           activeFilePathRef.current = d.activeFilePath || "";
         });
         return unlisten;
@@ -125,14 +134,17 @@ export const SettingsWindow: React.FC = () => {
     return () => { if (cleanup) cleanup(); unsub(); };
   }, []);
 
+  const applyPrefsRef = useRef(applyPrefs);
+  applyPrefsRef.current = applyPrefs;
+
   useEffect(() => {
     initPrefsEngine().then((prefs) => {
       if (prefsApplied.current) return;
       prefsApplied.current = true;
-      applyPrefs(prefs);
+      applyPrefsRef.current(prefs);
     });
     return onPrefsChanged((prefs) => {
-      applyPrefs(prefs);
+      applyPrefsRef.current(prefs);
     });
   }, []);
 
@@ -200,6 +212,9 @@ export const SettingsWindow: React.FC = () => {
     if (prefs[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION] !== undefined && prefs[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION] !== String(snapshotMaxRetention)) {
       setSnapshotMaxRetention(parseInt(prefs[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION], 10));
     }
+    if (prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] !== undefined && prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] !== String(fountainColorsEnabled)) {
+      setFountainColorsEnabled(prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] === "true");
+    }
   }
 
   const emitUpdate = (storageKey: string, value: string | number | boolean) => {
@@ -222,7 +237,7 @@ export const SettingsWindow: React.FC = () => {
   };
 
   const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
-  const muiTheme = createActOneTheme(currentThemeConfig, appScale);
+  const muiTheme = createActOneTheme(currentThemeConfig, appScale, fountainColorsEnabled);
 
   return (
     <MuiThemeProvider theme={muiTheme}>
@@ -401,7 +416,14 @@ export const SettingsWindow: React.FC = () => {
                       onChange={(e) => { const v = e.target.checked; setHideTagsEnabled(v); localStorage.setItem(STORAGE_KEYS.HIDE_TAGS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.HIDE_TAGS_ENABLED, v); }}
                     />}
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Hide the Tags</Typography>}
-                    sx={{ mx: 0 }}
+                    sx={{ mx: 0, flex: 1 }}
+                  />
+                  <FormControlLabel
+                    control={<Switch size="small" checked={fountainColorsEnabled}
+                      onChange={(e) => { const v = e.target.checked; setFountainColorsEnabled(v); localStorage.setItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, v); }}
+                    />}
+                    label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Syntax Colors</Typography>}
+                    sx={{ mx: 0, flex: 1 }}
                   />
                 </Box>
               </Box>
@@ -547,5 +569,6 @@ interface SettingsInitData {
   snapshotAutoIntervalMinutes: number;
   snapshotOnSave: boolean;
   snapshotMaxRetention: number;
+  fountainColorsEnabled: boolean;
   activeFilePath?: string;
 }

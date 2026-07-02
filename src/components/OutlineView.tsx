@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useFile, useEditor } from "../context";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
-import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon } from "./Icons";
+import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon, InfoOutlinedIcon } from "./Icons";
 
 import {
   Box,
@@ -19,6 +19,7 @@ import {
   Grid,
   Badge,
   Divider,
+  Tooltip,
 } from "@mui/material";
 
 export function getSceneColor(line: ParsedLine): string | undefined {
@@ -732,14 +733,21 @@ export const OutlineView = React.memo(() => {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 1, gap: 1 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Navigator
         </Typography>
-        <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
-          <MoreVertIcon sx={{ fontSize: 14 }} />
-        </IconButton>
+        <Box sx={{ display: "flex", gap: 0.25, alignItems: "center" }}>
+          <Tooltip title="Outline displays the headings and synopses of your screenplay. Drag scenes to reorder them.">
+            <span>
+              <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
+            </span>
+          </Tooltip>
+          <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
+            <MoreVertIcon sx={{ fontSize: 14 }} />
+          </IconButton>
+        </Box>
         <Menu
           anchorEl={menuAnchor}
           open={Boolean(menuAnchor)}
@@ -807,6 +815,8 @@ export const OutlineView = React.memo(() => {
           ))}
         </Menu>
       </Box>
+
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 1.5, gap: 1, overflow: "hidden" }}>
 
       <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
         <TextField
@@ -983,6 +993,7 @@ export const OutlineView = React.memo(() => {
             {renderTree(tree)}
           </List>
         )}
+      </Box>
       </Box>
     </Box>
   );

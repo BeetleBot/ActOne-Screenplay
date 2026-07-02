@@ -191,7 +191,11 @@ fn fdx_color(color: &str) -> String {
         _ => {
             if let Some(hex) = color.strip_prefix('#') {
                 let c = hex.trim_start_matches('#');
-                format!("{0}{0}{1}{1}{2}{2}", &c[0..2], &c[2..4], &c[4..6])
+                if c.len() >= 6 {
+                    format!("{0}{0}{1}{1}{2}{2}", &c[0..2], &c[2..4], &c[4..6])
+                } else {
+                    "000000000000".into()
+                }
             } else {
                 "000000000000".into()
             }

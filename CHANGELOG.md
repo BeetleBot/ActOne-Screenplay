@@ -18,7 +18,7 @@
 
 ### Added
 - **Cross-Window Settings Sync**: Rust `AppPrefs` backend (`app_prefs.rs`) with cross-window `app-prefs:changed` broadcast event, paired with a frontend `AppPrefsEngine` mirroring the `ThemeEngine` pattern. Changing a setting in any window propagates automatically to all open windows (SettingsWindow, HelpWindow, ThemeManagerWindow, TagManagerWindow, and main editor).
-- **"Hide the Tags" Toggle**: New setting hides production breakdown tag markers (`=`) in the editor for a cleaner reading view. Toggle via Settings/Quick Settings or Command Palette.
+- **"Hide the Tags" Toggle**: Ne    w setting hides production breakdown tag markers (`=`) in the editor for a cleaner reading view. Toggle via Settings/Quick Settings or Command Palette.
 - **Quick Settings Theme Picker**: Redesigned theme section with color swatches grouped by Light / Dark / Adaptive / Custom, matching the Welcome Screen pattern.
 - **Per-Script Settings**: New `perScriptSettings.ts` utility enables script-specific settings in multi-script `.actone` bundles. Production tags, parking items, todos, notepad, and character genders are now stored and retrieved per individual script rather than globally.
 

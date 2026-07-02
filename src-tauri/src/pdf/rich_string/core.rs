@@ -118,7 +118,7 @@ impl RichString {
         RichIterator {
             rich_string: self,
             element_idx: 0,
-            chars_iterator: self.elements[0].text.chars(),
+            chars_iterator: if self.elements.is_empty() { "".chars() } else { self.elements[0].text.chars() },
         }
     }
 

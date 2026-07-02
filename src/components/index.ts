@@ -39,5 +39,6 @@ export {
   PlayArrowIcon, RadioButtonUncheckedIcon, RestartAltIcon,
   SaveIcon, SearchIcon, SettingsIcon, StopIcon, TaskAltIcon,
   TextFieldsIcon, TimerIcon, TuneIcon, ViewSidebarIcon,
-  ZoomInIcon, ZoomOutIcon, CameraIcon
+  ZoomInIcon, ZoomOutIcon, CameraIcon, AddNotesIcon, AssignmentAddIcon,
+  BeenhereIcon, GarageIcon, ViewAgendaIcon, ActionKeyIcon, MoreHorizIcon
 } from './Icons';

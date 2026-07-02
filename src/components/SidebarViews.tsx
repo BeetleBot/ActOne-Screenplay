@@ -7,7 +7,7 @@ import { MarkerView } from "./MarkerView";
 import { ScriptsView } from "./ScriptsView";
 import { SnapshotsPanel } from "./SnapshotsPanel";
 import { ActoneBanner } from "./ActoneBanner";
-import { AddIcon, CloseIcon } from "./Icons";
+import { AddIcon, CloseIcon, InfoOutlinedIcon } from "./Icons";
 import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
 import {
   Box,
@@ -17,6 +17,7 @@ import {
   IconButton,
   Card,
   CardContent,
+  Tooltip,
 } from "@mui/material";
 
 interface SidebarViewProps {
@@ -62,40 +63,53 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
     };
 
     return (
-      <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 1.5, p: 2 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
-          Document Notepad
-        </Typography>
-        {!supportsExtended && (
-          <ActoneBanner message="Workspace features require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />
-        )}
-        <TextField
-          value={notepadText}
-          onChange={handleChange}
-          disabled={!supportsExtended}
-          multiline
-          placeholder={supportsExtended ? "Type your outline notes, beats, or draft goals here..." : "Save as .actone to use the notepad"}
-          variant="outlined"
-          fullWidth
-          slotProps={{
-            input: {
-              sx: {
-                fontFamily: "var(--font-ui)",
-                fontSize: "13px",
-                flex: 1,
-                alignItems: "flex-start",
-                minHeight: "300px",
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+            Document Notepad
+          </Typography>
+          <Tooltip title="Notepad provides a document-wide notepad for jotting down draft goals, beats, outlines, and general notes.">
+            <span>
+              <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
+            </span>
+          </Tooltip>
+        </Box>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1.5, p: 2 }}>
+          {!supportsExtended && (
+            <ActoneBanner message="Workspace features require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />
+          )}
+          <TextField
+            value={notepadText}
+            onChange={handleChange}
+            disabled={!supportsExtended}
+            multiline
+            placeholder={supportsExtended ? "Type your outline notes, beats, or draft goals here..." : "Save as .actone to use the notepad"}
+            variant="outlined"
+            fullWidth
+            slotProps={{
+              input: {
+                sx: {
+                  fontFamily: "var(--font-ui)",
+                  fontSize: "13px",
+                  flex: 1,
+                  alignItems: "flex-start",
+                  minHeight: "300px",
+                  bgcolor: "background.paper",
+                  "& fieldset": { borderColor: "divider" },
+                  "&:hover fieldset": { borderColor: "text.secondary" },
+                  "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+                }
               }
-            }
-          }}
-          sx={{
-            flex: 1,
-            display: "flex",
-            "& .MuiInputBase-root": {
-              height: "100%",
-            }
-          }}
-        />
+            }}
+            sx={{
+              flex: 1,
+              display: "flex",
+              "& .MuiInputBase-root": {
+                height: "100%",
+              }
+            }}
+          />
+        </Box>
       </Box>
     );
   }
@@ -139,11 +153,20 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
 
     if (!supportsExtended) {
       return (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 1.5, p: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
-            Parking
-          </Typography>
-          <ActoneBanner message="Workspace features require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+              Parking
+            </Typography>
+            <Tooltip title="Parking stores selections of text you've temporarily removed from the script. Drag or click to insert them back.">
+              <span>
+                <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
+              </span>
+            </Tooltip>
+          </Box>
+          <Box sx={{ p: 2 }}>
+            <ActoneBanner message="Workspace features require saving the screenplay as an ActOne Bundle (.actone)." saveFileAs={saveFileAs} />
+          </Box>
         </Box>
       );
     }
@@ -167,22 +190,31 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
     };
 
     return (
-      <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2, p: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
             Parking
           </Typography>
-          <Button
-            variant="contained"
-            size="small"
-            onClick={handleParkSelection}
-            disabled={editorView?.state.selection.main.empty}
-            startIcon={<AddIcon sx={{ fontSize: 14 }} />}
-            sx={{ textTransform: "none", fontSize: 11, fontWeight: 600 }}
-          >
-            Park Selection
-          </Button>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Tooltip title="Parking stores selections of text you've temporarily removed from the script. Drag or click to insert them back.">
+              <span>
+                <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
+              </span>
+            </Tooltip>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleParkSelection}
+              disabled={editorView?.state.selection.main.empty}
+              startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+              sx={{ textTransform: "none", fontSize: 11, fontWeight: 600 }}
+            >
+              Park Selection
+            </Button>
+          </Box>
         </Box>
+
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, p: 2, overflow: "hidden" }}>
 
         <Box 
           tabIndex={0}
@@ -259,6 +291,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
           )}
         </Box>
       </Box>
+    </Box>
     );
   }
 

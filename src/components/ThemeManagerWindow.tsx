@@ -6,7 +6,7 @@ import { TitleBar } from "./TitleBar";
 import { createActOneTheme, deriveAllColors, themes, type ThemeColors } from "../theme";
 import { resolveThemeConfig } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
-import { AddIcon, DeleteIcon, CheckIcon } from "./Icons";
+import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon } from "./Icons";
 
 const CORE_DEFAULTS = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
 const EMPTY_COLORS = deriveAllColors(CORE_DEFAULTS, false);
@@ -69,63 +69,161 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 }
 
 function ThemePreview({ colors }: { colors: ThemeColors }) {
+  const accentRgbVal = accentRgb(colors.accent);
+
   return (
     <Box sx={{
-      display: "flex", height: "100%", borderRadius: "8px", overflow: "hidden",
-      border: "1px solid", borderColor: colors.border,
-      fontFamily: '"Courier Prime", Courier, monospace', fontSize: "11px", lineHeight: 1.4,
+      display: "flex", flexDirection: "column", height: "100%", borderRadius: "8px", overflow: "hidden",
+      border: "1px solid", borderColor: colors.border, bgcolor: colors.editor,
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      userSelect: "none"
     }}>
+      {/* Mini Top Header/Tab Bar */}
       <Box sx={{
-        width: 20, flexShrink: 0, bgcolor: colors.sidebar, display: "flex", flexDirection: "column",
-        alignItems: "center", gap: 1, py: 1.5, px: 0.5, borderRight: `1px solid ${colors.border}`,
+        height: 24, bgcolor: colors.sidebar, borderBottom: `1px solid ${colors.border}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between", px: 1, flexShrink: 0
       }}>
-        <Box sx={{ width: 10, height: 10, borderRadius: "6px", bgcolor: colors.accent, opacity: 0.9 }} />
-        <Box sx={{ width: 10, height: 10, borderRadius: "6px", bgcolor: colors.button, opacity: 0.5 }} />
-        <Box sx={{ width: 10, height: 10, borderRadius: "6px", bgcolor: colors.button, opacity: 0.35 }} />
-        <Box sx={{ flex: 1 }} />
-        <Box sx={{ width: 10, height: 10, borderRadius: "6px", bgcolor: colors.button, opacity: 0.2 }} />
-      </Box>
-      <Box sx={{
-        width: 100, flexShrink: 0, bgcolor: colors.sidebar, display: "flex", flexDirection: "column",
-        gap: 0.3, p: 1, borderRight: `1px solid ${colors.border}`, fontSize: "7px",
-      }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-          <Box sx={{ flex: 1, height: 6, borderRadius: "3px", bgcolor: colors.accent, opacity: 0.15 }} />
-        </Box>
-        <Box sx={{ fontWeight: 700, color: colors.text, opacity: 0.6, textTransform: "uppercase", fontSize: "6px", letterSpacing: "0.05em", mb: 0.3 }}>ACT ONE</Box>
-        {[
-          { name: "INT. COFFEE SHOP", active: true },
-          { name: "EXT. PARK", active: false },
-          { name: "INT. OFFICE", active: false },
-        ].map((scene, i) => (
-          <Box key={i} sx={{
-            display: "flex", alignItems: "center", gap: 0.5, px: 0.5, py: 0.4,
-            borderRadius: "4px",
-            bgcolor: scene.active ? `rgba(${accentRgb(colors.accent)}, 0.12)` : "transparent",
-            color: scene.active ? colors.accent : colors.textSecondary,
-            fontWeight: scene.active ? 600 : 400,
+        {/* Simulated Tabs on left */}
+        <Box sx={{ display: "flex", alignItems: "flex-end", height: "100%", gap: 0.3 }}>
+          <Box sx={{
+            height: 18, px: 1, bgcolor: colors.editor, border: `1px solid ${colors.border}`,
+            borderBottom: "none", borderTopLeftRadius: 4, borderTopRightRadius: 4,
+            display: "flex", alignItems: "center", gap: 0.5, borderTop: `1.5px solid ${colors.accent}`
           }}>
-            <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: scene.active ? colors.accent : colors.border, flexShrink: 0 }} />
-            <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "6.5px" }}>{scene.name}</Box>
+            <Typography sx={{ fontSize: "6.5px", fontWeight: 600, color: colors.text, fontFamily: "monospace" }}>script.fountain</Typography>
           </Box>
-        ))}
-      </Box>
-      <Box sx={{ flex: 1, bgcolor: colors.editor, p: 1.5, display: "flex", flexDirection: "column", gap: 0.4, minWidth: 0 }}>
-        <Box sx={{ fontWeight: 700, textTransform: "uppercase", color: colors.text, fontSize: "10px" }}>INT. COFFEE SHOP - DAY</Box>
-        <Box sx={{ height: 1.5, width: "50%", bgcolor: colors.accent, opacity: 0.4, mb: 0.3, borderRadius: 1 }} />
-        <Box sx={{ color: colors.text, opacity: 0.85, fontSize: "9px" }}>The morning rush is in full swing. JANE (20s) sits alone at a corner table, staring at her</Box>
-        <Box component="span" sx={{ bgcolor: colors.selectionBg, color: colors.selectionText, borderRadius: "2px", px: 0.3, display: "inline", fontSize: "9px" }}>laptop screen.</Box>
-        <Box sx={{ color: colors.text, opacity: 0.85, fontSize: "9px" }}>She sighs deeply.</Box>
-        <Box sx={{ ml: "1.6in", fontWeight: 700, textTransform: "uppercase", color: colors.text, fontSize: "9px" }}>JANE</Box>
-        <Box sx={{ ml: "0.8in", mr: "0.8in", p: 0.6, borderRadius: "4px", bgcolor: colors.dropdown, color: colors.dropdownText, border: `1px solid ${colors.border}`, fontSize: "8px" }}>
-          <Box sx={{ ml: "0.4in", fontStyle: "italic", opacity: 0.7, fontSize: "7px" }}>(worried)</Box>
-          <Box sx={{ ml: "0.4in", fontSize: "8px" }}>I can't believe he left me this note...</Box>
+          <Box sx={{
+            height: 16, px: 1, bgcolor: "transparent", opacity: 0.6,
+            display: "flex", alignItems: "center", gap: 0.5
+          }}>
+            <Typography sx={{ fontSize: "6.5px", color: colors.textSecondary, fontFamily: "monospace" }}>notes.txt</Typography>
+          </Box>
         </Box>
-        <Box sx={{ my: 0.5, borderTop: `1px dashed ${colors.border}`, opacity: 0.4 }} />
+
+        {/* Windows-style Window Control Buttons on right */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, opacity: 0.5, mr: 0.5 }}>
+          {/* Minimize */}
+          <Box sx={{ width: 6, height: 1, bgcolor: colors.text }} />
+          {/* Maximize */}
+          <Box sx={{ width: 5, height: 5, border: `1px solid ${colors.text}` }} />
+          {/* Close */}
+          <Box sx={{ position: "relative", width: 6, height: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Box sx={{ position: "absolute", width: 7, height: 1, bgcolor: colors.text, transform: "rotate(45deg)" }} />
+            <Box sx={{ position: "absolute", width: 7, height: 1, bgcolor: colors.text, transform: "rotate(-45deg)" }} />
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Main Workspace Area */}
+      <Box sx={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
+        {/* Mini ActivityBar */}
+        <Box sx={{
+          width: 24, bgcolor: colors.sidebar, borderRight: `1px solid ${colors.border}`,
+          display: "flex", flexDirection: "column", alignItems: "center", py: 1, gap: 1, flexShrink: 0
+        }}>
+          {/* Active Outline tab */}
+          <Box sx={{
+            width: 18, height: 18, borderRadius: "4px",
+            bgcolor: `rgba(${accentRgbVal}, 0.12)`, display: "flex", alignItems: "center", justifyContent: "center",
+            borderLeft: `2.5px solid ${colors.accent}`, borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
+            color: colors.accent
+          }}>
+            <FormatListBulletedIcon sx={{ fontSize: 9 }} />
+          </Box>
+          {/* Inactive tabs */}
+          <LibraryBooksIcon sx={{ fontSize: 9, color: colors.textSecondary, opacity: 0.4 }} />
+          <AssignmentIcon sx={{ fontSize: 9, color: colors.textSecondary, opacity: 0.4 }} />
+          <TimerIcon sx={{ fontSize: 9, color: colors.textSecondary, opacity: 0.4 }} />
+          <Box sx={{ flex: 1 }} />
+          {/* Settings */}
+          <SettingsIcon sx={{ fontSize: 9, color: colors.textSecondary, opacity: 0.4, mb: 0.5 }} />
+        </Box>
+
+        {/* Mini Workspace Sidebar (Outline List - Static) */}
+        <Box sx={{
+          width: 90, bgcolor: colors.sidebar, borderRight: `1px solid ${colors.border}`,
+          display: "flex", flexDirection: "column", p: 0.8, gap: 0.5, flexShrink: 0
+        }}>
+          <Typography sx={{ fontWeight: 800, color: colors.textSecondary, opacity: 0.5, fontSize: "5.5px", letterSpacing: "0.05em", mb: 0.2 }}>OUTLINE</Typography>
+          
+          <Box sx={{
+            display: "flex", alignItems: "center", gap: 0.5, px: 0.5, py: 0.4, borderRadius: "3px",
+            bgcolor: `rgba(${accentRgbVal}, 0.12)`, color: colors.accent
+          }}>
+            <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: colors.accent }} />
+            <Typography sx={{ fontSize: "6px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>INT. COFFEE SHOP</Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 0.5, py: 0.4, color: colors.textSecondary, opacity: 0.7 }}>
+            <Box sx={{ width: 3, height: 3, borderRadius: "50%", border: `1px solid ${colors.border}` }} />
+            <Typography sx={{ fontSize: "6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>EXT. PARK - NIGHT</Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 0.5, py: 0.4, color: colors.textSecondary, opacity: 0.7 }}>
+            <Box sx={{ width: 3, height: 3, borderRadius: "50%", border: `1px solid ${colors.border}` }} />
+            <Typography sx={{ fontSize: "6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>INT. OFFICE - DAY</Typography>
+          </Box>
+        </Box>
+
+        {/* Mini Editor Workspace - Single Detailed Scene */}
+        <Box sx={{
+          flex: 1, bgcolor: colors.editor, p: 1.5, display: "flex", flexDirection: "column",
+          gap: 0.8, overflowY: "auto", minWidth: 0, fontFamily: '"Courier Prime", Courier, monospace', fontSize: "9px"
+        }}>
+          {/* Scene Heading */}
+          <Box sx={{ fontWeight: 700, color: colors.text, fontSize: "7.5px", mt: 0.5 }}>
+            INT. COFFEE SHOP - DAY
+          </Box>
+          
+          {/* Action Blocks */}
+          <Box sx={{ color: colors.text, opacity: 0.8, fontSize: "6.5px", lineHeight: 1.3 }}>
+            The morning rush is in full swing. JANE (20s) sits alone at a corner table, staring intently at her{" "}
+            <Box component="span" sx={{ bgcolor: colors.selectionBg, color: colors.selectionText, px: 0.3, borderRadius: "2px" }}>
+              laptop screen.
+            </Box>
+          </Box>
+          
+          <Box sx={{ color: colors.text, opacity: 0.8, fontSize: "6.5px", lineHeight: 1.3 }}>
+            She sighs deeply, rubbing her temples, and then glances quickly at her phone.
+          </Box>
+
+          {/* Character Dialogue Sequence */}
+          <Box sx={{ alignSelf: "center", display: "flex", flexDirection: "column", alignItems: "center", width: "100%", my: 0.3 }}>
+            <Typography sx={{ fontFamily: "inherit", fontWeight: 700, fontSize: "7px", color: colors.text, textTransform: "uppercase" }}>JANE</Typography>
+            <Typography sx={{ fontFamily: "inherit", fontStyle: "italic", fontSize: "6px", color: colors.textSecondary, opacity: 0.8 }}>(to herself, typing)</Typography>
+            <Typography sx={{ fontFamily: "inherit", fontSize: "6.5px", color: colors.text, textAlign: "center", maxWidth: "80%", mt: 0.2 }}>
+              This screenplay needs to be perfect.
+            </Typography>
+            <Typography sx={{ fontFamily: "inherit", fontStyle: "italic", fontSize: "6px", color: colors.textSecondary, opacity: 0.8, mt: 0.2 }}>(beat)</Typography>
+            <Typography sx={{ fontFamily: "inherit", fontSize: "6.5px", color: colors.text, textAlign: "center", maxWidth: "80%", mt: 0.2 }}>
+              Or else everything falls apart.
+            </Typography>
+          </Box>
+
+          {/* Action Line */}
+          <Box sx={{ color: colors.text, opacity: 0.8, fontSize: "6.5px", lineHeight: 1.3 }}>
+            She hits the enter key with dramatic flair.
+          </Box>
+
+          {/* Transition */}
+          <Box sx={{ alignSelf: "flex-end", fontWeight: 700, color: colors.text, fontSize: "7px", textTransform: "uppercase", mt: 0.5, mr: 1 }}>
+            FADE OUT.
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Bottom Status Bar */}
+      <Box sx={{
+        height: 16, bgcolor: colors.sidebar, borderTop: `1px solid ${colors.border}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between", px: 1, flexShrink: 0
+      }}>
+        <Typography sx={{ fontSize: "5.5px", color: colors.textSecondary, opacity: 0.6 }}>1,420 words | Page 1 of 8</Typography>
+        <Typography sx={{ fontSize: "5.5px", color: colors.accent, fontWeight: 700 }}>Fountain</Typography>
       </Box>
     </Box>
   );
 }
+
 
 export const ThemeManagerWindow: React.FC = () => {
   const [themeId, setThemeId] = useState("light");

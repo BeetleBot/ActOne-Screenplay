@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { useFile } from "../context";
-import { AddIcon, DownloadIcon, DragHandleIcon, SaveIcon } from "./Icons";
+import { AddIcon, DownloadIcon, DragHandleIcon, SaveIcon, InfoOutlinedIcon } from "./Icons";
 import { ExportModal } from "./ExportModal";
 
 import {
@@ -14,6 +14,7 @@ import {
   MenuItem,
   Divider,
   TextField,
+  Tooltip,
 } from "@mui/material";
 
 export const ScriptsView = React.memo(() => {
@@ -163,11 +164,16 @@ export const ScriptsView = React.memo(() => {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1.5, pt: 1.5, pb: 0.75 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: 12 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Scripts
         </Typography>
-        <Box sx={{ display: "flex", gap: 0.25 }}>
+        <Box sx={{ display: "flex", gap: 0.25, alignItems: "center" }}>
+          <Tooltip title="Scripts displays the list of files in the current bundle. Drag to reorder, add new scripts, or import fountain files.">
+            <span>
+              <InfoOutlinedIcon sx={{ fontSize: 16, opacity: 0.6, cursor: "help", mr: 0.5 }} />
+            </span>
+          </Tooltip>
           <IconButton size="small" onClick={importScript} title="Import Fountain File" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
             <DownloadIcon sx={{ fontSize: 16 }} />
           </IconButton>
@@ -180,7 +186,7 @@ export const ScriptsView = React.memo(() => {
         </Box>
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, px: 1 }}>
+      <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, p: 1.5 }}>
         {scripts.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", px: 1, py: 2, fontSize: 12 }}>
             No scripts yet. Add one.

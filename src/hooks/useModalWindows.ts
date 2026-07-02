@@ -2,14 +2,12 @@ import { useCallback, useRef } from "react";
 import { logger } from "../utils/logger";
 
 interface ModalWindowsHook {
-  openSettingsWindow: () => void;
+  openSettingsWindow: (tab?: string) => void;
   openHelpWindow: () => void;
   openTagManagerWindow: () => void;
   openThemeManagerWindow: () => void;
   openXrayWindow: () => void;
 }
-
-
 
 async function createTauriWindow(
   label: string,
@@ -18,8 +16,13 @@ async function createTauriWindow(
   width: number,
   height: number,
   resizable: boolean,
-  onDestroy: () => void,
+  onClose: () => void,
 ): Promise<boolean> {
+  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+  if (!isTauri) {
+    logger.warn("modalWindows", `createTauriWindow not supported on web: ${label}`);
+    return false;
+  }
   try {
     const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
     const webview = new WebviewWindow(label, {
@@ -27,20 +30,24 @@ async function createTauriWindow(
       title,
       width,
       height,
-      decorations: false,
       resizable,
-      center: true,
+      decorations: false,
     });
-
-    webview.once("tauri://destroyed", onDestroy);
-
-    await Promise.race([
-      new Promise<void>((resolve) => webview.once("tauri://created", () => resolve())),
-      new Promise<void>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
-    ]);
+    webview.once("tauri://created", () => {
+      logger.info("modalWindows", `Created window: ${label}`);
+    });
+    webview.once("tauri://error", (e) => {
+      logger.error("modalWindows", `Error creating window: ${label}`, e);
+      onClose();
+    });
+    webview.once("tauri://destroyed", () => {
+      logger.info("modalWindows", `Destroyed window: ${label}`);
+      onClose();
+    });
     return true;
   } catch (e) {
-    logger.error("modalWindows", `Failed to create ${label} window:`, e);
+    logger.error("modalWindows", "Failed to load Tauri WebviewWindow", e);
+    onClose();
     return false;
   }
 }
@@ -48,10 +55,11 @@ async function createTauriWindow(
 export function useModalWindows(): ModalWindowsHook {
   const windowsRef = useRef<Map<string, boolean>>(new Map());
 
-  const openSettingsWindow = useCallback(async () => {
+  const openSettingsWindow = useCallback(async (tab?: string) => {
     if (windowsRef.current.get("settings")) return;
     windowsRef.current.set("settings", true);
-    const ok = await createTauriWindow("settings", "/?modal=settings", "ActOne – Settings", 420, 500, false, () => windowsRef.current.delete("settings"));
+    const path = tab ? `/?modal=settings&tab=${tab}` : "/?modal=settings";
+    const ok = await createTauriWindow("settings", path, "ActOne – Settings", 420, 500, false, () => windowsRef.current.delete("settings"));
     if (!ok) {
       windowsRef.current.delete("settings");
     }

@@ -40,6 +40,8 @@ export interface UIContextProps {
   setHideTagsEnabled: (enabled: boolean) => void;
   lineFocusEnabled: boolean;
   setLineFocusEnabled: (enabled: boolean) => void;
+  fountainColorsEnabled: boolean;
+  setFountainColorsEnabled: (enabled: boolean) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -96,6 +98,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           break;
         case STORAGE_KEYS.LINE_FOCUS_ENABLED:
           setLineFocusEnabledState(strVal === "true");
+          break;
+        case STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED:
+          setFountainColorsEnabledState(strVal !== "false");
           break;
         case STORAGE_KEYS.THEME_ID:
           forceUpdate(n => n + 1);
@@ -156,10 +161,18 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [showSearchPanel, setShowSearchPanel] = useState<boolean>(false);
   const [showReplacePanel, setShowReplacePanel] = useState<boolean>(false);
 
+  useEffect(() => {
+    document.documentElement.style.setProperty("--app-scale", `${appScale}%`);
+  }, [appScale]);
+
   const [isZenMode, setIsZenModeState] = useState(false);
 
   const [lineFocusEnabled, setLineFocusEnabledState] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true";
+  });
+
+  const [fountainColorsEnabled, setFountainColorsEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED) !== "false";
   });
 
   useEffect(() => {
@@ -284,6 +297,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
   };
 
+  const setFountainColorsEnabled = (enabled: boolean) => {
+    setFountainColorsEnabledState(enabled);
+    localStorage.setItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, enabled ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, enabled ? "true" : "false");
+  };
+
   return (
     <UIContext.Provider
       value={{
@@ -322,6 +341,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setHideTagsEnabled,
         lineFocusEnabled,
         setLineFocusEnabled,
+        fountainColorsEnabled,
+        setFountainColorsEnabled,
       }}
     >
       {children}

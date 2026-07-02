@@ -13,7 +13,6 @@ import {
   MenuItem,
   IconButton,
   Divider,
-  Tooltip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useTheme } from "../context";
@@ -77,57 +76,134 @@ const ActionCard: React.FC<{
       alignItems: "center",
       justifyContent: "center",
       textAlign: "center",
-      width: 120,
-      height: 85,
-      p: 1.2,
-      borderRadius: 2,
-      cursor: "pointer",
+      p: 1.25,
+      width: 100,
+      height: 100,
+      borderRadius: "12px",
       bgcolor: "background.paper",
-      color: "text.primary",
-      border: 1,
+      border: "1px solid",
       borderColor: "divider",
-      transition: "all 0.12s ease",
+      cursor: "pointer",
+      boxSizing: "border-box",
+      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      "& .icon-wrapper": {
+        bgcolor: "action.selected",
+        color: "primary.main",
+        transition: "all 0.2s ease",
+      },
       "&:hover": {
-        bgcolor: "action.hover",
-        transform: "translateY(-1px)",
-        boxShadow: (theme: any) => `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
+        borderColor: "primary.main",
+        transform: "translateY(-2px)",
+        boxShadow: (theme: any) => `0 6px 20px -5px ${alpha(theme.palette.primary.main, 0.1)}`,
+        "& .icon-wrapper": {
+          bgcolor: "primary.main",
+          color: "primary.contrastText",
+          transform: "scale(1.05)",
+        },
       },
     }}
   >
     <Box
+      className="icon-wrapper"
       sx={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 26,
-        height: 26,
-        borderRadius: 1.5,
-        bgcolor: "action.selected",
-        color: "text.secondary",
+        width: 28,
+        height: 28,
+        borderRadius: "6px",
         mb: 0.75,
       }}
     >
       {icon}
     </Box>
-    <Typography
-      variant="subtitle2"
-      sx={{ fontWeight: 700, fontSize: 12, lineHeight: 1.2 }}
-    >
+    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.78rem", mb: 0.25, lineHeight: 1.1 }}>
       {title}
     </Typography>
-    <Typography
-      variant="caption"
-      sx={{
-        color: "text.secondary",
-        fontSize: 9,
-        lineHeight: 1.1,
-        mt: 0.25,
-      }}
-    >
+    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.62rem", lineHeight: 1.1 }}>
       {description}
     </Typography>
   </Box>
 );
+
+const RecentFileRow: React.FC<{
+  name: string;
+  parentDir: string;
+  isActOne: boolean;
+  onClick: () => void;
+  onDelete: () => void;
+}> = ({ name, parentDir, isActOne, onClick, onDelete }) => {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <Box
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        p: 1.5,
+        borderRadius: "10px",
+        border: "1px solid",
+        borderColor: "divider",
+        bgcolor: "background.paper",
+        cursor: "pointer",
+        transition: "all 0.15s ease",
+        "&:hover": {
+          borderColor: "primary.main",
+          bgcolor: "action.hover",
+        },
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0, flex: 1 }}>
+        <DescriptionIcon sx={{ fontSize: 18, color: "text.secondary", opacity: 0.6 }} />
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {name}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: 8,
+                fontWeight: 800,
+                px: 0.8,
+                py: 0.1,
+                borderRadius: "4px",
+                bgcolor: isActOne ? "primary.main" : "action.selected",
+                color: isActOne ? "primary.contrastText" : "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+              }}
+            >
+              {isActOne ? "bundle" : "fountain"}
+            </Typography>
+          </Box>
+          {parentDir && (
+            <Typography variant="caption" sx={{ color: "text.secondary", opacity: 0.6, fontSize: "0.7rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+              {parentDir} / {name}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
+      <IconButton
+        size="small"
+        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        sx={{
+          color: "text.disabled",
+          "&:hover": { color: "error.main" },
+          opacity: hovered ? 1 : 0,
+          transform: hovered ? "scale(1)" : "scale(0.8)",
+          transition: "all 0.15s ease",
+        }}
+      >
+        <DeleteIcon sx={{ fontSize: 14 }} />
+      </IconButton>
+    </Box>
+  );
+};
 
 interface WelcomeScreenWindowProps {
   standalone?: boolean;
@@ -141,15 +217,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const appVersion = __APP_VERSION__;
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
 
-  const getDirPath = (path: string): string => {
-    const normalized = path.replace(/\\/g, "/");
-    const idx = normalized.lastIndexOf("/");
-    return idx === -1 ? "" : normalized.slice(0, idx);
-  };
-
   useEffect(() => {
     setQuote(getDynamicQuote());
-
 
     // Check if double-clicked file was passed as CLI argument on startup
     invoke<string[]>("get_cli_args").then((paths) => {
@@ -270,341 +339,331 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   };
 
   return (
-    <>
-    <Box
-      sx={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        bgcolor: "background.default",
-        color: "text.primary",
-        overflow: "hidden",
-        position: "relative",
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "40%",
-          background: (theme: any) =>
-            `radial-gradient(ellipse 80% 60% at 50% -10%, ${alpha(theme.palette.primary.main, 0.06)} 0%, transparent 70%)`,
-          pointerEvents: "none",
-        },
-      }}
-    >
+    <Box sx={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", bgcolor: "background.default" }}>
+      {/* Left Column - Brand & Inspiration (40% width) */}
       <Box
         sx={{
-          flex: 1,
+          width: "40%",
+          height: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "space-between",
+          bgcolor: (t) => alpha(t.palette.primary.main, 0.03),
+          borderRight: "1px solid",
+          borderColor: "divider",
+          p: 4,
+          boxSizing: "border-box",
           position: "relative",
-          px: 4,
+          overflow: "hidden",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: (theme: any) =>
+              `radial-gradient(circle at 0% 0%, ${alpha(theme.palette.primary.main, 0.08)} 0%, transparent 60%)`,
+            pointerEvents: "none",
+          },
         }}
       >
-        {/* Logo with glow */}
-        <Box sx={{ position: "relative", width: 180, height: 180, mb: 1.5 }}>
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 340,
-              height: 340,
-              borderRadius: "50%",
-              background: (theme: any) =>
-                `radial-gradient(ellipse, ${alpha(theme.palette.primary.main, 0.09)} 0%, transparent 70%)`,
-              pointerEvents: "none",
-            }}
-          />
-          <img
-            src={logoImage}
-            alt="ActOne"
-            style={{ width: "100%", height: "100%", objectFit: "contain", position: "relative" }}
-          />
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: "auto" }}>
+          {/* Brand/Logo Area */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <Box sx={{ width: 180, height: 180, ml: -0.5 }}>
+              <img src={logoImage} alt="ActOne Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            </Box>
+          </Box>
+
+          {/* Typographic Quote Portion */}
+          {quote.text && (
+            <Box sx={{ position: "relative", maxWidth: "340px", mt: 0 }}>
+              <Typography
+                sx={{
+                  position: "absolute",
+                  top: -24,
+                  left: -16,
+                  fontSize: "5.5rem",
+                  fontFamily: "Georgia, serif",
+                  color: "primary.main",
+                  opacity: 0.12,
+                  lineHeight: 1,
+                  userSelect: "none",
+                }}
+              >
+                &ldquo;
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "1.1rem",
+                  fontWeight: 700,
+                  lineHeight: 1.45,
+                  fontFamily: '"Courier Prime", monospace',
+                  color: "text.primary",
+                  opacity: 0.9,
+                  position: "relative",
+                  zIndex: 1,
+                  pl: 0.5,
+                }}
+              >
+                {quote.text}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.72rem",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  color: "text.secondary",
+                  opacity: 0.55,
+                  mt: 1.5,
+                  pl: 0.5,
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                &mdash; {quote.author}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
-        {/* Quote */}
-        {quote.text && (
-          <Box sx={{ mb: 1.5, textAlign: "center", maxWidth: 440 }}>
-            <Typography
-              sx={{
-                fontSize: 14,
-                fontWeight: 800,
-                lineHeight: 1.35,
-                fontFamily: '"Courier Prime", monospace',
-                textTransform: "uppercase",
-                opacity: 0.75,
+        {/* Left Footer Area */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
+            <Button
+              size="small"
+              startIcon={<DiscordIcon sx={{ fontSize: 13 }} />}
+              onClick={() => {
+                import("@tauri-apps/plugin-opener")
+                  .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
+                  .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
               }}
-            >
-              &ldquo;{quote.text}&rdquo;
-            </Typography>
-            <Typography
               sx={{
-                fontSize: 12,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: 11,
                 color: "text.secondary",
-                mt: 0.5,
                 opacity: 0.5,
+                p: 0,
+                minWidth: 0,
+                "&:hover": { opacity: 1, bgcolor: "transparent" },
               }}
             >
-              &mdash; {quote.author}
+              Discord
+            </Button>
+            <Button
+              size="small"
+              startIcon={<HelpOutlinedIcon sx={{ fontSize: 13 }} />}
+              onClick={handleHelp}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: 11,
+                color: "text.secondary",
+                opacity: 0.5,
+                p: 0,
+                minWidth: 0,
+                "&:hover": { opacity: 1, bgcolor: "transparent" },
+              }}
+            >
+              Help Guide
+            </Button>
+          </Box>
+          <Typography variant="caption" sx={{ fontSize: 9.5, color: "text.secondary", opacity: 0.4 }}>
+            {appVersion ? `v${appVersion} • ` : ""}&copy; 2026 Write Up Film Service Company
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Right Column - Operations Area (60% width) */}
+      <Box
+        sx={{
+          width: "60%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "background.default",
+          p: 5,
+          boxSizing: "border-box",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Top Header Section */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: "-0.03em" }}>
+              Welcome back
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: 12 }}>
+              Choose a project or template to start writing
             </Typography>
           </Box>
-        )}
 
-        {/* Action Cards */}
-        <Box sx={{ display: "flex", flexDirection: "row", gap: 1.5, mb: 2 }}>
-          <Box sx={{ position: "relative" }}>
-            <Box sx={{
-              position: "absolute", inset: -5,
-              borderRadius: 2,
-              background: (t: any) => `radial-gradient(ellipse, ${alpha(t.palette.primary.main, 0.12)} 0%, transparent 70%)`,
-              pointerEvents: "none",
-            }} />
+          {/* Theme Picker */}
+          <IconButton
+            onClick={(e) => setThemeMenuAnchor(e.currentTarget)}
+            size="small"
+            sx={{ border: "1px solid", borderColor: "divider", p: 1, borderRadius: "8px" }}
+          >
+            <ColorLensIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
+
+        {/* Action Panel: 3 Premium Cards */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 3, mb: 3 }}>
+          <Typography variant="caption" sx={{ textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.08em", opacity: 0.5 }}>
+            Start Writing
+          </Typography>
+
+          <Box sx={{ display: "flex", gap: 1.5 }}>
             <ActionCard
-              icon={<AddIcon sx={{ fontSize: 15 }} />}
+              icon={<AddIcon sx={{ fontSize: 18 }} />}
               title="New Project"
-              description="Create screenplay"
+              description="Start fresh script"
               onClick={handleNew}
             />
+            <ActionCard
+              icon={<FolderOpenIcon sx={{ fontSize: 18 }} />}
+              title="Open File"
+              description="Browse local files"
+              onClick={handleOpen}
+            />
+            <ActionCard
+              icon={<AutoAwesomeIcon sx={{ fontSize: 18 }} />}
+              title="Templates"
+              description="Use structural form"
+              onClick={handleTemplates}
+            />
           </Box>
-          <ActionCard
-            icon={<FolderOpenIcon sx={{ fontSize: 15 }} />}
-            title="Open Project"
-            description="Browse and open"
-            onClick={handleOpen}
-          />
-          <ActionCard
-            icon={<AutoAwesomeIcon sx={{ fontSize: 15 }} />}
-            title="Templates"
-            description="Structure template"
-            onClick={handleTemplates}
-          />
         </Box>
 
-        {/* Recent Projects Strip */}
-        {recentFiles.length > 0 && (
-          <Box sx={{ textAlign: "center", maxWidth: 460 }}>
-            <Typography
-              variant="caption"
+        {/* Recents Section */}
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1.5, minHeight: 0 }}>
+          <Typography variant="caption" sx={{ textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.08em", opacity: 0.5 }}>
+            Recent Screenplays
+          </Typography>
+
+          {recentFiles.length === 0 ? (
+            <Box
               sx={{
-                fontWeight: 700,
-                color: "text.secondary",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                fontSize: 10,
-                display: "block",
-                mb: 1,
-                opacity: 0.55,
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px dashed",
+                borderColor: "divider",
+                borderRadius: "12px",
+                p: 3,
+                textAlign: "center",
               }}
             >
-              Recent Projects
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
-               {recentFiles.slice(0, 6).map((item: any) => {
-                const dir = getDirPath(item.path);
+              <Typography variant="body2" sx={{ color: "text.secondary", opacity: 0.65 }}>
+                No recent screenplays found
+              </Typography>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                flex: 1,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.75,
+                pr: 1,
+                "&::-webkit-scrollbar": { width: 5 },
+                "&::-webkit-scrollbar-thumb": { bgcolor: "divider", borderRadius: 3 },
+              }}
+            >
+              {recentFiles.slice(0, 10).map((file) => {
+                const pathParts = file.path.split(/[/\\]/);
+                const parentDir = pathParts.length > 1 ? pathParts[pathParts.length - 2] : "";
+                const isActOne = file.path.endsWith(".actone");
+                
                 return (
-                  <Tooltip key={item.path} title={item.path}>
-                    <Box
-                      onClick={() => handleOpenRecent(item.path)}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        maxWidth: 300,
-                        py: 0.75,
-                        px: 1.25,
-                        bgcolor: "background.paper",
-                        border: 1,
-                        borderColor: "divider",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        "&:hover": {
-                          borderColor: "primary.main",
-                          bgcolor: "action.hover",
-                        },
-                      }}
-                    >
-                      <DescriptionIcon sx={{ fontSize: 16, color: "text.secondary", opacity: 0.5, flexShrink: 0 }} />
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {item.name}
-                        </Typography>
-                        {dir && (
-                          <Typography variant="caption" sx={{ fontSize: 10, color: "text.secondary", opacity: 0.65, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {dir}
-                          </Typography>
-                        )}
-                      </Box>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); removeFromRecent(item.path); }}
-                        sx={{ color: "text.disabled", "&:hover": { color: "error.main" }, p: 0.2, flexShrink: 0 }}
-                      >
-                        <DeleteIcon sx={{ fontSize: 13 }} />
-                      </IconButton>
-                    </Box>
-                  </Tooltip>
+                  <RecentFileRow
+                    key={file.path}
+                    name={file.name}
+                    parentDir={parentDir}
+                    isActOne={isActOne}
+                    onClick={() => handleOpenRecent(file.path)}
+                    onDelete={() => removeFromRecent(file.path)}
+                  />
                 );
               })}
             </Box>
-          </Box>
-        )}
+          )}
+        </Box>
       </Box>
 
-      {/* Footer */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          py: 1.5,
-          px: 3,
-          position: "relative",
-        }}
+      {/* Theme Picker Dropdown Menu */}
+      <Menu
+        anchorEl={themeMenuAnchor}
+        open={Boolean(themeMenuAnchor)}
+        onClose={() => setThemeMenuAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { width: 220, maxHeight: 400, borderRadius: '12px' } } }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Button
-            size="small"
-            startIcon={<HelpOutlinedIcon sx={{ fontSize: 13 }} />}
-            onClick={handleHelp}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              color: "text.secondary",
-              opacity: 0.4,
-              "&:hover": { opacity: 1, color: "text.primary" },
-            }}
-          >
-            Help
-          </Button>
-          <Button
-            size="small"
-            startIcon={<DiscordIcon sx={{ fontSize: 13 }} />}
-            onClick={() => {
-              import("@tauri-apps/plugin-opener")
-                .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
-                .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
-            }}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              color: "text.secondary",
-              opacity: 0.4,
-              "&:hover": { opacity: 1, color: "text.primary" },
-            }}
-          >
-            Discord
-          </Button>
-          <Typography
-            sx={{
-              fontSize: 9.5,
-              fontWeight: 600,
-              color: "text.secondary",
-              opacity: 0.25,
-            }}
-          >
-            {appVersion ? `v${appVersion}` : ""}
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: 9,
-              fontWeight: 500,
-              color: "text.secondary",
-              opacity: 0.35,
-              userSelect: "none",
-            }}
-          >
-            &copy; 2026 Write Up Film Service Company
-          </Typography>
-        </Box>
-        <IconButton
-          onClick={(e) => setThemeMenuAnchor(e.currentTarget)}
-          size="small"
-          sx={{
-            color: "text.secondary",
-            opacity: 0.4,
-            "&:hover": { opacity: 1, color: "text.primary" },
-          }}
-        >
-          <ColorLensIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-        <Menu
-          anchorEl={themeMenuAnchor}
-          open={Boolean(themeMenuAnchor)}
-          onClose={() => setThemeMenuAnchor(null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          slotProps={{ paper: { sx: { minWidth: 220, maxHeight: 420, py: 0.5 } } }}
-        >
-          <Typography variant="caption" sx={{ px: 2, pt: 1, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Light
-          </Typography>
-          {themes.filter(t => !t.isDark).map((t) => (
-            <MenuItem
-              key={t.id}
-              selected={theme === t.id}
-              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
-              <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0 }}>
-                <Box sx={{ bgcolor: t.colors.editor }} />
-                <Box sx={{ bgcolor: t.colors.sidebar }} />
-                <Box sx={{ bgcolor: t.colors.accent }} />
-                <Box sx={{ bgcolor: t.colors.dropdown }} />
-              </Box>
-              {t.name}
-            </MenuItem>
-          ))}
-          <Divider sx={{ my: 0.5 }} />
-          <Typography variant="caption" sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Dark
-          </Typography>
-          {themes.filter(t => t.isDark).map((t) => (
-            <MenuItem
-              key={t.id}
-              selected={theme === t.id}
-              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
-              <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0 }}>
-                <Box sx={{ bgcolor: t.colors.editor }} />
-                <Box sx={{ bgcolor: t.colors.sidebar }} />
-                <Box sx={{ bgcolor: t.colors.accent }} />
-                <Box sx={{ bgcolor: t.colors.dropdown }} />
-              </Box>
-              {t.name}
-            </MenuItem>
-          ))}
-          {customThemes.length > 0 && (
-            <>
-              <Divider sx={{ my: 0.5 }} />
-              <Typography variant="caption" sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Custom
-              </Typography>
-              {customThemes.map((t) => (
-                <MenuItem
-                  key={t.id}
-                  selected={theme === t.id}
-              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
-              <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0 }}>
-                <Box sx={{ bgcolor: t.colors.editor }} />
-                <Box sx={{ bgcolor: t.colors.sidebar }} />
-                <Box sx={{ bgcolor: t.colors.accent }} />
-                <Box sx={{ bgcolor: t.colors.dropdown }} />
-              </Box>
-              {t.name}
-                </MenuItem>
-              ))}
-            </>
-          )}
-        </Menu>
-      </Box>
+        <Typography variant="caption" sx={{ px: 2, pt: 1, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Light
+        </Typography>
+        {themes.filter(t => !t.isDark).map((t) => (
+          <MenuItem
+            key={t.id}
+            selected={theme === t.id}
+            onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
+            <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0, mr: 1.5 }}>
+              <Box sx={{ bgcolor: t.colors.editor }} />
+              <Box sx={{ bgcolor: t.colors.sidebar }} />
+              <Box sx={{ bgcolor: t.colors.accent }} />
+              <Box sx={{ bgcolor: t.colors.dropdown }} />
+            </Box>
+            {t.name}
+          </MenuItem>
+        ))}
+        <Divider sx={{ my: 0.5 }} />
+        <Typography variant="caption" sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Dark
+        </Typography>
+        {themes.filter(t => t.isDark).map((t) => (
+          <MenuItem
+            key={t.id}
+            selected={theme === t.id}
+            onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
+            <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0, mr: 1.5 }}>
+              <Box sx={{ bgcolor: t.colors.editor }} />
+              <Box sx={{ bgcolor: t.colors.sidebar }} />
+              <Box sx={{ bgcolor: t.colors.accent }} />
+              <Box sx={{ bgcolor: t.colors.dropdown }} />
+            </Box>
+            {t.name}
+          </MenuItem>
+        ))}
+        {customThemes.length > 0 && (
+          <>
+            <Divider sx={{ my: 0.5 }} />
+            <Typography variant="caption" sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Custom
+            </Typography>
+            {customThemes.map((t) => (
+              <MenuItem
+                key={t.id}
+                selected={theme === t.id}
+                onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}>
+                <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0, mr: 1.5 }}>
+                  <Box sx={{ bgcolor: t.colors.editor }} />
+                  <Box sx={{ bgcolor: t.colors.sidebar }} />
+                  <Box sx={{ bgcolor: t.colors.accent }} />
+                  <Box sx={{ bgcolor: t.colors.dropdown }} />
+                </Box>
+                {t.name}
+              </MenuItem>
+            ))}
+          </>
+        )}
+      </Menu>
     </Box>
-    </>
   );
 };

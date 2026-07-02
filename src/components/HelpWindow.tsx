@@ -186,6 +186,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <>
       <Box
+        data-tauri-drag-region
         sx={{
           display: "flex",
           alignItems: "center",
@@ -195,6 +196,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           borderColor: "divider",
           px: 2,
           py: 0.75,
+          userSelect: "none",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

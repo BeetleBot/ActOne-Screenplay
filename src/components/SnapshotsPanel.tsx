@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from "react";
-import { Box, Typography, IconButton, Button, TextField, List, ListItemButton, Divider, Menu, MenuItem } from "@mui/material";
+import { Box, Typography, IconButton, Button, TextField, List, ListItemButton, Divider, Menu, MenuItem, Tooltip } from "@mui/material";
 import { useSnapshots, type SnapshotInfo } from "../context/SnapshotContext";
 import { useFile } from "../context/FileContext";
 import { useCustomModal } from "../context/CustomModalContext";
-import { AddIcon } from "./Icons";
+import { AddIcon, SettingsIcon, InfoOutlinedIcon } from "./Icons";
+import { useModalWindows } from "../hooks/useModalWindows";
 
 function formatSnapshotDateTime(isoString: string): string {
   const date = new Date(isoString);
@@ -51,9 +52,10 @@ interface SnapshotsPanelProps {
 }
 
 export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
-  const { snapshots, settings, createSnapshot, deleteSnapshot, restoreSnapshot, openSnapshotAsFile } = useSnapshots();
+  const { snapshots, settings, createSnapshot, deleteSnapshot, restoreSnapshot, openSnapshotAsFile, updateSettings } = useSnapshots();
   const { filePath, openFilePath } = useFile();
   const { confirm } = useCustomModal();
+  const { openSettingsWindow } = useModalWindows();
   const [comment, setComment] = useState("");
   const [tag, setTag] = useState("");
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; info: SnapshotInfo } | null>(null);
@@ -110,56 +112,86 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        gap: 1.5,
-        p: 2,
       }}
     >
       {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Snapshots
         </Typography>
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+          <Tooltip title="Snapshots captures previous states of your script. Take manual snapshots, or configure automatic interval snapshots.">
+            <span>
+              <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
+            </span>
+          </Tooltip>
+          <IconButton
+            size="small"
+            onClick={() => openSettingsWindow("snapshots")}
+            sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}
+          >
+            <SettingsIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
       </Box>
 
-      {/* Create snapshot */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Comment (optional)..."
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
-          slotProps={{
-            input: {
-              sx: { borderRadius: '6px', fontSize: '0.8rem', py: 0.3 }
-            }
-          }}
-        />
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Tag (optional)..."
-          value={tag}
-          onChange={(e) => setTag(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
-          slotProps={{
-            input: {
-              sx: { borderRadius: '6px', fontSize: '0.8rem', py: 0.3 }
-            }
-          }}
-        />
-        <Button
-          fullWidth
-          size="small"
-          variant="contained"
-          startIcon={<AddIcon sx={{ fontSize: 16 }} />}
-          onClick={handleCreate}
-          sx={{ borderRadius: '6px', py: 0.75, fontSize: '0.75rem' }}
-        >
-          New Snapshot
-        </Button>
-      </Box>
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, gap: 1.5, overflow: "hidden" }}>
+
+      {/* Create snapshot pane / Enable snapshot button */}
+      {settings.enabled ? (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Comment (optional)..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
+            slotProps={{
+              input: {
+                sx: { borderRadius: '6px', fontSize: '0.8rem', py: 0.3 }
+              }
+            }}
+          />
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Tag (optional)..."
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
+            slotProps={{
+              input: {
+                sx: { borderRadius: '6px', fontSize: '0.8rem', py: 0.3 }
+              }
+            }}
+          />
+          <Button
+            fullWidth
+            size="small"
+            variant="contained"
+            startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+            onClick={handleCreate}
+            sx={{ borderRadius: '6px', py: 0.75, fontSize: '0.75rem' }}
+          >
+            New Snapshot
+          </Button>
+        </Box>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2, alignItems: "center", justifyContent: "center", py: 2.5, px: 2, bgcolor: "action.hover", borderRadius: "8px", border: "1px dashed", borderColor: "divider" }}>
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", fontSize: "0.75rem" }}>
+            Snapshots are currently turned off.
+          </Typography>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={() => updateSettings({ enabled: true })}
+            sx={{ borderRadius: '6px', fontSize: '0.75rem', px: 2, py: 0.5 }}
+          >
+            Enable Snapshots
+          </Button>
+        </Box>
+      )}
 
       {/* Tag Filters */}
       {snapshots.length > 0 && (
@@ -356,6 +388,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
           Delete
         </MenuItem>
       </Menu>
+      </Box>
     </Box>
   );
 };

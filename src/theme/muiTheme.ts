@@ -117,7 +117,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#fffaf5",
-      text: "#2d1b14",
+      text: "#221510",
       accent: "#e8634a",
       sidebar: "#fff5ee",
       button: "#e8634a",
@@ -131,7 +131,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#0a1628",
-      text: "#e0f0ff",
+      text: "#f0f7ff",
       accent: "#4ecdc4",
       sidebar: "#0d1b2a",
       button: "#4ecdc4",
@@ -145,7 +145,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#fdf6f0",
-      text: "#3d2c2e",
+      text: "#24181a",
       accent: "#e8a0b4",
       sidebar: "#faf0ec",
       button: "#e8a0b4",
@@ -159,7 +159,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#1a1628",
-      text: "#e0d6f0",
+      text: "#faf8fc",
       accent: "#c4a8e8",
       sidebar: "#221e32",
       button: "#c4a8e8",
@@ -173,7 +173,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#f8f6fe",
-      text: "#2d2b3e",
+      text: "#1c1a29",
       accent: "#b8a9e8",
       sidebar: "#f4f0fc",
       button: "#b8a9e8",
@@ -187,7 +187,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#16201a",
-      text: "#d0e8d8",
+      text: "#f3faf6",
       accent: "#88c8a0",
       sidebar: "#1a2e24",
       button: "#88c8a0",
@@ -201,7 +201,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#f2faf5",
-      text: "#2a3d35",
+      text: "#17241e",
       accent: "#7ec8a8",
       sidebar: "#eef8f2",
       button: "#7ec8a8",
@@ -215,7 +215,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#121e24",
-      text: "#d0e8ee",
+      text: "#f3fbfd",
       accent: "#7ec8d8",
       sidebar: "#182830",
       button: "#7ec8d8",
@@ -229,7 +229,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#fefcf0",
-      text: "#3d392a",
+      text: "#242018",
       accent: "#e8d07e",
       sidebar: "#fcf8ea",
       button: "#e8d07e",
@@ -243,7 +243,7 @@ export const themes: ThemeConfig[] = [
     category: "other",
     colors: deriveAllColors({
       editor: "#241620",
-      text: "#e8d0e0",
+      text: "#fbf2f8",
       accent: "#d4a0c0",
       sidebar: "#2e1a28",
       button: "#d4a0c0",
@@ -271,7 +271,7 @@ function hexToRgbStr(hex: string): string {
   return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
 }
 
-function getEditorVars(t: ThemeConfig, appScale: number) {
+function getEditorVars(t: ThemeConfig, appScale: number, fountainColorsEnabled: boolean = true) {
   const c = t.colors;
   return {
     '--app-scale': `${appScale}%`,
@@ -291,14 +291,15 @@ function getEditorVars(t: ThemeConfig, appScale: number) {
     '--selection-text': c.selectionText,
     '--dropdown-text': c.dropdownText,
     '--titlebar-bg': c.sidebar,
-    '--text-editor-heading': c.accent,
-    '--text-editor-character': c.text,
+    '--text-editor-heading': fountainColorsEnabled ? c.accent : c.text,
+    '--text-editor-character': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 80%, ${c.text})` : c.text,
     '--text-editor-dialogue': c.text,
-    '--text-editor-parenthetical': c.textSecondary,
+    '--text-editor-parenthetical': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 55%, ${c.text})` : c.textSecondary,
     '--text-editor-action': c.text,
-    '--text-editor-transition': c.accent,
-    '--text-editor-shot': c.accent,
-    '--text-editor-meta': c.textSecondary,
+    '--text-editor-transition': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.text})` : c.text,
+    '--text-editor-shot': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.text})` : c.text,
+    '--text-editor-meta': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 45%, ${c.text})` : c.textSecondary,
+    '--text-editor-section': fountainColorsEnabled ? c.accent : c.text,
     '--editor-cursor': c.text,
 
     '--scene-color-blue': '#2196f3',
@@ -366,9 +367,9 @@ export function deriveThemeBg(accent: string, isDark: boolean): string {
   return isDark ? mixHex(accent, "#000000", 0.08) : mixHex(accent, "#ffffff", 0.03);
 }
 
-export function createActOneTheme(t: ThemeConfig, appScale: number) {
+export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColorsEnabled: boolean = true) {
   const c = t.colors;
-  const editorVars = getEditorVars(t, appScale);
+  const editorVars = getEditorVars(t, appScale, fountainColorsEnabled);
 
   return createTheme({
     ...shared,

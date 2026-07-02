@@ -25,6 +25,7 @@ export const STORAGE_KEYS = {
   SNAPSHOT_AUTO_INTERVAL: "actone-snapshot-auto-interval",
   SNAPSHOT_ON_SAVE: "actone-snapshot-on-save",
   SNAPSHOT_MAX_RETENTION: "actone-snapshot-max-retention",
+  FOUNTAIN_COLORS_ENABLED: "actone-fountain-colors-enabled",
 } as const;
 
 export const PILL_RADIUS = "9999px";
