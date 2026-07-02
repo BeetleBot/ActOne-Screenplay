@@ -65,9 +65,8 @@ import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, Description
 const ActionCard: React.FC<{
   icon: React.ReactNode;
   title: string;
-  description: string;
   onClick: () => void;
-}> = ({ icon, title, description, onClick }) => (
+}> = ({ icon, title, onClick }) => (
   <Box
     onClick={onClick}
     sx={{
@@ -76,9 +75,9 @@ const ActionCard: React.FC<{
       alignItems: "center",
       justifyContent: "center",
       textAlign: "center",
-      p: 1.25,
-      width: 100,
-      height: 100,
+      p: 1.5,
+      width: 110,
+      height: 90,
       borderRadius: "12px",
       bgcolor: "background.paper",
       border: "1px solid",
@@ -109,19 +108,16 @@ const ActionCard: React.FC<{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 28,
-        height: 28,
-        borderRadius: "6px",
-        mb: 0.75,
+        width: 32,
+        height: 32,
+        borderRadius: "8px",
+        mb: 1,
       }}
     >
       {icon}
     </Box>
-    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.78rem", mb: 0.25, lineHeight: 1.1 }}>
+    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.8rem", lineHeight: 1.2 }}>
       {title}
-    </Typography>
-    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.62rem", lineHeight: 1.1 }}>
-      {description}
     </Typography>
   </Box>
 );
@@ -255,6 +251,49 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     return () => { if (unlisten) unlisten(); };
   }, []);
 
+  // Keyboard shortcuts for standalone welcome window
+  useEffect(() => {
+    if (!standalone) return;
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && e.key === "n") {
+        e.stopPropagation();
+        e.preventDefault();
+        localStorage.setItem("pending-action", "new");
+        const created = await createEditorWindow("new");
+        if (created) {
+          const { listen } = await import("@tauri-apps/api/event");
+          const unlisten = await listen("editor:ready", () => {
+            unlisten();
+            closeWelcome();
+          });
+          setTimeout(() => { unlisten(); }, 10000);
+        }
+      } else if (ctrl && e.key === "o") {
+        e.stopPropagation();
+        e.preventDefault();
+        try {
+          const result = await invoke<{ path: string; content: string } | null>("open_file_dialog");
+          if (result && result.path) {
+            localStorage.setItem("pending-open-path", result.path);
+            localStorage.setItem("pending-action", "open");
+            const created = await createEditorWindow("open");
+            if (created) {
+              const { listen } = await import("@tauri-apps/api/event");
+              const unlisten = await listen("editor:ready", () => {
+                unlisten();
+                closeWelcome();
+              });
+              setTimeout(() => { unlisten(); }, 10000);
+            }
+          }
+        } catch (err) { logger.error("welcome", "Ctrl+O failed", err); }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [standalone]);
+
   const createEditorWindow = async (action: string): Promise<boolean> => {
     try {
       const webview = new WebviewWindow("main", {
@@ -290,7 +329,15 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
       try {
         localStorage.setItem("pending-action", "new");
         const created = await createEditorWindow("new");
-        if (created) { closeWelcome(); return; }
+        if (created) {
+          const { listen } = await import("@tauri-apps/api/event");
+          const unlisten = await listen("editor:ready", () => {
+            unlisten();
+            closeWelcome();
+          });
+          setTimeout(() => { unlisten(); }, 10000);
+          return;
+        }
       } catch (e) { logger.error("welcome", "handleNew failed", e); }
     }
     newFile();
@@ -304,7 +351,15 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           localStorage.setItem("pending-open-path", result.path);
           localStorage.setItem("pending-action", "open");
           const created = await createEditorWindow("open");
-          if (created) { closeWelcome(); return; }
+          if (created) {
+            const { listen } = await import("@tauri-apps/api/event");
+            const unlisten = await listen("editor:ready", () => {
+              unlisten();
+              closeWelcome();
+            });
+            setTimeout(() => { unlisten(); }, 10000);
+            return;
+          }
         }
       } catch (e) { logger.error("welcome", "handleOpen failed", e); }
     }
@@ -316,7 +371,15 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
       try {
         localStorage.setItem("pending-action", "template");
         const created = await createEditorWindow("template");
-        if (created) { closeWelcome(); return; }
+        if (created) {
+          const { listen } = await import("@tauri-apps/api/event");
+          const unlisten = await listen("editor:ready", () => {
+            unlisten();
+            closeWelcome();
+          });
+          setTimeout(() => { unlisten(); }, 10000);
+          return;
+        }
       } catch (e) { logger.error("welcome", "handleTemplates failed", e); }
     }
     newFile();
@@ -405,6 +468,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                   position: "relative",
                   zIndex: 1,
                   pl: 0.5,
+                  textAlign: "center",
                 }}
               >
                 {quote.text}
@@ -421,6 +485,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                   pl: 0.5,
                   position: "relative",
                   zIndex: 1,
+                  textAlign: "center",
                 }}
               >
                 &mdash; {quote.author}
@@ -429,9 +494,12 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           )}
         </Box>
 
-        {/* Left Footer Area */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
+        {/* Footer */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="caption" sx={{ fontSize: 9.5, color: "text.secondary", opacity: 0.4 }}>
+            {appVersion ? `v${appVersion}` : ""}
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Button
               size="small"
               startIcon={<DiscordIcon sx={{ fontSize: 13 }} />}
@@ -468,12 +536,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 "&:hover": { opacity: 1, bgcolor: "transparent" },
               }}
             >
-              Help Guide
+              Help
             </Button>
           </Box>
-          <Typography variant="caption" sx={{ fontSize: 9.5, color: "text.secondary", opacity: 0.4 }}>
-            {appVersion ? `v${appVersion} • ` : ""}&copy; 2026 Write Up Film Service Company
-          </Typography>
         </Box>
       </Box>
 
@@ -512,31 +577,22 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         </Box>
 
         {/* Action Panel: 3 Premium Cards */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 3, mb: 3 }}>
-          <Typography variant="caption" sx={{ textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.08em", opacity: 0.5 }}>
-            Start Writing
-          </Typography>
-
-          <Box sx={{ display: "flex", gap: 1.5 }}>
-            <ActionCard
-              icon={<AddIcon sx={{ fontSize: 18 }} />}
-              title="New Project"
-              description="Start fresh script"
-              onClick={handleNew}
-            />
-            <ActionCard
-              icon={<FolderOpenIcon sx={{ fontSize: 18 }} />}
-              title="Open File"
-              description="Browse local files"
-              onClick={handleOpen}
-            />
-            <ActionCard
-              icon={<AutoAwesomeIcon sx={{ fontSize: 18 }} />}
-              title="Templates"
-              description="Use structural form"
-              onClick={handleTemplates}
-            />
-          </Box>
+        <Box sx={{ display: "flex", gap: 1.5, mt: 3, mb: 3 }}>
+          <ActionCard
+            icon={<AddIcon sx={{ fontSize: 18 }} />}
+            title="New"
+            onClick={handleNew}
+          />
+          <ActionCard
+            icon={<FolderOpenIcon sx={{ fontSize: 18 }} />}
+            title="Open"
+            onClick={handleOpen}
+          />
+          <ActionCard
+            icon={<AutoAwesomeIcon sx={{ fontSize: 18 }} />}
+            title="Templates"
+            onClick={handleTemplates}
+          />
         </Box>
 
         {/* Recents Section */}
@@ -550,6 +606,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               sx={{
                 flex: 1,
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
                 border: "1px dashed",
@@ -557,10 +614,15 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 borderRadius: "12px",
                 p: 3,
                 textAlign: "center",
+                gap: 1.5,
               }}
             >
+              <DescriptionIcon sx={{ fontSize: 32, color: "text.secondary", opacity: 0.3 }} />
               <Typography variant="body2" sx={{ color: "text.secondary", opacity: 0.65 }}>
                 No recent screenplays found
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", opacity: 0.4, fontSize: "0.7rem" }}>
+                Your recent projects will appear here
               </Typography>
             </Box>
           ) : (

@@ -28,8 +28,8 @@ describe("UIContext", () => {
 
     expect(result.current.autoSaveEnabled).toBe(true);
     expect(result.current.autoSaveInterval).toBe(60000);
-    expect(result.current.showSearchPanel).toBe(false);
-    expect(result.current.showReplacePanel).toBe(false);
+    expect(result.current.activeRightPane).toBe(null);
+    expect(result.current.rightPaneWidth).toBe(360);
   });
 
   it("sets font family", () => {
@@ -86,11 +86,19 @@ describe("UIContext", () => {
     expect(result.current.autoSaveInterval).toBe(120000);
   });
 
-  it("manages search panel visibility", () => {
+  it("manages right pane state", () => {
     const { result } = renderHook(() => useUI(), { wrapper });
-    act(() => result.current.setShowSearchPanel(true));
-    expect(result.current.showSearchPanel).toBe(true);
-    act(() => result.current.setShowReplacePanel(true));
-    expect(result.current.showReplacePanel).toBe(true);
+    act(() => result.current.setActiveRightPane("search"));
+    expect(result.current.activeRightPane).toBe("search");
+    act(() => result.current.setActiveRightPane(null));
+    expect(result.current.activeRightPane).toBe(null);
+  });
+
+  it("clamps rightPaneWidth between 240 and 700", () => {
+    const { result } = renderHook(() => useUI(), { wrapper });
+    act(() => result.current.setRightPaneWidth(100));
+    expect(result.current.rightPaneWidth).toBe(240);
+    act(() => result.current.setRightPaneWidth(1000));
+    expect(result.current.rightPaneWidth).toBe(700);
   });
 });

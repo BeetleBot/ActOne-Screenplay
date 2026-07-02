@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
+import { RightPane } from "../RightPane";
 import { FountainEditor } from "../FountainEditor";
 
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -17,7 +18,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode } = useUI();
+  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane } = useUI();
   const { editorView } = useEditor();
 
   useEffect(() => {
@@ -106,7 +107,6 @@ export const Workspace = React.memo<WorkspaceProps>(({
       )}
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <ErrorBoundary name="search-panel"><SearchPanel /></ErrorBoundary>
         <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
           <Box
             className={`editor-paper paper-${paperSize}`}
@@ -119,6 +119,12 @@ export const Workspace = React.memo<WorkspaceProps>(({
           </Box>
         </Box>
       </Box>
+
+      {activeRightPane === "search" && (
+        <RightPane type="search" onClose={() => setActiveRightPane(null)} errorBoundaryName="search-pane">
+          <SearchPanel />
+        </RightPane>
+      )}
     </Box>
   );
 });

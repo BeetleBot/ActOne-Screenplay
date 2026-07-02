@@ -100,7 +100,7 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 
 | Action | Shortcut |
 |--------|----------|
-| Toggle search panel | <kbd>Ctrl+F</kbd> |
+| Toggle Find & Replace | <kbd>Ctrl+F</kbd> |
 | Toggle sidebar | <kbd>Ctrl+\\\\</kbd> |
 | Command palette | <kbd>Ctrl+K</kbd> |
 | Settings | <kbd>Ctrl+,</kbd> |
@@ -384,23 +384,28 @@ Press <kbd>Tab</kbd> to accept the ghost suggestion, or <kbd>ArrowDown</kbd> to 
     category: "Writing Tools",
     tags: ["search", "replace", "ctrl+f", "regex", "preserve case"],
     relatedIds: ["look-up"],
-    content: `Press <kbd>Ctrl+F</kbd> to open the floating, draggable search panel (positioned at top-right). Features:
+    content: `Press <kbd>Ctrl+F</kbd> to open the Find & Replace pane on the right side of the editor. Features:
 
 - **Find input** — auto-populates from selected text when opened
 - **Match Case** (\`Aa\`) toggle — case-sensitive search
-- **Whole Word** (\`ab\`) toggle — match only whole words
+- **Whole Word** (\`\\b\`) toggle — match only whole words
 - **Regex** (\`.*\`) toggle — treat search as regular expression
-- **Match counter** — shows \`currentMatch/totalMatches\` with prev/next navigation (\`↑\`/\`↓\`)
-- **Close** — \`×\` button or <kbd>Esc</kbd>
+- **Match counter** — shows \`currentMatch/totalMatches\` with prev/next arrows
+- **Results list** — all matches shown with scene name context and line preview; click any result to jump to it in the editor
+- **Close** — \`×\` button in the pane header or <kbd>Esc</kbd>
+- **Enter** — jump to next match; <kbd>Shift+Enter</kbd> — jump to previous match
+
+All matches are highlighted inline in the editor with a yellow background.
 
 **Replace** (collapsible section):
 
 - **Replace input** — text field for replacement
 - **Preserve Case** (\`AB\`) toggle — intelligently adapts replacement case (ALL CAPS → ALL CAPS, Capitalized → Capitalized, lowercase → lowercase)
-- **Replace** — replaces current match and moves to next
-- **Replace All** — replaces all matches simultaneously (sorted end-to-start)
+- **Replace** — replaces the currently selected match and moves to next
+- **Replace Selected** — replaces only the specific match selected via checkbox in the results list
+- **Replace All** — replaces all matches with confirmation before proceeding
 
-The panel is draggable — click and drag the header to reposition it anywhere in the editor.`,
+The pane width is adjustable — drag the left edge of the pane to resize. Press <kbd>Ctrl+F</kbd> again or click the close button to dismiss.`,
   },
   {
     id: "scene-numbers",

@@ -26,10 +26,10 @@ export interface UIContextProps {
   matchParenthesesEnabled: boolean;
   setMatchParenthesesEnabled: (enabled: boolean) => void;
 
-  showSearchPanel: boolean;
-  setShowSearchPanel: (show: boolean) => void;
-  showReplacePanel: boolean;
-  setShowReplacePanel: (show: boolean) => void;
+  activeRightPane: string | null;
+  setActiveRightPane: (pane: string | null) => void;
+  rightPaneWidth: number;
+  setRightPaneWidth: (w: number) => void;
   autoSaveEnabled: boolean;
   setAutoSaveEnabled: (enabled: boolean) => void;
   autoSaveInterval: number;
@@ -158,8 +158,17 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem(STORAGE_KEYS.HIDE_TAGS_ENABLED) === "true";
   });
 
-  const [showSearchPanel, setShowSearchPanel] = useState<boolean>(false);
-  const [showReplacePanel, setShowReplacePanel] = useState<boolean>(false);
+  const [activeRightPane, setActiveRightPaneState] = useState<string | null>(null);
+  const [rightPaneWidth, setRightPaneWidthState] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.RIGHT_PANE_WIDTH);
+      if (stored) {
+        const n = parseInt(stored, 10);
+        if (!isNaN(n) && n >= 240 && n <= 700) return n;
+      }
+    } catch {}
+    return 360;
+  });
 
   useEffect(() => {
     document.documentElement.style.setProperty("--app-scale", `${appScale}%`);
@@ -303,6 +312,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, enabled ? "true" : "false");
   };
 
+  const setRightPaneWidth = (w: number) => {
+    const clamped = Math.max(240, Math.min(700, w));
+    setRightPaneWidthState(clamped);
+    try { localStorage.setItem(STORAGE_KEYS.RIGHT_PANE_WIDTH, String(clamped)); } catch {}
+  };
+
   return (
     <UIContext.Provider
       value={{
@@ -327,10 +342,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         matchParenthesesEnabled,
         setMatchParenthesesEnabled,
 
-        showSearchPanel,
-        setShowSearchPanel,
-        showReplacePanel,
-        setShowReplacePanel,
+        activeRightPane,
+        setActiveRightPane: setActiveRightPaneState,
+        rightPaneWidth,
+        setRightPaneWidth,
         autoSaveEnabled,
         setAutoSaveEnabled,
         autoSaveInterval,

@@ -22,6 +22,45 @@ import {
   useTheme,
 } from "@mui/material";
 
+const RECENT_COMMANDS_KEY = "recentCommands";
+
+const fuzzyScore = (query: string, target: string): number => {
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+  if (t === q) return 100;
+  if (t.startsWith(q)) return 90;
+  if (t.includes(q)) return 70;
+
+  let score = 0;
+  let qIdx = 0;
+  let prevMatchIdx = -1;
+  for (let i = 0; i < t.length && qIdx < q.length; i++) {
+    if (t[i] === q[qIdx]) {
+      score += 10;
+      if (prevMatchIdx === i - 1) score += 5;
+      prevMatchIdx = i;
+      qIdx++;
+    }
+  }
+  if (qIdx < q.length) return 0;
+  return score;
+};
+
+const getRecentCommands = (): string[] => {
+  try {
+    const stored = localStorage.getItem(RECENT_COMMANDS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch { return []; }
+};
+
+const addRecentCommand = (cmdId: string) => {
+  try {
+    const recent = getRecentCommands().filter(id => id !== cmdId);
+    recent.unshift(cmdId);
+    localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(recent.slice(0, 10)));
+  } catch {}
+};
+
 interface CommandItem {
   id: string;
   name: string;
@@ -91,8 +130,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setActiveTab,
     setFontFamily,
     setPaperSize,
-    setShowSearchPanel,
-    setShowReplacePanel,
+    setActiveRightPane,
     isZenMode,
     setIsZenMode,
     zoomLevel,
@@ -215,8 +253,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "edit-cut", name: "Cut Selected", category: "Edit", icon: <ContentCutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+X", action: () => handleEditorAction("cut") },
     { id: "edit-copy", name: "Copy Selected", category: "Edit", icon: <ContentCopyIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+C", action: () => handleEditorAction("copy") },
     { id: "edit-paste", name: "Paste", category: "Edit", icon: <AssignmentIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
-    { id: "edit-search", name: "Find / Search Screenplay...", category: "Edit", icon: <SearchIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+F", action: () => { setShowSearchPanel(true); setShowReplacePanel(false); onClose(); } },
-    { id: "edit-replace", name: "Replace Text...", category: "Edit", icon: <FindReplaceIcon sx={{ fontSize: 16 }} />, action: () => { setShowSearchPanel(true); setShowReplacePanel(true); onClose(); } },
+    { id: "edit-search", name: "Find / Search Screenplay...", category: "Edit", icon: <SearchIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+F", action: () => { setActiveRightPane("search"); onClose(); } },
+    { id: "edit-replace", name: "Find and Replace...", category: "Edit", icon: <FindReplaceIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+F", action: () => { setActiveRightPane("search"); onClose(); } },
 
     // View
     { id: "view-sidebar", name: isSidebarOpen ? "Hide Sidebar Outline" : "Show Sidebar Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } },
@@ -260,10 +298,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://github.com/beetlebot/ActOne/issues"); onClose(); } },
   ];
 
-  const filteredCommands = commands.filter((cmd) =>
-    cmd.name.toLowerCase().includes(search.toLowerCase()) ||
-    cmd.category.toLowerCase().includes(search.toLowerCase())
-  );
+  const recentIds = getRecentCommands();
+
+  const filteredCommands = commands
+    .map((cmd) => ({
+      cmd,
+      score: fuzzyScore(search, cmd.name) + fuzzyScore(search, cmd.category),
+      recentIndex: recentIds.indexOf(cmd.id),
+    }))
+    .filter(({ score }) => search === "" || score > 0)
+    .sort((a, b) => {
+      if (a.recentIndex !== -1 && b.recentIndex !== -1) return a.recentIndex - b.recentIndex;
+      if (a.recentIndex !== -1) return -1;
+      if (b.recentIndex !== -1) return 1;
+      return b.score - a.score;
+    })
+    .map(({ cmd }) => cmd);
 
   const groupedCommands: { [category: string]: CommandItem[] } = {};
   filteredCommands.forEach((cmd) => {
@@ -293,6 +343,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (flatGroupedList[selectedIndex]) {
+        addRecentCommand(flatGroupedList[selectedIndex].id);
         flatGroupedList[selectedIndex].action();
       }
     } else if (e.key === "Escape") {
@@ -315,13 +366,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   let currentFlatIndex = 0;
 
   return (
-    <Dialog 
-      open 
-      onClose={onClose} 
-      fullWidth 
-      maxWidth="xs" 
+    <Dialog
+      open
+      onClose={onClose}
+      fullWidth
+      maxWidth="xs"
       scroll="paper"
       disableScrollLock
+      hideBackdrop
       slotProps={{
         paper: {
           sx: {
@@ -335,6 +387,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             boxShadow: isDark ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
             backgroundImage: "none",
             color: isDark ? "#e8e8e8" : "text.primary",
+            cursor: "none",
           },
         },
       }}

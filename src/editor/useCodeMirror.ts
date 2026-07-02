@@ -14,6 +14,8 @@ import {
   updateHideSyntaxEffect,
   updateHideTagsEffect,
   updateScriptFileNameEffect,
+  updateSearchMatchesEffect,
+  updateRightPaneOpenEffect,
   classifyLines,
   needsBlankAfterEnter,
   LINE_CHARACTER,
@@ -301,7 +303,7 @@ const activeLineAlwaysPlugin = ViewPlugin.fromClass(
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId, scriptFileName } = useFile();
-  const { typewriterMode, hideSyntaxEnabled, hideTagsEnabled, lineFocusEnabled } = useUI();
+  const { typewriterMode, hideSyntaxEnabled, hideTagsEnabled, lineFocusEnabled, activeRightPane } = useUI();
   const { setActiveLineId, setActiveLineNumber, setSelectedSceneId, setEditorView } = useEditor();
   const lastScriptKeyRef = useRef("");
   const currentScriptKey = `${activeFileId}-${activeScriptIndex}`;
@@ -385,6 +387,14 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       });
     }
   }, [hideTagsEnabled]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: updateRightPaneOpenEffect.of(activeRightPane !== null)
+      });
+    }
+  }, [activeRightPane]);
 
   useEffect(() => {
     if (viewRef.current) {
@@ -553,6 +563,8 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       effects: [
         updateHideTagsEffect.of(hideTagsEnabled),
         updateHideSyntaxEffect.of(hideSyntaxEnabled),
+        updateRightPaneOpenEffect.of(activeRightPane !== null),
+        updateSearchMatchesEffect.of([]),
       ]
     });
 

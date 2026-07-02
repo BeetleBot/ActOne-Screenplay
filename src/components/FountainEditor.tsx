@@ -322,7 +322,7 @@ export const FountainEditor = React.memo(() => {
     const sel = state.selection.main;
     if (cmd === "copy" || cmd === "cut") {
       const text = state.sliceDoc(sel.from, sel.to - sel.from);
-      try { await navigator.clipboard.writeText(text); } catch {}
+      try { await navigator.clipboard.writeText(text); } catch (e) { logger.error("editor", "clipboard write failed", e); }
       if (cmd === "cut" && !sel.empty) {
         view.dispatch({ changes: { from: sel.from, to: sel.to } });
       }
@@ -334,7 +334,7 @@ export const FountainEditor = React.memo(() => {
         } else {
           view.dispatch({ changes: { from: sel.from, insert: text } });
         }
-      } catch {}
+      } catch (e) { logger.error("editor", "clipboard read failed", e); }
     }
     handleClose();
   };
@@ -349,7 +349,8 @@ export const FountainEditor = React.memo(() => {
     },
     slotProps: {
       backdrop: {
-        sx: { backdropFilter: "none", WebkitBackdropFilter: "none" }
+        sx: { backdropFilter: "none", WebkitBackdropFilter: "none" },
+        onClick: handleClose
       },
       paper: {
         sx: (theme: any) => ({

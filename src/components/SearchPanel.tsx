@@ -1,465 +1,689 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useUI, useEditor } from "../context";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useUI, useFile, useEditor, useCustomModal } from "../context";
 import { EditorView } from "@codemirror/view";
-import { ChevronRightIcon, KeyboardArrowDownIcon, ArrowUpwardIcon, ArrowDownwardIcon, CloseIcon, FindReplaceIcon, DoneAllIcon } from "./Icons";
-
+import { updateSearchMatchesEffect } from "../editor/fountainSyntax";
 import {
-  setSearchQuery,
-  SearchQuery,
-  findNext,
-  findPrevious,
-  replaceNext,
-} from "@codemirror/search";
+  SearchIcon, CloseIcon, InfoOutlinedIcon, FindReplaceIcon, DoneAllIcon,
+  ArrowUpwardIcon, ArrowDownwardIcon, KeyboardArrowDownIcon, ChevronRightIcon,
+} from "./Icons";
 import {
-  Box,
-  Paper,
-  IconButton,
-  InputBase,
-  Typography,
+  Box, Typography, IconButton, TextField, Chip, List, ListItemButton,
+  ListItemText, Tooltip, Button, Divider,
 } from "@mui/material";
+import { LineType } from "../parser/FountainParser";
+import { logger } from "../utils/logger";
+import { PILL_RADIUS } from "../constants";
 
-export const SearchPanel = React.memo(() => {
-  const { showSearchPanel, setShowSearchPanel, showReplacePanel, setShowReplacePanel } = useUI();
+const SEARCH_QUERY_STORAGE_KEY = "actone-find-last-query";
+
+interface SearchResult {
+  from: number;
+  to: number;
+  text: string;
+  lineIndex: number;
+  column: number;
+  lineText: string;
+  sceneContext: string;
+}
+
+function buildPattern(query: string, caseSensitive: boolean, isRegex: boolean, wholeWord: boolean): RegExp | null {
+  if (!query) return null;
+  let src: string;
+  if (isRegex) {
+    src = query;
+  } else {
+    src = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  if (wholeWord) src = `\\b${src}\\b`;
+  try {
+    return new RegExp(src, caseSensitive ? "g" : "gi");
+  } catch {
+    return null;
+  }
+}
+
+function findLineAtPosition(lineStarts: { lineIndex: number; start: number }[], pos: number) {
+  let lo = 0, hi = lineStarts.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (lineStarts[mid].start <= pos) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  return lineStarts[hi] ?? null;
+}
+
+const OptionButton: React.FC<{
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  title: string;
+}> = ({ active, onClick, label, title }) => (
+  <Tooltip title={title}>
+    <Box
+      component="button"
+      onClick={onClick}
+      sx={{
+        minWidth: 26,
+        height: 22,
+        px: 0.8,
+        fontSize: 10,
+        fontWeight: 700,
+        fontFamily: "var(--font-ui)",
+        bgcolor: active ? "var(--button-color)" : "transparent",
+        color: active ? "#fff" : "text.secondary",
+        border: "1px solid",
+        borderColor: active ? "var(--button-color)" : "divider",
+        borderRadius: "4px",
+        cursor: "pointer",
+        userSelect: "none",
+        transition: "all 0.12s ease",
+        "&:hover": {
+          bgcolor: active ? "var(--button-color)" : "action.hover",
+          borderColor: active ? "var(--button-color)" : "text.secondary",
+        },
+      }}
+    >
+      {label}
+    </Box>
+  </Tooltip>
+);
+
+export const SearchPanel: React.FC = () => {
   const { editorView } = useEditor();
+  const { parsedDoc, rawText, setRawText } = useFile();
+  const { confirm } = useCustomModal();
+  const { setActiveRightPane, activeRightPane } = useUI();
 
-  const [searchText, setSearchText] = useState("");
+  const [query, setQuery] = useState<string>(() => {
+    try { return localStorage.getItem(SEARCH_QUERY_STORAGE_KEY) || ""; } catch { return ""; }
+  });
+  const [showReplace, setShowReplace] = useState(false);
   const [replaceText, setReplaceText] = useState("");
-  const [isCaseSensitive, setIsCaseSensitive] = useState(false);
-  const [isWholeWord, setIsWholeWord] = useState(false);
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [wholeWord, setWholeWord] = useState(false);
   const [isRegex, setIsRegex] = useState(false);
-  const [preserveCase, setPreserveCase] = useState(false);
-
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ startX: 0, startY: 0, posX: 0, posY: 0 });
-
-  const [matches, setMatches] = useState<{ index: number; text: string }[]>([]);
-  const [activeIndex, setActiveIndex] = useState(-1);
-
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const dx = e.clientX - dragStartRef.current.startX;
-      const dy = e.clientY - dragStartRef.current.startY;
-      setPosition({
-        x: dragStartRef.current.posX + dx,
-        y: dragStartRef.current.posY + dy,
-      });
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging]);
-
-  const handleDragStart = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest("input") || target.closest("button")) return;
-
-    setIsDragging(true);
-    dragStartRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      posX: position.x,
-      posY: position.y,
-    };
-    e.preventDefault();
-  };
+    try { localStorage.setItem(SEARCH_QUERY_STORAGE_KEY, query); } catch {}
+  }, [query]);
 
   useEffect(() => {
-    if (showSearchPanel) {
+    if (!initializedRef.current && activeRightPane === "search") {
+      initializedRef.current = true;
       setTimeout(() => {
-        if (searchInputRef.current) {
-          searchInputRef.current.focus();
-          searchInputRef.current.select();
-        }
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
       }, 50);
+    }
+  }, [activeRightPane]);
 
-      if (editorView) {
-        const { from, to } = editorView.state.selection.main;
-        if (from !== to) {
-          const selected = editorView.state.sliceDoc(from, to);
-          if (selected && selected.indexOf("\n") === -1) {
-            setSearchText(selected);
+  const docString = useMemo(() => {
+    return parsedDoc?.screenplayText ?? rawText ?? "";
+  }, [parsedDoc, rawText]);
+
+  const lineStarts = useMemo(() => {
+    if (!parsedDoc) return [] as { lineIndex: number; start: number }[];
+    const out: { lineIndex: number; start: number }[] = [];
+    let pos = 0;
+    parsedDoc.lines.forEach((line, idx) => {
+      out.push({ lineIndex: idx, start: pos });
+      pos += line.text.length + 1;
+    });
+    return out;
+  }, [parsedDoc]);
+
+  const resultRows = useMemo<SearchResult[]>(() => {
+    if (!query) return [];
+    const pattern = buildPattern(query, caseSensitive, isRegex, wholeWord);
+    if (!pattern) return [];
+    const matches: SearchResult[] = [];
+    const re = new RegExp(pattern.source, pattern.flags);
+    let m: RegExpExecArray | null;
+    let lastHeading: { sceneNumber?: string; text: string } | null = null;
+    while ((m = re.exec(docString)) !== null) {
+      const lineInfo = findLineAtPosition(lineStarts, m.index);
+      const lineIndex = lineInfo?.lineIndex ?? 0;
+      const lineText = parsedDoc?.lines[lineIndex]?.text ?? "";
+      const column = lineInfo ? m.index - lineInfo.start : 0;
+      if (lineText && parsedDoc) {
+        const current = parsedDoc.lines[lineIndex];
+        if (current && current.type === LineType.heading) {
+          lastHeading = { sceneNumber: current.sceneNumber, text: current.text };
+        }
+      }
+      if (!lastHeading) {
+        for (let i = lineIndex; i >= 0; i--) {
+          const l = parsedDoc?.lines[i];
+          if (l && l.type === LineType.heading) {
+            lastHeading = { sceneNumber: l.sceneNumber, text: l.text };
+            break;
           }
         }
       }
+      const sceneLabel = lastHeading
+        ? `${lastHeading.sceneNumber ? `[${lastHeading.sceneNumber}] ` : ""}${lastHeading.text}`
+        : "—";
+      matches.push({
+        from: m.index,
+        to: m.index + m[0].length,
+        text: m[0],
+        lineIndex,
+        column,
+        lineText,
+        sceneContext: sceneLabel,
+      });
+      if (m[0].length === 0) re.lastIndex++;
     }
-  }, [showSearchPanel, editorView]);
+    return matches;
+  }, [query, caseSensitive, wholeWord, isRegex, docString, lineStarts, parsedDoc]);
+
+  const regexError = useMemo(() => {
+    if (!query) return null;
+    const pattern = buildPattern(query, caseSensitive, isRegex, wholeWord);
+    if (!pattern && isRegex) return "Invalid regular expression";
+    return null;
+  }, [query, caseSensitive, isRegex, wholeWord]);
+
+  useEffect(() => {
+    if (activeIndex >= resultRows.length) setActiveIndex(-1);
+  }, [resultRows.length, activeIndex]);
+
+  const editorViewRef = useRef(editorView);
+  useEffect(() => {
+    editorViewRef.current = editorView;
+  }, [editorView]);
 
   useEffect(() => {
     if (!editorView) return;
-
-    const docText = editorView.state.doc.toString();
-    if (!searchText) {
-      setMatches([]);
-      setActiveIndex(-1);
-      editorView.dispatch({
-        effects: setSearchQuery.of(
-          new SearchQuery({
-            search: "",
-            replace: "",
-            caseSensitive: isCaseSensitive,
-            literal: !isRegex,
-            regexp: isRegex,
-            wholeWord: isWholeWord,
-          })
-        ),
-      });
-      return;
-    }
-
     try {
-      const escapedQuery = searchText.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-      let pattern = isRegex ? searchText : escapedQuery;
-      if (isWholeWord) {
-        pattern = `\\b${pattern}\\b`;
-      }
-      const regex = new RegExp(pattern, isCaseSensitive ? "g" : "gi");
-
-      const list: { index: number; text: string }[] = [];
-      let match;
-      while ((match = regex.exec(docText)) !== null) {
-        list.push({ index: match.index, text: match[0] });
-        if (regex.lastIndex === match.index) {
-          regex.lastIndex++;
-        }
-      }
-      setMatches(list);
-
-      const query = new SearchQuery({
-        search: searchText,
-        replace: replaceText,
-        caseSensitive: isCaseSensitive,
-        literal: !isRegex,
-        regexp: isRegex,
-        wholeWord: isWholeWord,
-      });
-
-      editorView.dispatch({
-        effects: setSearchQuery.of(query),
-      });
-    } catch {
-      setMatches([]);
+      const positions = resultRows.map((r) => ({ from: r.from, to: r.to }));
+      editorView.dispatch({ effects: updateSearchMatchesEffect.of(positions) });
+    } catch (e) {
+      logger.error("search", "Failed to dispatch search highlights:", e);
     }
-  }, [searchText, replaceText, isCaseSensitive, isWholeWord, isRegex, editorView]);
+  }, [resultRows, editorView]);
 
   useEffect(() => {
-    if (!editorView || matches.length === 0) {
-      setActiveIndex(-1);
-      return;
-    }
-
-    const mainSel = editorView.state.selection.main;
-    let foundIndex = matches.findIndex((m) => m.index === mainSel.from);
-
-    if (foundIndex === -1) {
-      foundIndex = matches.findIndex((m) => m.index >= mainSel.head);
-    }
-
-    if (foundIndex === -1) {
-      foundIndex = matches.length - 1;
-    }
-
-    setActiveIndex(foundIndex);
-  }, [matches, editorView?.state.selection.main]);
-
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (e.shiftKey) {
-        handlePrev();
-      } else {
-        handleNext();
+    return () => {
+      const view = editorViewRef.current;
+      if (view) {
+        try {
+          view.dispatch({ effects: updateSearchMatchesEffect.of([]) });
+        } catch {}
       }
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      handleClose();
-    }
-  };
+    };
+  }, []);
 
-  const handleReplaceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleReplace();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      handleClose();
-    }
-  };
-
-  const handleNext = () => {
-    if (editorView) {
-      findNext(editorView);
-      const pos = editorView.state.selection.main.head;
-      editorView.dispatch({
-        effects: EditorView.scrollIntoView(pos, { y: "center" }),
-      });
-      editorView.focus();
-    }
-  };
-
-  const handlePrev = () => {
-    if (editorView) {
-      findPrevious(editorView);
-      const pos = editorView.state.selection.main.head;
-      editorView.dispatch({
-        effects: EditorView.scrollIntoView(pos, { y: "center" }),
-      });
-      editorView.focus();
-    }
-  };
-
-  const getCaseMatchedReplacement = (matchText: string, replaceText: string): string => {
-    if (!matchText || !replaceText) return replaceText;
-
-    // 1. ALL CAPS
-    if (matchText === matchText.toUpperCase() && matchText !== matchText.toLowerCase()) {
-      return replaceText.toUpperCase();
-    }
-
-    // 2. Capitalized / Title Case
-    const firstChar = matchText.charAt(0);
-    const restChars = matchText.slice(1);
-    const isCapitalized =
-      firstChar === firstChar.toUpperCase() &&
-      restChars === restChars.toLowerCase() &&
-      matchText !== matchText.toLowerCase();
-
-    if (isCapitalized) {
-      return replaceText.charAt(0).toUpperCase() + replaceText.slice(1).toLowerCase();
-    }
-
-    // 3. Lowercase
-    if (matchText === matchText.toLowerCase() && matchText !== matchText.toUpperCase()) {
-      return replaceText.toLowerCase();
-    }
-
-    return replaceText;
-  };
-
-  const handleReplace = () => {
+  const handleResultClick = useCallback((r: SearchResult) => {
     if (!editorView) return;
-
-    const { from, to } = editorView.state.selection.main;
-    if (from !== to) {
-      const matchText = editorView.state.sliceDoc(from, to);
-      let finalReplace = replaceText;
-      if (preserveCase) {
-        finalReplace = getCaseMatchedReplacement(matchText, replaceText);
-      }
-
-      const tempQuery = new SearchQuery({
-        search: searchText,
-        replace: finalReplace,
-        caseSensitive: isCaseSensitive,
-        literal: !isRegex,
-        regexp: isRegex,
-        wholeWord: isWholeWord,
-      });
-
+    try {
       editorView.dispatch({
-        effects: setSearchQuery.of(tempQuery),
+        selection: { anchor: r.from, head: r.to },
+        effects: EditorView.scrollIntoView(r.from, { y: "center" }),
       });
-
-      replaceNext(editorView);
-
-      const originalQuery = new SearchQuery({
-        search: searchText,
-        replace: replaceText,
-        caseSensitive: isCaseSensitive,
-        literal: !isRegex,
-        regexp: isRegex,
-        wholeWord: isWholeWord,
-      });
-      editorView.dispatch({
-        effects: setSearchQuery.of(originalQuery),
-      });
-    } else {
-      replaceNext(editorView);
-    }
-    editorView.focus();
-  };
-
-  const handleReplaceAll = () => {
-    if (!editorView || matches.length === 0) return;
-
-    const sortedMatches = [...matches].sort((a, b) => b.index - a.index);
-    const changes = sortedMatches.map((match) => {
-      let finalReplace = replaceText;
-      if (preserveCase) {
-        finalReplace = getCaseMatchedReplacement(match.text, replaceText);
-      }
-      return {
-        from: match.index,
-        to: match.index + match.text.length,
-        insert: finalReplace,
-      };
-    });
-
-    editorView.dispatch({
-      changes,
-      selection: { anchor: editorView.state.selection.main.head },
-    });
-
-    editorView.focus();
-  };
-
-  const handleClose = () => {
-    setShowSearchPanel(false);
-    if (editorView) {
       editorView.focus();
+    } catch (e) {
+      logger.error("search", "Failed to scroll to match:", e);
+    }
+  }, [editorView]);
+
+  const goTo = useCallback((delta: number) => {
+    if (resultRows.length === 0) return;
+    const len = resultRows.length;
+    const next = ((activeIndex + delta) % len + len) % len;
+    setActiveIndex(next);
+    handleResultClick(resultRows[next]);
+  }, [activeIndex, resultRows, handleResultClick]);
+
+  const handleReplaceCurrent = useCallback(() => {
+    if (activeIndex < 0 || activeIndex >= resultRows.length) return;
+    if (!editorView) return;
+    const r = resultRows[activeIndex];
+    try {
+      editorView.dispatch({
+        changes: { from: r.from, to: r.to, insert: replaceText },
+        selection: { anchor: r.from + replaceText.length },
+      });
+    } catch (e) {
+      logger.error("search", "Failed to replace current match:", e);
+    }
+  }, [activeIndex, resultRows, replaceText, editorView]);
+
+  const handleReplaceAll = useCallback(async () => {
+    if (resultRows.length === 0) return;
+    if (!docString) return;
+    try {
+      const choice = await confirm({
+        title: "Replace All",
+        message: `Replace all ${resultRows.length} occurrence(s) with "${replaceText}"? You can undo with Ctrl+Z.`,
+        buttons: [
+          { value: "cancel", label: "Cancel", variant: "text" },
+          { value: "ok", label: "Replace All", variant: "contained", color: "primary" },
+        ],
+      });
+      if (choice !== "ok") return;
+      const pattern = buildPattern(query, caseSensitive, isRegex, wholeWord);
+      if (!pattern) return;
+      const newDoc = docString.replace(pattern, replaceText);
+      setRawText(newDoc);
+    } catch (e) {
+      logger.error("search", "Failed to replace all:", e);
+    }
+  }, [resultRows, docString, query, caseSensitive, isRegex, wholeWord, replaceText, confirm, setRawText]);
+
+  const handleReplaceSelected = useCallback(() => {
+    if (selected.size === 0) return;
+    if (!docString) return;
+    const sortedRows = [...resultRows]
+      .map((r, originalIndex) => ({ r, originalIndex }))
+      .filter(({ originalIndex }) => selected.has(originalIndex))
+      .sort((a, b) => b.r.from - a.r.from);
+    let working = docString;
+    for (const { r } of sortedRows) {
+      working = working.slice(0, r.from) + replaceText + working.slice(r.to);
+    }
+    setRawText(working);
+    setSelected(new Set());
+  }, [selected, resultRows, replaceText, docString, setRawText]);
+
+  const toggleCheck = useCallback((idx: number, value: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (value) next.add(idx); else next.delete(idx);
+      return next;
+    });
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setActiveRightPane(null);
+    setTimeout(() => editorView?.focus(), 50);
+  }, [setActiveRightPane, editorView]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (resultRows.length === 0) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const dir = e.key === "ArrowDown" ? 1 : -1;
+      goTo(dir);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeIndex >= 0 && activeIndex < resultRows.length) {
+        handleResultClick(resultRows[activeIndex]);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleClose();
     }
   };
 
-  if (!showSearchPanel) return null;
+  const renderHighlightedLine = (r: SearchResult) => {
+    const text = r.lineText || "";
+    if (!r.text || text.length === 0) {
+      return <span style={{ opacity: 0.5, fontStyle: "italic" }}>(empty line)</span>;
+    }
+    const lower = text.toLowerCase();
+    const needle = r.text.toLowerCase();
+    const start = lower.indexOf(needle);
+    if (start < 0) {
+      return <>{text}</>;
+    }
+    const before = text.slice(0, start);
+    const hit = text.slice(start, start + r.text.length);
+    const after = text.slice(start + r.text.length);
+    return (
+      <>
+        {before}
+        <Box component="span" sx={{ bgcolor: "rgba(255, 213, 0, 0.55)", color: "#000", borderRadius: "2px", px: 0.3 }}>
+          {hit}
+        </Box>
+        {after}
+      </>
+    );
+  };
 
   return (
-    <Paper
-      elevation={8}
-      ref={containerRef}
-      onMouseDown={handleDragStart}
-      sx={{
-        position: "fixed",
-        top: 80,
-        right: 40,
-        zIndex: 1000,
-        p: 1.5,
-        display: "flex",
-        flexDirection: "column",
-        gap: 1,
-        width: 380,
-        borderRadius: 2,
-        border: "1px solid",
-        borderColor: "divider",
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        cursor: isDragging ? "grabbing" : "grab",
-      }}
-    >
-      {/* Search Row */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <IconButton
-          size="small"
-          onClick={() => setShowReplacePanel(!showReplacePanel)}
-          title="Toggle Replace"
-        >
-          {showReplacePanel ? <KeyboardArrowDownIcon sx={{ fontSize: 16 }} /> : <ChevronRightIcon sx={{ fontSize: 16 }} />}
-        </IconButton>
-
-        <Box sx={{ display: "flex", flex: 1, alignItems: "center", border: "1px solid", borderColor: "divider", borderRadius: 1.5, px: 1, bgcolor: "background.paper" }}>
-          <InputBase
-            inputRef={searchInputRef}
-            placeholder="Find"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            sx={{ flex: 1, fontSize: 13, py: 0.2 }}
-          />
-          <Box sx={{ display: "flex", gap: 0.2 }}>
-            {[
-              { label: "Aa", active: isCaseSensitive, onClick: () => setIsCaseSensitive(!isCaseSensitive), title: "Match Case (Aa)" },
-              { label: "ab", active: isWholeWord, onClick: () => setIsWholeWord(!isWholeWord), title: "Match Whole Word (ab)" },
-              { label: ".*", active: isRegex, onClick: () => setIsRegex(!isRegex), title: "Use Regular Expression (.*)" },
-            ].map((btn) => (
-              <IconButton
-                key={btn.label}
-                size="small"
-                onClick={btn.onClick}
-                title={btn.title}
-                sx={{
-                  width: 22,
-                  height: 22,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  borderRadius: 1,
-                  bgcolor: btn.active ? "var(--button-color)" : "transparent",
-                  color: btn.active ? "#fff" : "text.secondary",
-                  "&:hover": {
-                    bgcolor: btn.active ? "var(--button-color)" : "action.hover",
-                  }
-                }}
-              >
-                {btn.label}
-              </IconButton>
-            ))}
-          </Box>
-        </Box>
-
-        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 45, textAlign: "center", fontSize: 11 }}>
-          {matches.length > 0 ? `${activeIndex + 1}/${matches.length}` : "0/0"}
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 2, pr: 5, py: 1.25, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+          Find and Replace
         </Typography>
-
-        <Box sx={{ display: "flex", gap: 0.2 }}>
-          <IconButton size="small" onClick={handlePrev} title="Previous Match (Shift+Enter)">
-            <ArrowUpwardIcon sx={{ fontSize: 16 }} />
-          </IconButton>
-          <IconButton size="small" onClick={handleNext} title="Next Match (Enter)">
-            <ArrowDownwardIcon sx={{ fontSize: 16 }} />
-          </IconButton>
-          <IconButton size="small" onClick={handleClose} title="Close (Escape)">
-            <CloseIcon sx={{ fontSize: 16 }} />
-          </IconButton>
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+          <Tooltip title="Search and replace text in the screenplay. Use Enter to jump to the next match, Shift+Enter for the previous one.">
+            <span>
+              <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
+            </span>
+          </Tooltip>
+          <Chip
+            label={resultRows.length === 0 ? "0 matches" : `${resultRows.length} ${resultRows.length === 1 ? "match" : "matches"}`}
+            size="small"
+            sx={{ height: 18, fontSize: 10, fontWeight: 600, borderRadius: PILL_RADIUS }}
+          />
         </Box>
       </Box>
 
-      {/* Replace Row */}
-      {showReplacePanel && (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Box sx={{ width: 28 }} /> {/* Spacer */}
-          <Box sx={{ display: "flex", flex: 1, alignItems: "center", border: "1px solid", borderColor: "divider", borderRadius: 1.5, px: 1, bgcolor: "background.paper" }}>
-            <InputBase
-              placeholder="Replace"
+      <Box sx={{ display: "flex", flexDirection: "column", flex: 1, p: 1.5, gap: 1.25, overflow: "hidden" }}>
+        <TextField
+          inputRef={searchInputRef}
+          placeholder="Find..."
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setActiveIndex(-1); setSelected(new Set()); }}
+          onKeyDown={handleKeyDown}
+          size="small"
+          fullWidth
+          error={!!regexError}
+          helperText={regexError || undefined}
+          slotProps={{
+            input: {
+              sx: {
+                bgcolor: "background.paper",
+                fontSize: "0.8rem",
+                "& fieldset": { borderColor: "divider" },
+                "&:hover fieldset": { borderColor: "text.secondary" },
+                "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+              },
+              startAdornment: (
+                <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
+                  <SearchIcon sx={{ fontSize: 14 }} />
+                </Box>
+              ),
+              endAdornment: (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
+                  {query && (
+                    <Tooltip title="Clear search">
+                      <IconButton size="small" onClick={() => { setQuery(""); setSelected(new Set()); setActiveIndex(-1); }}>
+                        <CloseIcon sx={{ fontSize: 12 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  <Tooltip title={showReplace ? "Hide replace" : "Show replace"}>
+                    <IconButton size="small" onClick={() => setShowReplace((s) => !s)}>
+                      {showReplace
+                        ? <KeyboardArrowDownIcon sx={{ fontSize: 14 }} />
+                        : <ChevronRightIcon sx={{ fontSize: 14 }} />}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Previous match (Shift+Enter)">
+                    <span>
+                      <IconButton size="small" onClick={() => goTo(-1)} disabled={resultRows.length === 0}>
+                        <ArrowUpwardIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title="Next match (Enter)">
+                    <span>
+                      <IconButton size="small" onClick={() => goTo(1)} disabled={resultRows.length === 0}>
+                        <ArrowDownwardIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </Box>
+              ),
+            },
+          }}
+        />
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <OptionButton active={caseSensitive} onClick={() => setCaseSensitive((v) => !v)} label="Aa" title="Match case" />
+          <OptionButton active={wholeWord} onClick={() => setWholeWord((v) => !v)} label="\\b" title="Whole word" />
+          <OptionButton active={isRegex} onClick={() => setIsRegex((v) => !v)} label=".*" title="Regular expression" />
+          <Box sx={{ flex: 1 }} />
+          {resultRows.length > 0 && (
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, fontWeight: 700 }}>
+              {activeIndex < 0 ? "1" : activeIndex + 1} of {resultRows.length}
+            </Typography>
+          )}
+        </Box>
+
+        {showReplace && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            <TextField
+              inputRef={replaceInputRef}
+              placeholder="Replace with..."
               value={replaceText}
               onChange={(e) => setReplaceText(e.target.value)}
-              onKeyDown={handleReplaceKeyDown}
-              sx={{ flex: 1, fontSize: 13, py: 0.2 }}
-            />
-            <IconButton
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); handleReplaceCurrent(); }
+                else if (e.key === "Escape") { e.preventDefault(); handleClose(); }
+              }}
               size="small"
-              onClick={() => setPreserveCase(!preserveCase)}
-              title="Preserve Case (AB)"
+              fullWidth
+              slotProps={{
+                input: {
+                  sx: {
+                    bgcolor: "background.paper",
+                    fontSize: "0.8rem",
+                    "& fieldset": { borderColor: "divider" },
+                    "&:hover fieldset": { borderColor: "text.secondary" },
+                    "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+                  },
+                },
+              }}
+            />
+            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+              <Tooltip title="Replace current match (Enter)">
+                <span>
+                  <Button
+                    size="small"
+                    onClick={handleReplaceCurrent}
+                    disabled={resultRows.length === 0 || activeIndex < 0}
+                    startIcon={<FindReplaceIcon sx={{ fontSize: 13 }} />}
+                    sx={{ fontSize: 11, textTransform: "none", py: 0.25 }}
+                  >
+                    Replace
+                  </Button>
+                </span>
+              </Tooltip>
+              <Tooltip title="Replace all matches">
+                <span>
+                  <Button
+                    size="small"
+                    onClick={handleReplaceAll}
+                    disabled={resultRows.length === 0}
+                    startIcon={<DoneAllIcon sx={{ fontSize: 13 }} />}
+                    sx={{ fontSize: 11, textTransform: "none", py: 0.25 }}
+                  >
+                    All ({resultRows.length})
+                  </Button>
+                </span>
+              </Tooltip>
+              <Tooltip title="Replace only checked matches">
+                <span>
+                  <Button
+                    size="small"
+                    onClick={handleReplaceSelected}
+                    disabled={selected.size === 0}
+                    sx={{ fontSize: 11, textTransform: "none", py: 0.25 }}
+                  >
+                    Selected ({selected.size})
+                  </Button>
+                </span>
+              </Tooltip>
+            </Box>
+          </Box>
+        )}
+
+        <Divider sx={{ mt: showReplace ? 0 : 0 }} />
+
+        <List
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            outline: "none",
+            p: 0.5,
+            mx: -1.5,
+            mb: -1.5,
+            mt: 0,
+            pt: 0.5,
+            "&:focus": { outline: "none" },
+          }}
+        >
+          {resultRows.length === 0 ? (
+            <Box
               sx={{
-                width: 22,
-                height: 22,
-                fontSize: 10,
-                fontWeight: 700,
-                borderRadius: 1,
-                bgcolor: preserveCase ? "var(--button-color)" : "transparent",
-                color: preserveCase ? "#fff" : "text.secondary",
-                "&:hover": {
-                  bgcolor: preserveCase ? "var(--button-color)" : "action.hover",
-                }
+                p: 4,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1,
+                color: "text.secondary",
+                textAlign: "center",
               }}
             >
-              AB
-            </IconButton>
-          </Box>
-
-          <Box sx={{ display: "flex", gap: 0.2 }}>
-            <IconButton size="small" onClick={handleReplace} title="Replace">
-              <FindReplaceIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-            <IconButton size="small" onClick={handleReplaceAll} title="Replace All">
-              <DoneAllIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-            <Box sx={{ width: 28 }} /> {/* Balance space with close btn */}
-          </Box>
-        </Box>
-      )}
-    </Paper>
+              <SearchIcon sx={{ fontSize: 28, opacity: 0.4 }} />
+              <Typography variant="body2" sx={{ fontSize: 12, fontStyle: "italic" }}>
+                {query
+                  ? (regexError || "No matches found")
+                  : "Type a query to search the screenplay"}
+              </Typography>
+              {!query && (
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, opacity: 0.7, mt: 0.5 }}>
+                  Use Aa, \\b, or .* to refine your search
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            resultRows.map((r, idx) => {
+              const isActive = idx === activeIndex;
+              const isChecked = selected.has(idx);
+              return (
+                <ListItemButton
+                  key={`${r.from}-${r.to}-${idx}`}
+                  data-match-id={`${r.from}-${r.to}`}
+                  selected={isActive}
+                  onClick={(e) => {
+                    setActiveIndex(idx);
+                    handleResultClick(r);
+                    e.currentTarget.parentElement?.focus();
+                  }}
+                  sx={{
+                    pl: 1.5,
+                    pr: 1,
+                    py: 0.75,
+                    borderRadius: "6px",
+                    mb: 0.25,
+                    transition: "all 0.12s ease",
+                    bgcolor: isActive ? "action.selected" : "transparent",
+                    "&.Mui-selected": {
+                      bgcolor: "action.selected",
+                      "&:hover": { bgcolor: "action.selected" },
+                    },
+                    "&:hover": {
+                      bgcolor: isActive ? "action.selected" : "action.hover",
+                    },
+                  }}
+                >
+                  <Box
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCheck(idx, !isChecked);
+                    }}
+                    sx={{
+                      width: 14,
+                      height: 14,
+                      minWidth: 14,
+                      borderRadius: "3px",
+                      border: "1.5px solid",
+                      borderColor: isChecked ? "primary.main" : "divider",
+                      bgcolor: isChecked ? "primary.main" : "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      mr: 1,
+                      mt: 0.25,
+                      flexShrink: 0,
+                      transition: "all 0.12s ease",
+                      "&:hover": { borderColor: "primary.main" },
+                    }}
+                  >
+                    {isChecked && (
+                      <Box
+                        component="svg"
+                        viewBox="0 0 12 12"
+                        sx={{ width: 10, height: 10, fill: "none", stroke: "#fff", strokeWidth: 2 }}
+                      >
+                        <path d="M2 6 L5 9 L10 3" />
+                      </Box>
+                    )}
+                  </Box>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: "flex", gap: 0.6, alignItems: "center", flexWrap: "wrap" }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            bgcolor: "action.selected",
+                            px: 0.4,
+                            borderRadius: "4px",
+                            fontSize: "8.5px",
+                            fontWeight: 700,
+                            color: "text.secondary",
+                          }}
+                        >
+                          Line {r.lineIndex + 1}
+                        </Typography>
+                        {r.column > 0 && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: 9, opacity: 0.7 }}
+                          >
+                            col {r.column + 1}
+                          </Typography>
+                        )}
+                        {r.sceneContext && r.sceneContext !== "—" && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: 9,
+                              fontWeight: 600,
+                              color: "text.secondary",
+                              maxWidth: "60%",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.03em",
+                            }}
+                          >
+                            {r.sceneContext}
+                          </Typography>
+                        )}
+                      </Box>
+                    }
+                    secondary={
+                      <Box
+                        sx={{
+                          fontSize: 12,
+                          lineHeight: 1.45,
+                          fontFamily: "var(--font-ui)",
+                          mt: 0.3,
+                          ml: 1.5,
+                          color: "text.primary",
+                          wordBreak: "break-word",
+                          overflow: "hidden",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {renderHighlightedLine(r)}
+                      </Box>
+                    }
+                  />
+                </ListItemButton>
+              );
+            })
+          )}
+        </List>
+      </Box>
+    </Box>
   );
-});
-
+};

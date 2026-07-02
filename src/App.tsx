@@ -69,8 +69,8 @@ function AppInner() {
     appScale,
     isZenMode,
     setIsZenMode,
-    showSearchPanel,
-    setShowSearchPanel,
+    activeRightPane,
+    setActiveRightPane,
     activeTab,
     setActiveTab,
   } = useUI();
@@ -93,7 +93,7 @@ function AppInner() {
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
     openSettings: useCallback(() => { modalWindows.openSettingsWindow(); }, [modalWindows]),
     openHelp: useCallback(() => { modalWindows.openHelpWindow(); }, [modalWindows]),
-    toggleSearch: useCallback(() => setShowSearchPanel(!showSearchPanel), [showSearchPanel, setShowSearchPanel]),
+    toggleSearch: useCallback(() => setActiveRightPane(activeRightPane === "search" ? null : "search"), [activeRightPane, setActiveRightPane]),
     toggleSnapshotsPanel: useCallback(() => {
       if (isSidebarOpen && activeTab === "snapshots") {
         setIsSidebarOpen(false);
@@ -334,6 +334,13 @@ function AppInner() {
       setShowStructureModal(true);
       localStorage.removeItem("pending-action");
     }
+
+    setTimeout(async () => {
+      try {
+        const { emit } = await import("@tauri-apps/api/event");
+        emit("editor:ready", { action });
+      } catch {}
+    }, 100);
   }, []);
 
   // Listen for OS file open events (from Rust backend)

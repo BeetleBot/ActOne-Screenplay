@@ -14,6 +14,8 @@ export const updatePageBreakDisplayEffect = StateEffect.define<PageBreakDisplayS
 export const updateHideSyntaxEffect = StateEffect.define<boolean>();
 export const updateHideTagsEffect = StateEffect.define<boolean>();
 export const updateScriptFileNameEffect = StateEffect.define<string>();
+export const updateSearchMatchesEffect = StateEffect.define<{ from: number; to: number }[]>();
+export const updateRightPaneOpenEffect = StateEffect.define<boolean>();
 
 
 
@@ -136,8 +138,9 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_SHOT]: "cm-fountain-shot",
 };
 
-const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, scriptFileName: string): DecorationSet => {
+const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, rightPaneOpen: boolean, scriptFileName: string, searchMatches: { from: number; to: number }[]): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
+  const allDecos: { from: number; to: number; dec: Decoration }[] = [];
   const doc = state.doc;
   const parsedDocLines = docObj?.lines;
   const lineTypesFallback = (parsedDocLines && parsedDocLines.length === doc.lines)
@@ -281,7 +284,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
     }
 
     const prodTags = getPerScriptSetting("productionTags", docObj?.settings, scriptFileName);
-    if (!hideTagsEnabled && prodTags && prodTags.tags) {
+    if (!hideTagsEnabled && !rightPaneOpen && prodTags && prodTags.tags) {
       const tagDefMap = new Map<string, string>();
       if (prodTags.definitions) {
         for (const def of prodTags.definitions) {
@@ -357,8 +360,24 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
     }
 
     for (const d of validDecos) {
-      builder.add(d.from, d.to, d.dec);
+      allDecos.push(d);
     }
+  }
+
+  for (const m of searchMatches) {
+    if (m.from >= 0 && m.to > m.from && m.to <= state.doc.length) {
+      allDecos.push({
+        from: m.from,
+        to: m.to,
+        dec: Decoration.mark({ class: "cm-search-match" })
+      });
+    }
+  }
+
+  allDecos.sort((a, b) => a.from - b.from || a.to - b.to);
+
+  for (const d of allDecos) {
+    builder.add(d.from, d.to, d.dec);
   }
 
   return builder.finish();
@@ -372,16 +391,20 @@ export const fountainHighlightField = StateField.define<{
   displaySettings: PageBreakDisplaySettings;
   hideSyntaxEnabled: boolean;
   hideTagsEnabled: boolean;
+  rightPaneOpen: boolean;
   scriptFileName: string;
+  searchMatches: { from: number; to: number }[];
 }>({
   create(state) {
     return {
-      decorations: computeFountainDecorations(state, null, false, false, ""),
+      decorations: computeFountainDecorations(state, null, false, false, false, "", []),
       doc: null,
       displaySettings: defaultDisplaySettings,
       hideSyntaxEnabled: false,
       hideTagsEnabled: false,
+      rightPaneOpen: false,
       scriptFileName: "",
+      searchMatches: [],
     };
   },
   update(value, tr) {
@@ -389,10 +412,14 @@ export const fountainHighlightField = StateField.define<{
     let displaySettings = value.displaySettings;
     let hideSyntaxEnabled = value.hideSyntaxEnabled;
     let hideTagsEnabled = value.hideTagsEnabled;
+    let rightPaneOpen = value.rightPaneOpen;
     let scriptFileName = value.scriptFileName;
+    let searchMatches = value.searchMatches;
     let hideSyntaxChanged = false;
     let hideTagsChanged = false;
+    let rightPaneChanged = false;
     let scriptFileNameChanged = false;
+    let searchMatchesChanged = false;
 
     for (const effect of tr.effects) {
       if (effect.is(updateParsedDocEffect)) {
@@ -409,19 +436,39 @@ export const fountainHighlightField = StateField.define<{
         hideTagsEnabled = effect.value;
         hideTagsChanged = true;
       }
+      if (effect.is(updateRightPaneOpenEffect)) {
+        rightPaneOpen = effect.value;
+        rightPaneChanged = true;
+      }
       if (effect.is(updateScriptFileNameEffect)) {
         scriptFileName = effect.value;
         scriptFileNameChanged = true;
       }
+      if (effect.is(updateSearchMatchesEffect)) {
+        searchMatches = effect.value;
+        searchMatchesChanged = true;
+      }
     }
-    if (tr.docChanged || tr.selection || doc !== value.doc || displaySettings !== value.displaySettings || hideSyntaxChanged || hideTagsChanged || scriptFileNameChanged) {
+    if (
+      tr.docChanged ||
+      tr.selection ||
+      doc !== value.doc ||
+      displaySettings !== value.displaySettings ||
+      hideSyntaxChanged ||
+      hideTagsChanged ||
+      rightPaneChanged ||
+      scriptFileNameChanged ||
+      searchMatchesChanged
+    ) {
       return {
-        decorations: computeFountainDecorations(tr.state, doc, hideSyntaxEnabled, hideTagsEnabled, scriptFileName),
+        decorations: computeFountainDecorations(tr.state, doc, hideSyntaxEnabled, hideTagsEnabled, rightPaneOpen, scriptFileName, searchMatches),
         doc,
         displaySettings,
         hideSyntaxEnabled,
         hideTagsEnabled,
+        rightPaneOpen,
         scriptFileName,
+        searchMatches,
       };
     }
     return value;

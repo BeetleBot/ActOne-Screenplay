@@ -8,14 +8,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Self-elevate to admin if SelfSign is requested and we're not admin
-$IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if ((-not $IsAdmin) -and $SelfSign) {
-    $scriptPath = $MyInvocation.MyCommand.Path
-    Start-Process -Verb RunAs -FilePath "powershell" -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-File", "`"$scriptPath`"", "-SelfSign"
-    exit
-}
-
 $ProjectRoot = Resolve-Path "$PSScriptRoot\..\.."
 $ArtifactsDir = "$ProjectRoot\Release\artifacts"
 
@@ -29,13 +21,11 @@ if (-not $Version) {
     if (-not $Version) {
         $Version = $currentVersion
     } else {
-        # Update version in package.json
         $packageJsonPath = "$ProjectRoot\package.json"
         $content = Get-Content $packageJsonPath -Raw
         $content = $content -replace '(?<="version"\s*:\s*")[^"]+(?=")', $Version
         [System.IO.File]::WriteAllText($packageJsonPath, $content)
-        
-        # Run sync-version.js to update Cargo.toml and tauri.conf.json
+
         Push-Location $ProjectRoot
         node sync-version.js
         Pop-Location
@@ -45,7 +35,7 @@ $MsixVersion = "$Version.0"
 Write-Step "Building ActOne v$Version"
 
 
-# --- Step 1: Build Tauri app ---
+# --- Step 1: Build Tauri app (no admin needed) ---
 Write-Step "Building Tauri app (release, no bundle)"
 Push-Location $ProjectRoot
 npm run tauri build -- --no-bundle
@@ -110,19 +100,50 @@ if ($SkipSigning) {
             -CertStoreLocation "Cert:\CurrentUser\My" `
             -Provider "Microsoft Enhanced RSA and AES Cryptographic Provider" `
             -HashAlgorithm SHA256
-        $store = New-Object System.Security.Cryptography.X509Certificates.X509Store "Root","LocalMachine"
-        $store.Open("ReadWrite")
-        $store.Add($cert)
-        $store.Close()
-        $pub = New-Object System.Security.Cryptography.X509Certificates.X509Store "TrustedPublisher","LocalMachine"
-        $pub.Open("ReadWrite")
-        $pub.Add($cert)
-        $pub.Close()
-        Write-Host "  Created and installed self-signed cert"
+        Write-Host "  Created self-signed cert in CurrentUser\My"
         $existing = $cert
     } else {
         $existing = $existing[0]
+        Write-Host "  Found existing self-signed cert"
     }
+
+    $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $machineRootCerts = Get-ChildItem -Path "Cert:\LocalMachine\Root" -ErrorAction SilentlyContinue | Where-Object { $_.Subject -eq $Subject }
+    if (-not $machineRootCerts) {
+        Write-Step "Installing certificate to LocalMachine stores (admin needed)..."
+        $tempCert = "$env:TEMP\actone-selfsign.cer"
+        Export-Certificate -Cert $existing -FilePath $tempCert -Type CERT | Out-Null
+        if (-not $IsAdmin) {
+            $installScript = @"
+                `$ErrorActionPreference = 'Stop'
+                `$store = New-Object System.Security.Cryptography.X509Certificates.X509Store 'Root','LocalMachine'
+                `$store.Open('ReadWrite')
+                `$store.Add(New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 '$tempCert')
+                `$store.Close()
+                `$pub = New-Object System.Security.Cryptography.X509Certificates.X509Store 'TrustedPublisher','LocalMachine'
+                `$pub.Open('ReadWrite')
+                `$pub.Add(New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 '$tempCert')
+                `$pub.Close()
+"@
+            $encodedScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($installScript))
+            $proc = Start-Process -Verb RunAs -Wait -PassThru -FilePath "powershell" -ArgumentList "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encodedScript
+            if ($proc.ExitCode -ne 0) { Write-Host "  WARNING: Certificate install may have failed (exit $($proc.ExitCode))" -ForegroundColor Yellow }
+        } else {
+            $store = New-Object System.Security.Cryptography.X509Certificates.X509Store "Root","LocalMachine"
+            $store.Open("ReadWrite")
+            $store.Add($existing)
+            $store.Close()
+            $pub = New-Object System.Security.Cryptography.X509Certificates.X509Store "TrustedPublisher","LocalMachine"
+            $pub.Open("ReadWrite")
+            $pub.Add($existing)
+            $pub.Close()
+        }
+        Remove-Item $tempCert -ErrorAction SilentlyContinue
+        Write-Host "  Certificate installed to LocalMachine\Root and TrustedPublisher"
+    } else {
+        Write-Host "  Certificate already in LocalMachine\Root"
+    }
+
     $Signtool = "$SdkBin\signtool.exe"
     & $Signtool sign /a /fd SHA256 /sha1 $existing.Thumbprint $MsixPath
     if ($LASTEXITCODE -eq 0) { $Signed = $true }

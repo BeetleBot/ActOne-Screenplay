@@ -282,6 +282,26 @@ export const OutlineView = React.memo(() => {
     }
   }, []);
 
+  const dragCleanupRef = useRef<{ onMove?: (e: MouseEvent) => void; onUp?: () => void }>({});
+
+  // Cleanup drag listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (dragCleanupRef.current.onMove) {
+        document.removeEventListener("mousemove", dragCleanupRef.current.onMove);
+      }
+      if (dragCleanupRef.current.onUp) {
+        document.removeEventListener("mouseup", dragCleanupRef.current.onUp);
+      }
+      if (ghostRef.current) {
+        document.body.removeChild(ghostRef.current);
+        ghostRef.current = null;
+      }
+      mouseDragRef.current = null;
+      mouseOverRef.current = null;
+    };
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (selectable.length === 0) return;
 
@@ -374,6 +394,7 @@ export const OutlineView = React.memo(() => {
     const onUp = () => {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
+      dragCleanupRef.current = {};
       if (ghostRef.current) {
         document.body.removeChild(ghostRef.current);
         ghostRef.current = null;
@@ -390,6 +411,7 @@ export const OutlineView = React.memo(() => {
       }
     };
 
+    dragCleanupRef.current = { onMove, onUp };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
   }, [scenesItems, reorderScenes]);

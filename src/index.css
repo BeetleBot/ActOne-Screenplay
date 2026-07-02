@@ -254,6 +254,22 @@ body {
   transition: opacity 0.15s ease-in-out;
 }
 
+.cm-search-match {
+  background-color: #ffe066 !important;
+  color: #000 !important;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #d4a017;
+  padding: 0 1px;
+  margin: 0 -1px;
+}
+
+[data-mui-color-scheme="dark"] .cm-search-match,
+.cm-dark .cm-search-match {
+  background-color: #f5c518 !important;
+  color: #000 !important;
+  box-shadow: 0 0 0 1px #b8860b;
+}
+
 /* Fountain Element Layout & Indents */
 .cm-fountain-heading {
   font-weight: bold !important;
