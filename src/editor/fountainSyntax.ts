@@ -1,7 +1,7 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
 import { FountainDocument } from "../parser";
-import { getPerScriptSetting } from "../utils/perScriptSettings";
+import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
 
@@ -283,7 +283,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       }
     }
 
-    const prodTags = getPerScriptSetting("productionTags", docObj?.settings, scriptFileName);
+    const prodTags = getPerScriptSettingObject("productionTags", docObj?.settings, scriptFileName, { tags: [], definitions: [] });
     if (!hideTagsEnabled && !rightPaneOpen && prodTags && prodTags.tags) {
       const tagDefMap = new Map<string, string>();
       if (prodTags.definitions) {

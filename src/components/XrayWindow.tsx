@@ -32,7 +32,7 @@ import {
   computeSceneTiming,
   computeCharacterConnections,
 } from "../utils/analysis";
-import { getPerScriptSetting } from "../utils/perScriptSettings";
+import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 import {
   SearchIcon,
   CloseIcon,
@@ -185,11 +185,11 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
 
   // Retrieve character profiles from document settings
   const characterProfiles = useMemo(() => {
-    return getPerScriptSetting("characterProfiles", settings, scriptFileName) || {};
+    return getPerScriptSettingObject("characterProfiles", settings, scriptFileName, {});
   }, [settings, scriptFileName]);
 
   const genders = useMemo(() => {
-    return getPerScriptSetting("genders", settings, scriptFileName) || {};
+    return getPerScriptSettingObject("genders", settings, scriptFileName, {});
   }, [settings, scriptFileName]);
 
   const characters = useMemo(() => {

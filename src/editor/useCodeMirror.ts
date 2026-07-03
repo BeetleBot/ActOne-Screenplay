@@ -5,7 +5,7 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { search } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
-import { getPerScriptSetting } from "../utils/perScriptSettings";
+import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 import { CATEGORIES, STORAGE_KEYS } from "../constants";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource } from "./inlineAutocomplete";
 import { 
@@ -451,7 +451,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
     const prodTagsTooltip = hoverTooltip((view, pos) => {
       const settings = parsedDocRef.current.settings;
-      const prodTags = getPerScriptSetting("productionTags", settings, scriptFileNameRef.current);
+      const prodTags = getPerScriptSettingObject("productionTags", settings, scriptFileNameRef.current, { tags: [], definitions: [] });
       if (!prodTags || !prodTags.tags) return null;
 
       for (const tag of prodTags.tags) {
@@ -501,7 +501,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setRawTextRef.current(update.state.doc.toString());
-            const prodTags = getPerScriptSetting("productionTags", parsedDocRef.current.settings, scriptFileNameRef.current);
+            const prodTags = getPerScriptSettingObject("productionTags", parsedDocRef.current.settings, scriptFileNameRef.current, { tags: [], definitions: [] });
             if (prodTags && prodTags.tags && prodTags.tags.length > 0) {
               let changed = false;
               const mappedTags = prodTags.tags.map((tag: { range?: [number, number]; definitionId?: string; type?: string; sceneId?: string }) => {

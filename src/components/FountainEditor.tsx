@@ -6,7 +6,7 @@ import { alpha } from "@mui/material/styles";
 import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, AutoAwesomeIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
 import { logger } from "../utils/logger";
 import { CATEGORIES } from "../constants";
-import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
+import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -82,7 +82,7 @@ export const FountainEditor = React.memo(() => {
 
   const existingTag = useMemo(() => {
     if (!view || !selection) return null;
-    const prodTags = getPerScriptSetting("productionTags", parsedDoc.settings, scriptFileName);
+    const prodTags = getPerScriptSettingObject("productionTags", parsedDoc.settings, scriptFileName, { tags: [], definitions: [] });
     if (!prodTags || !prodTags.tags) return null;
     
     const cursor = selection.from;
@@ -123,7 +123,7 @@ export const FountainEditor = React.memo(() => {
   const handleRemoveTag = () => {
     if (!existingTag) return;
     updateSettings((prev: any) => {
-      const prodTags = getPerScriptSetting("productionTags", prev, scriptFileName) || { tags: [], definitions: [] };
+      const prodTags = getPerScriptSettingObject("productionTags", prev, scriptFileName, { tags: [], definitions: [] });
       const tags = (prodTags.tags || []).filter((t: any) => t !== existingTag.tag);
       return {
         ...prev,
@@ -144,7 +144,7 @@ export const FountainEditor = React.memo(() => {
     if (!text) return;
 
     updateSettings((prev: any) => {
-      const prodTags = getPerScriptSetting("productionTags", prev, scriptFileName) || { tags: [], definitions: [] };
+      const prodTags = getPerScriptSettingObject("productionTags", prev, scriptFileName, { tags: [], definitions: [] });
       const tags = [...(prodTags.tags || [])];
       const definitions = [...(prodTags.definitions || [])];
 

@@ -8,7 +8,7 @@ import { ScriptsView } from "./ScriptsView";
 import { SnapshotsPanel } from "./SnapshotsPanel";
 import { ActoneBanner } from "./ActoneBanner";
 import { AddIcon, CloseIcon, InfoOutlinedIcon } from "./Icons";
-import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
+import { getPerScriptSettingString, updatePerScriptSetting } from "../utils/perScriptSettings";
 import {
   Box,
   Typography,
@@ -52,7 +52,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
   }
 
   if (activeTab === "notepad") {
-    const notepadText = getPerScriptSetting("notepad", parsedDoc.settings, scriptFileName) || "";
+    const notepadText = getPerScriptSettingString("notepad", parsedDoc.settings, scriptFileName);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const val = e.target.value;

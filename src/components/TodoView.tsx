@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { useFile, useEditor } from "../context";
 import { ActoneBanner } from "./ActoneBanner";
 import { RadioButtonUncheckedIcon, CheckCircleIcon, KeyboardArrowDownIcon, AddIcon, CloseIcon, InfoOutlinedIcon } from "./Icons";
-import { getPerScriptSetting, updatePerScriptSetting } from "../utils/perScriptSettings";
+import { getPerScriptSettingArray, updatePerScriptSetting } from "../utils/perScriptSettings";
 
 import {
   Box,
@@ -38,7 +38,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
   const [input, setInput] = useState("");
   const [showCompleted, setShowCompleted] = useState(true);
 
-  const todos: Todo[] = getPerScriptSetting("todos", parsedDoc.settings, scriptFileName) || [];
+  const todos: Todo[] = getPerScriptSettingArray<Todo>("todos", parsedDoc.settings, scriptFileName);
 
   const saveTodos = useCallback((newTodos: Todo[]) => {
     updateSettings((prev: any) => ({

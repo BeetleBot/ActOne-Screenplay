@@ -6,7 +6,7 @@ import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
 import { setPrefs } from "./theme/AppPrefsEngine";
-import { getPerScriptSetting, updatePerScriptSetting } from "./utils/perScriptSettings";
+import { getPerScriptSetting, getPerScriptSettingObject, updatePerScriptSetting } from "./utils/perScriptSettings";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
@@ -185,7 +185,7 @@ function AppInner() {
           const doc = parsedDocRef.current;
           const resolvedSet = {
             ...(doc?.settings || {}),
-            productionTags: getPerScriptSetting("productionTags", doc?.settings, scriptFileNameRef.current),
+            productionTags: getPerScriptSettingObject("productionTags", doc?.settings, scriptFileNameRef.current, { tags: [], definitions: [] }),
           };
           emit("modal:tag-manager:init", {
             parsedDoc: { ...doc, settings: resolvedSet },
@@ -210,7 +210,7 @@ function AppInner() {
           const sf = scriptFileNameRef.current;
           if (action === "rename" && newName) {
             updateSettingsRef.current((prev: any) => {
-              const prevProdTags = getPerScriptSetting("productionTags", prev, sf) || { tags: [], definitions: [] };
+              const prevProdTags = getPerScriptSettingObject("productionTags", prev, sf, { tags: [], definitions: [] });
               const definitions = (prevProdTags.definitions || []).map((d: any) =>
                 d.id === defId ? { ...d, name: newName } : d
               );
@@ -218,7 +218,7 @@ function AppInner() {
             });
           } else if (action === "delete") {
             updateSettingsRef.current((prev: any) => {
-              const prevProdTags = getPerScriptSetting("productionTags", prev, sf) || { tags: [], definitions: [] };
+              const prevProdTags = getPerScriptSettingObject("productionTags", prev, sf, { tags: [], definitions: [] });
               const definitions = (prevProdTags.definitions || []).filter((d: any) => d.id !== defId);
               const tags = (prevProdTags.tags || []).filter((t: any) => t.definitionId !== defId);
               return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { tags, definitions }) };
@@ -242,13 +242,13 @@ function AppInner() {
           const { characterName, profile } = event.payload;
           const sf = scriptFileNameRef.current;
           updateSettingsRef.current((prev: any) => {
-            const prevProfiles = getPerScriptSetting("characterProfiles", prev, sf) || {};
+            const prevProfiles = getPerScriptSettingObject("characterProfiles", prev, sf, {});
             const updatedProfiles = {
               ...prevProfiles,
               [characterName]: profile,
             };
 
-            const prevGenders = getPerScriptSetting("genders", prev, sf) || {};
+            const prevGenders = getPerScriptSettingObject("genders", prev, sf, {});
             const updatedGenders = {
               ...prevGenders,
               [characterName]: profile.gender || "unknown",
