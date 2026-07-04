@@ -27,7 +27,7 @@
 * \[ ] Index cards or some sort of planning board
 * \[ ] screenplay Preview feature.
 * \[x] Markers and tags.
-* \[ ] X-Ray or Analysis stuffs.
+* \[x] X-Ray or Analysis stuffs.
 * \[ ] AI integration(For Translations, Rephrasing and Better words)
 * \[ ] Cloud integration(Google Drive, Dropbox, etc.,)
 * \[x] Add a seperate title page customisation modal, with Image support, if possible.

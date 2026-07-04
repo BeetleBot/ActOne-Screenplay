@@ -2,7 +2,7 @@
   "name": "actone",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "type": "module",
   "scripts": {
     "predev": "node sync-version.js",
