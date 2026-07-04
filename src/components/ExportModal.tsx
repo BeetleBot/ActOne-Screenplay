@@ -207,8 +207,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
     if (isTauri) initScriptFonts();
   }, [rawText]);
 
-  const updateWatermarkSettings = (updates: Partial<any>) => {
-    updateSettings((prev: Record<string, any>) => ({
+  const updateWatermarkSettings = (updates: Partial<Record<string, unknown>>) => {
+    updateSettings((prev) => ({
       ...prev,
       watermarkSettings: {
         ...(prev.watermarkSettings || {}),
@@ -230,17 +230,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       [element]: { ...elementFormats[element], [attr]: !elementFormats[element][attr] },
     };
     setElementFormats(next);
-    updateSettings((prev: Record<string, any>) => ({ ...prev, elementFormats: next }));
+    updateSettings((prev) => ({ ...prev, elementFormats: next }));
   };
 
   const handleSceneNumberChange = (mode: "off" | "left_side" | "mirror") => {
     setSceneNumberMode(mode);
-    updateSettings((prev: Record<string, any>) => ({ ...prev, sceneNumberMode: mode }));
+    updateSettings((prev) => ({ ...prev, sceneNumberMode: mode }));
   };
 
   const handleSceneColorToggle = (checked: boolean) => {
     setExportSceneColors(checked);
-    updateSettings((prev: Record<string, any>) => ({ ...prev, exportSceneColors: checked }));
+    updateSettings((prev) => ({ ...prev, exportSceneColors: checked }));
   };
 
   const handleExportPDF = async () => {
@@ -376,6 +376,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       if (!dir) return;
 
       for (const script of scripts) {
+        // eslint-disable-next-line no-control-regex
         const sanitizedName = script.name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").trim() || "Untitled";
 
         if (format === "fountain") {

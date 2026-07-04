@@ -23,7 +23,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
 describe("FileContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (window as any).__TAURI_INTERNALS__ = {};
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
   });
 
   it("normalizes .actOne path to .actone when opening a file via openFilePath", async () => {
@@ -33,7 +33,7 @@ describe("FileContext", () => {
         {}
       )
     );
-    vi.mocked(invoke).mockImplementation(async (cmd, _args: any) => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string, _args: { path: string }) => {
       if (cmd === "read_file_binary" && _args.path.endsWith(".actOne")) {
         return mockedBytes;
       }
@@ -53,7 +53,7 @@ describe("FileContext", () => {
   });
 
   it("normalizes .actOne path to .actone when saving a file via saveFileAs", async () => {
-    vi.mocked(invoke).mockImplementation(async (cmd, _args: any) => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
       if (cmd === "save_file_dialog") {
         return "C:/scripts/new_movie.actOne";
       }
@@ -80,7 +80,7 @@ describe("FileContext", () => {
   });
 
   it("manages saveStatus transition during file saving", async () => {
-    vi.mocked(invoke).mockImplementation(async (cmd, _args: any) => {
+    vi.mocked(invoke).mockImplementation(async (cmd, _args) => {
       if (cmd === "save_file_dialog") {
         return "C:/scripts/new_movie.actone";
       }

@@ -65,7 +65,7 @@ export const SprintView = React.memo(() => {
     if (window.confirm("Are you sure you want to delete this sprint?")) {
       deleteHistoryItem(id);
       if (filePath?.toLowerCase().endsWith(".actone")) {
-        updateSettings((prev: any) => {
+        updateSettings((prev) => {
           const bundleHistory = (prev.sprintHistory || []) as SprintSession[];
           return {
             ...prev,
@@ -80,7 +80,7 @@ export const SprintView = React.memo(() => {
     if (window.confirm("Are you sure you want to clear all global sprint history and history stored in this file?")) {
       clearHistory();
       if (filePath?.toLowerCase().endsWith(".actone")) {
-        updateSettings((prev: any) => ({
+        updateSettings((prev) => ({
           ...prev,
           sprintHistory: []
         }));
@@ -124,7 +124,7 @@ export const SprintView = React.memo(() => {
     
     // Also save to bundle if available
     if (session && filePath?.toLowerCase().endsWith(".actone")) {
-      updateSettings((prev: any) => ({
+      updateSettings((prev) => ({
         ...prev,
         sprintHistory: [session, ...(prev.sprintHistory || [])]
       }));

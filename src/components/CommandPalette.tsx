@@ -58,7 +58,7 @@ const addRecentCommand = (cmdId: string) => {
     const recent = getRecentCommands().filter(id => id !== cmdId);
     recent.unshift(cmdId);
     localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(recent.slice(0, 10)));
-  } catch {}
+  } catch { void 0; }
 };
 
 interface CommandItem {
@@ -165,10 +165,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     }
   }
 
-  if (!isOpen && prevOpen.current) {
-    // no-op
-  }
-
   useEffect(() => {
     if (isOpen) {
       setSearch("");
@@ -199,7 +195,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const sel = state.selection.main;
     if (cmd === "copy" || cmd === "cut") {
       const text = state.sliceDoc(sel.from, sel.to - sel.from);
-      try { await navigator.clipboard.writeText(text); } catch {}
+      try { await navigator.clipboard.writeText(text); } catch { void 0; }
       if (cmd === "cut" && !sel.empty) {
         editorView.dispatch({ changes: { from: sel.from, to: sel.to } });
       }
@@ -211,7 +207,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         } else {
           editorView.dispatch({ changes: { from: sel.from, insert: text } });
         }
-      } catch {}
+      } catch { void 0; }
     }
     onClose();
   };

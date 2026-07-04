@@ -6,7 +6,7 @@ import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
 import { setPrefs } from "./theme/AppPrefsEngine";
-import { getPerScriptSetting, getPerScriptSettingObject, updatePerScriptSetting } from "./utils/perScriptSettings";
+import { getPerScriptSettingObject, updatePerScriptSetting } from "./utils/perScriptSettings";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
@@ -43,7 +43,7 @@ function AppInner() {
             new Promise<void>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
           ]);
           await getCurrentWindow().close();
-        } catch {}
+        } catch { void 0; }
       })();
     } else {
       paths.forEach((p) => openFilePath(p));
@@ -121,7 +121,7 @@ function AppInner() {
           try {
             const { getCurrentWindow } = await import("@tauri-apps/api/window");
             await getCurrentWindow().close();
-          } catch (e) {
+          } catch {
             window.close();
           }
         }
@@ -209,22 +209,22 @@ function AppInner() {
           const { action, defId, newName } = event.payload;
           const sf = scriptFileNameRef.current;
           if (action === "rename" && newName) {
-            updateSettingsRef.current((prev: any) => {
-              const prevProdTags = getPerScriptSettingObject("productionTags", prev, sf, { tags: [], definitions: [] });
-              const definitions = (prevProdTags.definitions || []).map((d: any) =>
+            updateSettingsRef.current((prev) => {
+              const prevProdTags = getPerScriptSettingObject<{ tags: Array<{ range?: [number, number]; definitionId: string; type?: string; sceneId?: string }>; definitions: Array<{ id: string; name: string; type: string; colorOverride: string | null }> }>("productionTags", prev, sf, { tags: [], definitions: [] });
+              const definitions = (prevProdTags.definitions || []).map((d) =>
                 d.id === defId ? { ...d, name: newName } : d
               );
               return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { ...prevProdTags, definitions }) };
             });
           } else if (action === "delete") {
-            updateSettingsRef.current((prev: any) => {
-              const prevProdTags = getPerScriptSettingObject("productionTags", prev, sf, { tags: [], definitions: [] });
-              const definitions = (prevProdTags.definitions || []).filter((d: any) => d.id !== defId);
-              const tags = (prevProdTags.tags || []).filter((t: any) => t.definitionId !== defId);
+            updateSettingsRef.current((prev) => {
+              const prevProdTags = getPerScriptSettingObject<{ tags: Array<{ range?: [number, number]; definitionId: string; type?: string; sceneId?: string }>; definitions: Array<{ id: string; name: string; type: string; colorOverride: string | null }> }>("productionTags", prev, sf, { tags: [], definitions: [] });
+              const definitions = (prevProdTags.definitions || []).filter((d) => d.id !== defId);
+              const tags = (prevProdTags.tags || []).filter((t) => t.definitionId !== defId);
               return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { tags, definitions }) };
             });
           } else if (action === "remove-all") {
-            updateSettingsRef.current((prev: any) => {
+            updateSettingsRef.current((prev) => {
               return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { tags: [], definitions: [] }) };
             });
           }
@@ -238,10 +238,10 @@ function AppInner() {
           });
         });
 
-        const u8 = await listen<{ characterName: string; profile: any }>("modal:xray:save-profile", (event) => {
+        const u8 = await listen<{ characterName: string; profile: { gender?: string; [key: string]: unknown } }>("modal:xray:save-profile", (event) => {
           const { characterName, profile } = event.payload;
           const sf = scriptFileNameRef.current;
-          updateSettingsRef.current((prev: any) => {
+          updateSettingsRef.current((prev) => {
             const prevProfiles = getPerScriptSettingObject("characterProfiles", prev, sf, {});
             const updatedProfiles = {
               ...prevProfiles,
@@ -309,7 +309,7 @@ function AppInner() {
           settings: parsedDoc?.settings || {},
         });
       } catch (e) {
-        // Ignored
+        void e;
       }
     })();
   }, [parsedDoc, scriptFileName]);
@@ -339,7 +339,7 @@ function AppInner() {
       try {
         const { emit } = await import("@tauri-apps/api/event");
         emit("editor:ready", { action });
-      } catch {}
+      } catch { void 0; }
     }, 100);
   }, []);
 

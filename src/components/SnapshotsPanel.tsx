@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { Box, Typography, IconButton, Button, TextField, List, ListItemButton, Divider, Menu, MenuItem, Tooltip } from "@mui/material";
+import type { Theme } from "@mui/material/styles";
 import { useSnapshots, type SnapshotInfo } from "../context/SnapshotContext";
 import { useFile } from "../context/FileContext";
 import { useCustomModal } from "../context/CustomModalContext";
@@ -30,8 +31,8 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const getSnapshotColors = (type: string, theme: any) => {
-  let color = theme.palette.text.primary;
+const getSnapshotColors = (type: string, theme: Theme) => {
+  let color: string;
   if (type === "manual") {
     color = theme.palette.primary.main;
   } else if (type === "on_save") {
@@ -211,8 +212,9 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
               <Box
                 key={opt.key}
                 onClick={() => setActiveFilter(activeFilter === opt.key ? null : opt.key)}
-                sx={(theme: any) => {
-                  const baseColor = theme.palette[opt.colorKey]?.main || theme.palette.primary.main;
+                sx={(theme: Theme) => {
+                  const palette = theme.palette as unknown as Record<string, { main?: string }>;
+                  const baseColor = palette[opt.colorKey]?.main || theme.palette.primary.main;
                   return {
                     fontSize: "8.5px",
                     fontFamily: "var(--font-ui)",
@@ -316,7 +318,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                         {/* Custom Tag */}
                         {info.custom_tag && (
                           <Box
-                            sx={(theme: any) => {
+                            sx={(theme: Theme) => {
                               const baseColor = theme.palette.secondary.main;
                               return {
                                 display: "inline-flex",

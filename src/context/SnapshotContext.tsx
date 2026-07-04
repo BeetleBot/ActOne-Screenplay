@@ -119,7 +119,7 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           next.enabled = value === "true" || value === true;
           updated = true;
         } else if (key === STORAGE_KEYS.SNAPSHOT_LOCATION) {
-          next.location = value as any;
+          next.location = value as SnapshotSettings["location"];
           updated = true;
         } else if (key === STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH) {
           next.custom_path = value as string;

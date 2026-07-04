@@ -8,6 +8,7 @@ import { logger } from "../utils/logger";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SettingsUpdater = (prev: Record<string, any>) => Record<string, any>;
 
 export interface ScreenplayFile {
@@ -552,7 +553,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const openFile = async () => {
-    let res: { path: string; content: string; settings?: any } | null = null;
+    let res: { path: string; content: string; settings?: Record<string, unknown> } | null = null;
     if (isTauri) {
       try {
         res = await invoke<{ path: string; content: string } | null>("open_file_dialog");
@@ -560,7 +561,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logger.error("file", "Open file dialog failed", e);
       }
     } else {
-      res = await new Promise<{ path: string; content: string; settings?: any } | null>((resolve) => {
+      res = await new Promise<{ path: string; content: string; settings?: Record<string, unknown> } | null>((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
         input.accept = ".fountain,.txt,.actone";
@@ -684,7 +685,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const saveActoneFile = async (path: string, scripts: ScriptInfo[], settings: any) => {
+  const saveActoneFile = async (path: string, scripts: ScriptInfo[], settings: Record<string, unknown>) => {
     const isActone = path.toLowerCase().endsWith(".actone");
     const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
     const zipped = packActoneBundle(scripts, settings);
@@ -737,6 +738,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (e) {
           logger.error("file", "Save actone file failed", e);
           setSaveStatus("idle");
+          await confirm({
+            title: "Save Failed",
+            message: `Could not save ActOne bundle to: ${normalizedPath}. Please verify permission and storage space.`,
+            buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
+          });
         } finally {
           setIsSaving(false);
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
@@ -762,6 +768,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (e) {
           logger.error("file", "Save actone file failed (browser)", e);
           setSaveStatus("idle");
+          await confirm({
+            title: "Save Failed",
+            message: "Could not generate or download ActOne bundle.",
+            buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
+          });
         }
       }
     } else {
@@ -775,6 +786,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (e) {
           logger.error("file", "Save file content failed", e);
           setSaveStatus("idle");
+          await confirm({
+            title: "Save Failed",
+            message: `Could not save Fountain script to: ${currentActive.filePath}. Please verify permission and storage space.`,
+            buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
+          });
         } finally {
           setIsSaving(false);
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
@@ -794,6 +810,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (e) {
           logger.error("file", "Save file failed (browser)", e);
           setSaveStatus("idle");
+          await confirm({
+            title: "Save Failed",
+            message: "Could not generate or download Fountain script.",
+            buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
+          });
         }
       }
     }
@@ -841,6 +862,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (e) {
         logger.error("file", "Save file dialog failed", e);
         setSaveStatus("idle");
+        await confirm({
+          title: "Save Failed",
+          message: "Could not save file as requested. Please verify file path permissions.",
+          buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
+        });
       }
     } else {
       const filename = await prompt({
@@ -915,6 +941,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (e) {
           logger.error("file", "Save file as failed (browser)", e);
           setSaveStatus("idle");
+          await confirm({
+            title: "Save Failed",
+            message: "Could not generate or download file.",
+            buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
+          });
         }
       } else {
         setSaveStatus("idle");

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { EditorState, StateEffect } from "@codemirror/state";
+import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 
 describe("parsedDoc effect early-return guard", () => {
@@ -12,7 +12,7 @@ describe("parsedDoc effect early-return guard", () => {
 
     let lastDispatchedText = "";
     const screenplayText = "EXT. HOUSE - DAY\n\nJOHN\nHello.";
-    let pendingScroll: number | null = null;
+    const pendingScroll: number | null = null;
 
     const runEffect = (screenText: string) => {
       if (screenText === lastDispatchedText && pendingScroll === null) return;
@@ -42,7 +42,7 @@ describe("parsedDoc effect early-return guard", () => {
 
     let lastDispatchedText = "Hello.";
     const screenplayText = "Hello.";
-    let pendingScroll: number | null = 5;
+    const pendingScroll: number | null = 5;
 
     const runEffect = (screenText: string) => {
       if (screenText === lastDispatchedText && pendingScroll === null) return;

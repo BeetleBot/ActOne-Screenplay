@@ -90,9 +90,23 @@ const SWATCH_COLORS = [
   "#ffffff", // White
 ];
 
+interface CharacterProfile {
+  description?: string;
+  role?: string;
+  gender?: string;
+  age?: string;
+  backstory?: string;
+  arc?: string;
+  color?: string;
+  highlight?: boolean;
+  relationships?: Array<{ target: string; type: string }>;
+  [key: string]: unknown;
+}
+
 interface XrayData {
   parsedDoc: FountainDocument;
   scriptFileName: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
 }
 
@@ -112,9 +126,9 @@ const formatDuration = (totalSeconds: number) => {
 function cleanSceneHeading(heading: string): string {
   if (!heading) return "";
   let cleaned = heading.replace(/#.*?#/g, "");
-  cleaned = cleaned.replace(/^\s*\d+[\.\s]*/, "");
+  cleaned = cleaned.replace(/^\s*\d+[.\s]*/, "");
   cleaned = cleaned.replace(/\[\[.*?\]\]/g, ""); // Strip custom double-bracket tag markers
-  cleaned = cleaned.replace(/[\*_~]/g, "");
+  cleaned = cleaned.replace(/[*_~]/g, "");
   return cleaned.trim().toUpperCase();
 }
 
@@ -185,11 +199,11 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
 
   // Retrieve character profiles from document settings
   const characterProfiles = useMemo(() => {
-    return getPerScriptSettingObject("characterProfiles", settings, scriptFileName, {});
+    return getPerScriptSettingObject<Record<string, CharacterProfile>>("characterProfiles", settings, scriptFileName, {});
   }, [settings, scriptFileName]);
 
   const genders = useMemo(() => {
-    return getPerScriptSettingObject("genders", settings, scriptFileName, {});
+    return getPerScriptSettingObject<Record<string, string>>("genders", settings, scriptFileName, {});
   }, [settings, scriptFileName]);
 
   const characters = useMemo(() => {
@@ -505,7 +519,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
   }, [characters, characterProfiles, characterConnections, hoveredNode, selectedNode, secondSelectedNode]);
 
   // Edit Modal save function
-  const handleSaveProfile = async (charName: string, updatedProfile: any) => {
+  const handleSaveProfile = async (charName: string, updatedProfile: CharacterProfile) => {
     try {
       const { emit } = await import("@tauri-apps/api/event");
       emit("modal:xray:save-profile", { characterName: charName, profile: updatedProfile });
@@ -1764,10 +1778,10 @@ interface CharacterEditModalProps {
   open: boolean;
   onClose: () => void;
   allCharacters: string[];
-  existingProfile: any;
+  existingProfile: CharacterProfile;
   genderFromGendersSetting: string;
   appearsInCount: number;
-  onSave: (charName: string, updatedProfile: any) => Promise<void>;
+  onSave: (charName: string, updatedProfile: CharacterProfile) => Promise<void>;
 }
 
 function CharacterEditModal({

@@ -283,7 +283,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       }
     }
 
-    const prodTags = getPerScriptSettingObject("productionTags", docObj?.settings, scriptFileName, { tags: [], definitions: [] });
+    const prodTags = getPerScriptSettingObject<{ tags: Array<{ range?: [number, number]; definitionId: string; type?: string }>; definitions: Array<{ id: string; name: string; type: string; colorOverride: string | null }> }>("productionTags", docObj?.settings, scriptFileName, { tags: [], definitions: [] });
     if (!hideTagsEnabled && !rightPaneOpen && prodTags && prodTags.tags) {
       const tagDefMap = new Map<string, string>();
       if (prodTags.definitions) {

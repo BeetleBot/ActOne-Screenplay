@@ -44,7 +44,7 @@ interface SceneInfo {
 }
 
 interface TagManagerInitData {
-  parsedDoc: any;
+  parsedDoc: Record<string, unknown>;
   filePath: string;
   activeScriptName: string;
 }
@@ -62,6 +62,7 @@ const TagManagerWindowContent: React.FC = () => {
   const [appScale, setAppScale] = useState(100);
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [parsedDoc, setParsedDoc] = useState<any>(null);
   const [filePath, setFilePath] = useState<string>("");
   const [activeScriptName, setActiveScriptName] = useState<string>("");
@@ -122,6 +123,7 @@ const TagManagerWindowContent: React.FC = () => {
 };
 
 const TagManagerWindowContentInner: React.FC<{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parsedDoc: any;
   filePath: string;
   activeScriptName: string;
@@ -151,7 +153,7 @@ const TagManagerWindowContentInner: React.FC<{
       try {
         const { emit } = await import("@tauri-apps/api/event");
         emit("modal:tag-manager:scroll-to", { pos });
-      } catch {}
+      } catch { void 0; }
     })();
   };
 
@@ -392,7 +394,7 @@ const TagManagerWindowContentInner: React.FC<{
     try {
       const { emit } = await import("@tauri-apps/api/event");
       emit("modal:tag-manager:update-settings", { action: "remove-all" });
-    } catch {}
+    } catch { void 0; }
     setConfirmRemoveAllOpen(false);
   };
 

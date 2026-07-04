@@ -6,7 +6,7 @@ describe("getTauriWindow", () => {
   });
 
   it("returns null when not in Tauri environment", async () => {
-    (window as any).__TAURI_INTERNALS__ = undefined;
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = undefined;
     const { getTauriWindow } = await import("./window");
     expect(getTauriWindow()).toBeNull();
   });
@@ -16,7 +16,7 @@ describe("getTauriWindow", () => {
     vi.doMock("@tauri-apps/api/window", () => ({
       getCurrentWindow: () => mockWindow,
     }));
-    (window as any).__TAURI_INTERNALS__ = {};
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
     const { getTauriWindow } = await import("./window");
     expect(getTauriWindow()).toBe(mockWindow);
   });
@@ -25,7 +25,7 @@ describe("getTauriWindow", () => {
     vi.doMock("@tauri-apps/api/window", () => ({
       getCurrentWindow: () => { throw new Error("not in tauri"); },
     }));
-    (window as any).__TAURI_INTERNALS__ = {};
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
     const { getTauriWindow } = await import("./window");
     expect(getTauriWindow()).toBeNull();
   });

@@ -300,6 +300,18 @@ const activeLineAlwaysPlugin = ViewPlugin.fromClass(
 );
 
 
+interface UseCodeMirrorProdTagItem {
+  range?: [number, number];
+  definitionId: string;
+  type?: string;
+}
+interface UseCodeMirrorProdDef {
+  id: string;
+  name: string;
+  type: string;
+  colorOverride: string | null;
+}
+
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId, scriptFileName } = useFile();
@@ -345,7 +357,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
   const pendingScrollToRef = useRef<number | null>(null);
   const lastDispatchedTextRef = useRef("");
-  const lastDispatchedParsedDocRef = useRef<any>(null);
+  const lastDispatchedParsedDocRef = useRef<unknown>(null);
 
   useEffect(() => {
     if (viewRef.current) {
@@ -451,14 +463,14 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
     const prodTagsTooltip = hoverTooltip((view, pos) => {
       const settings = parsedDocRef.current.settings;
-      const prodTags = getPerScriptSettingObject("productionTags", settings, scriptFileNameRef.current, { tags: [], definitions: [] });
+      const prodTags = getPerScriptSettingObject<{ tags: UseCodeMirrorProdTagItem[]; definitions: UseCodeMirrorProdDef[] }>("productionTags", settings, scriptFileNameRef.current, { tags: [], definitions: [] });
       if (!prodTags || !prodTags.tags) return null;
 
       for (const tag of prodTags.tags) {
         if (tag.range) {
           const [start, len] = tag.range;
           if (pos >= start && pos <= start + len) {
-            const def = prodTags.definitions?.find((d: Record<string, unknown>) => d.id === tag.definitionId);
+            const def = prodTags.definitions?.find((d) => d.id === tag.definitionId);
             const name = def ? def.name : view.state.sliceDoc(start, start + len);
             const type = tag.type || (def?.type as string) || "";
             const categoryLabel = CATEGORIES.find(c => c.key === type)?.label || type;

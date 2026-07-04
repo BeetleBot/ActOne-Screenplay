@@ -39,7 +39,7 @@ function loadCustomThemes(): CustomTheme[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch (e) { /* theme load failure is non-critical */ return []; }
+  } catch { return []; }
 }
 
 function saveCustomThemes(t: CustomTheme[]) {

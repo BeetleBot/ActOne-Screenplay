@@ -62,7 +62,7 @@ export const SettingsWindow: React.FC = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab");
       if (tabParam === "snapshots") return 2;
-    } catch {}
+    } catch { void 0; }
     return 0;
   });
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => {
@@ -129,7 +129,7 @@ export const SettingsWindow: React.FC = () => {
         const parsed = JSON.parse(state.customThemes);
         setCustomThemes(parsed);
         localStorage.setItem(STORAGE_KEYS.CUSTOM_THEMES, state.customThemes);
-      } catch {}
+      } catch { void 0; }
     });
     return () => { if (cleanup) cleanup(); unsub(); };
   }, []);
@@ -222,7 +222,7 @@ export const SettingsWindow: React.FC = () => {
       try {
         const { emit } = await import("@tauri-apps/api/event");
         emit("modal:settings:update", { key: storageKey, value });
-      } catch {}
+      } catch { void 0; }
     })();
     setPrefs({ [storageKey]: String(value) });
   };

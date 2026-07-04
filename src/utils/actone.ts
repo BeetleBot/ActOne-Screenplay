@@ -13,6 +13,7 @@ export interface ScriptInfo {
 
 export interface ActoneBundle {
   scripts: ScriptInfo[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
 }
 
@@ -25,8 +26,8 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const zipBytes = hasMagic ? bytes.slice(0, bytes.length - MAGIC_LENGTH) : bytes;
   const unzipped = unzipSync(zipBytes);
 
-  let parsedSettings: Record<string, any> = {};
-  let gendersData: Record<string, any> = {};
+  let parsedSettings: Record<string, unknown> = {};
+  let gendersData: Record<string, unknown> = {};
   let todosData: unknown[] = [];
   let parkingData: unknown[] = [];
   let notepadData: unknown = "";
@@ -57,7 +58,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
 
   let scripts: ScriptInfo[];
 
-  const settings: Record<string, any> = {
+  const settings: Record<string, unknown> = {
     ...parsedSettings,
     sprintHistory: sprintData,
     productionTags: productionTagsData,
@@ -82,26 +83,28 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   if (scripts.length > 1) {
     settings.notepad = notepadData && typeof notepadData === 'object' && !Array.isArray(notepadData)
       ? notepadData
-      : scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: notepadData }), {} as Record<string, any>);
+      : scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: notepadData }), {} as Record<string, unknown>);
+    const genderMap = gendersData as { genders?: unknown };
     settings.genders = gendersData && typeof gendersData === 'object' && !Array.isArray(gendersData)
       ? (Object.keys(gendersData).some(k => scripts.some(s => s.fileName === k))
         ? gendersData
-        : (gendersData as any).genders
-          ? scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: gendersData }), {} as Record<string, any>)
+        : genderMap.genders
+          ? scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: genderMap.genders }), {} as Record<string, unknown>)
           : gendersData)
-      : scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: gendersData }), {} as Record<string, any>);
+      : scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: gendersData }), {} as Record<string, unknown>);
     settings.todos = todosData && Array.isArray(todosData) && todosData.length > 0 && typeof todosData[0] !== 'string'
-      ? scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: todosData }), {} as Record<string, any>)
+      ? scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: todosData }), {} as Record<string, unknown>)
       : (todosData && typeof todosData === 'object' && !Array.isArray(todosData)
         ? todosData
-        : scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: todosData }), {} as Record<string, any>));
+        : scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: todosData }), {} as Record<string, unknown>));
     settings.parking = parkingData && typeof parkingData === 'object' && !Array.isArray(parkingData)
       ? parkingData
-      : scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: parkingData }), {} as Record<string, any>);
+      : scripts.reduce((acc, s) => ({ ...acc, [s.fileName]: parkingData }), {} as Record<string, unknown>);
   } else {
     settings.notepad = notepadData;
-    settings.genders = gendersData && typeof gendersData === 'object' && (gendersData as any).genders
-      ? (gendersData as any).genders
+    const genderMap = gendersData as { genders?: unknown };
+    settings.genders = gendersData && typeof gendersData === 'object' && genderMap.genders
+      ? genderMap.genders
       : gendersData;
     settings.todos = todosData;
     settings.parking = parkingData;
@@ -109,17 +112,30 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   return { scripts, settings };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string, any>): Uint8Array {
   const {
     genders, todos, parking, notepad, sprintHistory: sprintData, productionTags, ...restSettings
   } = settings || {};
 
-  const resolvePerScript = (key: string, scripts: ScriptInfo[]): any => {
+  const resolvePerScript = (key: string, scripts: ScriptInfo[]): unknown => {
     const val = (settings || {})[key];
     if (!val || scripts.length <= 1) return val;
-    const result: Record<string, any> = {};
+
+    const isKeyed = typeof val === "object" && !Array.isArray(val) &&
+      Object.keys(val).some(k => scripts.some(s => s.fileName === k));
+
+    const result: Record<string, unknown> = {};
     for (const s of scripts) {
-      result[s.fileName] = (val as Record<string, any>)[s.fileName] ?? val;
+      if (isKeyed) {
+        let fallback: unknown = undefined;
+        if (key === "todos" || key === "parking") fallback = [];
+        else if (key === "notepad") fallback = "";
+        else if (key === "genders") fallback = {};
+        result[s.fileName] = (val as Record<string, unknown>)[s.fileName] ?? fallback;
+      } else {
+        result[s.fileName] = val;
+      }
     }
     return result;
   };

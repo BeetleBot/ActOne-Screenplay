@@ -799,6 +799,39 @@ button:active,
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes cinematic-drift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes orb-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(40vw, 20vh) scale(1.15); }
+  66%      { transform: translate(20vw, 40vh) scale(0.9); }
+}
+
+@keyframes orb-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(-30vw, -25vh) scale(0.85); }
+  66%      { transform: translate(-50vw, 10vh) scale(1.1); }
+}
+
+@keyframes orb-drift-3 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-30%, -70%) scale(1.2); }
+}
+
+@keyframes quote-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes logo-glow-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.03); }
+}
+
 .skeleton-loading {
   display: flex;
   flex-direction: column;

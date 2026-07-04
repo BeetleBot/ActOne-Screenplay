@@ -41,7 +41,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
   const todos: Todo[] = getPerScriptSettingArray<Todo>("todos", parsedDoc.settings, scriptFileName);
 
   const saveTodos = useCallback((newTodos: Todo[]) => {
-    updateSettings((prev: any) => ({
+    updateSettings((prev) => ({
       ...prev,
       ...updatePerScriptSetting(prev, "todos", scriptFileName, newTodos),
     }));

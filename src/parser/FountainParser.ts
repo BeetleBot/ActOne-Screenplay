@@ -44,6 +44,7 @@ export interface ParsedLine {
 
 export interface FountainDocument {
   lines: ParsedLine[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: any;
   screenplayText: string;
   pageBreaks?: number[];
@@ -114,7 +115,7 @@ export function parseSceneHeading(headingText: string): ParsedSceneHeading {
 
 export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'letter'): FountainDocument {
   const screenplayText = rawText;
-  const settings: any = {};
+  const settings: Record<string, unknown> = {};
 
   const rawLines = screenplayText.split(/\r?\n/);
   const parsedLines: ParsedLine[] = [];
@@ -713,7 +714,7 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
   };
 
   const resultLines: string[] = [...titlePageLines];
-  let prevElement: any = null;
+  let prevElement: (ParsedLine & { originalIndex: number }) | null = null;
 
   for (let i = 0; i < bodyElements.length; i++) {
     const curr = bodyElements[i];

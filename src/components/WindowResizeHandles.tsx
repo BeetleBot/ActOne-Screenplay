@@ -3,6 +3,8 @@ import { logger } from "../utils/logger";
 
 type Dir = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
+
+
 const EDGE_SIZE = 8;
 const CORNER_SIZE = 24;
 
@@ -59,7 +61,8 @@ function edgeStyle(dir: Dir): React.CSSProperties {
   return style;
 }
 
-let tauriWindow: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let tauriWindow: any = null;
 
 async function ensureTauri() {
   if (!tauriWindow) {
@@ -86,7 +89,8 @@ export const WindowResizeHandles: React.FC<WindowResizeHandlesProps> = ({ showDr
 
     ensureTauri().then((win) => {
       if (win && typeof win.startResizeDragging === "function") {
-        win.startResizeDragging(tauriDirections[dir]).catch((err: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            win.startResizeDragging(tauriDirections[dir]).catch((err: any) => {
           logger.error("window", "Failed to start native resize dragging:", err);
         });
       }

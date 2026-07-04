@@ -3,6 +3,7 @@ import { useFile, useUI, useEditor, useParking, useCustomModal } from "../contex
 import { useCodeMirror } from "../editor";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
 import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, AutoAwesomeIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
 import { logger } from "../utils/logger";
 import { CATEGORIES } from "../constants";
@@ -32,6 +33,20 @@ const MARKER_COLORS = [
   { key: "yellow", label: "Yellow", color: "var(--scene-color-yellow)" },
   { key: "none", label: "Default (Orange)", color: "var(--cat-other)" }
 ];
+
+interface ProdTagItem {
+  range?: [number, number];
+  definitionId: string;
+  type?: string;
+  sceneId?: string;
+}
+
+interface ProdDef {
+  id: string;
+  name: string;
+  type: string;
+  colorOverride: string | null;
+}
 
 export const FountainEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,18 +97,18 @@ export const FountainEditor = React.memo(() => {
 
   const existingTag = useMemo(() => {
     if (!view || !selection) return null;
-    const prodTags = getPerScriptSettingObject("productionTags", parsedDoc.settings, scriptFileName, { tags: [], definitions: [] });
+    const prodTags = getPerScriptSettingObject<{ tags: ProdTagItem[]; definitions: ProdDef[] }>("productionTags", parsedDoc.settings, scriptFileName, { tags: [], definitions: [] });
     if (!prodTags || !prodTags.tags) return null;
-    
+
     const cursor = selection.from;
-    const tag = prodTags.tags.find((t: any) => {
+    const tag = prodTags.tags.find((t) => {
       if (!t.range) return false;
       const [start, len] = t.range;
       return cursor >= start && cursor <= start + len;
     });
-    
+
     if (tag) {
-      const def = prodTags.definitions?.find((d: any) => d.id === tag.definitionId);
+      const def = prodTags.definitions?.find((d) => d.id === tag.definitionId);
       if (!def) return null;
       const catLabel = CATEGORIES.find(c => c.key === def.type)?.label || def.type;
       return { tag, def, catLabel };
@@ -122,9 +137,9 @@ export const FountainEditor = React.memo(() => {
 
   const handleRemoveTag = () => {
     if (!existingTag) return;
-    updateSettings((prev: any) => {
-      const prodTags = getPerScriptSettingObject("productionTags", prev, scriptFileName, { tags: [], definitions: [] });
-      const tags = (prodTags.tags || []).filter((t: any) => t !== existingTag.tag);
+    updateSettings((prev) => {
+      const prodTags = getPerScriptSettingObject<{ tags: ProdTagItem[]; definitions: ProdDef[] }>("productionTags", prev, scriptFileName, { tags: [], definitions: [] });
+      const tags = (prodTags.tags || []).filter((t) => t !== existingTag.tag);
       return {
         ...prev,
         ...updatePerScriptSetting(prev, "productionTags", scriptFileName, {
@@ -143,12 +158,12 @@ export const FountainEditor = React.memo(() => {
     const text = selectedText.trim();
     if (!text) return;
 
-    updateSettings((prev: any) => {
-      const prodTags = getPerScriptSettingObject("productionTags", prev, scriptFileName, { tags: [], definitions: [] });
+    updateSettings((prev) => {
+      const prodTags = getPerScriptSettingObject<{ tags: ProdTagItem[]; definitions: ProdDef[] }>("productionTags", prev, scriptFileName, { tags: [], definitions: [] });
       const tags = [...(prodTags.tags || [])];
       const definitions = [...(prodTags.definitions || [])];
 
-      let def = definitions.find((d: any) => d.name.toLowerCase() === text.toLowerCase() && d.type === category);
+      let def = definitions.find((d) => d.name.toLowerCase() === text.toLowerCase() && d.type === category);
       if (!def) {
         def = {
           id: "def-" + Math.random().toString(36).substring(2, 9),
@@ -159,7 +174,7 @@ export const FountainEditor = React.memo(() => {
         definitions.push(def);
       }
 
-      const existingTagIdx = tags.findIndex((t: any) => t.range && t.range[0] === from && t.range[1] === (to - from));
+      const existingTagIdx = tags.findIndex((t) => t.range && t.range[0] === from && t.range[1] === (to - from));
       if (existingTagIdx !== -1) {
         tags[existingTagIdx] = {
           ...tags[existingTagIdx],
@@ -291,7 +306,7 @@ export const FountainEditor = React.memo(() => {
   const handleCreateTaskFromSelection = () => {
     if (!selectedText.trim()) return;
     const text = selectedText.trim();
-    updateSettings((prev: any) => {
+    updateSettings((prev) => {
       const todos = prev.todos || [];
       const newTodo = {
         id: Date.now().toString(),
@@ -353,7 +368,7 @@ export const FountainEditor = React.memo(() => {
         onClick: handleClose
       },
       paper: {
-        sx: (theme: any) => ({
+        sx: (theme: Theme) => ({
           borderRadius: "8px",
           boxShadow: `0px 4px 16px ${alpha(theme.palette.common.black, 0.15)}`,
           border: "1px solid",

@@ -1,8 +1,9 @@
 import React from "react";
 import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
+import type { SxProps, Theme } from "@mui/material/styles";
 
 type IconProps = SvgIconProps & {
-  sx?: any;
+  sx?: SxProps<Theme>;
 };
 
 function createIcon(d: string, viewBox?: string): React.FC<IconProps> {

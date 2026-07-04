@@ -36,14 +36,14 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       text: trimmed,
       createdAt: Date.now(),
     };
-    updateSettings((prev: any) => ({
+    updateSettings((prev) => ({
       ...prev,
       ...updatePerScriptSetting(prev, "parking", scriptFileName, [item, ...getPerScriptSettingArray<ParkedItem>("parking", prev, scriptFileName)]),
     }));
   }, [updateSettings, scriptFileName]);
 
   const removeItem = useCallback((id: string) => {
-    updateSettings((prev: any) => ({
+    updateSettings((prev) => ({
       ...prev,
       ...updatePerScriptSetting(prev, "parking", scriptFileName, getPerScriptSettingArray<ParkedItem>("parking", prev, scriptFileName).filter((i: ParkedItem) => i.id !== id)),
     }));

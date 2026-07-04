@@ -320,6 +320,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <Box sx={{ flex: 1 }}>
             {displayedArticles.length > 0 ? (
               <List<ArticleRowData>
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 listRef={(el: any) => { listApi.current = el; }}
                 rowCount={displayedArticles.length}
                 rowHeight={ITEM_HEIGHT}

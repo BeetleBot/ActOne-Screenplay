@@ -109,7 +109,7 @@ export const SearchPanel: React.FC = () => {
   const initializedRef = useRef(false);
 
   useEffect(() => {
-    try { localStorage.setItem(SEARCH_QUERY_STORAGE_KEY, query); } catch {}
+    try { localStorage.setItem(SEARCH_QUERY_STORAGE_KEY, query); } catch { void 0; }
   }, [query]);
 
   useEffect(() => {
@@ -214,7 +214,7 @@ export const SearchPanel: React.FC = () => {
       if (view) {
         try {
           view.dispatch({ effects: updateSearchMatchesEffect.of([]) });
-        } catch {}
+        } catch { void 0; }
       }
     };
   }, []);

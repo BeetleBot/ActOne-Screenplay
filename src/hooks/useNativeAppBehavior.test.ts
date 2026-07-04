@@ -37,7 +37,7 @@ describe("useNativeAppBehavior", () => {
 
   it("prevents browser navigation on window drop (external file drops)", () => {
     renderHook(() => useNativeAppBehavior());
-    const drop = new MouseEvent("drop", { cancelable: true } as any);
+    const drop = new MouseEvent("drop", { cancelable: true });
     const preventSpy = vi.spyOn(drop, "preventDefault");
     window.dispatchEvent(drop);
     expect(preventSpy).toHaveBeenCalled();

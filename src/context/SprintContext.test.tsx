@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import React from "react";
-import { SprintProvider, useSprint } from "./SprintContext";
+import { SprintProvider, useSprint, type SprintSession } from "./SprintContext";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return React.createElement(SprintProvider, null, children);
@@ -29,7 +29,7 @@ describe("SprintContext", () => {
   it("stops a sprint and adds to history", () => {
     const { result } = renderHook(() => useSprint(), { wrapper });
     act(() => result.current.startSprint("file-1", 25, 100));
-    let session: any;
+    let session: SprintSession | null;
     act(() => { session = result.current.stopSprint("file-1", 150, "test.fountain"); });
     expect(session).not.toBeNull();
     expect(session.wordCount).toBe(150);
@@ -40,7 +40,7 @@ describe("SprintContext", () => {
 
   it("returns null when stopping non-existent sprint", () => {
     const { result } = renderHook(() => useSprint(), { wrapper });
-    let session: any;
+    let session: SprintSession | null;
     act(() => { session = result.current.stopSprint("nonexistent", 100); });
     expect(session).toBeNull();
   });

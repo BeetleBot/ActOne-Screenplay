@@ -15,7 +15,7 @@ export interface CharacterEntry {
 export function extractCharacters(
   doc: FountainDocument,
   genders: Record<string, string>,
-  profiles?: Record<string, any>
+  profiles?: Record<string, { gender?: string; role?: string; color?: string; [key: string]: unknown }>
 ): CharacterEntry[] {
   const charactersMap: Record<string, { lineCount: number; wordCount: number; scenes: Set<number> }> = {};
   let currentSpeaker = "";
@@ -88,7 +88,7 @@ export interface ScriptStats {
 export function computeStats(
   doc: FountainDocument,
   genders: Record<string, string>,
-  profiles?: Record<string, any>
+  profiles?: Record<string, { gender?: string; role?: string; color?: string; [key: string]: unknown }>
 ): ScriptStats {
   const totalLines = doc.lines.length;
   const pages = doc.pageBreaks ? doc.pageBreaks.length + 1 : 1;

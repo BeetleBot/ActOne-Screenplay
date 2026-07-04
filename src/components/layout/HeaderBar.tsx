@@ -34,7 +34,7 @@ export const HeaderBar = React.memo(() => {
     };
     checkMaximized();
 
-    let unlisten: any;
+    let unlisten: (() => void) | undefined;
     const setupListener = async () => {
       const win = getTauriWindow();
       if (win) unlisten = await win.onResized(() => checkMaximized());

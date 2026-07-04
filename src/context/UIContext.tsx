@@ -166,7 +166,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         const n = parseInt(stored, 10);
         if (!isNaN(n) && n >= 240 && n <= 700) return n;
       }
-    } catch {}
+    } catch { void 0; }
     return 360;
   });
 
@@ -315,7 +315,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const setRightPaneWidth = (w: number) => {
     const clamped = Math.max(240, Math.min(700, w));
     setRightPaneWidthState(clamped);
-    try { localStorage.setItem(STORAGE_KEYS.RIGHT_PANE_WIDTH, String(clamped)); } catch {}
+    try { localStorage.setItem(STORAGE_KEYS.RIGHT_PANE_WIDTH, String(clamped)); } catch { void 0; }
   };
 
   return (

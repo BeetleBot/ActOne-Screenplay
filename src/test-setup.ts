@@ -26,7 +26,7 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
-(window as any).__TAURI_INTERNALS__ = undefined;
+(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = undefined;
 
 Element.prototype.scrollIntoView = () => {};
 
