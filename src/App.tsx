@@ -76,6 +76,8 @@ function AppInner() {
   } = useUI();
 
   const modalWindows = useModalWindows();
+  const closeAllWindowsRef = useRef(modalWindows.closeAllWindows);
+  closeAllWindowsRef.current = modalWindows.closeAllWindows;
 
   useKeyboardShortcuts({
     newFile,
@@ -422,15 +424,18 @@ function AppInner() {
             }
             if (!aborted) {
               isExitingRef.current = true;
+              await closeAllWindowsRef.current();
               await win.close();
             }
           } else if (confirmClose === "discard") {
             isExitingRef.current = true;
+            await closeAllWindowsRef.current();
             await win.close();
           }
         } else {
           // No dirty files, close immediately
           isExitingRef.current = true;
+          await closeAllWindowsRef.current();
           await win.close();
         }
       } catch (e) {
@@ -485,7 +490,9 @@ function AppInner() {
         new Promise<void>((resolve) => webview.once("tauri://created", () => resolve())),
         new Promise<void>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
       ]);
-      
+
+      await closeAllWindowsRef.current();
+
       const win = getCurrentWindow();
       await win.destroy();
     } catch (e) {

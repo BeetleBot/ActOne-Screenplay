@@ -111,7 +111,6 @@ body {
   width: 100vw;
   -webkit-font-smoothing: antialiased;
   text-rendering: auto;
-  border: 1px solid var(--border-color);
 }
 
 #root {

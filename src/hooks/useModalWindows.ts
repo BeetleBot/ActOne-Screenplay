@@ -7,6 +7,7 @@ interface ModalWindowsHook {
   openTagManagerWindow: () => void;
   openThemeManagerWindow: () => void;
   openXrayWindow: () => void;
+  closeAllWindows: () => Promise<void>;
 }
 
 async function createTauriWindow(
@@ -101,5 +102,19 @@ export function useModalWindows(): ModalWindowsHook {
     }
   }, []);
 
-  return { openSettingsWindow, openHelpWindow, openTagManagerWindow, openThemeManagerWindow, openXrayWindow };
+  const closeAllWindows = useCallback(async () => {
+    const labels = ["settings", "help", "tag-manager", "theme-manager", "xray"];
+    for (const label of labels) {
+      windowsRef.current.delete(label);
+      try {
+        const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+        const win = await WebviewWindow.getByLabel(label);
+        if (win) await win.close();
+      } catch (e) {
+        logger.warn("modalWindows", `Failed to close ${label}:`, e);
+      }
+    }
+  }, []);
+
+  return { openSettingsWindow, openHelpWindow, openTagManagerWindow, openThemeManagerWindow, openXrayWindow, closeAllWindows };
 }

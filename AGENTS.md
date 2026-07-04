@@ -90,6 +90,8 @@ src-tauri/
 
 ## Code Conventions
 
+- **Read the docs first** — before making assumptions, check `docs/` for architecture, API, and feature documentation. It covers the full codebase.
+- **Document every change** — any removal, addition, or behavioral change must be reflected in the relevant `docs/` files. Keep them in sync with the code.
 - **No comments in source code** unless the logic is non-obvious and cannot be clarified by naming.
 - **Icons** live in `src/components/Icons.tsx` as inline SVG paths using the `createIcon()` helper.
 - **Contexts** live in `src/context/`, each with a `.test.tsx` file.
