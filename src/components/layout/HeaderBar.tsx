@@ -9,11 +9,11 @@ import Tooltip from "@mui/material/Tooltip";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
-import { CloseIcon, AddIcon, DownloadIcon } from "../Icons";
+import { CloseIcon, AddIcon, DownloadIcon, ActionKeyIcon } from "../Icons";
 import { logger } from "../../utils/logger";
 import { useStoreUpdateCheck } from "../../hooks";
 
-export const HeaderBar = React.memo(() => {
+export const HeaderBar = React.memo<{ onOpenPalette?: () => void }>(({ onOpenPalette }) => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
   const { isZenMode } = useUI();
   const [isMaximized, setIsMaximized] = useState(false);
@@ -105,10 +105,10 @@ export const HeaderBar = React.memo(() => {
       sx={{
         bgcolor: (theme) => theme.palette.mode === 'light' ? darken(theme.palette.background.paper, 0.08) : darken(theme.palette.background.paper, 0.25),
         color: (theme) => theme.palette.text.secondary,
-        borderBottom: isZenMode ? 0 : 1,
+        borderBottom: 0,
         borderColor: (theme) => theme.palette.mode === 'light' ? alpha(theme.palette.text.primary, 0.08) : alpha(theme.palette.text.primary, 0.05),
-        height: isZenMode ? 0 : 30,
-        minHeight: isZenMode ? 0 : 30,
+        height: isZenMode ? 0 : 40,
+        minHeight: isZenMode ? 0 : 40,
         zIndex: 10,
         // Zen mode transition support
         opacity: isZenMode ? 0 : 1,
@@ -118,8 +118,57 @@ export const HeaderBar = React.memo(() => {
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', height: 30, minHeight: 30, px: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', height: 40, minHeight: 40, px: 0 }}>
         <Box ref={tabsContainerRef} className="header-tabs-container" sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', overflow: 'hidden', px: 0, gap: 0 }}>
+
+          <Box
+            className="command-palette-btn"
+            sx={{
+              width: 47,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              position: 'relative',
+              zIndex: 100000,
+              cursor: 'pointer',
+              bgcolor: 'primary.main',
+              transition: 'background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                bgcolor: 'transparent',
+                '& .command-palette-icon': {
+                  color: 'primary.main',
+                },
+              },
+              '@keyframes commandPaletteBounce': {
+                '0%': { transform: 'scale(1)' },
+                '40%': { transform: 'scale(0.82)' },
+                '70%': { transform: 'scale(1.14)' },
+                '100%': { transform: 'scale(1)' },
+              },
+              '&:active .command-palette-icon': {
+                animation: 'commandPaletteBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              },
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onOpenPalette?.(); }}
+          >
+            <Tooltip title="Command Palette (Ctrl+K)" placement="bottom">
+              <Box
+                className="command-palette-icon"
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'primary.contrastText',
+                  transition: 'color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                }}
+              >
+                <ActionKeyIcon sx={{ fontSize: 19 }} />
+              </Box>
+            </Tooltip>
+          </Box>
 
           {files.map((file) => {
             const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled";
@@ -148,15 +197,12 @@ export const HeaderBar = React.memo(() => {
                 }}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 0.8,
-                  px: 1.5, height: 30, borderTopLeftRadius: '6px', borderTopRightRadius: '6px',
+                   px: 1.5, height: 40, borderRadius: 0,
                   cursor: 'pointer', flexShrink: 0, userSelect: 'none',
                   fontSize: 11.5, whiteSpace: 'nowrap',
                   bgcolor: (theme) => isActive ? theme.palette.background.paper : 'transparent',
                   color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
-                  borderRight: (theme) => isActive 
-                    ? 'none' 
-                    : `1px solid ${theme.palette.mode === 'light' ? alpha(theme.palette.text.primary, 0.08) : alpha(theme.palette.text.primary, 0.04)}`,
-                  '&:hover': { 
+                  '&:hover': {
                     bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.text.primary, 0.04),
                     color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary
                   },
@@ -222,41 +268,39 @@ export const HeaderBar = React.memo(() => {
         </Box>
 
         {updateAvailable && (
-          <Tooltip title="Update available for ActOne. Click to install from Microsoft Store.">
-            <Box
-              onClick={(e) => { e.stopPropagation(); installUpdate(); }}
-              onMouseDown={(e) => e.stopPropagation()}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                px: 1,
-                height: 20,
-                mr: 0.5,
-                borderRadius: '10px',
-                cursor: 'pointer',
-                bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
-                color: 'primary.main',
-                fontSize: 10,
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                '&:hover': {
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
-                },
-              }}
-            >
-              <DownloadIcon sx={{ fontSize: 11 }} />
-              Update
-            </Box>
-          </Tooltip>
+          <Box
+            onClick={(e) => { e.stopPropagation(); installUpdate(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              px: 1,
+              height: 20,
+              mr: 0.5,
+              borderRadius: '10px',
+              cursor: 'pointer',
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+              color: 'primary.main',
+              fontSize: 10,
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              '&:hover': {
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
+              },
+            }}
+          >
+            <DownloadIcon sx={{ fontSize: 11 }} />
+            Update
+          </Box>
         )}
         <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} onMouseDown={(e) => e.stopPropagation()}>
           <IconButton
             onClick={handleMinimize}
             title="Minimize"
             sx={{
-              width: 46, height: 30, borderRadius: 0,
+              width: 48, height: 48, borderRadius: 0,
               color: 'inherit',
               '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
             }}
@@ -269,7 +313,7 @@ export const HeaderBar = React.memo(() => {
             onClick={handleMaximize}
             title={isMaximized ? "Restore" : "Maximize"}
             sx={{
-              width: 46, height: 30, borderRadius: 0,
+              width: 46, height: 40, borderRadius: 0,
               color: 'inherit',
               '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
             }}
@@ -289,7 +333,7 @@ export const HeaderBar = React.memo(() => {
             onClick={handleClose}
             title="Close"
             sx={{
-              width: 46, height: 30, borderRadius: 0,
+              width: 46, height: 40, borderRadius: 0,
               color: 'inherit',
               '&:hover': { bgcolor: (theme) => theme.palette.error.main, color: (theme) => theme.palette.common.white },
             }}

@@ -24,7 +24,7 @@ const tauriDirections: Record<Dir, string> = {
   sw: "SouthWest",
 };
 
-const TITLEBAR_HEIGHT = 30;
+const TITLEBAR_HEIGHT = 40;
 const WINDOW_CONTROLS_WIDTH = 138;
 
 function edgeStyle(dir: Dir): React.CSSProperties {

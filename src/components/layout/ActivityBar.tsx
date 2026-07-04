@@ -3,7 +3,6 @@ import { useUI, useFile, useTheme } from "../../context";
 import { PILL_RADIUS } from "../../constants";
 import { themes } from "../../theme";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
@@ -17,7 +16,7 @@ import {
   LibraryBooksIcon, CheckIcon, SettingsIcon, TimerIcon,
   KeyboardArrowDownIcon, CameraIcon,
   ViewAgendaIcon, AddNotesIcon, BeenhereIcon, AssignmentAddIcon,
-  GarageIcon, ActionKeyIcon, MoreHorizIcon,
+  GarageIcon, MoreHorizIcon,
 } from "../Icons";
 
 interface ActivityBarProps {
@@ -26,14 +25,13 @@ interface ActivityBarProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   onOpenSettingsModal: () => void;
-  onOpenPalette: () => void;
   onOpenBreakdownModal: () => void;
   onOpenThemeManagerModal?: () => void;
 }
 
 export const ActivityBar = React.memo<ActivityBarProps>(({
   activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen,
-  onOpenSettingsModal, onOpenPalette, onOpenBreakdownModal, onOpenThemeManagerModal,
+  onOpenSettingsModal, onOpenBreakdownModal, onOpenThemeManagerModal,
 }) => {
   const {
     paperSize, setPaperSize,
@@ -82,7 +80,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     <Box
       sx={{
         width: isZenMode ? 0 : 48, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', py: 0.5, gap: 0.25,
+        alignItems: 'center',
         bgcolor: 'background.paper', borderRight: isZenMode ? 0 : 1, borderColor: 'divider',
         flexShrink: 0,
         // Zen mode transition support with staggered delay (0.05s)
@@ -93,28 +91,51 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25, flex: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
         {tabs.map((tab) => {
           const isActive = isSidebarOpen && activeTab === tab.id;
           return (
             <Tooltip key={tab.id} title={tab.title} placement="right">
-              <IconButton
+              <Box
                 onClick={() => handleClick(tab.id)}
                 sx={{
-                  p: 1, borderRadius: '12px',
-                  color: isActive ? 'var(--button-color)' : 'text.secondary',
-                  bgcolor: isActive ? 'action.selected' : 'transparent',
-                  '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+                  width: 48,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: isActive ? 'primary.contrastText' : 'text.secondary',
+                  bgcolor: isActive ? 'primary.main' : 'transparent',
                   position: 'relative',
-                  '&::before': isActive ? {
-                    content: '""', position: 'absolute', left: -4,
-                    top: '25%', bottom: '25%', width: 3,
-                    borderRadius: '3px', bgcolor: 'primary.main',
-                  } : {},
+                  flexShrink: 0,
+                  transition: 'background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                  },
+                  '@keyframes activityIconBounce': {
+                    '0%': { transform: 'scale(1)' },
+                    '40%': { transform: 'scale(0.78)' },
+                    '70%': { transform: 'scale(1.12)' },
+                    '100%': { transform: 'scale(1)' },
+                  },
+                  '&:active .activity-icon-inner': {
+                    animation: 'activityIconBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  },
                 }}
               >
-                {tab.icon}
-              </IconButton>
+                <Box
+                  className="activity-icon-inner"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {tab.icon}
+                </Box>
+              </Box>
             </Tooltip>
           );
         })}
@@ -122,31 +143,39 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
 
       <Divider sx={{ width: 28, my: 0.5 }} />
 
-      <Tooltip title="Commands (Ctrl+K)" placement="right">
-        <IconButton
-          onClick={onOpenPalette}
-          sx={{
-            p: 1, borderRadius: '12px',
-            color: 'text.secondary',
-            '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
-          }}
-        >
-          <ActionKeyIcon sx={{ fontSize: 20 }} />
-        </IconButton>
-      </Tooltip>
-
       <Tooltip title="Quick Settings" placement="right">
-        <IconButton
+        <Box
           onClick={(e) => setAnchorEl(e.currentTarget)}
           sx={{
-            p: 1, borderRadius: '12px',
-            color: anchorEl ? 'var(--button-color)' : 'text.secondary',
-            bgcolor: anchorEl ? 'action.selected' : 'transparent',
-            '&:hover': { bgcolor: 'action.hover' },
+            width: 48,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: anchorEl ? 'primary.contrastText' : 'text.secondary',
+            bgcolor: anchorEl ? 'primary.main' : 'transparent',
+            transition: 'background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+            },
+            '&:active .activity-icon-inner': {
+              animation: 'activityIconBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            },
           }}
         >
-          <MoreHorizIcon sx={{ fontSize: 20 }} />
-        </IconButton>
+          <Box
+            className="activity-icon-inner"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <MoreHorizIcon sx={{ fontSize: 20 }} />
+          </Box>
+        </Box>
       </Tooltip>
 
       <Menu

@@ -566,33 +566,15 @@ async fn check_for_store_update() -> Result<StoreUpdateInfo, String> {
 }
 
 #[tauri::command]
-fn install_store_update() -> Result<(), String> {
+async fn install_store_update() -> Result<String, String> {
     #[cfg(all(target_os = "windows", not(debug_assertions)))]
     {
-        pollster::block_on(async {
-            use windows::Services::Store::StoreContext;
-            let context = StoreContext::GetDefault().map_err(|e| e.to_string())?;
-            let updates = context
-                .GetAppAndOptionalStorePackageUpdatesAsync()
-                .map_err(|e| e.to_string())?
-                .await
-                .map_err(|e| e.to_string())?;
-            let count = updates.Size().map_err(|e| e.to_string())?;
-            if count == 0 {
-                return Ok(());
-            }
-            context
-                .RequestDownloadAndInstallStorePackageUpdatesAsync(&updates)
-                .map_err(|e| e.to_string())?
-                .await
-                .map_err(|e| e.to_string())?;
-            Ok::<_, String>(())
-        })
+        Ok("ms-windows-store://pdp/?productid=9PJMKR0937KK".to_string())
     }
 
     #[cfg(any(not(target_os = "windows"), debug_assertions))]
     {
-        Err("Store updates are only available on Windows Store builds".to_string())
+        Err("Store is only available on Windows builds".to_string())
     }
 }
 

@@ -38,12 +38,17 @@ export function useStoreUpdateCheck() {
   }, []);
 
   const installUpdate = useCallback(async () => {
-    if (!isTauri) return;
+    if (!isTauri) {
+      window.open("https://apps.microsoft.com/detail/9PJMKR0937KK", "_blank");
+      return;
+    }
     try {
       const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("install_store_update");
+      const url = await invoke<string>("install_store_update");
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
     } catch (e) {
-      console.error("Failed to install store update:", e);
+      console.error("Failed to open Store:", e);
     }
   }, []);
 

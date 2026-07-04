@@ -25,7 +25,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   return (
     <>
-      <ErrorBoundary name="header"><HeaderBar /></ErrorBoundary>
+      <ErrorBoundary name="header"><HeaderBar onOpenPalette={onOpenPalette} /></ErrorBoundary>
       <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <ActivityBar
           activeTab={activeTab}
@@ -33,7 +33,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
           onOpenSettingsModal={onOpenSettingsModal}
-          onOpenPalette={onOpenPalette}
           onOpenBreakdownModal={onOpenBreakdownModal}
           onOpenThemeManagerModal={onOpenThemeManagerModal}
         />
