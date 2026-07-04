@@ -1,5 +1,34 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- **Window Resize Handles**: Reduced edge hit zone from 8px → 2px and corner size from 24px → 6px so the resize cursor only appears at the very edge of the window.
+- **Window Border**: Added a thin 1px border around the app window (`body`) using `var(--border-color)` as a visible grab handle.
+- **Empty Line Selection**: Plugin now only activates during actual drag-selection (skips cursor-only positions). Empty lines within a selection show a single-character-width marker via `::before` pseudo-element, matching Windows native selection behavior.
+- **Animations Removed**: Removed `bouncy-zoom-in` dialog animation, `editor-fade-in`, `skeleton-shimmer`, `cinematic-drift`, `orb-drift-*`, `quote-fade-in`, and `logo-glow-pulse` keyframes for improved UI responsiveness. Removed `MuiPaper-root` from transition list.
+- **MUI Transition Duration**: Set `MuiDialog` transition duration to `0`, `MuiPopover` and `MuiMenu` to `1` (instant). Tooltip `enterDelay` and `leaveDelay` set to `0`.
+- **Welcome Screen**: Removed aurora breathing animation from background gradient.
+
+### Added
+- **Clipboard Fallback**: Copy/cut operations now fall back to `document.execCommand("copy")` via a temporary textarea when `navigator.clipboard.writeText` fails.
+- **Context Menu Focus**: Editor refocuses after context menu opens (`setTimeout(() => view?.focus(), 0)`).
+
+## [0.2.13] - 2026-07-04
+
+### Changed
+- **Header Bar**: Height increased from 30px → 40px. Command Palette button moved from ActivityBar into HeaderBar (replaces the ActivityBar `ActionKey` icon). Window control button heights adjusted (minimize: 48px, maximize/close: 40px). Tab border radius removed. Titlebar border-bottom removed.
+- **ActivityBar**: Replaced MUI `IconButton` with custom `Box`-based buttons for better click feedback and performance. Removed `onOpenPalette` prop. Added press-bounce animation on active state. Active tab styling changed to filled primary background.
+- **Store Update**: Simplified `install_store_update` — now returns a Microsoft Store URL instead of performing the installation directly. The frontend opens the URL via Tauri's `openUrl` plugin. Outside Tauri, falls back to `window.open` for the Store page.
+
+### Fixed
+- **ActivityBar Layout**: Removed unused vertical padding/gap that was causing inconsistent spacing.
+
+## [0.2.12] - 2026-07-04
+
+### Added
+- **X-Ray Analysis**: Completed the screenplay analysis dashboard feature.
+
 ## [0.2.11] - 2026-07-04
 
 ### Changed

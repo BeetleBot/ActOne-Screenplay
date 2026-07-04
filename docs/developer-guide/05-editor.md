@@ -16,7 +16,7 @@ FountainEditor.tsx (React shell)
 
 ## Editor Hook (`useCodeMirror.ts`)
 
-Located at `src/editor/useCodeMirror.ts` (~500 lines). This custom React hook manages the full CodeMirror lifecycle:
+Located at `src/editor/useCodeMirror.ts` (~720 lines). This custom React hook manages the full CodeMirror lifecycle:
 
 - Creates `EditorView` instance
 - Configures all extensions (static + dynamic via compartments)
@@ -42,7 +42,7 @@ Located at `src/editor/useCodeMirror.ts` (~500 lines). This custom React hook ma
 
 ## Fountain Syntax (`fountainSyntax.ts`)
 
-Located at `src/editor/fountainSyntax.ts` (~400 lines). Implements a custom `StateField` that:
+Located at `src/editor/fountainSyntax.ts` (~480 lines). Implements a custom `StateField` that:
 
 1. Parses each line using the frontend parser on every document change
 2. Classifies lines into 25+ `LineType` values
@@ -51,7 +51,7 @@ Located at `src/editor/fountainSyntax.ts` (~400 lines). Implements a custom `Sta
 
 ## Inline Autocomplete (`inlineAutocomplete.ts`)
 
-Located at `src/editor/inlineAutocomplete.ts` (~200 lines). Provides ghost-text autocomplete for:
+Located at `src/editor/inlineAutocomplete.ts` (~430 lines). Provides ghost-text autocomplete for:
 
 - Character names (from character list + document)
 - Location extensions (INT./EXT.)
@@ -62,7 +62,7 @@ Uses a custom `ViewPlugin` with a ghost text widget displayed inline.
 
 ## Empty Line Selection (`emptyLineSelection.ts`)
 
-Located at `src/editor/emptyLineSelection.ts` (~80 lines). A `ViewPlugin` that handles selection behavior on blank lines — ensuring users can easily select and interact with empty lines (which CodeMirror normally treats as invisible).
+Located at `src/editor/emptyLineSelection.ts` (~40 lines). A `ViewPlugin` that renders a single-character-width selection marker on empty lines within the current selection range, matching Windows native selection behavior on both platforms.
 
 ## Key Features
 
