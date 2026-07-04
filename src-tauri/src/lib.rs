@@ -535,6 +535,66 @@ async fn check_microsoft_store_license() -> Result<bool, String> {
     }
 }
 
+#[derive(Serialize)]
+pub struct StoreUpdateInfo {
+    update_available: bool,
+}
+
+#[tauri::command]
+fn check_for_store_update() -> Result<StoreUpdateInfo, String> {
+    #[cfg(all(target_os = "windows", not(debug_assertions)))]
+    {
+        use windows::Services::Store::StoreContext;
+        let context = StoreContext::GetDefault().map_err(|e| e.to_string())?;
+        let result = context
+            .GetAppAndOptionalStorePackageUpdatesAsync()
+            .map_err(|e| e.to_string())?
+            .get()
+            .map_err(|e| e.to_string())?;
+        let count = result.Size().map_err(|e| e.to_string())?;
+        Ok(StoreUpdateInfo {
+            update_available: count > 0,
+        })
+    }
+
+    #[cfg(any(not(target_os = "windows"), debug_assertions))]
+    {
+        Ok(StoreUpdateInfo {
+            update_available: false,
+        })
+    }
+}
+
+#[tauri::command]
+fn install_store_update() -> Result<(), String> {
+    #[cfg(all(target_os = "windows", not(debug_assertions)))]
+    {
+        use windows::Services::Store::StoreContext;
+        let context = StoreContext::GetDefault().map_err(|e| e.to_string())?;
+        let result = context
+            .GetAppAndOptionalStorePackageUpdatesAsync()
+            .map_err(|e| e.to_string())?
+            .get()
+            .map_err(|e| e.to_string())?;
+        let updates = result.Updates().map_err(|e| e.to_string())?;
+        let count = updates.Size().map_err(|e| e.to_string())?;
+        if count == 0 {
+            return Ok(());
+        }
+        context
+            .RequestDownloadAndInstallStorePackagesAsync(&updates)
+            .map_err(|e| e.to_string())?
+            .get()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    #[cfg(any(not(target_os = "windows"), debug_assertions))]
+    {
+        Err("Store updates are only available on Windows Store builds".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -622,6 +682,8 @@ pub fn run() {
             generate_fadein_bytes,
             import_fountain_dialog,
             check_microsoft_store_license,
+            check_for_store_update,
+            install_store_update,
             select_watermark_image,
             get_fonts_for_script,
             get_detected_scripts,

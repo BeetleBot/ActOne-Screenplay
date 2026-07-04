@@ -37,24 +37,18 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   if (unzipped["settings.json"]) {
     try { parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"])); } catch (e) { logger.warn("actone", "Failed to parse settings.json", e); }
   }
-  if (unzipped["characters.json"]) {
-    try { const chars = JSON.parse(strFromU8(unzipped["characters.json"])); gendersData = chars; } catch (e) { logger.warn("actone", "Failed to parse characters.json", e); }
-  }
-  if (unzipped["todos.json"]) {
-    try { todosData = JSON.parse(strFromU8(unzipped["todos.json"])); } catch (e) { logger.warn("actone", "Failed to parse todos.json", e); }
-  }
-  if (unzipped["parking.json"]) {
-    try { parkingData = JSON.parse(strFromU8(unzipped["parking.json"])); } catch (e) { logger.warn("actone", "Failed to parse parking.json", e); }
-  }
-  if (unzipped["notepad.json"]) {
-    try { notepadData = JSON.parse(strFromU8(unzipped["notepad.json"])); } catch (e) { logger.warn("actone", "Failed to parse notepad.json", e); }
-  }
-  if (unzipped["sprint_data.json"]) {
-    try { sprintData = JSON.parse(strFromU8(unzipped["sprint_data.json"])); } catch (e) { logger.warn("actone", "Failed to parse sprint_data.json", e); }
-  }
-  if (unzipped["production_tags.json"]) {
-    try { productionTagsData = JSON.parse(strFromU8(unzipped["production_tags.json"])); } catch (e) { logger.warn("actone", "Failed to parse production_tags.json", e); }
-  }
+  const tryParse = <T>(key: string, fallback: T): T => {
+    const buf = unzipped[key];
+    if (!buf || buf.length === 0) return fallback;
+    try { return JSON.parse(strFromU8(buf)); } catch (e) { logger.warn("actone", `Failed to parse ${key}`, e); return fallback; }
+  };
+
+  gendersData = tryParse("characters.json", {});
+  todosData = tryParse("todos.json", []);
+  parkingData = tryParse("parking.json", []);
+  notepadData = tryParse("notepad.json", "");
+  sprintData = tryParse("sprint_data.json", []);
+  productionTagsData = tryParse("production_tags.json", { tags: [], definitions: [] });
 
   let scripts: ScriptInfo[];
 

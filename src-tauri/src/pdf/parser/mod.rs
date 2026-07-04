@@ -45,7 +45,8 @@ use preprocessor::{Line, Preprocessor};
 /// ```
 #[must_use]
 pub fn parse(src: &str) -> Screenplay {
-    let preprocessor = Preprocessor::new(src);
+    let cleaned = src.replace('\r', "");
+    let preprocessor = Preprocessor::new(&cleaned);
     Parser::new(&preprocessor.process()).parse()
 }
 

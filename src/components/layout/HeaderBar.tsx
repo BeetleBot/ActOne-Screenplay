@@ -9,8 +9,9 @@ import Tooltip from "@mui/material/Tooltip";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
-import { CloseIcon, AddIcon } from "../Icons";
+import { CloseIcon, AddIcon, DownloadIcon } from "../Icons";
 import { logger } from "../../utils/logger";
+import { useStoreUpdateCheck } from "../../hooks";
 
 export const HeaderBar = React.memo(() => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
@@ -19,6 +20,7 @@ export const HeaderBar = React.memo(() => {
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; fileId: string } | null>(null);
+  const { updateAvailable, installUpdate } = useStoreUpdateCheck();
 
   const handleContextMenu = (e: React.MouseEvent, fileId: string) => {
     e.preventDefault();
@@ -219,6 +221,36 @@ export const HeaderBar = React.memo(() => {
           </Tooltip>
         </Box>
 
+        {updateAvailable && (
+          <Tooltip title="Update available for ActOne. Click to install from Microsoft Store.">
+            <Box
+              onClick={(e) => { e.stopPropagation(); installUpdate(); }}
+              onMouseDown={(e) => e.stopPropagation()}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1,
+                height: 20,
+                mr: 0.5,
+                borderRadius: '10px',
+                cursor: 'pointer',
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+                color: 'primary.main',
+                fontSize: 10,
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                '&:hover': {
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
+                },
+              }}
+            >
+              <DownloadIcon sx={{ fontSize: 11 }} />
+              Update
+            </Box>
+          </Tooltip>
+        )}
         <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} onMouseDown={(e) => e.stopPropagation()}>
           <IconButton
             onClick={handleMinimize}

@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-import { useModalWindows } from "../hooks";
+import { useModalWindows, useStoreUpdateCheck } from "../hooks";
 import {
   Box,
   Typography,
@@ -12,6 +12,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Tooltip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useTheme } from "../context";
@@ -19,7 +20,7 @@ import { themes } from "../theme";
 import { logger } from "../utils/logger";
 
 import logoImage from "../assets/logo.png";
-import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DiscordIcon, CloseIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DiscordIcon, CloseIcon, DownloadIcon } from "./Icons";
 
 interface Quote {
   text: string;
@@ -385,6 +386,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
   const { openHelpWindow } = useModalWindows();
   const appVersion = __APP_VERSION__;
+  const { updateAvailable, installUpdate } = useStoreUpdateCheck();
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
 
   const isDark = mode === "dark";
@@ -862,6 +864,33 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             <Typography sx={{ fontSize: 10, color: palette.textFaint, fontWeight: 600 }}>
               {appVersion ? `v${appVersion}` : ""}
             </Typography>
+            {updateAvailable && (
+              <Tooltip title="Click to install update from Microsoft Store">
+                <Box
+                  onClick={(e) => { e.stopPropagation(); installUpdate(); }}
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.3,
+                    px: 0.75,
+                    py: 0.15,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+                    color: 'primary.main',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    '&:hover': {
+                      bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
+                    },
+                  }}
+                >
+                  <DownloadIcon sx={{ fontSize: 10 }} />
+                  Update
+                </Box>
+              </Tooltip>
+            )}
             <Button
               size="small"
               startIcon={<DiscordIcon sx={{ fontSize: 11 }} />}
