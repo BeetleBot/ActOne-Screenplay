@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.11] - 2026-07-04
+
+### Changed
+- **Welcome Screen**: Restored the v0.1.x welcome layout — centered logo, dynamic quote, three action cards (New Project, Open Project, Templates) and recent project chips — instead of the cinematic redesign.
+- **Welcome Screen Animation**: Replaced static gradient with a subtle aurora glow at the top that breathes (slow scale + opacity pulse) using the theme's primary color. Theme-aware opacity (0.22 dark, 0.38 light) so it stays visible on both backgrounds.
+
+### Added
+- **Microsoft Store Update Check (Welcome)**: "Update available" button in the welcome screen footer appears when a Microsoft Store update is detected. Clicking it triggers the Store install flow.
+- **Theme Cubes in Welcome**: Footer theme picker now shows the 2x2 color cube (editor / sidebar / accent / dropdown) on both the button and each menu item, matching the Quick Settings pattern.
+- **Keyboard Shortcuts**: Ctrl+N and Ctrl+O now work in the standalone welcome window, using the `editor:ready` event pattern for reliable window transitions.
+
+### Fixed
+- **Logo Drag**: The welcome screen logo is no longer draggable (the browser default `img` drag behavior was making the app feel like a website). Added `draggable={false}`, `onDragStart` preventDefault, and `WebkitUserDrag: none`.
+
 ## [0.2.9] - 2026-06-29
 
 ### Added
