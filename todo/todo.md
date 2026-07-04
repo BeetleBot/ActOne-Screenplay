@@ -31,4 +31,5 @@
 * \[ ] AI integration(For Translations, Rephrasing and Better words)
 * \[ ] Cloud integration(Google Drive, Dropbox, etc.,)
 * \[x] Add a seperate title page customisation modal, with Image support, if possible.
+* \[ ] Build separate .actone-to-.zip unpacker app
 

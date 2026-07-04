@@ -865,9 +865,7 @@ The import modal shows a detailed preview of each beat. Choose insertion mode: *
 - Marker categories (\`marker.json\`).
 - Production tags and definitions (\`production_tags.json\`).
 - Parked text snippets (\`parking.json\`).
-- A manifest (\`fountain.json\`) mapping script names to their archive filenames.
-
-**Extremely portable**: rename any .actone file to .zip and extract it to find your screenplay as a regular .fountain file alongside all data as readable JSON files.`,
+- A manifest (\`fountain.json\`) mapping script names to their archive filenames.`,
   },
   {
     id: "save",

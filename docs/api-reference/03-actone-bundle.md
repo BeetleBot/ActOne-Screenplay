@@ -2,7 +2,7 @@
 
 **Implementation:** `src/utils/actone.ts` (176 lines)
 
-The `.actone` format is ActOne's native project bundle — a ZIP archive containing one or more Fountain scripts plus metadata files, with a 4-byte magic trailer.
+The `.actone` format is ActOne's native project bundle — a ZIP archive containing one or more Fountain scripts plus metadata files, prefixed with a 4-byte magic header.
 
 ## File Structure
 
@@ -20,14 +20,16 @@ MyScreenplay.actone
 ├── production_tags.json           # Production tags/categories
 └── marker.json                    # Line markers
 
-[4-byte magic trailer: "ACT1"]
+[4-byte magic header: "ACT1"]
 ```
 
 ## Format Details
 
-### Magic Trailer
+### Magic Header
 
-All `.actone` files end with 4 bytes: `0x41 0x43 0x54 0x31` (`ACT1`). This distinguishes them from generic ZIP files.
+All `.actone` files start with 4 bytes: `0x41 0x43 0x54 0x31` (`ACT1`). This distinguishes them from generic ZIP files and prevents file-transfer apps (e.g., WhatsApp) from misidentifying them as plain ZIP archives.
+
+**Legacy format** (pre-0.3.0): Magic was appended at the end of the file. `unpackActoneBundle` still recognizes both positions for backward compatibility.
 
 ### fountain.json (Manifest)
 
@@ -73,7 +75,7 @@ function unpackActoneBundle(
 ): ActoneBundle;
 ```
 
-**Input:** Raw bytes of a `.actone` file (ZIP + ACT1 trailer).
+**Input:** Raw bytes of a `.actone` file (ACT1 header + ZIP data).
 
 **Returns:**
 ```typescript
@@ -84,7 +86,7 @@ interface ActoneBundle {
 ```
 
 **Logic:**
-1. Strips trailing `ACT1` magic bytes
+1. Checks for `ACT1` magic at start (new format) or end (legacy); strips it
 2. Inflates ZIP using `fflate`
 3. Looks for `fountain.json`:
    - **Found:** Reads manifest, extracts each `.fountain` file
@@ -108,7 +110,7 @@ function packActoneBundle(
 **Logic:**
 1. Creates `fountain.json` manifest from scripts
 2. Deflates all files into ZIP using `fflate`
-3. Appends `ACT1` magic trailer
+3. Prepends `ACT1` magic header
 4. Returns full bytes
 
 ### `ScriptInfo`
@@ -124,7 +126,9 @@ interface ScriptInfo {
 
 ## Legacy Compatibility
 
-When opening a legacy `.actone` (pre-multi-script):
+**Magic position:** Pre-0.3.0 files have the `ACT1` magic appended at the end. The unpacker checks both positions — start (new) first, then end (legacy), then treats the entire input as raw ZIP if no magic is found.
+
+**Pre-multi-script bundles:**
 - One `ScriptInfo` is created with `name` = bundle filename minus extension
 - `fileName` = `"document.fountain"`
 - On save, upgrades to the new format automatically
