@@ -27,13 +27,6 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const unzipped = unzipSync(zipBytes);
 
   let parsedSettings: Record<string, unknown> = {};
-  let gendersData: Record<string, unknown> = {};
-  let todosData: unknown[] = [];
-  let parkingData: unknown[] = [];
-  let notepadData: unknown = "";
-  let sprintData: unknown[] = [];
-  let productionTagsData: { tags: unknown[]; definitions: unknown[] } = { tags: [], definitions: [] };
-
   if (unzipped["settings.json"]) {
     try { parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"])); } catch (e) { logger.warn("actone", "Failed to parse settings.json", e); }
   }
@@ -43,12 +36,12 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
     try { return JSON.parse(strFromU8(buf)); } catch (e) { logger.warn("actone", `Failed to parse ${key}`, e); return fallback; }
   };
 
-  gendersData = tryParse("characters.json", {});
-  todosData = tryParse("todos.json", []);
-  parkingData = tryParse("parking.json", []);
-  notepadData = tryParse("notepad.json", "");
-  sprintData = tryParse("sprint_data.json", []);
-  productionTagsData = tryParse("production_tags.json", { tags: [], definitions: [] });
+  const gendersData = tryParse("characters.json", {});
+  const todosData = tryParse("todos.json", []);
+  const parkingData = tryParse("parking.json", []);
+  const notepadData = tryParse("notepad.json", "");
+  const sprintData = tryParse("sprint_data.json", []);
+  const productionTagsData = tryParse("production_tags.json", { tags: [], definitions: [] });
 
   let scripts: ScriptInfo[];
 

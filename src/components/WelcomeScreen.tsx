@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useFile } from "../context";
+import type { RecentFile } from "../context/FileContext";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -16,6 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
 import { useTheme } from "../context";
 import { themes } from "../theme";
 import { logger } from "../utils/logger";
@@ -90,7 +92,7 @@ const ActionCard: React.FC<{
       "&:hover": {
         bgcolor: "action.hover",
         transform: "translateY(-1px)",
-        boxShadow: (theme: any) => `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
+        boxShadow: (theme: Theme) => `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
       },
     }}
   >
@@ -393,7 +395,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               width: 340,
               height: 340,
               borderRadius: "50%",
-              background: (theme: any) =>
+              background: (theme: Theme) =>
                 `radial-gradient(ellipse, ${alpha(theme.palette.primary.main, 0.09)} 0%, transparent 70%)`,
               pointerEvents: "none",
             }}
@@ -445,7 +447,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             <Box sx={{
               position: "absolute", inset: -5,
               borderRadius: 2,
-              background: (t: any) => `radial-gradient(ellipse, ${alpha(t.palette.primary.main, 0.12)} 0%, transparent 70%)`,
+              background: (t: Theme) => `radial-gradient(ellipse, ${alpha(t.palette.primary.main, 0.12)} 0%, transparent 70%)`,
               pointerEvents: "none",
             }} />
             <ActionCard
@@ -488,7 +490,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               Recent Projects
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
-              {recentFiles.slice(0, 6).map((item: any) => (
+              {recentFiles.slice(0, 6).map((item: RecentFile) => (
                 <Chip
                   key={item.path}
                   icon={<DescriptionIcon sx={{ fontSize: 14, ml: 0.5 }} />}
