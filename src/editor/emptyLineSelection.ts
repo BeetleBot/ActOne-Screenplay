@@ -6,6 +6,8 @@ function computeEmptyLineDecorations(view: EditorView): DecorationSet {
   const doc = view.state.doc;
 
   for (const range of view.state.selection.ranges) {
+    if (range.from === range.to) continue;
+
     const fromLine = doc.lineAt(range.from);
     const toLine = doc.lineAt(Math.max(range.to - 1, range.from));
 

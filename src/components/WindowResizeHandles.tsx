@@ -5,8 +5,8 @@ type Dir = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
 
 
-const EDGE_SIZE = 8;
-const CORNER_SIZE = 24;
+const EDGE_SIZE = 2;
+const CORNER_SIZE = 6;
 
 const cursors: Record<Dir, string> = {
   n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize",

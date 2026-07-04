@@ -364,12 +364,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             height: "200%",
             background: (t) =>
               `radial-gradient(ellipse 60% 60% at 50% 30%, ${alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.22 : 0.38)} 0%, transparent 65%)`,
-            animation: "aurora 6s ease-in-out infinite",
-            willChange: "transform, opacity",
-            "@keyframes aurora": {
-              "0%, 100%": { transform: "translateX(-50%) scaleY(1) scaleX(1)", opacity: 1 },
-              "50%": { transform: "translateX(-50%) scaleY(1.5) scaleX(1.2)", opacity: 0.35 },
-            },
+
           }}
         />
       </Box>

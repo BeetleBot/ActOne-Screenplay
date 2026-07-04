@@ -123,6 +123,7 @@ export const FountainEditor = React.memo(() => {
       mouseX: event.clientX,
       mouseY: event.clientY,
     });
+    setTimeout(() => view?.focus(), 0);
   };
 
   const handleClose = () => {
@@ -333,11 +334,23 @@ export const FountainEditor = React.memo(() => {
   const handleEditorAction = async (cmd: string) => {
     if (!view) return;
     view.focus();
-    const state = view.state;
-    const sel = state.selection.main;
+    const sel = view.state.selection.main;
     if (cmd === "copy" || cmd === "cut") {
-      const text = state.sliceDoc(sel.from, sel.to - sel.from);
-      try { await navigator.clipboard.writeText(text); } catch (e) { logger.error("editor", "clipboard write failed", e); }
+      const text = view.state.sliceDoc(sel.from, sel.to - sel.from);
+      if (text) {
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
+      }
       if (cmd === "cut" && !sel.empty) {
         view.dispatch({ changes: { from: sel.from, to: sel.to } });
       }

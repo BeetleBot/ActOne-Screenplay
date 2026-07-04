@@ -423,6 +423,9 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
         },
       },
       MuiDialog: {
+        defaultProps: {
+          transitionDuration: 0,
+        },
         styleOverrides: {
           paper: {
             borderRadius: '10px',
@@ -441,6 +444,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
       },
       MuiPopover: {
         defaultProps: {
+          transitionDuration: 1,
           slotProps: {
             paper: {
               sx: {
@@ -454,10 +458,11 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
         },
       },
       MuiTooltip: {
-        defaultProps: { arrow: true },
+        defaultProps: { arrow: true, enterDelay: 0, leaveDelay: 0 },
       },
       MuiMenu: {
         defaultProps: {
+          transitionDuration: 1,
           slotProps: {
             paper: {
               sx: {

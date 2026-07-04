@@ -111,6 +111,7 @@ body {
   width: 100vw;
   -webkit-font-smoothing: antialiased;
   text-rendering: auto;
+  border: 1px solid var(--border-color);
 }
 
 #root {
@@ -161,7 +162,6 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  animation: editor-fade-in 0.25s ease-out;
 }
 
 .editor-paper.paper-a4 {
@@ -220,6 +220,11 @@ body {
 
 .cm-editor ::selection {
   background: rgba(var(--accent-rgb), 0.3) !important;
+}
+
+.cm-selected-empty-line::before {
+  content: '\00a0';
+  background: rgba(var(--accent-rgb), 0.3);
 }
 
 .cm-searchMatch {
@@ -720,7 +725,6 @@ button,
 .MuiButton-root,
 .MuiIconButton-root,
 .MuiCard-root,
-.MuiPaper-root,
 .cm-tooltip-autocomplete ul li {
   transition: transform var(--duration-normal) var(--easing-spring), background-color var(--duration-fast) ease, box-shadow var(--duration-normal) var(--easing-spring), border-color var(--duration-fast) ease !important;
 }
@@ -754,23 +758,7 @@ button:active,
   transition: width var(--duration-slow) var(--easing-spring), transform var(--duration-slow) var(--easing-spring) !important;
 }
 
-.MuiDialog-paper,
-.modal-content,
-.MuiPopover-paper,
-.MuiMenu-paper {
-  animation: bouncy-zoom-in var(--duration-slow) var(--easing-spring) forwards;
-}
 
-@keyframes bouncy-zoom-in {
-  from {
-    opacity: 0;
-    transform: scale(0.93) translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
 
 /* Modal Backdrop Blur (Dialogs only, not context menus or popovers) */
 .MuiModal-root:not(.MuiPopover-root) .MuiBackdrop-root {
@@ -789,48 +777,7 @@ button:active,
 }
 
 /* Loading Skeleton */
-@keyframes skeleton-shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
 
-@keyframes editor-fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes cinematic-drift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes orb-drift-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%      { transform: translate(40vw, 20vh) scale(1.15); }
-  66%      { transform: translate(20vw, 40vh) scale(0.9); }
-}
-
-@keyframes orb-drift-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%      { transform: translate(-30vw, -25vh) scale(0.85); }
-  66%      { transform: translate(-50vw, 10vh) scale(1.1); }
-}
-
-@keyframes orb-drift-3 {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50%      { transform: translate(-30%, -70%) scale(1.2); }
-}
-
-@keyframes quote-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes logo-glow-pulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.03); }
-}
 
 .skeleton-loading {
   display: flex;
@@ -846,7 +793,6 @@ button:active,
   border-radius: 4px;
   background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 50%, var(--skeleton-base) 75%);
   background-size: 800px 100%;
-  animation: skeleton-shimmer 1.8s ease-in-out infinite;
 }
 
 .skeleton-line.short { width: 60%; }

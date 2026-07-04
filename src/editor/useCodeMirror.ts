@@ -25,6 +25,7 @@ import {
   LINE_PARENTHETICAL,
   LINE_DUAL_PARENTHETICAL
 } from "./fountainSyntax";
+import { emptyLineSelectionPlugin } from "./emptyLineSelection";
 
 const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
   if (localStorage.getItem("actone-smart-quotes-enabled") !== "true") return tr;
@@ -502,6 +503,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         fountainKeymap,
         autocompletion({ override: [fountainCompletionSource], activateOnTyping: false }),
         keymap.of([...defaultKeymap, ...historyKeymap]),
+        emptyLineSelectionPlugin,
         editorTheme,
         placeholder("Start writing here"),
         fountainHighlightField,
