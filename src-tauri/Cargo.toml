@@ -34,7 +34,7 @@ zip = "2"
 dunce = "1.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows = { version = "0.58", features = ["Services_Store", "Foundation"] }
+windows = { version = "0.62", features = ["Services_Store", "Foundation"] }
 
 [profile.release]
 opt-level = 3
