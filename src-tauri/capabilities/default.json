@@ -24,6 +24,8 @@
     "core:webview:allow-create-webview",
     "core:webview:allow-webview-show",
     "core:webview:allow-set-webview-focus",
-    "core:window:allow-create"
+    "core:window:allow-create",
+    "clipboard-manager:allow-read-text",
+    "clipboard-manager:allow-write-text"
   ]
 }

@@ -386,7 +386,7 @@ body {
 .cm-fountain-pagebreak {
   border-top: 1px dashed var(--border-color) !important;
   height: 20px !important;
-  line-height: 0 !important;
+  line-height: 20px !important;
   font-size: 0 !important;
   color: transparent !important;
   box-sizing: border-box !important;
@@ -406,6 +406,16 @@ body {
 
 .cm-fountain-syntax {
   opacity: 0.35 !important;
+}
+
+.cm-fountain-syntax-hidden {
+  font-size: 0 !important;
+  letter-spacing: 0 !important;
+  color: transparent !important;
+  display: inline !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
 }
 
 .cm-ghost-text {

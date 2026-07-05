@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFile, useEditor, useUI } from "../context";
+import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
 import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon, BarChartIcon, CameraIcon } from "./Icons";
 import { logger } from "../utils/logger";
@@ -191,23 +192,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const handleEditorAction = async (cmd: string) => {
     if (!editorView) return;
     editorView.dom.focus({ preventScroll: true });
-    const state = editorView.state;
-    const sel = state.selection.main;
-    if (cmd === "copy" || cmd === "cut") {
-      const text = state.sliceDoc(sel.from, sel.to - sel.from);
-      try { await navigator.clipboard.writeText(text); } catch { void 0; }
-      if (cmd === "cut" && !sel.empty) {
-        editorView.dispatch({ changes: { from: sel.from, to: sel.to } });
-      }
-    } else if (cmd === "paste") {
+    if (cmd === "paste") {
       try {
-        const text = await navigator.clipboard.readText();
-        if (!sel.empty) {
-          editorView.dispatch({ changes: { from: sel.from, to: sel.to, insert: text } });
-        } else {
-          editorView.dispatch({ changes: { from: sel.from, insert: text } });
-        }
-      } catch { void 0; }
+        const text = await readText();
+        const sel = editorView.state.selection.main;
+        editorView.dispatch({
+          changes: { from: sel.from, to: sel.to, insert: text },
+          selection: { anchor: sel.from + text.length }
+        });
+      } catch {
+        void 0;
+      }
+    } else {
+      document.execCommand(cmd);
     }
     onClose();
   };

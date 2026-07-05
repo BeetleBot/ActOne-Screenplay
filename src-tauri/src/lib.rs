@@ -582,6 +582,7 @@ async fn install_store_update() -> Result<String, String> {
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .setup(move |app| {
             #[cfg(all(target_os = "windows", not(debug_assertions)))]
             {

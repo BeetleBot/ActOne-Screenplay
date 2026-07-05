@@ -32,6 +32,7 @@
     "@mui/material": "^9.0.1",
     "@mui/x-data-grid": "^9.7.0",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-clipboard-manager": "~2.0",
     "@tauri-apps/plugin-opener": "^2",
     "@types/react-window": "^1.8.8",
     "fflate": "^0.8.3",

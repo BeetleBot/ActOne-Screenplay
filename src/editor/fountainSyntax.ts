@@ -189,7 +189,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
 
     const isEditingThisLine = i === activeLineNum;
     const syntaxDeco = (hideSyntaxEnabled && !isEditingThisLine)
-      ? Decoration.replace({})
+      ? Decoration.mark({ class: "cm-fountain-syntax-hidden" })
       : Decoration.mark({ class: "cm-fountain-syntax" });
 
     if (/^#{1,2}(?:[^#]|$)/.test(trimmed) && type === LINE_SECTION) {

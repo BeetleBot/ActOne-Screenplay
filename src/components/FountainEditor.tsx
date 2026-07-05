@@ -6,6 +6,7 @@ import { alpha } from "@mui/material/styles";
 import type { Theme } from "@mui/material/styles";
 import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, AutoAwesomeIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
 import { logger } from "../utils/logger";
+import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { CATEGORIES } from "../constants";
 import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
 
@@ -334,35 +335,19 @@ export const FountainEditor = React.memo(() => {
   const handleEditorAction = async (cmd: string) => {
     if (!view) return;
     view.focus();
-    const sel = view.state.selection.main;
-    if (cmd === "copy" || cmd === "cut") {
-      const text = view.state.sliceDoc(sel.from, sel.to - sel.from);
-      if (text) {
-        try {
-          await navigator.clipboard.writeText(text);
-        } catch {
-          const ta = document.createElement("textarea");
-          ta.value = text;
-          ta.style.position = "fixed";
-          ta.style.left = "-9999px";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-        }
-      }
-      if (cmd === "cut" && !sel.empty) {
-        view.dispatch({ changes: { from: sel.from, to: sel.to } });
-      }
-    } else if (cmd === "paste") {
+    if (cmd === "paste") {
       try {
-        const text = await navigator.clipboard.readText();
-        if (!sel.empty) {
-          view.dispatch({ changes: { from: sel.from, to: sel.to, insert: text } });
-        } else {
-          view.dispatch({ changes: { from: sel.from, insert: text } });
-        }
-      } catch (e) { logger.error("editor", "clipboard read failed", e); }
+        const text = await readText();
+        const sel = view.state.selection.main;
+        view.dispatch({
+          changes: { from: sel.from, to: sel.to, insert: text },
+          selection: { anchor: sel.from + text.length }
+        });
+      } catch (e) {
+        logger.error("editor", "clipboard read failed", e);
+      }
+    } else {
+      document.execCommand(cmd);
     }
     handleClose();
   };
