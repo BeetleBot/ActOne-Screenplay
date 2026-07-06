@@ -67,8 +67,9 @@ export const FountainEditor = React.memo(() => {
   const [markerMenuAnchorEl, setMarkerMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [transformMenuAnchorEl, setTransformMenuAnchorEl] = useState<null | HTMLElement>(null);
 
-  // Snapshot of selection captured at right-click time — before CodeMirror collapses it on mousedown.
-  // Do NOT read selection directly at render time for menu state; use this ref instead.
+  // Snapshot of selection captured at mousedown time (button=2 / right-click),
+  // BEFORE CodeMirror's own mousedown handler collapses the selection.
+  // Always set — includes cursor position even when there is no text selection.
   const menuSelectionRef = useRef<{ from: number; to: number; text: string } | null>(null);
 
   const view = viewRef.current;
@@ -106,11 +107,17 @@ export const FountainEditor = React.memo(() => {
   }, [parsedDoc?.lines, view, selection]);
 
   const existingTag = useMemo(() => {
-    if (!view || !selection) return null;
+    if (!view) return null;
+    // When context menu is open, use the snapshot cursor (captured before CodeMirror collapsed selection).
+    // When menu is closed, fall back to the live cursor for any passive checks.
+    const cursor = contextMenu
+      ? (menuSelectionRef.current?.from ?? selection?.from)
+      : selection?.from;
+    if (cursor == null) return null;
+
     const prodTags = getPerScriptSettingObject<{ tags: ProdTagItem[]; definitions: ProdDef[] }>("productionTags", parsedDoc.settings, scriptFileName, { tags: [], definitions: [] });
     if (!prodTags || !prodTags.tags) return null;
 
-    const cursor = selection.from;
     const tag = prodTags.tags.find((t) => {
       if (!t.range) return false;
       const [start, len] = t.range;
@@ -124,21 +131,26 @@ export const FountainEditor = React.memo(() => {
       return { tag, def, catLabel };
     }
     return null;
-  }, [parsedDoc.settings?.productionTags, view, selection, scriptFileName]);
+  }, [contextMenu, parsedDoc.settings?.productionTags, view, selection, scriptFileName]);
+
+  // Capture selection on right-click mousedown — this fires BEFORE CodeMirror's mousedown
+  // handler, so the selection is still intact at this point.
+  const handleMouseDown = (event: React.MouseEvent) => {
+    if (event.button !== 2) return; // only care about right-click
+    const v = viewRef.current;
+    if (!v) { menuSelectionRef.current = null; return; }
+    const sel = v.state.selection.main;
+    menuSelectionRef.current = {
+      from: sel.from,
+      to: sel.to,
+      text: sel.from !== sel.to ? v.state.sliceDoc(sel.from, sel.to) : "",
+    };
+  };
 
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
-    // Snapshot the selection NOW, before CodeMirror's mousedown handler collapses it.
-    const v = viewRef.current;
-    if (v) {
-      const sel = v.state.selection.main;
-      const hassel = sel.from !== sel.to;
-      menuSelectionRef.current = hassel
-        ? { from: sel.from, to: sel.to, text: v.state.sliceDoc(sel.from, sel.to) }
-        : null;
-    } else {
-      menuSelectionRef.current = null;
-    }
+    // menuSelectionRef was already set in handleMouseDown (before CodeMirror collapsed it).
+    // Nothing to re-read here — just open the menu.
     setQuickTagMode(event.ctrlKey || event.metaKey);
     setContextMenu({
       mouseX: event.clientX,
@@ -408,6 +420,7 @@ export const FountainEditor = React.memo(() => {
     <div 
       className={`editor-font-wrapper ${fontFamily}`} 
       style={{ display: "flex", flex: 1, minHeight: "100%", flexDirection: "column" }}
+      onMouseDown={handleMouseDown}
       onContextMenu={handleContextMenu}
     >
       <div ref={containerRef} style={{ flex: 1, minHeight: "100%", cursor: "text" }} onClick={() => viewRef.current?.focus()} />

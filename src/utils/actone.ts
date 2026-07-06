@@ -1,4 +1,5 @@
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
+import { migrateProductionTags } from "./perScriptSettings";
 import { logger } from "./logger";
 
 const ACTONE_MAGIC = new Uint8Array([0x41, 0x43, 0x54, 0x31]); // "ACT1"
@@ -53,7 +54,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const parkingData = tryParse("parking.json", []);
   const notepadData = tryParse("notepad.json", "");
   const sprintData = tryParse("sprint_data.json", []);
-  const productionTagsData = tryParse("production_tags.json", { tags: [], definitions: [] });
+  const productionTagsData = migrateProductionTags(tryParse("production_tags.json", { tags: [], definitions: [] }));
 
   let scripts: ScriptInfo[];
 

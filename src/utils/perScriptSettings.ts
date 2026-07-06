@@ -15,12 +15,28 @@ export function getPerScriptSetting(
     ["parking", "todos", "notepad", "productionTags", "characterProfiles", "genders"].includes(key);
 
   if (isPerScriptKeyed) {
-    if (key === "productionTags" && ("tags" in val || "definitions" in val)) {
-      return val;
-    }
     return val[scriptFileName];
   }
   return val;
+}
+
+export function migrateProductionTags(raw: any): Record<string, any> {
+  if (!raw || typeof raw !== "object") return {};
+  
+  // Old flat format: { tags: [...], definitions: [...] }
+  // Also catches hybrid format: { tags: [], definitions: [], "33.fountain": {...} }
+  if ("tags" in raw || "definitions" in raw) {
+    const result: Record<string, any> = {};
+    for (const [key, val] of Object.entries(raw)) {
+      if (key === "tags" || key === "definitions") continue; // drop flat-format junk
+      if (val && typeof val === "object" && ("tags" in (val as any) || "definitions" in (val as any))) {
+        result[key] = val; // keep per-script entries
+      }
+    }
+    return result;
+  }
+  
+  return raw;
 }
 
 export function updatePerScriptSetting(

@@ -5,7 +5,7 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { search } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
-import { getPerScriptSettingObject } from "../utils/perScriptSettings";
+import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
 import { CATEGORIES, STORAGE_KEYS } from "../constants";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource } from "./inlineAutocomplete";
 import { 
@@ -543,13 +543,16 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
               if (changed) {
                 updateSettingsRef.current((prev) => {
-                  const prevProd = prev.productionTags || { tags: [], definitions: [] };
+                  const current = getPerScriptSettingObject(
+                    "productionTags", prev, scriptFileNameRef.current,
+                    { tags: [], definitions: [] }
+                  );
                   return {
                     ...prev,
-                    productionTags: {
-                      ...prevProd,
+                    ...updatePerScriptSetting(prev, "productionTags", scriptFileNameRef.current, {
+                      ...current,
                       tags: mappedTags
-                    }
+                    })
                   };
                 });
               }
