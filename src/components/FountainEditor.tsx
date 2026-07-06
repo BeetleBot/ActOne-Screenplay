@@ -67,19 +67,28 @@ export const FountainEditor = React.memo(() => {
   const [markerMenuAnchorEl, setMarkerMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [transformMenuAnchorEl, setTransformMenuAnchorEl] = useState<null | HTMLElement>(null);
 
+  // Snapshot of selection captured at right-click time — before CodeMirror collapses it on mousedown.
+  // Do NOT read selection directly at render time for menu state; use this ref instead.
+  const menuSelectionRef = useRef<{ from: number; to: number; text: string } | null>(null);
+
   const view = viewRef.current;
   const selection = view ? view.state.selection.main : null;
   const hasSelection = selection ? selection.from !== selection.to : false;
   const selectedText = (view && selection && hasSelection) ? view.state.sliceDoc(selection.from, selection.to) : "";
 
+  // These are derived from the snapshotted selection so they remain stable while the menu is open.
+  const menuHasSelection = menuSelectionRef.current !== null && menuSelectionRef.current.from !== menuSelectionRef.current.to;
+  const menuSelectedText = menuSelectionRef.current?.text ?? "";
+
   const wordCount = useMemo(() => {
-    if (!selectedText) return 0;
-    const trimmed = selectedText.trim();
+    const text = contextMenu ? menuSelectedText : selectedText;
+    if (!text) return 0;
+    const trimmed = text.trim();
     if (!trimmed) return 0;
     return trimmed.split(/\s+/).length;
-  }, [selectedText]);
+  }, [selectedText, menuSelectedText, contextMenu]);
 
-  const charCount = selectedText.length;
+  const charCount = contextMenu ? menuSelectedText.length : selectedText.length;
 
   const currentSceneLine = useMemo(() => {
     if (!view || !selection || !parsedDoc?.lines) return null;
@@ -119,12 +128,22 @@ export const FountainEditor = React.memo(() => {
 
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
+    // Snapshot the selection NOW, before CodeMirror's mousedown handler collapses it.
+    const v = viewRef.current;
+    if (v) {
+      const sel = v.state.selection.main;
+      const hassel = sel.from !== sel.to;
+      menuSelectionRef.current = hassel
+        ? { from: sel.from, to: sel.to, text: v.state.sliceDoc(sel.from, sel.to) }
+        : null;
+    } else {
+      menuSelectionRef.current = null;
+    }
     setQuickTagMode(event.ctrlKey || event.metaKey);
     setContextMenu({
       mouseX: event.clientX,
       mouseY: event.clientY,
     });
-    setTimeout(() => view?.focus(), 0);
   };
 
   const handleClose = () => {
@@ -135,6 +154,9 @@ export const FountainEditor = React.memo(() => {
     setHighlightMenuAnchorEl(null);
     setMarkerMenuAnchorEl(null);
     setTransformMenuAnchorEl(null);
+    menuSelectionRef.current = null;
+    // Restore editor focus after the menu is fully closed.
+    setTimeout(() => viewRef.current?.focus(), 0);
   };
 
   const handleRemoveTag = () => {
@@ -154,10 +176,11 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handleTagClick = (category: string) => {
-    if (!view || !selection || !hasSelection) return;
-    const from = selection.from;
-    const to = selection.to;
-    const text = selectedText.trim();
+    const snap = menuSelectionRef.current;
+    if (!view || !snap) return;
+    const from = snap.from;
+    const to = snap.to;
+    const text = snap.text.trim();
     if (!text) return;
 
     updateSettings((prev) => {
@@ -205,21 +228,23 @@ export const FountainEditor = React.memo(() => {
   };
 
   const toggleInlineMarker = (marker: string) => {
-    if (!view || !selection || !hasSelection) return;
-    const from = selection.from;
-    const to = selection.to;
-    
+    const snap = menuSelectionRef.current;
+    if (!view || !snap) return;
+    const from = snap.from;
+    const to = snap.to;
+    const snapText = snap.text;
+
     const isWrapped =
-      selectedText.startsWith(marker) && selectedText.endsWith(marker) && selectedText.length > marker.length * 2;
+      snapText.startsWith(marker) && snapText.endsWith(marker) && snapText.length > marker.length * 2;
 
     if (isWrapped) {
-      const unwrapped = selectedText.slice(marker.length, -marker.length);
+      const unwrapped = snapText.slice(marker.length, -marker.length);
       view.dispatch({
         changes: { from, to, insert: unwrapped },
         selection: { anchor: from, head: from + unwrapped.length },
       });
     } else {
-      const wrapped = marker + selectedText + marker;
+      const wrapped = marker + snapText + marker;
       view.dispatch({
         changes: { from, to, insert: wrapped },
         selection: { anchor: from, head: from + wrapped.length },
@@ -229,10 +254,9 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handleParkSelection = () => {
-    if (!view || !selection || !hasSelection) return;
-    const from = selection.from;
-    const to = selection.to;
-    const text = view.state.sliceDoc(from, to);
+    const snap = menuSelectionRef.current;
+    if (!view || !snap) return;
+    const { from, to, text } = snap;
     if (!text.trim()) return;
 
     parking.addItem(text);
@@ -267,10 +291,11 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handleDropMarkerWithColor = async (colorName: string) => {
-    if (!view || !selection) return;
-    const from = selection.from;
-    const to = selection.to;
-    const defaultDesc = selectedText || "";
+    const snap = menuSelectionRef.current;
+    if (!view) return;
+    const from = snap?.from ?? view.state.selection.main.from;
+    const to = snap?.to ?? view.state.selection.main.to;
+    const defaultDesc = snap?.text ?? "";
     handleClose();
     const desc = await showPrompt({
       title: "Drop Marker",
@@ -287,16 +312,16 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handleTransformCase = (mode: "upper" | "title" | "lower") => {
-    if (!view || !selection || !hasSelection) return;
-    const from = selection.from;
-    const to = selection.to;
-    let newText = selectedText;
+    const snap = menuSelectionRef.current;
+    if (!view || !snap) return;
+    const { from, to } = snap;
+    let newText = snap.text;
     if (mode === "upper") {
-      newText = selectedText.toUpperCase();
+      newText = snap.text.toUpperCase();
     } else if (mode === "lower") {
-      newText = selectedText.toLowerCase();
+      newText = snap.text.toLowerCase();
     } else if (mode === "title") {
-      newText = selectedText.replace(/\b\w+/g, (s) => s.charAt(0).toUpperCase() + s.substring(1).toLowerCase());
+      newText = snap.text.replace(/\b\w+/g, (s) => s.charAt(0).toUpperCase() + s.substring(1).toLowerCase());
     }
     view.dispatch({
       changes: { from, to, insert: newText },
@@ -306,8 +331,8 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handleCreateTaskFromSelection = () => {
-    if (!selectedText.trim()) return;
-    const text = selectedText.trim();
+    const text = (menuSelectionRef.current?.text ?? "").trim();
+    if (!text) return;
     updateSettings((prev) => {
       const todos = prev.todos || [];
       const newTodo = {
@@ -326,8 +351,9 @@ export const FountainEditor = React.memo(() => {
 
   const handleLookUpSelection = () => {
     handleClose();
-    if (!selectedText) return;
-    const query = encodeURIComponent(selectedText.trim());
+    const text = menuSelectionRef.current?.text ?? "";
+    if (!text) return;
+    const query = encodeURIComponent(text.trim());
     const url = `https://www.google.com/search?q=${query}`;
     import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url)).catch(() => window.open(url, "_blank"));
   };
@@ -399,7 +425,7 @@ export const FountainEditor = React.memo(() => {
       >
         {quickTagMode ? (
           <>
-            {hasSelection && (
+            {menuHasSelection && (
               <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
                   QUICK TAG
@@ -407,7 +433,7 @@ export const FountainEditor = React.memo(() => {
               </Box>
             )}
             {CATEGORIES.map((cat) => (
-              <MenuItem key={cat.key} onClick={() => handleTagClick(cat.key)} disabled={!hasSelection}>
+              <MenuItem key={cat.key} onClick={() => handleTagClick(cat.key)} disabled={!menuHasSelection}>
                 <Box
                   sx={{
                     width: 8,
@@ -432,7 +458,7 @@ export const FountainEditor = React.memo(() => {
           </>
         ) : (
           <>
-        {hasSelection && (
+        {menuHasSelection && (
           <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
               SELECTION STATS
@@ -443,14 +469,14 @@ export const FountainEditor = React.memo(() => {
           </Box>
         )}
 
-        <MenuItem disabled={!hasSelection} onClick={() => handleEditorAction("cut")}>
+        <MenuItem disabled={!menuHasSelection} onClick={() => handleEditorAction("cut")}>
           <ListItemIcon>
             <ContentCutIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary="Cut" />
         </MenuItem>
         
-        <MenuItem disabled={!hasSelection} onClick={() => handleEditorAction("copy")}>
+        <MenuItem disabled={!menuHasSelection} onClick={() => handleEditorAction("copy")}>
           <ListItemIcon>
             <ContentCopyIcon fontSize="small" />
           </ListItemIcon>
@@ -467,7 +493,7 @@ export const FountainEditor = React.memo(() => {
         <Divider />
 
         <MenuItem
-          disabled={!hasSelection}
+          disabled={!menuHasSelection}
           onClick={(e) => {
             setSubMenuAnchorEl(e.currentTarget);
             setFormatMenuAnchorEl(null);
@@ -540,7 +566,7 @@ export const FountainEditor = React.memo(() => {
         <Divider />
 
         <MenuItem
-          disabled={!hasSelection}
+          disabled={!menuHasSelection}
           onClick={(e) => {
             setFormatMenuAnchorEl(e.currentTarget);
             setSubMenuAnchorEl(null);
@@ -560,7 +586,7 @@ export const FountainEditor = React.memo(() => {
         </MenuItem>
 
         <MenuItem
-          disabled={!hasSelection}
+          disabled={!menuHasSelection}
           onClick={(e) => {
             setTransformMenuAnchorEl(e.currentTarget);
             setSubMenuAnchorEl(null);
@@ -580,7 +606,7 @@ export const FountainEditor = React.memo(() => {
         </MenuItem>
 
         <MenuItem
-          disabled={!hasSelection}
+          disabled={!menuHasSelection}
           onClick={handleLookUpSelection}
         >
           <ListItemIcon>
@@ -592,7 +618,7 @@ export const FountainEditor = React.memo(() => {
         <Divider />
 
         <MenuItem
-          disabled={!hasSelection}
+          disabled={!menuHasSelection}
           onClick={handleCreateTaskFromSelection}
         >
           <ListItemIcon>
@@ -602,7 +628,7 @@ export const FountainEditor = React.memo(() => {
         </MenuItem>
 
         <MenuItem
-          disabled={!hasSelection}
+          disabled={!menuHasSelection}
           onClick={handleParkSelection}
         >
           <ListItemIcon>
@@ -721,19 +747,19 @@ export const FountainEditor = React.memo(() => {
         }}
         {...menuProps}
       >
-        <MenuItem disabled={!hasSelection} onClick={() => toggleInlineMarker("**")}>
+        <MenuItem disabled={!menuHasSelection} onClick={() => toggleInlineMarker("**")}>
           <ListItemIcon>
             <FormatBoldIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary="Bold" />
         </MenuItem>
-        <MenuItem disabled={!hasSelection} onClick={() => toggleInlineMarker("*")}>
+        <MenuItem disabled={!menuHasSelection} onClick={() => toggleInlineMarker("*")}>
           <ListItemIcon>
             <FormatItalicIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary="Italic" />
         </MenuItem>
-        <MenuItem disabled={!hasSelection} onClick={() => toggleInlineMarker("_")}>
+        <MenuItem disabled={!menuHasSelection} onClick={() => toggleInlineMarker("_")}>
           <ListItemIcon>
             <FormatUnderlinedIcon fontSize="small" />
           </ListItemIcon>
@@ -762,13 +788,13 @@ export const FountainEditor = React.memo(() => {
         }}
         {...menuProps}
       >
-        <MenuItem disabled={!hasSelection} onClick={() => handleTransformCase("upper")}>
+        <MenuItem disabled={!menuHasSelection} onClick={() => handleTransformCase("upper")}>
           <ListItemText primary="UPPERCASE" />
         </MenuItem>
-        <MenuItem disabled={!hasSelection} onClick={() => handleTransformCase("title")}>
+        <MenuItem disabled={!menuHasSelection} onClick={() => handleTransformCase("title")}>
           <ListItemText primary="Title Case" />
         </MenuItem>
-        <MenuItem disabled={!hasSelection} onClick={() => handleTransformCase("lower")}>
+        <MenuItem disabled={!menuHasSelection} onClick={() => handleTransformCase("lower")}>
           <ListItemText primary="lowercase" />
         </MenuItem>
       </Menu>
