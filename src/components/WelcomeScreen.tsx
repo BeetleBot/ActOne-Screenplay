@@ -11,15 +11,11 @@ import {
   Typography,
   Button,
   Chip,
-  Menu,
-  MenuItem,
-  Divider,
   Tooltip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import type { Theme } from "@mui/material/styles";
-import { useTheme } from "../context";
-import { themes } from "../theme";
+
 import { logger } from "../utils/logger";
 import { TutorialSelectionDialog } from "./OnboardingTour";
 
@@ -138,12 +134,10 @@ interface WelcomeScreenWindowProps {
 
 export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false }) => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
-  const { theme, setTheme, customThemes } = useTheme();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
   const { openHelpWindow } = useModalWindows();
   const appVersion = __APP_VERSION__;
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
-  const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
   const [tutorialDialogOpen, setTutorialDialogOpen] = useState(false);
 
   const handleSelectTour = async (type: "ui" | "fountain") => {
@@ -636,116 +630,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             &copy; 2026 Write Up Film Service Company
           </Typography>
         </Box>
-        <Button
-          onClick={(e) => setThemeMenuAnchor(e.currentTarget)}
-          size="small"
-          startIcon={
-            <Box sx={{ width: 12, height: 12, borderRadius: "3px", display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden", flexShrink: 0 }}>
-              {(() => {
-                const t = [...themes, ...customThemes].find(th => th.id === theme);
-                if (!t) return <><Box sx={{ bgcolor: "action.selected" }} /><Box sx={{ bgcolor: "action.selected" }} /></>;
-                return (
-                  <>
-                    <Box sx={{ bgcolor: t.colors.editor }} />
-                    <Box sx={{ bgcolor: t.colors.sidebar }} />
-                    <Box sx={{ bgcolor: t.colors.accent }} />
-                    <Box sx={{ bgcolor: t.colors.dropdown }} />
-                  </>
-                );
-              })()}
-            </Box>
-          }
-          sx={{
-            textTransform: "none",
-            fontWeight: 600,
-            fontSize: 10,
-            color: "text.secondary",
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: "8px",
-            px: 1.25,
-            py: 0.25,
-            minWidth: 0,
-            "&:hover": { color: "text.primary", borderColor: "text.secondary" },
-          }}
-        >
-          {(() => {
-            const t = [...themes, ...customThemes].find(th => th.id === theme);
-            return t?.name ?? "Theme";
-          })()}
-        </Button>
-        <Menu
-          anchorEl={themeMenuAnchor}
-          open={Boolean(themeMenuAnchor)}
-          onClose={() => setThemeMenuAnchor(null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          slotProps={{ paper: { sx: { width: 220, maxHeight: 400, borderRadius: '12px' } } }}
-        >
-          <Typography sx={{ px: 2, pt: 1, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Light
-          </Typography>
-          {themes.filter(t => !t.isDark).map((t) => (
-            <MenuItem
-              key={t.id}
-              selected={theme === t.id}
-              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
-              sx={{ color: "text.primary", "&:hover": { bgcolor: "action.hover" }, "&.Mui-selected": { bgcolor: "action.selected" } }}
-            >
-              <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0, mr: 1.5 }}>
-                <Box sx={{ bgcolor: t.colors.editor }} />
-                <Box sx={{ bgcolor: t.colors.sidebar }} />
-                <Box sx={{ bgcolor: t.colors.accent }} />
-                <Box sx={{ bgcolor: t.colors.dropdown }} />
-              </Box>
-              {t.name}
-            </MenuItem>
-          ))}
-          <Divider sx={{ my: 0.5, borderColor: "divider" }} />
-          <Typography sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Dark
-          </Typography>
-          {themes.filter(t => t.isDark).map((t) => (
-            <MenuItem
-              key={t.id}
-              selected={theme === t.id}
-              onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
-              sx={{ color: "text.primary", "&:hover": { bgcolor: "action.hover" }, "&.Mui-selected": { bgcolor: "action.selected" } }}
-            >
-              <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0, mr: 1.5 }}>
-                <Box sx={{ bgcolor: t.colors.editor }} />
-                <Box sx={{ bgcolor: t.colors.sidebar }} />
-                <Box sx={{ bgcolor: t.colors.accent }} />
-                <Box sx={{ bgcolor: t.colors.dropdown }} />
-              </Box>
-              {t.name}
-            </MenuItem>
-          ))}
-          {customThemes.length > 0 && (
-            <>
-              <Divider sx={{ my: 0.5, borderColor: "divider" }} />
-              <Typography sx={{ px: 2, pt: 0.5, pb: 0.5, display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Custom
-              </Typography>
-              {customThemes.map((t) => (
-                <MenuItem
-                  key={t.id}
-                  selected={theme === t.id}
-                  onClick={() => { setTheme(t.id); setThemeMenuAnchor(null); }}
-                  sx={{ color: "text.primary", "&:hover": { bgcolor: "action.hover" }, "&.Mui-selected": { bgcolor: "action.selected" } }}
-                >
-                  <Box sx={{ width: 22, height: 22, borderRadius: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', flexShrink: 0, mr: 1.5 }}>
-                    <Box sx={{ bgcolor: t.colors.editor }} />
-                    <Box sx={{ bgcolor: t.colors.sidebar }} />
-                    <Box sx={{ bgcolor: t.colors.accent }} />
-                    <Box sx={{ bgcolor: t.colors.dropdown }} />
-                  </Box>
-                  {t.name}
-                </MenuItem>
-              ))}
-            </>
-          )}
-        </Menu>
+
       </Box>
     </Box>
   );

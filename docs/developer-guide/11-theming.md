@@ -1,34 +1,96 @@
 # Theming System
 
-ActOne has a comprehensive theming system with **14 built-in themes**, custom theme support, and cross-window synchronization.
+ActOne has a comprehensive theming system with **17 built-in themes**, 3 family-specific adaptive variants, custom theme support, and cross-window synchronization.
 
 ## Theme Architecture
 
 ```
-ThemeEngine.ts
+muiTheme.ts
+  ├── THEMES / THEME_CATEGORIES → theme data + section labels
   ├── deriveAllColors(coreColors) → full palette
   ├── generateMuiTheme(colors, mode) → MUI theme
-  └── getFountainColors(colors) → syntax highlighting
+  └── resolveThemeConfig(themeId) → light/dark pair
 ```
 
 ## Built-in Themes
 
-| Theme | Mode |
-|-------|------|
-| Light | Light |
-| Dark | Dark |
-| Dracula | Dark |
-| Nord | Dark |
-| Solarized Light | Light |
-| Solarized Dark | Dark |
-| Monokai | Dark |
-| GitHub Light | Light |
-| GitHub Dark | Dark |
-| One Dark | Dark |
-| One Light | Light |
-| Ayu Light | Light |
-| Ayu Dark | Dark |
-| Adaptive | Follows system |
+Themes are organized into categories, each with its own adaptive variant:
+
+### Classic (adaptiveId: `adaptive`)
+
+| Theme | Mode | Description |
+|-------|------|-------------|
+| Classic Light | Light | Clean light theme |
+| Classic Dark | Dark | Clean dark theme |
+| Adaptive | Auto | Switches Classic Light/Dark by system preference |
+
+### Catppuccin (adaptiveId: `catppuccin-adaptive`)
+
+| Theme | Mode | Description |
+|-------|------|-------------|
+| Catppuccin Latte | Light | Soft light theme with purple accents |
+| Catppuccin Mocha | Dark | Rich dark theme with purple accents |
+| Catppuccin Adaptive | Auto | Switches Latte/Mocha by system preference |
+
+### Pitch (adaptiveId: `pitch-adaptive`)
+
+| Theme | Mode | Description |
+|-------|------|-------------|
+| Pitch Light | Light | Pure white e-ink style |
+| Pitch Dark | Dark | Pure black background with grey tones |
+| Pitch Adaptive | Auto | Switches white/black by system preference |
+
+### Pastel
+
+| Theme | Mode | Description |
+|-------|------|-------------|
+| Sunrise | Light | Warm cream with coral accents |
+| Sunset | Dark | Deep warm brown with coral accents |
+| Mint | Light | Pale mint with green accents |
+| Forest | Dark | Deep forest green with green accents |
+| Rose | Light | Soft blush with rose accents |
+| Berry | Dark | Deep berry with rose accents |
+| Ocean | Dark | Deep teal blue |
+| Honey | Light | Warm golden cream |
+| Plum | Dark | Dark plum purple |
+| Sky | Light | Light pastel blue |
+| Slate | Dark | Dark blue-grey |
+
+## Theme Categories
+
+The `THEME_CATEGORIES` array in `muiTheme.ts` drives both the Theme Manager and Quick Settings:
+
+```typescript
+const THEME_CATEGORIES: ThemeCategory[] = [
+  { label: "CLASSIC", category: "classic", adaptiveId: "adaptive" },
+  { label: "CATPPUCCIN", category: "catppuccin", adaptiveId: "catppuccin-adaptive" },
+  { label: "PITCH", category: "pitch", adaptiveId: "pitch-adaptive" },
+  { label: "PASTEL", category: "pastel" },
+];
+```
+
+The adaptive item is rendered first in its section (e.g. "Adaptive" before "Classic Light"). The `ADAPTIVE_THEME_META` record provides icon colors for each family's adaptive chip.
+
+## Theme ID Resolution
+
+`resolveThemeConfig()` in `themeUtils.ts` maps adaptive theme IDs to their current light/dark variant at runtime:
+
+| Adaptive ID | Maps to |
+|-------------|---------|
+| `adaptive` | Classic Light (light mode) / Classic Dark (dark mode) |
+| `catppuccin-adaptive` | Catppuccin Latte (light) / Catppuccin Mocha (dark) |
+| `pitch-adaptive` | Pitch Light (light) / Pitch Dark (dark) |
+
+## Adaptive Theme Toggle
+
+`ThemeContext.tsx`'s `toggleMode` handles all three adaptive types. When the user toggles light/dark:
+
+- If the current theme is `adaptive`, it swaps between the Classic Light and Classic Dark theme objects directly
+- If `catppuccin-adaptive`, it swaps between Catppuccin Latte and Catppuccin Mocha
+- If `pitch-adaptive`, it swaps between Pitch Light and Pitch Dark
+- For non-adaptive themes, it falls through to the normal light/dark resolution
+
+Initial saved-theme validation ensures that after a cold start, restored adaptive IDs are correctly resolved to their current light/dark variants. If a saved `themeId` is one of the three adaptive IDs, the proper pair lookup occurs before the first render.
 
 ## Color System
 

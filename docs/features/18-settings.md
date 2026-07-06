@@ -33,7 +33,7 @@
 
 | Setting | Description |
 |---------|-------------|
-| Theme | Select from 14 built-in + custom themes |
+| Theme | Select from 17 built-in + custom themes |
 | App Scale | UI size percentage (100/110/125/150) |
 | Theme Manager | Open custom theme editor |
 

@@ -32,6 +32,16 @@ export function resolveThemeConfig(
     const theme = themes.find(x => x.id === id);
     if (theme) return theme;
   }
+  if (themeId === "catppuccin-adaptive") {
+    const id = systemDark ? "catppuccin-mocha" : "catppuccin-latte";
+    const theme = themes.find(x => x.id === id);
+    if (theme) return theme;
+  }
+  if (themeId === "pitch-adaptive") {
+    const id = systemDark ? "pitch-black" : "pitch-white";
+    const theme = themes.find(x => x.id === id);
+    if (theme) return theme;
+  }
   const builtin = themes.find(x => x.id === themeId);
   if (builtin) return builtin;
   const custom = customThemes.find(x => x.id === themeId);

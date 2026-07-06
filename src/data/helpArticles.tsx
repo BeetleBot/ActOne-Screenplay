@@ -26,7 +26,7 @@ export const articles: HelpArticle[] = [
 **Footer actions:**
 - **Help** — Opens the Help Wiki window with searchable documentation.
 - **Discord** — Opens the ActOne Discord invite in your default browser.
-- **Theme palette** (palette icon) — Switch between built-in themes (7 light + 7 dark + Adaptive).
+- **Quick Settings** (gear icon) — Open the settings sidebar to switch themes, adjust scale, and more.
 - **App version** — Build number, useful when reporting bugs.
 
 The Welcome screen also shows a rotating random writing quote from famous screenwriters.`,
@@ -976,33 +976,38 @@ Quick Settings are also available from the Activity Bar gear icon for common adj
     category: "Settings & Customization",
     tags: ["theme", "colors", "dark", "light", "custom"],
     relatedIds: ["settings-overview", "font-paper"],
-    content: `ActOne ships with **14 built-in themes** (7 light + 7 dark) organized into sections, plus an **Adaptive** mode. Each pair shares a complementary design language:
+    content: `ActOne ships with **17 built-in themes** organized into sections, with per-family adaptive variants. Each section has a shared design language:
 
 | Section | Theme | Mode | Description |
 |---------|-------|------|-------------|
-| ADAPTIVE | Adaptive | Auto | Follows system light/dark preference |
+| CLASSIC | Adaptive | Auto | Classic Light/Dark by system preference |
 | CLASSIC | Classic Light | Light | Clean light theme |
 | CLASSIC | Classic Dark | Dark | Clean dark theme |
+| CATPPUCCIN | Catppuccin Adaptive | Auto | Catppuccin Latte/Mocha by system preference |
+| CATPPUCCIN | Catppuccin Latte | Light | Soft light with purple accents |
+| CATPPUCCIN | Catppuccin Mocha | Dark | Rich dark with purple accents |
+| PITCH | Pitch Adaptive | Auto | Pitch Light/Dark by system preference |
 | PITCH | Pitch Light | Light | Pure white e-ink style |
 | PITCH | Pitch Dark | Dark | Pure black background with grey tones |
-| OTHER | Sunrise | Light | Warm cream with coral accents |
-| OTHER | Ocean | Dark | Deep blue with teal accents |
-| PASTEL | Blush | Light | Soft peachy pastel with rose accents |
-| PASTEL | Mauve | Dark | Dark pastel purple with lavender accents |
-| PASTEL | Lilac | Light | Soft purple pastel with violet accents |
-| PASTEL | Sage | Dark | Dark pastel sage with soft green accents |
-| PASTEL | Mint | Light | Soft mint pastel with teal accents |
-| PASTEL | Teal | Dark | Dark pastel teal with mint accents |
-| PASTEL | Butter | Light | Warm cream pastel with amber accents |
-| PASTEL | Plum | Dark | Dark pastel plum with soft rose accents |
+| PASTEL | Sunrise | Light | Warm cream with coral accents |
+| PASTEL | Sunset | Dark | Deep warm brown with coral accents |
+| PASTEL | Mint | Light | Pale mint with green accents |
+| PASTEL | Forest | Dark | Deep forest green with green accents |
+| PASTEL | Rose | Light | Soft blush with rose accents |
+| PASTEL | Berry | Dark | Deep berry with rose accents |
+| PASTEL | Ocean | Dark | Deep teal blue |
+| PASTEL | Honey | Light | Warm golden cream |
+| PASTEL | Plum | Dark | Dark plum purple |
+| PASTEL | Sky | Light | Light pastel blue |
+| PASTEL | Slate | Dark | Dark blue-grey |
 
-**Adaptive** mode automatically switches between Classic Light and Classic Dark based on your system's appearance setting (<code>prefers-color-scheme</code>). The transition happens instantly — no refresh needed. Select it from the Quick Settings theme grid or the Theme Manager.
+**Adaptive** variants automatically switch between their family's light and dark themes based on your system's appearance setting (<code>prefers-color-scheme</code>). Each family (Classic, Catppuccin, Pitch) has its own adaptive option. The transition happens instantly — no refresh needed.
 
-Quick-switch between any theme from the **Quick Settings** menu in the Activity Bar — a theme grid shows 2×2 color cubes (editor, sidebar, accent, dropdown) for every built-in theme plus Adaptive. The active theme is highlighted with a primary-colored border.
+Quick-switch between any theme from the **Quick Settings** menu (gear icon in the Activity Bar) — a theme grid with 2×2 color cubes organized by section. The active theme is highlighted with a primary-colored border.
 
-**Create your own themes** via Settings → Theme Manager. Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, name it, and see a live preview of a rendered miniature screenplay with activity bar, sidebar, and editor.
+**Create your own themes** via Quick Settings → "Manage Themes…". Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, name it, and see a live preview.
 
-**14 built-in themes** (7 light + 7 dark) are available as clickable starting points in the creation form. Custom themes persist in localStorage and appear under a "CUSTOM" section in the Theme Manager.`,
+**17 built-in themes** are available as clickable starting points in the creation form. Custom themes appear under a "CUSTOM" section in the Theme Manager.`,
   },
   {
     id: "font-paper",

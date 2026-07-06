@@ -3,7 +3,7 @@ import { Box, Typography, IconButton, Button, TextField, Switch } from "@mui/mat
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
-import { createActOneTheme, deriveAllColors, themes, type ThemeColors } from "../theme";
+import { createActOneTheme, deriveAllColors, themes, THEME_CATEGORIES, ADAPTIVE_THEME_META, type ThemeColors } from "../theme";
 import { resolveThemeConfig } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
 import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon, DownloadIcon, UploadIcon } from "./Icons";
@@ -28,14 +28,7 @@ interface CustomTheme {
   id: string; name: string; isDark: boolean; colors: ThemeColors;
 }
 
-type ThemeSection = { label: string; ids: string[] };
 
-const THEME_SECTIONS: ThemeSection[] = [
-  { label: "CLASSIC", ids: ["light", "dark"] },
-  { label: "PITCH", ids: ["pitch-black", "pitch-white"] },
-  { label: "PASTEL", ids: ["blush", "mauve", "lilac", "sage", "mint", "teal", "butter", "plum"] },
-  { label: "OTHER", ids: ["ocean", "sunrise"] },
-];
 
 function accentRgb(hex: string) {
   const c = hex.replace("#", "");
@@ -478,52 +471,56 @@ export const ThemeManagerWindow: React.FC = () => {
               </Box>
             ) : (
               <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", pr: 0.5 }}>
-                <Box sx={{ mb: 1.5 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, mb: 0.75, display: "block" }}>ADAPTIVE</Typography>
-                  <Box onClick={() => setTheme("adaptive")} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: "8px", cursor: "pointer", border: "2px solid", borderColor: themeId === "adaptive" ? "primary.main" : "divider", bgcolor: themeId === "adaptive" ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
-                    <Box sx={{ width: 32, height: 32, borderRadius: "8px", overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
-                      <Box sx={{ flex: 1, bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: "#0061a4" }} />
-                      </Box>
-                      <Box sx={{ width: "2px", bgcolor: "divider" }} />
-                      <Box sx={{ flex: 1, bgcolor: "#1a1c1e", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: "#a0caff" }} />
-                      </Box>
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5, fontSize: 12 }}>
-                        {themeId === "adaptive" && <CheckIcon sx={{ fontSize: 14, color: "primary.main" }} />}Adaptive
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>Follows system preference</Typography>
-                    </Box>
-                  </Box>
-                </Box>
-                {THEME_SECTIONS.map(section => (
-                  <Box key={section.label} sx={{ mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, mb: 0.75, display: "block" }}>{section.label}</Typography>
-                    {section.ids.map(id => {
-                      const t = themes.find(x => x.id === id);
-                      if (!t) return null;
-                      const isActive = themeId === t.id;
-                      const tc = t.colors;
-                      return (
-                        <Box key={t.id} onClick={() => setTheme(t.id)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: "8px", cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
-                          <Box sx={{ width: 32, height: 32, borderRadius: "8px", overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
-                            <Box sx={{ bgcolor: tc.editor }} />
-                            <Box sx={{ bgcolor: tc.sidebar }} />
-                            <Box sx={{ bgcolor: tc.accent }} />
-                            <Box sx={{ bgcolor: tc.dropdown }} />
+                {THEME_CATEGORIES.map(cat => {
+                  const catThemes = themes.filter(t => t.category === cat.category);
+                  return (
+                    <Box key={cat.label} sx={{ mb: 1.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, mb: 0.75, display: "block" }}>{cat.label}</Typography>
+                      {cat.adaptiveId && (() => {
+                        const meta = ADAPTIVE_THEME_META[cat.adaptiveId!];
+                        const isActive = themeId === cat.adaptiveId;
+                        return (
+                          <Box onClick={() => setTheme(cat.adaptiveId!)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: "8px", cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
+                            <Box sx={{ width: 32, height: 32, borderRadius: "8px", overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
+                              <Box sx={{ flex: 1, bgcolor: meta.splitLightBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: meta.splitLightDot }} />
+                              </Box>
+                              <Box sx={{ width: "2px", bgcolor: "divider" }} />
+                              <Box sx={{ flex: 1, bgcolor: meta.splitDarkBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: meta.splitDarkDot }} />
+                              </Box>
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5, fontSize: 12 }}>
+                                {isActive && <CheckIcon sx={{ fontSize: 14, color: "primary.main" }} />}{meta.label}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>Follows system preference</Typography>
+                            </Box>
                           </Box>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5, fontSize: 12 }}>
-                              {isActive && <CheckIcon sx={{ fontSize: 14, color: "primary.main" }} />}{t.name}
-                            </Typography>
+                        );
+                      })()}
+                      {catThemes.map(t => {
+                        const isActive = themeId === t.id;
+                        const tc = t.colors;
+                        return (
+                          <Box key={t.id} onClick={() => setTheme(t.id)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: "8px", cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
+                            <Box sx={{ width: 32, height: 32, borderRadius: "8px", overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
+                              <Box sx={{ bgcolor: tc.editor }} />
+                              <Box sx={{ bgcolor: tc.sidebar }} />
+                              <Box sx={{ bgcolor: tc.accent }} />
+                              <Box sx={{ bgcolor: tc.dropdown }} />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5, fontSize: 12 }}>
+                                {isActive && <CheckIcon sx={{ fontSize: 14, color: "primary.main" }} />}{t.name}
+                              </Typography>
+                            </Box>
                           </Box>
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                ))}
+                        );
+                      })}
+                    </Box>
+                  );
+                })}
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 2, mb: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, display: "block" }}>CUSTOM THEMES</Typography>
                   <Box sx={{ display: "flex", gap: 0.5 }}>

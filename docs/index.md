@@ -23,7 +23,7 @@ Architecture, setup, and implementation details for developers working on ActOne
 | [Editor Integration](developer-guide/05-editor.md) | CodeMirror 6 setup, extensions, editor features |
 | [Fountain Parser](developer-guide/06-fountain-parser.md) | Both frontend (TypeScript) and backend (Rust) parsers |
 | [State Management](developer-guide/08-state-management.md) | All 8 React contexts, state, actions, persistence |
-| [Theming System](developer-guide/11-theming.md) | 14 built-in themes, custom themes, color system |
+| [Theming System](developer-guide/11-theming.md) | 17 built-in themes, category+adaptive system, custom themes, color system |
 
 ### Backend
 

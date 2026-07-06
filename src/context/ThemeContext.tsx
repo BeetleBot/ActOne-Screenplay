@@ -50,13 +50,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setThemeState] = useState<string>(() => {
     const saved = localStorage.getItem(THEME_ID_KEY);
     if (saved) {
-      if (saved === "adaptive") return saved;
+      if (saved === "adaptive" || saved === "catppuccin-adaptive" || saved === "pitch-adaptive") return saved;
       if (themes.some(t => t.id === saved)) return saved;
       const customs = loadCustomThemes();
       if (customs.some(t => t.id === saved)) return saved;
     }
-    const isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    return isSystemDark ? "dark" : "light";
+    return "adaptive";
   });
   const themeRef = useRef(theme);
   themeRef.current = theme;
@@ -114,6 +113,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const toggleMode = useCallback(() => {
     if (theme === "adaptive") {
       setTheme(systemDark ? "light" : "dark");
+    } else if (theme === "catppuccin-adaptive") {
+      setTheme(systemDark ? "catppuccin-latte" : "catppuccin-mocha");
+    } else if (theme === "pitch-adaptive") {
+      setTheme(systemDark ? "pitch-white" : "pitch-black");
     } else {
       setTheme(mode === "light" ? "dark" : "light");
     }

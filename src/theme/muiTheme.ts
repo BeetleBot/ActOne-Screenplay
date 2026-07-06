@@ -1,7 +1,7 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { PILL_RADIUS } from '../constants';
 
-export type ThemeId = 'adaptive' | 'light' | 'dark' | 'pitch-black' | 'pitch-white' | 'sunrise' | 'ocean' | 'blush' | 'mauve' | 'lilac' | 'sage' | 'mint' | 'teal' | 'butter' | 'plum';
+export type ThemeId = 'adaptive' | 'catppuccin-adaptive' | 'pitch-adaptive' | 'catppuccin-latte' | 'catppuccin-mocha' | 'light' | 'dark' | 'pitch-white' | 'pitch-black' | 'sunrise' | 'sunset' | 'mint' | 'forest' | 'rose' | 'berry' | 'ocean' | 'honey' | 'plum' | 'sky' | 'slate';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -25,8 +25,55 @@ export interface ThemeConfig {
   desc: string;
   isDark: boolean;
   colors: ThemeColors;
-  category: "classic" | "pitch" | "other" | "custom";
+  category: "classic" | "catppuccin" | "pitch" | "pastel" | "other" | "custom";
 }
+
+export interface ThemeCategory {
+  label: string;
+  category: string;
+  adaptiveId?: string;
+}
+
+export const ADAPTIVE_THEME_META: Record<string, {
+  label: string;
+  splitLightBg: string;
+  splitLightDot: string;
+  splitDarkBg: string;
+  splitDarkDot: string;
+  swatchColors: [string, string, string, string];
+}> = {
+  adaptive: {
+    label: "Adaptive",
+    splitLightBg: "#f5f5f5",
+    splitLightDot: "#0061a4",
+    splitDarkBg: "#1a1c1e",
+    splitDarkDot: "#a0caff",
+    swatchColors: ["#ffffff", "#1a1c1e", "#0061a4", "#a0caff"],
+  },
+  "catppuccin-adaptive": {
+    label: "Catppuccin Adaptive",
+    splitLightBg: "#ccd0da",
+    splitLightDot: "#8839ef",
+    splitDarkBg: "#252538",
+    splitDarkDot: "#cba6f7",
+    swatchColors: ["#eff1f5", "#252538", "#8839ef", "#cba6f7"],
+  },
+  "pitch-adaptive": {
+    label: "Pitch Adaptive",
+    splitLightBg: "#ffffff",
+    splitLightDot: "#000000",
+    splitDarkBg: "#000000",
+    splitDarkDot: "#9a9996",
+    swatchColors: ["#ffffff", "#000000", "#000000", "#9a9996"],
+  },
+};
+
+export const THEME_CATEGORIES: ThemeCategory[] = [
+  { label: "CLASSIC", category: "classic", adaptiveId: "adaptive" },
+  { label: "CATPPUCCIN", category: "catppuccin", adaptiveId: "catppuccin-adaptive" },
+  { label: "PITCH", category: "pitch", adaptiveId: "pitch-adaptive" },
+  { label: "PASTEL", category: "pastel" },
+];
 
 export function deriveAllColors(colors: {
   editor: string;
@@ -82,6 +129,34 @@ export const themes: ThemeConfig[] = [
     }, true),
   },
   {
+    id: "catppuccin-latte",
+    name: "Catppuccin Latte",
+    desc: "Soft light theme with purple accents",
+    isDark: false,
+    category: "catppuccin",
+    colors: deriveAllColors({
+      editor: "#eff1f5",
+      text: "#4c4f69",
+      accent: "#8839ef",
+      sidebar: "#ccd0da",
+      button: "#8839ef",
+    }, false),
+  },
+  {
+    id: "catppuccin-mocha",
+    name: "Catppuccin Mocha",
+    desc: "Rich dark theme with purple accents",
+    isDark: true,
+    category: "catppuccin",
+    colors: deriveAllColors({
+      editor: "#1e1e2e",
+      text: "#cdd6f4",
+      accent: "#cba6f7",
+      sidebar: "#252538",
+      button: "#cba6f7",
+    }, true),
+  },
+  {
     id: "pitch-white",
     name: "Pitch Light",
     desc: "Pure white e-ink style, only black and white",
@@ -112,141 +187,155 @@ export const themes: ThemeConfig[] = [
   {
     id: "sunrise",
     name: "Sunrise",
-    desc: "Warm cream with coral accents",
+    desc: "Warm pastel cream with soft coral accents",
     isDark: false,
-    category: "other",
+    category: "pastel",
     colors: deriveAllColors({
-      editor: "#fffaf5",
+      editor: "#fffaf0",
       text: "#221510",
-      accent: "#e8634a",
+      accent: "#e88a6a",
       sidebar: "#fff5ee",
-      button: "#e8634a",
+      button: "#e88a6a",
     }, false),
   },
   {
-    id: "ocean",
-    name: "Ocean",
-    desc: "Deep blue with teal accents",
+    id: "sunset",
+    name: "Sunset",
+    desc: "Deep warm brown with soft coral accents",
     isDark: true,
-    category: "other",
+    category: "pastel",
     colors: deriveAllColors({
-      editor: "#0a1628",
-      text: "#f0f7ff",
-      accent: "#4ecdc4",
-      sidebar: "#0d1b2a",
-      button: "#4ecdc4",
-    }, true),
-  },
-  {
-    id: "blush",
-    name: "Blush",
-    desc: "Soft peachy pastel with rose accents",
-    isDark: false,
-    category: "other",
-    colors: deriveAllColors({
-      editor: "#fdf6f0",
-      text: "#24181a",
-      accent: "#e8a0b4",
-      sidebar: "#faf0ec",
-      button: "#e8a0b4",
-    }, false),
-  },
-  {
-    id: "mauve",
-    name: "Mauve",
-    desc: "Dark pastel purple with soft lavender accents",
-    isDark: true,
-    category: "other",
-    colors: deriveAllColors({
-      editor: "#1a1628",
-      text: "#faf8fc",
-      accent: "#c4a8e8",
-      sidebar: "#221e32",
-      button: "#c4a8e8",
-    }, true),
-  },
-  {
-    id: "lilac",
-    name: "Lilac",
-    desc: "Soft purple pastel with violet accents",
-    isDark: false,
-    category: "other",
-    colors: deriveAllColors({
-      editor: "#f8f6fe",
-      text: "#1c1a29",
-      accent: "#b8a9e8",
-      sidebar: "#f4f0fc",
-      button: "#b8a9e8",
-    }, false),
-  },
-  {
-    id: "sage",
-    name: "Sage",
-    desc: "Dark pastel sage with soft green accents",
-    isDark: true,
-    category: "other",
-    colors: deriveAllColors({
-      editor: "#16201a",
-      text: "#f3faf6",
-      accent: "#88c8a0",
-      sidebar: "#1a2e24",
-      button: "#88c8a0",
+      editor: "#1a1012",
+      text: "#f7f0ea",
+      accent: "#e88a6a",
+      sidebar: "#24161a",
+      button: "#e88a6a",
     }, true),
   },
   {
     id: "mint",
     name: "Mint",
-    desc: "Soft mint pastel with teal accents",
+    desc: "Pale mint pastel with soft green accents",
     isDark: false,
-    category: "other",
+    category: "pastel",
     colors: deriveAllColors({
-      editor: "#f2faf5",
-      text: "#17241e",
-      accent: "#7ec8a8",
+      editor: "#f0faf2",
+      text: "#16241c",
+      accent: "#7ec89e",
       sidebar: "#eef8f2",
-      button: "#7ec8a8",
+      button: "#7ec89e",
     }, false),
   },
   {
-    id: "teal",
-    name: "Teal",
-    desc: "Dark pastel teal with mint accents",
+    id: "forest",
+    name: "Forest",
+    desc: "Deep forest green with soft green accents",
     isDark: true,
-    category: "other",
+    category: "pastel",
     colors: deriveAllColors({
-      editor: "#121e24",
-      text: "#f3fbfd",
-      accent: "#7ec8d8",
-      sidebar: "#182830",
-      button: "#7ec8d8",
+      editor: "#101a14",
+      text: "#f0faf4",
+      accent: "#7ec89e",
+      sidebar: "#16241e",
+      button: "#7ec89e",
     }, true),
   },
   {
-    id: "butter",
-    name: "Butter",
-    desc: "Warm cream pastel with amber accents",
+    id: "rose",
+    name: "Rose",
+    desc: "Soft blush pastel with rose accents",
     isDark: false,
-    category: "other",
+    category: "pastel",
     colors: deriveAllColors({
-      editor: "#fefcf0",
-      text: "#242018",
-      accent: "#e8d07e",
-      sidebar: "#fcf8ea",
-      button: "#e8d07e",
+      editor: "#fdf0f4",
+      text: "#24181a",
+      accent: "#e89eb8",
+      sidebar: "#faf0f2",
+      button: "#e89eb8",
+    }, false),
+  },
+  {
+    id: "berry",
+    name: "Berry",
+    desc: "Deep berry with rose accents",
+    isDark: true,
+    category: "pastel",
+    colors: deriveAllColors({
+      editor: "#1a1016",
+      text: "#faf0f4",
+      accent: "#e89eb8",
+      sidebar: "#24161e",
+      button: "#e89eb8",
+    }, true),
+  },
+  {
+    id: "ocean",
+    name: "Ocean",
+    desc: "Deep teal blue pastel",
+    isDark: true,
+    category: "pastel",
+    colors: deriveAllColors({
+      editor: "#0e1a28",
+      text: "#eaf4f8",
+      accent: "#4ecdc4",
+      sidebar: "#12202e",
+      button: "#4ecdc4",
+    }, true),
+  },
+  {
+    id: "honey",
+    name: "Honey",
+    desc: "Warm golden cream pastel",
+    isDark: false,
+    category: "pastel",
+    colors: deriveAllColors({
+      editor: "#fefaf0",
+      text: "#241e14",
+      accent: "#e8c87e",
+      sidebar: "#fcf6ea",
+      button: "#e8c87e",
     }, false),
   },
   {
     id: "plum",
     name: "Plum",
-    desc: "Dark pastel plum with soft rose accents",
+    desc: "Dark plum purple pastel",
     isDark: true,
-    category: "other",
+    category: "pastel",
     colors: deriveAllColors({
-      editor: "#241620",
-      text: "#fbf2f8",
-      accent: "#d4a0c0",
-      sidebar: "#2e1a28",
-      button: "#d4a0c0",
+      editor: "#1e1428",
+      text: "#f6eefc",
+      accent: "#c89ed4",
+      sidebar: "#261a32",
+      button: "#c89ed4",
+    }, true),
+  },
+  {
+    id: "sky",
+    name: "Sky",
+    desc: "Light pastel blue",
+    isDark: false,
+    category: "pastel",
+    colors: deriveAllColors({
+      editor: "#f0f6fe",
+      text: "#141e2c",
+      accent: "#7eace8",
+      sidebar: "#eaf2fc",
+      button: "#7eace8",
+    }, false),
+  },
+  {
+    id: "slate",
+    name: "Slate",
+    desc: "Dark blue-grey pastel",
+    isDark: true,
+    category: "pastel",
+    colors: deriveAllColors({
+      editor: "#12161e",
+      text: "#ecf0f6",
+      accent: "#8a9eb8",
+      sidebar: "#181e28",
+      button: "#8a9eb8",
     }, true),
   },
 ];

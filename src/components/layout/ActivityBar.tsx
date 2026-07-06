@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useUI, useFile, useTheme } from "../../context";
 import { PILL_RADIUS } from "../../constants";
-import { themes } from "../../theme";
+import { themes, THEME_CATEGORIES, ADAPTIVE_THEME_META } from "../../theme";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import Divider from "@mui/material/Divider";
@@ -325,89 +325,63 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
 
         {!collapsedSections.has('theme') && (
           <Box sx={{ px: 2, py: 1 }}>
-            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
-              Light
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-                {themes.filter(t => !t.isDark).map((t) => {
-                  const isActive = theme === t.id;
-                  return (
-                    <Tooltip key={t.id} title={t.name} placement="top">
-                      <Box
-                        onClick={() => setTheme(t.id)}
-                        sx={{
-                          width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
-                          border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
-                          display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
-                          '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                          transition: 'border-color 0.12s ease',
-                        }}
-                      >
-                        <Box sx={{ bgcolor: t.colors.editor }} />
-                        <Box sx={{ bgcolor: t.colors.sidebar }} />
-                        <Box sx={{ bgcolor: t.colors.accent }} />
-                        <Box sx={{ bgcolor: t.colors.dropdown }} />
-                      </Box>
-                    </Tooltip>
-                  );
-                })}
-            </Box>
-
-            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
-              Dark
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-              {themes.filter(t => t.isDark).map((t) => {
-                const isActive = theme === t.id;
-                return (
-                  <Tooltip key={t.id} title={t.name} placement="top">
-                    <Box
-                      onClick={() => setTheme(t.id)}
-                      sx={{
-                        width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
-                        border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
-                        display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
-                        '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                        transition: 'border-color 0.12s ease',
-                      }}
-                    >
-                      <Box sx={{ bgcolor: t.colors.editor }} />
-                      <Box sx={{ bgcolor: t.colors.sidebar }} />
-                      <Box sx={{ bgcolor: t.colors.accent }} />
-                      <Box sx={{ bgcolor: t.colors.dropdown }} />
-                    </Box>
-                  </Tooltip>
-                );
-              })}
-            </Box>
-
-            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
-              Adaptive
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-              {(() => {
-                const isActive = theme === 'adaptive';
-                return (
-                  <Tooltip title="Adaptive (follows system)" placement="top">
-                    <Box
-                      onClick={() => setTheme('adaptive')}
-                      sx={{
-                        width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
-                        border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
-                        display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
-                        '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                        transition: 'border-color 0.12s ease',
-                      }}
-                    >
-                      <Box sx={{ bgcolor: '#e0e0e0' }} />
-                      <Box sx={{ bgcolor: '#333' }} />
-                      <Box sx={{ bgcolor: '#1976d2' }} />
-                      <Box sx={{ bgcolor: '#90caf9' }} />
-                    </Box>
-                  </Tooltip>
-                );
-              })()}
-            </Box>
+            {THEME_CATEGORIES.map(cat => {
+              const catThemes = themes.filter(t => t.category === cat.category);
+              return (
+                <Box key={cat.label}>
+                  <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontSize: '0.6rem', mb: 0.5, fontWeight: 600 }}>
+                    {cat.label}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                    {cat.adaptiveId && (() => {
+                      const meta = ADAPTIVE_THEME_META[cat.adaptiveId!];
+                      const isActive = theme === cat.adaptiveId;
+                      return (
+                        <Tooltip key={cat.adaptiveId} title={meta.label + " (follows system)"} placement="top">
+                          <Box
+                            onClick={() => setTheme(cat.adaptiveId!)}
+                            sx={{
+                              width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                              border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
+                              display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
+                              '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
+                              transition: 'border-color 0.12s ease',
+                            }}
+                          >
+                            <Box sx={{ bgcolor: meta.swatchColors[0] }} />
+                            <Box sx={{ bgcolor: meta.swatchColors[1] }} />
+                            <Box sx={{ bgcolor: meta.swatchColors[2] }} />
+                            <Box sx={{ bgcolor: meta.swatchColors[3] }} />
+                          </Box>
+                        </Tooltip>
+                      );
+                    })()}
+                    {catThemes.map(t => {
+                      const isActive = theme === t.id;
+                      return (
+                        <Tooltip key={t.id} title={t.name} placement="top">
+                          <Box
+                            onClick={() => setTheme(t.id)}
+                            sx={{
+                              width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                              border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
+                              display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
+                              '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
+                              transition: 'border-color 0.12s ease',
+                            }}
+                          >
+                            <Box sx={{ bgcolor: t.colors.editor }} />
+                            <Box sx={{ bgcolor: t.colors.sidebar }} />
+                            <Box sx={{ bgcolor: t.colors.accent }} />
+                            <Box sx={{ bgcolor: t.colors.dropdown }} />
+                          </Box>
+                        </Tooltip>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              );
+            })}
 
             {customThemes.length > 0 && (
               <>
