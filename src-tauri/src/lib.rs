@@ -594,16 +594,35 @@ async fn check_for_store_update() -> Result<StoreUpdateInfo, String> {
 }
 
 #[tauri::command]
-async fn install_store_update() -> Result<String, String> {
-    #[cfg(all(target_os = "windows", not(debug_assertions)))]
+async fn install_store_update() -> Result<(), String> {
+    let url = "https://apps.microsoft.com/detail/9PJMKR0937KK";
+    #[cfg(target_os = "windows")]
     {
-        Ok("ms-windows-store://pdp/?productid=9PJMKR0937KK".to_string())
+        let target_url = if cfg!(debug_assertions) {
+            url
+        } else {
+            "ms-windows-store://pdp/?productid=9PJMKR0937KK"
+        };
+        std::process::Command::new("cmd")
+            .args(&["/C", "start", "", target_url])
+            .spawn()
+            .map_err(|e| e.to_string())?;
     }
-
-    #[cfg(any(not(target_os = "windows"), debug_assertions))]
+    #[cfg(target_os = "macos")]
     {
-        Err("Store is only available on Windows builds".to_string())
+        std::process::Command::new("open")
+            .arg(url)
+            .spawn()
+            .map_err(|e| e.to_string())?;
     }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(url)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
