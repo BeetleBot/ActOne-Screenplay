@@ -3,12 +3,13 @@ import { useFile, useUI, useSprint } from "../../context";
 import { LineType } from "../../parser";
 import { countWords } from "../../utils/text";
 import { Box, Typography, Menu, MenuItem, ListItemText, IconButton } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { BarChartIcon } from "../Icons";
 import { useEditor } from "../../context";
 
 export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }) => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
-  const { isZenMode } = useUI();
+  const { isZenMode, activeAmbientTrack, stopAmbientTrack } = useUI();
   const { activeLineNumber } = useEditor();
   const { activeSprints } = useSprint();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -79,6 +80,7 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
 
   return (
     <Box 
+      id="status-bar"
       sx={{ 
         height: isZenMode ? 0 : 28, 
         bgcolor: "background.paper", 
@@ -188,6 +190,35 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
       </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 3 }, flexShrink: 0 }}>
+          {activeAmbientTrack && (
+            <Typography
+              variant="caption"
+              onClick={stopAmbientTrack}
+              sx={{
+                fontSize: 10,
+                color: "primary.main",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                cursor: "pointer",
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                border: "1px solid",
+                borderColor: (t) => alpha(t.palette.primary.main, 0.15),
+                px: 1.2,
+                py: 0.25,
+                borderRadius: 1,
+                transition: "all 0.15s ease",
+                "&:hover": {
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+                },
+              }}
+              title={`Click to stop: ${activeAmbientTrack}`}
+            >
+              <span className="ambient-pulse" style={{ display: "inline-block", width: 4, height: 4, borderRadius: "50%", backgroundColor: "currentColor" }} />
+              ♪ {activeAmbientTrack}
+            </Typography>
+          )}
           {onOpenXray && (
             <IconButton
               size="small"

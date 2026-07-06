@@ -42,7 +42,7 @@ export interface FileContextProps {
   saveFileAs: () => Promise<string | null>;
   selectFile: (id: string) => void;
   newFile: (initialContent?: string) => void;
-  closeFile: (id: string) => Promise<void>;
+  closeFile: (id: string, force?: boolean) => Promise<void>;
   closeOthers: (id: string) => Promise<void>;
   closeAll: () => Promise<void>;
   recentFiles: RecentFile[];
@@ -207,11 +207,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveScriptIndexState(0);
   };
 
-  const closeFile = async (id: string) => {
+  const closeFile = async (id: string, force?: boolean) => {
     const fileToClose = files.find(f => f.id === id);
     if (!fileToClose) return;
 
-    if (fileToClose.isDirty) {
+    if (fileToClose.isDirty && !force) {
       const confirmClose = await confirm({
         title: "Unsaved Changes",
         message: `"${fileToClose.filePath ? fileToClose.filePath.split(/[/\\]/).pop() : 'Untitled'}" has unsaved changes. Do you want to save your changes before closing?`,

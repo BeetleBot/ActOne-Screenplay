@@ -103,6 +103,7 @@ End-user documentation for every feature in ActOne.
 | [X-Ray Analysis](features/17-xray.md) | Screenplay analysis dashboard |
 | [Settings](features/18-settings.md) | All configuration options |
 | [Help Guide](features/19-help-guide.md) | Built-in 47-article help system |
+| [Interactive Tutorials](features/20-onboarding-tutorials.md) | User onboarding and Fountain writing tours |
 
 ---
 

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { AppProviders, useFile, useUI, useEditor, ThemeProvider, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
-import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary } from "./components";
+import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialSelectionDialog } from "./components";
 import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
@@ -10,7 +10,7 @@ import { getPerScriptSettingObject, updatePerScriptSetting } from "./utils/perSc
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
-const isEditorWindow = action === "new" || action === "open" || action === "template";
+const isEditorWindow = action === "new" || action === "open" || action === "template" || action === "tutorial";
 const modalParam = params.get("modal");
 const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "tag-manager" || modalParam === "theme-manager" || modalParam === "xray";
 
@@ -18,6 +18,8 @@ function AppInner() {
   const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName } = useFile();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const { confirm } = useCustomModal();
+  const [activeTour, setActiveTour] = useState<"ui" | "fountain" | null>(null);
+  const [tutorialDialogOpen, setTutorialDialogOpen] = useState(false);
 
   const isStandalone = !isEditorWindow;
 
@@ -335,6 +337,16 @@ function AppInner() {
       newFile();
       setShowStructureModal(true);
       localStorage.removeItem("pending-action");
+    } else if (action === "tutorial") {
+      const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" || "ui";
+      localStorage.removeItem("pending-tutorial-type");
+      localStorage.removeItem("pending-action");
+      if (type === "ui") {
+        newFile();
+      } else {
+        newFile("=== TUTORIAL SANDBOX ===\n\n");
+      }
+      setActiveTour(type);
     }
 
     setTimeout(async () => {
@@ -561,8 +573,18 @@ function AppInner() {
         openTagManagerWindow={isModalWindow ? undefined : modalWindows.openTagManagerWindow}
         openThemeManagerWindow={isModalWindow ? undefined : modalWindows.openThemeManagerWindow}
         openXrayWindow={isModalWindow ? undefined : modalWindows.openXrayWindow}
+        onOpenTutorialDialog={() => setTutorialDialogOpen(true)}
       />
     </div>
+    <OnboardingTour
+      activeTour={activeTour}
+      onCloseTour={() => setActiveTour(null)}
+    />
+    <TutorialSelectionDialog
+      open={tutorialDialogOpen}
+      onClose={() => setTutorialDialogOpen(false)}
+      onSelectTour={(type) => setActiveTour(type)}
+    />
     {isDraggingOver && <DropOverlay />}
     </>
   );

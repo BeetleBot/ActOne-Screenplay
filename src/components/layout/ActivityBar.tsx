@@ -78,6 +78,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
 
   return (
     <Box
+      id="activity-bar"
       sx={{
         width: isZenMode ? 0 : 48, display: 'flex', flexDirection: 'column',
         alignItems: 'center',

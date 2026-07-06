@@ -18,6 +18,8 @@ export { TitleBar } from './TitleBar';
 export { TitlePageEditorModal } from './TitlePageEditorModal';
 export { TodoView } from './TodoView';
 export { WelcomeScreenWindow } from './WelcomeScreen';
+export { OnboardingTour, TutorialSelectionDialog } from './OnboardingTour';
+export { AmbientPanel } from './AmbientPanel';
 export { WindowResizeHandles } from './WindowResizeHandles';
 export { SettingsWindow } from './SettingsWindow';
 export { HelpWindow } from './HelpWindow';
@@ -36,7 +38,7 @@ export {
   FormatUnderlinedIcon, FullscreenIcon, HelpOutlinedIcon, HistoryIcon,
   InfoOutlinedIcon, KeyboardArrowDownIcon, LocalOfferIcon, MenuBookIcon,
   MergeTypeIcon, MoreVertIcon, NoteAddIcon, OpenInNewIcon, PersonIcon,
-  PlayArrowIcon, RadioButtonUncheckedIcon, RestartAltIcon,
+  PlayArrowIcon, RadioButtonUncheckedIcon, RestartAltIcon, MusicNoteIcon,
   SaveIcon, SearchIcon, SettingsIcon, StopIcon, TaskAltIcon,
   TextFieldsIcon, TimerIcon, TuneIcon, ViewSidebarIcon,
   ZoomInIcon, ZoomOutIcon, CameraIcon, AddNotesIcon, AssignmentAddIcon,

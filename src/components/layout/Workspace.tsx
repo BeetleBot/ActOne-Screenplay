@@ -6,6 +6,7 @@ import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
 import { FountainEditor } from "../FountainEditor";
+import { AmbientPanel } from "../AmbientPanel";
 
 import { ErrorBoundary } from "../ErrorBoundary";
 
@@ -62,6 +63,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
       {isSidebarOpen && (
         <>
           <Paper
+            id="sidebar-container"
             className="sidebar"
             elevation={0}
             tabIndex={-1}
@@ -107,7 +109,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
       )}
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <Box className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
+        <Box id="editor-workspace" className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
           <Box
             className={`editor-paper paper-${paperSize}`}
             sx={{
@@ -123,6 +125,12 @@ export const Workspace = React.memo<WorkspaceProps>(({
       {activeRightPane === "search" && (
         <RightPane type="search" onClose={() => setActiveRightPane(null)} errorBoundaryName="search-pane">
           <SearchPanel />
+        </RightPane>
+      )}
+
+      {activeRightPane === "ambient" && (
+        <RightPane type="ambient" onClose={() => setActiveRightPane(null)} errorBoundaryName="ambient-pane" ariaLabel="Ambient Sounds">
+          <AmbientPanel />
         </RightPane>
       )}
     </Box>

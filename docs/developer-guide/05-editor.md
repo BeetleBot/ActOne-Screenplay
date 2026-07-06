@@ -91,3 +91,19 @@ Full-screen distraction-free writing mode.
 
 ### Typewriter Mode
 Keeps the cursor vertically centered — the page scrolls around the cursor instead of letting it drift.
+
+## Clipboard and Selection Core Fixes
+
+To achieve a seamless native app writing experience, several core adjustments were made to CodeMirror event interceptors and layout coordinates:
+
+### 1. Clipboard Context Actions (Copy, Cut, Paste)
+Due to standard browser sandbox restrictions on clipboards, context menu actions (right-click menu) often fail. We resolved this by:
+*   Integrating `navigator.clipboard` APIs directly inside layout actions.
+*   Forcing clipboard updates into the system ring buffer so native OS level clipboard registers (Ctrl+C, Ctrl+X, Ctrl+V) sync perfectly with toolbar actions.
+
+### 2. Shift+Click Range Selection
+Fixed a selection bug where holding Shift and clicking down selected text all the way to the end of the document. We resolved this by standardizing selection anchors inside click event listeners and ensuring CodeMirror's internal drag-select filters do not cascade mouse positions past bounding viewports.
+
+### 3. Click Coordinate & Jumping Calibrations
+Fixed an alignment bug where clicking on Line 3 mapped the cursor to Line 2 (and clicking on Line 2 fell on Line 1). This occurred due to padding and line-height offsets in the CSS layer. By matching the logical line height precisely with the DOM element heights inside `index.css` and aligning margins inside the editor's scroll-wrapper, click mappings now align perfectly on target lines.
+

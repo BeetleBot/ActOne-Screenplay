@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
-import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon, BarChartIcon, CameraIcon } from "./Icons";
+import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon, BarChartIcon, CameraIcon, MusicNoteIcon } from "./Icons";
 import { logger } from "../utils/logger";
 
 
@@ -85,6 +85,7 @@ interface CommandPaletteProps {
   onOpenThemeManagerModal: () => void;
   onOpenXrayModal?: () => void;
   onToggleSnapshotsPanel?: () => void;
+  onOpenTutorialDialog?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -101,6 +102,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenThemeManagerModal,
   onOpenXrayModal,
   onToggleSnapshotsPanel,
+  onOpenTutorialDialog,
 }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -144,6 +146,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setHideTagsEnabled,
     lineFocusEnabled,
     setLineFocusEnabled,
+    stopAmbientTrack,
   } = useUI();
 
   const openUrl = (url: string) => {
@@ -252,9 +255,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     // View
     { id: "view-sidebar", name: isSidebarOpen ? "Hide Sidebar Outline" : "Show Sidebar Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } },
     { id: "view-tab-outline", name: "Switch Sidebar Tab: Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("outline"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-scripts", name: "Switch Sidebar Tab: Scripts", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("scripts"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-notepad", name: "Switch Sidebar Tab: Notepad", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("notepad"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-characters", name: "Switch Sidebar Tab: Characters", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("characters"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-stats", name: "Switch Sidebar Tab: Statistics", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("stats"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-markers", name: "Switch Sidebar Tab: Markers", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("markers"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-todo", name: "Switch Sidebar Tab: Tasks", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("todo"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-snapshots", name: "Switch Sidebar Tab: Snapshots", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("snapshots"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-sprint", name: "Switch Sidebar Tab: Sprint", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("sprint"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-parking", name: "Switch Sidebar Tab: Parking", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("parking"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "audio-ambient-open", name: "Ambient Sounds: Open Control Panel...", category: "Audio", icon: <MusicNoteIcon sx={{ fontSize: 16 }} />, action: () => { setActiveRightPane("ambient"); onClose(); } },
+    { id: "audio-ambient-stop", name: "Ambient Sounds: Stop Playback", category: "Audio", icon: <MusicNoteIcon sx={{ fontSize: 16 }} />, action: () => { stopAmbientTrack(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <FullscreenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },
     { id: "view-focus-mode", name: lineFocusEnabled ? "Disable Focus Mode" : "Enable Focus Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setLineFocusEnabled(!lineFocusEnabled); onClose(); } },
@@ -287,6 +296,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
     // Help
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, shortcut: "F1", action: () => { onOpenHelpModal(); onClose(); } },
+    { id: "help-tutorial", name: "Interactive Tutorial...", category: "Help", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTutorialDialog?.(); onClose(); } },
     { id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } },
     { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://github.com/beetlebot/ActOne/issues"); onClose(); } },
   ];

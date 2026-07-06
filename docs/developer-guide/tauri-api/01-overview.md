@@ -95,3 +95,13 @@ core:webview:allow-*
 ```
 
 This grants full window management and webview creation permissions.
+
+## Tauri Plugins
+
+ActOne utilizes official Tauri plugins for specialized native integrations:
+
+### Clipboard Manager (`@tauri-apps/plugin-clipboard-manager`)
+Used to securely read text from the system clipboard inside custom context actions and Command Palette entries.
+*   **Frontend Import:** `import { readText } from "@tauri-apps/plugin-clipboard-manager";`
+*   **Configuration:** Configured inside Tauri backend registries to bypass default web-browser sandbox limits.
+

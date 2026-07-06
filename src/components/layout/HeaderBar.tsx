@@ -99,6 +99,7 @@ export const HeaderBar = React.memo<{ onOpenPalette?: () => void }>(({ onOpenPal
 
   return (
     <AppBar
+      id="header-bar"
       position="static"
       elevation={0}
       onMouseDown={handleStartDrag}

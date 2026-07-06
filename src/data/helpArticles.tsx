@@ -129,9 +129,21 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 
 **Settings:** Open Settings, Set Font (Courier Prime / Courier Prime Sans), Set Paper Size (Letter / A4), Theme Manager.
 
-**Help:** Help Guide, Fountain Syntax Guide, Report a Bug.
+**Help:** Help Guide, Interactive Tutorial, Fountain Syntax Guide, Report a Bug.
 
 Each command shows its keyboard shortcut when available. Navigate with arrow keys and press Enter to execute. Press Escape to close. Available even when modals are open.`,
+  },
+  {
+    id: "interactive-tutorial",
+    title: "Interactive Tutorial",
+    category: "Getting Started",
+    tags: ["tutorial", "tour", "learn", "onboarding"],
+    relatedIds: ["welcome-screen", "command-palette"],
+    content: `You can launch the **Interactive Tutorial** from the Welcome screen or by searching for it in the Command Palette (<kbd>Ctrl+K</kbd>).
+
+There are two tutorials available:
+- **UI Tour:** A quick guided tour showing you around the interface (Sidebar, X-Ray, Focus Mode, Zen Mode, etc.).
+- **Fountain Elements:** An interactive sandbox that teaches you how to format a screenplay using the Fountain syntax. It will live-validate your formatting as you learn.`,
   },
 
   // ===== FOUNTAIN SYNTAX =====

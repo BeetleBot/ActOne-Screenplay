@@ -21,6 +21,7 @@ import type { Theme } from "@mui/material/styles";
 import { useTheme } from "../context";
 import { themes } from "../theme";
 import { logger } from "../utils/logger";
+import { TutorialSelectionDialog } from "./OnboardingTour";
 
 interface Quote {
   text: string;
@@ -143,6 +144,20 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const appVersion = __APP_VERSION__;
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
+  const [tutorialDialogOpen, setTutorialDialogOpen] = useState(false);
+
+  const handleSelectTour = async (type: "ui" | "fountain") => {
+    try {
+      localStorage.setItem("pending-action", "tutorial");
+      localStorage.setItem("pending-tutorial-type", type);
+      const created = await createEditorWindow("tutorial");
+      if (created) {
+        closeWelcome();
+      }
+    } catch (e) {
+      logger.error("welcome", "Failed to start tutorial:", e);
+    }
+  };
 
   useEffect(() => {
     setQuote(getDynamicQuote());
@@ -464,7 +479,19 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             description="Structure template"
             onClick={handleTemplates}
           />
+          <ActionCard
+            icon={<HelpOutlinedIcon sx={{ fontSize: 15 }} />}
+            title="Tutorials"
+            description="Interactive tours"
+            onClick={() => setTutorialDialogOpen(true)}
+          />
         </Box>
+
+        <TutorialSelectionDialog
+          open={tutorialDialogOpen}
+          onClose={() => setTutorialDialogOpen(false)}
+          onSelectTour={handleSelectTour}
+        />
 
         {/* Recent Projects Strip */}
         {recentFiles.length > 0 && (

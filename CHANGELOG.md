@@ -1,8 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.15] - 2026-07-06
 
 ### Changed
+- **Ambient Sound Engine**: Completely rewrote the focus sound generator. Replaced synthetic procedural audio (Oscillators/Noise) with a file-based asset loading engine (`AudioBufferSourceNode`) using high-quality static MP3 loops (Light Rain, Coffee Shop, Wind in Trees, Ocean Waves) for smoother, less fatiguing background audio.
 - **Window Resize Handles**: Reduced edge hit zone from 8px → 2px and corner size from 24px → 6px so the resize cursor only appears at the very edge of the window.
 - **Window Border**: Added a thin 1px border around the app window (`body`) using `var(--border-color)` as a visible grab handle.
 - **Empty Line Selection**: Plugin now only activates during actual drag-selection (skips cursor-only positions). Empty lines within a selection show a single-character-width marker via `::before` pseudo-element, matching Windows native selection behavior.
@@ -11,8 +12,15 @@
 - **Welcome Screen**: Removed aurora breathing animation from background gradient.
 
 ### Added
+- **Interactive Tutorials**: Added a new guided Onboarding Tour feature with two modes: a quick UI tour of the app interface, and an interactive Fountain writing sandbox that live-validates your formatting as you learn.
 - **Clipboard Fallback**: Copy/cut operations now fall back to `document.execCommand("copy")` via a temporary textarea when `navigator.clipboard.writeText` fails.
 - **Context Menu Focus**: Editor refocuses after context menu opens (`setTimeout(() => view?.focus(), 0)`).
+
+### Fixed
+- **Tutorial Closure Bug**: Fixed an issue in the Onboarding Tour where closing the tutorial overlay would incorrectly force-close the user's active project file and drop them back to the Welcome Screen.
+
+### Removed
+- **Retro Typewriter Audio**: Removed the typewriter ambient track and its procedural logic.
 
 ## [0.2.13] - 2026-07-04
 
