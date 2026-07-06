@@ -8,7 +8,8 @@ import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, Bookma
 import { logger } from "../utils/logger";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { CATEGORIES } from "../constants";
-import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
+import { getPerScriptSettingObject } from "../utils/perScriptSettings";
+import { updateTagsEffect, tagStateField } from "../editor/tagState";
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -172,17 +173,16 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handleRemoveTag = () => {
-    if (!existingTag) return;
-    updateSettings((prev) => {
-      const prodTags = getPerScriptSettingObject<{ tags: ProdTagItem[]; definitions: ProdDef[] }>("productionTags", prev, scriptFileName, { tags: [], definitions: [] });
-      const tags = (prodTags.tags || []).filter((t) => t !== existingTag.tag);
-      return {
-        ...prev,
-        ...updatePerScriptSetting(prev, "productionTags", scriptFileName, {
-          ...prodTags,
-          tags
-        }),
-      };
+    if (!existingTag || !view) return;
+    const currentTags = view.state.field(tagStateField, false);
+    if (!currentTags) return;
+    
+    const tags = (currentTags.tags || []).filter((t) => t !== existingTag.tag);
+    view.dispatch({
+      effects: updateTagsEffect.of({
+        ...currentTags,
+        tags
+      })
     });
     handleClose();
   };
@@ -195,45 +195,44 @@ export const FountainEditor = React.memo(() => {
     const text = snap.text.trim();
     if (!text) return;
 
-    updateSettings((prev) => {
-      const prodTags = getPerScriptSettingObject<{ tags: ProdTagItem[]; definitions: ProdDef[] }>("productionTags", prev, scriptFileName, { tags: [], definitions: [] });
-      const tags = [...(prodTags.tags || [])];
-      const definitions = [...(prodTags.definitions || [])];
+    const currentTags = view.state.field(tagStateField, false);
+    if (!currentTags) return;
+    
+    const tags = [...(currentTags.tags || [])];
+    const definitions = [...(currentTags.definitions || [])];
 
-      let def = definitions.find((d) => d.name.toLowerCase() === text.toLowerCase() && d.type === category);
-      if (!def) {
-        def = {
-          id: "def-" + Math.random().toString(36).substring(2, 9),
-          name: text,
-          type: category,
-          colorOverride: null
-        };
-        definitions.push(def);
-      }
-
-      const existingTagIdx = tags.findIndex((t) => t.range && t.range[0] === from && t.range[1] === (to - from));
-      if (existingTagIdx !== -1) {
-        tags[existingTagIdx] = {
-          ...tags[existingTagIdx],
-          type: category,
-          definitionId: def.id
-        };
-      } else {
-        tags.push({
-          range: [from, to - from],
-          type: category,
-          definitionId: def.id,
-          sceneId: ""
-        });
-      }
-
-      return {
-        ...prev,
-        ...updatePerScriptSetting(prev, "productionTags", scriptFileName, {
-          tags,
-          definitions
-        }),
+    let def = definitions.find((d) => d.name.toLowerCase() === text.toLowerCase() && d.type === category);
+    if (!def) {
+      def = {
+        id: "def-" + Math.random().toString(36).substring(2, 9),
+        name: text,
+        type: category,
+        colorOverride: null
       };
+      definitions.push(def);
+    }
+
+    const existingTagIdx = tags.findIndex((t) => t.range && t.range[0] === from && t.range[1] === (to - from));
+    if (existingTagIdx !== -1) {
+      tags[existingTagIdx] = {
+        ...tags[existingTagIdx],
+        type: category,
+        definitionId: def.id
+      };
+    } else {
+      tags.push({
+        range: [from, to - from],
+        type: category,
+        definitionId: def.id,
+        sceneId: ""
+      });
+    }
+
+    view.dispatch({
+      effects: updateTagsEffect.of({
+        tags,
+        definitions
+      })
     });
 
     handleClose();

@@ -109,7 +109,18 @@ export const Workspace = React.memo<WorkspaceProps>(({
       )}
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <Box id="editor-workspace" className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} sx={{ flex: 1, overflow: 'auto' }}>
+        <Box 
+          id="editor-workspace" 
+          className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} 
+          sx={{ flex: 1, overflow: 'auto' }}
+          onMouseDown={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.id === "editor-workspace" || target.classList.contains("editor-paper")) {
+              e.preventDefault();
+              editorView?.focus();
+            }
+          }}
+        >
           <Box
             className={`editor-paper paper-${paperSize}`}
             sx={{

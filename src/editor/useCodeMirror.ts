@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { EditorState, Compartment, Transaction, RangeSetBuilder } from "@codemirror/state";
 import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip, placeholder, Decoration, DecorationSet } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { search } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
@@ -26,6 +26,7 @@ import {
   LINE_DUAL_PARENTHETICAL
 } from "./fountainSyntax";
 import { emptyLineSelectionPlugin } from "./emptyLineSelection";
+import { tagStateField, tagInvertedEffects, setTagsEffect } from "./tagState";
 
 const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
   if (localStorage.getItem("actone-smart-quotes-enabled") !== "true") return tr;
@@ -411,6 +412,18 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
   useEffect(() => {
     if (viewRef.current) {
+      const prodTags = getPerScriptSettingObject("productionTags", parsedDoc.settings, scriptFileName, { tags: [], definitions: [] });
+      const currentTags = viewRef.current.state.field(tagStateField, false);
+      if (currentTags && JSON.stringify(prodTags) !== JSON.stringify(currentTags)) {
+        viewRef.current.dispatch({
+          effects: setTagsEffect.of(prodTags)
+        });
+      }
+    }
+  }, [parsedDoc.settings, scriptFileName]);
+
+  useEffect(() => {
+    if (viewRef.current) {
       viewRef.current.dispatch({
         effects: updateScriptFileNameEffect.of(scriptFileName)
       });
@@ -493,16 +506,24 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       return null;
     });
 
+    const initialProdTags = getPerScriptSettingObject("productionTags", parsedDocRef.current.settings, scriptFileNameRef.current, { tags: [], definitions: [] });
+
     const startState = EditorState.create({
       doc: rawText,
       extensions: [
+        tagStateField.init(() => initialProdTags),
+        tagInvertedEffects,
         history(),
         ghostSuggestionField,
         ghostSuggestionKeymap(),
         activeLineAlwaysPlugin,
         fountainKeymap,
         autocompletion({ override: [fountainCompletionSource], activateOnTyping: false }),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        keymap.of([
+          { key: "Mod-Shift-z", run: redo, preventDefault: true },
+          ...defaultKeymap,
+          ...historyKeymap
+        ]),
         emptyLineSelectionPlugin,
         editorTheme,
         placeholder("Start writing here"),
@@ -515,49 +536,19 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setRawTextRef.current(update.state.doc.toString());
-            const prodTags = getPerScriptSettingObject("productionTags", parsedDocRef.current.settings, scriptFileNameRef.current, { tags: [], definitions: [] });
-            if (prodTags && prodTags.tags && prodTags.tags.length > 0) {
-              let changed = false;
-              const mappedTags = prodTags.tags.map((tag: { range?: [number, number]; definitionId?: string; type?: string; sceneId?: string }) => {
-                if (!tag.range) return tag;
-                const [start, len] = tag.range;
-                try {
-                  const newStart = update.changes.mapPos(start, 1);
-                  const newEnd = update.changes.mapPos(start + len, -1);
-                  const newLen = newEnd - newStart;
-                  if (newStart !== start || newLen !== len) {
-                    changed = true;
-                  }
-                  if (newLen <= 0) {
-                    changed = true;
-                    return null;
-                  }
-                  return {
-                    ...tag,
-                    range: [newStart, newLen]
-                  };
-                } catch {
-                  return tag;
-                }
-              }).filter(Boolean);
-
-              if (changed) {
-                updateSettingsRef.current((prev) => {
-                  const current = getPerScriptSettingObject(
-                    "productionTags", prev, scriptFileNameRef.current,
-                    { tags: [], definitions: [] }
-                  );
-                  return {
-                    ...prev,
-                    ...updatePerScriptSetting(prev, "productionTags", scriptFileNameRef.current, {
-                      ...current,
-                      tags: mappedTags
-                    })
-                  };
-                });
-              }
-            }
           }
+
+          const prevTags = update.startState.field(tagStateField, false);
+          const currTags = update.state.field(tagStateField, false);
+          if (currTags && prevTags && currTags !== prevTags) {
+            updateSettingsRef.current((prev) => {
+              return {
+                ...prev,
+                ...updatePerScriptSetting(prev, "productionTags", scriptFileNameRef.current, currTags)
+              };
+            });
+          }
+
           if (update.selectionSet || update.docChanged) {
             const pos = update.state.selection.main.head;
             const lineNum = update.state.doc.lineAt(pos).number;
@@ -577,12 +568,17 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     setEditorView(view);
 
     view.dispatch({
+      selection: { anchor: 0, head: 0 },
       effects: [
         updateHideTagsEffect.of(hideTagsEnabled),
         updateHideSyntaxEffect.of(hideSyntaxEnabled),
         updateRightPaneOpenEffect.of(activeRightPane !== null),
         updateSearchMatchesEffect.of([]),
       ]
+    });
+
+    requestAnimationFrame(() => {
+      view.focus();
     });
 
     if (typewriterMode) {
@@ -617,6 +613,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         if (isDifferentScript) {
           view.dispatch({
             changes: { from: 0, to: view.state.doc.length, insert: rawText },
+            selection: { anchor: 0, head: 0 }
           });
         } else {
           const cursor = view.state.selection.main.head;
@@ -628,9 +625,10 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       }
 
       if (isDifferentScript) {
-        const targetPos = view.state.selection.main.head;
-        pendingScrollToRef.current = targetPos;
-        view.focus();
+        pendingScrollToRef.current = 0;
+        requestAnimationFrame(() => {
+          view.focus();
+        });
       }
     }
   }, [rawText, currentScriptKey]);

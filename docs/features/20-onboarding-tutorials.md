@@ -39,6 +39,6 @@ Both tours launch inside a temporary, virtual workspace sandbox. When exiting or
 
 ### Component Entry Points
 *   **Trigger Component:** `WelcomeScreenWindow` renders the "Interactive Tutorials" launcher card which pops open the selection dialog.
-*   **Command Palette:** The `Interactive Screenplay Tutorials...` command is registered under the Help section of the command registry.
+*   **Command Palette:** The `Interactive Tutorial` command is registered under the Help section of the command registry.
 *   **Container Component:** `App.tsx` handles the initial `?action=tutorial` query param, instantly creating the sandbox file in memory on mount to prevent rendering deadlocks, then mounts `<OnboardingTour>`.
 *   **Main Component:** `src/components/OnboardingTour.tsx` contains the tour definitions, drag event listeners, coordinate polling hooks, SVG mask elements, and typography layout.

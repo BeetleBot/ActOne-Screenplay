@@ -136,3 +136,7 @@ interface ScriptInfo {
 When saving:
 - If only one script and it was a legacy format, maintains `document.fountain` name
 - Otherwise creates `fountain.json` manifest
+
+**production_tags.json Migration:**
+- Legacy files stored tags in a flat `{ tags: [], definitions: [] }` structure or a hybrid structure.
+- `unpackActoneBundle` automatically migrates this to a strictly script-keyed structure (`{ "scriptName.fountain": { tags: [], definitions: [] } }`) upon loading.

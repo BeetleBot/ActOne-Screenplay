@@ -23,6 +23,12 @@
 | Typewriter Mode | Default state |
 | Hide Fountain Markup | Show/hide formatting characters |
 
+## Audio
+
+| Setting | Description |
+|---------|-------------|
+| Ambient Sounds | Toggle ambient typing sounds (now powered by a bundled MP3 asset engine rather than procedural generation for higher quality and reliability) |
+
 ## Appearance
 
 | Setting | Description |

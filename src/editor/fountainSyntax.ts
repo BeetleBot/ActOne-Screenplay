@@ -1,7 +1,7 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
 import { FountainDocument } from "../parser";
-import { getPerScriptSettingObject } from "../utils/perScriptSettings";
+import { tagStateField } from "./tagState";
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
 
@@ -138,7 +138,7 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_SHOT]: "cm-fountain-shot",
 };
 
-const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, rightPaneOpen: boolean, scriptFileName: string, searchMatches: { from: number; to: number }[]): DecorationSet => {
+const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, rightPaneOpen: boolean, searchMatches: { from: number; to: number }[]): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const allDecos: { from: number; to: number; dec: Decoration }[] = [];
   const doc = state.doc;
@@ -283,7 +283,7 @@ const computeFountainDecorations = (state: EditorState, docObj: FountainDocument
       }
     }
 
-    const prodTags = getPerScriptSettingObject<{ tags: Array<{ range?: [number, number]; definitionId: string; type?: string }>; definitions: Array<{ id: string; name: string; type: string; colorOverride: string | null }> }>("productionTags", docObj?.settings, scriptFileName, { tags: [], definitions: [] });
+    const prodTags = state.field(tagStateField, false);
     if (!hideTagsEnabled && !rightPaneOpen && prodTags && prodTags.tags) {
       const tagDefMap = new Map<string, string>();
       if (prodTags.definitions) {
@@ -392,18 +392,16 @@ export const fountainHighlightField = StateField.define<{
   hideSyntaxEnabled: boolean;
   hideTagsEnabled: boolean;
   rightPaneOpen: boolean;
-  scriptFileName: string;
   searchMatches: { from: number; to: number }[];
 }>({
   create(state) {
     return {
-      decorations: computeFountainDecorations(state, null, false, false, false, "", []),
+      decorations: computeFountainDecorations(state, null, false, false, false, []),
       doc: null,
       displaySettings: defaultDisplaySettings,
       hideSyntaxEnabled: false,
       hideTagsEnabled: false,
       rightPaneOpen: false,
-      scriptFileName: "",
       searchMatches: [],
     };
   },
@@ -413,12 +411,10 @@ export const fountainHighlightField = StateField.define<{
     let hideSyntaxEnabled = value.hideSyntaxEnabled;
     let hideTagsEnabled = value.hideTagsEnabled;
     let rightPaneOpen = value.rightPaneOpen;
-    let scriptFileName = value.scriptFileName;
     let searchMatches = value.searchMatches;
     let hideSyntaxChanged = false;
     let hideTagsChanged = false;
     let rightPaneChanged = false;
-    let scriptFileNameChanged = false;
     let searchMatchesChanged = false;
 
     for (const effect of tr.effects) {
@@ -440,10 +436,6 @@ export const fountainHighlightField = StateField.define<{
         rightPaneOpen = effect.value;
         rightPaneChanged = true;
       }
-      if (effect.is(updateScriptFileNameEffect)) {
-        scriptFileName = effect.value;
-        scriptFileNameChanged = true;
-      }
       if (effect.is(updateSearchMatchesEffect)) {
         searchMatches = effect.value;
         searchMatchesChanged = true;
@@ -457,17 +449,15 @@ export const fountainHighlightField = StateField.define<{
       hideSyntaxChanged ||
       hideTagsChanged ||
       rightPaneChanged ||
-      scriptFileNameChanged ||
       searchMatchesChanged
     ) {
       return {
-        decorations: computeFountainDecorations(tr.state, doc, hideSyntaxEnabled, hideTagsEnabled, rightPaneOpen, scriptFileName, searchMatches),
+        decorations: computeFountainDecorations(tr.state, doc, hideSyntaxEnabled, hideTagsEnabled, rightPaneOpen, searchMatches),
         doc,
         displaySettings,
         hideSyntaxEnabled,
         hideTagsEnabled,
         rightPaneOpen,
-        scriptFileName,
         searchMatches,
       };
     }
