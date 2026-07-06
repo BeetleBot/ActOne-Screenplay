@@ -46,16 +46,14 @@
         "description": "ActOne Screenplay Bundle",
         "ext": [
           "actone"
-        ],
-        "icon": "icons/actone-document"
+        ]
       },
       {
         "name": "actheme-theme",
         "description": "ActOne Custom Theme",
         "ext": [
           "actheme"
-        ],
-        "icon": "icons/actheme-document"
+        ]
       },
       {
         "name": "fountain-screenplay",
