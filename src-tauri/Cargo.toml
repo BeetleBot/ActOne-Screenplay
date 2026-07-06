@@ -1,6 +1,6 @@
 [package]
 name = "actone"
-version = "0.2.14"
+version = "0.2.15"
 description = "A Tauri App"
 authors = ["Write Up Film Service Company"]
 license = "Proprietary"
