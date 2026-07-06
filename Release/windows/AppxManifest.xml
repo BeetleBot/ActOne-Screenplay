@@ -49,16 +49,25 @@
         <uap:Extension Category="windows.fileTypeAssociation">
           <uap:FileTypeAssociation Name="actone-bundle">
             <uap:DisplayName>ActOne Screenplay Bundle</uap:DisplayName>
-            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:Logo>Assets\actone-document-tile.png</uap:Logo>
             <uap:SupportedFileTypes>
               <uap:FileType>.actone</uap:FileType>
             </uap:SupportedFileTypes>
           </uap:FileTypeAssociation>
         </uap:Extension>
         <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="actheme-theme">
+            <uap:DisplayName>ActOne Custom Theme</uap:DisplayName>
+            <uap:Logo>Assets\actheme-document-tile.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.actheme</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
           <uap:FileTypeAssociation Name="fountain-screenplay">
             <uap:DisplayName>Fountain Screenplay</uap:DisplayName>
-            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:Logo>Assets\fountain-document-tile.png</uap:Logo>
             <uap:SupportedFileTypes>
               <uap:FileType>.fountain</uap:FileType>
               <uap:FileType>.txt</uap:FileType>

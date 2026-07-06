@@ -57,6 +57,9 @@ Copy-Item "$ProjectRoot\src-tauri\icons\Square44x44Logo.png" $AssetsDir
 Copy-Item "$ProjectRoot\src-tauri\icons\Square150x150Logo.png" $AssetsDir
 Copy-Item "$ProjectRoot\src-tauri\icons\Wide310x150Logo.png" $AssetsDir
 Copy-Item "$ProjectRoot\src-tauri\icons\Square310x310Logo.png" $AssetsDir
+Copy-Item "$ProjectRoot\src-tauri\icons\actone-document-tile.png" $AssetsDir
+Copy-Item "$ProjectRoot\src-tauri\icons\actheme-document-tile.png" $AssetsDir
+Copy-Item "$ProjectRoot\src-tauri\icons\fountain-document-tile.png" $AssetsDir
 
 # --- Step 3: Stamp version into manifest ---
 Write-Step "Stamping version $MsixVersion into manifest"

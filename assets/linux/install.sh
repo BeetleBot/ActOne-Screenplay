@@ -34,6 +34,19 @@ if command -v xdg-icon-resource >/dev/null 2>&1; then
 			xdg-icon-resource install --novendor --size $size "usr/share/actone/icon_app/actone_icon_${size}x${size}.png" actone
 		fi
 	done
+
+	echo "Installing document type icons..."
+	for size in 64 256; do
+		if [ -f "usr/share/actone/icon_mime/text-vnd.fountain_${size}x${size}.png" ]; then
+			xdg-icon-resource install --context mimetypes --novendor --size $size "usr/share/actone/icon_mime/text-vnd.fountain_${size}x${size}.png" text-vnd.fountain
+		fi
+		if [ -f "usr/share/actone/icon_mime/application-vnd.actone.bundle_${size}x${size}.png" ]; then
+			xdg-icon-resource install --context mimetypes --novendor --size $size "usr/share/actone/icon_mime/application-vnd.actone.bundle_${size}x${size}.png" application-vnd.actone.bundle
+		fi
+		if [ -f "usr/share/actone/icon_mime/application-vnd.actone.theme_${size}x${size}.png" ]; then
+			xdg-icon-resource install --context mimetypes --novendor --size $size "usr/share/actone/icon_mime/application-vnd.actone.theme_${size}x${size}.png" application-vnd.actone.theme
+		fi
+	done
 fi
 
 # MIME type
@@ -42,6 +55,8 @@ if command -v xdg-mime >/dev/null 2>&1; then
 		echo "Adding MIME type..."
 		xdg-mime install --novendor usr/share/mime/packages/actone.xml
 		xdg-mime default actone.desktop text/vnd.fountain
+		xdg-mime default actone.desktop application/vnd.actone.bundle
+		xdg-mime default actone.desktop application/vnd.actone.theme
 	fi
 fi
 

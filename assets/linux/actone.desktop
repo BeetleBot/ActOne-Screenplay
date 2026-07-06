@@ -9,5 +9,5 @@ Icon=actone
 Terminal=false
 Categories=Office;WordProcessor;TextEditor;
 Keywords=screenplay;fountain;script;writing;screenwriting;
-MimeType=text/vnd.fountain;
+MimeType=text/vnd.fountain;application/vnd.actone.bundle;application/vnd.actone.theme;
 StartupNotify=false

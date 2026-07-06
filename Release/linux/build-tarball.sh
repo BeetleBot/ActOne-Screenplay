@@ -141,6 +141,7 @@ npm run tauri build
 echo "==> Packaging tarball"
 TARBALL_DIR="$PROJECT_ROOT/target/tarball"
 mkdir -p "$TARBALL_DIR/usr/share/actone/icon_app"
+mkdir -p "$TARBALL_DIR/usr/share/actone/icon_mime"
 mkdir -p "$TARBALL_DIR/usr/share/applications"
 mkdir -p "$TARBALL_DIR/usr/share/mime/packages"
 
@@ -153,6 +154,15 @@ for size in 16 32 64 128 256 512; do
     if [ -f "$icon" ]; then
         cp "$icon" "$TARBALL_DIR/usr/share/actone/icon_app/actone_icon_${size}x${size}.png"
     fi
+done
+
+for size in 64 256; do
+    for mime in text-vnd.fountain application-vnd.actone.bundle application-vnd.actone.theme; do
+        icon="$PROJECT_ROOT/src-tauri/icons/${mime}_${size}x${size}.png"
+        if [ -f "$icon" ]; then
+            cp "$icon" "$TARBALL_DIR/usr/share/actone/icon_mime/"
+        fi
+    done
 done
 
 cp "$PROJECT_ROOT/assets/linux/install.sh" "$TARBALL_DIR/"

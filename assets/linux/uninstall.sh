@@ -27,11 +27,16 @@ if [ -f "/usr/local/bin/actone" ]; then
 	rm -f /usr/local/bin/actone
 fi
 
-# Install icon resources
 if command -v xdg-icon-resource >/dev/null 2>&1; then
 	echo "Uninstalling application icons..."
 	for size in 16 32 64 128 256 512; do
 		xdg-icon-resource uninstall --size $size actone 2>/dev/null || true
+	done
+	echo "Uninstalling document type icons..."
+	for size in 64 256; do
+		xdg-icon-resource uninstall --context mimetypes --size $size text-vnd.fountain 2>/dev/null || true
+		xdg-icon-resource uninstall --context mimetypes --size $size application-vnd.actone.bundle 2>/dev/null || true
+		xdg-icon-resource uninstall --context mimetypes --size $size application-vnd.actone.theme 2>/dev/null || true
 	done
 fi
 

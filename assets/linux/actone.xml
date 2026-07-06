@@ -3,7 +3,16 @@
   <mime-type type="text/vnd.fountain">
     <comment>Fountain Screenplay</comment>
     <glob pattern="*.fountain"/>
-    <glob pattern="*.actone"/>
     <sub-class-of type="text/plain"/>
+  </mime-type>
+  <mime-type type="application/vnd.actone.bundle">
+    <comment>ActOne Screenplay Bundle</comment>
+    <glob pattern="*.actone"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+  <mime-type type="application/vnd.actone.theme">
+    <comment>ActOne Custom Theme</comment>
+    <glob pattern="*.actheme"/>
+    <sub-class-of type="application/json"/>
   </mime-type>
 </mime-info>
