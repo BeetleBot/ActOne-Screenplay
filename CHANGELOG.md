@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.16] - 2026-07-06
+
+### Added
+- **Production Tagging Undo/Redo**: Integrated the production tagging system with CodeMirror's history stack. Adding or removing tags via the editor's context menu can now be fully reverted and restored using standard undo/redo shortcuts.
+- **Redo Shortcut**: Added `Ctrl+Shift+Z` as a supported shortcut for Redo on Windows and Linux, matching modern text editor standards alongside `Ctrl+Y`.
+- **Custom Theme Sharing**: Added import/export support for custom themes via the `.actheme` JSON file format, featuring native save/open dialogs and schema structure validation.
+- **Custom File Icons**: Created and integrated dedicated custom document icons for `.actone` screenplay bundles (dark-themed logo) and `.actheme` files (gradient-themed logo) for OS-level file associations.
+
+### Changed
+- **Cursor Focus Retention**: Implemented event capture in the workspace area so clicking in empty margins or below the screenplay page no longer hides the cursor, keeping the editor active.
+- **Cursor Initialization**: The editor now automatically focuses and places the caret at the first line of the document on initial project load or script switch.
+
+### Fixed
+- **Tagging System Corruption**: Fixed right-click text selection loss and re-parsing data corruption bugs. Added `migrateProductionTags` to auto-repair flat/hybrid tag layouts in older or corrupted `.actone` bundles.
+
 ## [0.2.15] - 2026-07-06
 
 ### Changed

@@ -135,6 +135,34 @@ fn save_file_dialog(content: String) -> Option<String> {
 }
 
 #[tauri::command]
+fn save_theme_dialog(content: String, default_name: String) -> Option<String> {
+    let file = rfd::FileDialog::new()
+        .add_filter("ActOne Theme", &["actheme"])
+        .set_file_name(&default_name)
+        .save_file()?;
+    let mut file_path = file;
+    file_path.set_extension("actheme");
+    let path = file_path.to_string_lossy().to_string();
+    if fs::write(&file_path, content).is_ok() {
+        return Some(path);
+    }
+    None
+}
+
+#[tauri::command]
+fn import_theme_dialog() -> Option<serde_json::Value> {
+    let file = rfd::FileDialog::new()
+        .add_filter("ActOne Theme", &["actheme"])
+        .pick_file()?;
+    let path_str = file.to_string_lossy().to_string();
+    let content = fs::read_to_string(&file).ok()?;
+    Some(serde_json::json!({
+        "path": path_str,
+        "content": content
+    }))
+}
+
+#[tauri::command]
 fn read_file_binary(path: String) -> Result<Vec<u8>, String> {
     fs::read(path).map_err(|e| e.to_string())
 }
@@ -681,6 +709,8 @@ pub fn run() {
             snapshots::restore_snapshot,
             snapshots::get_snapshot_folder_path,
             snapshots::open_folder,
+            save_theme_dialog,
+            import_theme_dialog,
         ]);
 
     builder

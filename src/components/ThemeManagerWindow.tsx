@@ -6,7 +6,8 @@ import { TitleBar } from "./TitleBar";
 import { createActOneTheme, deriveAllColors, themes, type ThemeColors } from "../theme";
 import { resolveThemeConfig } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
-import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon } from "./Icons";
+import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon, DownloadIcon, UploadIcon } from "./Icons";
+import { invoke } from "@tauri-apps/api/core";
 
 const CORE_DEFAULTS = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
 const EMPTY_COLORS = deriveAllColors(CORE_DEFAULTS, false);
@@ -225,6 +226,25 @@ function ThemePreview({ colors }: { colors: ThemeColors }) {
 }
 
 
+function validateTheme(data: any): data is Omit<CustomTheme, 'id'> {
+  if (!data || typeof data !== 'object') return false;
+  if (typeof data.name !== 'string' || data.name.trim().length === 0) return false;
+  if (typeof data.isDark !== 'boolean') return false;
+  
+  const colors = data.colors;
+  if (!colors || typeof colors !== 'object') return false;
+  
+  const requiredColors = ['editor', 'text', 'accent', 'sidebar', 'button'];
+  const hexColorRegex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+  
+  for (const key of requiredColors) {
+    if (typeof colors[key] !== 'string' || !hexColorRegex.test(colors[key])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export const ThemeManagerWindow: React.FC = () => {
   const [themeId, setThemeId] = useState("light");
   const [appScale, setAppScale] = useState(100);
@@ -302,6 +322,58 @@ export const ThemeManagerWindow: React.FC = () => {
     setFormIsDark(true);
     const core = { editor: preset.colors.editor, text: "#e0e0e0", accent: preset.colors.accent, sidebar: preset.colors.sidebar, button: preset.colors.accent };
     setForm(deriveAllColors(core, true));
+  };
+
+  const handleExportTheme = async (theme: CustomTheme) => {
+    try {
+      const payload = JSON.stringify({
+        name: theme.name,
+        isDark: theme.isDark,
+        colors: {
+          editor: theme.colors.editor,
+          text: theme.colors.text,
+          accent: theme.colors.accent,
+          sidebar: theme.colors.sidebar,
+          button: theme.colors.button
+        }
+      }, null, 2);
+      
+      await invoke("save_theme_dialog", {
+        content: payload,
+        defaultName: `${theme.name}.actheme`
+      });
+    } catch (err) {
+      console.error("Failed to export theme", err);
+      alert("Failed to export theme.");
+    }
+  };
+
+  const handleImportTheme = async () => {
+    try {
+      const result = await invoke<{ path: string; content: string } | null>("import_theme_dialog");
+      if (!result) return;
+
+      const parsed = JSON.parse(result.content);
+      if (!validateTheme(parsed)) {
+        alert("Invalid theme file structure.");
+        return;
+      }
+
+      const id = parsed.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now().toString(36);
+      const newTheme: CustomTheme = {
+        id,
+        name: parsed.name,
+        isDark: parsed.isDark,
+        colors: parsed.colors
+      };
+
+      const updated = [...customThemes, newTheme];
+      setCustomThemes(updated);
+      engineSetTheme({ customThemes: JSON.stringify(updated) });
+    } catch (err) {
+      console.error("Theme import failed", err);
+      alert("Failed to import theme.");
+    }
   };
 
   const handleSave = () => {
@@ -454,7 +526,10 @@ export const ThemeManagerWindow: React.FC = () => {
                 ))}
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 2, mb: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, display: "block" }}>CUSTOM THEMES</Typography>
-                  <Button size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />} onClick={startCreate} sx={{ fontSize: 11 }}>Create</Button>
+                  <Box sx={{ display: "flex", gap: 0.5 }}>
+                    <Button size="small" startIcon={<UploadIcon sx={{ fontSize: 14 }} />} onClick={handleImportTheme} sx={{ fontSize: 11 }}>Import</Button>
+                    <Button size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />} onClick={startCreate} sx={{ fontSize: 11 }}>Create</Button>
+                  </Box>
                 </Box>
                 {customThemes.length === 0 && (
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 2, fontSize: "0.8rem", fontStyle: "italic" }}>No custom themes yet.</Typography>
@@ -474,6 +549,9 @@ export const ThemeManagerWindow: React.FC = () => {
                           {isActive && <CheckIcon sx={{ fontSize: 14, color: "primary.main" }} />}{ct.name}
                         </Typography>
                       </Box>
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleExportTheme(ct); }} title="Export Theme (.actheme)" sx={{ color: "text.secondary" }}>
+                        <DownloadIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
                       <IconButton size="small" onClick={(e) => { e.stopPropagation(); startEdit(ct); }} sx={{ color: "text.secondary" }}>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem" }}>EDIT</Typography>
                       </IconButton>

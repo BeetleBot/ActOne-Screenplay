@@ -272,44 +272,120 @@ export function extractPngTextMetadata(pngBytes: Uint8Array, targetKey: string):
 When exporting, the app will generate a visual card layout:
 
 ```typescript
-const generateThemeCardBlob = (themeName: string, colors: any): Promise<Blob> => {
+const generateThemeCardBlob = (themeName: string, colors: any, isDark: boolean, logoUrl: string): Promise<Blob> => {
   return new Promise((resolve) => {
     const canvas = document.createElement("canvas");
-    canvas.width = 600;
-    canvas.height = 400;
+    canvas.width = 1200; // High resolution 1.5:1 ratio for social media (Twitter/X, Discord)
+    canvas.height = 800;
     const ctx = canvas.getContext("2d")!;
 
-    // 1. Background (Editor Color)
-    ctx.fillStyle = colors.editor;
-    ctx.fillRect(0, 0, 600, 400);
+    // 1. Draw a beautiful rich gradient background based on theme accent
+    const bgGradient = ctx.createLinearGradient(0, 0, 1200, 800);
+    bgGradient.addColorStop(0, colors.sidebar);
+    bgGradient.addColorStop(0.5, colors.editor);
+    bgGradient.addColorStop(1, `color-mix(in srgb, ${colors.accent} 20%, ${colors.editor})`);
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, 1200, 800);
 
-    // 2. Sidebar representation
-    ctx.fillStyle = colors.sidebar;
-    ctx.fillRect(0, 0, 180, 400);
-
-    // 3. Highlight/Accent circles
+    // 2. Draw subtle background design elements (circles with blur/glow)
+    ctx.globalAlpha = 0.15;
     ctx.fillStyle = colors.accent;
     ctx.beginPath();
-    ctx.arc(350, 150, 60, 0, Math.PI * 2);
+    ctx.arc(1000, 200, 300, 0, Math.PI * 2);
     ctx.fill();
+    ctx.beginPath();
+    ctx.arc(100, 600, 200, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
 
-    // 4. Accent text & UI accents (Button Color)
-    ctx.fillStyle = colors.button;
-    ctx.fillRect(240, 260, 220, 45); // Representing an active button
-
-    ctx.fillStyle = colors.text;
-    ctx.font = "bold 24px var(--font-ui)";
-    ctx.fillText(themeName, 210, 80);
-
-    ctx.font = "italic 14px var(--font-ui)";
-    ctx.fillText("ActOne Theme Card", 210, 110);
+    // 3. Draw a floating Glassmorphism Card Wrapper
+    ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 15;
     
-    // Watermark
-    ctx.fillStyle = colors.text;
-    ctx.font = "10px var(--font-ui)";
-    ctx.fillText("DRAG TO IMPORT IN ACTONE", 450, 380);
+    ctx.fillStyle = isDark ? "rgba(20, 20, 25, 0.6)" : "rgba(255, 255, 255, 0.65)";
+    ctx.beginPath();
+    ctx.roundRect(80, 80, 1040, 640, 24);
+    ctx.fill();
+    
+    // Draw card border
+    ctx.shadowBlur = 0; // turn off shadow for borders
+    ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
-    canvas.toBlob((blob) => resolve(blob!), "image/png");
+    // 4. Load & Draw the ActOne Logo
+    const logoImg = new Image();
+    logoImg.src = logoUrl;
+    logoImg.onload = () => {
+      // Draw Logo at the top center
+      ctx.drawImage(logoImg, 600 - 64, 140, 128, 128);
+
+      // Theme Name centered
+      ctx.fillStyle = colors.text;
+      ctx.font = "bold 64px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(themeName, 600, 330);
+
+      // Subtitle centered
+      ctx.fillStyle = `color-mix(in srgb, ${colors.text} 60%, transparent)`;
+      ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+      ctx.fillText("ACTONE CUSTOM THEME", 600, 375);
+
+      // Separator line
+      ctx.strokeStyle = `color-mix(in srgb, ${colors.text} 15%, transparent)`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(350, 410);
+      ctx.lineTo(850, 410);
+      ctx.stroke();
+
+      // Horizontal Color Swatches (centered)
+      const swatches = [
+        { name: "Editor", val: colors.editor },
+        { name: "Sidebar", val: colors.sidebar },
+        { name: "Accent", val: colors.accent },
+        { name: "Button", val: colors.button },
+        { name: "Text", val: colors.text }
+      ];
+
+      const startX = 600 - (swatches.length * 140) / 2 + 70;
+      swatches.forEach((swatch, idx) => {
+        const x = startX + idx * 140;
+        const y = 470;
+
+        // Draw color circle
+        ctx.fillStyle = swatch.val;
+        ctx.beginPath();
+        ctx.arc(x, y, 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Circle border
+        ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.1)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Swatch Name
+        ctx.fillStyle = colors.text;
+        ctx.font = "bold 15px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+        ctx.fillText(swatch.name, x, y + 65);
+
+        // Swatch Hex Code
+        ctx.fillStyle = `color-mix(in srgb, ${colors.text} 50%, transparent)`;
+        ctx.font = "13px monospace";
+        ctx.fillText(swatch.val.toUpperCase(), x, y + 85);
+      });
+
+      // --- WATERMARK & BRANDING ---
+      ctx.fillStyle = `color-mix(in srgb, ${colors.text} 30%, transparent)`;
+      ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+      ctx.fillText("ACTONE", 160, 680);
+      ctx.fillText("Drag image card into app window to install", 1040, 680);
+
+      canvas.toBlob((blob) => resolve(blob!), "image/png");
+    };
   });
 };
 ```
