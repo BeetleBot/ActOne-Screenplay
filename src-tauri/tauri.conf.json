@@ -1,6 +1,6 @@
 {
   "productName": "ActOne",
-  "version": "0.2.17",
+  "version": "0.2.18",
   "identifier": "com.writeup.actone",
   "build": {
     "beforeDevCommand": "npm run dev",

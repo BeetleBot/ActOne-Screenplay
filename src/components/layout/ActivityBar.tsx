@@ -12,7 +12,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import {
-  LibraryBooksIcon, CheckIcon, SettingsIcon, TimerIcon,
+  FolderSpecialIcon, CheckIcon, SettingsIcon, TimerIcon,
   KeyboardArrowDownIcon, CameraIcon,
   ViewAgendaIcon, AddNotesIcon, BeenhereIcon, AssignmentAddIcon,
   GarageIcon, MoreHorizIcon, ActionKeyIcon,
@@ -65,7 +65,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
 
   const allTabs = [
     { id: "outline", icon: <ViewAgendaIcon sx={{ fontSize: 20 }} />, title: "Outline" },
-    { id: "scripts", icon: <LibraryBooksIcon sx={{ fontSize: 20 }} />, title: "Scripts" },
+    { id: "scripts", icon: <FolderSpecialIcon sx={{ fontSize: 20 }} />, title: "Scripts" },
     { id: "notepad", icon: <AddNotesIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
     { id: "markers", icon: <BeenhereIcon sx={{ fontSize: 20 }} />, title: "Markers" },
     { id: "todo", icon: <AssignmentAddIcon sx={{ fontSize: 20 }} />, title: "Tasks" },

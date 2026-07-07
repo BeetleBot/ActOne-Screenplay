@@ -60,7 +60,7 @@ function getDynamicQuote(): Quote {
 }
 
 import logoImage from "../assets/logo.png";
-import { AddIcon, FolderOpenIcon, AutoAwesomeIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, DiscordIcon, DownloadIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, DiscordIcon, DownloadIcon } from "./Icons";
 
 const ActionCard: React.FC<{
   icon: React.ReactNode;
@@ -81,17 +81,17 @@ const ActionCard: React.FC<{
       p: 1.2,
       borderRadius: 0,
       cursor: "pointer",
-      bgcolor: "background.paper",
+      bgcolor: "transparent",
       color: "text.primary",
       border: "none",
       borderRight: "1px solid",
       borderColor: "divider",
-      transition: "background-color 0.12s ease",
+      transition: "background-color 0.15s ease, transform 0.15s ease",
       "&:last-child": {
         borderRight: "none",
       },
       "&:hover": {
-        bgcolor: "action.hover",
+        bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
       },
     }}
   >
@@ -100,11 +100,13 @@ const ActionCard: React.FC<{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 26,
-        height: 26,
+        width: 30,
+        height: 30,
         borderRadius: 0,
-        bgcolor: "action.selected",
-        color: "text.secondary",
+        bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+        color: "primary.main",
+        border: "1px solid",
+        borderColor: "divider",
         mb: 0.75,
       }}
     >
@@ -356,28 +358,122 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         aria-hidden
         sx={{
           position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "60%",
+          inset: 0,
           pointerEvents: "none",
-          filter: "blur(60px)",
           overflow: "hidden",
+          "@keyframes lineDrift1": {
+            "0%": { transform: "translateX(-15%) rotate(-18deg)" },
+            "50%": { transform: "translateX(15%) rotate(-18deg)" },
+            "100%": { transform: "translateX(-15%) rotate(-18deg)" },
+          },
+          "@keyframes lineDrift2": {
+            "0%": { transform: "translateX(18%) rotate(12deg)" },
+            "50%": { transform: "translateX(-18%) rotate(12deg)" },
+            "100%": { transform: "translateX(18%) rotate(12deg)" },
+          },
+          "@keyframes lineDrift3": {
+            "0%": { transform: "translateX(-10%) rotate(-6deg)", opacity: 0.5 },
+            "50%": { transform: "translateX(10%) rotate(-6deg)", opacity: 1 },
+            "100%": { transform: "translateX(-10%) rotate(-6deg)", opacity: 0.5 },
+          },
+          "@keyframes lineDrift4": {
+            "0%": { transform: "translateX(-20%) rotate(24deg)" },
+            "50%": { transform: "translateX(20%) rotate(24deg)" },
+            "100%": { transform: "translateX(-20%) rotate(24deg)" },
+          },
+          "@keyframes lineDrift5": {
+            "0%": { transform: "translateX(12%) rotate(-14deg)" },
+            "50%": { transform: "translateX(-12%) rotate(-14deg)" },
+            "100%": { transform: "translateX(12%) rotate(-14deg)" },
+          },
+          "@keyframes lineDrift6": {
+            "0%": { transform: "translateX(-15%) rotate(8deg)" },
+            "50%": { transform: "translateX(15%) rotate(8deg)" },
+            "100%": { transform: "translateX(-15%) rotate(8deg)" },
+          },
         }}
       >
         <Box
           sx={{
             position: "absolute",
-            top: "0%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "160%",
-            height: "200%",
-            background: (t) =>
-              `radial-gradient(ellipse 60% 60% at 50% 30%, ${alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.22 : 0.38)} 0%, transparent 65%)`,
-
+            inset: "-20%",
+            filter: "blur(3px)",
+            opacity: 0.9,
           }}
-        />
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: "8%",
+              left: "-10%",
+              width: "70%",
+              height: "1.5px",
+              background: (t) =>
+                `linear-gradient(90deg, transparent 0%, ${alpha(t.palette.primary.main, 0.9)} 50%, transparent 100%)`,
+              animation: "lineDrift1 14s ease-in-out infinite",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: "22%",
+              right: "-20%",
+              width: "80%",
+              height: "1.5px",
+              background: (t) =>
+                `linear-gradient(90deg, transparent 0%, ${alpha(t.palette.primary.main, 0.75)} 50%, transparent 100%)`,
+              animation: "lineDrift2 18s ease-in-out infinite",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: "40%",
+              left: "5%",
+              width: "90%",
+              height: "1px",
+              background: (t) =>
+                `linear-gradient(90deg, transparent 0%, ${alpha(t.palette.text.primary, 0.55)} 50%, transparent 100%)`,
+              animation: "lineDrift3 22s ease-in-out infinite",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: "55%",
+              left: "-15%",
+              width: "60%",
+              height: "1px",
+              background: (t) =>
+                `linear-gradient(90deg, transparent 0%, ${alpha(t.palette.primary.main, 0.7)} 50%, transparent 100%)`,
+              animation: "lineDrift4 16s ease-in-out infinite",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: "70%",
+              right: "-10%",
+              width: "75%",
+              height: "1px",
+              background: (t) =>
+                `linear-gradient(90deg, transparent 0%, ${alpha(t.palette.text.primary, 0.4)} 50%, transparent 100%)`,
+              animation: "lineDrift5 20s ease-in-out infinite",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: "85%",
+              left: "10%",
+              width: "50%",
+              height: "1px",
+              background: (t) =>
+                `linear-gradient(90deg, transparent 0%, ${alpha(t.palette.primary.main, 0.6)} 50%, transparent 100%)`,
+              animation: "lineDrift6 24s ease-in-out infinite",
+            }}
+          />
+        </Box>
       </Box>
       <Box
         sx={{
@@ -448,37 +544,33 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         )}
 
         {/* Action Cards */}
-        <Box 
-          sx={{ 
-            display: "flex", 
-            flexDirection: "row", 
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "row",
             mb: 2,
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 0,
-            overflow: "hidden"
           }}
         >
           <ActionCard
-            icon={<AddIcon sx={{ fontSize: 15 }} />}
+            icon={<AddIcon sx={{ fontSize: 18 }} />}
             title="New Project"
             description="Create screenplay"
             onClick={handleNew}
           />
           <ActionCard
-            icon={<FolderOpenIcon sx={{ fontSize: 15 }} />}
+            icon={<FolderOpenIcon sx={{ fontSize: 18 }} />}
             title="Open Project"
             description="Browse and open"
             onClick={handleOpen}
           />
           <ActionCard
-            icon={<AutoAwesomeIcon sx={{ fontSize: 15 }} />}
+            icon={<CombineColumnsIcon sx={{ fontSize: 18 }} />}
             title="Templates"
             description="Structure template"
             onClick={handleTemplates}
           />
           <ActionCard
-            icon={<HelpOutlinedIcon sx={{ fontSize: 15 }} />}
+            icon={<HelpOutlinedIcon sx={{ fontSize: 18 }} />}
             title="Tutorials"
             description="Interactive tours"
             onClick={() => setTutorialDialogOpen(true)}
@@ -522,14 +614,14 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                     maxWidth: 200,
                     fontWeight: 600,
                     fontSize: 11.5,
-                    height: 32,
-                    bgcolor: "background.paper",
+                    height: 30,
+                    bgcolor: "transparent",
                     border: 1,
                     borderColor: "divider",
                     borderRadius: 0,
                     "&:hover": {
                       borderColor: "primary.main",
-                      bgcolor: "action.hover",
+                      bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
                     },
                     "& .MuiChip-icon": { color: "text.secondary", opacity: 0.5 },
                   }}
