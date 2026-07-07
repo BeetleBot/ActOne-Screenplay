@@ -338,7 +338,7 @@ export const SearchPanel: React.FC = () => {
     return (
       <>
         {before}
-        <Box component="span" sx={{ bgcolor: "rgba(255, 213, 0, 0.55)", color: "#000", borderRadius: "2px", px: 0.3 }}>
+        <Box component="span" sx={{ bgcolor: "warning.main", color: "warning.contrastText", borderRadius: "2px", px: 0.3 }}>
           {hit}
         </Box>
         {after}
@@ -348,7 +348,7 @@ export const SearchPanel: React.FC = () => {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 2, pr: 5, py: 1.25, borderBottom: "1px solid", borderColor: "divider" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 2, pr: 5, height: 40, minHeight: 40, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Find and Replace
         </Typography>

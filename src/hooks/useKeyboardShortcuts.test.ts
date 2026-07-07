@@ -17,6 +17,9 @@ describe("useKeyboardShortcuts", () => {
       zoomIn: vi.fn(),
       zoomOut: vi.fn(),
       resetZoom: vi.fn(),
+      interfaceScaleIn: vi.fn(),
+      interfaceScaleOut: vi.fn(),
+      resetInterfaceScale: vi.fn(),
       closeFile: vi.fn(),
       openSettings: vi.fn(),
       toggleSearch: vi.fn(),
@@ -126,6 +129,27 @@ describe("useKeyboardShortcuts", () => {
     renderHook(() => useKeyboardShortcuts(actions));
     fireKey("\\", { ctrl: true });
     expect(actions.toggleSidebar).toHaveBeenCalled();
+  });
+
+  it("calls interfaceScaleIn on Ctrl+Alt+=", () => {
+    const actions = createActions();
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("=", { ctrl: true, alt: true });
+    expect(actions.interfaceScaleIn).toHaveBeenCalled();
+  });
+
+  it("calls interfaceScaleOut on Ctrl+Alt+-", () => {
+    const actions = createActions();
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("-", { ctrl: true, alt: true });
+    expect(actions.interfaceScaleOut).toHaveBeenCalled();
+  });
+
+  it("calls resetInterfaceScale on Ctrl+Alt+0", () => {
+    const actions = createActions();
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("0", { ctrl: true, alt: true });
+    expect(actions.resetInterfaceScale).toHaveBeenCalled();
   });
 
   it("calls toggleZenMode on Ctrl+Alt+Enter", () => {

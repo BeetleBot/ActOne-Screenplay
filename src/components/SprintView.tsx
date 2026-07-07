@@ -175,7 +175,7 @@ export const SprintView = React.memo(() => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 0, gap: 0, overflow: "hidden" }}>
       {/* Header Panel */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, height: 40, minHeight: 40, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Writing Sprint
         </Typography>
@@ -189,7 +189,7 @@ export const SprintView = React.memo(() => {
         {/* Main Timer Control Area */}
         <Box sx={{ mb: 0 }}>
         {!currentSprint ? (
-          <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)" }}>
+          <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: "8px", border: 1, borderColor: "divider" }}>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase", display: "block", mb: 1 }}>
                 Preset Duration
@@ -308,7 +308,7 @@ export const SprintView = React.memo(() => {
             </Box>
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
-              <Box sx={{ py: 1.5, textAlign: "center", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "10px", bgcolor: "background.paper" }}>
+              <Box sx={{ py: 1.5, textAlign: "center", border: 1, borderColor: "divider", borderRadius: "10px", bgcolor: "background.paper" }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main" }}>
                   {sprintWords}
                 </Typography>
@@ -317,7 +317,7 @@ export const SprintView = React.memo(() => {
                 </Typography>
               </Box>
 
-              <Box sx={{ py: 1.5, textAlign: "center", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "10px", bgcolor: "background.paper" }}>
+              <Box sx={{ py: 1.5, textAlign: "center", border: 1, borderColor: "divider", borderRadius: "10px", bgcolor: "background.paper" }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: "success.main" }}>
                   {activeWpm}
                 </Typography>
@@ -352,7 +352,7 @@ export const SprintView = React.memo(() => {
                   textTransform: "none", 
                   fontWeight: 600, 
                   py: 1.25,
-                  borderColor: "rgba(0,0,0,0.15)",
+                  borderColor: "divider",
                   "&:hover": {
                     borderColor: "text.primary"
                   }
@@ -457,13 +457,13 @@ export const SprintView = React.memo(() => {
                   let badgeStyle = {};
                   if (index === 0) {
                     badgeColor = "#d4af37"; // Gold
-                    badgeStyle = { textShadow: "0 0 4px rgba(212, 175, 55, 0.4)", fontWeight: "900" };
+                    badgeStyle = { fontWeight: "900" };
                   } else if (index === 1) {
                     badgeColor = "#c0c0c0"; // Silver
-                    badgeStyle = { textShadow: "0 0 4px rgba(192, 192, 192, 0.4)", fontWeight: "900" };
+                    badgeStyle = { fontWeight: "900" };
                   } else if (index === 2) {
                     badgeColor = "#cd7f32"; // Bronze
-                    badgeStyle = { textShadow: "0 0 4px rgba(205, 127, 50, 0.4)", fontWeight: "900" };
+                    badgeStyle = { fontWeight: "900" };
                   }
 
                   return (

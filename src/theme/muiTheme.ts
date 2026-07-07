@@ -92,7 +92,7 @@ export function deriveAllColors(colors: {
     selectionBg: isDark
       ? `rgba(${hexToRgbStr(colors.accent)}, 0.25)`
       : `rgba(${hexToRgbStr(colors.accent)}, 0.20)`,
-    dropdown: isDark ? '#242628' : '#ffffff',
+    dropdown: colors.sidebar,
     dropdownText: colors.text,
     border: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
     textSecondary: isDark ? 'rgba(255,255,255,0.54)' : 'rgba(0,0,0,0.54)',
@@ -541,6 +541,8 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
                 borderColor: c.border,
                 boxShadow: 'none',
                 backgroundImage: 'none',
+                backgroundColor: c.dropdown,
+                color: c.dropdownText,
               },
             },
           },

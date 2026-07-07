@@ -15,7 +15,6 @@ import {
   TextField,
   InputAdornment,
   IconButton,
-  useTheme,
   ThemeProvider as MuiThemeProvider,
 } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -127,7 +126,6 @@ export const HelpWindow: React.FC = () => {
 };
 
 const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArticleId, setSelectedArticleId] = useState("welcome-screen");
@@ -263,7 +261,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             borderColor: "divider",
             display: "flex",
             flexDirection: "column",
-            bgcolor: theme.palette.mode === "dark" ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.02)",
+            bgcolor: "action.hover",
           }}
         >
           {!isSearching && (

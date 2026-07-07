@@ -380,14 +380,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           sx: {
             zoom: `${appScale}%`,
             borderRadius: '10px',
-            backgroundColor: isDark ? "rgba(20, 20, 20, 0.85)" : "rgba(255, 255, 255, 0.92)",
+            backgroundColor: theme.palette.background.paper + (isDark ? "d9" : "eb"),
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
             border: "1px solid",
             borderColor: "divider",
-            boxShadow: isDark ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
+            boxShadow: isDark ? "none" : theme.shadows[8],
             backgroundImage: "none",
-            color: isDark ? "#e8e8e8" : "text.primary",
+            color: theme.palette.text.primary,
             cursor: "none",
           },
         },
@@ -412,12 +412,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 "& fieldset": { border: "none" },
                 "&:hover fieldset": { border: "none" },
                 "&.Mui-focused fieldset": { border: "none" },
-                bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "action.hover",
+                bgcolor: isDark ? `${theme.palette.text.primary}14` : `${theme.palette.text.primary}0a`,
                 borderRadius: "8px",
                 px: 1.5,
-                color: isDark ? "#fff" : "text.primary",
-                "& input": { color: isDark ? "#fff" : "text.primary" },
-                "& input::placeholder": { color: isDark ? "rgba(255, 255, 255, 0.5)" : "text.secondary" },
+                color: theme.palette.text.primary,
+                "& input": { color: theme.palette.text.primary },
+                "& input::placeholder": { color: theme.palette.text.secondary, opacity: 0.5 },
               },
               startAdornment: (
                 <Box sx={{ display: "flex", color: "text.secondary", mr: 1 }}>
@@ -438,7 +438,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <List disablePadding>
             {Object.keys(groupedCommands).map((cat) => (
               <Box key={cat}>
-                <ListSubheader sx={{ bgcolor: "transparent", color: isDark ? "rgba(255, 255, 255, 0.5)" : "text.secondary", fontSize: 10, fontWeight: 700, textTransform: "uppercase", py: 0.5, lineHeight: "24px" }}>
+                <ListSubheader sx={{ bgcolor: "transparent", color: theme.palette.text.secondary, fontSize: 10, fontWeight: 700, textTransform: "uppercase", py: 0.5, lineHeight: "24px" }}>
                   {cat}
                 </ListSubheader>
                 {groupedCommands[cat].map((cmd) => {
@@ -456,10 +456,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         px: 2,
                         gap: 1,
                         "&.Mui-selected": {
-                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "action.selected",
+                          backgroundColor: `${theme.palette.primary.main}20`,
                         },
                         "&:hover": {
-                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "action.hover",
+                          backgroundColor: `${theme.palette.primary.main}10`,
                         },
                       }}
                     >
@@ -471,10 +471,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       />
                       {cmd.shortcut && (
                         <Chip
-                          label={cmd.shortcut}
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: 9, height: 16, fontFamily: "monospace", opacity: 0.7 }}
+                           label={cmd.shortcut}
+                           size="small"
+                           variant="outlined"
+                           sx={{ fontSize: 9, height: 16, fontFamily: "monospace", opacity: 0.7, borderColor: "divider" }}
                         />
                       )}
                     </ListItemButton>
@@ -488,16 +488,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
       <Divider />
 
-      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: isDark ? "rgba(0, 0, 0, 0.3)" : "action.hover", color: isDark ? "rgba(255, 255, 255, 0.6)" : "text.secondary" }}>
+      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: isDark ? `${theme.palette.background.default}66` : "action.hover", color: theme.palette.text.secondary }}>
         <Box sx={{ display: "flex", gap: 1.5 }}>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "action.selected", color: isDark ? "rgba(255, 255, 255, 0.7)" : "text.primary", px: 0.5, py: 0.2, borderRadius: 0.5 }}>↑↓</Typography> navigate
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0.5 }}>↑↓</Typography> navigate
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "action.selected", color: isDark ? "rgba(255, 255, 255, 0.7)" : "text.primary", px: 0.5, py: 0.2, borderRadius: 0.5 }}>Enter</Typography> run
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0.5 }}>Enter</Typography> run
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "action.selected", color: isDark ? "rgba(255, 255, 255, 0.7)" : "text.primary", px: 0.5, py: 0.2, borderRadius: 0.5 }}>Esc</Typography> close
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0.5 }}>Esc</Typography> close
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.7 }}>ActOne Palette</Typography>

@@ -20,7 +20,7 @@ import {
   MenuItem,
   Divider,
 } from "@mui/material";
-import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { ThemeProvider as MuiThemeProvider, useTheme, alpha } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
@@ -133,6 +133,7 @@ function cleanSceneHeading(heading: string): string {
 }
 
 function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
+  const theme = useTheme();
   const [tabIndex, setTabIndex] = useState(0);
   const [characterFilter, setCharacterFilter] = useState("");
   const [selectedChar, setSelectedChar] = useState<string | null>(null);
@@ -1023,9 +1024,9 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                         <text x="30" y={height - 18} fill="var(--text-secondary, #666)" fontSize="8" textAnchor="end">0</text>
 
                         {/* Action Area */}
-                        <path d={pathAction} fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" strokeWidth="1.5" />
+                        <path d={pathAction} fill={alpha(theme.palette.warning.main, 0.2)} stroke={theme.palette.warning.main} strokeWidth="1.5" />
                         {/* Dialogue Area */}
-                        <path d={pathDialogue} fill="rgba(59, 130, 246, 0.25)" stroke="#3b82f6" strokeWidth="1.5" />
+                        <path d={pathDialogue} fill={alpha(theme.palette.info.main, 0.25)} stroke={theme.palette.info.main} strokeWidth="1.5" />
 
                         {/* X-axis Scene Markers — skip labels to prevent overlap */}
                         {sceneTimings.map((_, idx) => {

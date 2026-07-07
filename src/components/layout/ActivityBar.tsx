@@ -10,7 +10,6 @@ import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
-import Slider from "@mui/material/Slider";
 import Button from "@mui/material/Button";
 import {
   LibraryBooksIcon, CheckIcon, SettingsIcon, TimerIcon,
@@ -35,8 +34,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
 }) => {
   const {
     paperSize, setPaperSize,
-    typewriterMode, setTypewriterMode, zoomLevel, setZoomLevel,
-    appScale, setAppScale,
+    typewriterMode, setTypewriterMode,
     hideSyntaxEnabled, setHideSyntaxEnabled,
     isZenMode,
     fountainColorsEnabled, setFountainColorsEnabled,
@@ -80,9 +78,12 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     <Box
       id="activity-bar"
       sx={{
-        width: isZenMode ? 0 : 48, display: 'flex', flexDirection: 'column',
+        width: isZenMode ? 0 : 48, 
+        minWidth: isZenMode ? 0 : 48,
+        maxWidth: isZenMode ? 0 : 48,
+        display: 'flex', flexDirection: 'column',
         alignItems: 'center',
-        bgcolor: 'background.paper', borderRight: isZenMode ? 0 : 1, borderColor: 'divider',
+        bgcolor: 'background.paper',
         flexShrink: 0,
         // Zen mode transition support with staggered delay (0.05s)
         opacity: isZenMode ? 0 : 1,
@@ -185,7 +186,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { minWidth: 260, ml: 1 } } }}
+        slotProps={{ paper: { sx: { width: 220, ml: 1 } } }}
       >
         <Box sx={{ px: 2, py: 1.5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'primary.main' }}>
@@ -193,64 +194,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
           </Typography>
         </Box>
 
-        <Divider sx={{ mb: 0.5 }} />
 
-        {/* ── View & Scale ── */}
-        <Box
-          sx={{ px: 2, pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
-          onClick={() => toggleSection('view')}
-        >
-          <Typography variant="overline" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.65rem' }}>
-            View & Scale
-          </Typography>
-          <KeyboardArrowDownIcon sx={{
-            fontSize: 16, color: 'text.disabled',
-            transform: collapsedSections.has('view') ? 'rotate(-90deg)' : 'rotate(0deg)',
-            transition: 'transform 0.15s',
-          }} />
-        </Box>
-
-        {!collapsedSections.has('view') && (
-          <>
-            <Box sx={{ px: 2, py: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>Interface Scale</Typography>
-                <Typography variant="caption" color="primary">{appScale}%</Typography>
-              </Box>
-              <Slider size="small" min={50} max={300} step={5} value={appScale}
-                onChange={(_, val) => setAppScale(val as number)} aria-label="Interface Scale" />
-            </Box>
-
-            <Box sx={{ px: 2, py: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>Editor Zoom</Typography>
-                <Typography variant="caption" color="primary">{zoomLevel}%</Typography>
-              </Box>
-              <Slider size="small" min={50} max={400} step={10} value={zoomLevel}
-                onChange={(_, val) => setZoomLevel(val as number)} aria-label="Editor Zoom" />
-            </Box>
-
-            <Box sx={{ px: 2, pb: 1, pt: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => { setZoomLevel(100); setAppScale(100); }}
-                disabled={appScale === 100 && zoomLevel === 100}
-                sx={{
-                  borderRadius: '6px',
-                  textTransform: 'none',
-                  fontSize: '0.75rem',
-                  py: 0.25,
-                  px: 1.5,
-                }}
-              >
-                Reset Scale & Zoom
-              </Button>
-            </Box>
-          </>
-        )}
-
-        <Divider sx={{ my: 0.5 }} />
 
         {/* ── Editor Preferences ── */}
         <Box
@@ -269,31 +213,31 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
 
         {!collapsedSections.has('editor') && (
           <>
-            <MenuItem onClick={() => setTypewriterMode(!typewriterMode)} dense>
-              <ListItemIcon>
+            <MenuItem onClick={() => setTypewriterMode(!typewriterMode)} dense sx={{ py: 0.25, px: 1.5 }}>
+              <ListItemIcon sx={{ minWidth: 28 }}>
                 <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {typewriterMode ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
                 </Box>
               </ListItemIcon>
-              <ListItemText primary={<Typography variant="body2">Typewriter Mode</Typography>} />
+              <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Typewriter Mode</Typography>} />
             </MenuItem>
 
-            <MenuItem onClick={() => setHideSyntaxEnabled(!hideSyntaxEnabled)} dense>
-              <ListItemIcon>
+            <MenuItem onClick={() => setHideSyntaxEnabled(!hideSyntaxEnabled)} dense sx={{ py: 0.25, px: 1.5 }}>
+              <ListItemIcon sx={{ minWidth: 28 }}>
                 <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {hideSyntaxEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
                 </Box>
               </ListItemIcon>
-              <ListItemText primary={<Typography variant="body2">Hide Fountain Markup</Typography>} />
+              <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Hide Fountain Markup</Typography>} />
             </MenuItem>
 
-            <MenuItem onClick={() => setFountainColorsEnabled(!fountainColorsEnabled)} dense>
-              <ListItemIcon>
+            <MenuItem onClick={() => setFountainColorsEnabled(!fountainColorsEnabled)} dense sx={{ py: 0.25, px: 1.5 }}>
+              <ListItemIcon sx={{ minWidth: 28 }}>
                 <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {fountainColorsEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
                 </Box>
               </ListItemIcon>
-              <ListItemText primary={<Typography variant="body2">Syntax Colors</Typography>} />
+              <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Syntax Colors</Typography>} />
             </MenuItem>
           </>
         )}
@@ -441,7 +385,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         </Box>
 
         {!collapsedSections.has('layout') && (
-          <MenuItem onClick={() => {}} sx={{ cursor: 'default', '&:hover': { bgcolor: 'transparent' } }}>
+          <Box sx={{ px: 1.5, py: 0.5 }}>
             <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
                <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
@@ -464,14 +408,14 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                   </Button>
                </Box>
             </Box>
-          </MenuItem>
+          </Box>
         )}
 
         <Divider sx={{ my: 0.5 }} />
 
-        <MenuItem onClick={() => { setAnchorEl(null); onOpenSettingsModal(); }} dense>
-          <ListItemIcon><SettingsIcon sx={{ fontSize: 18 }} /></ListItemIcon>
-          <ListItemText primary={<Typography variant="body2">Full Settings</Typography>} />
+        <MenuItem onClick={() => { setAnchorEl(null); onOpenSettingsModal(); }} dense sx={{ py: 0.25, px: 1.5 }}>
+          <ListItemIcon sx={{ minWidth: 28 }}><SettingsIcon sx={{ fontSize: 18 }} /></ListItemIcon>
+          <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Full Settings</Typography>} />
         </MenuItem>
       </Menu>
     </Box>

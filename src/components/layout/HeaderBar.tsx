@@ -125,7 +125,9 @@ export const HeaderBar = React.memo<{ onOpenPalette?: () => void }>(({ onOpenPal
           <Box
             className="command-palette-btn"
             sx={{
-              width: 47,
+              width: 48,
+              minWidth: 48,
+              maxWidth: 48,
               height: 40,
               display: 'flex',
               alignItems: 'center',

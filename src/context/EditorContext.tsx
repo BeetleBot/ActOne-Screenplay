@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import { useFile, type SettingsUpdater } from "./FileContext";
 import { ParsedLine, LineType } from "../parser";
-import { useUI } from "./UIContext";
 
 
 export interface EditorContextProps {
@@ -31,8 +30,7 @@ export const useEditor = () => {
 };
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { rawText, parsedDoc, setRawText, updateSettings } = useFile();
-  const { paperSize } = useUI();
+  const { parsedDoc, setRawText, updateSettings } = useFile();
   
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const [activeLineNumber, setActiveLineNumber] = useState<number>(-1);
