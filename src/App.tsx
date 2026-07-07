@@ -64,7 +64,7 @@ function AppInner() {
     togglePalette
   } = useModals();
 
-  const { editorView, cleanExtraSpace, updateSettings } = useEditor();
+  const { editorView, updateSettings } = useEditor();
   const {
     zoomLevel,
     setZoomLevel,
@@ -106,7 +106,6 @@ function AppInner() {
         setIsSidebarOpen(true);
       }
     }, [isSidebarOpen, activeTab, setActiveTab, setIsSidebarOpen]),
-    cleanExtraSpace,
     isDisabled: isModalActive,
   });
 

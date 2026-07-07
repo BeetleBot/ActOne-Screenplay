@@ -65,6 +65,10 @@ Features:
 
 Saves the raw Fountain text as a standalone `.fountain` file (extracting from `.actone` bundle if applicable).
 
+## Remember Last Export Directory
+
+The app remembers the last directory you exported to. When you export again (PDF, Fountain, FDX, or FadeIn), the file dialog opens in the same directory you used last time, making repeated exports to the same location more convenient. The last-used directory is persisted across app restarts.
+
 ## CSV Export (.csv)
 
 Exports a spreadsheet-compatible breakdown of all scenes:

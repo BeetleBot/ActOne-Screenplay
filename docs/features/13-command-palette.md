@@ -28,7 +28,6 @@
 - Cut / Copy / Paste
 - Find / Replace
 - Select All
-- Clean Spaces
 - Toggle Bold / Italic / Underline
 
 ### View

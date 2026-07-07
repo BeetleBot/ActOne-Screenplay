@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { CloseIcon, DownloadIcon } from "./Icons";
 import { SystemFontPicker } from "./SystemFontPicker";
 import { logger } from "../utils/logger";
+import { STORAGE_KEYS } from "../constants";
 
 import {
   Checkbox,
@@ -243,13 +244,24 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
     updateSettings((prev) => ({ ...prev, exportSceneColors: checked }));
   };
 
+  const getLastExportDir = () => {
+    return localStorage.getItem(STORAGE_KEYS.LAST_EXPORT_DIR);
+  };
+
+  const saveLastExportDir = (filePath: string) => {
+    const sepIdx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+    if (sepIdx > 0) {
+      localStorage.setItem(STORAGE_KEYS.LAST_EXPORT_DIR, filePath.substring(0, sepIdx));
+    }
+  };
+
   const handleExportPDF = async () => {
     try {
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
         const revisedLines: boolean[] = [];
 
-        await invoke("export_pdf", {
+        const result = await invoke<string | null>("export_pdf", {
           fountainText: rawText,
           paperSize,
           fontFamily: selectedFont,
@@ -273,7 +285,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
           watermarkCenterGrayscale,
           scriptFonts: JSON.stringify(scriptFonts),
+          defaultDirectory: getLastExportDir(),
         });
+        if (result) saveLastExportDir(result);
       } else {
         alert("PDF export is only supported in the desktop app.");
       }
@@ -293,7 +307,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       });
 
       if (isTauri) {
-        await invoke("export_fountain", { content: cleaned });
+        const result = await invoke<string | null>("export_fountain", {
+          content: cleaned,
+          defaultDirectory: getLastExportDir(),
+        });
+        if (result) saveLastExportDir(result);
       } else {
         const bundleName = filePath
           ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"
@@ -318,7 +336,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
     try {
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
-        await invoke("export_fdx", { fountainText: rawText });
+        const result = await invoke<string | null>("export_fdx", {
+          fountainText: rawText,
+          defaultDirectory: getLastExportDir(),
+        });
+        if (result) saveLastExportDir(result);
       } else {
         const cleaned = stripFountainForExport(rawText, {
           sections: false,
@@ -347,7 +369,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
     try {
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
-        await invoke("export_fadein", { fountainText: rawText });
+        const result = await invoke<string | null>("export_fadein", {
+          fountainText: rawText,
+          defaultDirectory: getLastExportDir(),
+        });
+        if (result) saveLastExportDir(result);
       } else {
         const bundleName = filePath
           ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"

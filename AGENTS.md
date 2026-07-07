@@ -305,6 +305,12 @@ npm run tauri      # Tauri CLI (build, dev, etc.)
 
 ---
 
+## Communication Style
+
+**Explain in plain language, then technical.** When explaining a bug, feature, or code behavior, start with clear plain-English wording — no postman/wizard/butler analogies, just direct non-technical phrasing. Then follow with a brief technical breakdown including file paths and line numbers. Do not talk down; assume the user is technically literate but wants the conceptual context before the low-level details.
+
+---
+
 ## Cross-Agent Compatibility
 
-`CLAUDE.md` is a copy of this file for Claude Code. If you edit this file, update both. Other agents (Cursor, Copilot, Windsurf) can use their own config files pointing here — add a line like `Read AGENTS.md for project instructions` to `.cursorrules` or `.github/copilot-instructions.md`.
+Other agents (Cursor, Copilot, Windsurf) can use their own config files pointing here — add a line like `Read AGENTS.md for project instructions` to `.cursorrules` or `.github/copilot-instructions.md`.

@@ -215,10 +215,13 @@ fn export_pdf(
     watermark_center_opacity: Option<f32>,
     watermark_center_grayscale: Option<bool>,
     script_fonts: Option<String>,
+    default_directory: Option<String>,
 ) -> Option<String> {
-    let file = rfd::FileDialog::new()
-        .add_filter("PDF Document", &["pdf"])
-        .save_file()?;
+    let mut dialog = rfd::FileDialog::new();
+    if let Some(dir) = &default_directory {
+        dialog = dialog.set_directory(dir);
+    }
+    let file = dialog.add_filter("PDF Document", &["pdf"]).save_file()?;
         
     let paper = if paper_size == "letter" {
         pdf::LETTER
@@ -440,10 +443,12 @@ fn generate_pdf_bytes(
 }
 
 #[tauri::command]
-fn export_fountain(content: String) -> Option<String> {
-    let file = rfd::FileDialog::new()
-        .add_filter("Fountain Screenplay", &["fountain"])
-        .save_file()?;
+fn export_fountain(content: String, default_directory: Option<String>) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new();
+    if let Some(dir) = &default_directory {
+        dialog = dialog.set_directory(dir);
+    }
+    let file = dialog.add_filter("Fountain Screenplay", &["fountain"]).save_file()?;
 
     if fs::write(&file, &content).is_ok() {
         return Some(file.to_string_lossy().to_string());
@@ -469,10 +474,12 @@ fn export_csv(content: String) -> Option<String> {
 }
 
 #[tauri::command]
-fn export_fdx(fountain_text: String) -> Option<String> {
-    let file = rfd::FileDialog::new()
-        .add_filter("Final Draft File", &["fdx"])
-        .save_file()?;
+fn export_fdx(fountain_text: String, default_directory: Option<String>) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new();
+    if let Some(dir) = &default_directory {
+        dialog = dialog.set_directory(dir);
+    }
+    let file = dialog.add_filter("Final Draft File", &["fdx"]).save_file()?;
 
     let screenplay = pdf::parse(&fountain_text);
     let fdx_content = pdf::export_to_fdx(&screenplay);
@@ -483,10 +490,12 @@ fn export_fdx(fountain_text: String) -> Option<String> {
 }
 
 #[tauri::command]
-fn export_fadein(fountain_text: String) -> Option<String> {
-    let file = rfd::FileDialog::new()
-        .add_filter("Fade In File", &["fadein"])
-        .save_file()?;
+fn export_fadein(fountain_text: String, default_directory: Option<String>) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new();
+    if let Some(dir) = &default_directory {
+        dialog = dialog.set_directory(dir);
+    }
+    let file = dialog.add_filter("Fade In File", &["fadein"]).save_file()?;
 
     let screenplay = pdf::parse(&fountain_text);
     let fadein_xml = pdf::export_to_fadein(&screenplay);

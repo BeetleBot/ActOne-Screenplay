@@ -56,13 +56,13 @@ export const tagStateField = StateField.define<TagStore>({
             newStart = tr.changes.mapPos(start, -1);
             newLen = tr.changes.mapPos(start + len, 1) - newStart;
           }
-          if (newLen <= 0) return null; // Tag was deleted completely
+          if (newLen <= 0) return null;
           return { ...tag, range: [newStart, newLen] as [number, number] };
         } catch {
           return tag;
         }
       }).filter(Boolean) as TagItem[];
-      
+
       nextValue = { ...nextValue, tags: mappedTags };
     }
 

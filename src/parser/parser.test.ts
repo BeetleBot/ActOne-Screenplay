@@ -50,6 +50,15 @@ describe("Fountain Screenplay Parser", () => {
       expect(getElementMaxWidth(LineType.action, "letter")).toBe(60);
     });
 
+    it("returns narrower widths for dual dialogue", () => {
+      expect(getElementMaxWidth(LineType.dualDialogueCharacter, "letter")).toBe(22);
+      expect(getElementMaxWidth(LineType.dualDialogue, "letter")).toBe(27);
+      expect(getElementMaxWidth(LineType.dualDialogueParenthetical, "letter")).toBe(22);
+      expect(getElementMaxWidth(LineType.dualDialogueCharacter, "a4")).toBe(20);
+      expect(getElementMaxWidth(LineType.dualDialogue, "a4")).toBe(24);
+      expect(getElementMaxWidth(LineType.dualDialogueParenthetical, "a4")).toBe(20);
+    });
+
     it("returns different widths for A4", () => {
       expect(getElementMaxWidth(LineType.character, "a4")).toBe(35);
       expect(getElementMaxWidth(LineType.heading, "a4")).toBe(57);

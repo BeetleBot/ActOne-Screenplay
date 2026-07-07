@@ -17,7 +17,6 @@ interface ShortcutActions {
   closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
-  cleanExtraSpace: () => void;
   openHelp?: () => void;
   toggleSnapshotsPanel?: () => void;
   isDisabled?: boolean;
@@ -67,12 +66,6 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (e.altKey && e.key.toLowerCase() === "s") {
         e.preventDefault();
         actionsRef.current.toggleSnapshotsPanel?.();
-        return;
-      }
-
-      if (e.shiftKey && e.altKey && e.key.toLowerCase() === "c") {
-        e.preventDefault();
-        actionsRef.current.cleanExtraSpace();
         return;
       }
 

@@ -54,7 +54,7 @@ export const FountainEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { fontFamily } = useUI();
   const { parsedDoc, scriptFileName } = useFile();
-  const { updateSettings, cleanExtraSpace } = useEditor();
+  const { updateSettings } = useEditor();
   const parking = useParking();
   const { prompt: showPrompt } = useCustomModal();
   
@@ -276,11 +276,6 @@ export const FountainEditor = React.memo(() => {
     });
     handleClose();
     view.focus();
-  };
-
-  const handleCleanSpaces = () => {
-    cleanExtraSpace();
-    handleClose();
   };
 
   const handleHighlightScene = (colorName: string) => {
@@ -776,13 +771,6 @@ export const FountainEditor = React.memo(() => {
             <FormatUnderlinedIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary="Underline" />
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleCleanSpaces}>
-          <ListItemIcon>
-            <AutoAwesomeIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Clean Spaces" />
         </MenuItem>
       </Menu>
 

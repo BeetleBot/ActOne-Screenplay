@@ -20,7 +20,6 @@ describe("useKeyboardShortcuts", () => {
       closeFile: vi.fn(),
       openSettings: vi.fn(),
       toggleSearch: vi.fn(),
-      cleanExtraSpace: vi.fn(),
     };
   }
 
@@ -120,13 +119,6 @@ describe("useKeyboardShortcuts", () => {
     renderHook(() => useKeyboardShortcuts(actions));
     fireKey("0", { ctrl: true });
     expect(actions.resetZoom).toHaveBeenCalled();
-  });
-
-  it("calls cleanExtraSpace on Shift+Alt+C", () => {
-    const actions = createActions();
-    renderHook(() => useKeyboardShortcuts(actions));
-    fireKey("c", { shift: true, alt: true });
-    expect(actions.cleanExtraSpace).toHaveBeenCalled();
   });
 
   it("calls toggleSidebar on Ctrl+\\", () => {

@@ -4,7 +4,7 @@ import React from "react";
 
 vi.mock("../context", () => ({
   useFile: () => ({ rawText: "", scripts: [], scriptFileName: "test.fountain", saveFile: vi.fn(), updateSettings: vi.fn() }),
-  useEditor: () => ({ editorView: null, cleanExtraSpace: vi.fn() }),
+  useEditor: () => ({ editorView: null }),
   useUI: () => ({
     typewriterMode: false,
     setTypewriterMode: vi.fn(),

@@ -34,6 +34,20 @@ Located at `src/parser/FountainParser.ts` (~800 lines). A standalone TypeScript 
 | `TitlePageKey` | Title page field | `Title: My Script` |
 | `TitlePageValue` | Title page value | (indented continuation) |
 
+### Element Character Widths
+
+The parser uses these max character-per-line widths for pagination and wrapping:
+
+| Element | Letter | A4 |
+|---------|--------|----|
+| Scene Heading / Action / Shot / Transition | 60 | 57 |
+| Character | 38 | 35 |
+| Dialogue | 35 | 35 |
+| Parenthetical | 25 | 25 |
+| Dual Dialogue Character | 22 | 20 |
+| Dual Dialogue | 27 | 24 |
+| Dual Dialogue Parenthetical | 22 | 20 |
+
 ### Parser Algorithm
 
 The parser is a **line-by-line state machine** that:

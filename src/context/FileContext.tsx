@@ -316,7 +316,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const doc = parseScreenplay(normalized, paperSize);
       setFiles(prev => prev.map(f => {
         if (f.id === activeFileId) {
-          const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+          const mergedSettings = doc.settings && Object.keys(doc.settings).length > 0
             ? doc.settings
             : f.parsedDoc.settings;
 
@@ -343,7 +343,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return f;
       }));
       setParsedDoc(prevDoc => {
-        const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
+        const mergedSettings = doc.settings && Object.keys(doc.settings).length > 0
           ? doc.settings
           : prevDoc.settings;
         return { ...doc, settings: mergedSettings };

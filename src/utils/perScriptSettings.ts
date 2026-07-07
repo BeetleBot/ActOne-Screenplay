@@ -33,7 +33,8 @@ export function migrateProductionTags(raw: any): Record<string, any> {
         result[key] = val; // keep per-script entries
       }
     }
-    return result;
+    // Keep flat format as-is when there are no per-script entries (e.g. empty tags)
+    return Object.keys(result).length > 0 ? result : raw;
   }
   
   return raw;

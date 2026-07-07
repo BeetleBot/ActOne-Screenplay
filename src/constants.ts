@@ -27,6 +27,7 @@ export const STORAGE_KEYS = {
   SNAPSHOT_MAX_RETENTION: "actone-snapshot-max-retention",
   FOUNTAIN_COLORS_ENABLED: "actone-fountain-colors-enabled",
   RIGHT_PANE_WIDTH: "actone-right-pane-width",
+  LAST_EXPORT_DIR: "actone-last-export-dir",
 } as const;
 
 export const PILL_RADIUS = "9999px";

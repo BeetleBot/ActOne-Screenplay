@@ -181,7 +181,7 @@
 - **Look Up Word**: Right-click any selected word and choose "Look Up" to search it on Google in a new browser tab.
 - **Scene Numbers**: Command Palette options to auto-number scene headings (`#1#`, `#2#`, ...) and clear all scene numbers at once.
 - **Scene Drag-and-Drop Reordering**: Drag scenes in the Outline sidebar to reorder them with visual insertion indicator. Editor text updates automatically.
-- **Editor Context Menu Expansion**: Right-click menu now includes Tag (production breakdown), Highlight Scene (color), Drop Marker, Format (Bold/Italic/Underline/Clean Spaces), Transform Case (UPPER/Title/lower), Look Up Word, Create Task, and Park Selection.
+- **Editor Context Menu Expansion**: Right-click menu now includes Tag (production breakdown), Highlight Scene (color), Drop Marker, Format (Bold/Italic/Underline), Transform Case (UPPER/Title/lower), Look Up Word, Create Task, and Park Selection.
 - **Import Structure Template**: Command Palette > Import Structure Template to insert predefined screenplay structures (Three-Act Structure, Save the Cat, Hero's Journey) as outline elements.
 - **Title Page Editor**: Command Palette > Edit Title Page to set screenplay title, author, contact, draft date, and more. Embedded in Fountain file and appears in PDF exports.
 - **4 New Built-in Themes**: Warm Sepia, Matrix Charcoal, Pitch Black, and Pitch White.

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import { useFile, type SettingsUpdater } from "./FileContext";
-import { ParsedLine, LineType, formatScreenplaySpaces } from "../parser";
+import { ParsedLine, LineType } from "../parser";
 import { useUI } from "./UIContext";
 
 
@@ -20,7 +20,6 @@ export interface EditorContextProps {
   scrollToLine: (lineIndex: number, noFocus?: boolean) => void;
   autoAddSceneNumbers: () => void;
   clearSceneNumbers: () => void;
-  cleanExtraSpace: () => void;
 }
 
 const EditorContext = createContext<EditorContextProps | undefined>(undefined);
@@ -138,11 +137,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setRawText(serialized);
   };
 
-  const cleanExtraSpace = () => {
-    const formatted = formatScreenplaySpaces(rawText, paperSize);
-    setRawText(formatted);
-  };
-
   return (
     <EditorContext.Provider
       value={{
@@ -160,7 +154,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         scrollToLine,
         autoAddSceneNumbers,
         clearSceneNumbers,
-        cleanExtraSpace,
       }}
     >
       {children}

@@ -66,6 +66,10 @@ Keeps your editing line vertically centered on screen. As you type, the page scr
 - Regex mode toggle
 - Replace single / replace all
 
+### Dual Dialogue Indentation
+
+When a character name ends with `^`, the line and its associated dialogue block are classified as **dual dialogue** and indented further right (character at `3.5in`, parenthetical at `2.9in`, dialogue at `2.3in`) to visually distinguish the second speaker in a side-by-side pair. The first speaker uses standard indentation.
+
 ### Scene Navigation
 
 - **Outline view** in sidebar: click any scene to jump to it

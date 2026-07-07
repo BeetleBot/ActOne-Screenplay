@@ -307,6 +307,7 @@ body {
 
 .cm-fountain-character {
   text-transform: uppercase !important;
+  font-weight: bold !important;
   margin-left: 2.2in !important;
   margin-right: 0 !important;
   color: var(--text-editor-character) !important;
@@ -321,6 +322,26 @@ body {
 .cm-fountain-dialogue {
   margin-left: 1.0in !important;
   margin-right: 1.0in !important;
+  color: var(--text-editor-dialogue) !important;
+}
+
+.cm-fountain-dual-character {
+  text-transform: uppercase !important;
+  font-weight: bold !important;
+  margin-left: 3.5in !important;
+  margin-right: 0 !important;
+  color: var(--text-editor-character) !important;
+}
+
+.cm-fountain-dual-parenthetical {
+  margin-left: 2.9in !important;
+  margin-right: 0.3in !important;
+  color: var(--text-editor-parenthetical) !important;
+}
+
+.cm-fountain-dual-dialogue {
+  margin-left: 2.3in !important;
+  margin-right: 0.3in !important;
   color: var(--text-editor-dialogue) !important;
 }
 

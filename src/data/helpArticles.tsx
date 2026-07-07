@@ -125,7 +125,7 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 
 **View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Reset Interface Scale, Show/Hide Fountain Markup, Show/Hide Tags, Open X-Ray Analysis, Show Snapshots.
 
-**Format:** Tag Manager, Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers, Clean Spaces.
+**Format:** Tag Manager, Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers.
 
 **Settings:** Open Settings, Set Font (Courier Prime / Courier Prime Sans), Set Paper Size (Letter / A4), Theme Manager.
 
@@ -357,25 +357,11 @@ Press <kbd>Tab</kbd> to accept the ghost suggestion, or <kbd>ArrowDown</kbd> to 
     content: `Zoom the editor text from **50% to 400%** using <kbd>Ctrl+=</kbd> (zoom in), <kbd>Ctrl+-</kbd> (zoom out), and <kbd>Ctrl+0</kbd> (reset to 100%). Step size is 10%. Also adjustable via Quick Settings slider or Settings → Editor → Editor Zoom. Persisted in localStorage.`,
   },
   {
-    id: "clean-spaces",
-    title: "Clean Screenplay Spaces",
-    category: "Writing Tools",
-    tags: ["clean spaces", "formatting", "blank lines", "Shift+Alt+C"],
-    relatedIds: ["smart-newline", "transform-case"],
-    content: `Press <kbd>Shift+Alt+C</kbd> or use the Command Palette → "Clean Spaces" to normalize your screenplay formatting. This:
-
-- Strips extra spaces after syntax prefixes (\`.\`, \`#\`, \`=\`, \`@\`, \`!\`, \`~\`)
-- Strips spaces inside \`[[ … ]]\` note brackets
-- Collapses consecutive empty lines inside dialogue blocks
-- Removes empty lines between consecutive outline elements
-- Ensures single blank line spacing between distinct semantic elements`,
-  },
-  {
     id: "transform-case",
     title: "Transform Case",
     category: "Writing Tools",
     tags: ["uppercase", "lowercase", "title case", "case"],
-    relatedIds: ["clean-spaces", "inline-formatting"],
+    relatedIds: ["inline-formatting"],
     content: `Right-click a selection and choose Transform Case to convert between UPPERCASE, Title Case, or lowercase. Useful for normalizing character names and scene headings.
 
 - **UPPERCASE**: All caps via \`toUpperCase()\`
@@ -702,7 +688,7 @@ Persists in .actone bundle settings.`,
 - **Tag** → submenu with 15 production categories: Cast (Character), Prop, VFX, SFX (Special Effect), Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other. If cursor is on an existing tag, shows **Remove Tag**.
 - **Highlight Scene** → 7 colors: Red, Orange, Yellow, Green, Blue, Purple, Pink, plus Clear.
 - **Drop Marker** → submenu with 11 colors (Blue, Brown, Cyan, Green, Magenta, Orange, Pink, Purple, Red, Yellow, Default Orange). Prompts for a description.
-- **Format** → Bold, Italic, Underline, Clean Spaces.
+- **Format** → Bold, Italic, Underline.
 - **Transform Case** → UPPERCASE, Title Case, lowercase.
 - **Look Up Word** → Google search selection.
 - **Create Task** → adds selected text as a to-do item.

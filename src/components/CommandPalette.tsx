@@ -123,7 +123,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const {
     autoAddSceneNumbers,
     clearSceneNumbers,
-    cleanExtraSpace,
     editorView,
   } = useEditor();
 
@@ -281,7 +280,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenStructureModal(); onClose(); } },
     { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
     { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <DeleteIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },
-    { id: "format-clean-space", name: "Clean Screenplay Spaces", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, shortcut: "Shift+Alt+C", action: () => { cleanExtraSpace(); onClose(); } },
 
     // Settings
 

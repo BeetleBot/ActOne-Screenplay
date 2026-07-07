@@ -354,14 +354,17 @@ export function getElementMaxWidth(type: LineType, paperSize: 'letter' | 'a4'): 
   const isA4 = paperSize === 'a4';
   switch (type) {
     case LineType.character:
-    case LineType.dualDialogueCharacter:
       return isA4 ? 35 : 38;
+    case LineType.dualDialogueCharacter:
+      return isA4 ? 20 : 22;
     case LineType.dialogue:
-    case LineType.dualDialogue:
       return 35;
+    case LineType.dualDialogue:
+      return isA4 ? 24 : 27;
     case LineType.parenthetical:
-    case LineType.dualDialogueParenthetical:
       return 25;
+    case LineType.dualDialogueParenthetical:
+      return isA4 ? 20 : 22;
     case LineType.heading:
     case LineType.action:
     case LineType.shot:
