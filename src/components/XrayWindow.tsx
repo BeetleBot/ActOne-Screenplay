@@ -24,7 +24,7 @@ import { ThemeProvider as MuiThemeProvider, useTheme, alpha } from "@mui/materia
 import CssBaseline from "@mui/material/CssBaseline";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
-import { initThemeEngine, onThemeChanged } from "../theme/ThemeEngine";
+import { initThemeEngine, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
 import { LineType, type FountainDocument } from "../parser";
 import {
   extractCharacters,
@@ -35,7 +35,6 @@ import {
 import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 import {
   SearchIcon,
-  CloseIcon,
   PersonIcon,
   BarChartIcon,
   TimerIcon,
@@ -43,6 +42,7 @@ import {
   DeleteIcon,
   EditIcon,
 } from "./Icons";
+import { TitleBar } from "./TitleBar";
 import { WindowResizeHandles } from "./WindowResizeHandles";
 import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
 
@@ -140,9 +140,11 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
 
   // SVG network map hover state
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [secondSelectedNode, setSecondSelectedNode] = useState<string | null>(null);
-  const [connectionsMode, setConnectionsMode] = useState<"network" | "matrix">("network");
+  const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
+
+  // Network container adaptive sizing
+  const networkContainerRef = useRef<HTMLDivElement>(null);
+  const [networkSize, setNetworkSize] = useState({ width: 600, height: 400 });
 
   // Pacing chart zoom state
   const [pacingZoom, setPacingZoom] = useState(1);
@@ -159,6 +161,21 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
       }
     });
     observer.observe(pacingContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Network container ResizeObserver
+  useEffect(() => {
+    if (!networkContainerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setNetworkSize({ width, height });
+        }
+      }
+    });
+    observer.observe(networkContainerRef.current);
     return () => observer.disconnect();
   }, []);
 
@@ -191,6 +208,30 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
         }
       }
       if (hasA && hasB) {
+        shared.push(scene);
+      }
+    });
+    return shared;
+  }, [doc, sceneTimings]);
+
+  const getGroupSharedScenes = useCallback((chars: string[]) => {
+    if (!doc || chars.length < 2) return [];
+    const shared: typeof sceneTimings = [];
+    sceneTimings.forEach((scene, sceneIdx) => {
+      const presentChars = new Set<string>();
+      let currentSceneIdx = -1;
+      for (const line of doc.lines) {
+        if (line.type === LineType.heading) {
+          currentSceneIdx++;
+        }
+        if (currentSceneIdx === sceneIdx) {
+          if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
+            const name = line.text.replace(/^@[ ]*/, "").replace(/[ ]*\^[ ]*$/, "").replace(/\s*\([^)]*\)/g, "").trim().toUpperCase();
+            presentChars.add(name);
+          }
+        }
+      }
+      if (chars.every((c) => presentChars.has(c))) {
         shared.push(scene);
       }
     });
@@ -382,11 +423,11 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
   // SVG network map connections computation
   const connectionsSvg = useMemo(() => {
     if (characters.length === 0) return null;
-    const width = 540;
-    const height = 360;
+    const width = networkSize.width;
+    const height = networkSize.height;
     const cx = width / 2;
     const cy = height / 2;
-    const r = 120;
+    const r = Math.min(width, height) * 0.32;
 
     const activeChars = characters.slice(0, 12);
     const charCount = activeChars.length;
@@ -408,6 +449,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
     );
 
     const maxInteractions = Math.max(1, ...activeConnections.map((c) => c.interactions));
+    const hasSelection = selectedNodes.size > 0;
 
     return (
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
@@ -416,22 +458,32 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
           const p2 = positions.find((p) => p.name === conn.target)!;
           
           const isConnectionSelected =
-            (selectedNode === conn.source && secondSelectedNode === conn.target) ||
-            (selectedNode === conn.target && secondSelectedNode === conn.source);
-          
-          const isHighlighted = isConnectionSelected || (
-            !secondSelectedNode && (
-              selectedNode === conn.source || selectedNode === conn.target ||
-              hoveredNode === conn.source || hoveredNode === conn.target
-            )
-          );
+            selectedNodes.has(conn.source) && selectedNodes.has(conn.target);
 
-          const isDimmed = secondSelectedNode 
-            ? !isConnectionSelected 
-            : (selectedNode && selectedNode !== conn.source && selectedNode !== conn.target) ||
-              (hoveredNode && hoveredNode !== conn.source && hoveredNode !== conn.target);
+          // When multiple selected: only show connections between selected nodes
+          // When single selected: highlight that node's connections
+          // When hovering (no selection): highlight hovered node's connections
+          const isHighlighted = hasSelection
+            ? isConnectionSelected
+            : (hoveredNode === conn.source || hoveredNode === conn.target);
 
-          const opacity = isHighlighted ? 0.95 : isDimmed ? 0.03 : 0.25;
+          const isDimmed = (hasSelection || hoveredNode) && !isHighlighted;
+
+          let strokeColor: string;
+          let opacity: number;
+          if (isConnectionSelected && hasSelection) {
+            strokeColor = theme.palette.primary.main;
+            opacity = 1;
+          } else if (isHighlighted) {
+            strokeColor = theme.palette.primary.main;
+            opacity = 1;
+          } else if (isDimmed) {
+            strokeColor = theme.palette.divider;
+            opacity = 0.05;
+          } else {
+            strokeColor = theme.palette.divider;
+            opacity = 0.25;
+          }
           const strokeWidth = 1 + (conn.interactions / maxInteractions) * 5;
 
           return (
@@ -441,7 +493,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                 y1={p1.y}
                 x2={p2.x}
                 y2={p2.y}
-                stroke={isHighlighted ? "#8b5cf6" : "#90caf9"}
+                stroke={strokeColor}
                 strokeWidth={strokeWidth}
                 strokeOpacity={opacity}
               />
@@ -450,11 +502,11 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
         })}
 
         {positions.map((pos) => {
-          const isSelected = selectedNode === pos.name || secondSelectedNode === pos.name;
+          const isSelected = selectedNodes.has(pos.name);
           const isHighlighted = hoveredNode === pos.name || isSelected;
-          const isDimmed = secondSelectedNode
-            ? (selectedNode !== pos.name && secondSelectedNode !== pos.name)
-            : (selectedNode && selectedNode !== pos.name) || (hoveredNode && hoveredNode !== pos.name);
+          const isDimmed = (hasSelection || hoveredNode)
+            ? !isSelected && hoveredNode !== pos.name
+            : false;
           const radius = isSelected ? 12 : hoveredNode === pos.name ? 10 : 8;
 
           return (
@@ -463,28 +515,16 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
               style={{ cursor: "pointer" }}
               onMouseEnter={() => setHoveredNode(pos.name)}
               onMouseLeave={() => setHoveredNode(null)}
-              onClick={(e) => {
-                if (e.ctrlKey || e.metaKey) {
-                  if (selectedNode) {
-                    if (selectedNode === pos.name) {
-                      setSelectedNode(secondSelectedNode);
-                      setSecondSelectedNode(null);
-                    } else if (secondSelectedNode === pos.name) {
-                      setSecondSelectedNode(null);
-                    } else {
-                      setSecondSelectedNode(pos.name);
-                    }
+              onClick={() => {
+                setSelectedNodes((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(pos.name)) {
+                    next.delete(pos.name);
                   } else {
-                    setSelectedNode(pos.name);
+                    next.add(pos.name);
                   }
-                } else {
-                  if (selectedNode === pos.name && !secondSelectedNode) {
-                    setSelectedNode(null);
-                  } else {
-                    setSelectedNode(pos.name);
-                    setSecondSelectedNode(null);
-                  }
-                }
+                  return next;
+                });
               }}
             >
               <circle
@@ -492,7 +532,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                 cy={pos.y}
                 r={radius}
                 fill={pos.color}
-                stroke="#fff"
+                stroke={theme.palette.background.paper}
                 strokeWidth={isHighlighted ? 2.5 : 1}
                 style={{ opacity: isDimmed ? 0.35 : 1 }}
               />
@@ -502,11 +542,11 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                 textAnchor="middle"
                 fontSize="9"
                 fontWeight={isHighlighted ? "700" : "500"}
-                fill={isHighlighted ? "#8b5cf6" : "#e0e0e0"}
+                fill={isSelected ? theme.palette.primary.main : isHighlighted ? theme.palette.primary.main : theme.palette.text.primary}
                 style={{
                   opacity: isDimmed ? 0.3 : 1,
                   paintOrder: "stroke",
-                  stroke: "#121212",
+                  stroke: theme.palette.background.default,
                   strokeWidth: 2,
                 }}
               >
@@ -517,7 +557,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
         })}
       </svg>
     );
-  }, [characters, characterProfiles, characterConnections, hoveredNode, selectedNode, secondSelectedNode]);
+  }, [characters, characterProfiles, characterConnections, hoveredNode, selectedNodes, networkSize, theme]);
 
   // Edit Modal save function
   const handleSaveProfile = async (charName: string, updatedProfile: CharacterProfile) => {
@@ -550,6 +590,9 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "background.default", color: "text.primary", overflow: "hidden" }}>
+      {onClose && (
+        <TitleBar title="X-Ray Analysis" onClose={onClose} icon={<BarChartIcon sx={{ fontSize: 16 }} />} />
+      )}
       {/* Header bar */}
       <Box
         data-tauri-drag-region
@@ -557,25 +600,18 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
           display: "flex",
           alignItems: "center",
           px: 2,
-          py: 0.5,
+          height: 40,
           borderBottom: 1,
           borderColor: "divider",
           flexShrink: 0,
           userSelect: "none",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <BarChartIcon sx={{ fontSize: 18, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>
-            X-Ray
-          </Typography>
-        </Box>
         {data && (
           <Tabs
             value={tabIndex}
             onChange={(_, v) => setTabIndex(v)}
             sx={{
-              ml: 3,
               minHeight: 32,
               "& .MuiTab-root": {
                 minHeight: 32,
@@ -598,11 +634,6 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
             <Tab label="Characters" icon={<PersonIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
             <Tab label="Connections" icon={<ShareIconLocal sx={{ fontSize: 15 }} />} iconPosition="start" />
           </Tabs>
-        )}
-        {onClose && (
-          <IconButton aria-label="close" onClick={onClose} sx={{ color: "#9e9e9e", ml: "auto", p: 0.5 }}>
-            <CloseIcon sx={{ fontSize: 18 }} />
-          </IconButton>
         )}
       </Box>
 
@@ -1324,263 +1355,51 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
           </Box>
         )}
 
-        {/* Tab 3: Character Connections Network Map / Matrix Heatmap */}
+        {/* Tab 3: Character Connections Network Map */}
         {tabIndex === 3 && (
           <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
             {/* Header controls */}
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Character Interactions
-                </Typography>
-                {connectionsMode === "network" && (
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.65rem", display: { xs: "none", sm: "block" } }}>
-                    (Ctrl + Click two nodes to show connection data)
-                  </Typography>
-                )}
-              </Box>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  size="small"
-                  variant={connectionsMode === "network" ? "contained" : "outlined"}
-                  onClick={() => setConnectionsMode("network")}
-                  sx={{
-                    textTransform: "none",
-                    fontSize: 11,
-                    py: 0.5,
-                    bgcolor: connectionsMode === "network" ? "primary.main" : "transparent",
-                    color: connectionsMode === "network" ? "primary.contrastText" : "text.primary",
-                    borderColor: "primary.main",
-                    "&:hover": {
-                      bgcolor: connectionsMode === "network" ? "primary.dark" : "action.hover",
-                      borderColor: "primary.main",
-                    }
-                  }}
-                >
-                  Network
-                </Button>
-                <Button
-                  size="small"
-                  variant={connectionsMode === "matrix" ? "contained" : "outlined"}
-                  onClick={() => setConnectionsMode("matrix")}
-                  sx={{
-                    textTransform: "none",
-                    fontSize: 11,
-                    py: 0.5,
-                    bgcolor: connectionsMode === "matrix" ? "primary.main" : "transparent",
-                    color: connectionsMode === "matrix" ? "primary.contrastText" : "text.primary",
-                    borderColor: "primary.main",
-                    "&:hover": {
-                      bgcolor: connectionsMode === "matrix" ? "primary.dark" : "action.hover",
-                      borderColor: "primary.main",
-                    }
-                  }}
-                >
-                  Matrix
-                </Button>
-              </Box>
+            <Box sx={{ display: "flex", flexDirection: "column" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Character Interactions
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.65rem" }}>
+                Click to select · Multi-select to compare
+              </Typography>
             </Box>
 
             <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
-              {/* Left Side: Map / Matrix */}
-              <Paper elevation={0} sx={{ flex: 1, p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, display: "flex", flexDirection: "column", overflow: "auto", minWidth: 0 }}>
-                {connectionsMode === "network" ? (
-                  <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {connectionsSvg}
-                  </Box>
-                ) : (
-                  /* Interaction Matrix Heatmap — fills the panel */
-                  <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
-                    {/* Summary stats row */}
-                    <Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap" }}>
-                      <Box sx={{ px: 1.5, py: 0.5, borderRadius: 1, bgcolor: "action.hover", display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", fontSize: "0.8rem" }}>
-                          {characterConnections.length}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.65rem" }}>
-                          connections
-                        </Typography>
-                      </Box>
-                      <Box sx={{ px: 1.5, py: 0.5, borderRadius: 1, bgcolor: "action.hover", display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", fontSize: "0.8rem" }}>
-                          {characterConnections.reduce((s, c) => s + c.interactions, 0)}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.65rem" }}>
-                          total scenes shared
-                        </Typography>
-                      </Box>
-                      {(() => {
-                        const strongest = characterConnections.length > 0
-                          ? characterConnections.reduce((a, b) => a.interactions > b.interactions ? a : b)
-                          : null;
-                        return strongest ? (
-                          <Box sx={{ px: 1.5, py: 0.5, borderRadius: 1, bgcolor: "action.hover", display: "flex", alignItems: "center", gap: 0.5 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "#10b981", fontSize: "0.7rem" }}>
-                              {strongest.source} ↔ {strongest.target}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.65rem" }}>
-                              strongest ({strongest.interactions})
-                            </Typography>
-                          </Box>
-                        ) : null;
-                      })()}
-                    </Box>
-
-                    {/* The actual matrix grid */}
-                    <Box sx={{ flex: 1, overflow: "auto" }}>
-                      <table style={{ borderCollapse: "separate", borderSpacing: 2, width: "100%", minWidth: 400, tableLayout: "fixed" }}>
-                        <colgroup>
-                          <col style={{ width: 90 }} />
-                          {characters.slice(0, 12).map((char) => (
-                            <col key={char.name} style={{ width: "calc((100% - 90px) / 12)" }} />
-                          ))}
-                        </colgroup>
-                        <thead>
-                          <tr>
-                            <th style={{ width: 90 }} />
-                            {characters.slice(0, 12).map((char) => (
-                              <th
-                                key={char.name}
-                                style={{
-                                  padding: "2px 0",
-                                  verticalAlign: "bottom",
-                                  textAlign: "center",
-                                }}
-                              >
-                                <Box
-                                  sx={{
-                                    writingMode: "vertical-rl",
-                                    transform: "rotate(180deg)",
-                                    fontSize: "0.6rem",
-                                    fontWeight: 700,
-                                    color: selectedNode === char.name ? "primary.main" : "text.secondary",
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    maxHeight: 70,
-                                    cursor: "pointer",
-                                  }}
-                                  onClick={() => setSelectedNode(selectedNode === char.name ? null : char.name)}
-                                >
-                                  {char.name.length > 8 ? char.name.slice(0, 7) + "…" : char.name}
-                                </Box>
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {characters.slice(0, 12).map((rowChar) => (
-                            <tr key={rowChar.name}>
-                              <td style={{ textAlign: "right", paddingRight: 8 }}>
-                                <Typography
-                                  variant="caption"
-                                  onClick={() => setSelectedNode(selectedNode === rowChar.name ? null : rowChar.name)}
-                                  sx={{
-                                    fontWeight: 700,
-                                    fontSize: "0.65rem",
-                                    color: selectedNode === rowChar.name ? "primary.main" : "text.secondary",
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    display: "block",
-                                    maxWidth: 85,
-                                    cursor: "pointer",
-                                    "&:hover": { color: "primary.main" },
-                                  }}
-                                >
-                                  {rowChar.name}
-                                </Typography>
-                              </td>
-                              {characters.slice(0, 12).map((colChar) => {
-                                const isSelf = rowChar.name === colChar.name;
-                                const connection = characterConnections.find(
-                                  (c) =>
-                                    (c.source === rowChar.name && c.target === colChar.name) ||
-                                    (c.source === colChar.name && c.target === rowChar.name)
-                                );
-                                const count = connection ? connection.interactions : 0;
-                                const maxInt = Math.max(1, ...characterConnections.map((c) => c.interactions));
-                                const intensity = count > 0 ? 0.15 + (count / maxInt) * 0.85 : 0;
-                                const isRowOrColSelected = selectedNode === rowChar.name || selectedNode === colChar.name;
-
-                                return (
-                                  <td key={colChar.name} style={{ padding: 0 }}>
-                                    <Box
-                                      onClick={() => !isSelf && setSelectedNode(rowChar.name)}
-                                      title={`${rowChar.name} & ${colChar.name}: ${count} scenes`}
-                                      sx={{
-                                        width: "100%",
-                                        aspectRatio: "1",
-                                        borderRadius: "4px",
-                                        bgcolor: isSelf
-                                          ? "action.selected"
-                                          : count > 0
-                                            ? `rgba(139, 92, 246, ${intensity})`
-                                            : "action.hover",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        cursor: isSelf ? "default" : "pointer",
-                                        outline: isRowOrColSelected && !isSelf ? "1.5px solid" : "none",
-                                        outlineColor: isRowOrColSelected && !isSelf ? "primary.main" : "transparent",
-                                        transition: "all 0.15s ease",
-                                        "&:hover": !isSelf ? {
-                                          filter: "brightness(1.3)",
-                                          outline: "1.5px solid",
-                                          outlineColor: "text.primary",
-                                        } : {},
-                                      }}
-                                    >
-                                      {count > 0 && (
-                                        <Typography variant="caption" sx={{ fontSize: "0.6rem", fontWeight: 800, color: "text.primary" }}>
-                                          {count}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </Box>
-                  </Box>
-                )}
+              {/* Left Side: Network Map */}
+              <Paper elevation={0} sx={{ flex: 1, p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, display: "flex", flexDirection: "column", overflow: "auto", minWidth: 0 }}>
+                <Box ref={networkContainerRef} sx={{ flex: 1, width: '100%', height: '100%', display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {connectionsSvg}
+                </Box>
               </Paper>
 
               {/* Right Side: Detail panel */}
-              <Paper elevation={0} sx={{ width: 280, flexShrink: 0, p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
-                {selectedNode && secondSelectedNode ? (
-                  /* Dual selection connection detail view */
+              <Paper elevation={0} sx={{ width: 280, flexShrink: 0, p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
+                {selectedNodes.size >= 2 ? (
+                  /* Multi-select group view */
                   <>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                       <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        CONNECTION DETAILS
+                        SELECTED GROUP
                       </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.8rem", color: "text.primary" }}>
-                          {selectedNode}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700 }}>
-                          ↔
-                        </Typography>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.8rem", color: "text.primary" }}>
-                          {secondSelectedNode}
-                        </Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1 }}>
+                        {Array.from(selectedNodes).map((name) => (
+                          <Typography key={name} variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.8rem", color: "text.primary" }}>
+                            {name}{Array.from(selectedNodes).indexOf(name) < selectedNodes.size - 1 ? " ·" : ""}
+                          </Typography>
+                        ))}
                       </Box>
                     </Box>
 
                     <Divider sx={{ borderColor: "divider" }} />
 
-                    {/* Shared Scenes Count & Stats */}
+                    {/* Shared Scenes where ALL selected characters appear */}
                     {(() => {
-                      const connection = characterConnections.find(
-                        (c) =>
-                          (c.source === selectedNode && c.target === secondSelectedNode) ||
-                          (c.source === secondSelectedNode && c.target === selectedNode)
-                      );
-                      const sharedScenes = getSharedScenes(selectedNode, secondSelectedNode);
+                      const chars = Array.from(selectedNodes);
+                      const sharedScenes = getGroupSharedScenes(chars);
                       return (
                         <>
                           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover", p: 1, borderRadius: 1 }}>
@@ -1588,16 +1407,15 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                               Shared Scenes
                             </Typography>
                             <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", fontSize: "0.95rem" }}>
-                              {connection ? connection.interactions : 0}
+                              {sharedScenes.length}
                             </Typography>
                           </Box>
 
                           <Divider sx={{ borderColor: "divider" }} />
 
-                          {/* List of shared scenes */}
                           <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, flex: 1, minHeight: 0 }}>
                             <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                              SHARED SCENES LIST
+                              SCENES WITH ALL SELECTED
                             </Typography>
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, overflowY: "auto", flex: 1 }}>
                               {sharedScenes.map((s, idx) => (
@@ -1632,116 +1450,121 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                       );
                     })()}
                   </>
-                ) : selectedNode ? (
+                ) : selectedNodes.size === 1 ? (
                   /* Single selection character detail view */
-                  <>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: characterProfiles[selectedNode]?.color || getGenderColor(genders[selectedNode]), flexShrink: 0 }} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.85rem", color: "text.primary" }}>
-                        {selectedNode}
-                      </Typography>
-                    </Box>
+                  (() => {
+                    const singleSelectedNode = Array.from(selectedNodes)[0];
+                    return (
+                      <>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: characterProfiles[singleSelectedNode]?.color || getGenderColor(genders[singleSelectedNode]), flexShrink: 0 }} />
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.85rem", color: "text.primary" }}>
+                            {singleSelectedNode}
+                          </Typography>
+                        </Box>
 
-                    <Divider sx={{ borderColor: "divider" }} />
+                        <Divider sx={{ borderColor: "divider" }} />
 
-                    {/* Co-occurrence bars */}
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Scene co-occurrences
-                      </Typography>
-                      {characterConnections
-                        .filter((c) => c.source === selectedNode || c.target === selectedNode)
-                        .sort((a, b) => b.interactions - a.interactions)
-                        .map((c) => {
-                          const peer = c.source === selectedNode ? c.target : c.source;
-                          const peerProfile = characterProfiles[peer] || {};
-                          const peerColor = peerProfile.color || getGenderColor(genders[peer]);
-                          const maxInt = Math.max(1, ...characterConnections
-                            .filter((cc) => cc.source === selectedNode || cc.target === selectedNode)
-                            .map((cc) => cc.interactions));
-                          const pct = (c.interactions / maxInt) * 100;
+                        {/* Co-occurrence bars */}
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            Scene co-occurrences
+                          </Typography>
+                          {characterConnections
+                            .filter((c) => c.source === singleSelectedNode || c.target === singleSelectedNode)
+                            .sort((a, b) => b.interactions - a.interactions)
+                            .map((c) => {
+                              const peer = c.source === singleSelectedNode ? c.target : c.source;
+                              const peerProfile = characterProfiles[peer] || {};
+                              const peerColor = peerProfile.color || getGenderColor(genders[peer]);
+                              const maxInt = Math.max(1, ...characterConnections
+                                .filter((cc) => cc.source === singleSelectedNode || cc.target === singleSelectedNode)
+                                .map((cc) => cc.interactions));
+                              const pct = (c.interactions / maxInt) * 100;
 
-                          return (
-                            <Box
-                              key={peer}
-                              sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", "&:hover": { bgcolor: "action.hover" }, borderRadius: 0.5, px: 0.5, py: 0.25 }}
-                              onClick={() => setHoveredNode(peer)}
-                            >
-                              <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: peerColor, flexShrink: 0 }} />
-                              <Typography variant="caption" sx={{ width: 70, fontWeight: 600, fontSize: "0.6rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "text.primary" }}>
-                                {peer}
-                              </Typography>
-                              <Box sx={{ flex: 1, bgcolor: "action.hover", height: 6, borderRadius: 1, overflow: "hidden" }}>
-                                <Box sx={{ width: `${pct}%`, height: "100%", bgcolor: peerColor, borderRadius: 1, transition: "width 0.3s ease" }} />
-                              </Box>
-                              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "0.6rem", color: "text.primary", minWidth: 18, textAlign: "right" }}>
-                                {c.interactions}
-                              </Typography>
-                            </Box>
-                          );
-                        })}
-                    </Box>
-
-                    <Divider sx={{ borderColor: "divider" }} />
-
-                    {/* Shared scenes */}
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, flex: 1, minHeight: 0 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Shared scenes
-                      </Typography>
-                      {(() => {
-                        const peer = hoveredNode && hoveredNode !== selectedNode ? hoveredNode :
-                          characterConnections.find((c) => c.source === selectedNode || c.target === selectedNode)?.source === selectedNode ?
-                          characterConnections.find((c) => c.source === selectedNode || c.target === selectedNode)?.target :
-                          characterConnections.find((c) => c.source === selectedNode || c.target === selectedNode)?.source;
-
-                        if (!peer) {
-                          return (
-                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: "0.65rem" }}>
-                              No connections found.
-                            </Typography>
-                          );
-                        }
-
-                        const shared = getSharedScenes(selectedNode, peer);
-                        return (
-                          <>
-                            <Typography variant="caption" sx={{ fontSize: "0.6rem", color: "primary.main", fontWeight: 700 }}>
-                              with {peer} ({shared.length} scenes)
-                            </Typography>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, overflowY: "auto", flex: 1 }}>
-                              {shared.map((s, idx) => (
+                              return (
                                 <Box
-                                  key={idx}
-                                  sx={{ p: 0.75, bgcolor: "action.hover", borderRadius: 1, borderLeft: "2px solid", borderLeftColor: "primary.main", cursor: "pointer" }}
-                                  onDoubleClick={async () => {
-                                    try {
-                                      const { emit } = await import("@tauri-apps/api/event");
-                                      emit("modal:xray:scroll-to-line", { lineIndex: s.lineIndex });
-                                    } catch (e) {
-                                      console.error("Failed to scroll to scene line:", e);
-                                    }
-                                  }}
+                                  key={peer}
+                                  sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", "&:hover": { bgcolor: "action.hover" }, borderRadius: 0.5, px: 0.5, py: 0.25 }}
+                                  onClick={() => setHoveredNode(peer)}
                                 >
-                                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.6rem", display: "block", color: "text.primary", lineHeight: 1.3 }}>
-                                    {cleanSceneHeading(s.heading)}
+                                  <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: peerColor, flexShrink: 0 }} />
+                                  <Typography variant="caption" sx={{ width: 70, fontWeight: 600, fontSize: "0.6rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "text.primary" }}>
+                                    {peer}
                                   </Typography>
-                                  <Typography variant="caption" sx={{ fontSize: "0.55rem", color: "text.secondary" }}>
-                                    {formatDuration(s.durationSeconds)} est. | @{formatDuration(s.offsetSeconds)}
+                                  <Box sx={{ flex: 1, bgcolor: "action.hover", height: 6, borderRadius: 1, overflow: "hidden" }}>
+                                    <Box sx={{ width: `${pct}%`, height: "100%", bgcolor: peerColor, borderRadius: 1, transition: "width 0.3s ease" }} />
+                                  </Box>
+                                  <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "0.6rem", color: "text.primary", minWidth: 18, textAlign: "right" }}>
+                                    {c.interactions}
                                   </Typography>
                                 </Box>
-                              ))}
-                              {shared.length === 0 && (
-                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: "0.6rem" }}>
-                                  No shared speaking scenes.
+                              );
+                            })}
+                        </Box>
+
+                        <Divider sx={{ borderColor: "divider" }} />
+
+                        {/* Shared scenes */}
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, flex: 1, minHeight: 0 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            Shared scenes
+                          </Typography>
+                          {(() => {
+                            const peer = hoveredNode && hoveredNode !== singleSelectedNode ? hoveredNode :
+                              characterConnections.find((c) => c.source === singleSelectedNode || c.target === singleSelectedNode)?.source === singleSelectedNode ?
+                              characterConnections.find((c) => c.source === singleSelectedNode || c.target === singleSelectedNode)?.target :
+                              characterConnections.find((c) => c.source === singleSelectedNode || c.target === singleSelectedNode)?.source;
+
+                            if (!peer) {
+                              return (
+                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: "0.65rem" }}>
+                                  No connections found.
                                 </Typography>
-                              )}
-                            </Box>
-                          </>
-                        );
-                      })()}
-                    </Box>
-                  </>
+                              );
+                            }
+
+                            const shared = getSharedScenes(singleSelectedNode, peer);
+                            return (
+                              <>
+                                <Typography variant="caption" sx={{ fontSize: "0.6rem", color: "primary.main", fontWeight: 700 }}>
+                                  with {peer} ({shared.length} scenes)
+                                </Typography>
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, overflowY: "auto", flex: 1 }}>
+                                  {shared.map((s, idx) => (
+                                    <Box
+                                      key={idx}
+                                      sx={{ p: 0.75, bgcolor: "action.hover", borderRadius: 1, borderLeft: "2px solid", borderLeftColor: "primary.main", cursor: "pointer" }}
+                                      onDoubleClick={async () => {
+                                        try {
+                                          const { emit } = await import("@tauri-apps/api/event");
+                                          emit("modal:xray:scroll-to-line", { lineIndex: s.lineIndex });
+                                        } catch (e) {
+                                          console.error("Failed to scroll to scene line:", e);
+                                        }
+                                      }}
+                                    >
+                                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.6rem", display: "block", color: "text.primary", lineHeight: 1.3 }}>
+                                        {cleanSceneHeading(s.heading)}
+                                      </Typography>
+                                      <Typography variant="caption" sx={{ fontSize: "0.55rem", color: "text.secondary" }}>
+                                        {formatDuration(s.durationSeconds)} est. | @{formatDuration(s.offsetSeconds)}
+                                      </Typography>
+                                    </Box>
+                                  ))}
+                                  {shared.length === 0 && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: "0.6rem" }}>
+                                      No shared speaking scenes.
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </>
+                            );
+                          })()}
+                        </Box>
+                      </>
+                    );
+                  })()
                 ) : (
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", flexDirection: "column", gap: 1 }}>
                     <PersonIcon sx={{ fontSize: 28, color: "text.secondary", opacity: 0.4 }} />
@@ -2052,9 +1875,9 @@ function CharacterEditModal({
 }
 
 export const XrayWindow: React.FC = () => {
-  const [themeId, setThemeId] = useState("light");
+  const [themeId, setThemeId] = useState(() => getInitialThemeId());
   const [appScale, setAppScale] = useState(100);
-  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => getInitialCustomThemes());
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
   const [data, setData] = useState<XrayData | null>(null);
   const [timedOut, setTimedOut] = useState(false);

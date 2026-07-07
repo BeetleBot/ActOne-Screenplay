@@ -3,10 +3,11 @@ import Fuse from "fuse.js";
 import { List } from "react-window";
 import { articles, categories, HelpArticle } from "../data/helpArticles";
 import { HelpMarkdown } from "./HelpMarkdown";
-import { CloseIcon, SearchIcon, ClearIcon, OpenInNewIcon, LibraryBooksIcon } from "./Icons";
+import { SearchIcon, ClearIcon, OpenInNewIcon, LibraryBooksIcon, HelpOutlinedIcon } from "./Icons";
+import { TitleBar } from "./TitleBar";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
-import { initThemeEngine, onThemeChanged } from "../theme/ThemeEngine";
+import { initThemeEngine, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
 import {
   Box,
   Typography,
@@ -78,9 +79,9 @@ const openFountainGuide = () => {
 };
 
 export const HelpWindow: React.FC = () => {
-  const [themeId, setThemeId] = useState("light");
+  const [themeId, setThemeId] = useState(() => getInitialThemeId());
   const [appScale, setAppScale] = useState(100);
-  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => getInitialCustomThemes());
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   useEffect(() => {
@@ -183,6 +184,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   return (
     <>
+      <TitleBar title="Help Wiki" onClose={onClose} icon={<HelpOutlinedIcon sx={{ fontSize: 16 }} />} />
       <Box
         data-tauri-drag-region
         sx={{
@@ -193,19 +195,19 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           borderBottom: 1,
           borderColor: "divider",
           px: 2,
-          py: 0.75,
+          height: 40,
           userSelect: "none",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <LibraryBooksIcon sx={{ fontSize: 18 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap" }}>
-            ActOne Help Wiki
+          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}>
+            Articles
           </Typography>
           <Chip
-            label={`${articles.length} articles`}
+            label={`${articles.length}`}
             size="small"
-            sx={{ fontSize: 9.5, height: 18, borderRadius: "4px", fontWeight: 600 }}
+            sx={{ fontSize: 9.5, height: 18, borderRadius: 0, fontWeight: 600 }}
           />
         </Box>
         <TextField
@@ -217,7 +219,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             flex: 1,
             maxWidth: 320,
             "& .MuiOutlinedInput-root": {
-              borderRadius: "6px",
+              borderRadius: 0,
               height: 28,
               fontSize: 12,
               bgcolor: "action.hover",
@@ -247,9 +249,6 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             },
           }}
         />
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", ml: "auto", p: 0.5 }}>
-          <CloseIcon sx={{ fontSize: 18 }} />
-        </IconButton>
       </Box>
 
       <Box sx={{ display: "flex", overflow: "hidden", flex: 1 }}>
@@ -274,7 +273,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   fontSize: 10,
                   height: 22,
                   fontWeight: 600,
-                  borderRadius: "4px",
+                  borderRadius: 0,
                   bgcolor: selectedCategory === null ? "primary.main" : "action.hover",
                   color: selectedCategory === null ? "primary.contrastText" : "text.secondary",
                   "&:hover": { bgcolor: selectedCategory === null ? "primary.dark" : "action.selected" },
@@ -290,7 +289,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     fontSize: 10,
                     height: 22,
                     fontWeight: 600,
-                    borderRadius: "4px",
+                    borderRadius: 0,
                     bgcolor: selectedCategory === cat ? "primary.main" : "action.hover",
                     color: selectedCategory === cat ? "primary.contrastText" : "text.secondary",
                     "&:hover": { bgcolor: selectedCategory === cat ? "primary.dark" : "action.selected" },
@@ -371,7 +370,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       fontSize: 10,
                       fontWeight: 600,
                       cursor: "pointer",
-                      borderRadius: "4px",
+                      borderRadius: 0,
                       bgcolor: "action.hover",
                       "&:hover": { bgcolor: "action.selected" },
                     }}
@@ -395,7 +394,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         sx={{
                           px: 1.5,
                           py: 0.8,
-                          borderRadius: 1,
+                          borderRadius: 0,
                           cursor: "pointer",
                           bgcolor: "action.hover",
                           "&:hover": { bgcolor: "action.selected" },

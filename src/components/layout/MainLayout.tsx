@@ -24,25 +24,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const { activeTab, setActiveTab } = useUI();
 
   return (
-    <>
-      <ErrorBoundary name="header"><HeaderBar onOpenPalette={onOpenPalette} /></ErrorBoundary>
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <ActivityBar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}
-          onOpenSettingsModal={onOpenSettingsModal}
-          onOpenBreakdownModal={onOpenBreakdownModal}
-          onOpenThemeManagerModal={onOpenThemeManagerModal}
-        />
-        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', height: '100%', width: '100%', flex: 1, overflow: 'hidden' }}>
+      <ActivityBar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        onOpenSettingsModal={onOpenSettingsModal}
+        onOpenBreakdownModal={onOpenBreakdownModal}
+        onOpenThemeManagerModal={onOpenThemeManagerModal}
+        onOpenPalette={onOpenPalette}
+      />
+      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <ErrorBoundary name="header"><HeaderBar /></ErrorBoundary>
+        <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <Workspace
             isSidebarOpen={isSidebarOpen}
           />
-          <ErrorBoundary name="status"><StatusBar onOpenXray={onOpenXray} /></ErrorBoundary>
         </Box>
+        <ErrorBoundary name="status"><StatusBar onOpenXray={onOpenXray} /></ErrorBoundary>
       </Box>
-    </>
+    </Box>
   );
 };

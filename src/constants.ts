@@ -30,7 +30,7 @@ export const STORAGE_KEYS = {
   LAST_EXPORT_DIR: "actone-last-export-dir",
 } as const;
 
-export const PILL_RADIUS = "9999px";
+export const PILL_RADIUS = "0px";
 
 export const MAX_RECENT_FILES = 10;
 

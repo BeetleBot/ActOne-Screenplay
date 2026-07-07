@@ -84,6 +84,8 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
       sx={{ 
         height: isZenMode ? 0 : 28, 
         bgcolor: "background.paper", 
+        borderTop: isZenMode ? 0 : 1,
+        borderColor: "divider",
         display: "flex", 
         alignItems: "center", 
         justifyContent: "space-between", 

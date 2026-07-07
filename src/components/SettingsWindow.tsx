@@ -15,6 +15,7 @@ import {
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
+import { SettingsIcon } from "./Icons";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
@@ -243,7 +244,7 @@ export const SettingsWindow: React.FC = () => {
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
       <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
-        <TitleBar title="Settings" onClose={handleClose} />
+        <TitleBar title="Settings" onClose={handleClose} icon={<SettingsIcon sx={{ fontSize: 16 }} />} />
         <Box sx={{ px: 2, py: 1 }}>
           <ToggleButtonGroup
             value={activeTab}
@@ -260,7 +261,7 @@ export const SettingsWindow: React.FC = () => {
         <Box sx={{ flex: 1, overflow: "auto", px: 2, py: 1.5 }}>
           {activeTab === 0 && (
             <Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
                   LAYOUT & SCALE
                 </Typography>
@@ -291,7 +292,7 @@ export const SettingsWindow: React.FC = () => {
                   />
                 </Box>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   SAVING
                 </Typography>
@@ -321,7 +322,7 @@ export const SettingsWindow: React.FC = () => {
           )}
           {activeTab === 1 && (
             <Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   TYPOGRAPHY
                 </Typography>
@@ -335,7 +336,7 @@ export const SettingsWindow: React.FC = () => {
                   <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
                 </Select>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   VIEW
                 </Typography>
@@ -353,7 +354,7 @@ export const SettingsWindow: React.FC = () => {
                   aria-label="Editor Zoom"
                 />
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   EDITING
                 </Typography>
@@ -390,7 +391,7 @@ export const SettingsWindow: React.FC = () => {
                   />
                 </Box>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   DISPLAY
                 </Typography>
@@ -431,7 +432,7 @@ export const SettingsWindow: React.FC = () => {
           )}
           {activeTab === 2 && (
             <Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   GENERAL
                 </Typography>
@@ -444,7 +445,7 @@ export const SettingsWindow: React.FC = () => {
 
               {snapshotsEnabled && (
                 <>
-                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5, mb: 1.5 }}>
+                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                       SAVE LOCATION
                     </Typography>
@@ -481,13 +482,13 @@ export const SettingsWindow: React.FC = () => {
                           logger.error("settingsWindow", "Failed to open snapshots folder", e);
                         }
                       }}
-                      sx={{ mt: 1.5, fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
+                      sx={{ mt: 1.5, fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
                     >
                       Open Snapshots Folder
                     </Button>
                   </Box>
 
-                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 1.5 }}>
+                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                       AUTO-SNAPSHOT
                     </Typography>

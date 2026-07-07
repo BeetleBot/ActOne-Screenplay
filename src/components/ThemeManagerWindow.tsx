@@ -5,8 +5,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
 import { createActOneTheme, deriveAllColors, themes, THEME_CATEGORIES, ADAPTIVE_THEME_META, type ThemeColors } from "../theme";
 import { resolveThemeConfig } from "../theme/themeUtils";
-import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
-import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon, DownloadIcon, UploadIcon } from "./Icons";
+import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
+import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon, DownloadIcon, UploadIcon, ColorLensIcon } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
 
 const CORE_DEFAULTS = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
@@ -43,9 +43,9 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
         onChange={(e) => onChange(e.target.value)}
         sx={{
           width: 28, height: 28, p: 0, border: "1px solid", borderColor: "divider",
-          borderRadius: "6px", cursor: "pointer", bgcolor: "transparent",
+          borderRadius: 0, cursor: "pointer", bgcolor: "transparent",
           "&::-webkit-color-swatch-wrapper": { p: 0 },
-          "&::-webkit-color-swatch": { border: "none", borderRadius: "5px" },
+          "&::-webkit-color-swatch": { border: "none", borderRadius: 0 },
         }}
       />
       <TextField size="small" value={value}
@@ -53,7 +53,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
         sx={{
           flex: 1,
           "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-          bgcolor: "action.hover", borderRadius: "6px",
+           bgcolor: "action.hover", borderRadius: 0,
           "&:hover": { bgcolor: "action.selected" },
           "& input": { fontSize: "11px", fontFamily: "monospace", py: 0.5, px: 1 },
         }}
@@ -67,7 +67,7 @@ function ThemePreview({ colors }: { colors: ThemeColors }) {
 
   return (
     <Box sx={{
-      display: "flex", flexDirection: "column", height: "100%", borderRadius: "8px", overflow: "hidden",
+       display: "flex", flexDirection: "column", height: "100%", borderRadius: 0, overflow: "hidden",
       border: "1px solid", borderColor: colors.border, bgcolor: colors.editor,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       userSelect: "none"
@@ -117,7 +117,7 @@ function ThemePreview({ colors }: { colors: ThemeColors }) {
         }}>
           {/* Active Outline tab */}
           <Box sx={{
-            width: 18, height: 18, borderRadius: "4px",
+             width: 18, height: 18, borderRadius: 0,
             bgcolor: `rgba(${accentRgbVal}, 0.12)`, display: "flex", alignItems: "center", justifyContent: "center",
             borderLeft: `2.5px solid ${colors.accent}`, borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
             color: colors.accent
@@ -141,7 +141,7 @@ function ThemePreview({ colors }: { colors: ThemeColors }) {
           <Typography sx={{ fontWeight: 800, color: colors.textSecondary, opacity: 0.5, fontSize: "5.5px", letterSpacing: "0.05em", mb: 0.2 }}>OUTLINE</Typography>
           
           <Box sx={{
-            display: "flex", alignItems: "center", gap: 0.5, px: 0.5, py: 0.4, borderRadius: "3px",
+             display: "flex", alignItems: "center", gap: 0.5, px: 0.5, py: 0.4, borderRadius: 0,
             bgcolor: `rgba(${accentRgbVal}, 0.12)`, color: colors.accent
           }}>
             <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: colors.accent }} />
@@ -239,9 +239,9 @@ function validateTheme(data: any): data is Omit<CustomTheme, 'id'> {
 }
 
 export const ThemeManagerWindow: React.FC = () => {
-  const [themeId, setThemeId] = useState("light");
+  const [themeId, setThemeId] = useState(() => getInitialThemeId());
   const [appScale, setAppScale] = useState(100);
-  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => getInitialCustomThemes());
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -420,12 +420,12 @@ export const ThemeManagerWindow: React.FC = () => {
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
       <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
-        <TitleBar title="Theme Manager" onClose={handleClose} />
+        <TitleBar title="Theme Manager" onClose={handleClose} icon={<ColorLensIcon sx={{ fontSize: 16 }} />} />
         <Box sx={{ flex: 1, display: "flex", gap: 1.5, p: 2, minHeight: 0 }}>
           {/* Left pane */}
           <Box sx={{
             width: 340, flexShrink: 0, display: "flex", flexDirection: "column",
-            border: "1px solid", borderColor: "divider", borderRadius: 1, p: 1.5, minHeight: 0,
+            border: "1px solid", borderColor: "divider", borderRadius: 0, p: 1.5, minHeight: 0,
           }}>
             {showForm ? (
               <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
@@ -435,7 +435,7 @@ export const ThemeManagerWindow: React.FC = () => {
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mb: 1.5 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 11, color: "text.secondary" }}>THEME NAME</Typography>
                   <TextField size="small" fullWidth value={formName} onChange={(e) => setFormName(e.target.value)}
-                    sx={{ "& .MuiOutlinedInput-notchedOutline": { border: "none" }, bgcolor: "action.hover", borderRadius: "6px", "&:hover": { bgcolor: "action.selected" }, "& .MuiOutlinedInput-input": { py: 0.6, px: 1.25, fontSize: 12 } }}
+                    sx={{ "& .MuiOutlinedInput-notchedOutline": { border: "none" }, bgcolor: "action.hover", borderRadius: 0, "&:hover": { bgcolor: "action.selected" }, "& .MuiOutlinedInput-input": { py: 0.6, px: 1.25, fontSize: 12 } }}
                   />
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
@@ -451,7 +451,7 @@ export const ThemeManagerWindow: React.FC = () => {
                     { name: "Forest", colors: { sidebar: "#1a2e1a", editor: "#1f3d1f", accent: "#6b8c42" } },
                     { name: "Lavender", colors: { sidebar: "#1e1a2e", editor: "#2a1f3d", accent: "#b39ddb" } },
                   ].map(p => (
-                    <Box key={p.name} onClick={() => applyPreset(p)} sx={{ width: 44, height: 44, borderRadius: "10px", cursor: "pointer", border: "2px solid", borderColor: "divider", display: "flex", flexDirection: "column", overflow: "hidden", "&:hover": { borderColor: "primary.main" }, transition: "border-color 0.12s ease" }}>
+                    <Box key={p.name} onClick={() => applyPreset(p)} sx={{ width: 44, height: 44, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: "divider", display: "flex", flexDirection: "column", overflow: "hidden", "&:hover": { borderColor: "primary.main" }, transition: "border-color 0.12s ease" }}>
                       <Box sx={{ flex: 1, bgcolor: p.colors.sidebar }} />
                       <Box sx={{ flex: 1, bgcolor: p.colors.editor }} />
                       <Box sx={{ height: 6, bgcolor: p.colors.accent }} />
@@ -480,8 +480,8 @@ export const ThemeManagerWindow: React.FC = () => {
                         const meta = ADAPTIVE_THEME_META[cat.adaptiveId!];
                         const isActive = themeId === cat.adaptiveId;
                         return (
-                          <Box onClick={() => setTheme(cat.adaptiveId!)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: "8px", cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
-                            <Box sx={{ width: 32, height: 32, borderRadius: "8px", overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
+                          <Box onClick={() => setTheme(cat.adaptiveId!)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
+                            <Box sx={{ width: 32, height: 32, borderRadius: 0, overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
                               <Box sx={{ flex: 1, bgcolor: meta.splitLightBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: meta.splitLightDot }} />
                               </Box>
@@ -503,8 +503,8 @@ export const ThemeManagerWindow: React.FC = () => {
                         const isActive = themeId === t.id;
                         const tc = t.colors;
                         return (
-                          <Box key={t.id} onClick={() => setTheme(t.id)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: "8px", cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
-                            <Box sx={{ width: 32, height: 32, borderRadius: "8px", overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
+                          <Box key={t.id} onClick={() => setTheme(t.id)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
+                            <Box sx={{ width: 32, height: 32, borderRadius: 0, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
                               <Box sx={{ bgcolor: tc.editor }} />
                               <Box sx={{ bgcolor: tc.sidebar }} />
                               <Box sx={{ bgcolor: tc.accent }} />
@@ -534,8 +534,8 @@ export const ThemeManagerWindow: React.FC = () => {
                 {customThemes.map(ct => {
                   const isActive = themeId === ct.id;
                   return (
-                    <Box key={ct.id} sx={{ display: "flex", alignItems: "center", gap: 1, p: 1, mb: 0.5, borderRadius: "8px", cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "transparent", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }} onClick={() => setTheme(ct.id)}>
-                      <Box sx={{ width: 28, height: 28, borderRadius: "6px", overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
+                    <Box key={ct.id} sx={{ display: "flex", alignItems: "center", gap: 1, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "transparent", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }} onClick={() => setTheme(ct.id)}>
+                      <Box sx={{ width: 28, height: 28, borderRadius: 0, overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
                         <Box sx={{ width: 7, bgcolor: ct.colors.sidebar }} />
                         <Box sx={{ flex: 1, bgcolor: ct.colors.editor, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: ct.colors.accent }} />
@@ -562,7 +562,7 @@ export const ThemeManagerWindow: React.FC = () => {
             )}
           </Box>
           {/* Right pane: preview */}
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", border: "1px solid", borderColor: "divider", borderRadius: 1, p: 1.5, minHeight: 0 }}>
+          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", border: "1px solid", borderColor: "divider", borderRadius: 0, p: 1.5, minHeight: 0 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, mb: 1.25, display: "block" }}>THEME PREVIEW</Typography>
             <Box sx={{ flex: 1, minHeight: 0 }}>
               <ThemePreview colors={previewColors.colors} />

@@ -161,9 +161,7 @@ export const MarkerView = React.memo(() => {
               sx: {
                 bgcolor: "background.paper",
                 fontSize: "0.75rem",
-                "& fieldset": { borderColor: "divider" },
-                "&:hover fieldset": { borderColor: "text.secondary" },
-                "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+                "& fieldset": { border: "none" },
               },
               startAdornment: (
                 <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
@@ -199,7 +197,7 @@ export const MarkerView = React.memo(() => {
                   letterSpacing: "0.04em",
                   px: 1,
                   py: 0.3,
-                  borderRadius: "4px",
+                  borderRadius: 0,
                   cursor: "pointer",
                   userSelect: "none",
                   border: "1px solid",
@@ -255,7 +253,7 @@ export const MarkerView = React.memo(() => {
                 sx={{
                   pl: 1.5,
                   py: 0.5,
-                  borderRadius: '6px',
+                  borderRadius: 0,
                   mb: 0.25,
                   alignItems: "center",
                   transition: "all 0.12s ease",
@@ -301,7 +299,7 @@ export const MarkerView = React.memo(() => {
                           sx={{
                             bgcolor: "action.selected",
                             px: 0.4,
-                            borderRadius: '4px',
+                            borderRadius: 0,
                             fontSize: '8.5px',
                             fontWeight: 700,
                             color: "text.secondary",
@@ -365,7 +363,7 @@ export const MarkerView = React.memo(() => {
                           bgcolor: "action.selected",
                           px: 0.6,
                           py: 0.2,
-                          borderRadius: '4px',
+                          borderRadius: 0,
                           fontSize: 9,
                           fontWeight: 700,
                           color: "text.secondary",

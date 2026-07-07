@@ -165,7 +165,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
   const hasTitlePage = Object.values(fields).some(v => v.trim().length > 0);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}>
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <TextFieldsIcon sx={{ fontSize: 18 }} />

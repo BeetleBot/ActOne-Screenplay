@@ -150,7 +150,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
             onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
             slotProps={{
               input: {
-                sx: { borderRadius: '6px', fontSize: '0.8rem', py: 0.3 }
+                sx: { borderRadius: 0, fontSize: '0.8rem', py: 0.3 }
               }
             }}
           />
@@ -163,7 +163,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
             onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
             slotProps={{
               input: {
-                sx: { borderRadius: '6px', fontSize: '0.8rem', py: 0.3 }
+                sx: { borderRadius: 0, fontSize: '0.8rem', py: 0.3 }
               }
             }}
           />
@@ -173,13 +173,13 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
             variant="contained"
             startIcon={<AddIcon sx={{ fontSize: 16 }} />}
             onClick={handleCreate}
-            sx={{ borderRadius: '6px', py: 0.75, fontSize: '0.75rem' }}
+            sx={{ borderRadius: 0, py: 0.75, fontSize: '0.75rem' }}
           >
             New Snapshot
           </Button>
         </Box>
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2, alignItems: "center", justifyContent: "center", py: 2.5, px: 2, bgcolor: "action.hover", borderRadius: "8px", border: "1px dashed", borderColor: "divider" }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2, alignItems: "center", justifyContent: "center", py: 2.5, px: 2, bgcolor: "action.hover", borderRadius: 0, border: "1px dashed", borderColor: "divider" }}>
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", fontSize: "0.75rem" }}>
             Snapshots are currently turned off.
           </Typography>
@@ -187,7 +187,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
             size="small"
             variant="contained"
             onClick={() => updateSettings({ enabled: true })}
-            sx={{ borderRadius: '6px', fontSize: '0.75rem', px: 2, py: 0.5 }}
+            sx={{ borderRadius: 0, fontSize: '0.75rem', px: 2, py: 0.5 }}
           >
             Enable Snapshots
           </Button>
@@ -222,7 +222,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                     letterSpacing: "0.04em",
                     px: 1,
                     py: 0.3,
-                    borderRadius: "4px",
+                    borderRadius: 0,
                     cursor: "pointer",
                     userSelect: "none",
                     border: "1px solid",
@@ -265,7 +265,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                   sx={(theme) => {
                     const colors = getSnapshotColors(info.snapshot_type, theme);
                     return {
-                      borderRadius: "6px",
+                      borderRadius: 0,
                       mb: 0.25,
                       pr: 0.5,
                       py: 0.5,
@@ -300,7 +300,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                               alignItems: "center",
                               px: 0.8,
                               py: 0.3,
-                              borderRadius: "4px",
+                              borderRadius: 0,
                               border: "1px solid",
                               borderColor: `color-mix(in srgb, ${colors.tagColor} 30%, transparent)`,
                               bgcolor: `color-mix(in srgb, ${colors.tagColor} 12%, transparent)`,
@@ -325,7 +325,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                                 alignItems: "center",
                                 px: 0.8,
                                 py: 0.3,
-                                borderRadius: "4px",
+                                borderRadius: 0,
                                 border: "1px solid",
                                 borderColor: `color-mix(in srgb, ${baseColor} 30%, transparent)`,
                                 bgcolor: `color-mix(in srgb, ${baseColor} 12%, transparent)`,

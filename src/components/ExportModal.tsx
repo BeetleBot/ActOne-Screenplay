@@ -476,7 +476,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       maxWidth="xs"
       disableScrollLock
       transitionDuration={200}
-      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px', maxHeight: '85vh' } }}
+      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0, maxHeight: '85vh' } }}
     >
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -734,7 +734,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         fullWidth
         maxWidth="xs"
         disableScrollLock
-        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}
+        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
       >
         <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Format Elements</Typography>
@@ -831,7 +831,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         fullWidth
         maxWidth="xs"
         disableScrollLock
-        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}
+        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
       >
         <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Watermark Options</Typography>

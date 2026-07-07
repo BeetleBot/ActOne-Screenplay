@@ -399,7 +399,7 @@ export const FountainEditor = React.memo(() => {
       },
       paper: {
         sx: (theme: Theme) => ({
-          borderRadius: "8px",
+          borderRadius: 0,
           boxShadow: `0px 4px 16px ${alpha(theme.palette.common.black, 0.15)}`,
           border: "1px solid",
           borderColor: "divider",

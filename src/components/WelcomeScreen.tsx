@@ -79,17 +79,19 @@ const ActionCard: React.FC<{
       width: 120,
       height: 85,
       p: 1.2,
-      borderRadius: 2,
+      borderRadius: 0,
       cursor: "pointer",
       bgcolor: "background.paper",
       color: "text.primary",
-      border: 1,
+      border: "none",
+      borderRight: "1px solid",
       borderColor: "divider",
-      transition: "all 0.12s ease",
+      transition: "background-color 0.12s ease",
+      "&:last-child": {
+        borderRight: "none",
+      },
       "&:hover": {
         bgcolor: "action.hover",
-        transform: "translateY(-1px)",
-        boxShadow: (theme: Theme) => `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
       },
     }}
   >
@@ -100,7 +102,7 @@ const ActionCard: React.FC<{
         justifyContent: "center",
         width: 26,
         height: 26,
-        borderRadius: 1.5,
+        borderRadius: 0,
         bgcolor: "action.selected",
         color: "text.secondary",
         mb: 0.75,
@@ -446,21 +448,23 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         )}
 
         {/* Action Cards */}
-        <Box sx={{ display: "flex", flexDirection: "row", gap: 1.5, mb: 2 }}>
-          <Box sx={{ position: "relative" }}>
-            <Box sx={{
-              position: "absolute", inset: -5,
-              borderRadius: 2,
-              background: (t: Theme) => `radial-gradient(ellipse, ${alpha(t.palette.primary.main, 0.12)} 0%, transparent 70%)`,
-              pointerEvents: "none",
-            }} />
-            <ActionCard
-              icon={<AddIcon sx={{ fontSize: 15 }} />}
-              title="New Project"
-              description="Create screenplay"
-              onClick={handleNew}
-            />
-          </Box>
+        <Box 
+          sx={{ 
+            display: "flex", 
+            flexDirection: "row", 
+            mb: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 0,
+            overflow: "hidden"
+          }}
+        >
+          <ActionCard
+            icon={<AddIcon sx={{ fontSize: 15 }} />}
+            title="New Project"
+            description="Create screenplay"
+            onClick={handleNew}
+          />
           <ActionCard
             icon={<FolderOpenIcon sx={{ fontSize: 15 }} />}
             title="Open Project"
@@ -522,6 +526,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                     bgcolor: "background.paper",
                     border: 1,
                     borderColor: "divider",
+                    borderRadius: 0,
                     "&:hover": {
                       borderColor: "primary.main",
                       bgcolor: "action.hover",

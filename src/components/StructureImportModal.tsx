@@ -110,7 +110,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px' } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}>
       <DialogTitle sx={{ m: 0, px: 2.5, py: 1.75, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <LibraryBooksIcon sx={{ fontSize: 16, color: "primary.main" }} />
@@ -137,7 +137,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
             gap: 0.75,
             pr: 0.5,
             "&::-webkit-scrollbar": { width: 4 },
-            "&::-webkit-scrollbar-thumb": { bgcolor: "divider", borderRadius: 2 },
+            "&::-webkit-scrollbar-thumb": { bgcolor: "divider", borderRadius: 0 },
           }}
         >
           {loading ? (
@@ -151,7 +151,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                   onClick={() => setSelectedStructure(s)}
                   sx={{
                     p: 1.5,
-                    borderRadius: "8px",
+                    borderRadius: 0,
                     border: "1px solid",
                     borderColor: isSelected ? "primary.main" : "divider",
                     bgcolor: isSelected ? "action.selected" : "background.paper",
@@ -185,7 +185,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                 onClick={handleInsertAtCursor}
                 startIcon={<AddCircleIcon sx={{ fontSize: 13 }} />}
                 size="small"
-                sx={{ fontSize: 11, borderRadius: "6px", py: 0.75, textTransform: "none", fontWeight: 600 }}
+                sx={{ fontSize: 11, borderRadius: 0, py: 0.75, textTransform: "none", fontWeight: 600 }}
               >
                 Insert at Cursor
               </Button>
@@ -194,7 +194,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                 onClick={handleAppendToEnd}
                 startIcon={<ArrowCircleDownIcon sx={{ fontSize: 13 }} />}
                 size="small"
-                sx={{ fontSize: 11, borderRadius: "6px", py: 0.75, textTransform: "none", fontWeight: 600 }}
+                sx={{ fontSize: 11, borderRadius: 0, py: 0.75, textTransform: "none", fontWeight: 600 }}
               >
                 Append to End
               </Button>
@@ -205,7 +205,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
               startIcon={<RestartAltIcon sx={{ fontSize: 13 }} />}
               size="small"
               color="error"
-              sx={{ fontSize: 11, borderRadius: "6px", py: 0.75, textTransform: "none", fontWeight: 600 }}
+              sx={{ fontSize: 11, borderRadius: 0, py: 0.75, textTransform: "none", fontWeight: 600 }}
             >
               Overwrite Screenplay
             </Button>

@@ -105,7 +105,7 @@ export const ScriptsView = React.memo(() => {
       padding: "4px 10px",
       background: "rgb(25, 118, 210)",
       color: "white",
-      borderRadius: "6px",
+      borderRadius: "0",
       fontSize: "13px",
       left: e.clientX + "px",
       top: e.clientY + "px",
@@ -210,7 +210,7 @@ export const ScriptsView = React.memo(() => {
                   }}
                   data-script-index={index}
                   sx={{
-                    borderRadius: "6px", mb: 0.25, pr: 1, py: 0.5, pl: 0.5,
+                    borderRadius: 0, mb: 0.25, pr: 1, py: 0.5, pl: 0.5,
                     opacity: isDragging ? 0.4 : 1,
                     borderTop: isOver ? "2px solid" : "2px solid transparent",
                     borderTopColor: isOver ? "primary.main" : "transparent",

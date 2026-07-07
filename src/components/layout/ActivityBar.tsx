@@ -15,7 +15,7 @@ import {
   LibraryBooksIcon, CheckIcon, SettingsIcon, TimerIcon,
   KeyboardArrowDownIcon, CameraIcon,
   ViewAgendaIcon, AddNotesIcon, BeenhereIcon, AssignmentAddIcon,
-  GarageIcon, MoreHorizIcon,
+  GarageIcon, MoreHorizIcon, ActionKeyIcon,
 } from "../Icons";
 
 interface ActivityBarProps {
@@ -26,11 +26,12 @@ interface ActivityBarProps {
   onOpenSettingsModal: () => void;
   onOpenBreakdownModal: () => void;
   onOpenThemeManagerModal?: () => void;
+  onOpenPalette?: () => void;
 }
 
 export const ActivityBar = React.memo<ActivityBarProps>(({
   activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen,
-  onOpenSettingsModal, onOpenBreakdownModal, onOpenThemeManagerModal,
+  onOpenSettingsModal, onOpenBreakdownModal, onOpenThemeManagerModal, onOpenPalette,
 }) => {
   const {
     paperSize, setPaperSize,
@@ -84,6 +85,8 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         display: 'flex', flexDirection: 'column',
         alignItems: 'center',
         bgcolor: 'background.paper',
+        borderRight: isZenMode ? 0 : 1,
+        borderColor: 'divider',
         flexShrink: 0,
         // Zen mode transition support with staggered delay (0.05s)
         opacity: isZenMode ? 0 : 1,
@@ -93,7 +96,69 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          flex: 1, 
+          overflowY: 'auto', 
+          width: '100%',
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
+        <Box
+          className="command-palette-btn"
+          sx={{
+            width: 47,
+            minWidth: 47,
+            maxWidth: 47,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            position: 'relative',
+            cursor: 'pointer',
+            bgcolor: 'primary.main',
+            borderBottom: 1,
+            borderColor: 'divider',
+            transition: 'background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              bgcolor: 'transparent',
+              '& .command-palette-icon': {
+                color: 'primary.main',
+              },
+            },
+            '@keyframes commandPaletteBounce': {
+              '0%': { transform: 'scale(1)' },
+              '40%': { transform: 'scale(0.82)' },
+              '70%': { transform: 'scale(1.14)' },
+              '100%': { transform: 'scale(1)' },
+            },
+            '&:active .command-palette-icon': {
+              animation: 'commandPaletteBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            },
+          }}
+          onClick={(e) => { e.stopPropagation(); onOpenPalette?.(); }}
+        >
+          <Tooltip title="Command Palette (Ctrl+K)" placement="right">
+            <Box
+              className="command-palette-icon"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'primary.contrastText',
+                transition: 'color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              }}
+            >
+              <ActionKeyIcon sx={{ fontSize: 19 }} />
+            </Box>
+          </Tooltip>
+        </Box>
         {tabs.map((tab) => {
           const isActive = isSidebarOpen && activeTab === tab.id;
           return (
@@ -101,7 +166,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
               <Box
                 onClick={() => handleClick(tab.id)}
                 sx={{
-                  width: 48,
+                  width: 47,
                   height: 40,
                   display: 'flex',
                   alignItems: 'center',
@@ -111,6 +176,8 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                   bgcolor: isActive ? 'primary.main' : 'transparent',
                   position: 'relative',
                   flexShrink: 0,
+                  borderBottom: 1,
+                  borderColor: 'divider',
                   transition: 'background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
                     bgcolor: 'primary.main',
@@ -149,7 +216,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         <Box
           onClick={(e) => setAnchorEl(e.currentTarget)}
           sx={{
-            width: 48,
+            width: 47,
             height: 40,
             display: 'flex',
             alignItems: 'center',

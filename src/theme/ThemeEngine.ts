@@ -27,6 +27,12 @@ export async function initThemeEngine(): Promise<ThemeState> {
       appScale: result.app_scale,
       customThemes: result.custom_themes,
     };
+    // Sync to localStorage immediately to prevent FOUC on future window loads
+    try {
+      localStorage.setItem("actone-theme-id", result.theme_id);
+      localStorage.setItem("actone-custom-themes", result.custom_themes);
+      localStorage.setItem("actone-app-scale", String(result.app_scale));
+    } catch {}
   } catch {
     currentState = getFallbackState();
   }
@@ -39,6 +45,11 @@ export async function initThemeEngine(): Promise<ThemeState> {
           appScale: event.payload.app_scale,
           customThemes: event.payload.custom_themes,
         };
+        try {
+          localStorage.setItem("actone-theme-id", event.payload.theme_id);
+          localStorage.setItem("actone-custom-themes", event.payload.custom_themes);
+          localStorage.setItem("actone-app-scale", String(event.payload.app_scale));
+        } catch {}
         listeners.forEach((cb) => cb(currentState!));
       });
     } catch {
@@ -61,9 +72,18 @@ export function resetThemeEngine(): void {
 
 export async function setThemeState(partial: { themeId?: string; appScale?: number; customThemes?: string }): Promise<void> {
   const payload: Record<string, unknown> = {};
-  if (partial.themeId !== undefined) payload.themeId = partial.themeId;
-  if (partial.appScale !== undefined) payload.appScale = partial.appScale;
-  if (partial.customThemes !== undefined) payload.customThemes = partial.customThemes;
+  if (partial.themeId !== undefined) {
+    payload.themeId = partial.themeId;
+    try { localStorage.setItem("actone-theme-id", partial.themeId); } catch {}
+  }
+  if (partial.appScale !== undefined) {
+    payload.appScale = partial.appScale;
+    try { localStorage.setItem("actone-app-scale", String(partial.appScale)); } catch {}
+  }
+  if (partial.customThemes !== undefined) {
+    payload.customThemes = partial.customThemes;
+    try { localStorage.setItem("actone-custom-themes", partial.customThemes); } catch {}
+  }
   try {
     await invoke("set_theme_state", payload);
   } catch {
@@ -80,4 +100,21 @@ export function onThemeChanged(callback: ThemeChangeCallback): () => void {
   listeners.add(callback);
   if (currentState) callback(currentState);
   return () => { listeners.delete(callback); };
+}
+
+export function getInitialThemeId(): string {
+  try {
+    return localStorage.getItem("actone-theme-id") || "adaptive";
+  } catch {
+    return "adaptive";
+  }
+}
+
+export function getInitialCustomThemes(): any[] {
+  try {
+    const raw = localStorage.getItem("actone-custom-themes");
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }

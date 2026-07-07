@@ -95,9 +95,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
                   alignItems: "flex-start",
                   minHeight: "300px",
                   bgcolor: "background.paper",
-                  "& fieldset": { borderColor: "divider" },
-                  "&:hover fieldset": { borderColor: "text.secondary" },
-                  "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+                  "& fieldset": { border: "none" },
                 }
               }
             }}
@@ -250,7 +248,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
                   sx={{
                     cursor: "pointer",
                     position: "relative",
-                    borderRadius: '12px',
+                    borderRadius: 0,
                     maxHeight: "140px",
                     display: "flex",
                     flexDirection: "column",

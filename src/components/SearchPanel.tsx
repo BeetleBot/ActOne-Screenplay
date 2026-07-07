@@ -73,7 +73,7 @@ const OptionButton: React.FC<{
         color: active ? "#fff" : "text.secondary",
         border: "1px solid",
         borderColor: active ? "var(--button-color)" : "divider",
-        borderRadius: "4px",
+        borderRadius: 0,
         cursor: "pointer",
         userSelect: "none",
         transition: "all 0.12s ease",
@@ -338,7 +338,7 @@ export const SearchPanel: React.FC = () => {
     return (
       <>
         {before}
-        <Box component="span" sx={{ bgcolor: "warning.main", color: "warning.contrastText", borderRadius: "2px", px: 0.3 }}>
+        <Box component="span" sx={{ bgcolor: "warning.main", color: "warning.contrastText", borderRadius: 0, px: 0.3 }}>
           {hit}
         </Box>
         {after}
@@ -382,9 +382,7 @@ export const SearchPanel: React.FC = () => {
               sx: {
                 bgcolor: "background.paper",
                 fontSize: "0.8rem",
-                "& fieldset": { borderColor: "divider" },
-                "&:hover fieldset": { borderColor: "text.secondary" },
-                "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+                "& fieldset": { border: "none" },
               },
               startAdornment: (
                 <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
@@ -457,9 +455,7 @@ export const SearchPanel: React.FC = () => {
                   sx: {
                     bgcolor: "background.paper",
                     fontSize: "0.8rem",
-                    "& fieldset": { borderColor: "divider" },
-                    "&:hover fieldset": { borderColor: "text.secondary" },
-                    "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+                    "& fieldset": { border: "none" },
                   },
                 },
               }}
@@ -566,7 +562,7 @@ export const SearchPanel: React.FC = () => {
                     pl: 1.5,
                     pr: 1,
                     py: 0.75,
-                    borderRadius: "6px",
+                    borderRadius: 0,
                     mb: 0.25,
                     transition: "all 0.12s ease",
                     bgcolor: isActive ? "action.selected" : "transparent",
@@ -588,7 +584,7 @@ export const SearchPanel: React.FC = () => {
                       width: 14,
                       height: 14,
                       minWidth: 14,
-                      borderRadius: "3px",
+                      borderRadius: 0,
                       border: "1.5px solid",
                       borderColor: isChecked ? "primary.main" : "divider",
                       bgcolor: isChecked ? "primary.main" : "transparent",
@@ -621,7 +617,7 @@ export const SearchPanel: React.FC = () => {
                           sx={{
                             bgcolor: "action.selected",
                             px: 0.4,
-                            borderRadius: "4px",
+                            borderRadius: 0,
                             fontSize: "8.5px",
                             fontWeight: 700,
                             color: "text.secondary",

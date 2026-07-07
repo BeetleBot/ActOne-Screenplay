@@ -356,7 +356,7 @@ export const OutlineView = React.memo(() => {
       padding: "4px 10px",
       background: "rgb(25, 118, 210)",
       color: "white",
-      borderRadius: "6px",
+      borderRadius: "0",
       fontSize: "13px",
       left: e.clientX + "px",
       top: e.clientY + "px",
@@ -523,7 +523,7 @@ export const OutlineView = React.memo(() => {
             sx={{
               pl: 0,
               py: 0.25,
-              borderRadius: '6px',
+              borderRadius: 0,
               mb: 0.1,
               transition: "background-color 0.12s ease",
             }}
@@ -575,7 +575,7 @@ export const OutlineView = React.memo(() => {
           ref={isActive ? activeItemRef : null}
           selected={isActive}
           onClick={(e) => { handleItemClick(item, true, e); }}
-          sx={{ pl: 1.5, py: 0.25, borderRadius: '6px', mb: 0.1 }}
+          sx={{ pl: 1.5, py: 0.25, borderRadius: 0, mb: 0.1 }}
         >
           <Box component="span" sx={{ mr: 0.8, fontSize: 10, color: "text.secondary" }}>•</Box>
           <ListItemText
@@ -601,7 +601,7 @@ export const OutlineView = React.memo(() => {
         sx={{
           pl: 0.5,
           py: 0.25,
-          borderRadius: '6px',
+          borderRadius: 0,
           mb: 0.1,
           opacity: isDragging ? 0.4 : 1,
           bgcolor: showDragOver
@@ -682,7 +682,7 @@ export const OutlineView = React.memo(() => {
                   sx={{
                     bgcolor: "action.selected",
                     px: 0.4,
-                    borderRadius: '4px',
+                    borderRadius: 0,
                     fontSize: fontSizes.number,
                     fontWeight: 700,
                     color: "text.secondary",
@@ -719,7 +719,7 @@ export const OutlineView = React.memo(() => {
                           alignItems: "center",
                           px: 0.8,
                           py: 0.3,
-                          borderRadius: "4px",
+                          borderRadius: 0,
                           border: "1px solid",
                           borderColor: "divider",
                           bgcolor: "action.hover",
@@ -852,9 +852,7 @@ export const OutlineView = React.memo(() => {
               sx: {
                 bgcolor: "background.paper",
                 fontSize: "0.75rem",
-                "& fieldset": { borderColor: "divider" },
-                "&:hover fieldset": { borderColor: "text.secondary" },
-                "&.Mui-focused fieldset": { borderWidth: "1px", borderColor: "primary.main" },
+                "& fieldset": { border: "none" },
               },
               startAdornment: (
                 <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
@@ -939,7 +937,7 @@ export const OutlineView = React.memo(() => {
                     sx={{
                       fontSize: 9.5,
                       height: 20,
-                      borderRadius: "4px",
+                      borderRadius: 0,
                       fontWeight: isSelected ? 700 : 500,
                       border: `1.5px solid ${colorVal}`,
                       bgcolor: isSelected ? colorVal : "transparent",
@@ -973,7 +971,7 @@ export const OutlineView = React.memo(() => {
                       sx={{
                         fontSize: 9.5,
                         height: 20,
-                        borderRadius: "4px",
+                        borderRadius: 0,
                         fontWeight: isSelected ? 700 : 500,
                         border: "1px solid",
                         borderColor: isSelected ? "primary.main" : "divider",

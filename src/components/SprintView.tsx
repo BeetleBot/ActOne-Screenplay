@@ -189,7 +189,7 @@ export const SprintView = React.memo(() => {
         {/* Main Timer Control Area */}
         <Box sx={{ mb: 0 }}>
         {!currentSprint ? (
-          <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: "8px", border: 1, borderColor: "divider" }}>
+          <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: 0, border: 1, borderColor: "divider" }}>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase", display: "block", mb: 1 }}>
                 Preset Duration
@@ -202,7 +202,7 @@ export const SprintView = React.memo(() => {
                     sx={{
                       px: 1.5,
                       py: 0.4,
-                      borderRadius: "4px",
+                      borderRadius: 0,
                       border: "1px solid",
                       borderColor: sprintDuration === p ? "primary.main" : "divider",
                       bgcolor: sprintDuration === p ? "color-mix(in srgb, currentColor 12%, transparent)" : "transparent",
@@ -241,7 +241,7 @@ export const SprintView = React.memo(() => {
                 sx={{
                   width: 90,
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: "6px",
+                    borderRadius: 0,
                   }
                 }}
               />
@@ -258,7 +258,7 @@ export const SprintView = React.memo(() => {
                 py: 1.25,
                 fontWeight: 700,
                 fontSize: "13px",
-                borderRadius: "6px",
+                borderRadius: 0,
                 textTransform: "none",
               }}
             >
@@ -273,7 +273,7 @@ export const SprintView = React.memo(() => {
               display: "flex",
               flexDirection: "column",
               gap: 2.5,
-              borderRadius: "10px",
+              borderRadius: 0,
               background: `color-mix(in srgb, var(--button-color) 6%, transparent)`,
               border: `1px solid color-mix(in srgb, var(--button-color) 18%, transparent)`,
             }}
@@ -308,7 +308,7 @@ export const SprintView = React.memo(() => {
             </Box>
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
-              <Box sx={{ py: 1.5, textAlign: "center", border: 1, borderColor: "divider", borderRadius: "10px", bgcolor: "background.paper" }}>
+              <Box sx={{ py: 1.5, textAlign: "center", border: 1, borderColor: "divider", borderRadius: 0, bgcolor: "background.paper" }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main" }}>
                   {sprintWords}
                 </Typography>
@@ -317,7 +317,7 @@ export const SprintView = React.memo(() => {
                 </Typography>
               </Box>
 
-              <Box sx={{ py: 1.5, textAlign: "center", border: 1, borderColor: "divider", borderRadius: "10px", bgcolor: "background.paper" }}>
+              <Box sx={{ py: 1.5, textAlign: "center", border: 1, borderColor: "divider", borderRadius: 0, bgcolor: "background.paper" }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: "success.main" }}>
                   {activeWpm}
                 </Typography>
@@ -335,7 +335,7 @@ export const SprintView = React.memo(() => {
                 startIcon={<StopIcon />}
                 onClick={handleStop}
                 sx={{
-                  borderRadius: "10px",
+                  borderRadius: 0,
                   textTransform: "none",
                   fontWeight: 700,
                   py: 1.25,
@@ -348,7 +348,7 @@ export const SprintView = React.memo(() => {
                 color="inherit" 
                 onClick={handleCancel}
                 sx={{ 
-                  borderRadius: "10px", 
+                  borderRadius: 0, 
                   textTransform: "none", 
                   fontWeight: 600, 
                   py: 1.25,

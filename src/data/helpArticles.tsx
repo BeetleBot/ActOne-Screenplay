@@ -993,7 +993,16 @@ Quick-switch between any theme from the **Quick Settings** menu (gear icon in th
 
 **Create your own themes** via Quick Settings → "Manage Themes…". Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, name it, and see a live preview.
 
-**17 built-in themes** are available as clickable starting points in the creation form. Custom themes appear under a "CUSTOM" section in the Theme Manager.`,
+**17 built-in themes** are available as clickable starting points in the creation form. Custom themes appear under a "CUSTOM" section in the Theme Manager.
+
+---
+
+### Design System: Sharp & Tactile Buttons
+
+ActOne features a strict **flat geometric aesthetic**:
+- **Sharp Corners**: All lists, dropdowns, chips, text inputs, dialog modals, scrollbars, and window control buttons are flattened to \`0\` border-radius.
+- **Outlined Text Boxes**: Text fields feature a sharp 1px border. Focused inputs display a crisp inner highlight border matching the theme's active accent color.
+- **Premium Buttons**: Primary buttons employ top-to-bottom tactile color gradients with a polished top edge highlight to feel physical and state-of-the-art across all custom and built-in themes.`,
   },
   {
     id: "font-paper",

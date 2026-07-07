@@ -1,5 +1,4 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
-import { PILL_RADIUS } from '../constants';
 
 export type ThemeId = 'adaptive' | 'catppuccin-adaptive' | 'pitch-adaptive' | 'catppuccin-latte' | 'catppuccin-mocha' | 'light' | 'dark' | 'pitch-white' | 'pitch-black' | 'sunrise' | 'sunset' | 'mint' | 'forest' | 'rose' | 'berry' | 'ocean' | 'honey' | 'plum' | 'sky' | 'slate';
 
@@ -345,7 +344,7 @@ const shared: ThemeOptions = {
     fontFamily: "var(--font-ui)",
     button: { textTransform: 'none', fontWeight: 500 },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 0 },
   transitions: {
     duration: { shortest: 120, shorter: 200, short: 300 },
   },
@@ -496,7 +495,57 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
           disableElevation: true,
         },
         styleOverrides: {
-          root: { borderRadius: PILL_RADIUS },
+          root: {
+            borderRadius: 0,
+            textTransform: 'none',
+            fontWeight: 600,
+            transition: 'all 0.15s ease-in-out',
+          },
+          contained: {
+            background: `linear-gradient(180deg, ${c.accent} 0%, color-mix(in srgb, ${c.accent} 85%, #000) 100%)`,
+            border: '1px solid',
+            borderColor: `color-mix(in srgb, ${c.accent} 75%, #000)`,
+            boxShadow: 'inset 0 1.5px 0px rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.15)',
+            color: '#fff',
+            '&:hover': {
+              background: `linear-gradient(180deg, color-mix(in srgb, ${c.accent} 93%, #fff) 0%, color-mix(in srgb, ${c.accent} 93%, #000) 100%)`,
+              borderColor: `color-mix(in srgb, ${c.accent} 85%, #000)`,
+              boxShadow: 'inset 0 1.5px 0px rgba(255, 255, 255, 0.18), 0 2px 4px rgba(0, 0, 0, 0.2)',
+            },
+            '&:active': {
+              background: `color-mix(in srgb, ${c.accent} 85%, #000)`,
+              boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.3)',
+            },
+            '&.MuiButton-colorInherit': {
+              background: `linear-gradient(180deg, ${c.button} 0%, color-mix(in srgb, ${c.button} 85%, #000) 100%)`,
+              borderColor: `color-mix(in srgb, ${c.button} 80%, #000)`,
+              color: c.text,
+              boxShadow: 'inset 0 1.5px 0px rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.15)',
+              '&:hover': {
+                background: `linear-gradient(180deg, color-mix(in srgb, ${c.button} 93%, #fff) 0%, color-mix(in srgb, ${c.button} 93%, #000) 100%)`,
+                borderColor: `color-mix(in srgb, ${c.button} 80%, #000)`,
+              },
+            },
+          },
+          outlined: {
+            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: c.border,
+            color: c.text,
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+            '&:hover': {
+              borderColor: c.accent,
+              backgroundColor: `color-mix(in srgb, ${c.accent} 8%, transparent)`,
+              color: c.text,
+            },
+          },
+          text: {
+            color: c.textSecondary,
+            '&:hover': {
+              backgroundColor: 'action.hover',
+              color: c.text,
+            },
+          },
         },
       },
       MuiIconButton: {
@@ -517,7 +566,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
         },
         styleOverrides: {
           paper: {
-            borderRadius: '10px',
+            borderRadius: 0,
             outline: 'none',
             border: '1px solid',
             borderColor: c.border,
@@ -566,7 +615,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
         },
         styleOverrides: {
           paper: {
-            borderRadius: '8px',
+            borderRadius: 0,
             backgroundColor: c.dropdown,
             color: c.dropdownText,
             padding: '4px 0',
@@ -590,7 +639,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
             paddingLeft: '10px',
             paddingRight: '10px',
             minHeight: '28px',
-            borderRadius: '6px',
+            borderRadius: 0,
             margin: '2px 6px',
             transition: 'background-color 0.1s',
             '&.Mui-selected': {
@@ -630,12 +679,19 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
       MuiOutlinedInput: {
         styleOverrides: {
           root: {
-            borderRadius: '6px',
+            borderRadius: 0,
             backgroundColor: c.dropdown,
+            border: '1px solid',
+            borderColor: c.border,
+            transition: 'border-color 0.15s, background-color 0.15s, box-shadow 0.15s',
             '& fieldset': { border: 'none' },
-            '&:hover': { backgroundColor: 'action.hover' },
+            '&:hover': { 
+              backgroundColor: 'action.hover',
+              borderColor: 'text.secondary',
+            },
             '&.Mui-focused': {
               backgroundColor: c.dropdown,
+              borderColor: c.accent,
               boxShadow: `0 0 0 1px ${c.accent} inset`,
             },
           },
@@ -669,7 +725,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
         styleOverrides: {
           root: {
             fontSize: '12px',
-            borderRadius: '6px',
+            borderRadius: 0,
             '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
             backgroundColor: c.dropdown,
             '&:hover': { backgroundColor: 'action.hover' },
@@ -730,7 +786,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
             color: c.text,
             border: '1px solid',
             borderColor: c.border,
-            borderRadius: '4px',
+            borderRadius: 0,
             fontSize: '10px',
             padding: '2px 6px',
             boxShadow: 'none',
@@ -752,7 +808,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
             padding: 6,
           },
           track: {
-            borderRadius: 11,
+            borderRadius: 0,
             border: '1px solid',
             borderColor: c.border,
             backgroundColor: 'transparent',
@@ -762,7 +818,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
             boxShadow: 'none',
             width: 14,
             height: 14,
-            borderRadius: 7,
+            borderRadius: 0,
             backgroundColor: c.textSecondary,
             transition: 'transform 0.18s, background-color 0.18s',
           },

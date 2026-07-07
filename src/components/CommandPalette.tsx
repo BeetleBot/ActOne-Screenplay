@@ -379,7 +379,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         paper: {
           sx: {
             zoom: `${appScale}%`,
-            borderRadius: '10px',
+            borderRadius: 0,
             backgroundColor: theme.palette.background.paper + (isDark ? "d9" : "eb"),
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
@@ -413,7 +413,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 "&:hover fieldset": { border: "none" },
                 "&.Mui-focused fieldset": { border: "none" },
                 bgcolor: isDark ? `${theme.palette.text.primary}14` : `${theme.palette.text.primary}0a`,
-                borderRadius: "8px",
+                borderRadius: 0,
                 px: 1.5,
                 color: theme.palette.text.primary,
                 "& input": { color: theme.palette.text.primary },

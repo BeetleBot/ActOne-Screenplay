@@ -1,14 +1,15 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Box, Typography, TextField, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, ToggleButtonGroup, ToggleButton, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Typography, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, ToggleButtonGroup, ToggleButton, useMediaQuery, useTheme } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { SearchIcon, CloseIcon, DownloadIcon, LocalOfferIcon, TuneIcon, DeleteIcon } from "./Icons";
+import { SearchIcon, DownloadIcon, LocalOfferIcon, TuneIcon, DeleteIcon } from "./Icons";
+import { TitleBar } from "./TitleBar";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 import { CATEGORIES } from "../constants";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
-import { initThemeEngine, onThemeChanged } from "../theme/ThemeEngine";
+import { initThemeEngine, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
 import { Button, Menu, MenuItem, Checkbox, Divider, Dialog, DialogTitle, DialogContent } from "@mui/material";
 import { LineType } from "../parser";
 
@@ -58,9 +59,9 @@ export const TagManagerWindow: React.FC = () => {
 };
 
 const TagManagerWindowContent: React.FC = () => {
-  const [themeId, setThemeId] = useState("light");
+  const [themeId, setThemeId] = useState(() => getInitialThemeId());
   const [appScale, setAppScale] = useState(100);
-  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => getInitialCustomThemes());
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [parsedDoc, setParsedDoc] = useState<any>(null);
@@ -409,15 +410,7 @@ const TagManagerWindowContentInner: React.FC<{
 
   return (
     <>
-      <Box data-tauri-drag-region sx={{ display: "flex", alignItems: "center", px: 2, py: 0.75, justifyContent: "space-between", userSelect: "none", flexShrink: 0, borderBottom: "0.5px solid", borderColor: "divider" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <LocalOfferIcon sx={{ fontSize: 18 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Tag Manager</Typography>
-        </Box>
-        <IconButton aria-label="close" onClick={handleClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 18 }} />
-        </IconButton>
-      </Box>
+      <TitleBar title="Tag Manager" onClose={handleClose} icon={<LocalOfferIcon sx={{ fontSize: 16 }} />} />
 
       <Box sx={{ px: isSmall ? 1 : 2, py: 1.5, display: "flex", flexDirection: "column", gap: isSmall ? 1 : 1.5, flex: 1, overflow: "hidden" }}>
         {!parsedDoc ? (
@@ -451,7 +444,7 @@ const TagManagerWindowContentInner: React.FC<{
                         fontSize: 11,
                         '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                         bgcolor: 'action.hover',
-                        borderRadius: '4px',
+                        borderRadius: 0,
                         '&:hover': { bgcolor: 'action.selected' },
                         '& .MuiOutlinedInput-input': { py: 0.35, px: 1 },
                       },
@@ -478,7 +471,7 @@ const TagManagerWindowContentInner: React.FC<{
                         minHeight: 24,
                         px: 1,
                         py: 0.25,
-                        borderRadius: "4px",
+                        borderRadius: 0,
                         border: "0.5px solid",
                         borderColor: categoryFilters.size > 0 ? "primary.main" : "divider",
                         bgcolor: categoryFilters.size > 0 ? "primary.main" + "0a" : "transparent",
@@ -503,7 +496,7 @@ const TagManagerWindowContentInner: React.FC<{
                             onClick={() => toggleCategoryFilter(cat.key)}
                           >
                             <Checkbox size="small" checked={active} sx={{ py: 0, '& .MuiSvgIcon-root': { fontSize: 15 } }} />
-                            <Box sx={{ width: 8, height: 8, borderRadius: "2px", bgcolor: cat.color, mr: 0.75, flexShrink: 0 }} />
+                            <Box sx={{ width: 8, height: 8, borderRadius: 0, bgcolor: cat.color, mr: 0.75, flexShrink: 0 }} />
                             {cat.label}
                           </MenuItem>
                         );
@@ -532,7 +525,7 @@ const TagManagerWindowContentInner: React.FC<{
                     onClick={handleExportCSV}
                     startIcon={<DownloadIcon sx={{ fontSize: 12 }} />}
                     sx={{
-                      borderRadius: "4px",
+                      borderRadius: 0,
                       fontSize: "10px",
                       textTransform: "none",
                       px: 1,
@@ -556,7 +549,7 @@ const TagManagerWindowContentInner: React.FC<{
                     onClick={() => setConfirmRemoveAllOpen(true)}
                     startIcon={<DeleteIcon sx={{ fontSize: 12 }} />}
                     sx={{
-                      borderRadius: "4px",
+                      borderRadius: 0,
                       fontSize: "10px",
                       textTransform: "none",
                       px: 1,
@@ -578,7 +571,7 @@ const TagManagerWindowContentInner: React.FC<{
               </Box>
 
               {reportType === 0 && (
-                <TableContainer component={Box} sx={{ flex: 1, minHeight: 0, overflow: "auto", border: "0.5px solid", borderColor: "divider", borderRadius: "6px" }}>
+                <TableContainer component={Box} sx={{ flex: 1, minHeight: 0, overflow: "auto", border: "0.5px solid", borderColor: "divider", borderRadius: 0 }}>
                   <Table size="small" stickyHeader sx={{ tableLayout: "fixed", borderCollapse: "collapse", '& .MuiTableCell-root': { border: "0.5px solid", borderColor: "divider", fontSize: 10, px: 1, py: 0.5 } }}>
                     <TableHead>
                       <TableRow sx={(theme) => ({
@@ -638,7 +631,7 @@ const TagManagerWindowContentInner: React.FC<{
                                           border: `0.5px solid ${h.color}25`,
                                           px: 0.6,
                                           py: 0.15,
-                                          borderRadius: "3px",
+                                          borderRadius: 0,
                                           cursor: "pointer",
                                           fontWeight: 500,
                                           lineHeight: 1.4,
@@ -662,7 +655,7 @@ const TagManagerWindowContentInner: React.FC<{
               )}
 
               {reportType === 1 && (
-                <Box sx={{ flex: 1, minHeight: 0, overflow: "auto", border: "0.5px solid", borderColor: "divider", borderRadius: "6px" }}>
+                <Box sx={{ flex: 1, minHeight: 0, overflow: "auto", border: "0.5px solid", borderColor: "divider", borderRadius: 0 }}>
                   {tagGroupsByCategory.length === 0 ? (
                     <Typography sx={{ p: 4, fontSize: 11, color: "text.disabled", textAlign: "center" }}>
                       No tags match the current filters
@@ -676,7 +669,7 @@ const TagManagerWindowContentInner: React.FC<{
                           bgcolor: "action.hover",
                           borderBottom: "0.5px solid", borderColor: "divider",
                         }}>
-                          <Box sx={{ width: 7, height: 7, borderRadius: "2px", bgcolor: group.cat.color, flexShrink: 0 }} />
+                          <Box sx={{ width: 7, height: 7, borderRadius: 0, bgcolor: group.cat.color, flexShrink: 0 }} />
                           <Typography sx={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                             {group.cat.label}
                           </Typography>
