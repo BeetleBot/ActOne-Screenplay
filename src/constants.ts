@@ -28,6 +28,7 @@ export const STORAGE_KEYS = {
   FOUNTAIN_COLORS_ENABLED: "actone-fountain-colors-enabled",
   RIGHT_PANE_WIDTH: "actone-right-pane-width",
   LAST_EXPORT_DIR: "actone-last-export-dir",
+  ICON_STYLE: "actone-icon-style",
 } as const;
 
 export const PILL_RADIUS = "0px";

@@ -84,6 +84,33 @@ export const SearchPanel: React.FC = () => {
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
 
+  const [displayCount, setDisplayCount] = useState(50);
+  const listObserverRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    setDisplayCount(50);
+  }, [debouncedQuery, caseSensitive, wholeWord, editorView, parsedDoc]);
+
+  useEffect(() => {
+    if (activeIndex >= displayCount) {
+      setDisplayCount(activeIndex + 50);
+    }
+  }, [activeIndex, displayCount]);
+
+  const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
+    if (listObserverRef.current) {
+      listObserverRef.current.disconnect();
+    }
+    if (node) {
+      listObserverRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          setDisplayCount((prev) => prev + 50);
+        }
+      });
+      listObserverRef.current.observe(node);
+    }
+  }, []);
+
   useEffect(() => {
     try { localStorage.setItem(SEARCH_QUERY_STORAGE_KEY, query); } catch { void 0; }
   }, [query]);
@@ -144,7 +171,9 @@ export const SearchPanel: React.FC = () => {
 
     const doc = editorView.state.doc;
     const matches: SearchResult[] = [];
-    let lastHeading: { sceneNumber?: string; text: string } | null = null;
+    
+    let headingCursor = 0;
+    let currentHeading: { sceneNumber?: string; text: string } | null = null;
 
     try {
       const cursor = searchQuery.getCursor(doc) as unknown as Iterable<{ from: number; to: number }>;
@@ -164,22 +193,16 @@ export const SearchPanel: React.FC = () => {
         } catch { /* ignore */ }
 
         if (parsedDoc) {
-          const current = parsedDoc.lines[lineIndex];
-          if (current && current.type === LineType.heading) {
-            lastHeading = { sceneNumber: current.sceneNumber, text: current.text };
-          }
-          if (!lastHeading) {
-            for (let i = lineIndex; i >= 0; i--) {
-              const l = parsedDoc.lines[i];
-              if (l && l.type === LineType.heading) {
-                lastHeading = { sceneNumber: l.sceneNumber, text: l.text };
-                break;
-              }
+          while (headingCursor <= lineIndex && headingCursor < parsedDoc.lines.length) {
+            const l = parsedDoc.lines[headingCursor];
+            if (l && l.type === LineType.heading) {
+              currentHeading = { sceneNumber: l.sceneNumber, text: l.text };
             }
+            headingCursor++;
           }
         }
-        const sceneLabel = lastHeading
-          ? `${lastHeading.sceneNumber ? `[${lastHeading.sceneNumber}] ` : ""}${lastHeading.text}`
+        const sceneLabel = currentHeading
+          ? `${currentHeading.sceneNumber ? `[${currentHeading.sceneNumber}] ` : ""}${currentHeading.text}`
           : "—";
 
         matches.push({
@@ -373,8 +396,8 @@ export const SearchPanel: React.FC = () => {
           onKeyDown={handleKeyDown}
           size="small"
           fullWidth
-error={!!queryError}
-helperText={queryError || undefined}
+          error={!!queryError}
+          helperText={queryError || undefined}
           slotProps={{
             input: {
               sx: {
@@ -533,9 +556,9 @@ helperText={queryError || undefined}
             >
               <SearchIcon sx={{ fontSize: 28, opacity: 0.4 }} />
               <Typography variant="body2" sx={{ fontSize: 12, fontStyle: "italic" }}>
-{query
-  ? (queryError || "No matches found")
-  : "Type a query to search the screenplay"}
+                {query
+                  ? (queryError || "No matches found")
+                  : "Type a query to search the screenplay"}
               </Typography>
               {!query && (
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, opacity: 0.7, mt: 0.5 }}>
@@ -544,138 +567,147 @@ helperText={queryError || undefined}
               )}
             </Box>
           ) : (
-            resultRows.map((r, idx) => {
-              const isActive = idx === activeIndex;
-              const isChecked = selected.has(idx);
-              return (
-                <ListItemButton
-                  key={`${r.from}-${r.to}-${idx}`}
-                  data-match-id={`${r.from}-${r.to}`}
-                  selected={isActive}
-                  onClick={(e) => {
-                    setActiveIndex(idx);
-                    handleResultClick(r);
-                    e.currentTarget.parentElement?.focus();
-                  }}
-                  sx={{
-                    pl: 1.5,
-                    pr: 1,
-                    py: 0.75,
-                    borderRadius: 0,
-                    mb: 0.25,
-                    transition: "all 0.12s ease",
-                    bgcolor: isActive ? "action.selected" : "transparent",
-                    "&.Mui-selected": {
-                      bgcolor: "action.selected",
-                      "&:hover": { bgcolor: "action.selected" },
-                    },
-                    "&:hover": {
-                      bgcolor: isActive ? "action.selected" : "action.hover",
-                    },
-                  }}
-                >
-                  <Box
+            <>
+              {resultRows.slice(0, displayCount).map((r, idx) => {
+                const isActive = idx === activeIndex;
+                const isChecked = selected.has(idx);
+                return (
+                  <ListItemButton
+                    key={`${r.from}-${r.to}-${idx}`}
+                    data-match-id={`${r.from}-${r.to}`}
+                    selected={isActive}
                     onClick={(e) => {
-                      e.stopPropagation();
-                      toggleCheck(idx, !isChecked);
+                      setActiveIndex(idx);
+                      handleResultClick(r);
+                      e.currentTarget.parentElement?.focus();
                     }}
                     sx={{
-                      width: 14,
-                      height: 14,
-                      minWidth: 14,
+                      pl: 1.5,
+                      pr: 1,
+                      py: 0.75,
                       borderRadius: 0,
-                      border: "1.5px solid",
-                      borderColor: isChecked ? "primary.main" : "divider",
-                      bgcolor: isChecked ? "primary.main" : "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      mr: 1,
-                      mt: 0.25,
-                      flexShrink: 0,
+                      mb: 0.25,
                       transition: "all 0.12s ease",
-                      "&:hover": { borderColor: "primary.main" },
+                      bgcolor: isActive ? "action.selected" : "transparent",
+                      "&.Mui-selected": {
+                        bgcolor: "action.selected",
+                        "&:hover": { bgcolor: "action.selected" },
+                      },
+                      "&:hover": {
+                        bgcolor: isActive ? "action.selected" : "action.hover",
+                      },
                     }}
                   >
-                    {isChecked && (
-                      <Box
-                        component="svg"
-                        viewBox="0 0 12 12"
-                        sx={{ width: 10, height: 10, fill: "none", stroke: "#fff", strokeWidth: 2 }}
-                      >
-                        <path d="M2 6 L5 9 L10 3" />
-                      </Box>
-                    )}
-                  </Box>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: "flex", gap: 0.6, alignItems: "center", flexWrap: "wrap" }}>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            bgcolor: "action.selected",
-                            px: 0.4,
-                            borderRadius: 0,
-                            fontSize: "8.5px",
-                            fontWeight: 700,
-                            color: "text.secondary",
-                          }}
+                    <Box
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCheck(idx, !isChecked);
+                      }}
+                      sx={{
+                        width: 14,
+                        height: 14,
+                        minWidth: 14,
+                        borderRadius: 0,
+                        border: "1.5px solid",
+                        borderColor: isChecked ? "primary.main" : "divider",
+                        bgcolor: isChecked ? "primary.main" : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        mr: 1,
+                        mt: 0.25,
+                        flexShrink: 0,
+                        transition: "all 0.12s ease",
+                        "&:hover": { borderColor: "primary.main" },
+                      }}
+                    >
+                      {isChecked && (
+                        <Box
+                          component="svg"
+                          viewBox="0 0 12 12"
+                          sx={{ width: 10, height: 10, fill: "none", stroke: "#fff", strokeWidth: 2 }}
                         >
-                          Line {r.lineIndex + 1}
-                        </Typography>
-                        {r.column > 0 && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ fontSize: 9, opacity: 0.7 }}
-                          >
-                            col {r.column + 1}
-                          </Typography>
-                        )}
-                        {r.sceneContext && r.sceneContext !== "—" && (
+                          <path d="M2 6 L5 9 L10 3" />
+                        </Box>
+                      )}
+                    </Box>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: "flex", gap: 0.6, alignItems: "center", flexWrap: "wrap" }}>
                           <Typography
                             variant="caption"
                             sx={{
-                              fontSize: 9,
-                              fontWeight: 600,
+                              bgcolor: "action.selected",
+                              px: 0.4,
+                              borderRadius: 0,
+                              fontSize: "8.5px",
+                              fontWeight: 700,
                               color: "text.secondary",
-                              maxWidth: "60%",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.03em",
                             }}
                           >
-                            {r.sceneContext}
+                            Line {r.lineIndex + 1}
                           </Typography>
-                        )}
-                      </Box>
-                    }
-                    secondary={
-                      <Box
-                        sx={{
-                          fontSize: 12,
-                          lineHeight: 1.45,
-                          fontFamily: "var(--font-ui)",
-                          mt: 0.3,
-                          ml: 1.5,
-                          color: "text.primary",
-                          wordBreak: "break-word",
-                          overflow: "hidden",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                        }}
-                      >
-                        {renderHighlightedLine(r)}
-                      </Box>
-                    }
-                  />
-                </ListItemButton>
-              );
-            })
+                          {r.column > 0 && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ fontSize: 9, opacity: 0.7 }}
+                            >
+                              col {r.column + 1}
+                            </Typography>
+                          )}
+                          {r.sceneContext && r.sceneContext !== "—" && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontSize: 9,
+                                fontWeight: 600,
+                                color: "text.secondary",
+                                maxWidth: "60%",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.03em",
+                              }}
+                            >
+                              {r.sceneContext}
+                            </Typography>
+                          )}
+                        </Box>
+                      }
+                      secondary={
+                        <Box
+                          sx={{
+                            fontSize: 12,
+                            lineHeight: 1.45,
+                            fontFamily: "var(--font-ui)",
+                            mt: 0.3,
+                            ml: 1.5,
+                            color: "text.primary",
+                            wordBreak: "break-word",
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {renderHighlightedLine(r)}
+                        </Box>
+                      }
+                    />
+                  </ListItemButton>
+                );
+              })}
+              {displayCount < resultRows.length && (
+                <Box ref={loadMoreRef} sx={{ p: 2, textAlign: "center", color: "text.secondary" }}>
+                  <Typography variant="caption" sx={{ fontStyle: "italic", opacity: 0.7 }}>
+                    Scroll to load more matches...
+                  </Typography>
+                </Box>
+              )}
+            </>
           )}
         </List>
       </Box>

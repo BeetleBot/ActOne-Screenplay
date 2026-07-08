@@ -57,6 +57,7 @@ export const SettingsWindow: React.FC = () => {
   const [snapshotOnSave, setSnapshotOnSave] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE, false));
   const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, 20));
   const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, true));
+  const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, "duotone") as string);
   const activeFilePathRef = useRef<string>("");
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -112,6 +113,7 @@ export const SettingsWindow: React.FC = () => {
           setSnapshotOnSave(d.snapshotOnSave);
           setSnapshotMaxRetention(d.snapshotMaxRetention || 20);
           setFountainColorsEnabled(d.fountainColorsEnabled !== false);
+          setIconStyle(d.iconStyle ?? "duotone");
           activeFilePathRef.current = d.activeFilePath || "";
         });
         return unlisten;
@@ -216,6 +218,9 @@ export const SettingsWindow: React.FC = () => {
     if (prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] !== undefined && prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] !== String(fountainColorsEnabled)) {
       setFountainColorsEnabled(prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] === "true");
     }
+    if (prefs[STORAGE_KEYS.ICON_STYLE] !== undefined && prefs[STORAGE_KEYS.ICON_STYLE] !== iconStyle) {
+      setIconStyle(prefs[STORAGE_KEYS.ICON_STYLE]);
+    }
   }
 
   const emitUpdate = (storageKey: string, value: string | number | boolean) => {
@@ -291,6 +296,21 @@ export const SettingsWindow: React.FC = () => {
                     aria-label="Interface Scale"
                   />
                 </Box>
+              </Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  ICON STYLE
+                </Typography>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={iconStyle}
+                  onChange={(e) => { const v = e.target.value as string; setIconStyle(v); localStorage.setItem(STORAGE_KEYS.ICON_STYLE, v); emitUpdate(STORAGE_KEYS.ICON_STYLE, v); }}
+                >
+                  <MenuItem value="duotone">Dual Tone</MenuItem>
+                  <MenuItem value="fill">Solid (Filled)</MenuItem>
+                  <MenuItem value="regular">Stroke (Regular)</MenuItem>
+                </Select>
               </Box>
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
@@ -571,5 +591,6 @@ interface SettingsInitData {
   snapshotOnSave: boolean;
   snapshotMaxRetention: number;
   fountainColorsEnabled: boolean;
+  iconStyle?: string;
   activeFilePath?: string;
 }

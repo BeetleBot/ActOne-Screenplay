@@ -76,8 +76,8 @@ const ActionCard: React.FC<{
       alignItems: "center",
       justifyContent: "center",
       textAlign: "center",
-      width: 120,
-      height: 85,
+      width: 130,
+      height: 95,
       p: 1.2,
       borderRadius: 0,
       cursor: "pointer",
@@ -100,14 +100,14 @@ const ActionCard: React.FC<{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 30,
-        height: 30,
+        width: 36,
+        height: 36,
         borderRadius: 0,
         bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
         color: "primary.main",
         border: "1px solid",
         borderColor: "divider",
-        mb: 0.75,
+        mb: 0.5,
       }}
     >
       {icon}
@@ -552,25 +552,25 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           }}
         >
           <ActionCard
-            icon={<AddIcon sx={{ fontSize: 18 }} />}
+            icon={<AddIcon sx={{ fontSize: 24 }} />}
             title="New Project"
             description="Create screenplay"
             onClick={handleNew}
           />
           <ActionCard
-            icon={<FolderOpenIcon sx={{ fontSize: 18 }} />}
+            icon={<FolderOpenIcon sx={{ fontSize: 24 }} />}
             title="Open Project"
             description="Browse and open"
             onClick={handleOpen}
           />
           <ActionCard
-            icon={<CombineColumnsIcon sx={{ fontSize: 18 }} />}
+            icon={<CombineColumnsIcon sx={{ fontSize: 24 }} />}
             title="Templates"
             description="Structure template"
             onClick={handleTemplates}
           />
           <ActionCard
-            icon={<HelpOutlinedIcon sx={{ fontSize: 18 }} />}
+            icon={<HelpOutlinedIcon sx={{ fontSize: 24 }} />}
             title="Tutorials"
             description="Interactive tours"
             onClick={() => setTutorialDialogOpen(true)}

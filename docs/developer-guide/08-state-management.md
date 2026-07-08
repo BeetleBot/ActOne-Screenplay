@@ -27,6 +27,7 @@ Manages UI chrome state:
 | `zoomLevel` | `number` | Editor zoom percentage |
 | `sidebarWidth` | `number` | Sidebar width in pixels |
 | `rightPaneOpen` | `boolean` | Right pane visibility |
+| `iconStyle` | `'fill' \| 'duotone' \| 'regular'` | Active icon style for Phosphor icons |
 
 ### FileContext (`src/context/FileContext.tsx`)
 

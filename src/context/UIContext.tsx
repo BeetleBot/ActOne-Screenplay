@@ -48,6 +48,8 @@ export interface UIContextProps {
   setLineFocusEnabled: (enabled: boolean) => void;
   fountainColorsEnabled: boolean;
   setFountainColorsEnabled: (enabled: boolean) => void;
+  iconStyle: 'fill' | 'duotone' | 'regular';
+  setIconStyle: (style: 'fill' | 'duotone' | 'regular') => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -107,6 +109,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           break;
         case STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED:
           setFountainColorsEnabledState(strVal !== "false");
+          break;
+        case STORAGE_KEYS.ICON_STYLE:
+          setIconStyleState(strVal as "fill" | "duotone" | "regular");
           break;
         case STORAGE_KEYS.THEME_ID:
           forceUpdate(n => n + 1);
@@ -218,6 +223,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const [fountainColorsEnabled, setFountainColorsEnabledState] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED) !== "false";
+  });
+
+  const [iconStyle, setIconStyleState] = useState<'fill' | 'duotone' | 'regular'>(() => {
+    return (localStorage.getItem(STORAGE_KEYS.ICON_STYLE) as 'fill' | 'duotone' | 'regular' | null) ?? "duotone";
   });
 
   useEffect(() => {
@@ -348,6 +357,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, enabled ? "true" : "false");
   };
 
+  const setIconStyle = (style: 'fill' | 'duotone' | 'regular') => {
+    setIconStyleState(style);
+    localStorage.setItem(STORAGE_KEYS.ICON_STYLE, style);
+    broadcastSetting(STORAGE_KEYS.ICON_STYLE, style);
+  };
+
   const setRightPaneWidth = (w: number) => {
     const clamped = Math.max(240, Math.min(700, w));
     setRightPaneWidthState(clamped);
@@ -394,6 +409,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setLineFocusEnabled,
         fountainColorsEnabled,
         setFountainColorsEnabled,
+        iconStyle,
+        setIconStyle,
         activeAmbientTrack,
         playAmbientTrack,
         stopAmbientTrack,

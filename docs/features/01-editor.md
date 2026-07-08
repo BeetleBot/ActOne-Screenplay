@@ -61,10 +61,12 @@ Keeps your editing line vertically centered on screen. As you type, the page scr
 ### Find & Replace
 
 `Ctrl+F` opens the search panel. Supports:
-- Text search with live highlighting
-- Case-sensitive toggle
-- Regex mode toggle
-- Replace single / replace all
+- **Fast, Optimized Searching**: Performance is optimized for massive scripts, using a single-pass O(N) scene context lookup.
+- **Incremental List Rendering**: To prevent DOM overloading and application lag, the search panel uses infinite scrolling to render matches incrementally (50 items at a time) as you scroll or navigate.
+- **Precise Scene Context**: Displays which Scene Heading each match belongs to.
+- **Refinement Toggles**: Case-sensitive (`Aa`) and whole-word (`\b`) matching.
+- **Flexible Replacing**: Replace single, replace selected (via checkboxes), or replace all.
+
 
 ### Dual Dialogue Indentation
 

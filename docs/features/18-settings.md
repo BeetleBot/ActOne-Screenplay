@@ -8,6 +8,7 @@
 |---------|---------|-------------|
 | Language | `en` (only) | Interface language |
 | Telemetry | Off (only) | ActOne collects no data |
+| Icon Style | `duotone` / `fill` / `regular` | Select interface icon style (Dual Tone, Solid, Stroke) |
 
 ## Editor
 

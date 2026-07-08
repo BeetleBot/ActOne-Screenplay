@@ -229,3 +229,17 @@ UIProvider
 ActOne uses an asset-based audio engine for ambient sounds:
 - **MP3 Assets**: Replaced the legacy procedural generation engine (Tone.js) with high-quality bundled MP3 assets for better performance and reliability.
 - **Offline Capable**: All sound assets are bundled natively within the app (`~10MB`), ensuring full offline functionality without external network requests.
+
+## Find & Replace Optimization
+
+To ensure a smooth user experience on low-spec computers when searching massive screenplay scripts, several key optimizations were introduced to `SearchPanel.tsx`:
+- **Single-Pass Scene Context Tracking**: Rather than performing a nested backward-scan for every match to identify its parent scene heading (which is $O(M \times N)$ complexity), we maintain a forward-moving `headingCursor`. Since CodeMirror returns search matches sequentially in document order, we advance this cursor along with the matches, dropping the search complexity to $O(M + N)$.
+- **Incremental DOM Rendering (Infinite Scroll)**: Rendering thousands of DOM nodes simultaneously freezes weaker systems. We implemented a lightweight Infinite Scroll mechanism inside the standard MUI `<List>` wrapper using React `useCallback` refs and an `IntersectionObserver`. It renders 50 items initially and loads 50 more as the user scrolls to the bottom or keyboard-navigates past the visible threshold, keeping memory usage low and rendering instant.
+
+## Icon System (Phosphor Icons)
+
+ActOne uses `@phosphor-icons/react` for all system icons, replacing the legacy hardcoded SVG path definitions.
+- **Factory Wrapper (`createPhosphorIcon`)**: Defined in `src/components/Icons.tsx`. It bridges Phosphor icon components into Material UI's `SvgIcon` so they fully support MUI's `sx` styling prop (for dynamic sizing, theme-dependent colors, margins, etc.).
+- **Dynamic Styling**: The wrapper queries `UIContext` (specifically the `iconStyle` state) to dynamically control the rendering style. The application supports three modes: `duotone` (Dual Tone), `fill` (Solid), and `regular` (Stroke).
+- **Standalone Mode Resilience**: Since secondary windows (like `SettingsWindow`, `HelpWindow`, etc.) run in separate processes without a root React Context, calling `useUI()` directly would crash the DOM render. To prevent this, the wrapper catches context lookup errors and falls back to reading the icon weight directly from `localStorage`, ensuring robust standalone window rendering.
+

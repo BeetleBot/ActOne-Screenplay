@@ -1,116 +1,110 @@
-import React from "react";
-import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
-import type { SxProps, Theme } from "@mui/material/styles";
+import React from 'react';
+import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon';
+import type { SxProps, Theme } from '@mui/material/styles';
+import { useUI } from '../context/UIContext';
+import {
+  ClipboardText, Plus, PlusCircle, Archive, ArrowCircleDown, ArrowDown, ArrowUp,
+  Sparkle, ChartBar, BookmarkSimple, Bug, Check, CheckCircle, CaretRight, X,
+  Palette, Copy, Scissors, Trash, FileText, Checks, Download, Upload, Trophy,
+  MagnifyingGlass, FolderOpen, TextB, TextItalic, ListBullets, TextUnderline,
+  CornersOut, Question, ClockCounterClockwise, Info, CaretDown, Tag, BookOpenText,
+  GitMerge, DotsThreeVertical, FilePlus, ArrowSquareOut, User, Play, MusicNote,
+  Circle, ArrowCounterClockwise, FloppyDisk, Gear, Stop, TextT, Timer, Faders,
+  Sidebar, MagnifyingGlassPlus, MagnifyingGlassMinus, Camera, CheckSquareOffset,
+  Garage, Command, DotsThree, DotsSix, Books, Pencil, DiscordLogo,
+  SquaresFour, FolderStar, TreeStructure, Rows
+} from '@phosphor-icons/react';
 
 type IconProps = SvgIconProps & {
   sx?: SxProps<Theme>;
 };
 
-function createIcon(d: string, viewBox?: string): React.FC<IconProps> {
-  return (props) => (
-    <SvgIcon {...props} viewBox={viewBox || "0 0 24 24"}>
-      <path d={d} />
-    </SvgIcon>
-  );
+function createPhosphorIcon(PhosphorComponent: React.ElementType): React.FC<IconProps> {
+  return (props) => {
+    let iconStyle: any = "duotone";
+    try {
+      const ui = useUI();
+      iconStyle = ui.iconStyle;
+    } catch {
+      iconStyle = localStorage.getItem("actone-icon-style") || "duotone";
+    }
+    return (
+      <SvgIcon component={PhosphorComponent} weight={iconStyle} inheritViewBox {...props} />
+    );
+  };
 }
 
-export const AssignmentIcon = createIcon(
-  "M21 3h-6.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H3v18h18V3zm-9 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
-);
-export const AddIcon = createIcon("M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z");
-export const AddCircleIcon = createIcon("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z");
-export const ArchiveIcon = createIcon("M18.71 3H5.29L3 5.79V21h18V5.79L18.71 3zM12 17.5 6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z");
-export const ArrowCircleDownIcon = createIcon("M12 4c4.41 0 8 3.59 8 8s-3.59 8-8 8-8-3.59-8-8 3.59-8 8-8m0-2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m1 10V8h-2v4H8l4 4 4-4z");
-export const ArrowDownwardIcon = createIcon("M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z");
-export const ArrowUpwardIcon = createIcon("M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z");
-export const AutoAwesomeIcon = createIcon("M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zM11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12 11.5 9.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z");
-export const BarChartIcon = createIcon("M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-4h2v11h-2zm4 8h2v3h-2z");
-export const BookmarkIcon = createIcon("M19 3H5v18l7-3 7 3V3z");
-export const BugReportIcon = createIcon("M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5s-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z");
-export const CheckIcon = createIcon("M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z");
-export const CheckCircleIcon = createIcon("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z");
-export const ChevronRightIcon = createIcon("M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z");
-export const CloseIcon = createIcon("M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z");
+export const AssignmentIcon = createPhosphorIcon(ClipboardText);
+export const AddIcon = createPhosphorIcon(Plus);
+export const AddCircleIcon = createPhosphorIcon(PlusCircle);
+export const ArchiveIcon = createPhosphorIcon(Archive);
+export const ArrowCircleDownIcon = createPhosphorIcon(ArrowCircleDown);
+export const ArrowDownwardIcon = createPhosphorIcon(ArrowDown);
+export const ArrowUpwardIcon = createPhosphorIcon(ArrowUp);
+export const AutoAwesomeIcon = createPhosphorIcon(Sparkle);
+export const BarChartIcon = createPhosphorIcon(ChartBar);
+export const BookmarkIcon = createPhosphorIcon(BookmarkSimple);
+export const BugReportIcon = createPhosphorIcon(Bug);
+export const CheckIcon = createPhosphorIcon(Check);
+export const CheckCircleIcon = createPhosphorIcon(CheckCircle);
+export const ChevronRightIcon = createPhosphorIcon(CaretRight);
+export const CloseIcon = createPhosphorIcon(X);
 export const ClearIcon = CloseIcon;
-export const ColorLensIcon = createIcon("M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z");
-export const ContentCopyIcon = createIcon("M16 1H2v16h2V3h12V1zm5 4H6v18h15V5zm-2 16H8V7h11v14z");
-export const ContentCutIcon = createIcon("M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z");
-export const DeleteIcon = createIcon("M6 21h12V7H6v14zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z");
-export const DescriptionIcon = createIcon("M14 2H4v20h16V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z");
-export const DoneAllIcon = createIcon("M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41 6 19l1.41-1.41L1.83 12 .41 13.41z");
-export const DownloadIcon = createIcon("M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z");
-export const UploadIcon = createIcon("M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z");
-export const EmojiEventsIcon = createIcon("M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zm-14 3V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z");
+export const ColorLensIcon = createPhosphorIcon(Palette);
+export const ContentCopyIcon = createPhosphorIcon(Copy);
+export const ContentCutIcon = createPhosphorIcon(Scissors);
+export const DeleteIcon = createPhosphorIcon(Trash);
+export const DescriptionIcon = createPhosphorIcon(FileText);
+export const DoneAllIcon = createPhosphorIcon(Checks);
+export const DownloadIcon = createPhosphorIcon(Download);
+export const UploadIcon = createPhosphorIcon(Upload);
+export const EmojiEventsIcon = createPhosphorIcon(Trophy);
 export const FileDownloadIcon = DownloadIcon;
-export const FindReplaceIcon = createIcon("M11 6c1.38 0 2.63.56 3.54 1.46L12 10h6V4l-2.05 2.05C14.68 4.78 12.93 4 11 4c-3.53 0-6.43 2.61-6.92 6H6.1c.46-2.28 2.48-4 4.9-4zm5.64 9.14c.66-.9 1.12-1.97 1.28-3.14H15.9c-.46 2.28-2.48 4-4.9 4-1.38 0-2.63-.56-3.54-1.46L10 12H4v6l2.05-2.05C7.32 17.22 9.07 18 11 18c1.55 0 2.98-.51 4.14-1.36L20 21.49 21.49 20z");
-export const FolderOpenIcon = createIcon("M22 6H12l-2-2H2v16h20V6zm-2 12H4V8h16v10z");
-export const FormatBoldIcon = createIcon("M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z");
-export const FormatItalicIcon = createIcon("M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4h-8z");
-export const FormatListBulletedIcon = createIcon("M4 7h2v2H4zm0 4h2v2H4zm0 4h2v2H4zm4-8h12v2H8zm0 4h12v2H8zm0 4h12v2H8z");
-export const FormatUnderlinedIcon = createIcon("M12 17c3.31 0 6-2.69 6-6V3h-2.5v8c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11V3H6v8c0 3.31 2.69 6 6 6zM5 19v2h14v-2H5z");
-export const FullscreenIcon = createIcon("M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z");
-export const HelpOutlinedIcon = createIcon("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z");
-export const HistoryIcon = createIcon("M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z");
-export const InfoOutlinedIcon = createIcon("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z");
-export const KeyboardArrowDownIcon = createIcon("M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z");
-export const LocalOfferIcon = createIcon("M22.83 12.99 11.83 2H2v9.83l10.99 10.99 9.84-9.83zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z");
-export const MenuBookIcon = createIcon("M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5z");
-export const MergeTypeIcon = createIcon("M17 20.41 18.41 19 15 15.59 13.59 17zM7.5 8H11v5.59L5.59 19 7 20.41l6-6V8h3.5L12 3.5z");
-export const MoreVertIcon = createIcon("M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z");
-export const NoteAddIcon = createIcon("M14 2H4v20h16V8l-6-6zm2 14h-3v3h-2v-3H8v-2h3v-3h2v3h3v2zm-3-7V3.5L18.5 9H13z");
-export const OpenInNewIcon = createIcon("M19 19H5V5h7V3H3v18h18v-9h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z");
-export const PersonIcon = createIcon("M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z");
-export const PlayArrowIcon = createIcon("M8 5v14l11-7L8 5z");
-export const MusicNoteIcon = createIcon("M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z");
-export const RadioButtonUncheckedIcon = createIcon("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z");
-export const RestartAltIcon = createIcon("M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z");
-export const SaveIcon = createIcon("M17 3H3v18h18V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z");
-export const SearchIcon = createIcon("M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z");
-export const SettingsIcon = createIcon("M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z");
-export const StopIcon = createIcon("M6 6h12v12H6V6z");
-export const TaskAltIcon = createIcon("M22 5.18 10.59 16.6l-4.24-4.24 1.41-1.41 2.83 2.83 10-10zm-2.21 5.04c.13.57.21 1.17.21 1.78 0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8c1.58 0 3.04.46 4.28 1.25l1.44-1.44C16.1 2.67 14.13 2 12 2 6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10c0-1.19-.22-2.33-.6-3.39z");
-export const TextFieldsIcon = createIcon("M2.5 4v3h5v12h3V7h5V4zm19 5h-9v3h3v7h3v-7h3z");
-export const TimerIcon = createIcon("M15 1H9v2h6V1zm-3 5c-4.4 0-8 3.6-8 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 14c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm1-6.4V9h-2v5.4l3.8 2.2 1-1.7-2.8-1.5z");
-export const TuneIcon = createIcon("M3 17v2h6v-2zM3 5v2h10V5zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9zm14 4v-2H11v2zm-6-4h2V7h4V5h-4V3h-2z");
-export const ViewSidebarIcon = createIcon("M16 20H2V4h14v16zm2-12h4V4h-4zm0 12h4v-4h-4zm0-6h4v-4h-4z");
-export const ZoomInIcon = createIcon("M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7H9v2H7v1h2v2h1v-2h2V9h-2z");
-export const ZoomOutIcon = createIcon("M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z");
-export const CameraIcon = createIcon("M9.4 10.5l4.77-8.26C13.47 2.09 12.75 2 12 2c-2.4 0-4.6.85-6.32 2.25l3.66 6.35.06-.1zM21.54 9c-.92-2.92-3.15-5.26-6-6.34L11.88 9h9.66zm.26 1h-7.49l.29.5 4.76 8.25C21 16.97 22 14.61 22 12c0-.69-.07-1.35-.2-2zM8.54 12l-3.9-6.75C3.01 7.03 2 9.39 2 12c0 .69.07 1.35.2 2h7.49l-1.15-2zm-6.08 3c.92 2.92 3.15 5.26 6 6.34L12.12 15H2.46zm11.27 0-3.9 6.76c.7.15 1.42.24 2.17.24 2.4 0 4.6-.85 6.32-2.25l-3.66-6.35-.93 1.6z");
-export const AssignmentAddIcon = createIcon(
-  "M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h168q13-36 43.5-58t68.5-22q38 0 68.5 22t43.5 58h168q33 0 56.5 23.5T840-760v268q-19-9-39-15.5t-41-9.5v-243H200v560h242q3 22 9.5 42t15.5 38H200Zm0-120v40-560 243-3 280Zm80-40h163q3-21 9.5-41t14.5-39H280v80Zm0-160h244q32-30 71.5-50t84.5-27v-3H280v80Zm0-160h400v-80H280v80Zm200-190q13 0 21.5-8.5T510-820q0-13-8.5-21.5T480-850q-13 0-21.5 8.5T450-820q0 13 8.5 21.5T480-790ZM720-40q-83 0-141.5-58.5T520-240q0-83 58.5-141.5T720-440q83 0 141.5 58.5T920-240q0 83-58.5 141.5T720-40Zm-20-80h40v-100h100v-40H740v-100h-40v100H600v40h100v100Z",
-  "0 -960 960 960"
-);
-export const AddNotesIcon = createIcon(
-  "M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v268q-19-9-39-15.5t-41-9.5v-243H200v560h242q3 22 9.5 42t15.5 38H200Zm0-120v40-560 243-3 280Zm80-40h163q3-21 9.5-41t14.5-39H280v80Zm0-160h244q32-30 71.5-50t84.5-27v-3H280v80Zm0-160h400v-80H280v80ZM720-40q-83 0-141.5-58.5T520-240q0-83 58.5-141.5T720-440q83 0 141.5 58.5T920-240q0 83-58.5 141.5T720-40Zm-20-80h40v-100h100v-40H740v-100h-40v100H600v40h100v100Z",
-  "0 -960 960 960"
-);
-export const BeenhereIcon = createIcon(
-  "M480-40 192-256q-15-11-23.5-28t-8.5-36v-480q0-33 23.5-56.5T240-880h480q33 0 56.5 23.5T800-800v480q0 19-8.5 36T768-256L480-40Zm0-100 240-180v-480H240v480l240 180Zm-42-220 226-226-56-58-170 170-84-84-58 56 142 142Zm42-440H240h480-240Z",
-  "0 -960 960 960"
-);
-export const GarageIcon = createIcon(
-  "M160-80q-33 0-56.5-23.5T80-160v-640q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v640q0 33-23.5 56.5T800-80H160Zm0-80h640v-640H160v640Zm200-240q-17 0-28.5-11.5T320-440q0-17 11.5-28.5T360-480q17 0 28.5 11.5T400-440q0 17-11.5 28.5T360-400Zm240 0q-17 0-28.5-11.5T560-440q0-17 11.5-28.5T600-480q17 0 28.5 11.5T640-440q0 17-11.5 28.5T600-400ZM200-516v264q0 14 9 23t23 9h16q14 0 23-9t9-23v-48h400v48q0 14 9 23t23 9h16q14 0 23-9t9-23v-264l-66-192q-5-14-16.5-23t-25.5-9H308q-14 0-25.5 9T266-708l-66 192Zm106-64 28-80h292l28 80H306ZM160-800v640-640Zm120 420v-120h400v120H280Z",
-  "0 -960 960 960"
-);
-export const ViewAgendaIcon = createIcon(
-  "M200-520q-33 0-56.5-23.5T120-600v-160q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v160q0 33-23.5 56.5T760-520H200Zm0-80h560v-160H200v160Zm0 480q-33 0-56.5-23.5T120-200v-160q0-33 23.5-56.5T200-440h560q33 0 56.5 23.5T840-360v160q0 33-23.5 56.5T760-120H200Zm0-80h560v-160H200v160Zm0-560v160-160Zm0 400v160-160Z",
-  "0 -960 960 960"
-);
-export const ActionKeyIcon = createIcon(
-  "M864-40 741-162q-18 11-38.5 16.5T660-140q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 23-6 43.5T797-218L920-96l-56 56ZM220-140q-66 0-113-47T60-300q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T300-300q0-33-23.5-56.5T220-380q-33 0-56.5 23.5T140-300q0 33 23.5 56.5T220-220Zm440 0q33 0 56.5-23.5T740-300q0-33-23.5-56.5T660-380q-33 0-56.5 23.5T580-300q0 33 23.5 56.5T660-220ZM220-580q-66 0-113-47T60-740q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm440 0q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm-440-80q33 0 56.5-23.5T300-740q0-33-23.5-56.5T220-820q-33 0-56.5 23.5T140-740q0 33 23.5 56.5T220-660Zm440 0q33 0 56.5-23.5T740-740q0-33-23.5-56.5T660-820q-33 0-56.5 23.5T580-740q0 33 23.5 56.5T660-660ZM220-300Zm0-440Zm440 0Z",
-  "0 -960 960 960"
-);
-export const MoreHorizIcon = createIcon("M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z");
-export const DragHandleIcon = createIcon("M20 9H4v2h16V9zM4 15h16v-2H4v2z");
-export const LibraryBooksIcon = createIcon("M4 6H2v16h16v-2H4V6zm18-4H6v16h16V2zm-3 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z");
-export const EditIcon = createIcon("M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z");
-export const DiscordIcon = createIcon("M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.094 13.094 0 0 1-1.873-.894.077.077 0 0 1-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 0 1 .077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 0 1 .078.009c.12.099.246.195.373.289a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z");
-export const Dashboard2AddIcon = createIcon(
-  "M80-160h280v-280H80v280Zm80-440v-120h240v120H160Zm-80 80h400v-280H80v280Zm440 280v-120h280v120H520Zm-80 80h440v-280H440v280Zm-280-80v-120h120v120H160Zm240-360Zm320 80q-83 0-141.5-58.5T520-720q0-83 58.5-141.5T720-920q83 0 141.5 58.5T920-720q0 83-58.5 141.5T720-520Zm-20-80h40v-100h100v-40H740v-100h-40v100H600v40h100v100ZM520-360Zm-240 0Z",
-  "0 -960 960 960"
-);
-export const CombineColumnsIcon = createIcon(
-  "M440-360v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Zm-80-120Zm240 0ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h160q33 0 56.5 23.5T440-760v80h-80v-80H200v560h160v-80h80v80q0 33-23.5 56.5T360-120H200Zm400 0q-33 0-56.5-23.5T520-200v-80h80v80h160v-560H600v80h-80v-80q0-33 23.5-56.5T600-840h160q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H600Z",
-  "0 -960 960 960"
-);
-export const FolderSpecialIcon = createIcon("M22 6H12l-2-2H2v16h20V6zm-4.06 11L15 15.28 12.06 17l.78-3.33-2.59-2.24 3.41-.29L15 8l1.34 3.14 3.41.29-2.59 2.24.78 3.33z");
+export const FindReplaceIcon = createPhosphorIcon(MagnifyingGlass);
+export const FolderOpenIcon = createPhosphorIcon(FolderOpen);
+export const FormatBoldIcon = createPhosphorIcon(TextB);
+export const FormatItalicIcon = createPhosphorIcon(TextItalic);
+export const FormatListBulletedIcon = createPhosphorIcon(ListBullets);
+export const FormatUnderlinedIcon = createPhosphorIcon(TextUnderline);
+export const FullscreenIcon = createPhosphorIcon(CornersOut);
+export const HelpOutlinedIcon = createPhosphorIcon(Question);
+export const HistoryIcon = createPhosphorIcon(ClockCounterClockwise);
+export const InfoOutlinedIcon = createPhosphorIcon(Info);
+export const KeyboardArrowDownIcon = createPhosphorIcon(CaretDown);
+export const LocalOfferIcon = createPhosphorIcon(Tag);
+export const MenuBookIcon = createPhosphorIcon(BookOpenText);
+export const MergeTypeIcon = createPhosphorIcon(GitMerge);
+export const MoreVertIcon = createPhosphorIcon(DotsThreeVertical);
+export const NoteAddIcon = createPhosphorIcon(FilePlus);
+export const OpenInNewIcon = createPhosphorIcon(ArrowSquareOut);
+export const PersonIcon = createPhosphorIcon(User);
+export const PlayArrowIcon = createPhosphorIcon(Play);
+export const MusicNoteIcon = createPhosphorIcon(MusicNote);
+export const RadioButtonUncheckedIcon = createPhosphorIcon(Circle);
+export const RestartAltIcon = createPhosphorIcon(ArrowCounterClockwise);
+export const SaveIcon = createPhosphorIcon(FloppyDisk);
+export const SearchIcon = createPhosphorIcon(MagnifyingGlass);
+export const SettingsIcon = createPhosphorIcon(Gear);
+export const StopIcon = createPhosphorIcon(Stop);
+export const TaskAltIcon = createPhosphorIcon(CheckCircle);
+export const TextFieldsIcon = createPhosphorIcon(TextT);
+export const TimerIcon = createPhosphorIcon(Timer);
+export const TuneIcon = createPhosphorIcon(Faders);
+export const ViewSidebarIcon = createPhosphorIcon(Sidebar);
+export const ZoomInIcon = createPhosphorIcon(MagnifyingGlassPlus);
+export const ZoomOutIcon = createPhosphorIcon(MagnifyingGlassMinus);
+export const CameraIcon = createPhosphorIcon(Camera);
+export const AssignmentAddIcon = createPhosphorIcon(ClipboardText);
+export const AddNotesIcon = createPhosphorIcon(FilePlus);
+export const BeenhereIcon = createPhosphorIcon(CheckSquareOffset);
+export const GarageIcon = createPhosphorIcon(Garage);
+export const ViewAgendaIcon = createPhosphorIcon(Rows);
+export const ActionKeyIcon = createPhosphorIcon(Command);
+export const MoreHorizIcon = createPhosphorIcon(DotsThree);
+export const DragHandleIcon = createPhosphorIcon(DotsSix);
+export const LibraryBooksIcon = createPhosphorIcon(Books);
+export const EditIcon = createPhosphorIcon(Pencil);
+export const DiscordIcon = createPhosphorIcon(DiscordLogo);
+export const Dashboard2AddIcon = createPhosphorIcon(SquaresFour);
+export const CombineColumnsIcon = createPhosphorIcon(TreeStructure);
+export const FolderSpecialIcon = createPhosphorIcon(FolderStar);

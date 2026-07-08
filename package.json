@@ -2,7 +2,7 @@
   "name": "actone",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "type": "module",
   "scripts": {
     "predev": "node sync-version.js",
@@ -31,6 +31,7 @@
     "@material/material-color-utilities": "^0.4.0",
     "@mui/material": "^9.0.1",
     "@mui/x-data-grid": "^9.7.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-clipboard-manager": "~2.0",
     "@tauri-apps/plugin-opener": "^2",
