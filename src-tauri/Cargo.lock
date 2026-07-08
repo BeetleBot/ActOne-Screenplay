@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "actone"
-version = "0.2.18"
+version = "0.2.19"
 dependencies = [
  "bitflags 2.11.1",
  "cosmic-text",
