@@ -14,7 +14,6 @@ import {
   updateHideSyntaxEffect,
   updateHideTagsEffect,
   updateScriptFileNameEffect,
-  updateSearchMatchesEffect,
   updateRightPaneOpenEffect,
   classifyLines,
   needsBlankAfterEnter,
@@ -573,7 +572,6 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         updateHideTagsEffect.of(hideTagsEnabled),
         updateHideSyntaxEffect.of(hideSyntaxEnabled),
         updateRightPaneOpenEffect.of(activeRightPane !== null),
-        updateSearchMatchesEffect.of([]),
       ]
     });
 

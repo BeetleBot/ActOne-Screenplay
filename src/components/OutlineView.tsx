@@ -840,7 +840,7 @@ export const OutlineView = React.memo(() => {
 
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 1.5, gap: 1, overflow: "hidden" }}>
 
-      <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
+      <Box sx={{ display: "flex", gap: 0, alignItems: "stretch" }}>
         <TextField
           placeholder="Search outline..."
           value={searchQuery}
@@ -873,8 +873,14 @@ export const OutlineView = React.memo(() => {
           sx={{
             border: "1px solid",
             borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
-            bgcolor: activeFilterCount > 0 ? "action.selected" : "transparent",
-            p: 0.8,
+            bgcolor: activeFilterCount > 0 ? "action.selected" : "action.hover",
+            borderRadius: 0,
+            height: "auto",
+            minHeight: 0,
+            minWidth: 0,
+            alignSelf: "stretch",
+            width: 32,
+            p: 0.3,
           }}
         >
           <Badge badgeContent={activeFilterCount} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}>
@@ -913,7 +919,7 @@ export const OutlineView = React.memo(() => {
                 setSelectedColor(null);
                 setSelectedStoryline(null);
               }}
-              sx={{ height: 18, fontSize: 10, cursor: "pointer" }}
+              sx={{ height: 18, fontSize: 10, cursor: "pointer", borderRadius: 0 }}
             />
           )}
         </Box>

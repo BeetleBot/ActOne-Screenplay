@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useUI, useFile, useEditor, useCustomModal } from "../context";
 import { EditorView } from "@codemirror/view";
-import { updateSearchMatchesEffect } from "../editor/fountainSyntax";
+import { undo, redo } from "@codemirror/commands";
+import { SearchQuery, setSearchQuery } from "@codemirror/search";
 import {
   SearchIcon, CloseIcon, InfoOutlinedIcon, FindReplaceIcon, DoneAllIcon,
   ArrowUpwardIcon, ArrowDownwardIcon, KeyboardArrowDownIcon, ChevronRightIcon,
@@ -24,32 +25,6 @@ interface SearchResult {
   column: number;
   lineText: string;
   sceneContext: string;
-}
-
-function buildPattern(query: string, caseSensitive: boolean, isRegex: boolean, wholeWord: boolean): RegExp | null {
-  if (!query) return null;
-  let src: string;
-  if (isRegex) {
-    src = query;
-  } else {
-    src = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-  if (wholeWord) src = `\\b${src}\\b`;
-  try {
-    return new RegExp(src, caseSensitive ? "g" : "gi");
-  } catch {
-    return null;
-  }
-}
-
-function findLineAtPosition(lineStarts: { lineIndex: number; start: number }[], pos: number) {
-  let lo = 0, hi = lineStarts.length - 1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (lineStarts[mid].start <= pos) lo = mid + 1;
-    else hi = mid - 1;
-  }
-  return lineStarts[hi] ?? null;
 }
 
 const OptionButton: React.FC<{
@@ -90,7 +65,7 @@ const OptionButton: React.FC<{
 
 export const SearchPanel: React.FC = () => {
   const { editorView } = useEditor();
-  const { parsedDoc, rawText, setRawText } = useFile();
+  const { parsedDoc } = useFile();
   const { confirm } = useCustomModal();
   const { setActiveRightPane, activeRightPane } = useUI();
 
@@ -101,7 +76,8 @@ export const SearchPanel: React.FC = () => {
   const [replaceText, setReplaceText] = useState("");
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWord, setWholeWord] = useState(false);
-  const [isRegex, setIsRegex] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +86,16 @@ export const SearchPanel: React.FC = () => {
 
   useEffect(() => {
     try { localStorage.setItem(SEARCH_QUERY_STORAGE_KEY, query); } catch { void 0; }
+  }, [query]);
+
+  useEffect(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 500);
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
   }, [query]);
 
   useEffect(() => {
@@ -122,76 +108,14 @@ export const SearchPanel: React.FC = () => {
     }
   }, [activeRightPane]);
 
-  const docString = useMemo(() => {
-    return parsedDoc?.screenplayText ?? rawText ?? "";
-  }, [parsedDoc, rawText]);
-
-  const lineStarts = useMemo(() => {
-    if (!parsedDoc) return [] as { lineIndex: number; start: number }[];
-    const out: { lineIndex: number; start: number }[] = [];
-    let pos = 0;
-    parsedDoc.lines.forEach((line, idx) => {
-      out.push({ lineIndex: idx, start: pos });
-      pos += line.text.length + 1;
+  const searchQuery = useMemo<SearchQuery | null>(() => {
+    if (!debouncedQuery) return null;
+    return new SearchQuery({
+      search: debouncedQuery,
+      caseSensitive,
+      wholeWord,
     });
-    return out;
-  }, [parsedDoc]);
-
-  const resultRows = useMemo<SearchResult[]>(() => {
-    if (!query) return [];
-    const pattern = buildPattern(query, caseSensitive, isRegex, wholeWord);
-    if (!pattern) return [];
-    const matches: SearchResult[] = [];
-    const re = new RegExp(pattern.source, pattern.flags);
-    let m: RegExpExecArray | null;
-    let lastHeading: { sceneNumber?: string; text: string } | null = null;
-    while ((m = re.exec(docString)) !== null) {
-      const lineInfo = findLineAtPosition(lineStarts, m.index);
-      const lineIndex = lineInfo?.lineIndex ?? 0;
-      const lineText = parsedDoc?.lines[lineIndex]?.text ?? "";
-      const column = lineInfo ? m.index - lineInfo.start : 0;
-      if (lineText && parsedDoc) {
-        const current = parsedDoc.lines[lineIndex];
-        if (current && current.type === LineType.heading) {
-          lastHeading = { sceneNumber: current.sceneNumber, text: current.text };
-        }
-      }
-      if (!lastHeading) {
-        for (let i = lineIndex; i >= 0; i--) {
-          const l = parsedDoc?.lines[i];
-          if (l && l.type === LineType.heading) {
-            lastHeading = { sceneNumber: l.sceneNumber, text: l.text };
-            break;
-          }
-        }
-      }
-      const sceneLabel = lastHeading
-        ? `${lastHeading.sceneNumber ? `[${lastHeading.sceneNumber}] ` : ""}${lastHeading.text}`
-        : "—";
-      matches.push({
-        from: m.index,
-        to: m.index + m[0].length,
-        text: m[0],
-        lineIndex,
-        column,
-        lineText,
-        sceneContext: sceneLabel,
-      });
-      if (m[0].length === 0) re.lastIndex++;
-    }
-    return matches;
-  }, [query, caseSensitive, wholeWord, isRegex, docString, lineStarts, parsedDoc]);
-
-  const regexError = useMemo(() => {
-    if (!query) return null;
-    const pattern = buildPattern(query, caseSensitive, isRegex, wholeWord);
-    if (!pattern && isRegex) return "Invalid regular expression";
-    return null;
-  }, [query, caseSensitive, isRegex, wholeWord]);
-
-  useEffect(() => {
-    if (activeIndex >= resultRows.length) setActiveIndex(-1);
-  }, [resultRows.length, activeIndex]);
+  }, [debouncedQuery, caseSensitive, wholeWord]);
 
   const editorViewRef = useRef(editorView);
   useEffect(() => {
@@ -200,24 +124,108 @@ export const SearchPanel: React.FC = () => {
 
   useEffect(() => {
     if (!editorView) return;
-    try {
-      const positions = resultRows.map((r) => ({ from: r.from, to: r.to }));
-      editorView.dispatch({ effects: updateSearchMatchesEffect.of(positions) });
-    } catch (e) {
-      logger.error("search", "Failed to dispatch search highlights:", e);
-    }
-  }, [resultRows, editorView]);
+    editorView.dispatch({
+      effects: setSearchQuery.of(searchQuery ?? new SearchQuery({ search: "" })),
+    });
+  }, [searchQuery, editorView]);
 
   useEffect(() => {
     return () => {
       const view = editorViewRef.current;
       if (view) {
-        try {
-          view.dispatch({ effects: updateSearchMatchesEffect.of([]) });
-        } catch { void 0; }
+        view.dispatch({ effects: setSearchQuery.of(new SearchQuery({ search: "" })) });
       }
     };
   }, []);
+
+  const resultRows = useMemo<SearchResult[]>(() => {
+    if (!searchQuery || !searchQuery.valid) return [];
+    if (!editorView) return [];
+
+    const doc = editorView.state.doc;
+    const matches: SearchResult[] = [];
+    let lastHeading: { sceneNumber?: string; text: string } | null = null;
+
+    try {
+      const cursor = searchQuery.getCursor(doc) as unknown as Iterable<{ from: number; to: number }>;
+      for (const m of cursor) {
+        const from = m.from;
+        const to = m.to;
+        const matchText = doc.sliceString(from, to);
+
+        let lineIndex = 0;
+        let lineText = "";
+        let column = 0;
+        try {
+          const line = doc.lineAt(from);
+          lineIndex = line.number - 1;
+          lineText = line.text;
+          column = from - line.from;
+        } catch { /* ignore */ }
+
+        if (parsedDoc) {
+          const current = parsedDoc.lines[lineIndex];
+          if (current && current.type === LineType.heading) {
+            lastHeading = { sceneNumber: current.sceneNumber, text: current.text };
+          }
+          if (!lastHeading) {
+            for (let i = lineIndex; i >= 0; i--) {
+              const l = parsedDoc.lines[i];
+              if (l && l.type === LineType.heading) {
+                lastHeading = { sceneNumber: l.sceneNumber, text: l.text };
+                break;
+              }
+            }
+          }
+        }
+        const sceneLabel = lastHeading
+          ? `${lastHeading.sceneNumber ? `[${lastHeading.sceneNumber}] ` : ""}${lastHeading.text}`
+          : "—";
+
+        matches.push({
+          from, to,
+          text: matchText,
+          lineIndex,
+          column,
+          lineText,
+          sceneContext: sceneLabel,
+        });
+      }
+    } catch (e) {
+      logger.error("search", "Failed to iterate search cursor:", e);
+    }
+
+    return matches;
+  }, [searchQuery, editorView, parsedDoc]);
+
+  const queryError = null;
+
+  useEffect(() => {
+    if (activeIndex >= resultRows.length) setActiveIndex(-1);
+  }, [resultRows.length, activeIndex]);
+
+  useEffect(() => {
+    if (!editorView) return;
+    const view = editorView;
+    const handler = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (!ctrl) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) {
+        if (undo(view)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      } else if ((key === "z" && e.shiftKey) || key === "y") {
+        if (redo(view)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    };
+    window.addEventListener("keydown", handler, { capture: true });
+    return () => window.removeEventListener("keydown", handler, { capture: true });
+  }, [editorView]);
 
   const handleResultClick = useCallback((r: SearchResult) => {
     if (!editorView) return;
@@ -256,7 +264,7 @@ export const SearchPanel: React.FC = () => {
 
   const handleReplaceAll = useCallback(async () => {
     if (resultRows.length === 0) return;
-    if (!docString) return;
+    if (!editorView) return;
     try {
       const choice = await confirm({
         title: "Replace All",
@@ -267,29 +275,24 @@ export const SearchPanel: React.FC = () => {
         ],
       });
       if (choice !== "ok") return;
-      const pattern = buildPattern(query, caseSensitive, isRegex, wholeWord);
-      if (!pattern) return;
-      const newDoc = docString.replace(pattern, replaceText);
-      setRawText(newDoc);
+      const changes = resultRows.map(r => ({ from: r.from, to: r.to, insert: replaceText }));
+      editorView.dispatch({ changes });
     } catch (e) {
       logger.error("search", "Failed to replace all:", e);
     }
-  }, [resultRows, docString, query, caseSensitive, isRegex, wholeWord, replaceText, confirm, setRawText]);
+  }, [resultRows, replaceText, confirm, editorView]);
 
   const handleReplaceSelected = useCallback(() => {
     if (selected.size === 0) return;
-    if (!docString) return;
+    if (!editorView) return;
     const sortedRows = [...resultRows]
       .map((r, originalIndex) => ({ r, originalIndex }))
       .filter(({ originalIndex }) => selected.has(originalIndex))
       .sort((a, b) => b.r.from - a.r.from);
-    let working = docString;
-    for (const { r } of sortedRows) {
-      working = working.slice(0, r.from) + replaceText + working.slice(r.to);
-    }
-    setRawText(working);
+    const changes = sortedRows.map(({ r }) => ({ from: r.from, to: r.to, insert: replaceText }));
+    editorView.dispatch({ changes });
     setSelected(new Set());
-  }, [selected, resultRows, replaceText, docString, setRawText]);
+  }, [selected, resultRows, replaceText, editorView]);
 
   const toggleCheck = useCallback((idx: number, value: boolean) => {
     setSelected((prev) => {
@@ -358,11 +361,6 @@ export const SearchPanel: React.FC = () => {
               <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
             </span>
           </Tooltip>
-          <Chip
-            label={resultRows.length === 0 ? "0 matches" : `${resultRows.length} ${resultRows.length === 1 ? "match" : "matches"}`}
-            size="small"
-            sx={{ height: 18, fontSize: 10, fontWeight: 600, borderRadius: PILL_RADIUS }}
-          />
         </Box>
       </Box>
 
@@ -375,8 +373,8 @@ export const SearchPanel: React.FC = () => {
           onKeyDown={handleKeyDown}
           size="small"
           fullWidth
-          error={!!regexError}
-          helperText={regexError || undefined}
+error={!!queryError}
+helperText={queryError || undefined}
           slotProps={{
             input: {
               sx: {
@@ -426,15 +424,16 @@ export const SearchPanel: React.FC = () => {
         />
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <OptionButton active={caseSensitive} onClick={() => setCaseSensitive((v) => !v)} label="Aa" title="Match case" />
-          <OptionButton active={wholeWord} onClick={() => setWholeWord((v) => !v)} label="\\b" title="Whole word" />
-          <OptionButton active={isRegex} onClick={() => setIsRegex((v) => !v)} label=".*" title="Regular expression" />
           <Box sx={{ flex: 1 }} />
           {resultRows.length > 0 && (
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, fontWeight: 700 }}>
-              {activeIndex < 0 ? "1" : activeIndex + 1} of {resultRows.length}
-            </Typography>
+            <Chip
+              label={`${activeIndex < 0 ? "1" : activeIndex + 1} of ${resultRows.length}`}
+              size="small"
+              sx={{ height: 22, fontSize: 10, fontWeight: 600, borderRadius: PILL_RADIUS }}
+            />
           )}
+          <OptionButton active={caseSensitive} onClick={() => setCaseSensitive((v) => !v)} label="Aa" title="Match case" />
+          <OptionButton active={wholeWord} onClick={() => setWholeWord((v) => !v)} label="\\b" title="Whole word" />
         </Box>
 
         {showReplace && (
@@ -534,13 +533,13 @@ export const SearchPanel: React.FC = () => {
             >
               <SearchIcon sx={{ fontSize: 28, opacity: 0.4 }} />
               <Typography variant="body2" sx={{ fontSize: 12, fontStyle: "italic" }}>
-                {query
-                  ? (regexError || "No matches found")
-                  : "Type a query to search the screenplay"}
+{query
+  ? (queryError || "No matches found")
+  : "Type a query to search the screenplay"}
               </Typography>
               {!query && (
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, opacity: 0.7, mt: 0.5 }}>
-                  Use Aa, \\b, or .* to refine your search
+                  Use Aa or \\b to refine your search
                 </Typography>
               )}
             </Box>
