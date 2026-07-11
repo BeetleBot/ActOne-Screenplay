@@ -6,7 +6,7 @@ import { alpha } from "@mui/material/styles";
 import type { Theme } from "@mui/material/styles";
 import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
 import { logger } from "../utils/logger";
-import { readText } from "@tauri-apps/plugin-clipboard-manager";
+import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { CATEGORIES } from "../constants";
 import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 import { updateTagsEffect, tagStateField } from "../editor/tagState";
@@ -366,7 +366,7 @@ export const FountainEditor = React.memo(() => {
 
   const handleEditorAction = async (cmd: string) => {
     if (!view) return;
-    view.focus();
+    const snap = menuSelectionRef.current;
     if (cmd === "paste") {
       try {
         const text = await readText();
@@ -378,9 +378,20 @@ export const FountainEditor = React.memo(() => {
       } catch (e) {
         logger.error("editor", "clipboard read failed", e);
       }
-    } else {
-      document.execCommand(cmd);
+    } else if (snap && snap.from !== snap.to && (cmd === "cut" || cmd === "copy")) {
+      try {
+        await writeText(snap.text);
+        if (cmd === "cut") {
+          view.dispatch({
+            changes: { from: snap.from, to: snap.to, insert: "" },
+            selection: { anchor: snap.from },
+          });
+        }
+      } catch (e) {
+        logger.error("editor", "clipboard write failed", e);
+      }
     }
+    view.focus();
     handleClose();
   };
 

@@ -176,28 +176,28 @@ fn element_to_fdx(el: &Element, _line_idx: usize) -> String {
 
 fn fdx_color(color: &str) -> String {
     match color.to_lowercase().trim() {
-        "red" => "FF0000FFFF0000".into(),
-        "blue" => "0000FFFF0000".into(),
-        "green" => "00FF00000000".into(),
-        "pink" => "FF00CCFF00CC".into(),
-        "magenta" => "FF00FFFF00FF".into(),
-        "gray" => "808080808080".into(),
-        "purple" => "800080800080".into(),
-        "cyan" => "00FFFFFF00FF".into(),
-        "teal" => "008080008080".into(),
-        "yellow" => "FFFF00000000".into(),
-        "orange" => "FFA500FFA500".into(),
-        "brown" => "A52A2AA52A2A".into(),
+        "red" => "FF0000".into(),
+        "blue" => "0000FF".into(),
+        "green" => "00FF00".into(),
+        "pink" => "FF00CC".into(),
+        "magenta" => "FF00FF".into(),
+        "gray" => "808080".into(),
+        "purple" => "800080".into(),
+        "cyan" => "00FFFF".into(),
+        "teal" => "008080".into(),
+        "yellow" => "FFFF00".into(),
+        "orange" => "FFA500".into(),
+        "brown" => "A52A2A".into(),
         _ => {
             if let Some(hex) = color.strip_prefix('#') {
                 let c = hex.trim_start_matches('#');
                 if c.len() >= 6 {
-                    format!("{0}{0}{1}{1}{2}{2}", &c[0..2], &c[2..4], &c[4..6])
+                    c[0..6].to_uppercase()
                 } else {
-                    "000000000000".into()
+                    "000000".into()
                 }
             } else {
-                "000000000000".into()
+                "000000".into()
             }
         }
     }
@@ -209,7 +209,8 @@ fn build_title_page(titlepage: &crate::pdf::screenplay::TitlePage) -> String {
         || !titlepage.credit.is_empty()
         || !titlepage.source.is_empty()
         || !titlepage.draft_date.is_empty()
-        || !titlepage.contact.is_empty();
+        || !titlepage.contact.is_empty()
+        || !titlepage.extras.is_empty();
     if !has_content {
         return String::new();
     }
@@ -252,6 +253,11 @@ fn build_title_page(titlepage: &crate::pdf::screenplay::TitlePage) -> String {
     }
     if let Some(c) = &contact {
         lines.push(left_title_line(c));
+    }
+    for (key, vals) in &titlepage.extras {
+        if let Some(v) = vals.first() {
+            lines.push(left_title_line(&format!("{}: {}", key, v.to_plain_string())));
+        }
     }
 
     let content: String = lines.join("");

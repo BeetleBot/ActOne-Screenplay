@@ -60,6 +60,7 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
       if (e.altKey && e.key.toLowerCase() === "q") {
         e.preventDefault();
         actionsRef.current.closeFile();

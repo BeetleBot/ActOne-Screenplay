@@ -28,7 +28,7 @@ The Sprint sidebar shows more detail:
 Completed sprints are saved to `sprint_data.json` in the `.actone` bundle:
 - Date and time
 - Goal
-- Words written
+- Words written (words typed *during* the sprint, not the file total)
 - Duration
 
 ## Use Cases

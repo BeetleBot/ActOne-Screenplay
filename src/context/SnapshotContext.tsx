@@ -71,7 +71,6 @@ export interface SnapshotContextProps {
   createSnapshot: (comment?: string, type?: "manual" | "auto" | "on_save", customTag?: string) => Promise<void>;
   refreshSnapshots: () => Promise<void>;
   deleteSnapshot: (info: SnapshotInfo) => Promise<void>;
-  restoreSnapshot: (info: SnapshotInfo) => Promise<void>;
   openSnapshotAsFile: (info: SnapshotInfo) => Promise<void>;
 }
 
@@ -209,15 +208,6 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [filePath, refreshSnapshots]);
 
-  const restoreSnapshot = useCallback(async (info: SnapshotInfo) => {
-    if (!filePath) return;
-    try {
-      await invoke("restore_snapshot", { filePath, snapshotPath: info.snapshot_path });
-    } catch (e) {
-      logger.warn("snapshots", "Failed to restore snapshot", e);
-    }
-  }, [filePath]);
-
   const openSnapshotAsFile = useCallback(async (info: SnapshotInfo) => {
     try {
       await openFilePath(info.snapshot_path);
@@ -265,7 +255,6 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         createSnapshot,
         refreshSnapshots,
         deleteSnapshot,
-        restoreSnapshot,
         openSnapshotAsFile,
       }}
     >

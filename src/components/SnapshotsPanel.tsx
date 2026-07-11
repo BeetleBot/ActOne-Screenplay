@@ -2,7 +2,6 @@ import React, { useState, useCallback } from "react";
 import { Box, Typography, IconButton, Button, TextField, List, ListItemButton, Divider, Menu, MenuItem, Tooltip } from "@mui/material";
 import type { Theme } from "@mui/material/styles";
 import { useSnapshots, type SnapshotInfo } from "../context/SnapshotContext";
-import { useFile } from "../context/FileContext";
 import { useCustomModal } from "../context/CustomModalContext";
 import { AddIcon, SettingsIcon, InfoOutlinedIcon } from "./Icons";
 import { useModalWindows } from "../hooks/useModalWindows";
@@ -53,8 +52,7 @@ interface SnapshotsPanelProps {
 }
 
 export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
-  const { snapshots, settings, createSnapshot, deleteSnapshot, restoreSnapshot, openSnapshotAsFile, updateSettings } = useSnapshots();
-  const { filePath, openFilePath } = useFile();
+  const { snapshots, settings, createSnapshot, deleteSnapshot, openSnapshotAsFile, updateSettings } = useSnapshots();
   const { confirm } = useCustomModal();
   const { openSettingsWindow } = useModalWindows();
   const [comment, setComment] = useState("");
@@ -67,25 +65,6 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
     setComment("");
     setTag("");
   }, [createSnapshot, comment, tag]);
-
-  const handleRestore = useCallback(async (info: SnapshotInfo) => {
-    setMenuState(null);
-    const result = await confirm({
-      title: "Restore Snapshot",
-      message: `Restore snapshot from ${formatSnapshotDateTime(info.created_at)}?\n\nThis will overwrite your current file. A snapshot of the current state will be created first.`,
-      buttons: [
-        { value: "restore", label: "Restore", variant: "contained", color: "primary" },
-        { value: "cancel", label: "Cancel", variant: "text" },
-      ],
-    });
-    if (result === "restore") {
-      await createSnapshot();
-      await restoreSnapshot(info);
-      if (filePath) {
-        await openFilePath(filePath);
-      }
-    }
-  }, [createSnapshot, restoreSnapshot, filePath, openFilePath, confirm]);
 
   const handleOpenAsFile = useCallback(async (info: SnapshotInfo) => {
     setMenuState(null);
@@ -379,9 +358,6 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
         transformOrigin={{ vertical: "top", horizontal: "right" }}
         slotProps={{ paper: { sx: { minWidth: 130 } } }}
       >
-        <MenuItem onClick={() => menuState && handleRestore(menuState.info)} dense sx={{ fontSize: 12 }}>
-          Restore
-        </MenuItem>
         <MenuItem onClick={() => menuState && handleOpenAsFile(menuState.info)} dense sx={{ fontSize: 12 }}>
           Open as New File
         </MenuItem>

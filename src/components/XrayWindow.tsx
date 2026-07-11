@@ -1618,6 +1618,7 @@ function CharacterEditModal({
   appearsInCount,
   onSave,
 }: CharacterEditModalProps) {
+  const theme = useTheme();
   const [description, setDescription] = useState(existingProfile.description || "");
   const [role, setRole] = useState(existingProfile.role || "");
   const [gender, setGender] = useState(existingProfile.gender || genderFromGendersSetting || "unknown");
@@ -1664,11 +1665,11 @@ function CharacterEditModal({
   const peerCharacters = allCharacters.filter((name) => name !== characterName);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { bgcolor: "#1a1a1a", color: "#fff", border: "1px solid #333" } } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { bgcolor: theme.palette.background.paper, color: theme.palette.text.primary, border: 1, borderColor: theme.palette.divider } } }}>
       <DialogTitle sx={{ fontWeight: 800, fontSize: "1.1rem", textTransform: "uppercase", pb: 1 }}>
         {characterName}
       </DialogTitle>
-      <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2, borderColor: "#333" }}>
+      <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2, borderColor: theme.palette.divider }}>
         <TextField
           label="DESCRIPTION"
           placeholder="e.g. A weary detective in his 50s, haunted by a cold case..."
@@ -1678,20 +1679,20 @@ function CharacterEditModal({
           rows={2}
           fullWidth
           slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ "& label": { color: "#888" }, "& .MuiInputBase-input": { color: "#fff" } }}
+          sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
         />
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel shrink id="role-select-label" sx={{ color: "#888" }}>ROLE</InputLabel>
+              <InputLabel shrink id="role-select-label" sx={{ color: theme.palette.text.secondary }}>ROLE</InputLabel>
               <Select
                 labelId="role-select-label"
                 label="ROLE"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 displayEmpty
-                sx={{ color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#333" } }}
+                sx={{ color: theme.palette.text.primary, "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.divider } }}
               >
                 <MenuItem value=""><em>None</em></MenuItem>
                 <MenuItem value="Protagonist">Protagonist</MenuItem>
@@ -1703,7 +1704,7 @@ function CharacterEditModal({
           </Grid>
           <Grid size={{ xs: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel shrink id="gender-select-label" sx={{ color: "#888" }}>GENDER</InputLabel>
+              <InputLabel shrink id="gender-select-label" sx={{ color: theme.palette.text.secondary }}>GENDER</InputLabel>
               <Select
                 labelId="gender-select-label"
                 label="GENDER"
@@ -1712,7 +1713,7 @@ function CharacterEditModal({
                   setGender(e.target.value);
                   setColor(getGenderColor(e.target.value));
                 }}
-                sx={{ color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#333" } }}
+                sx={{ color: theme.palette.text.primary, "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.divider } }}
               >
                 <MenuItem value="male">Male</MenuItem>
                 <MenuItem value="female">Female</MenuItem>
@@ -1730,7 +1731,7 @@ function CharacterEditModal({
               size="small"
               fullWidth
               slotProps={{ inputLabel: { shrink: true } }}
-              sx={{ "& label": { color: "#888" }, "& .MuiInputBase-input": { color: "#fff" } }}
+              sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
             />
           </Grid>
         </Grid>
@@ -1744,7 +1745,7 @@ function CharacterEditModal({
           rows={2}
           fullWidth
           slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ "& label": { color: "#888" }, "& .MuiInputBase-input": { color: "#fff" } }}
+          sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
         />
 
         <TextField
@@ -1756,11 +1757,11 @@ function CharacterEditModal({
           rows={2}
           fullWidth
           slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ "& label": { color: "#888" }, "& .MuiInputBase-input": { color: "#fff" } }}
+          sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
         />
 
         <Box>
-          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", display: "block", mb: 1, color: "#888" }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", display: "block", mb: 1, color: theme.palette.text.secondary }}>
             COLOR PROFILE
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center" }}>
@@ -1773,7 +1774,7 @@ function CharacterEditModal({
                   height: 24,
                   bgcolor: c,
                   border: color === c ? 2 : 0,
-                  borderColor: "#fff",
+                  borderColor: theme.palette.getContrastText(theme.palette.background.paper),
                   "&:hover": { bgcolor: c, opacity: 0.8 },
                 }}
               />
@@ -1782,17 +1783,17 @@ function CharacterEditModal({
               variant={highlight ? "contained" : "outlined"}
               size="small"
               onClick={() => setHighlight(!highlight)}
-              sx={{ textTransform: "none", ml: "auto", fontSize: 10, py: 0.25, color: "#fff", borderColor: "#333" }}
+              sx={{ textTransform: "none", ml: "auto", fontSize: 10, py: 0.25, color: theme.palette.text.primary, borderColor: theme.palette.divider }}
             >
               Highlight: {highlight ? "On" : "Off"}
             </Button>
           </Box>
         </Box>
 
-        <Divider sx={{ borderColor: "#333" }} />
+        <Divider sx={{ borderColor: theme.palette.divider }} />
 
         <Box>
-          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", display: "block", mb: 1, color: "#888" }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", display: "block", mb: 1, color: theme.palette.text.secondary }}>
             RELATIONSHIPS
           </Typography>
           {relationships.length === 0 ? (
@@ -1808,7 +1809,7 @@ function CharacterEditModal({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    bgcolor: "#252525",
+                    bgcolor: theme.palette.action.hover,
                     px: 1,
                     py: 0.5,
                     borderRadius: 0,
@@ -1817,7 +1818,7 @@ function CharacterEditModal({
                   <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 600 }}>
                     {r.target} — {r.type}
                   </Typography>
-                  <IconButton size="small" onClick={() => handleRemoveRelationship(r.target)} sx={{ color: "#aaa" }}>
+                  <IconButton size="small" onClick={() => handleRemoveRelationship(r.target)} sx={{ color: theme.palette.text.secondary }}>
                     <DeleteIcon sx={{ fontSize: 14 }} />
                   </IconButton>
                 </Box>
@@ -1827,13 +1828,13 @@ function CharacterEditModal({
 
           <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center" }}>
             <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel id="rel-target-label" sx={{ color: "#888" }}>Character</InputLabel>
+              <InputLabel id="rel-target-label" sx={{ color: theme.palette.text.secondary }}>Character</InputLabel>
               <Select
                 labelId="rel-target-label"
                 value={newRelTarget}
                 onChange={(e) => setNewRelTarget(e.target.value)}
                 label="Character"
-                sx={{ color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#333" } }}
+                sx={{ color: theme.palette.text.primary, "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.divider } }}
               >
                 {peerCharacters.map((name) => (
                   <MenuItem key={name} value={name}>
@@ -1849,7 +1850,7 @@ function CharacterEditModal({
               onChange={(e) => setNewRelType(e.target.value)}
               size="small"
               fullWidth
-              sx={{ "& label": { color: "#888" }, "& .MuiInputBase-input": { color: "#fff" } }}
+              sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
             />
             <IconButton onClick={handleAddRelationship} color="primary" disabled={!newRelTarget || !newRelType}>
               <AddIcon />
@@ -1857,13 +1858,13 @@ function CharacterEditModal({
           </Box>
         </Box>
 
-        <Divider sx={{ borderColor: "#333" }} />
+        <Divider sx={{ borderColor: theme.palette.divider }} />
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
           APPEARS IN ({appearsInCount} SCENES)
         </Typography>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} color="inherit" sx={{ color: "#aaa" }}>
+        <Button onClick={onClose} color="inherit" sx={{ color: theme.palette.text.secondary }}>
           Cancel
         </Button>
         <Button onClick={handleSave} variant="contained" color="primary">

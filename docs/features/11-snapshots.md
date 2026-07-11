@@ -27,16 +27,13 @@ Configured in Settings → Snapshots:
 - Timestamp and type indicator
 - File size
 - Optional comment and custom tag
-- **Restore** button (copies snapshot content back to original)
+- **Open as New File** (opens the snapshot content in a new editor tab)
 - **Delete** button
 
 ## Key Actions
 
 ### Creating a Manual Snapshot
 Click **Create Snapshot** in the snapshots panel. Optionally add a comment or custom tag.
-
-### Restoring from Snapshot
-Click **Restore** on any snapshot. The snapshot content is copied back to the original file location.
 
 ### Deleting Snapshots
 Click **Delete** on individual snapshots. Old auto/on_save snapshots are automatically pruned.

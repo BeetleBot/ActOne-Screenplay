@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import { useFile, type SettingsUpdater } from "./FileContext";
 import { ParsedLine, LineType } from "../parser";
-
+import { logger } from "../utils/logger";
 
 export interface EditorContextProps {
   activeLineId: string | null;
@@ -42,17 +42,18 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const scrollToLine = (lineIndex: number, noFocus?: boolean) => {
-    if (editorView) {
+    if (!editorView) return;
+    try {
       const line = editorView.state.doc.line(lineIndex + 1);
       editorView.dispatch({
         selection: { anchor: line.from },
         effects: EditorView.scrollIntoView(line.from, { y: "center" }),
       });
       if (!noFocus) editorView.focus();
+    } catch (e) {
+      logger.warn("editor", `scrollToLine(${lineIndex}) failed`, e);
     }
   };
-
-
 
   const updateLineText = (lineIndex: number, newText: string) => {
     if (lineIndex < 0 || lineIndex >= parsedDoc.lines.length) return;

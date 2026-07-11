@@ -66,8 +66,11 @@ export function getThemeState(): ThemeState {
 
 /** Reset cached state — used in tests to avoid cross-test leakage */
 export function resetThemeEngine(): void {
+  if (unlisten) {
+    try { unlisten(); } catch {}
+    unlisten = null;
+  }
   currentState = null;
-  unlisten = null;
 }
 
 export async function setThemeState(partial: { themeId?: string; appScale?: number; customThemes?: string }): Promise<void> {

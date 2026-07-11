@@ -120,7 +120,7 @@ export const SprintView = React.memo(() => {
 
   const handleStop = () => {
     const fileName = filePath ? filePath.split(/[/\\]/).pop() : "Untitled";
-    const session = stopSprint(activeFileId, sprintWords, fileName);
+    const session = stopSprint(activeFileId, currentTotalWords, fileName);
     
     // Also save to bundle if available
     if (session && filePath?.toLowerCase().endsWith(".actone")) {

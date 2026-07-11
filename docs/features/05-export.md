@@ -78,3 +78,11 @@ Exports a spreadsheet-compatible breakdown of all scenes:
 - Character list
 - Word count per scene
 - Scene color
+
+### Watermark Settings Persistence
+
+The watermark configuration (header/footer/center opacity and grayscale) is saved to the document settings whenever you close the watermark dialog — whether via X, Done, or clicking outside the panel. All three close paths persist the full configuration.
+
+## FDX Scene Color Encoding
+
+Scene colors in FDX export are written as standard 6-hex `RRGGBB` codes for compatibility with Final Draft and other screenwriting software.

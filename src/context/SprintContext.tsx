@@ -71,12 +71,13 @@ export const SprintProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!active) return null;
 
     const actualDuration = Math.min(active.durationMinutes, Math.max(1, Math.round((Date.now() - active.startTime) / 60000)));
+    const wordsWritten = Math.max(0, wordCount - active.startWordCount);
     const newSession: SprintSession = {
       id: Date.now().toString(),
       startTime: active.startTime,
       endTime: Date.now(),
       durationMinutes: actualDuration,
-      wordCount,
+      wordCount: wordsWritten,
       content: "",
       fileName,
       fileId,

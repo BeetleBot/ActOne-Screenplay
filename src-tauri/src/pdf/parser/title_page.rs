@@ -29,7 +29,7 @@ impl<'a> Parser<'a> {
                 "DRAFT DATE" => tp.draft_date = values,
                 "CONTACT" => tp.contact = values,
                 "NOTES" => tp.notes = values,
-                _ => (),
+                _ => tp.extras.push((key.trim().to_string(), values)),
             }
         }
 

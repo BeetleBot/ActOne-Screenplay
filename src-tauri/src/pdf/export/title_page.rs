@@ -194,6 +194,34 @@ pub fn write_titlepage(
         }
     }
 
+    for (key, vals) in &titlepage.extras {
+        y_pos += LINE_HEIGHT;
+        let header_text = format!("{}: {}", key, vals.first().map(|v| v.to_plain_string()).unwrap_or_default());
+        let header_rs = RichString::from(header_text);
+        let mut ctx = DrawContext {
+            layout_info,
+            surface: &mut surface,
+            y_position: &mut y_pos,
+            max_y: page_max_y,
+            is_revised: false,
+            font_system,
+            font_cache,
+        };
+        write_element(&mut ctx, &header_rs, &title_margin, Alignment::Centered, false, &mut temp_res)?;
+        for v in vals.iter().skip(1) {
+            let mut ctx = DrawContext {
+                layout_info,
+                surface: &mut surface,
+                y_position: &mut y_pos,
+                max_y: page_max_y,
+                is_revised: false,
+                font_system,
+                font_cache,
+            };
+            write_element(&mut ctx, v, &title_margin, Alignment::Centered, false, &mut temp_res)?;
+        }
+    }
+
     surface.finish();
     page.finish();
     Ok(())

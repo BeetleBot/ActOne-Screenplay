@@ -32,10 +32,18 @@ describe("SprintContext", () => {
     let session: SprintSession | null;
     act(() => { session = result.current.stopSprint("file-1", 150, "test.fountain"); });
     expect(session).not.toBeNull();
-    expect(session.wordCount).toBe(150);
+    expect(session.wordCount).toBe(50);
     expect(session.fileName).toBe("test.fountain");
     expect(result.current.activeSprints["file-1"]).toBeUndefined();
     expect(result.current.sprintHistory).toHaveLength(1);
+  });
+
+  it("clamps sprint word count to zero if total decreased", () => {
+    const { result } = renderHook(() => useSprint(), { wrapper });
+    act(() => result.current.startSprint("file-1", 25, 200));
+    let session: SprintSession | null;
+    act(() => { session = result.current.stopSprint("file-1", 150, "x.fountain"); });
+    expect(session!.wordCount).toBe(0);
   });
 
   it("returns null when stopping non-existent sprint", () => {
@@ -85,5 +93,13 @@ describe("SprintContext", () => {
     const { result } = renderHook(() => useSprint(), { wrapper });
     act(() => result.current.startSprint("file-1", 10, 50));
     expect(localStorage.getItem("actone-active-sprints")).toBeTruthy();
+  });
+
+  it("works correctly when starting from 0 words", () => {
+    const { result } = renderHook(() => useSprint(), { wrapper });
+    act(() => result.current.startSprint("file-1", 25, 0));
+    let session: SprintSession | null;
+    act(() => { session = result.current.stopSprint("file-1", 10, "test.fountain"); });
+    expect(session!.wordCount).toBe(10);
   });
 });

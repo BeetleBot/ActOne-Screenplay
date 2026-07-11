@@ -303,7 +303,8 @@ fn build_title_page(titlepage: &crate::pdf::screenplay::TitlePage) -> String {
         || !titlepage.credit.is_empty()
         || !titlepage.source.is_empty()
         || !titlepage.draft_date.is_empty()
-        || !titlepage.contact.is_empty();
+        || !titlepage.contact.is_empty()
+        || !titlepage.extras.is_empty();
     if !has_content {
         return String::from("  <titlepage/>\n");
     }
@@ -440,6 +441,16 @@ fn build_title_page(titlepage: &crate::pdf::screenplay::TitlePage) -> String {
             "    <para>\n      <style basestyle=\"Normal Text\"/>\n        <text>{}</text>\n    </para>\n",
             escape_xml(&titlepage.source[0].to_plain_string())
         ));
+    }
+
+    for (key, vals) in &titlepage.extras {
+        if let Some(v) = vals.first() {
+            out.push_str(&format!(
+                "    <para>\n      <style basestyle=\"Normal Text\"/>\n        <text>{}: {}</text>\n    </para>\n",
+                escape_xml(key),
+                escape_xml(&v.to_plain_string())
+            ));
+        }
     }
 
     out.push_str("  </titlepage>\n");
@@ -695,7 +706,7 @@ EXT. STREET - NIGHT
         let src = "INT. HOUSE - DAY\n\nHello.";
         let screenplay = parse(src);
         let xml = export(&screenplay);
-        let packed = crate::pdf::fadein_pack::pack(&xml);
+        let packed = crate::pdf::fadein_pack::pack(&xml).unwrap();
 
         use std::io::Read;
         let mut archive = zip::ZipArchive::new(std::io::Cursor::new(packed)).unwrap();

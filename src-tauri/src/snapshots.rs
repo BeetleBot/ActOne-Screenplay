@@ -295,38 +295,6 @@ pub fn delete_snapshot(
 }
 
 #[tauri::command]
-pub fn restore_snapshot(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, crate::app_prefs::AppPrefsState>,
-    file_path: String,
-    snapshot_path: String,
-) -> Result<(), String> {
-    if !app_prefs_enabled(&state) {
-        return Err("Snapshots are disabled".to_string());
-    }
-
-    let source = Path::new(&snapshot_path);
-    let dest = Path::new(&file_path);
-
-    if !source.exists() {
-        return Err("Snapshot file not found".to_string());
-    }
-
-    fs::copy(source, dest).map_err(|e| e.to_string())?;
-
-    // Update the snapshot dir's index to reflect the restored file path
-    let dir = snapshot_dir(&app, &file_path, &state);
-    let mut index = load_index(&dir);
-    index.file_path = dunce::canonicalize(dest)
-        .unwrap_or_else(|_| dest.to_path_buf())
-        .to_string_lossy()
-        .to_string();
-    save_index(&dir, &index)?;
-
-    Ok(())
-}
-
-#[tauri::command]
 pub fn get_snapshot_folder_path(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::app_prefs::AppPrefsState>,

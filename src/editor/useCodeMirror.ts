@@ -318,9 +318,12 @@ const searchHighlightField = StateField.define<DecorationSet>({
       const cursor = query.getCursor(tr.state);
       const { from: selFrom, to: selTo } = tr.state.selection.main;
 
-      for (const { from, to } of cursor) {
+      let match = cursor.next();
+      while (!match.done) {
+        const { from, to } = match.value;
         const isActive = (from === selFrom && to === selTo);
         builder.add(from, to, isActive ? activeSearchMatchDeco : searchMatchDeco);
+        match = cursor.next();
       }
       return builder.finish();
     }

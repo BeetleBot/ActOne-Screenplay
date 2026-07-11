@@ -132,6 +132,9 @@ impl<'a> Parser<'a> {
                         || self.try_page_break(trimmed, i)
                         || self.try_centered(trimmed, i)
                         || self.try_lyrics(trimmed, i)
+                        || self.try_heading(trimmed, i)
+                        || self.try_transition(trimmed, i)
+                        || self.try_shot(trimmed, i)
                         || self.try_action(line, i)
                     {}
                 }

@@ -116,6 +116,7 @@ pub struct TitlePage {
     pub draft_date: Vec<RichString>,
     pub contact: Vec<RichString>,
     pub notes: Vec<RichString>,
+    pub extras: Vec<(String, Vec<RichString>)>,
 }
 
 impl TitlePage {
@@ -129,6 +130,7 @@ impl TitlePage {
             draft_date: Vec::new(),
             contact: Vec::new(),
             notes: Vec::new(),
+            extras: Vec::new(),
         }
     }
 }

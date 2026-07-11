@@ -36,8 +36,11 @@ export function getPrefs(): Record<string, string> {
 }
 
 export function resetPrefsEngine(): void {
+  if (unlisten) {
+    try { unlisten(); } catch {}
+    unlisten = null;
+  }
   currentPrefs = {};
-  unlisten = null;
 }
 
 export async function setPrefs(prefs: Record<string, string>): Promise<void> {
@@ -45,6 +48,7 @@ export async function setPrefs(prefs: Record<string, string>): Promise<void> {
     await invoke("set_app_prefs", { prefs });
   } catch {
     Object.assign(currentPrefs, prefs);
+    listeners.forEach((cb) => cb(currentPrefs));
   }
 }
 

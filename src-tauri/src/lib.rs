@@ -499,7 +499,7 @@ fn export_fadein(fountain_text: String, default_directory: Option<String>) -> Op
 
     let screenplay = pdf::parse(&fountain_text);
     let fadein_xml = pdf::export_to_fadein(&screenplay);
-    let packed = pdf::fadein_pack::pack(&fadein_xml);
+    let packed = pdf::fadein_pack::pack(&fadein_xml).ok()?;
     if fs::write(&file, &packed).is_ok() {
         return Some(file.to_string_lossy().to_string());
     }
@@ -507,7 +507,7 @@ fn export_fadein(fountain_text: String, default_directory: Option<String>) -> Op
 }
 
 #[tauri::command]
-fn generate_fadein_bytes(fountain_text: String) -> Vec<u8> {
+fn generate_fadein_bytes(fountain_text: String) -> Result<Vec<u8>, String> {
     let screenplay = pdf::parse(&fountain_text);
     let fadein_xml = pdf::export_to_fadein(&screenplay);
     pdf::fadein_pack::pack(&fadein_xml)
@@ -570,6 +570,11 @@ async fn check_microsoft_store_license() -> Result<bool, String> {
     {
         Ok(true)
     }
+}
+
+#[tauri::command]
+fn get_target_os() -> String {
+    std::env::consts::OS.to_string()
 }
 
 #[derive(Serialize)]
@@ -724,6 +729,7 @@ pub fn run() {
             generate_fadein_bytes,
             import_fountain_dialog,
             check_microsoft_store_license,
+            get_target_os,
             check_for_store_update,
             install_store_update,
             select_watermark_image,
@@ -734,7 +740,6 @@ pub fn run() {
             snapshots::create_snapshot,
             snapshots::get_snapshots,
             snapshots::delete_snapshot,
-            snapshots::restore_snapshot,
             snapshots::get_snapshot_folder_path,
             snapshots::open_folder,
             save_theme_dialog,

@@ -218,6 +218,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
     }));
   };
 
+  const currentWatermarkSettings = () => ({
+    headerEnabled: watermarkHeaderEnabled,
+    headerText: watermarkHeaderText,
+    headerOpacity: watermarkHeaderOpacity,
+    footerEnabled: watermarkFooterEnabled,
+    footerText: watermarkFooterText,
+    footerOpacity: watermarkFooterOpacity,
+    centerEnabled: watermarkCenterEnabled,
+    centerType: watermarkCenterType,
+    centerText: watermarkCenterText,
+    centerImagePath: watermarkCenterImagePath,
+    centerOpacity: watermarkCenterOpacity,
+    centerGrayscale: watermarkCenterGrayscale,
+  });
+
   const handleFormatChange = (_: React.MouseEvent<HTMLElement>, newFormat: ExportFormat | null) => {
     if (newFormat !== null) {
       setFormat(newFormat);
@@ -813,20 +828,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         open={showWatermarkPanel}
         onClose={() => {
           setShowWatermarkPanel(false);
-          updateWatermarkSettings({
-            headerEnabled: watermarkHeaderEnabled,
-            headerText: watermarkHeaderText,
-            headerOpacity: watermarkHeaderOpacity,
-            footerEnabled: watermarkFooterEnabled,
-            footerText: watermarkFooterText,
-            footerOpacity: watermarkFooterOpacity,
-            centerEnabled: watermarkCenterEnabled,
-            centerType: watermarkCenterType,
-            centerText: watermarkCenterText,
-            centerImagePath: watermarkCenterImagePath,
-            centerOpacity: watermarkCenterOpacity,
-            centerGrayscale: watermarkCenterGrayscale,
-          });
+          updateWatermarkSettings(currentWatermarkSettings());
         }}
         fullWidth
         maxWidth="xs"
@@ -839,17 +841,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
             aria-label="close"
             onClick={() => {
               setShowWatermarkPanel(false);
-              updateWatermarkSettings({
-                headerEnabled: watermarkHeaderEnabled,
-                headerText: watermarkHeaderText,
-                footerEnabled: watermarkFooterEnabled,
-                footerText: watermarkFooterText,
-                centerEnabled: watermarkCenterEnabled,
-                centerType: watermarkCenterType,
-                centerText: watermarkCenterText,
-                centerImagePath: watermarkCenterImagePath,
-                centerOpacity: watermarkCenterOpacity,
-              });
+              updateWatermarkSettings(currentWatermarkSettings());
             }}
             sx={{ color: "text.secondary" }}
           >
@@ -1038,17 +1030,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           <Button
             onClick={() => {
               setShowWatermarkPanel(false);
-              updateWatermarkSettings({
-                headerEnabled: watermarkHeaderEnabled,
-                headerText: watermarkHeaderText,
-                footerEnabled: watermarkFooterEnabled,
-                footerText: watermarkFooterText,
-                centerEnabled: watermarkCenterEnabled,
-                centerType: watermarkCenterType,
-                centerText: watermarkCenterText,
-                centerImagePath: watermarkCenterImagePath,
-                centerOpacity: watermarkCenterOpacity,
-              });
+              updateWatermarkSettings(currentWatermarkSettings());
             }}
             variant="contained"
             size="small"

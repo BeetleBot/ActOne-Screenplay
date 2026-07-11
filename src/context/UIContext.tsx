@@ -4,6 +4,7 @@ import { logger } from "../utils/logger";
 import { setPrefs } from "../theme/AppPrefsEngine";
 import { setThemeState } from "../theme/ThemeEngine";
 import { ambientSoundEngine } from "../utils/AmbientSoundEngine";
+import { getTauriWindow } from "../utils/window";
 
 export interface UIContextProps {
   fontFamily: 'courier-prime' | 'courier-prime-sans';
@@ -232,15 +233,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   useEffect(() => {
     const applyZenMode = async () => {
       let tauriSuccess = false;
-      try {
-        const { getCurrentWindow } = await import("@tauri-apps/api/window");
-        const win = getCurrentWindow();
-        if (win) {
+      const win = getTauriWindow();
+      if (win) {
+        try {
           await win.setFullscreen(isZenMode);
           tauriSuccess = true;
+        } catch (e) {
+          logger.warn("ui", "Failed to set Tauri fullscreen:", e);
         }
-      } catch (e) {
-        logger.error("ui", "Failed to set Tauri fullscreen:", e);
       }
 
       if (!tauriSuccess) {
