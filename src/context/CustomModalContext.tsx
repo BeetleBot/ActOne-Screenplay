@@ -106,7 +106,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         slotProps={{
           paper: {
             sx: {
-              borderRadius: "10px",
+              borderRadius: 0,
               minWidth: 280,
               p: 0.5,
               zoom: `${appScale}%`
@@ -145,7 +145,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         slotProps={{
           paper: {
             sx: {
-              borderRadius: "10px",
+              borderRadius: 0,
               minWidth: 280,
               p: 0.5,
               zoom: `${appScale}%`
@@ -181,7 +181,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
+                borderRadius: 0,
               }
             }}
           />

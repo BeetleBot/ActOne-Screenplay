@@ -204,7 +204,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
               size="small"
               onClick={handleParkSelection}
               disabled={editorView?.state.selection.main.empty}
-              startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+              startIcon={<AddIcon sx={{ fontSize: 16 }} />}
               sx={{ textTransform: "none", fontSize: 11, fontWeight: 600 }}
             >
               Park Selection
@@ -254,7 +254,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
                     flexDirection: "column",
                     flexShrink: 0,
                     bgcolor: isSelected ? "action.selected" : "transparent",
-                    transition: "border-color 0.12s ease, background-color 0.12s ease",
+                    transition: "border-color var(--duration-fast) ease, background-color var(--duration-fast) ease",
                     "&:hover": {
                       borderColor: "primary.main",
                       bgcolor: isSelected ? "action.selected" : "action.hover",
@@ -277,7 +277,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
                         zIndex: 2,
                       }}
                     >
-                      <CloseIcon sx={{ fontSize: 12 }} />
+                      <CloseIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                     <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 12, lineHeight: 1.4 }}>
                       {item.text}

@@ -656,7 +656,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {/* Overview Cards */}
             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
-              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, textAlign: "center" }}>
+              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
                 <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2rem", color: "text.primary" }}>
                   {stats.pages}
                 </Typography>
@@ -668,7 +668,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                 </Typography>
               </Paper>
 
-              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, textAlign: "center" }}>
+              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
                 <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2rem", color: "text.primary" }}>
                   {stats.headingCount}
                 </Typography>
@@ -680,7 +680,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                 </Typography>
               </Paper>
 
-              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, textAlign: "center" }}>
+              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
                 <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2rem", color: "text.primary" }}>
                   {characters.length}
                 </Typography>
@@ -692,7 +692,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                 </Typography>
               </Paper>
 
-              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, textAlign: "center" }}>
+              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
                 <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2rem", color: "text.primary" }}>
                   {stats.totalWords.toLocaleString()}
                 </Typography>
@@ -710,7 +710,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
               <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.primary", mb: 2 }}>
                 Dialogue Distribution
               </Typography>
-              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
                   {characters.slice(0, 15).map((char, idx) => {
                     const profile = characterProfiles[char.name] || {};
@@ -722,8 +722,8 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                         <Typography variant="caption" sx={{ width: 100, textAlign: "right", fontWeight: 700, fontSize: "0.7rem", color: "text.secondary" }}>
                           {char.name}
                         </Typography>
-                        <Box sx={{ flex: 1, bgcolor: "action.hover", height: 16, borderRadius: 1, overflow: "hidden" }}>
-                          <Box sx={{ width: `${barWidth}%`, height: "100%", bgcolor: swatchColor, borderRadius: "0 4px 4px 0", transition: "width 0.5s ease" }} />
+                        <Box sx={{ flex: 1, bgcolor: "action.hover", height: 16, borderRadius: 0, overflow: "hidden" }}>
+                          <Box sx={{ width: `${barWidth}%`, height: "100%", bgcolor: swatchColor, borderRadius: 0, transition: "width var(--duration-slow) ease" }} />
                         </Box>
                         <Typography variant="caption" sx={{ width: 40, fontWeight: 600, fontSize: "0.75rem", color: "text.primary" }}>
                           {char.wordCount}
@@ -775,7 +775,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
               <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.primary", mb: 2 }}>
                 Gender Analysis
               </Typography>
-              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
                 <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 4, alignItems: "center" }}>
                 <Box sx={{ display: "flex", justifyContent: "center", flexShrink: 0, width: 160 }}>
                   {/* SVG Donut Chart */}
@@ -844,7 +844,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
               <Grid container spacing={2}>
                 {/* INT / EXT Donut */}
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, textAlign: "center" }}>
+                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                       INTERIOR / EXTERIOR
                     </Typography>
@@ -879,7 +879,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
 
                 {/* Time of Day Donut */}
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, textAlign: "center" }}>
+                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                       TIME OF DAY
                     </Typography>
@@ -936,7 +936,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
 
                 {/* Scene Length Distribution */}
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, textAlign: "center" }}>
+                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                       SCENE LENGTH DISTRIBUTION
                     </Typography>
@@ -951,7 +951,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                               <Typography variant="caption" sx={{ fontSize: "0.6rem", fontWeight: 700, mb: 0.5, color: "text.primary" }}>
                                 {b.count}
                               </Typography>
-                              <Box sx={{ width: 14, height: `${heightPct * 0.6}%`, bgcolor: "primary.main", borderRadius: "2px 2px 0 0", minHeight: b.count > 0 ? 4 : 0 }} />
+                              <Box sx={{ width: 14, height: `${heightPct * 0.6}%`, bgcolor: "primary.main", borderRadius: 0, minHeight: b.count > 0 ? 4 : 0 }} />
                               <Box sx={{ position: "absolute", bottom: -24, left: "50%", transform: "translateX(-50%)", width: "100%", textAlign: "center" }}>
                                 <Typography variant="caption" sx={{ fontSize: "0.5rem", color: "text.secondary", whiteSpace: "nowrap", display: "block" }}>
                                   {b.label}
@@ -967,7 +967,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
 
                 {/* Top Locations */}
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textAlign: "center", display: "block", mb: 1 }}>
                       TOP LOCATIONS
                     </Typography>
@@ -1000,7 +1000,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
               </Box>
               <Paper
                 elevation={0}
-                sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}
                 onWheel={(e) => {
                   if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
@@ -1075,11 +1075,11 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "center", gap: 3, mt: 1 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ width: 10, height: 10, bgcolor: "#f59e0b", borderRadius: "2px" }} />
+                    <Box sx={{ width: 10, height: 10, bgcolor: "#f59e0b", borderRadius: 0 }} />
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Action</Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ width: 10, height: 10, bgcolor: "#3b82f6", borderRadius: "2px" }} />
+                    <Box sx={{ width: 10, height: 10, bgcolor: "#3b82f6", borderRadius: 0 }} />
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Dialogue</Typography>
                   </Box>
                 </Box>
@@ -1091,7 +1091,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
               <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.primary", mb: 2 }}>
                 Character Presence by Scene
               </Typography>
-              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
                 <Box sx={{ overflowX: "auto" }}>
                   <table style={{ borderCollapse: "collapse" }}>
                     <thead>
@@ -1118,7 +1118,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                                   width: 14,
                                   height: 14,
                                   mx: "auto",
-                                  borderRadius: "2px",
+                                  borderRadius: 0,
                                   bgcolor: isPresent ? "primary.main" : "action.hover",
                                 }}
                               />
@@ -1143,7 +1143,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
               </Typography>
             </Box>
 
-            <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+            <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
               <Box sx={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", color: "var(--text-muted, #aaa)" }}>
                   <thead>
@@ -1253,11 +1253,11 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                         alignItems: "center",
                         justifyContent: "space-between",
                         p: 1,
-                        borderRadius: "6px",
+                        borderRadius: 0,
                         bgcolor: "background.paper",
                         border: "1px solid",
                         borderColor: "divider",
-                        transition: "background-color 0.2s",
+                        transition: "background-color var(--duration-fast)",
                         "&:hover": { bgcolor: "action.hover" },
                       }}
                     >
@@ -1270,7 +1270,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            borderRadius: "10px",
+                            borderRadius: 0,
                             bgcolor: `${swatchColor}18`,
                             flexShrink: 0,
                           }}
@@ -1402,7 +1402,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                       const sharedScenes = getGroupSharedScenes(chars);
                       return (
                         <>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover", p: 1, borderRadius: 1 }}>
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover", p: 1, borderRadius: 0 }}>
                             <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
                               Shared Scenes
                             </Typography>
@@ -1421,7 +1421,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                               {sharedScenes.map((s, idx) => (
                                 <Box
                                   key={idx}
-                                  sx={{ p: 0.75, bgcolor: "action.hover", borderRadius: 1, borderLeft: "2px solid", borderLeftColor: "primary.main", cursor: "pointer" }}
+                                  sx={{ p: 0.75, bgcolor: "action.hover", borderRadius: 0, borderLeft: "2px solid", borderLeftColor: "primary.main", cursor: "pointer" }}
                                   onDoubleClick={async () => {
                                     try {
                                       const { emit } = await import("@tauri-apps/api/event");
@@ -1485,15 +1485,15 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                               return (
                                 <Box
                                   key={peer}
-                                  sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", "&:hover": { bgcolor: "action.hover" }, borderRadius: 0.5, px: 0.5, py: 0.25 }}
+                                  sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", "&:hover": { bgcolor: "action.hover" }, borderRadius: 0, px: 0.5, py: 0.25 }}
                                   onClick={() => setHoveredNode(peer)}
                                 >
                                   <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: peerColor, flexShrink: 0 }} />
                                   <Typography variant="caption" sx={{ width: 70, fontWeight: 600, fontSize: "0.6rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "text.primary" }}>
                                     {peer}
                                   </Typography>
-                                  <Box sx={{ flex: 1, bgcolor: "action.hover", height: 6, borderRadius: 1, overflow: "hidden" }}>
-                                    <Box sx={{ width: `${pct}%`, height: "100%", bgcolor: peerColor, borderRadius: 1, transition: "width 0.3s ease" }} />
+                                  <Box sx={{ flex: 1, bgcolor: "action.hover", height: 6, borderRadius: 0, overflow: "hidden" }}>
+                                    <Box sx={{ width: `${pct}%`, height: "100%", bgcolor: peerColor, borderRadius: 0, transition: "width var(--duration-slow) ease" }} />
                                   </Box>
                                   <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "0.6rem", color: "text.primary", minWidth: 18, textAlign: "right" }}>
                                     {c.interactions}
@@ -1534,7 +1534,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                                   {shared.map((s, idx) => (
                                     <Box
                                       key={idx}
-                                      sx={{ p: 0.75, bgcolor: "action.hover", borderRadius: 1, borderLeft: "2px solid", borderLeftColor: "primary.main", cursor: "pointer" }}
+                                      sx={{ p: 0.75, bgcolor: "action.hover", borderRadius: 0, borderLeft: "2px solid", borderLeftColor: "primary.main", cursor: "pointer" }}
                                       onDoubleClick={async () => {
                                         try {
                                           const { emit } = await import("@tauri-apps/api/event");
@@ -1811,7 +1811,7 @@ function CharacterEditModal({
                     bgcolor: "#252525",
                     px: 1,
                     py: 0.5,
-                    borderRadius: 1,
+                    borderRadius: 0,
                   }}
                 >
                   <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 600 }}>

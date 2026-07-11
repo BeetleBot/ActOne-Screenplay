@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import { EditorState, Compartment, Transaction, RangeSetBuilder } from "@codemirror/state";
+import { EditorState, Compartment, Transaction, RangeSetBuilder, StateField } from "@codemirror/state";
 import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip, placeholder, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
-import { search } from "@codemirror/search";
+import { search, setSearchQuery, getSearchQuery } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
 import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
@@ -301,6 +301,35 @@ const activeLineAlwaysPlugin = ViewPlugin.fromClass(
 );
 
 
+const searchMatchDeco = Decoration.mark({ class: "cm-searchMatch" });
+const activeSearchMatchDeco = Decoration.mark({ class: "cm-searchMatch cm-searchMatch-selected" });
+
+const searchHighlightField = StateField.define<DecorationSet>({
+  create() {
+    return Decoration.none;
+  },
+  update(decorations, tr) {
+    const query = getSearchQuery(tr.state);
+    if (!query || !query.valid || !query.search) {
+      return Decoration.none;
+    }
+    if (tr.docChanged || tr.selection || tr.effects.some(e => e.is(setSearchQuery))) {
+      const builder = new RangeSetBuilder<Decoration>();
+      const cursor = query.getCursor(tr.state);
+      const { from: selFrom, to: selTo } = tr.state.selection.main;
+
+      for (const { from, to } of cursor) {
+        const isActive = (from === selFrom && to === selTo);
+        builder.add(from, to, isActive ? activeSearchMatchDeco : searchMatchDeco);
+      }
+      return builder.finish();
+    }
+    return decorations.map(tr.changes);
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
+
 interface UseCodeMirrorProdTagItem {
   range?: [number, number];
   definitionId: string;
@@ -529,6 +558,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         fountainHighlightField,
         smartQuotesExtension,
         search(),
+        searchHighlightField,
         prodTagsTooltip,
 
         typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),

@@ -525,7 +525,7 @@ export const OutlineView = React.memo(() => {
               py: 0.25,
               borderRadius: 0,
               mb: 0.1,
-              transition: "background-color 0.12s ease",
+              transition: "background-color var(--duration-fast) ease",
             }}
           >
             <IconButton
@@ -535,7 +535,7 @@ export const OutlineView = React.memo(() => {
                 p: 0.1,
                 mr: 0.4,
                 transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
-                transition: "transform 0.15s ease",
+                transition: "transform var(--duration-normal) ease",
               }}
             >
               <KeyboardArrowDownIcon  />
@@ -611,7 +611,7 @@ export const OutlineView = React.memo(() => {
                   ? `color-mix(in srgb, ${sceneColor} 8%, transparent)`
                   : `${sceneColor}12`)
               : "transparent",
-          transition: "background-color 0.12s ease",
+          transition: "background-color var(--duration-fast) ease",
           position: "relative",
           "&:hover": {
             bgcolor: sceneColor

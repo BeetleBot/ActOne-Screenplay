@@ -491,13 +491,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: isDark ? `${theme.palette.background.default}66` : "action.hover", color: theme.palette.text.secondary }}>
         <Box sx={{ display: "flex", gap: 1.5 }}>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0.5 }}>↑↓</Typography> navigate
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0 }}>↑↓</Typography> navigate
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0.5 }}>Enter</Typography> run
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0 }}>Enter</Typography> run
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0.5 }}>Esc</Typography> close
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0 }}>Esc</Typography> close
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.7 }}>ActOne Palette</Typography>

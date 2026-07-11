@@ -22,7 +22,7 @@ export const KBD: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
       bgcolor: "action.selected",
       border: "1px solid",
       borderColor: "divider",
-      borderRadius: "4px",
+      borderRadius: 0,
       lineHeight: 1.5,
       verticalAlign: "middle",
     }}
@@ -40,7 +40,7 @@ const Mono: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
       fontSize: "12px",
       bgcolor: "action.hover",
       px: 0.5,
-      borderRadius: "3px",
+      borderRadius: 0,
     }}
   >
     {children}

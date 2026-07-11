@@ -212,7 +212,7 @@ export const SprintView = React.memo(() => {
                       letterSpacing: "0.04em",
                       cursor: "pointer",
                       textTransform: "uppercase",
-                      transition: "all 0.12s",
+                      transition: "all var(--duration-fast)",
                       userSelect: "none",
                     }}
                   >

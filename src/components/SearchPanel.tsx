@@ -9,7 +9,7 @@ import {
 } from "./Icons";
 import {
   Box, Typography, IconButton, TextField, Chip, List, ListItemButton,
-  ListItemText, Tooltip, Button, Divider,
+  ListItemText, Tooltip, Button, Divider, ToggleButtonGroup, ToggleButton,
 } from "@mui/material";
 import { LineType } from "../parser/FountainParser";
 import { logger } from "../utils/logger";
@@ -26,42 +26,6 @@ interface SearchResult {
   lineText: string;
   sceneContext: string;
 }
-
-const OptionButton: React.FC<{
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  title: string;
-}> = ({ active, onClick, label, title }) => (
-  <Tooltip title={title}>
-    <Box
-      component="button"
-      onClick={onClick}
-      sx={{
-        minWidth: 26,
-        height: 22,
-        px: 0.8,
-        fontSize: 10,
-        fontWeight: 700,
-        fontFamily: "var(--font-ui)",
-        bgcolor: active ? "var(--button-color)" : "transparent",
-        color: active ? "#fff" : "text.secondary",
-        border: "1px solid",
-        borderColor: active ? "var(--button-color)" : "divider",
-        borderRadius: 0,
-        cursor: "pointer",
-        userSelect: "none",
-        transition: "all 0.12s ease",
-        "&:hover": {
-          bgcolor: active ? "var(--button-color)" : "action.hover",
-          borderColor: active ? "var(--button-color)" : "text.secondary",
-        },
-      }}
-    >
-      {label}
-    </Box>
-  </Tooltip>
-);
 
 export const SearchPanel: React.FC = () => {
   const { editorView } = useEditor();
@@ -415,7 +379,7 @@ export const SearchPanel: React.FC = () => {
                   {query && (
                     <Tooltip title="Clear search">
                       <IconButton size="small" onClick={() => { setQuery(""); setSelected(new Set()); setActiveIndex(-1); }}>
-                        <CloseIcon sx={{ fontSize: 12 }} />
+                        <CloseIcon sx={{ fontSize: 14 }} />
                       </IconButton>
                     </Tooltip>
                   )}
@@ -429,14 +393,14 @@ export const SearchPanel: React.FC = () => {
                   <Tooltip title="Previous match (Shift+Enter)">
                     <span>
                       <IconButton size="small" onClick={() => goTo(-1)} disabled={resultRows.length === 0}>
-                        <ArrowUpwardIcon sx={{ fontSize: 14 }} />
+                        <ArrowUpwardIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </span>
                   </Tooltip>
                   <Tooltip title="Next match (Enter)">
                     <span>
                       <IconButton size="small" onClick={() => goTo(1)} disabled={resultRows.length === 0}>
-                        <ArrowDownwardIcon sx={{ fontSize: 14 }} />
+                        <ArrowDownwardIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </span>
                   </Tooltip>
@@ -455,8 +419,45 @@ export const SearchPanel: React.FC = () => {
               sx={{ height: 22, fontSize: 10, fontWeight: 600, borderRadius: PILL_RADIUS }}
             />
           )}
-          <OptionButton active={caseSensitive} onClick={() => setCaseSensitive((v) => !v)} label="Aa" title="Match case" />
-          <OptionButton active={wholeWord} onClick={() => setWholeWord((v) => !v)} label="\\b" title="Whole word" />
+          <ToggleButtonGroup
+            size="small"
+            value={[
+              ...(caseSensitive ? ["case" as const] : []),
+              ...(wholeWord ? ["word" as const] : []),
+            ]}
+            onChange={(_, values: string[]) => {
+              setCaseSensitive(values.includes("case"));
+              setWholeWord(values.includes("word"));
+            }}
+            sx={{
+              gap: 0.25,
+              "& .MuiToggleButtonGroup-grouped": {
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: "0px !important",
+                minWidth: 26,
+                height: 22,
+                fontSize: 10,
+                fontWeight: 700,
+                p: "0 6px",
+                textTransform: "none",
+                "&.Mui-selected": {
+                  bgcolor: "var(--button-color)",
+                  color: "#fff",
+                  borderColor: "var(--button-color)",
+                  "&:hover": {
+                    bgcolor: "var(--button-color)",
+                  },
+                },
+                "&:hover": {
+                  bgcolor: "action.hover",
+                },
+              },
+            }}
+          >
+            <ToggleButton value="case" title="Match case">Aa</ToggleButton>
+            <ToggleButton value="word" title="Whole word">\b</ToggleButton>
+          </ToggleButtonGroup>
         </Box>
 
         {showReplace && (
@@ -587,7 +588,7 @@ export const SearchPanel: React.FC = () => {
                       py: 0.75,
                       borderRadius: 0,
                       mb: 0.25,
-                      transition: "all 0.12s ease",
+                      transition: "all var(--duration-fast) ease",
                       bgcolor: isActive ? "action.selected" : "transparent",
                       "&.Mui-selected": {
                         bgcolor: "action.selected",
@@ -618,7 +619,7 @@ export const SearchPanel: React.FC = () => {
                         mr: 1,
                         mt: 0.25,
                         flexShrink: 0,
-                        transition: "all 0.12s ease",
+                        transition: "all var(--duration-fast) ease",
                         "&:hover": { borderColor: "primary.main" },
                       }}
                     >

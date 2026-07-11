@@ -448,7 +448,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
                 borderColor: (t) => taskComplete ? alpha(t.palette.success.main, 0.3) : t.palette.divider,
                 px: 2,
                 py: 1.5,
-                borderRadius: 1.5,
+                borderRadius: 0,
                 mb: 2.5,
               }}
             >
@@ -510,7 +510,7 @@ export const TutorialSelectionDialog: React.FC<TutorialSelectionDialogProps> = (
         paper: {
           sx: {
             p: 1,
-            borderRadius: 3,
+            borderRadius: 0,
             border: 1,
             borderColor: "divider",
           },
@@ -520,7 +520,7 @@ export const TutorialSelectionDialog: React.FC<TutorialSelectionDialogProps> = (
       <DialogTitle sx={{ fontWeight: 800, fontSize: 16, pb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         Interactive Tutorials
         <IconButton size="small" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 18 }} />
+          <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ pb: 2 }}>
@@ -533,12 +533,12 @@ export const TutorialSelectionDialog: React.FC<TutorialSelectionDialogProps> = (
             onClick={() => { onSelectTour("ui"); onClose(); }}
             sx={{
               p: 2,
-              borderRadius: 2,
+              borderRadius: 0,
               cursor: "pointer",
               border: 1,
               borderColor: "divider",
               bgcolor: "background.paper",
-              transition: "all 0.12s ease",
+              transition: "all var(--duration-fast) ease",
               "&:hover": {
                 borderColor: "primary.main",
                 bgcolor: "action.hover",
@@ -558,12 +558,12 @@ export const TutorialSelectionDialog: React.FC<TutorialSelectionDialogProps> = (
             onClick={() => { onSelectTour("fountain"); onClose(); }}
             sx={{
               p: 2,
-              borderRadius: 2,
+              borderRadius: 0,
               cursor: "pointer",
               border: 1,
               borderColor: "divider",
               bgcolor: "background.paper",
-              transition: "all 0.12s ease",
+              transition: "all var(--duration-fast) ease",
               "&:hover": {
                 borderColor: "primary.main",
                 bgcolor: "action.hover",

@@ -124,7 +124,7 @@ const inputSx = {
   fontSize: 12,
   '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
   bgcolor: 'action.hover',
-  borderRadius: '6px',
+  borderRadius: 0,
   '&:hover': { bgcolor: 'action.selected' },
   '& .MuiOutlinedInput-input': { py: 0.6, px: 1.25 },
 };
@@ -172,7 +172,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
           <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Title Page Editor</Typography>
         </Box>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 18 }} />
+          <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
       </DialogTitle>
 
@@ -191,7 +191,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
 
       <DialogContent dividers sx={{ px: 2, py: 1.5, maxHeight: `${(65 * 100) / appScale}vh` }}>
         {activeTab === 0 && (
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
               METADATA FIELDS
             </Typography>
@@ -223,7 +223,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
         )}
 
         {activeTab === 1 && (
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
               RAW FOUNTAIN SYNTAX
             </Typography>
@@ -240,7 +240,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
                 sx={{
                   '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                   bgcolor: 'action.hover',
-                  borderRadius: '6px',
+                  borderRadius: 0,
                 }}
                 slotProps={{
                   input: {

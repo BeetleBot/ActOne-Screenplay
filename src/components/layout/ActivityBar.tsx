@@ -125,7 +125,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
             bgcolor: 'primary.main',
             borderBottom: 1,
             borderColor: 'divider',
-            transition: 'background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            transition: 'background-color var(--duration-slow) var(--easing-standard)',
             '&:hover': {
               bgcolor: 'transparent',
               '& .command-palette-icon': {
@@ -152,7 +152,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'primary.contrastText',
-                transition: 'color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                transition: 'color var(--duration-slow) var(--easing-standard), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
               <ActionKeyIcon sx={{ fontSize: 19 }} />
@@ -178,7 +178,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                   flexShrink: 0,
                   borderBottom: 1,
                   borderColor: 'divider',
-                  transition: 'background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'background-color var(--duration-slow) var(--easing-standard), color var(--duration-slow) var(--easing-standard)',
                   '&:hover': {
                     bgcolor: 'primary.main',
                     color: 'primary.contrastText',
@@ -224,7 +224,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
             cursor: 'pointer',
             color: anchorEl ? 'primary.contrastText' : 'text.secondary',
             bgcolor: anchorEl ? 'primary.main' : 'transparent',
-            transition: 'background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            transition: 'background-color var(--duration-slow) var(--easing-standard), color var(--duration-slow) var(--easing-standard)',
             '&:hover': {
               bgcolor: 'primary.main',
               color: 'primary.contrastText',
@@ -274,7 +274,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
           <KeyboardArrowDownIcon sx={{
             fontSize: 16, color: 'text.disabled',
             transform: collapsedSections.has('editor') ? 'rotate(-90deg)' : 'rotate(0deg)',
-            transition: 'transform 0.15s',
+            transition: 'transform var(--duration-normal)',
           }} />
         </Box>
 
@@ -330,7 +330,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
           <KeyboardArrowDownIcon sx={{
             fontSize: 16, color: 'text.disabled',
             transform: collapsedSections.has('theme') ? 'rotate(-90deg)' : 'rotate(0deg)',
-            transition: 'transform 0.15s',
+            transition: 'transform var(--duration-normal)',
           }} />
         </Box>
 
@@ -352,11 +352,11 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                           <Box
                             onClick={() => setTheme(cat.adaptiveId!)}
                             sx={{
-                              width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                              width: 28, height: 28, borderRadius: 0, cursor: 'pointer',
                               border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                               display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                               '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                              transition: 'border-color 0.12s ease',
+                              transition: 'border-color var(--duration-fast) ease',
                             }}
                           >
                             <Box sx={{ bgcolor: meta.swatchColors[0] }} />
@@ -374,11 +374,11 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                           <Box
                             onClick={() => setTheme(t.id)}
                             sx={{
-                              width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                              width: 28, height: 28, borderRadius: 0, cursor: 'pointer',
                               border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                               display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                               '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                              transition: 'border-color 0.12s ease',
+                              transition: 'border-color var(--duration-fast) ease',
                             }}
                           >
                             <Box sx={{ bgcolor: t.colors.editor }} />
@@ -407,11 +407,11 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                         <Box
                           onClick={() => setTheme(t.id)}
                           sx={{
-                            width: 28, height: 28, borderRadius: '7px', cursor: 'pointer',
+                            width: 28, height: 28, borderRadius: 0, cursor: 'pointer',
                             border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                             display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                             '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                            transition: 'border-color 0.12s ease',
+                            transition: 'border-color var(--duration-fast) ease',
                           }}
                         >
                           <Box sx={{ bgcolor: t.colors.editor }} />
@@ -447,7 +447,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
           <KeyboardArrowDownIcon sx={{
             fontSize: 16, color: 'text.disabled',
             transform: collapsedSections.has('layout') ? 'rotate(-90deg)' : 'rotate(0deg)',
-            transition: 'transform 0.15s',
+            transition: 'transform var(--duration-normal)',
           }} />
         </Box>
 

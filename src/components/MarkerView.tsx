@@ -173,7 +173,7 @@ export const MarkerView = React.memo(() => {
                   size="small"
                   onClick={() => setSearchQuery("")}
                 >
-                  <CloseIcon sx={{ fontSize: 12 }} />
+                  <CloseIcon sx={{ fontSize: 14 }} />
                 </IconButton>
               ),
             },
@@ -204,7 +204,7 @@ export const MarkerView = React.memo(() => {
                   borderColor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 30%, transparent)`,
                   bgcolor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 8%, transparent)`,
                   color: isSelected ? "#ffffff" : `color-mix(in srgb, ${colorVal} 85%, currentColor)`,
-                  transition: "all 0.15s ease",
+                  transition: "all var(--duration-normal) ease",
                   "&:hover": {
                     borderColor: colorVal,
                     bgcolor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 15%, transparent)`,
@@ -256,7 +256,7 @@ export const MarkerView = React.memo(() => {
                   borderRadius: 0,
                   mb: 0.25,
                   alignItems: "center",
-                  transition: "all 0.12s ease",
+                  transition: "all var(--duration-fast) ease",
                   bgcolor: isSelected
                     ? (colorVal.startsWith("var")
                         ? `color-mix(in srgb, ${colorVal} 20%, transparent)`

@@ -132,7 +132,7 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
               alignItems: "center", 
               gap: 0.5,
               opacity: 1,
-              transition: "opacity 0.2s ease-in-out",
+              transition: "opacity var(--duration-fast) ease-in-out",
               flexShrink: 0
             }}
           >
@@ -207,8 +207,8 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
                 borderColor: (t) => alpha(t.palette.primary.main, 0.15),
                 px: 1.2,
                 py: 0.25,
-                borderRadius: 1,
-                transition: "all 0.15s ease",
+                borderRadius: 0,
+                transition: "all var(--duration-normal) ease",
                 "&:hover": {
                   bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
                 },

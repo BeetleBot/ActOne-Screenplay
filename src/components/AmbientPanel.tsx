@@ -63,7 +63,7 @@ export const AmbientPanel: React.FC = () => {
       </Box>
 
       {/* Volume Control */}
-      <Card sx={{ m: 2, bgcolor: "background.paper", borderRadius: 2 }} elevation={0} variant="outlined">
+      <Card sx={{ m: 2, bgcolor: "background.paper", borderRadius: 0 }} elevation={0} variant="outlined">
         <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1, color: "text.secondary" }}>
             <VolumeIcon />
@@ -101,12 +101,12 @@ export const AmbientPanel: React.FC = () => {
                 key={t.id}
                 onClick={() => handleToggleTrack(t.id)}
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: 0,
                   cursor: "pointer",
                   border: 1,
                   borderColor: isActive ? "primary.main" : "divider",
                   bgcolor: isActive ? (theme) => alpha(theme.palette.primary.main, 0.05) : "background.paper",
-                  transition: "all 0.15s ease",
+                  transition: "all var(--duration-normal) ease",
                   py: 1.5,
                   px: 2,
                   "&:hover": {

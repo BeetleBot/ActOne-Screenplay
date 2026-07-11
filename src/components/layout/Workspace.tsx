@@ -102,7 +102,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
               opacity: isZenMode ? 0 : 1,
               pointerEvents: isZenMode ? 'none' : 'auto',
               '&:hover': { bgcolor: 'var(--button-color)', opacity: 0.3 },
-              transition: 'background-color 0.2s, opacity 0.3s ease-in-out 0.1s, width 0.3s ease-in-out 0.1s',
+              transition: 'background-color var(--duration-fast), opacity 0.3s ease-in-out 0.1s, width 0.3s ease-in-out 0.1s',
             }}
           />
         </>
@@ -125,7 +125,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
             className={`editor-paper paper-${paperSize}`}
             sx={{
               zoom: zoomLevel / 100,
-              transition: 'zoom 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'zoom var(--duration-slow) var(--easing-standard)',
             }}
           >
             <ErrorBoundary name="editor"><FountainEditor /></ErrorBoundary>

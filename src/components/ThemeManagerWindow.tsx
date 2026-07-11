@@ -172,7 +172,7 @@ function ThemePreview({ colors }: { colors: ThemeColors }) {
           {/* Action Blocks */}
           <Box sx={{ color: colors.text, opacity: 0.8, fontSize: "6.5px", lineHeight: 1.3 }}>
             The morning rush is in full swing. JANE (20s) sits alone at a corner table, staring intently at her{" "}
-            <Box component="span" sx={{ bgcolor: colors.selectionBg, color: colors.selectionText, px: 0.3, borderRadius: "2px" }}>
+            <Box component="span" sx={{ bgcolor: colors.selectionBg, color: colors.selectionText, px: 0.3, borderRadius: 0 }}>
               laptop screen.
             </Box>
           </Box>
@@ -451,7 +451,7 @@ export const ThemeManagerWindow: React.FC = () => {
                     { name: "Forest", colors: { sidebar: "#1a2e1a", editor: "#1f3d1f", accent: "#6b8c42" } },
                     { name: "Lavender", colors: { sidebar: "#1e1a2e", editor: "#2a1f3d", accent: "#b39ddb" } },
                   ].map(p => (
-                    <Box key={p.name} onClick={() => applyPreset(p)} sx={{ width: 44, height: 44, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: "divider", display: "flex", flexDirection: "column", overflow: "hidden", "&:hover": { borderColor: "primary.main" }, transition: "border-color 0.12s ease" }}>
+                    <Box key={p.name} onClick={() => applyPreset(p)} sx={{ width: 44, height: 44, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: "divider", display: "flex", flexDirection: "column", overflow: "hidden", "&:hover": { borderColor: "primary.main" }, transition: "border-color var(--duration-fast) ease" }}>
                       <Box sx={{ flex: 1, bgcolor: p.colors.sidebar }} />
                       <Box sx={{ flex: 1, bgcolor: p.colors.editor }} />
                       <Box sx={{ height: 6, bgcolor: p.colors.accent }} />
@@ -480,7 +480,7 @@ export const ThemeManagerWindow: React.FC = () => {
                         const meta = ADAPTIVE_THEME_META[cat.adaptiveId!];
                         const isActive = themeId === cat.adaptiveId;
                         return (
-                          <Box onClick={() => setTheme(cat.adaptiveId!)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
+                          <Box onClick={() => setTheme(cat.adaptiveId!)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all var(--duration-fast) ease" }}>
                             <Box sx={{ width: 32, height: 32, borderRadius: 0, overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
                               <Box sx={{ flex: 1, bgcolor: meta.splitLightBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: meta.splitLightDot }} />
@@ -503,7 +503,7 @@ export const ThemeManagerWindow: React.FC = () => {
                         const isActive = themeId === t.id;
                         const tc = t.colors;
                         return (
-                          <Box key={t.id} onClick={() => setTheme(t.id)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }}>
+                          <Box key={t.id} onClick={() => setTheme(t.id)} sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "divider", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all var(--duration-fast) ease" }}>
                             <Box sx={{ width: 32, height: 32, borderRadius: 0, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
                               <Box sx={{ bgcolor: tc.editor }} />
                               <Box sx={{ bgcolor: tc.sidebar }} />
@@ -534,7 +534,7 @@ export const ThemeManagerWindow: React.FC = () => {
                 {customThemes.map(ct => {
                   const isActive = themeId === ct.id;
                   return (
-                    <Box key={ct.id} sx={{ display: "flex", alignItems: "center", gap: 1, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "transparent", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all 0.12s ease" }} onClick={() => setTheme(ct.id)}>
+                    <Box key={ct.id} sx={{ display: "flex", alignItems: "center", gap: 1, p: 1, mb: 0.5, borderRadius: 0, cursor: "pointer", border: "2px solid", borderColor: isActive ? "primary.main" : "transparent", bgcolor: isActive ? "action.selected" : "transparent", "&:hover": { bgcolor: "action.hover" }, transition: "all var(--duration-fast) ease" }} onClick={() => setTheme(ct.id)}>
                       <Box sx={{ width: 28, height: 28, borderRadius: 0, overflow: "hidden", display: "flex", flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
                         <Box sx={{ width: 7, bgcolor: ct.colors.sidebar }} />
                         <Box sx={{ flex: 1, bgcolor: ct.colors.editor, display: "flex", alignItems: "center", justifyContent: "center" }}>

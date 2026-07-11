@@ -63,7 +63,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           gap: 1.5,
           p: 1.5,
           m: 0.5,
-          borderRadius: 1,
+          borderRadius: 0,
           bgcolor: "error.main",
           color: "error.contrastText",
           opacity: 0.85,

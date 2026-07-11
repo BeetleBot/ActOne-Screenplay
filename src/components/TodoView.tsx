@@ -173,7 +173,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
               disablePadding
               secondaryAction={
                 <IconButton edge="end" size="small" onClick={() => deleteTodo(todo.id)}>
-                  <CloseIcon sx={{ fontSize: 12 }} />
+                  <CloseIcon sx={{ fontSize: 14 }} />
                 </IconButton>
               }
               sx={(theme) => ({
@@ -202,7 +202,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                     component="span"
                     sx={{
                       opacity: 0.4,
-                      transition: "opacity 0.15s",
+                      transition: "opacity var(--duration-normal)",
                       ".MuiListItemButton-root:hover &": { opacity: 1 }
                     }}
                   >
@@ -253,7 +253,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                 sx={{
                   fontSize: 14,
                   transform: showCompleted ? "rotate(0deg)" : "rotate(-90deg)",
-                  transition: "transform 0.15s"
+                  transition: "transform var(--duration-normal)"
                 }}
               />
             }
@@ -277,7 +277,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                   disablePadding
                   secondaryAction={
                     <IconButton edge="end" size="small" onClick={() => deleteTodo(todo.id)}>
-                      <CloseIcon sx={{ fontSize: 12 }} />
+                      <CloseIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   }
                   sx={(theme) => ({
@@ -296,7 +296,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                         component="span"
                         sx={{
                           opacity: 0.6,
-                          transition: "opacity 0.15s",
+                          transition: "opacity var(--duration-normal)",
                           ".MuiListItemButton-root:hover &": { opacity: 1 }
                         }}
                       >

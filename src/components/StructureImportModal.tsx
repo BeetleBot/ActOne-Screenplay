@@ -156,7 +156,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
                     borderColor: isSelected ? "primary.main" : "divider",
                     bgcolor: isSelected ? "action.selected" : "background.paper",
                     cursor: "pointer",
-                    transition: "all 0.15s ease",
+                    transition: "all var(--duration-normal) ease",
                     "&:hover": {
                       borderColor: isSelected ? "primary.main" : "text.secondary",
                       bgcolor: isSelected ? "action.selected" : "action.hover",

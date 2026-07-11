@@ -160,8 +160,18 @@ export const HeaderBar = React.memo(() => {
                     bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.text.primary, 0.04),
                     color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary
                   },
-                  transition: 'all 0.12s ease',
+                  transition: 'all var(--duration-fast) ease',
                   position: 'relative',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: isActive ? 2 : 0,
+                    bgcolor: 'primary.main',
+                    transition: 'height var(--duration-fast) ease',
+                  },
                 }}
               >
                 <span className="tab-name" style={{ fontWeight: isActive ? 600 : 400 }}>{display}</span>
@@ -216,7 +226,7 @@ export const HeaderBar = React.memo(() => {
                 '&:hover': { color: 'text.primary', bgcolor: 'action.hover' }
               }}
             >
-              <AddIcon sx={{ fontSize: 15 }} />
+              <AddIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
         </Box>
@@ -232,7 +242,7 @@ export const HeaderBar = React.memo(() => {
               px: 1,
               height: 20,
               mr: 0.5,
-              borderRadius: '10px',
+              borderRadius: 0,
               cursor: 'pointer',
               bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
               color: 'primary.main',

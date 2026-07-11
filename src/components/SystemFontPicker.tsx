@@ -64,7 +64,7 @@ export const SystemFontPicker: React.FC<SystemFontPickerProps> = ({
           Choose {script} Font
         </Typography>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 18 }} />
+          <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
       </DialogTitle>
 
@@ -91,7 +91,7 @@ export const SystemFontPicker: React.FC<SystemFontPickerProps> = ({
                 onSelect(font);
                 onClose();
               }}
-              sx={{ borderRadius: 1, py: 0.3, minHeight: 30 }}
+              sx={{ borderRadius: 0, py: 0.3, minHeight: 30 }}
             >
               <ListItemText
                 primary={font}

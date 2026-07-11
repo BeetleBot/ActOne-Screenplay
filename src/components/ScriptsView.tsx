@@ -214,7 +214,7 @@ export const ScriptsView = React.memo(() => {
                     opacity: isDragging ? 0.4 : 1,
                     borderTop: isOver ? "2px solid" : "2px solid transparent",
                     borderTopColor: isOver ? "primary.main" : "transparent",
-                    transition: "border-top-color 0.12s ease, opacity 0.12s ease",
+                    transition: "border-top-color var(--duration-fast) ease, opacity var(--duration-fast) ease",
                     "&.Mui-selected": {
                       bgcolor: "action.selected",
                       "&:hover": { bgcolor: "action.selected" },

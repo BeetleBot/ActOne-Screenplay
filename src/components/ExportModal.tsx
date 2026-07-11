@@ -484,13 +484,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 14 }}>Export Screenplay</Typography>
         </Box>
         <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 18 }} />
+          <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
       </DialogTitle>
 
       <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto", display: "flex", flexDirection: "column", gap: 1.5 }}>
         {/* Exporting Indicator */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.6, bgcolor: "action.hover", borderRadius: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.6, bgcolor: "action.hover", borderRadius: 0 }}>
           <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 11, color: "text.secondary" }}>
             {batchExport ? "Batch Exporting" : "Exporting"}
           </Typography>
@@ -534,7 +534,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         {/* Conditional Panes based on Format */}
         {format === "pdf" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                 SUMMARY SETTINGS
               </Typography>
@@ -546,7 +546,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
               </Box>
             </Box>
 
-            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
                 FORMATTING OPTIONS
               </Typography>
@@ -576,7 +576,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
               </Box>
             </Box>
 
-            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
               <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, display: 'block' }}>
                 EXPORT FONT
               </Typography>
@@ -591,7 +591,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
             </Box>
 
             {detectedScripts.length > 0 && (
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, display: 'block' }}>
                   SCRIPT FONTS
                 </Typography>
@@ -644,7 +644,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
                   size="small"
                   fullWidth
                   onClick={() => setShowFormatPanel(true)}
-                  sx={{ fontSize: 11, py: 0.5, borderRadius: '6px' }}
+                  sx={{ fontSize: 11, py: 0.5, borderRadius: 0 }}
                 >
                   Format Elements
                 </Button>
@@ -653,7 +653,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
                   size="small"
                   fullWidth
                   onClick={() => setShowWatermarkPanel(true)}
-                  sx={{ fontSize: 11, py: 0.5, borderRadius: '6px' }}
+                  sx={{ fontSize: 11, py: 0.5, borderRadius: 0 }}
                 >
                   Watermark Options
                 </Button>
@@ -662,7 +662,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         )}
 
         {format === "fdx" && (
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
               FINAL DRAFT XML
             </Typography>
@@ -673,7 +673,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         )}
 
         {format === "fadein" && (
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
               FADE IN PROFESSIONAL
             </Typography>
@@ -685,7 +685,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
 
         {format === "fountain" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                 CLEAN FOUNTAIN EXPORT
               </Typography>
@@ -694,7 +694,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
               </Typography>
             </Box>
 
-            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
                 EXPORT SECTIONS
               </Typography>
@@ -739,12 +739,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Format Elements</Typography>
           <IconButton aria-label="close" onClick={() => setShowFormatPanel(false)} sx={{ color: "text.secondary" }}>
-            <CloseIcon sx={{ fontSize: 18 }} />
+            <CloseIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </DialogTitle>
 
         <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto" }}>
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, mb: 0.5, display: "block" }}>
               SCENE NUMBERS
             </Typography>
@@ -758,7 +758,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
             </RadioGroup>
           </Box>
 
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: 0.5, mb: 0.75, display: "block" }}>
               ELEMENT FORMATTING
             </Typography>
@@ -779,7 +779,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
                           width: 28, height: 24, p: 0,
                           border: "1px solid",
                           borderColor: elementFormats[key][attr] ? "primary.main" : "divider",
-                          borderRadius: "4px",
+                          borderRadius: 0,
                           bgcolor: elementFormats[key][attr] ? "primary.main" : "transparent",
                           color: elementFormats[key][attr] ? "primary.contrastText" : "text.secondary",
                           fontSize: 10,
@@ -788,7 +788,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
                           '&:hover': {
                             bgcolor: elementFormats[key][attr] ? "primary.dark" : "action.hover",
                           },
-                          transition: "all 0.1s ease",
+                          transition: "all var(--duration-fast) ease",
                         }}
                       >
                         {attr === "bold" ? "B" : attr === "italic" ? "I" : "U"}
@@ -853,13 +853,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
             }}
             sx={{ color: "text.secondary" }}
           >
-            <CloseIcon sx={{ fontSize: 18 }} />
+            <CloseIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </DialogTitle>
 
         <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
           {/* Header Watermark */}
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
             <FormControlLabel
               control={
                 <Switch
@@ -901,7 +901,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           </Box>
 
           {/* Footer Watermark */}
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
             <FormControlLabel
               control={
                 <Switch
@@ -943,7 +943,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           </Box>
 
           {/* Center Watermark */}
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
             <FormControlLabel
               control={
                 <Switch

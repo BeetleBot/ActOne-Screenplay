@@ -9,24 +9,11 @@
   --margin-right: 96px;
   --line-height: 16px;
 
-  --radius-inline: 0px;
-  --radius-xs: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
-  --radius-full: 0px;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-2xl: 0 16px 48px rgba(0, 0, 0, 0.10);
-
   --duration-fast: 0.08s;
   --duration-normal: 0.15s;
   --duration-slow: 0.22s;
   --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
   --bg-app: #ffffff;
   --bg-sidebar: #f8f9fa;
@@ -228,13 +215,13 @@ body {
 
 .cm-searchMatch {
   background-color: rgba(var(--accent-rgb), 0.35);
-  border-radius: 2px;
+  border-radius: 0;
   box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.25);
 }
 
 .cm-selectionMatch {
   background-color: rgba(var(--accent-rgb), 0.55) !important;
-  border-radius: 2px;
+  border-radius: 0;
   box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.4);
 }
 
@@ -255,13 +242,13 @@ body {
 
 .cm-faded-line {
   opacity: 0.35;
-  transition: opacity 0.15s ease-in-out;
+  transition: opacity var(--duration-normal) ease-in-out;
 }
 
 .cm-search-match {
   background-color: #ffe066 !important;
   color: #000 !important;
-  border-radius: 2px;
+  border-radius: 0;
   box-shadow: 0 0 0 1px #d4a017;
   padding: 0 1px;
   margin: 0 -1px;
@@ -537,11 +524,11 @@ body.dark-theme {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: 5px;
+  border-radius: 0;
   border: 2px solid transparent;
   background-clip: content-box;
   min-height: 40px;
-  transition: background 0.15s ease, width 0.15s ease, height 0.15s ease;
+  transition: background var(--duration-normal) ease, width var(--duration-normal) ease, height var(--duration-normal) ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -560,7 +547,7 @@ body.dark-theme ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.18);
   border: 2px solid transparent;
   background-clip: content-box;
-  transition: background 0.15s ease, width 0.15s ease, height 0.15s ease;
+  transition: background var(--duration-normal) ease, width var(--duration-normal) ease, height var(--duration-normal) ease;
 }
 
 body.dark-theme ::-webkit-scrollbar-thumb:hover {
@@ -608,8 +595,8 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
 .cm-tooltip.cm-tooltip-autocomplete {
   background-color: color-mix(in srgb, var(--bg-sidebar) 98%, transparent) !important;
   border: 1px solid var(--border-color) !important;
-  box-shadow: var(--shadow-xl) !important;
-  border-radius: 10px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 0 !important;
   padding: 4px 0 !important;
   font-family: var(--font-ui) !important;
   font-size: 13px !important;
@@ -637,7 +624,7 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   gap: 8px !important;
   font-family: var(--font-ui) !important;
   font-size: 12.5px !important;
-  border-radius: 6px !important;
+  border-radius: 0 !important;
   transition: background-color var(--duration-fast) var(--easing-spring), color var(--duration-fast) var(--easing-spring) !important;
 }
 
@@ -746,8 +733,8 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   padding: 4px 8px;
   font-size: 11px;
   font-family: var(--font-ui, sans-serif);
-  border-radius: 4px;
-  box-shadow: var(--shadow-md);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Fast yet Bouncy Transitions & Animations */
@@ -759,26 +746,10 @@ button,
   transition: transform var(--duration-normal) var(--easing-spring), background-color var(--duration-fast) ease, box-shadow var(--duration-normal) var(--easing-spring), border-color var(--duration-fast) ease !important;
 }
 
-button:hover,
-.MuiButton-root:hover,
-.MuiIconButton-root:hover {
-  transform: scale(1.05);
-}
-
 button:active,
 .MuiButton-root:active,
 .MuiIconButton-root:active {
-  transform: scale(0.95);
-}
-
-.MuiCard-root:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: var(--shadow-md) !important;
-}
-
-.MuiCard-root:active,
-.board-card:active {
-  transform: translateY(0) scale(0.99);
+  transform: scale(0.97);
 }
 
 .sidebar,
@@ -786,24 +757,6 @@ button:active,
 .app-workspace,
 .MuiDrawer-paper {
   transition: width var(--duration-slow) var(--easing-spring), transform var(--duration-slow) var(--easing-spring) !important;
-}
-
-
-
-/* Modal Backdrop Blur (Dialogs only, not context menus or popovers) */
-.MuiModal-root:not(.MuiPopover-root) .MuiBackdrop-root {
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-.MuiTab-root {
-  transition: all var(--duration-normal) var(--easing-spring) !important;
-}
-.MuiTab-root:hover {
-  transform: translateY(-1px);
-}
-.MuiTab-root:active {
-  transform: translateY(0);
 }
 
 /* Loading Skeleton */
@@ -820,7 +773,7 @@ button:active,
 
 .skeleton-line {
   height: 16px;
-  border-radius: 4px;
+  border-radius: 0;
   background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 50%, var(--skeleton-base) 75%);
   background-size: 800px 100%;
 }

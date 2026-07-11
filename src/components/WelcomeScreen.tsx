@@ -86,7 +86,7 @@ const ActionCard: React.FC<{
       border: "none",
       borderRight: "1px solid",
       borderColor: "divider",
-      transition: "background-color 0.15s ease, transform 0.15s ease",
+      transition: "background-color var(--duration-normal) ease, transform var(--duration-normal) ease",
       "&:last-child": {
         borderRight: "none",
       },
@@ -698,7 +698,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                   gap: 0.3,
                   px: 0.75,
                   py: 0.15,
-                  borderRadius: '8px',
+                  borderRadius: 0,
                   cursor: 'pointer',
                   bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
                   color: 'primary.main',

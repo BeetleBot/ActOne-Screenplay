@@ -274,7 +274,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                       alignItems: "flex-start",
                       gap: 0.5,
                       bgcolor: colors.bgColor,
-                      transition: "background-color 0.12s ease",
+                      transition: "background-color var(--duration-fast) ease",
                       "&:hover": {
                         bgcolor: colors.hoverBgColor,
                       },
