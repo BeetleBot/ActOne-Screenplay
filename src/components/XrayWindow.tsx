@@ -1159,9 +1159,8 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                   <tbody>
                     {sceneTimings.map((t, idx) => {
                       // Timing calculations
-                      const estDialogueSecs = Math.round((t.dialogueWords / 150) * 60);
-                      const estActionSecs = Math.round((t.actionWords / 200) * 60);
-                      const totalSecs = estDialogueSecs + estActionSecs;
+                      const estDialogueSecs = Math.round((t.dialogueWords / 250) * 60);
+                      const estActionSecs = Math.round((t.actionWords / 250) * 60);
 
                       return (
                         <tr
@@ -1181,7 +1180,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                           <td style={{ padding: "10px 8px", textAlign: "right" }}>{formatDuration(estDialogueSecs)}</td>
                           <td style={{ padding: "10px 8px", textAlign: "right" }}>{formatDuration(estActionSecs)}</td>
                           <td style={{ padding: "10px 8px", textAlign: "right", color: "#10b981", fontWeight: 700 }}>
-                            {formatDuration(totalSecs)}
+                            {formatDuration(t.durationSeconds)}
                           </td>
                           <td style={{ padding: "10px 8px", textAlign: "right" }}>
                             {formatDuration(t.offsetSeconds)}
@@ -1201,6 +1200,9 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
                     </tr>
                   </tbody>
                 </table>
+                <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.7rem", mt: 1, fontStyle: "italic" }}>
+                  Approximate reading time based on ~250 words per minute (industry standard: 1 page ≈ 1 minute of screen time).
+                </Typography>
               </Box>
             </Paper>
           </Box>
