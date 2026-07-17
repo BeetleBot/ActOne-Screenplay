@@ -31,27 +31,92 @@ interface TourStep {
 const UI_STEPS: TourStep[] = [
   {
     title: "Welcome to ActOne!",
-    description: "Let's take a quick 1-minute tour of the workspace to get you oriented with the interface.",
+    description: "Let's take a guided tour of the workspace to get you familiar with every part of the interface.",
+  },
+  {
+    targetId: "command-palette-btn",
+    title: "Command Palette",
+    description: "The logo button at the top of the Activity Bar opens the Command Palette (Ctrl+K). Type any command — open files, toggle settings, run analyses — and find it instantly without digging through menus.",
   },
   {
     targetId: "activity-bar",
     title: "The Activity Bar",
-    description: "Located on the far left, this bar lets you switch between different utility panels like the Document Outline, Notes, Snapshots, and Sprint Tracker, with Quick Settings at the bottom.",
+    description: "This vertical strip on the far left is your main navigation hub. Each icon switches to a different side panel. The Quick Settings menu lives at the bottom. Let's walk through every panel.",
+  },
+  {
+    targetId: "activity-tab-outline",
+    title: "Outline Panel",
+    description: "Shows your screenplay's structure as a tree of scenes. You can drag to reorder scenes, collapse sections, and jump to any part of your script instantly.",
+  },
+  {
+    targetId: "activity-tab-scripts",
+    title: "Scripts Panel",
+    description: "When working with .actone bundles, this panel lists all the scripts inside the bundle. Use the + icon to add multiple .fountain scripts to your bundle and switch between them seamlessly.",
+  },
+  {
+    targetId: "activity-tab-notepad",
+    title: "Notepad Panel",
+    description: "A scratchpad for quick notes, character ideas, plot points — anything you want to jot down alongside your screenplay. Notes persist with your file.",
+  },
+  {
+    targetId: "activity-tab-markers",
+    title: "Markers / Production Breakdown",
+    description: "Tag and categorize your scenes for production planning. Assign props, cast, locations, and generate breakdown reports to keep your shoot organized.",
+  },
+  {
+    targetId: "activity-tab-todo",
+    title: "Tasks Panel",
+    description: "Keep track of writing goals and to-do items. Mark tasks as complete, set priorities, and manage your revision checklist right alongside your script.",
+  },
+  {
+    targetId: "activity-tab-snapshots",
+    title: "Snapshots Panel",
+    description: "Save named versions of your screenplay at any point. Browse, restore, or compare snapshots — a safety net for experimental rewrites.",
+  },
+  {
+    targetId: "activity-tab-sprint",
+    title: "Sprint Tracker",
+    description: "A built-in writing timer. Set a duration and write against the clock. Track your words-per-minute and see how your pace evolves across sessions.",
+  },
+  {
+    targetId: "activity-tab-parking",
+    title: "Parking Panel",
+    description: "Stash deleted or unused text here instead of losing it forever. Great for alternate dialogue, cut scenes, or lines you want to revisit later.",
+  },
+  {
+    targetId: "quick-settings",
+    title: "Quick Settings",
+    description: "Click the gear icon at the bottom of the Activity Bar to open the Quick Settings menu. Toggle Typewriter Mode, switch themes, choose Letter/A4 paper size, hide Fountain markup, and open the full Settings window.",
   },
   {
     targetId: "header-bar",
     title: "The Header Bar",
-    description: "Here you can manage open file tabs, minimize, maximize, or close the app window. The left-most icon is the Command Palette icon: clicking on it or pressing Ctrl+K will open a search menu to run any command in the application.",
+    description: "This strip holds your open file tabs — click any tab to switch, middle-click to close. Use the + button to create a new file. On the right, the window controls let you minimize, maximize, and close the app.",
   },
   {
     targetId: "editor-workspace",
     title: "The Editor Workspace",
-    description: "This is your main writing area. ActOne is a distraction-free environment that formats your screenplay in real time as you type.",
+    description: "Your main writing area. ActOne is a distraction-free environment that formats your screenplay in real time as you type. Fountain markup becomes proper screenplay layout instantly.",
   },
   {
     targetId: "status-bar",
     title: "The Status Bar",
-    description: "At the very bottom, you can view your current page/word count, toggle typewriter mode, adjust zoom levels, and run deep pacing analysis using the X-Ray tool.",
+    description: "The very bottom of the window gives you live file information and tools. Let's look at each section.",
+  },
+  {
+    targetId: "status-file-name",
+    title: "Status Bar — File & Save Status",
+    description: "The left side shows the current file name (or active script name for bundles). A spinning indicator means saving is in progress; a green checkmark confirms it's saved to disk.",
+  },
+  {
+    targetId: "status-scenes",
+    title: "Status Bar — Document Statistics",
+    description: "Keep an eye on your Scene count, running Word count, and your current Page number out of estimated total pages. All three update live as you type.",
+  },
+  {
+    targetId: "status-xray",
+    title: "Status Bar — X-Ray Deep Analysis",
+    description: "The bar chart icon opens the X-Ray analysis window. It runs a deep pacing report: character speech balance, scene length distribution, page count breakdown, and more.",
   },
 ];
 
@@ -309,21 +374,26 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   };
 
   // Card Positioning logic
-  let cardStyle: React.CSSProperties = {
+  const cardStyle: React.CSSProperties = {
     position: "fixed",
     zIndex: 999999,
     width: 320,
     transition: dragOffset ? "transform 0.15s ease-out" : "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
   };
 
+  const isSidebarTarget = currentStep.targetId === "activity-bar" ||
+    currentStep.targetId?.startsWith("activity-tab-") ||
+    currentStep.targetId === "command-palette-btn" ||
+    currentStep.targetId === "quick-settings";
+
   if (dragPosition) {
     cardStyle.left = dragPosition.x;
     cardStyle.top = dragPosition.y;
     cardStyle.transform = "scale(1.025)";
   } else if (targetRect) {
-    if (currentStep.targetId === "activity-bar") {
+    if (isSidebarTarget) {
       cardStyle.left = targetRect.right + 16;
-      cardStyle.top = Math.max(16, targetRect.top + (targetRect.height / 2) - 100);
+      cardStyle.top = 16;
     } else if (currentStep.targetId === "status-bar") {
       cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160);
       cardStyle.bottom = (window.innerHeight - targetRect.top) + 16;
@@ -550,7 +620,7 @@ export const TutorialSelectionDialog: React.FC<TutorialSelectionDialogProps> = (
               🧭 App Interface Tour
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-              Explore the layout: Header, Activity Bar sidebar, Workspace, and Status Bar.
+              Explore every panel: Command Palette, all Activity Bar panels, Quick Settings, Header tabs, Editor Workspace, and all Status Bar tools.
             </Typography>
           </Box>
 

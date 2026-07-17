@@ -101,7 +101,8 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
-        <Typography 
+        <Typography
+          id="status-file-name"
           onClick={handleScriptClick}
           variant="caption" 
           sx={{ 
@@ -126,7 +127,8 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
 
 
         {saveStatus !== "idle" && (
-          <Box 
+          <Box
+            id="status-save-status"
             sx={{ 
               display: "flex", 
               alignItems: "center", 
@@ -192,6 +194,7 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 3 }, flexShrink: 0 }}>
           {activeAmbientTrack && (
             <Typography
+              id="status-ambient"
               variant="caption"
               onClick={stopAmbientTrack}
               sx={{
@@ -221,6 +224,7 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
           )}
           {onOpenXray && (
             <IconButton
+              id="status-xray"
               size="small"
               onClick={onOpenXray}
               sx={{ p: 0.3, color: "text.secondary", '&:hover': { color: "primary.main" } }}
@@ -230,7 +234,8 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
             </IconButton>
           )}
           {sprintDetails && (
-          <Typography 
+          <Typography
+            id="status-sprint"
             variant="caption" 
             sx={{ 
               fontSize: 11, 
@@ -257,13 +262,13 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
         )}
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
-          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
+          <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
             Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
           </Typography>
-          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
+          <Typography id="status-words" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
             Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
           </Typography>
-          <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap" }}>
+          <Typography id="status-page" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap" }}>
             Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
           </Typography>
         </Box>

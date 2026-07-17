@@ -9,13 +9,12 @@ import { useModalWindows, useStoreUpdateCheck } from "../hooks";
 import {
   Box,
   Typography,
-  Button,
-  Tooltip,
   IconButton,
 } from "@mui/material";
-import { alpha, useTheme } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 
 import { logger } from "../utils/logger";
+import { ThemeLogo } from "./ThemeLogo";
 import { TutorialSelectionDialog } from "./OnboardingTour";
 
 const GREETINGS = [
@@ -56,7 +55,7 @@ function getRandomGreeting(): string {
   }
 }
 
-import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, DiscordIcon, DownloadIcon, CloseIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, DiscordIcon, DownloadIcon } from "./Icons";
 
 const ActionCard: React.FC<{
   icon: React.ReactNode;
@@ -126,39 +125,6 @@ const ActionCard: React.FC<{
     </Typography>
   </Box>
 );
-
-const ThemeLogo: React.FC<{ sx?: any }> = ({ sx }) => {
-  const theme = useTheme();
-  return (
-    <svg
-      version="1.0"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 3000 3000"
-      preserveAspectRatio="xMidYMid meet"
-      style={{
-        width: "100%",
-        height: "100%",
-        ...sx,
-      }}
-    >
-      <defs>
-        <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={theme.palette.primary.main} />
-          <stop offset="100%" stopColor={theme.palette.primary.light || theme.palette.secondary.main} />
-        </linearGradient>
-      </defs>
-      <g
-        transform="translate(0,3000) scale(0.1,-0.1)"
-        fill="url(#logo-gradient)"
-        stroke="none"
-        style={{ transition: "fill 0.3s ease" }}
-      >
-        <path d="M8674 26030 c-305 -41 -482 -158 -593 -395 -116 -245 -163 -580 -163 -1170 0 -539 39 -861 134 -1110 86 -224 224 -369 408 -426 181 -56 96 -53 1628 -57 1108 -2 1413 -5 1409 -15 -8 -22 -3828 -11638 -3883 -11809 l-54 -167 -748 -4 c-812 -4 -840 -6 -1011 -63 -277 -93 -429 -336 -495 -793 -29 -199 -40 -393 -40 -731 1 -610 52 -952 181 -1205 125 -246 304 -347 667 -375 162 -13 6410 -13 6572 0 363 28 542 129 667 375 129 253 180 595 181 1205 0 338 -11 532 -40 731 -66 457 -218 700 -495 793 -166 56 -209 59 -929 65 l-666 6 333 1060 c183 583 340 1084 348 1113 l16 52 2837 0 2837 0 344 -1103 c190 -606 347 -1108 349 -1114 3 -10 -135 -13 -670 -13 -706 0 -873 -7 -1023 -42 -141 -32 -227 -78 -316 -167 -84 -84 -134 -165 -180 -293 -94 -256 -137 -673 -126 -1213 13 -589 77 -924 221 -1150 106 -165 241 -246 487 -292 88 -16 299 -18 3474 -21 2140 -2 3433 1 3525 7 362 24 537 110 666 327 148 250 206 602 206 1254 1 352 -8 513 -38 725 -63 445 -205 685 -464 788 -172 68 -304 76 -1150 77 l-685 0 -57 178 c-1627 5101 -4494 14064 -4513 14112 -79 194 -172 338 -299 466 -200 201 -444 313 -831 381 -94 16 -329 18 -4030 19 -2161 1 -3957 -2 -3991 -6z m7273 -6450 c513 -1807 933 -3288 933 -3292 0 -5 -871 -8 -1936 -8 -1544 0 -1935 3 -1932 13 2 6 434 1489 959 3295 l954 3283 45 -3 44 -3 933 -3285z" />
-        <path d="M5870 6873 c-14 -2 -54 -13 -89 -24 -223 -70 -400 -240 -476 -456 -44 -126 -46 -188 -42 -1028 3 -673 5 -798 19 -845 78 -280 271 -471 545 -540 77 -20 157 -20 9198 -18 l9120 3 77 26 c124 43 204 93 298 188 97 98 154 194 192 327 l23 79 0 830 c0 891 1 866 -52 1005 -62 159 -199 307 -356 383 -50 25 -124 53 -164 61 -65 15 -922 16 -9170 15 -5004 -1 -9109 -4 -9123 -6z" />
-      </g>
-    </svg>
-  );
-};
 
 interface WelcomeScreenWindowProps {
   standalone?: boolean;
@@ -294,6 +260,25 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     }
   };
 
+  const handleMinimize = async () => {
+    try {
+      await getCurrentWindow().minimize();
+    } catch (e) {
+      logger.error("welcome", "minimize failed", e);
+    }
+  };
+
+  const handleStartDrag = async (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("[data-no-drag]") || target.closest("button, [role='button'], .MuiButtonBase-root")) return;
+    try {
+      await getCurrentWindow().startDragging();
+    } catch (e) {
+      logger.error("welcome", "startDrag failed", e);
+    }
+  };
+
   const handleNew = async () => {
     if (standalone) {
       try {
@@ -373,7 +358,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
 
   return (
     <Box
-      data-tauri-drag-region
       sx={{
         height: "100%",
         display: "flex",
@@ -384,58 +368,118 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         position: "relative",
       }}
     >
-      {/* Floating Close Button */}
-      <IconButton
-        size="small"
-        onClick={closeWelcome}
+      {/* Header */}
+      <Box
+        onMouseDown={handleStartDrag}
         sx={{
-          position: "absolute",
-          top: 12,
-          right: 12,
-          color: "text.secondary",
-          zIndex: 100,
-          p: 0.5,
-          borderRadius: 0,
-          opacity: 0.4,
-          transition: "opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease",
-          "&:hover": {
-            opacity: 1,
-            color: "error.main",
-            bgcolor: (t) => alpha(t.palette.error.main, 0.1),
-          },
+          height: 40,
+          minHeight: 40,
+          display: "flex",
+          alignItems: "center",
+          flexShrink: 0,
+          borderBottom: 1,
+          borderColor: "divider",
+          bgcolor: "background.paper",
+          position: "relative",
+          zIndex: 10,
+          pr: "94px",
         }}
       >
-        <CloseIcon sx={{ fontSize: 16 }} />
-      </IconButton>
+        <Box
+          sx={{
+            width: 48,
+            height: 40,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
+            flexShrink: 0,
+            borderRight: "1px solid",
+            borderColor: "rgba(0,0,0,0.15)",
+          }}
+        >
+          <Box sx={{ width: 19, height: 19, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <ThemeLogo variant="solid" />
+          </Box>
+        </Box>
+        <Typography sx={{ fontWeight: 700, fontSize: 11, color: "text.secondary", pl: 1.5, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+          Welcome to ActOne
+        </Typography>
+        <Box sx={{ flex: 1 }} />
+        {updateAvailable && (
+          <Box
+            onClick={(e) => { e.stopPropagation(); installUpdate(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            title="Click to install update from Microsoft Store"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              height: 40,
+              px: 1.25,
+              cursor: "pointer",
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+              color: "primary.main",
+              fontSize: 11,
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              borderLeft: 1,
+              borderColor: "divider",
+              flexShrink: 0,
+              "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.25) },
+            }}
+          >
+            <DownloadIcon sx={{ fontSize: 12 }} />
+            Update
+          </Box>
+        )}
+        <Box
+          data-no-drag="true"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            flexShrink: 0,
+            position: "absolute",
+            right: 0,
+            top: 0,
+            height: "100%",
+            bgcolor: "inherit",
+            zIndex: 11,
+            borderLeft: 1,
+            borderColor: "divider",
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <IconButton
+            onClick={handleMinimize}
+            title="Minimize"
+            sx={{ width: 48, height: 40, borderRadius: 0, color: "inherit", "&:hover": { bgcolor: "action.hover", color: "text.primary" } }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
+              <path d="M2 6H10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+          </IconButton>
+          <IconButton
+            onClick={closeWelcome}
+            title="Close"
+            sx={{ width: 46, height: 40, borderRadius: 0, color: "inherit", borderLeft: 1, borderColor: "divider", "&:hover": { bgcolor: (t) => t.palette.error.main, color: (t) => t.palette.common.white } }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
+              <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" style={{ pointerEvents: "none" }} />
+            </svg>
+          </IconButton>
+        </Box>
+      </Box>
 
       <Box
         aria-hidden
-        data-tauri-drag-region
         sx={{
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
           overflow: "hidden",
-          "@keyframes breathe1": {
-            "0%": { transform: "scale(1)", opacity: 0.045 },
-            "50%": { transform: "scale(1.15)", opacity: 0.07 },
-            "100%": { transform: "scale(1)", opacity: 0.045 },
-          },
-          "@keyframes breathe2": {
-            "0%": { transform: "scale(1.1)", opacity: 0.035 },
-            "50%": { transform: "scale(0.95)", opacity: 0.06 },
-            "100%": { transform: "scale(1.1)", opacity: 0.035 },
-          },
-          "@keyframes breathe3": {
-            "0%": { transform: "scale(0.95)", opacity: 0.03 },
-            "50%": { transform: "scale(1.1)", opacity: 0.055 },
-            "100%": { transform: "scale(0.95)", opacity: 0.03 },
-          },
-          "@keyframes logoBreathe": {
-            "0%": { transform: "rotate(-1.5deg)" },
-            "50%": { transform: "rotate(1.5deg)" },
-            "100%": { transform: "rotate(-1.5deg)" },
-          },
+          zIndex: 0,
         }}
       >
         <Box
@@ -449,7 +493,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             background: (t) =>
               `radial-gradient(circle, ${alpha(t.palette.primary.main, 0.35)} 0%, transparent 70%)`,
             filter: "blur(80px)",
-            animation: "breathe1 10s ease-in-out infinite",
+            opacity: 0.045,
+            pointerEvents: "none",
           }}
         />
         <Box
@@ -463,7 +508,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             background: (t) =>
               `radial-gradient(circle, ${alpha(t.palette.primary.main, 0.3)} 0%, transparent 70%)`,
             filter: "blur(90px)",
-            animation: "breathe2 12s ease-in-out infinite",
+            opacity: 0.035,
+            pointerEvents: "none",
           }}
         />
         <Box
@@ -477,27 +523,29 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             background: (t) =>
               `radial-gradient(circle, ${alpha(t.palette.text.primary, 0.15)} 0%, transparent 70%)`,
             filter: "blur(100px)",
-            animation: "breathe3 14s ease-in-out infinite",
+            opacity: 0.03,
+            pointerEvents: "none",
           }}
         />
         <Box
           sx={{
             position: "absolute",
-            bottom: 24,
-            right: 28,
-            width: 80,
-            height: 80,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 180,
+            height: 180,
             opacity: 0.07,
-            animation: "logoBreathe 8s ease-in-out infinite",
+            pointerEvents: "none",
           }}
         >
           <ThemeLogo />
         </Box>
       </Box>
       <Box
-        data-tauri-drag-region
         sx={{
           flex: 1,
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           position: "relative",
@@ -601,14 +649,15 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 gap: 0.5,
                 overflowY: "auto",
                 flex: 1,
+                minHeight: 0,
                 pr: 1, // Space for scrollbar
-                "&::-webkit-scrollbar": { width: 4 },
+                "&::-webkit-scrollbar": { width: "6px" },
                 "&::-webkit-scrollbar-thumb": {
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  borderRadius: 0,
+                  backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.15),
+                  borderRadius: "3px",
                 },
                 "&::-webkit-scrollbar-thumb:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.3),
                 },
               }}
             >
@@ -759,99 +808,79 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
       {/* Footer */}
       <Box
         sx={{
+          height: 28,
+          minHeight: 28,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          py: 1.5,
           px: 3,
           position: "relative",
+          flexShrink: 0,
+          borderTop: 1,
+          borderColor: "divider",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Button
-            size="small"
-            startIcon={<HelpOutlinedIcon sx={{ fontSize: 13 }} />}
-            onClick={handleHelp}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              color: "text.secondary",
-              opacity: 0.4,
-              "&:hover": { opacity: 1, color: "text.primary" },
-            }}
-          >
-            Help
-          </Button>
-          <Button
-            size="small"
-            startIcon={<DiscordIcon sx={{ fontSize: 13 }} />}
-            onClick={() => {
-              import("@tauri-apps/plugin-opener")
-                .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
-                .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
-            }}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              color: "text.secondary",
-              opacity: 0.4,
-              "&:hover": { opacity: 1, color: "text.primary" },
-            }}
-          >
-            Discord
-          </Button>
           <Typography
             sx={{
               fontSize: 9.5,
               fontWeight: 600,
               color: "text.secondary",
-              opacity: 0.25,
+              opacity: 0.5,
             }}
           >
             {appVersion ? `v${appVersion}` : ""}
           </Typography>
-          {updateAvailable && (
-            <Tooltip title="Click to install update from Microsoft Store">
-              <Box
-                onClick={(e) => { e.stopPropagation(); installUpdate(); }}
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 0.3,
-                  px: 0.75,
-                  py: 0.15,
-                  borderRadius: 0,
-                  cursor: 'pointer',
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
-                  color: 'primary.main',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
-                  '&:hover': {
-                    bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
-                  },
-                }}
-              >
-                <DownloadIcon sx={{ fontSize: 10 }} />
-                Update available
-              </Box>
-            </Tooltip>
-          )}
           <Typography
             sx={{
               fontSize: 9,
               fontWeight: 500,
               color: "text.secondary",
-              opacity: 0.35,
+              opacity: 0.5,
               userSelect: "none",
             }}
           >
             &copy; 2026 Write Up Film Service Company
           </Typography>
         </Box>
-
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            onClick={handleHelp}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.6,
+              cursor: "pointer",
+              color: "text.secondary",
+              opacity: 0.4,
+              transition: "opacity 0.2s ease, color 0.2s ease",
+              "&:hover": { opacity: 1, color: "text.primary" },
+            }}
+          >
+            <HelpOutlinedIcon sx={{ fontSize: 12 }} />
+            <Typography sx={{ fontSize: 10, fontWeight: 600 }}>Help</Typography>
+          </Box>
+          <Box
+            onClick={() => {
+              import("@tauri-apps/plugin-opener")
+                .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
+                .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
+            }}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.6,
+              cursor: "pointer",
+              color: "text.secondary",
+              opacity: 0.4,
+              transition: "opacity 0.2s ease, color 0.2s ease",
+              "&:hover": { opacity: 1, color: "text.primary" },
+            }}
+          >
+            <DiscordIcon sx={{ fontSize: 12 }} />
+            <Typography sx={{ fontSize: 10, fontWeight: 600 }}>Discord</Typography>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

@@ -235,27 +235,29 @@ export const HeaderBar = React.memo(() => {
           <Box
             onClick={(e) => { e.stopPropagation(); installUpdate(); }}
             onMouseDown={(e) => e.stopPropagation()}
+            title="Click to install update from Microsoft Store"
             sx={{
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
-              px: 1,
-              height: 20,
-              mr: 0.5,
-              borderRadius: 0,
+              height: 40,
+              px: 1.25,
               cursor: 'pointer',
               bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
               color: 'primary.main',
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               whiteSpace: 'nowrap',
+              borderLeft: 1,
+              borderColor: 'divider',
               flexShrink: 0,
+              transition: 'background-color 0.2s ease',
               '&:hover': {
                 bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
               },
             }}
           >
-            <DownloadIcon sx={{ fontSize: 11 }} />
+            <DownloadIcon sx={{ fontSize: 12 }} />
             Update
           </Box>
         )}

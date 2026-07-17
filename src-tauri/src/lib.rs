@@ -698,6 +698,10 @@ pub fn run() {
             app.manage(ThemeConfig(Mutex::new(theme_state)));
 
             let prefs = app_prefs::load_prefs(handle);
+            if let Some(icon_pref) = prefs.get("actone-app-icon") {
+                let use_dark = icon_pref == "dark";
+                let _ = app_prefs::apply_app_icon(handle, use_dark);
+            }
             app.manage(app_prefs::AppPrefsState(Mutex::new(prefs)));
 
             Ok(())

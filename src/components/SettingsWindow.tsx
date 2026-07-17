@@ -58,6 +58,7 @@ export const SettingsWindow: React.FC = () => {
   const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, 20));
   const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, true));
   const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, "fill") as string);
+  const [appIcon, setAppIcon] = useState(() => readLocal(STORAGE_KEYS.APP_ICON, "light") as string);
   const activeFilePathRef = useRef<string>("");
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -114,6 +115,7 @@ export const SettingsWindow: React.FC = () => {
           setSnapshotMaxRetention(d.snapshotMaxRetention || 20);
           setFountainColorsEnabled(d.fountainColorsEnabled !== false);
           setIconStyle(d.iconStyle ?? "fill");
+          setAppIcon(d.appIcon ?? "light");
           activeFilePathRef.current = d.activeFilePath || "";
         });
         return unlisten;
@@ -221,6 +223,9 @@ export const SettingsWindow: React.FC = () => {
     if (prefs[STORAGE_KEYS.ICON_STYLE] !== undefined && prefs[STORAGE_KEYS.ICON_STYLE] !== iconStyle) {
       setIconStyle(prefs[STORAGE_KEYS.ICON_STYLE]);
     }
+    if (prefs[STORAGE_KEYS.APP_ICON] !== undefined && prefs[STORAGE_KEYS.APP_ICON] !== appIcon) {
+      setAppIcon(prefs[STORAGE_KEYS.APP_ICON]);
+    }
   }
 
   const emitUpdate = (storageKey: string, value: string | number | boolean) => {
@@ -310,6 +315,20 @@ export const SettingsWindow: React.FC = () => {
                   <MenuItem value="duotone">Dual Tone</MenuItem>
                   <MenuItem value="fill">Solid (Filled)</MenuItem>
                   <MenuItem value="regular">Stroke (Regular)</MenuItem>
+                </Select>
+              </Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  APP ICON (LOGO)
+                </Typography>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={appIcon}
+                  onChange={(e) => { const v = e.target.value as string; setAppIcon(v); localStorage.setItem(STORAGE_KEYS.APP_ICON, v); emitUpdate(STORAGE_KEYS.APP_ICON, v); }}
+                >
+                  <MenuItem value="light">Light Logo (Default)</MenuItem>
+                  <MenuItem value="dark">Dark Logo</MenuItem>
                 </Select>
               </Box>
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
@@ -592,5 +611,6 @@ interface SettingsInitData {
   snapshotMaxRetention: number;
   fountainColorsEnabled: boolean;
   iconStyle?: string;
+  appIcon?: string;
   activeFilePath?: string;
 }

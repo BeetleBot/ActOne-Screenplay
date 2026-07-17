@@ -29,6 +29,7 @@ export const STORAGE_KEYS = {
   RIGHT_PANE_WIDTH: "actone-right-pane-width",
   LAST_EXPORT_DIR: "actone-last-export-dir",
   ICON_STYLE: "actone-icon-style",
+  APP_ICON: "actone-app-icon",
 } as const;
 
 export const PILL_RADIUS = "0px";

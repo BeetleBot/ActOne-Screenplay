@@ -37,7 +37,7 @@ export function getPrefs(): Record<string, string> {
 
 export function resetPrefsEngine(): void {
   if (unlisten) {
-    try { unlisten(); } catch {}
+    try { unlisten(); } catch { /* unlisten may fail outside Tauri */ }
     unlisten = null;
   }
   currentPrefs = {};

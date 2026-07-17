@@ -18,6 +18,10 @@
 * \[x] Fix the small orphan issues in the pdf output.
 * \[x] And I want quick tagging context menu. Like when I select a word or sentence and Hold ctrl + right click, then the app should show me tagging options only.
 
+* [ ]  Fix the Welcome Screen Title Bar
+
+- [ ] 
+
 ## Features to Implement
 
 * \[x] Import Strucutre.
@@ -32,4 +36,3 @@
 * \[ ] Cloud integration(Google Drive, Dropbox, etc.,)
 * \[x] Add a seperate title page customisation modal, with Image support, if possible.
 * \[ ] Build separate .actone-to-.zip unpacker app
-

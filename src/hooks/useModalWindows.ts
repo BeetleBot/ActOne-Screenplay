@@ -60,7 +60,7 @@ export function useModalWindows(): ModalWindowsHook {
     if (windowsRef.current.get("settings")) return;
     windowsRef.current.set("settings", true);
     const path = tab ? `/?modal=settings&tab=${tab}` : "/?modal=settings";
-    const ok = await createTauriWindow("settings", path, "ActOne – Settings", 420, 500, false, () => windowsRef.current.delete("settings"));
+    const ok = await createTauriWindow("settings", path, "ActOne – Settings", 500, 600, false, () => windowsRef.current.delete("settings"));
     if (!ok) {
       windowsRef.current.delete("settings");
     }

@@ -13,6 +13,29 @@ fn prefs_file_path(app: &tauri::AppHandle) -> PathBuf {
         .join("actone-prefs.json")
 }
 
+pub fn apply_app_icon(app: &tauri::AppHandle, use_dark: bool) -> Result<(), String> {
+    let bytes = if use_dark {
+        include_bytes!("../../assets/Logos And Icons/Logos/newlogodark.png") as &[u8]
+    } else {
+        include_bytes!("../../assets/Logos And Icons/Logos/newlogo.png") as &[u8]
+    };
+
+    // Parse the PNG bytes using the image crate
+    let img = image::load_from_memory(bytes)
+        .map_err(|e| format!("Failed to parse image bytes: {}", e))?
+        .to_rgba8();
+    
+    let (width, height) = img.dimensions();
+    let raw_rgba = img.into_raw();
+
+    let image = tauri::image::Image::new_owned(raw_rgba, width, height);
+
+    for window in app.webview_windows().values() {
+        let _ = window.set_icon(image.clone());
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn get_app_prefs(state: tauri::State<'_, AppPrefsState>) -> HashMap<String, String> {
     state.0.lock().unwrap_or_else(|e| e.into_inner()).clone()
@@ -30,6 +53,11 @@ pub fn set_app_prefs(
     }
     let merged = current.clone();
     drop(current);
+
+    if let Some(icon_pref) = prefs.get("actone-app-icon") {
+        let use_dark = icon_pref == "dark";
+        let _ = apply_app_icon(&app, use_dark);
+    }
 
     let file_path = prefs_file_path(&app);
     if let Some(parent) = file_path.parent() {

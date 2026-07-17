@@ -7,6 +7,7 @@ import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
 import { setPrefs } from "./theme/AppPrefsEngine";
 import { getPerScriptSettingObject, updatePerScriptSetting } from "./utils/perScriptSettings";
+import { unpackActoneBundle } from "./utils";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
@@ -177,6 +178,7 @@ function AppInner() {
             snapshotOnSave: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_ON_SAVE) === "true",
             fountainColorsEnabled: localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED) !== "false",
             iconStyle: localStorage.getItem(STORAGE_KEYS.ICON_STYLE) ?? "fill",
+            appIcon: localStorage.getItem(STORAGE_KEYS.APP_ICON) ?? "light",
             activeFilePath: activeFileIdRef.current || "",
           });
         });
@@ -346,7 +348,23 @@ function AppInner() {
       localStorage.removeItem("pending-tutorial-type");
       localStorage.removeItem("pending-action");
       if (type === "ui") {
-        newFile();
+        (async () => {
+          try {
+            const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+            if (isTauriEnv) {
+              const { resolveResource } = await import("@tauri-apps/api/path");
+              const samplePath = await resolveResource("samples/BeeDetectiveV2.actone");
+              openFilePath(samplePath);
+            } else {
+              const res = await fetch("/samples/BeeDetectiveV2.actone");
+              const buf = await res.arrayBuffer();
+              const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
+              newFile(bundle.scripts[0]?.content || "");
+            }
+          } catch {
+            newFile();
+          }
+        })();
       } else {
         newFile("=== TUTORIAL SANDBOX ===\n\n");
       }

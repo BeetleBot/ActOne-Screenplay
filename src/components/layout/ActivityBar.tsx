@@ -15,8 +15,9 @@ import {
   FolderSimplePlusIcon, CheckIcon, SettingsIcon, TimerIcon,
   KeyboardArrowDownIcon, CameraIcon,
   ViewAgendaIcon, AddNotesIcon, BeenhereIcon, AssignmentAddIcon,
-  GarageIcon, MoreHorizIcon, ActionKeyIcon,
+  GarageIcon, MoreHorizIcon,
 } from "../Icons";
+import { ThemeLogo } from "../ThemeLogo";
 
 interface ActivityBarProps {
   activeTab: string;
@@ -110,6 +111,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         }}
       >
         <Box
+          id="command-palette-btn"
           className="command-palette-btn"
           sx={{
             width: 47,
@@ -151,11 +153,13 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                width: 19,
+                height: 19,
                 color: 'primary.contrastText',
                 transition: 'color var(--duration-slow) var(--easing-standard), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
-              <ActionKeyIcon sx={{ fontSize: 19 }} />
+              <ThemeLogo variant="solid" />
             </Box>
           </Tooltip>
         </Box>
@@ -164,6 +168,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
           return (
             <Tooltip key={tab.id} title={tab.title} placement="right">
               <Box
+                id={"activity-tab-" + tab.id}
                 onClick={() => handleClick(tab.id)}
                 sx={{
                   width: 47,
@@ -214,6 +219,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
 
       <Tooltip title="Quick Settings" placement="right">
         <Box
+          id="quick-settings"
           onClick={(e) => setAnchorEl(e.currentTarget)}
           sx={{
             width: 47,

@@ -32,7 +32,7 @@ export async function initThemeEngine(): Promise<ThemeState> {
       localStorage.setItem("actone-theme-id", result.theme_id);
       localStorage.setItem("actone-custom-themes", result.custom_themes);
       localStorage.setItem("actone-app-scale", String(result.app_scale));
-    } catch {}
+    } catch { /* localStorage may fail in some environments */ }
   } catch {
     currentState = getFallbackState();
   }

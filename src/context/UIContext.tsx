@@ -209,7 +209,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const setAmbientVolume = (vol: number) => {
     setAmbientVolumeState(vol);
     ambientSoundEngine.setVolume(vol);
-    try { localStorage.setItem("ambient-volume", String(vol)); } catch {}
+    try { localStorage.setItem("ambient-volume", String(vol)); } catch { /* localStorage may be full or unavailable */ }
   };
 
   useEffect(() => {
