@@ -13,8 +13,8 @@
       {
         "label": "welcome",
         "title": "ActOne",
-        "width": 600,
-        "height": 540,
+        "width": 520,
+        "height": 400,
         "center": true,
         "decorations": false,
         "resizable": false
