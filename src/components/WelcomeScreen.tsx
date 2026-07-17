@@ -9,10 +9,7 @@ import { useModalWindows, useStoreUpdateCheck } from "../hooks";
 import {
   Box,
   Typography,
-  Button,
   Tooltip,
-  TextField,
-  InputAdornment,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 
@@ -34,7 +31,7 @@ function formatRelativeTime(ts: number): string {
 
 import logoDark from "../assets/logo_dark.png";
 import logoLight from "../assets/logo_light.png";
-import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DescriptionIcon, DiscordIcon, DownloadIcon, SearchIcon, CloseIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DescriptionIcon, DiscordIcon, DownloadIcon, CloseIcon } from "./Icons";
 
 interface WelcomeScreenWindowProps {
   standalone?: boolean;
@@ -43,7 +40,6 @@ interface WelcomeScreenWindowProps {
 export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false }) => {
   const theme = useTheme();
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
-  const [search, setSearch] = useState("");
   const { openHelpWindow } = useModalWindows();
   const appVersion = __APP_VERSION__;
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
@@ -267,86 +263,161 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             `radial-gradient(ellipse at center, ${alpha(t.palette.primary.main, 0.06)} 0%, transparent 70%)`,
         }}
       />
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-          px: 4,
-        }}
-      >
-        {/* Hero: logo + wordmark side-by-side */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-          <Box
-            component="img"
-            src={theme.palette.mode === "dark" ? logoDark : logoLight}
-            alt="ActOne"
-            draggable={false}
-            onDragStart={(e) => e.preventDefault()}
-            sx={{ width: 72, height: 72, objectFit: "contain", userSelect: "none", WebkitUserDrag: "none", flexShrink: 0 }}
-          />
-          <Box sx={{ textAlign: "left" }}>
-            <Typography sx={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1, color: "text.primary" }}>
+      <Box sx={{ flex: 1, display: "flex", position: "relative", overflow: "hidden" }}>
+        {/* Sidebar */}
+        <Box
+          sx={{
+            width: 180,
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            borderRight: "1px solid",
+            borderColor: "divider",
+            bgcolor: (t) => alpha(t.palette.text.primary, 0.015),
+          }}
+        >
+          {/* Logo + wordmark */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, px: 2, py: 2.5 }}>
+            <Box
+              component="img"
+              src={theme.palette.mode === "dark" ? logoDark : logoLight}
+              alt="ActOne"
+              draggable={false}
+              onDragStart={(e) => e.preventDefault()}
+              sx={{ width: 40, height: 40, objectFit: "contain", userSelect: "none", WebkitUserDrag: "none", flexShrink: 0 }}
+            />
+            <Typography sx={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1, color: "text.primary" }}>
               ActOne
             </Typography>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "text.secondary", opacity: 0.55, mt: 0.4 }}>
-              {appVersion ? `v${appVersion}` : ""} • Screenplay editor
+          </Box>
+
+          <Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />
+
+          {/* Nav items */}
+          <Box sx={{ display: "flex", flexDirection: "column", py: 1 }}>
+            {[
+              { icon: <AddIcon sx={{ fontSize: 16 }} />, label: "New", onClick: handleNew },
+              { icon: <FolderOpenIcon sx={{ fontSize: 16 }} />, label: "Open", onClick: handleOpen },
+              { icon: <CombineColumnsIcon sx={{ fontSize: 16 }} />, label: "Templates", onClick: handleTemplates },
+              { icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, label: "Help", onClick: handleHelp },
+            ].map((item) => (
+              <Box
+                key={item.label}
+                onClick={item.onClick}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.2,
+                  px: 2,
+                  py: 0.9,
+                  cursor: "pointer",
+                  position: "relative",
+                  color: "text.primary",
+                  transition: "background-color var(--duration-fast) ease",
+                  "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 3,
+                    bgcolor: "transparent",
+                  },
+                }}
+              >
+                <Box sx={{ color: "text.secondary", display: "flex" }}>{item.icon}</Box>
+                <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{item.label}</Typography>
+              </Box>
+            ))}
+            <Box
+              onClick={() => setTutorialDialogOpen(true)}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.2,
+                px: 2,
+                py: 0.9,
+                cursor: "pointer",
+                color: "text.primary",
+                transition: "background-color var(--duration-fast) ease",
+                "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
+              }}
+            >
+              <Box sx={{ color: "text.secondary", display: "flex" }}>
+                <HelpOutlinedIcon sx={{ fontSize: 16 }} />
+              </Box>
+              <Typography sx={{ fontSize: 12, fontWeight: 600 }}>Tutorials</Typography>
+            </Box>
+          </Box>
+
+          {/* Spacer */}
+          <Box sx={{ flex: 1 }} />
+
+          {/* Footer of sidebar */}
+          <Box sx={{ borderTop: "1px solid", borderColor: "divider", px: 2, py: 1.5 }}>
+            <Typography sx={{ fontSize: 9.5, fontWeight: 600, color: "text.secondary", opacity: 0.5, letterSpacing: "0.05em" }}>
+              {appVersion ? `v${appVersion}` : ""}
             </Typography>
+            <Typography sx={{ fontSize: 9, fontWeight: 500, color: "text.secondary", opacity: 0.4, mt: 0.3 }}>
+              &copy; 2026 Write Up Film Service Company
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, mt: 1 }}>
+              <Box
+                onClick={() => {
+                  import("@tauri-apps/plugin-opener")
+                    .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
+                    .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
+                }}
+                sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "text.secondary", opacity: 0.5, "&:hover": { opacity: 1, color: "text.primary" } }}
+              >
+                <DiscordIcon sx={{ fontSize: 12 }} />
+                <Typography sx={{ fontSize: 10, fontWeight: 600 }}>Discord</Typography>
+              </Box>
+              {updateAvailable && (
+                <Tooltip title="Click to install update from Microsoft Store">
+                  <Box
+                    onClick={(e) => { e.stopPropagation(); installUpdate(); }}
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 0.3,
+                      px: 0.6,
+                      py: 0.15,
+                      borderRadius: 0,
+                      cursor: "pointer",
+                      bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+                      color: "primary.main",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.25) },
+                    }}
+                  >
+                    <DownloadIcon sx={{ fontSize: 10 }} />
+                    Update
+                  </Box>
+                </Tooltip>
+              )}
+            </Box>
           </Box>
         </Box>
 
-        {/* Search + Recent Files */}
-        <Box sx={{ width: "100%", maxWidth: 480, mb: 2 }}>
-          <TextField
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search recent files"
-            fullWidth
-            size="small"
-            autoFocus
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                  </InputAdornment>
-                ),
-                endAdornment: search ? (
-                  <InputAdornment position="end">
-                    <CloseIcon
-                      sx={{ fontSize: 14, color: "text.secondary", cursor: "pointer", "&:hover": { color: "text.primary" } }}
-                      onClick={() => setSearch("")}
-                    />
-                  </InputAdornment>
-                ) : null,
-              },
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 0,
-                fontSize: 12,
-                bgcolor: (t) => alpha(t.palette.text.primary, 0.03),
-                "& fieldset": { borderColor: "divider" },
-                "&:hover fieldset": { borderColor: "primary.main" },
-              },
-              "& input": { padding: "8px 0", color: "text.primary" },
-              "& input::placeholder": { color: "text.secondary", opacity: 0.6 },
-            }}
-          />
-        </Box>
+        {/* Content area */}
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", p: 3 }}>
+          <Typography sx={{ fontSize: 22, fontWeight: 800, color: "text.primary", mb: 0.5 }}>
+            Welcome to ActOne
+          </Typography>
+          <Typography sx={{ fontSize: 11, fontWeight: 600, color: "text.secondary", opacity: 0.6, mb: 2.5 }}>
+            Start a new project, open a recent file, or learn the basics.
+          </Typography>
 
-        {/* Recent Files List */}
-        {recentFiles.length > 0 && (() => {
-          const filtered = recentFiles.filter(
-            (f) => !search || f.name.toLowerCase().includes(search.toLowerCase())
-          );
-          if (filtered.length === 0) return null;
-          return (
-            <Box sx={{ width: "100%", maxWidth: 480, mb: 2 }}>
-              {filtered.slice(0, 8).map((item: RecentFile) => (
+          {/* Recent section */}
+          <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.6, mb: 1 }}>
+            Recent
+          </Typography>
+          {recentFiles.length > 0 ? (
+            <Box sx={{ mb: 3, border: "1px solid", borderColor: "divider" }}>
+              {recentFiles.slice(0, 6).map((item: RecentFile) => (
                 <Box
                   key={item.path}
                   onClick={() => handleOpenRecent(item.path)}
@@ -357,216 +428,92 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                     px: 1.2,
                     py: 0.8,
                     cursor: "pointer",
-                    borderRadius: 0,
-                    border: "1px solid transparent",
                     borderBottom: "1px solid",
                     borderColor: "divider",
                     transition: "background-color var(--duration-fast) ease",
-                    "&:hover": {
-                      bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
-                      borderColor: "primary.main",
-                    },
-                    "&:last-of-type": { borderBottom: "1px solid transparent" },
+                    "&:last-of-type": { borderBottom: "none" },
+                    "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
                   }}
                 >
-                  <DescriptionIcon sx={{ fontSize: 16, color: "text.secondary", flexShrink: 0 }} />
+                  <DescriptionIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }} />
                   <Box sx={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: "text.primary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <Typography sx={{ fontSize: 11.5, fontWeight: 600, color: "text.primary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {item.name}
                     </Typography>
-                    <Typography sx={{ fontSize: 10, color: "text.secondary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", opacity: 0.6 }}>
-                      {item.path}
-                    </Typography>
                   </Box>
-                  <Typography sx={{ fontSize: 10, color: "text.secondary", flexShrink: 0, opacity: 0.6, fontWeight: 500 }}>
+                  <Typography sx={{ fontSize: 9.5, color: "text.secondary", flexShrink: 0, opacity: 0.6, fontWeight: 500 }}>
                     {formatRelativeTime(item.lastOpened)}
                   </Typography>
                   <CloseIcon
                     onClick={(e) => { e.stopPropagation(); removeFromRecent(item.path); }}
-                    sx={{ fontSize: 12, color: "text.secondary", cursor: "pointer", opacity: 0.4, flexShrink: 0, "&:hover": { opacity: 1, color: "error.main" } }}
+                    sx={{ fontSize: 11, color: "text.secondary", cursor: "pointer", opacity: 0.4, flexShrink: 0, "&:hover": { opacity: 1, color: "error.main" } }}
                   />
                 </Box>
               ))}
             </Box>
-          );
-        })()}
-
-        <TutorialSelectionDialog
-          open={tutorialDialogOpen}
-          onClose={() => setTutorialDialogOpen(false)}
-          onSelectTour={handleSelectTour}
-        />
-
-        {/* Action Buttons (small) */}
-        <Box sx={{ display: "flex", flexDirection: "row", gap: 1, mt: 1 }}>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<AddIcon sx={{ fontSize: 14 }} />}
-            onClick={handleNew}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              borderRadius: 0,
-              borderColor: "divider",
-              color: "text.primary",
-              "&:hover": { borderColor: "primary.main", bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
-            }}
-          >
-            New
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<FolderOpenIcon sx={{ fontSize: 14 }} />}
-            onClick={handleOpen}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              borderRadius: 0,
-              borderColor: "divider",
-              color: "text.primary",
-              "&:hover": { borderColor: "primary.main", bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
-            }}
-          >
-            Open
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<CombineColumnsIcon sx={{ fontSize: 14 }} />}
-            onClick={handleTemplates}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              borderRadius: 0,
-              borderColor: "divider",
-              color: "text.primary",
-              "&:hover": { borderColor: "primary.main", bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
-            }}
-          >
-            Templates
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<HelpOutlinedIcon sx={{ fontSize: 14 }} />}
-            onClick={() => setTutorialDialogOpen(true)}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              borderRadius: 0,
-              borderColor: "divider",
-              color: "text.primary",
-              "&:hover": { borderColor: "primary.main", bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
-            }}
-          >
-            Tutorials
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Footer */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          py: 1.5,
-          px: 3,
-          position: "relative",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Button
-            size="small"
-            startIcon={<HelpOutlinedIcon sx={{ fontSize: 13 }} />}
-            onClick={handleHelp}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              color: "text.secondary",
-              opacity: 0.4,
-              "&:hover": { opacity: 1, color: "text.primary" },
-            }}
-          >
-            Help
-          </Button>
-          <Button
-            size="small"
-            startIcon={<DiscordIcon sx={{ fontSize: 13 }} />}
-            onClick={() => {
-              import("@tauri-apps/plugin-opener")
-                .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
-                .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
-            }}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 11,
-              color: "text.secondary",
-              opacity: 0.4,
-              "&:hover": { opacity: 1, color: "text.primary" },
-            }}
-          >
-            Discord
-          </Button>
-          <Typography
-            sx={{
-              fontSize: 9.5,
-              fontWeight: 600,
-              color: "text.secondary",
-              opacity: 0.25,
-            }}
-          >
-            {appVersion ? `v${appVersion}` : ""}
-          </Typography>
-          {updateAvailable && (
-            <Tooltip title="Click to install update from Microsoft Store">
-              <Box
-                onClick={(e) => { e.stopPropagation(); installUpdate(); }}
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 0.3,
-                  px: 0.75,
-                  py: 0.15,
-                  borderRadius: 0,
-                  cursor: 'pointer',
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
-                  color: 'primary.main',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
-                  '&:hover': {
-                    bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
-                  },
-                }}
-              >
-                <DownloadIcon sx={{ fontSize: 10 }} />
-                Update available
-              </Box>
-            </Tooltip>
+          ) : (
+            <Box sx={{ mb: 3, p: 2, border: "1px dashed", borderColor: "divider", textAlign: "center" }}>
+              <Typography sx={{ fontSize: 11, color: "text.secondary", opacity: 0.5 }}>
+                No recent files yet
+              </Typography>
+            </Box>
           )}
-          <Typography
-            sx={{
-              fontSize: 9,
-              fontWeight: 500,
-              color: "text.secondary",
-              opacity: 0.35,
-              userSelect: "none",
-            }}
-          >
-            &copy; 2026 Write Up Film Service Company
-          </Typography>
-        </Box>
 
+          {/* Walkthroughs section */}
+          <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.6, mb: 1 }}>
+            Walkthroughs
+          </Typography>
+          <Box sx={{ border: "1px solid", borderColor: "divider" }}>
+            <Box
+              onClick={() => handleSelectTour("ui")}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.2,
+                px: 1.2,
+                py: 0.9,
+                cursor: "pointer",
+                borderBottom: "1px solid",
+                borderColor: "divider",
+                transition: "background-color var(--duration-fast) ease",
+                "&:last-of-type": { borderBottom: "none" },
+                "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
+              }}
+            >
+              <Typography sx={{ fontSize: 13, color: "primary.main", fontWeight: 700, flexShrink: 0 }}>→</Typography>
+              <Box>
+                <Typography sx={{ fontSize: 11.5, fontWeight: 600, color: "text.primary" }}>UI Tour</Typography>
+                <Typography sx={{ fontSize: 9.5, color: "text.secondary", opacity: 0.6 }}>Learn the editor layout and shortcuts</Typography>
+              </Box>
+            </Box>
+            <Box
+              onClick={() => handleSelectTour("fountain")}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.2,
+                px: 1.2,
+                py: 0.9,
+                cursor: "pointer",
+                transition: "background-color var(--duration-fast) ease",
+                "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
+              }}
+            >
+              <Typography sx={{ fontSize: 13, color: "primary.main", fontWeight: 700, flexShrink: 0 }}>→</Typography>
+              <Box>
+                <Typography sx={{ fontSize: 11.5, fontWeight: 600, color: "text.primary" }}>Fountain Syntax</Typography>
+                <Typography sx={{ fontSize: 9.5, color: "text.secondary", opacity: 0.6 }}>Write screenplays in plain text</Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
       </Box>
+
+      <TutorialSelectionDialog
+        open={tutorialDialogOpen}
+        onClose={() => setTutorialDialogOpen(false)}
+        onSelectTour={handleSelectTour}
+      />
     </Box>
   );
 };
