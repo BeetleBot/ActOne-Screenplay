@@ -176,7 +176,7 @@ function AppInner() {
             snapshotAutoIntervalMinutes: parseInt(localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL) ?? "15", 10),
             snapshotOnSave: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_ON_SAVE) === "true",
             fountainColorsEnabled: localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED) !== "false",
-            iconStyle: localStorage.getItem(STORAGE_KEYS.ICON_STYLE) ?? "duotone",
+            iconStyle: localStorage.getItem(STORAGE_KEYS.ICON_STYLE) ?? "fill",
             activeFilePath: activeFileIdRef.current || "",
           });
         });

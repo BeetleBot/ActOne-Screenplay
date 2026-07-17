@@ -4,7 +4,7 @@ import { useCodeMirror } from "../editor";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import type { Theme } from "@mui/material/styles";
-import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, SearchIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
+import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, GoogleLogoIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, DeleteIcon, ChevronRightIcon } from "./Icons";
 import { logger } from "../utils/logger";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { CATEGORIES } from "../constants";
@@ -628,7 +628,7 @@ export const FountainEditor = React.memo(() => {
           onClick={handleLookUpSelection}
         >
           <ListItemIcon>
-            <SearchIcon fontSize="small" />
+            <GoogleLogoIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary="Look Up Word" />
         </MenuItem>

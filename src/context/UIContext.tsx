@@ -227,7 +227,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   });
 
   const [iconStyle, setIconStyleState] = useState<'fill' | 'duotone' | 'regular'>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.ICON_STYLE) as 'fill' | 'duotone' | 'regular' | null) ?? "duotone";
+    return (localStorage.getItem(STORAGE_KEYS.ICON_STYLE) as 'fill' | 'duotone' | 'regular' | null) ?? "fill";
   });
 
   useEffect(() => {

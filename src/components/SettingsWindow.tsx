@@ -57,7 +57,7 @@ export const SettingsWindow: React.FC = () => {
   const [snapshotOnSave, setSnapshotOnSave] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE, false));
   const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, 20));
   const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, true));
-  const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, "duotone") as string);
+  const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, "fill") as string);
   const activeFilePathRef = useRef<string>("");
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -113,7 +113,7 @@ export const SettingsWindow: React.FC = () => {
           setSnapshotOnSave(d.snapshotOnSave);
           setSnapshotMaxRetention(d.snapshotMaxRetention || 20);
           setFountainColorsEnabled(d.fountainColorsEnabled !== false);
-          setIconStyle(d.iconStyle ?? "duotone");
+          setIconStyle(d.iconStyle ?? "fill");
           activeFilePathRef.current = d.activeFilePath || "";
         });
         return unlisten;

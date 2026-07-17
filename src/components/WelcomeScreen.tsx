@@ -13,7 +13,7 @@ import {
   Chip,
   Tooltip,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import type { Theme } from "@mui/material/styles";
 
 import { logger } from "../utils/logger";
@@ -59,7 +59,8 @@ function getDynamicQuote(): Quote {
   }
 }
 
-import logoImage from "../assets/logo.png";
+import logoDark from "../assets/logo_dark.png";
+import logoLight from "../assets/logo_light.png";
 import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, DiscordIcon, DownloadIcon } from "./Icons";
 
 const ActionCard: React.FC<{
@@ -137,6 +138,7 @@ interface WelcomeScreenWindowProps {
 }
 
 export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false }) => {
+  const theme = useTheme();
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
   const [quote, setQuote] = useState<Quote>({ text: "", author: "" });
   const { openHelpWindow } = useModalWindows();
@@ -504,7 +506,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           />
           <Box
             component="img"
-            src={logoImage}
+            src={theme.palette.mode === "dark" ? logoDark : logoLight}
             alt="ActOne"
             draggable={false}
             onDragStart={(e) => e.preventDefault()}

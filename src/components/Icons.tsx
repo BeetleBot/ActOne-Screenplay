@@ -12,7 +12,7 @@ import {
   Circle, ArrowCounterClockwise, FloppyDisk, Gear, Stop, TextT, Timer, Faders,
   Sidebar, MagnifyingGlassPlus, MagnifyingGlassMinus, Camera, CheckSquareOffset,
   Garage, Command, DotsThree, DotsSix, Books, Pencil, DiscordLogo,
-  SquaresFour, FolderStar, TreeStructure, Rows
+  SquaresFour, FolderStar, TreeStructure, Rows, ListMagnifyingGlass, GoogleLogo, FolderSimplePlus
 } from '@phosphor-icons/react';
 
 type IconProps = SvgIconProps & {
@@ -21,12 +21,12 @@ type IconProps = SvgIconProps & {
 
 function createPhosphorIcon(PhosphorComponent: React.ElementType): React.FC<IconProps> {
   return (props) => {
-    let iconStyle: any = "duotone";
+    let iconStyle: any = "fill";
     try {
       const ui = useUI();
       iconStyle = ui.iconStyle;
     } catch {
-      iconStyle = localStorage.getItem("actone-icon-style") || "duotone";
+      iconStyle = localStorage.getItem("actone-icon-style") || "fill";
     }
     return (
       <SvgIcon component={PhosphorComponent} weight={iconStyle} inheritViewBox {...props} />
@@ -108,3 +108,53 @@ export const DiscordIcon = createPhosphorIcon(DiscordLogo);
 export const Dashboard2AddIcon = createPhosphorIcon(SquaresFour);
 export const CombineColumnsIcon = createPhosphorIcon(TreeStructure);
 export const FolderSpecialIcon = createPhosphorIcon(FolderStar);
+export const ListMagnifyingGlassIcon = createPhosphorIcon(ListMagnifyingGlass);
+export const GoogleLogoIcon = createPhosphorIcon(GoogleLogo);
+export const FolderSimplePlusIcon = createPhosphorIcon(FolderSimplePlus);
+
+export const CommandPaletteIcon: React.FC<IconProps> = (props) => {
+  let iconStyle: any = "fill";
+  try {
+    const ui = useUI();
+    iconStyle = ui.iconStyle;
+  } catch {
+    iconStyle = localStorage.getItem("actone-icon-style") || "fill";
+  }
+
+  if (iconStyle === "fill") {
+    return (
+      <SvgIcon viewBox="0 0 100 100" {...props}>
+        <rect x="8" y="16" width="6" height="68" rx="0" />
+        <rect x="18" y="16" width="6" height="68" rx="0" />
+        <rect x="76" y="16" width="6" height="68" rx="0" />
+        <rect x="86" y="16" width="6" height="68" rx="0" />
+        <path d="M 33 86 L 48 14 L 67 86 Z M 44 80 L 48 22 L 56 80 Z" fillRule="evenodd" />
+        <rect x="30" y="52" width="40" height="6" rx="0" />
+      </SvgIcon>
+    );
+  }
+
+  if (iconStyle === "duotone") {
+    return (
+      <SvgIcon viewBox="0 0 100 100" {...props}>
+        <rect x="8" y="16" width="6" height="68" rx="0" opacity="0.5" />
+        <rect x="18" y="16" width="6" height="68" rx="0" opacity="0.5" />
+        <rect x="76" y="16" width="6" height="68" rx="0" opacity="0.5" />
+        <rect x="86" y="16" width="6" height="68" rx="0" opacity="0.5" />
+        <path d="M 33 86 L 48 14 L 67 86 Z M 44 80 L 48 22 L 56 80 Z" fillRule="evenodd" />
+        <rect x="30" y="52" width="40" height="6" rx="0" />
+      </SvgIcon>
+    );
+  }
+
+  return (
+    <SvgIcon viewBox="0 0 100 100" {...props}>
+      <path d="M 12 20 L 8 20 L 8 80 L 12 80" fill="none" stroke="currentColor" strokeWidth={3} strokeLinejoin="miter" />
+      <path d="M 22 20 L 18 20 L 18 80 L 22 80" fill="none" stroke="currentColor" strokeWidth={3} strokeLinejoin="miter" />
+      <path d="M 78 20 L 82 20 L 82 80 L 78 80" fill="none" stroke="currentColor" strokeWidth={3} strokeLinejoin="miter" />
+      <path d="M 88 20 L 92 20 L 92 80 L 88 80" fill="none" stroke="currentColor" strokeWidth={3} strokeLinejoin="miter" />
+      <path d="M 33 86 L 48 14 L 67 86" fill="none" stroke="currentColor" strokeWidth={3} strokeLinejoin="miter" />
+      <line x1="30" y1="54" x2="70" y2="54" stroke="currentColor" strokeWidth={3} />
+    </SvgIcon>
+  );
+};
