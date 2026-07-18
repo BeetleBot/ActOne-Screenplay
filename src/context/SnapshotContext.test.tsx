@@ -29,7 +29,7 @@ describe("SnapshotContext", () => {
     const { result } = renderHook(() => useSnapshots(), { wrapper });
     expect(result.current.snapshots).toEqual([]);
     expect(result.current.isPanelOpen).toBe(false);
-    expect(result.current.settings.enabled).toBe(false);
+    expect(result.current.settings.enabled).toBe(true);
   });
 
   it("defaults to project location", () => {
@@ -89,6 +89,6 @@ describe("SnapshotContext", () => {
     expect(result.current.settings.auto_enabled).toBe(true);
     expect(result.current.settings.on_save).toBe(true);
     expect(result.current.settings.location).toBe("project");
-    expect(result.current.settings.auto_interval_minutes).toBe(15);
+    expect(result.current.settings.auto_interval_minutes).toBe(5);
   });
 });

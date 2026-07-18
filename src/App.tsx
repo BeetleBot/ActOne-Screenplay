@@ -5,6 +5,7 @@ import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, Err
 import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
+import { clearResetSettings, DEFAULTS } from "./constants/defaults";
 import { setPrefs } from "./theme/AppPrefsEngine";
 import { getPerScriptSettingObject, updatePerScriptSetting } from "./utils/perScriptSettings";
 import { unpackActoneBundle } from "./utils";
@@ -145,6 +146,10 @@ function AppInner() {
   }, [confirm]);
 
   useEffect(() => {
+    clearResetSettings();
+  }, []);
+
+  useEffect(() => {
     const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
     if (!isTauri) return;
 
@@ -156,29 +161,34 @@ function AppInner() {
         const { EditorView } = await import("@codemirror/view");
 
         const u1 = await listen("modal:settings:ready", () => {
+          const readLS = (key: string) => localStorage.getItem(key);
+          const readBool = (key: string) => {
+            const v = localStorage.getItem(key);
+            return v !== null ? v === "true" : Boolean(DEFAULTS[key]);
+          };
           emit("modal:settings:init", {
-            themeId: localStorage.getItem(STORAGE_KEYS.THEME_ID) ?? "light",
-            fontFamily: localStorage.getItem(STORAGE_KEYS.FONT_FAMILY) ?? "courier-prime-sans",
-            paperSize: localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) ?? "a4",
-            typewriterMode: localStorage.getItem(STORAGE_KEYS.TYPEWRITER_MODE) === "true",
-            zoomLevel: parseInt(localStorage.getItem(STORAGE_KEYS.ZOOM_LEVEL) ?? "100", 10),
-            appScale: parseInt(localStorage.getItem(STORAGE_KEYS.APP_SCALE) ?? "100", 10),
-            autocompleteEnabled: localStorage.getItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED) !== "false",
-            smartQuotesEnabled: localStorage.getItem(STORAGE_KEYS.SMART_QUOTES_ENABLED) !== "false",
-            matchParenthesesEnabled: localStorage.getItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED) !== "false",
-            autoSaveEnabled: localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_ENABLED) !== "false",
-            autoSaveInterval: parseInt(localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL) ?? "60000", 10),
-            hideSyntaxEnabled: localStorage.getItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED) === "true",
-            lineFocusEnabled: localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true",
-            snapshotsEnabled: localStorage.getItem(STORAGE_KEYS.SNAPSHOTS_ENABLED) === "true",
-            snapshotLocation: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_LOCATION) ?? "project",
-            snapshotCustomPath: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH) ?? "",
-            snapshotAutoEnabled: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED) === "true",
-            snapshotAutoIntervalMinutes: parseInt(localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL) ?? "15", 10),
-            snapshotOnSave: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_ON_SAVE) === "true",
-            fountainColorsEnabled: localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED) !== "false",
-            iconStyle: localStorage.getItem(STORAGE_KEYS.ICON_STYLE) ?? "fill",
-            appIcon: localStorage.getItem(STORAGE_KEYS.APP_ICON) ?? "light",
+            themeId: readLS(STORAGE_KEYS.THEME_ID) ?? DEFAULTS[STORAGE_KEYS.THEME_ID] as string,
+            fontFamily: readLS(STORAGE_KEYS.FONT_FAMILY) ?? DEFAULTS[STORAGE_KEYS.FONT_FAMILY] as string,
+            paperSize: readLS(STORAGE_KEYS.PAPER_SIZE) ?? DEFAULTS[STORAGE_KEYS.PAPER_SIZE] as string,
+            typewriterMode: readBool(STORAGE_KEYS.TYPEWRITER_MODE),
+            zoomLevel: parseInt(readLS(STORAGE_KEYS.ZOOM_LEVEL) ?? String(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL]), 10),
+            appScale: parseInt(readLS(STORAGE_KEYS.APP_SCALE) ?? String(DEFAULTS[STORAGE_KEYS.APP_SCALE]), 10),
+            autocompleteEnabled: readBool(STORAGE_KEYS.AUTOCOMPLETE_ENABLED),
+            smartQuotesEnabled: readBool(STORAGE_KEYS.SMART_QUOTES_ENABLED),
+            matchParenthesesEnabled: readBool(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED),
+            autoSaveEnabled: readBool(STORAGE_KEYS.AUTO_SAVE_ENABLED),
+            autoSaveInterval: parseInt(readLS(STORAGE_KEYS.AUTO_SAVE_INTERVAL) ?? String(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]), 10),
+            hideSyntaxEnabled: readBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED),
+            lineFocusEnabled: readBool(STORAGE_KEYS.LINE_FOCUS_ENABLED),
+            snapshotsEnabled: readBool(STORAGE_KEYS.SNAPSHOTS_ENABLED),
+            snapshotLocation: readLS(STORAGE_KEYS.SNAPSHOT_LOCATION) ?? DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION] as string,
+            snapshotCustomPath: readLS(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH) ?? DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH] as string,
+            snapshotAutoEnabled: readBool(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED),
+            snapshotAutoIntervalMinutes: parseInt(readLS(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL) ?? String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL]), 10),
+            snapshotOnSave: readBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE),
+            fountainColorsEnabled: readBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED),
+            iconStyle: readLS(STORAGE_KEYS.ICON_STYLE) ?? DEFAULTS[STORAGE_KEYS.ICON_STYLE] as string,
+            appIcon: readLS(STORAGE_KEYS.APP_ICON) ?? DEFAULTS[STORAGE_KEYS.APP_ICON] as string,
             activeFilePath: activeFileIdRef.current || "",
           });
         });

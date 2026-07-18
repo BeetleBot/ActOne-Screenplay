@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { invoke } from "@tauri-apps/api/core";
 import { useFile } from "./FileContext";
 import { STORAGE_KEYS } from "../constants";
+import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 
 export interface SnapshotInfo {
@@ -27,13 +28,28 @@ export interface SnapshotSettings {
 
 function loadSettings(): SnapshotSettings {
   return {
-    enabled: localStorage.getItem(STORAGE_KEYS.SNAPSHOTS_ENABLED) === "true",
-    location: (localStorage.getItem(STORAGE_KEYS.SNAPSHOT_LOCATION) as SnapshotSettings["location"]) || "project",
-    custom_path: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH) || "",
-    auto_enabled: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED) === "true",
-    auto_interval_minutes: parseInt(localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL) || "15", 10),
-    on_save: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_ON_SAVE) === "true",
-    max_retention: parseInt(localStorage.getItem(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION) || "20", 10),
+    enabled: (() => {
+      const v = localStorage.getItem(STORAGE_KEYS.SNAPSHOTS_ENABLED);
+      return v !== null ? v === "true" : Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]);
+    })(),
+    location: (localStorage.getItem(STORAGE_KEYS.SNAPSHOT_LOCATION) as SnapshotSettings["location"]) || String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION]),
+    custom_path: localStorage.getItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH) || String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH]),
+    auto_enabled: (() => {
+      const v = localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED);
+      return v !== null ? v === "true" : Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED]);
+    })(),
+    auto_interval_minutes: (() => {
+      const v = localStorage.getItem(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL);
+      return v !== null ? parseInt(v, 10) : Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL]);
+    })(),
+    on_save: (() => {
+      const v = localStorage.getItem(STORAGE_KEYS.SNAPSHOT_ON_SAVE);
+      return v !== null ? v === "true" : Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_ON_SAVE]);
+    })(),
+    max_retention: (() => {
+      const v = localStorage.getItem(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION);
+      return v !== null ? parseInt(v, 10) : Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION]);
+    })(),
   };
 }
 

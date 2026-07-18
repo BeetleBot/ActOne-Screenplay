@@ -341,7 +341,7 @@ export const themes: ThemeConfig[] = [
 
 const shared: ThemeOptions = {
   typography: {
-    fontFamily: "var(--font-ui)",
+    fontFamily: '"Noto Sans", sans-serif',
     button: { textTransform: 'none', fontWeight: 500 },
   },
   shape: { borderRadius: 0 },

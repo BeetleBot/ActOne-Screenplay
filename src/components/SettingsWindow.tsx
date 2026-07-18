@@ -11,6 +11,11 @@ import {
   ToggleButton,
   TextField,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -21,6 +26,7 @@ import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
 import { initPrefsEngine, setPrefs, onPrefsChanged } from "../theme/AppPrefsEngine";
 import { STORAGE_KEYS } from "../constants";
+import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -35,30 +41,31 @@ function readLocalNum(key: string, fallback: number): number {
 }
 
 export const SettingsWindow: React.FC = () => {
-  const [themeId, setThemeId] = useState(() => readLocal(STORAGE_KEYS.THEME_ID, "light"));
-  const [fontFamily, setFontFamily] = useState(() => readLocal(STORAGE_KEYS.FONT_FAMILY, "courier-prime-sans") as string);
-  const [paperSize, setPaperSize] = useState(() => readLocal(STORAGE_KEYS.PAPER_SIZE, "a4") as string);
-  const [typewriterMode, setTypewriterMode] = useState(() => readLocalBool(STORAGE_KEYS.TYPEWRITER_MODE, false));
-  const [zoomLevel, setZoomLevel] = useState(() => readLocalNum(STORAGE_KEYS.ZOOM_LEVEL, 100));
-  const [appScale, setAppScale] = useState(() => readLocalNum(STORAGE_KEYS.APP_SCALE, 100));
-  const [autocompleteEnabled, setAutocompleteEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, true));
-  const [smartQuotesEnabled, setSmartQuotesEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SMART_QUOTES_ENABLED, true));
-  const [matchParenthesesEnabled, setMatchParenthesesEnabled] = useState(() => readLocalBool(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, true));
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTO_SAVE_ENABLED, true));
-  const [autoSaveInterval, setAutoSaveInterval] = useState(() => readLocalNum(STORAGE_KEYS.AUTO_SAVE_INTERVAL, 60000));
-  const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, false));
-  const [hideTagsEnabled, setHideTagsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_TAGS_ENABLED, false));
-  const [lineFocusEnabled, setLineFocusEnabled] = useState(() => readLocalBool(STORAGE_KEYS.LINE_FOCUS_ENABLED, false));
-  const [snapshotsEnabled, setSnapshotsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOTS_ENABLED, false));
-  const [snapshotLocation, setSnapshotLocation] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_LOCATION, "project") as "project" | "app_data" | "custom");
-  const [snapshotCustomPath, setSnapshotCustomPath] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, ""));
-  const [snapshotAutoEnabled, setSnapshotAutoEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED, false));
-  const [snapshotAutoIntervalMinutes, setSnapshotAutoIntervalMinutes] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL, 15));
-  const [snapshotOnSave, setSnapshotOnSave] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE, false));
-  const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, 20));
-  const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, true));
-  const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, "fill") as string);
-  const [appIcon, setAppIcon] = useState(() => readLocal(STORAGE_KEYS.APP_ICON, "light") as string);
+  const [themeId, setThemeId] = useState(() => readLocal(STORAGE_KEYS.THEME_ID, String(DEFAULTS[STORAGE_KEYS.THEME_ID])));
+  const [fontFamily, setFontFamily] = useState(() => readLocal(STORAGE_KEYS.FONT_FAMILY, String(DEFAULTS[STORAGE_KEYS.FONT_FAMILY])) as string);
+  const [paperSize, setPaperSize] = useState(() => readLocal(STORAGE_KEYS.PAPER_SIZE, String(DEFAULTS[STORAGE_KEYS.PAPER_SIZE])) as string);
+  const [typewriterMode, setTypewriterMode] = useState(() => readLocalBool(STORAGE_KEYS.TYPEWRITER_MODE, Boolean(DEFAULTS[STORAGE_KEYS.TYPEWRITER_MODE])));
+  const [zoomLevel, setZoomLevel] = useState(() => readLocalNum(STORAGE_KEYS.ZOOM_LEVEL, Number(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL])));
+  const [appScale, setAppScale] = useState(() => readLocalNum(STORAGE_KEYS.APP_SCALE, Number(DEFAULTS[STORAGE_KEYS.APP_SCALE])));
+  const [autocompleteEnabled, setAutocompleteEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTOCOMPLETE_ENABLED])));
+  const [smartQuotesEnabled, setSmartQuotesEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SMART_QUOTES_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SMART_QUOTES_ENABLED])));
+  const [matchParenthesesEnabled, setMatchParenthesesEnabled] = useState(() => readLocalBool(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED])));
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTO_SAVE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED])));
+  const [autoSaveInterval, setAutoSaveInterval] = useState(() => readLocalNum(STORAGE_KEYS.AUTO_SAVE_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL])));
+  const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED])));
+  const [hideTagsEnabled, setHideTagsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_TAGS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_TAGS_ENABLED])));
+  const [lineFocusEnabled, setLineFocusEnabled] = useState(() => readLocalBool(STORAGE_KEYS.LINE_FOCUS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED])));
+  const [snapshotsEnabled, setSnapshotsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOTS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED])));
+  const [snapshotLocation, setSnapshotLocation] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_LOCATION, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION])) as "project" | "app_data" | "custom");
+  const [snapshotCustomPath, setSnapshotCustomPath] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH] as string)));
+  const [snapshotAutoEnabled, setSnapshotAutoEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED])));
+  const [snapshotAutoIntervalMinutes, setSnapshotAutoIntervalMinutes] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL])));
+  const [snapshotOnSave, setSnapshotOnSave] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_ON_SAVE])));
+  const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION])));
+  const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED])));
+  const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, String(DEFAULTS[STORAGE_KEYS.ICON_STYLE])) as string);
+  const [appIcon, setAppIcon] = useState(() => readLocal(STORAGE_KEYS.APP_ICON, String(DEFAULTS[STORAGE_KEYS.APP_ICON])) as string);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const activeFilePathRef = useRef<string>("");
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -68,6 +75,70 @@ export const SettingsWindow: React.FC = () => {
     } catch { void 0; }
     return 0;
   });
+  const handleResetSettings = () => {
+    const settingKeys = Object.keys(DEFAULTS);
+    settingKeys.forEach((key) => {
+      try { localStorage.removeItem(key); } catch { /* ignore */ }
+    });
+    const extras = [STORAGE_KEYS.OUTLINE_FONT_SIZE, STORAGE_KEYS.RIGHT_PANE_WIDTH];
+    extras.forEach((key) => {
+      try { localStorage.removeItem(key); } catch { /* ignore */ }
+    });
+
+    setThemeId(String(DEFAULTS[STORAGE_KEYS.THEME_ID]));
+    setFontFamily(String(DEFAULTS[STORAGE_KEYS.FONT_FAMILY]));
+    setPaperSize(String(DEFAULTS[STORAGE_KEYS.PAPER_SIZE]));
+    setTypewriterMode(Boolean(DEFAULTS[STORAGE_KEYS.TYPEWRITER_MODE]));
+    setZoomLevel(Number(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL]));
+    setAppScale(Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]));
+    setAutocompleteEnabled(Boolean(DEFAULTS[STORAGE_KEYS.AUTOCOMPLETE_ENABLED]));
+    setSmartQuotesEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SMART_QUOTES_ENABLED]));
+    setMatchParenthesesEnabled(Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]));
+    setAutoSaveEnabled(Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED]));
+    setAutoSaveInterval(Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
+    setHideSyntaxEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
+    setHideTagsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_TAGS_ENABLED]));
+    setLineFocusEnabled(Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
+    setSnapshotsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]));
+    setSnapshotLocation(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION]) as "project" | "app_data" | "custom");
+    setSnapshotCustomPath(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH]));
+    setSnapshotAutoEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED]));
+    setSnapshotAutoIntervalMinutes(Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL]));
+    setSnapshotOnSave(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_ON_SAVE]));
+    setSnapshotMaxRetention(Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION]));
+    setFountainColorsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]));
+    setIconStyle(String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]));
+    setAppIcon(String(DEFAULTS[STORAGE_KEYS.APP_ICON]));
+
+    emitUpdate(STORAGE_KEYS.THEME_ID, String(DEFAULTS[STORAGE_KEYS.THEME_ID]));
+    emitUpdate(STORAGE_KEYS.FONT_FAMILY, String(DEFAULTS[STORAGE_KEYS.FONT_FAMILY]));
+    emitUpdate(STORAGE_KEYS.PAPER_SIZE, String(DEFAULTS[STORAGE_KEYS.PAPER_SIZE]));
+    emitUpdate(STORAGE_KEYS.TYPEWRITER_MODE, Boolean(DEFAULTS[STORAGE_KEYS.TYPEWRITER_MODE]));
+    emitUpdate(STORAGE_KEYS.ZOOM_LEVEL, Number(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL]));
+    emitUpdate(STORAGE_KEYS.APP_SCALE, Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]));
+    emitUpdate(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTOCOMPLETE_ENABLED]));
+    emitUpdate(STORAGE_KEYS.SMART_QUOTES_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SMART_QUOTES_ENABLED]));
+    emitUpdate(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]));
+    emitUpdate(STORAGE_KEYS.AUTO_SAVE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED]));
+    emitUpdate(STORAGE_KEYS.AUTO_SAVE_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
+    emitUpdate(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
+    emitUpdate(STORAGE_KEYS.HIDE_TAGS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_TAGS_ENABLED]));
+    emitUpdate(STORAGE_KEYS.LINE_FOCUS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
+    emitUpdate(STORAGE_KEYS.SNAPSHOTS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]));
+    emitUpdate(STORAGE_KEYS.SNAPSHOT_LOCATION, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION]));
+    emitUpdate(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH]));
+    emitUpdate(STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED]));
+    emitUpdate(STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL]));
+    emitUpdate(STORAGE_KEYS.SNAPSHOT_ON_SAVE, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_ON_SAVE]));
+    emitUpdate(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION]));
+    emitUpdate(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]));
+    emitUpdate(STORAGE_KEYS.ICON_STYLE, String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]));
+    emitUpdate(STORAGE_KEYS.APP_ICON, String(DEFAULTS[STORAGE_KEYS.APP_ICON]));
+    engineSetTheme({ themeId: String(DEFAULTS[STORAGE_KEYS.THEME_ID]), appScale: Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]) });
+
+    setResetDialogOpen(false);
+  };
+
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_THEMES) ?? "[]"); } catch { return []; }
   });
@@ -357,6 +428,18 @@ export const SettingsWindow: React.FC = () => {
                   </Select>
                 )}
               </Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mt: 1.5 }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  fullWidth
+                  size="small"
+                  onClick={() => setResetDialogOpen(true)}
+                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
+                >
+                  Reset All Settings to Default
+                </Button>
+              </Box>
             </Box>
           )}
           {activeTab === 1 && (
@@ -583,6 +666,24 @@ export const SettingsWindow: React.FC = () => {
           )}
         </Box>
       </Box>
+      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="xs">
+        <DialogTitle sx={{ fontSize: 14, fontWeight: 600 }}>
+          Reset Settings
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ fontSize: 12 }}>
+            This will reset all settings to their default values. This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button onClick={() => setResetDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+            Cancel
+          </Button>
+          <Button onClick={handleResetSettings} variant="contained" color="error" size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </MuiThemeProvider>
   );
 };

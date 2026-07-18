@@ -18,16 +18,16 @@ describe("UIContext", () => {
     expect(result.current.fontFamily).toBe("courier-prime-sans");
     expect(result.current.paperSize).toBe("a4");
     expect(result.current.isZenMode).toBe(false);
-    expect(result.current.typewriterMode).toBe(false);
+    expect(result.current.typewriterMode).toBe(true);
     expect(result.current.activeTab).toBe("outline");
-    expect(result.current.zoomLevel).toBe(100);
-    expect(result.current.appScale).toBe(100);
+    expect(result.current.zoomLevel).toBe(120);
+    expect(result.current.appScale).toBe(120);
     expect(result.current.autocompleteEnabled).toBe(true);
-    expect(result.current.smartQuotesEnabled).toBe(true);
+    expect(result.current.smartQuotesEnabled).toBe(false);
     expect(result.current.matchParenthesesEnabled).toBe(true);
 
     expect(result.current.autoSaveEnabled).toBe(true);
-    expect(result.current.autoSaveInterval).toBe(60000);
+    expect(result.current.autoSaveInterval).toBe(300000);
     expect(result.current.activeRightPane).toBe(null);
     expect(result.current.rightPaneWidth).toBe(360);
   });

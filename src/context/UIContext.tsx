@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { STORAGE_KEYS } from "../constants";
+import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 import { setPrefs } from "../theme/AppPrefsEngine";
 import { setThemeState } from "../theme/ThemeEngine";
@@ -123,51 +124,58 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return () => window.removeEventListener("settings-changed", handler);
   }, []);
   const [fontFamily, setFontFamilyState] = useState<'courier-prime' | 'courier-prime-sans'>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.FONT_FAMILY) as 'courier-prime' | 'courier-prime-sans' | null) ?? "courier-prime-sans";
+    return (localStorage.getItem(STORAGE_KEYS.FONT_FAMILY) as 'courier-prime' | 'courier-prime-sans' | null) ?? String(DEFAULTS[STORAGE_KEYS.FONT_FAMILY]) as 'courier-prime' | 'courier-prime-sans';
   });
   const [typewriterMode, setTypewriterModeState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.TYPEWRITER_MODE) === "true";
+    const stored = localStorage.getItem(STORAGE_KEYS.TYPEWRITER_MODE);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.TYPEWRITER_MODE]);
   });
   const [paperSize, setPaperSizeState] = useState<'letter' | 'a4'>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) as 'letter' | 'a4' | null) ?? "a4";
+    return (localStorage.getItem(STORAGE_KEYS.PAPER_SIZE) as 'letter' | 'a4' | null) ?? String(DEFAULTS[STORAGE_KEYS.PAPER_SIZE]) as 'letter' | 'a4';
   });
   const [activeTab, setActiveTab] = useState<string>("outline");
   const [zoomLevel, setZoomLevelState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ZOOM_LEVEL);
-    const parsed = saved ? parseInt(saved, 10) : 100;
-    return isNaN(parsed) ? 100 : parsed;
+    const parsed = saved ? parseInt(saved, 10) : Number(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL]);
+    return isNaN(parsed) ? Number(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL]) : parsed;
   });
   const [appScale, setAppScaleState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.APP_SCALE);
-    const parsed = saved ? parseInt(saved, 10) : 100;
-    return isNaN(parsed) ? 100 : parsed;
+    const parsed = saved ? parseInt(saved, 10) : Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]);
+    return isNaN(parsed) ? Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]) : parsed;
   });
 
   const [autocompleteEnabled, setAutocompleteEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED) !== "false";
+    const stored = localStorage.getItem(STORAGE_KEYS.AUTOCOMPLETE_ENABLED);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.AUTOCOMPLETE_ENABLED]);
   });
   const [smartQuotesEnabled, setSmartQuotesEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.SMART_QUOTES_ENABLED) !== "false";
+    const stored = localStorage.getItem(STORAGE_KEYS.SMART_QUOTES_ENABLED);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.SMART_QUOTES_ENABLED]);
   });
   const [matchParenthesesEnabled, setMatchParenthesesEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED) !== "false";
+    const stored = localStorage.getItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]);
   });
 
 
 
   const [autoSaveEnabled, setAutoSaveEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_ENABLED) !== "false";
+    const stored = localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_ENABLED);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED]);
   });
   const [autoSaveInterval, setAutoSaveIntervalState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.AUTO_SAVE_INTERVAL);
-    return saved ? parseInt(saved, 10) : 60000;
+    return saved ? parseInt(saved, 10) : Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]);
   });
   const [hideSyntaxEnabled, setHideSyntaxEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED) === "true";
+    const stored = localStorage.getItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]);
   });
 
   const [hideTagsEnabled, setHideTagsEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.HIDE_TAGS_ENABLED) === "true";
+    const stored = localStorage.getItem(STORAGE_KEYS.HIDE_TAGS_ENABLED);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.HIDE_TAGS_ENABLED]);
   });
 
   const [activeRightPane, setActiveRightPaneState] = useState<string | null>(null);
@@ -219,15 +227,17 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [isZenMode, setIsZenModeState] = useState(false);
 
   const [lineFocusEnabled, setLineFocusEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true";
+    const stored = localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]);
   });
 
   const [fountainColorsEnabled, setFountainColorsEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED) !== "false";
+    const stored = localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]);
   });
 
   const [iconStyle, setIconStyleState] = useState<'fill' | 'duotone' | 'regular'>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.ICON_STYLE) as 'fill' | 'duotone' | 'regular' | null) ?? "fill";
+    return (localStorage.getItem(STORAGE_KEYS.ICON_STYLE) as 'fill' | 'duotone' | 'regular' | null) ?? String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]) as 'fill' | 'duotone' | 'regular';
   });
 
   useEffect(() => {

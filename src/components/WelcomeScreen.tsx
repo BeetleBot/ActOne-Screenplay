@@ -1,143 +1,74 @@
 import React, { useEffect, useState } from "react";
-import { useFile } from "../context";
+import { useFile, useTheme as useAppTheme } from "../context";
 import type { RecentFile } from "../context/FileContext";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-
 import { useModalWindows, useStoreUpdateCheck } from "../hooks";
-import {
-  Box,
-  Typography,
-  IconButton,
-} from "@mui/material";
-import { alpha } from "@mui/material/styles";
-
+import { Box, Typography, useTheme, alpha, Menu, MenuItem } from "@mui/material";
 import { logger } from "../utils/logger";
 import { ThemeLogo } from "./ThemeLogo";
 import { TutorialSelectionDialog } from "./OnboardingTour";
-
-const GREETINGS = [
-  "What are you writing today?",
-  "Ready to tell a story?",
-  "Let's build a world.",
-  "Your screenplay awaits.",
-  "Time to write something great.",
-  "Where does the story begin?",
-  "What happens next?",
-  "Lights, camera, write.",
-  "Every great film starts here.",
-  "Who's your protagonist today?",
-  "Fresh page, fresh ideas.",
-  "The cursor is blinking. Go.",
-  "What's the opening scene?",
-  "Let's make something worth watching.",
-  "A blank page is a beautiful thing.",
-  "Start with the character. Always.",
-  "Your audience is waiting.",
-  "Write the movie you'd want to see.",
-];
-
-function getRandomGreeting(): string {
-  try {
-    const lastIdxStr = localStorage.getItem("last_greeting_index");
-    const lastIdx = lastIdxStr ? parseInt(lastIdxStr, 10) : -1;
-    const available = [];
-    for (let i = 0; i < GREETINGS.length; i++) {
-      if (i !== lastIdx) available.push(i);
-    }
-    const candidates = available.length > 0 ? available : [0];
-    const idx = candidates[Math.floor(Math.random() * candidates.length)];
-    localStorage.setItem("last_greeting_index", idx.toString());
-    return GREETINGS[idx];
-  } catch {
-    return GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-  }
-}
-
-import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DescriptionIcon, DeleteIcon, DiscordIcon, DownloadIcon } from "./Icons";
-
-const ActionCard: React.FC<{
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  onClick: () => void;
-}> = ({ icon, title, description, onClick }) => (
-  <Box
-    onClick={onClick}
-    sx={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      textAlign: "center",
-      width: 140,
-      height: 100,
-      p: 1,
-      borderRadius: 0,
-      cursor: "pointer",
-      bgcolor: "transparent",
-      color: "text.primary",
-      transition: "all 0.25s ease",
-      "&:hover": {
-        bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-        "& .action-icon": {
-          transform: "scale(1.12)",
-          bgcolor: (t) => alpha(t.palette.primary.main, 0.18),
-        },
-      },
-    }}
-  >
-    <Box
-      className="action-icon"
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 38,
-        height: 38,
-        borderRadius: 0,
-        bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
-        color: "primary.main",
-        mb: 0.5,
-        transition: "all 0.25s ease",
-      }}
-    >
-      {icon}
-    </Box>
-    <Typography
-      variant="subtitle2"
-      sx={{ fontWeight: 600, fontSize: 13, lineHeight: 1.2, mt: 0.5 }}
-    >
-      {title}
-    </Typography>
-    <Typography
-      variant="caption"
-      sx={{
-        color: "text.secondary",
-        fontSize: 10,
-        lineHeight: 1.2,
-        mt: 0.25,
-        opacity: 0.9,
-      }}
-    >
-      {description}
-    </Typography>
-  </Box>
-);
+import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIcon, DiscordIcon, PlayArrowIcon, MenuBookIcon, DescriptionIcon, ColorLensIcon, CloseIcon, MinimizeIcon } from "./Icons";
+import { getRandomQuote, type Quote } from "../data/quotes";
+import { themes as themeList, ADAPTIVE_THEME_META, THEME_CATEGORIES } from "../theme/muiTheme";
 
 interface WelcomeScreenWindowProps {
   standalone?: boolean;
 }
 
+function getRelativeTime(timestamp: number): string {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+function getFileTypeIcon(name: string): "actone" | "fountain" | "file" {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".actone")) return "actone";
+  if (lower.endsWith(".fountain") || lower.endsWith(".txt")) return "fountain";
+  return "file";
+}
+
+function getDirectory(path: string): string {
+  const parts = path.split(/[/\\]/);
+  if (parts.length <= 1) return path;
+  parts.pop();
+  return parts.join("/");
+}
+
 export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false }) => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
-  const [greeting, setGreeting] = useState("");
   const { openHelpWindow } = useModalWindows();
   const appVersion = __APP_VERSION__;
+  const appChannel = __APP_CHANNEL__;
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
   const [tutorialDialogOpen, setTutorialDialogOpen] = useState(false);
-
+  const [quote, setQuote] = useState<Quote>(getRandomQuote());
+  const handleQuoteClick = () => setQuote(getRandomQuote());
+  const emptyMessages = [
+    "What are you doing? This is empty. Start writing!",
+    "No recent projects yet. What are you waiting for?",
+    "This space is screaming for a screenplay.",
+    "Blank pages don't write themselves!",
+    "Your next masterpiece is just a click away.",
+    "Don't leave me hanging. Create something!",
+  ];
+  const [emptyMessage] = useState(() => emptyMessages[Math.floor(Math.random() * emptyMessages.length)]);
+  const [themeAnchor, setThemeAnchor] = useState<null | HTMLElement>(null);
+  const { theme: currentThemeId, setTheme: setAppTheme, customThemes } = useAppTheme();
+  const theme = useTheme();
 
   const handleSelectTour = async (type: "ui" | "fountain") => {
     try {
@@ -153,8 +84,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   };
 
   useEffect(() => {
-    setGreeting(getRandomGreeting());
-
     invoke<string[]>("get_cli_args").then((paths) => {
       if (paths && paths.length > 0) {
         const filePath = paths[0];
@@ -271,7 +200,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const handleStartDrag = async (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (target.closest("[data-no-drag]") || target.closest("button, [role='button'], .MuiButtonBase-root")) return;
+    if (target.closest("[data-no-drag]") || target.closest("button, [role='button'], a, .clickable")) return;
     try {
       await getCurrentWindow().startDragging();
     } catch (e) {
@@ -356,532 +285,703 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     openHelpWindow();
   };
 
+  const handleOpenThemeMenu = (e: React.MouseEvent<HTMLElement>) => {
+    setThemeAnchor(e.currentTarget);
+  };
+
+  const handleCloseThemeMenu = () => {
+    setThemeAnchor(null);
+  };
+
+  const handleSelectTheme = (themeId: string) => {
+    setAppTheme(themeId);
+    handleCloseThemeMenu();
+  };
+
   return (
     <Box
+      onMouseDown={handleStartDrag}
       sx={{
+        width: "100%",
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        bgcolor: "background.default",
-        color: "text.primary",
+        bgcolor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
         overflow: "hidden",
-        position: "relative",
+        boxSizing: "border-box",
+        cursor: "grab",
+        fontFamily: '"Noto Sans", sans-serif',
+        "& .MuiTypography-root": { fontFamily: '"Noto Sans", sans-serif' },
       }}
     >
-      {/* Header */}
-      <Box
-        onMouseDown={handleStartDrag}
-        sx={{
-          height: 40,
-          minHeight: 40,
-          display: "flex",
-          alignItems: "center",
-          flexShrink: 0,
-          borderBottom: 1,
-          borderColor: "divider",
-          bgcolor: "background.paper",
-          position: "relative",
-          zIndex: 10,
-          pr: "94px",
-        }}
-      >
-        <Box
-          sx={{
-            width: 48,
-            height: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: "primary.main",
-            color: "primary.contrastText",
-            flexShrink: 0,
-            borderRight: "1px solid",
-            borderColor: "rgba(0,0,0,0.15)",
-          }}
-        >
-          <Box sx={{ width: 19, height: 19, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Box sx={{ display: "flex", height: 120, minHeight: 120, borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <Box
+            sx={{
+              width: "20%",
+              borderRight: `1px solid rgba(0,0,0,0.2)`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: theme.palette.primary.main,
+              p: 1,
+              boxSizing: "border-box",
+            }}
+          >
+            <Box sx={{ width: 100, height: 100, color: theme.palette.primary.contrastText, lineHeight: 0, filter: `drop-shadow(0 0 12px ${alpha(theme.palette.primary.contrastText, 0.3)})` }}>
             <ThemeLogo variant="solid" />
           </Box>
         </Box>
-        <Typography sx={{ fontWeight: 700, fontSize: 11, color: "text.secondary", pl: 1.5, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-          Welcome to ActOne
-        </Typography>
-        <Box sx={{ flex: 1 }} />
-        {updateAvailable && (
+
+        <Box sx={{ width: "60%", display: "flex", flexDirection: "column", borderRight: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}>
           <Box
-            onClick={(e) => { e.stopPropagation(); installUpdate(); }}
-            onMouseDown={(e) => e.stopPropagation()}
-            title="Click to install update from Microsoft Store"
             sx={{
+              height: 60,
+              borderBottom: `1px solid ${theme.palette.divider}`,
               display: "flex",
               alignItems: "center",
-              gap: 0.5,
-              height: 40,
-              px: 1.25,
-              cursor: "pointer",
-              bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
-              color: "primary.main",
-              fontSize: 11,
-              fontWeight: 700,
-              whiteSpace: "nowrap",
-              borderLeft: 1,
-              borderColor: "divider",
-              flexShrink: 0,
-              "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.25) },
+              justifyContent: "center",
             }}
           >
-            <DownloadIcon sx={{ fontSize: 12 }} />
-            Update
+            <Typography sx={{ fontWeight: 800, fontSize: 18, letterSpacing: "-0.01em", color: theme.palette.text.primary }}>
+              Welcome To ActOne!
+            </Typography>
           </Box>
-        )}
-        <Box
-          data-no-drag="true"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            flexShrink: 0,
-            position: "absolute",
-            right: 0,
-            top: 0,
-            height: "100%",
-            bgcolor: "inherit",
-            zIndex: 11,
-            borderLeft: 1,
-            borderColor: "divider",
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <IconButton
-            onClick={handleMinimize}
-            title="Minimize"
-            sx={{ width: 48, height: 40, borderRadius: 0, color: "inherit", "&:hover": { bgcolor: "action.hover", color: "text.primary" } }}
+          <Box
+            className="clickable"
+            onClick={handleQuoteClick}
+            sx={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              px: 2,
+              textAlign: "center",
+              cursor: "pointer",
+              "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+            }}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
-              <path d="M2 6H10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-            </svg>
-          </IconButton>
-          <IconButton
-            onClick={closeWelcome}
-            title="Close"
-            sx={{ width: 46, height: 40, borderRadius: 0, color: "inherit", borderLeft: 1, borderColor: "divider", "&:hover": { bgcolor: (t) => t.palette.error.main, color: (t) => t.palette.common.white } }}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
-              <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" style={{ pointerEvents: "none" }} />
-            </svg>
-          </IconButton>
-        </Box>
-      </Box>
-
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          overflow: "hidden",
-          zIndex: 0,
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "-15%",
-            right: "-10%",
-            width: 500,
-            height: 500,
-            borderRadius: "50%",
-            background: (t) =>
-              `radial-gradient(circle, ${alpha(t.palette.primary.main, 0.35)} 0%, transparent 70%)`,
-            filter: "blur(80px)",
-            opacity: 0.045,
-            pointerEvents: "none",
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: "-10%",
-            left: "-15%",
-            width: 450,
-            height: 450,
-            borderRadius: "50%",
-            background: (t) =>
-              `radial-gradient(circle, ${alpha(t.palette.primary.main, 0.3)} 0%, transparent 70%)`,
-            filter: "blur(90px)",
-            opacity: 0.035,
-            pointerEvents: "none",
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            top: "40%",
-            left: "30%",
-            width: 350,
-            height: 350,
-            borderRadius: "50%",
-            background: (t) =>
-              `radial-gradient(circle, ${alpha(t.palette.text.primary, 0.15)} 0%, transparent 70%)`,
-            filter: "blur(100px)",
-            opacity: 0.03,
-            pointerEvents: "none",
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 180,
-            height: 180,
-            opacity: 0.07,
-            pointerEvents: "none",
-          }}
-        >
-          <ThemeLogo />
-        </Box>
-      </Box>
-      <Box
-        sx={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          position: "relative",
-          px: 4,
-          pt: 4,
-          pb: 1.5,
-          gap: 1.5,
-          "@keyframes fadeInUp": {
-            "0%": { opacity: 0, transform: "translateY(8px)" },
-            "100%": { opacity: 1, transform: "translateY(0)" },
-          },
-        }}
-      >
-        <Typography
-          sx={{
-            fontSize: 26,
-            fontWeight: 600,
-            fontFamily: '"Inter", sans-serif',
-            letterSpacing: "-0.02em",
-            lineHeight: 1.15,
-            color: "primary.main",
-            opacity: 0,
-            animation: "fadeInUp 0.5s ease forwards 0.15s",
-            maxWidth: 340,
-          }}
-        >
-          {greeting}
-        </Typography>
-
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            gap: 0.5,
-            opacity: 0,
-            animation: "fadeInUp 0.5s ease forwards 0.25s",
-          }}
-        >
-          <ActionCard
-            icon={<AddIcon sx={{ fontSize: 22 }} />}
-            title="New Project"
-            description="Create screenplay"
-            onClick={handleNew}
-          />
-          <ActionCard
-            icon={<FolderOpenIcon sx={{ fontSize: 22 }} />}
-            title="Open Project"
-            description="Browse and open"
-            onClick={handleOpen}
-          />
-          <ActionCard
-            icon={<CombineColumnsIcon sx={{ fontSize: 22 }} />}
-            title="Templates"
-            description="Structure template"
-            onClick={handleTemplates}
-          />
-          <ActionCard
-            icon={<HelpOutlinedIcon sx={{ fontSize: 22 }} />}
-            title="Tutorials"
-            description="Interactive tours"
-            onClick={() => setTutorialDialogOpen(true)}
-          />
+            <Box key={quote.text} sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+              <Typography
+                sx={{
+                  fontStyle: "italic",
+                  fontSize: 15,
+                  fontWeight: 500,
+                  color: theme.palette.text.secondary,
+                  lineHeight: 1.3,
+                }}
+              >
+                &ldquo;{quote.text}&rdquo;
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 11,
+                  fontWeight: 400,
+                  color: theme.palette.text.disabled,
+                  lineHeight: 1.2,
+                }}
+              >
+                &mdash; {quote.author}
+              </Typography>
+            </Box>
+          </Box>
         </Box>
 
-        <TutorialSelectionDialog
-          open={tutorialDialogOpen}
-          onClose={() => setTutorialDialogOpen(false)}
-          onSelectTour={handleSelectTour}
-        />
-
         <Box
           sx={{
-            flex: 1,
-            opacity: 0,
-            animation: "fadeInUp 0.5s ease forwards 0.35s",
-            overflow: "hidden",
+            width: "20%",
             display: "flex",
             flexDirection: "column",
+            boxSizing: "border-box",
+            bgcolor: theme.palette.background.paper,
           }}
         >
-          <Typography
-            variant="caption"
+          <Box
             sx={{
-              fontWeight: 600,
-              color: "text.secondary",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              fontSize: 10,
-              display: "block",
-              mb: 0.8,
-              opacity: 0.8,
+              height: 40,
+              display: "flex",
+              borderBottom: `1px solid rgba(0,0,0,0.2)`,
             }}
           >
-            Recent
-          </Typography>
-          {recentFiles.length > 0 ? (
             <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 0.5,
-                overflowY: "auto",
-                flex: 1,
-                minHeight: 0,
-                pr: 1, // Space for scrollbar
-                "&::-webkit-scrollbar": { width: "6px" },
-                "&::-webkit-scrollbar-thumb": {
-                  backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.15),
-                  borderRadius: "3px",
-                },
-                "&::-webkit-scrollbar-thumb:hover": {
-                  backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.3),
-                },
-              }}
-            >
-              {recentFiles.slice(0, 10).map((item: RecentFile) => {
-                const parts = item.path.replace(/\\/g, "/").split("/");
-                const folder = parts.slice(0, -1).slice(-2).join("/");
-                const ext = item.name.split(".").pop()?.toLowerCase() || "";
-                const typeLabel = ext === "actone" ? "Bundle" : ext === "fountain" ? "Fountain" : ext.toUpperCase();
-                const elapsed = Date.now() - item.lastOpened;
-                const mins = Math.floor(elapsed / 60000);
-                const hrs = Math.floor(mins / 60);
-                const days = Math.floor(hrs / 24);
-                const timeAgo = days > 0 ? `${days}d ago` : hrs > 0 ? `${hrs}h ago` : mins > 1 ? `${mins}m ago` : "Just now";
-
-                return (
-                  <Box
-                    key={item.path}
-                    onClick={() => handleOpenRecent(item.path)}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.2,
-                      px: 1.5,
-                      py: 1,
-                      borderRadius: 0,
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-                        "& .recent-delete": { opacity: 0.5 },
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 0,
-                        bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <DescriptionIcon sx={{ fontSize: 16, color: "primary.main", opacity: 0.7 }} />
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        sx={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          lineHeight: 1.2,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {item.name}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: 10,
-                          color: "text.secondary",
-                          opacity: 0.85,
-                          lineHeight: 1.3,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {folder}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexShrink: 0 }}>
-                      <Box
-                        sx={{
-                          px: 0.8,
-                          py: 0.3,
-                          bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
-                          color: "primary.main",
-                          borderRadius: 0,
-                          fontSize: 9,
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {typeLabel}
-                      </Box>
-                      <Typography
-                        sx={{
-                          fontSize: 10,
-                          fontWeight: 500,
-                          color: "text.secondary",
-                          opacity: 0.75,
-                          whiteSpace: "nowrap",
-                          width: 55,
-                          textAlign: "right",
-                        }}
-                      >
-                        {timeAgo}
-                      </Typography>
-                      <IconButton
-                        className="recent-delete"
-                        size="medium"
-                        onClick={(e) => { e.stopPropagation(); removeFromRecent(item.path); }}
-                        sx={{
-                          p: 0.8,
-                          opacity: 0.4,
-                          borderRadius: 0,
-                          transition: "all 0.15s ease",
-                          "&:hover": { opacity: 1, color: "error.main", bgcolor: (t) => alpha(t.palette.error.main, 0.1) },
-                        }}
-                      >
-                        <DeleteIcon sx={{ fontSize: 18 }} />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-          ) : (
-            <Box
+              className="clickable"
+              onClick={handleMinimize}
+              aria-label="Minimize"
               sx={{
                 flex: 1,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                cursor: "pointer",
+                borderRight: `1px solid ${theme.palette.divider}`,
+                "&:hover": { bgcolor: theme.palette.action.hover },
               }}
             >
-              <Typography
+              <MinimizeIcon sx={{ fontSize: 14, color: theme.palette.text.primary }} />
+            </Box>
+            {updateAvailable && (
+              <Box
+                className="clickable"
+                onClick={installUpdate}
                 sx={{
-                  fontSize: 12,
-                  color: "text.secondary",
-                  opacity: 0.35,
-                  fontStyle: "italic",
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  borderRight: `1px solid ${theme.palette.divider}`,
+                  color: theme.palette.primary.main,
+                  "&:hover": { bgcolor: theme.palette.action.hover },
                 }}
               >
-                No recent projects yet
-              </Typography>
+                <Typography sx={{ fontSize: 12, fontWeight: "bold" }}>↓</Typography>
+              </Box>
+            )}
+            <Box
+              className="clickable"
+              onClick={closeWelcome}
+              aria-label="Close"
+              sx={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                "&:hover": { bgcolor: theme.palette.error.main, color: "#FFFFFF" },
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 14, color: "inherit" }} />
             </Box>
-          )}
-        </Box>
-
-      </Box>
-
-      {/* Footer */}
-      <Box
-        sx={{
-          height: 28,
-          minHeight: 28,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 3,
-          position: "relative",
-          flexShrink: 0,
-          borderTop: 1,
-          borderColor: "divider",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Typography
-            sx={{
-              fontSize: 9.5,
-              fontWeight: 600,
-              color: "text.secondary",
-              opacity: 0.5,
-            }}
-          >
-            {appVersion ? `v${appVersion}` : ""}
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: 9,
-              fontWeight: 500,
-              color: "text.secondary",
-              opacity: 0.5,
-              userSelect: "none",
-            }}
-          >
-            &copy; 2026 Write Up Film Service Company
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box
-            onClick={handleHelp}
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.6,
-              cursor: "pointer",
-              color: "text.secondary",
-              opacity: 0.4,
-              transition: "opacity 0.2s ease, color 0.2s ease",
-              "&:hover": { opacity: 1, color: "text.primary" },
-            }}
-          >
-            <HelpOutlinedIcon sx={{ fontSize: 12 }} />
-            <Typography sx={{ fontSize: 10, fontWeight: 600 }}>Help</Typography>
           </Box>
+
           <Box
+            className="clickable"
             onClick={() => {
               import("@tauri-apps/plugin-opener")
                 .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
                 .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
             }}
             sx={{
-              display: "inline-flex",
+              height: 40,
+              display: "flex",
               alignItems: "center",
-              gap: 0.6,
+              justifyContent: "center",
+              gap: 0.5,
               cursor: "pointer",
-              color: "text.secondary",
-              opacity: 0.4,
-              transition: "opacity 0.2s ease, color 0.2s ease",
-              "&:hover": { opacity: 1, color: "text.primary" },
+              "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08), textDecoration: "underline" },
             }}
           >
-            <DiscordIcon sx={{ fontSize: 12 }} />
-            <Typography sx={{ fontSize: 10, fontWeight: 600 }}>Discord</Typography>
+            <DiscordIcon sx={{ fontSize: 18, color: theme.palette.text.primary }} />
+            <Typography sx={{ fontSize: 13, fontWeight: 500, color: theme.palette.text.primary }}>
+              Discord
+            </Typography>
+          </Box>
+
+          <Box
+            className="clickable"
+            onClick={handleOpenThemeMenu}
+            sx={{
+              height: 40,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 0.5,
+              cursor: "pointer",
+              "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08), textDecoration: "underline" },
+            }}
+          >
+            <ColorLensIcon sx={{ fontSize: 18, color: theme.palette.text.primary }} />
+            <Typography sx={{ fontSize: 13, fontWeight: 500, color: theme.palette.text.primary }}>
+              Theme
+            </Typography>
           </Box>
         </Box>
       </Box>
+      <Menu
+        anchorEl={themeAnchor}
+        open={Boolean(themeAnchor)}
+        onClose={handleCloseThemeMenu}
+        slotProps={{
+          paper: {
+            sx: {
+              border: `1px solid ${theme.palette.divider}`,
+              boxShadow: "none",
+              minWidth: 220,
+              maxHeight: 420,
+            },
+          },
+        }}
+      >
+        {THEME_CATEGORIES.map((cat, catIdx) => {
+          const catThemes = themeList.filter((t) => t.category === cat.category);
+          const adaptiveMeta = cat.adaptiveId ? ADAPTIVE_THEME_META[cat.adaptiveId] : null;
+          return (
+            <Box key={cat.category}>
+              {catIdx === 0 && (
+                <Box sx={{ pt: 0.5, pb: 0.25, px: 2 }}>
+                  <Typography sx={{ fontSize: 9.5, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
+                    {cat.label}
+                  </Typography>
+                </Box>
+              )}
+              {catIdx > 0 && (
+                <Box sx={{ pt: 0.75, pb: 0.25, px: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+                  <Typography sx={{ fontSize: 9.5, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
+                    {cat.label}
+                  </Typography>
+                </Box>
+              )}
+              {adaptiveMeta && (
+                <MenuItem
+                  key={cat.adaptiveId}
+                  selected={currentThemeId === cat.adaptiveId}
+                  onClick={() => handleSelectTheme(cat.adaptiveId!)}
+                  sx={{ py: 0.5 }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
+                    <Box
+                      sx={{
+                        width: 22, height: 22, flexShrink: 0,
+                        display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden",
+                        border: `1.5px solid ${currentThemeId === cat.adaptiveId ? theme.palette.primary.main : theme.palette.divider}`,
+                      }}
+                    >
+                      <Box sx={{ bgcolor: adaptiveMeta.swatchColors[0] }} />
+                      <Box sx={{ bgcolor: adaptiveMeta.swatchColors[1] }} />
+                      <Box sx={{ bgcolor: adaptiveMeta.swatchColors[2] }} />
+                      <Box sx={{ bgcolor: adaptiveMeta.swatchColors[3] }} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: 12, fontWeight: currentThemeId === cat.adaptiveId ? 600 : 500 }}>
+                        {adaptiveMeta.label}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </MenuItem>
+              )}
+              {catThemes.map((t) => {
+                const isActive = currentThemeId === t.id;
+                return (
+                  <MenuItem
+                    key={t.id}
+                    selected={isActive}
+                    onClick={() => handleSelectTheme(t.id)}
+                    sx={{ py: 0.5 }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
+                      <Box
+                        sx={{
+                          width: 22, height: 22, flexShrink: 0,
+                          display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden",
+                          border: `1.5px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
+                        }}
+                      >
+                        <Box sx={{ bgcolor: t.colors.editor }} />
+                        <Box sx={{ bgcolor: t.colors.sidebar }} />
+                        <Box sx={{ bgcolor: t.colors.accent }} />
+                        <Box sx={{ bgcolor: t.colors.dropdown }} />
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: 12, fontWeight: isActive ? 600 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {t.name}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
+                );
+              })}
+            </Box>
+          );
+        })}
+
+        {customThemes.length > 0 && (
+          <Box>
+            <Box sx={{ pt: 0.75, pb: 0.25, px: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+              <Typography sx={{ fontSize: 9.5, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
+                CUSTOM
+              </Typography>
+            </Box>
+            {customThemes.map((t) => {
+              const isActive = currentThemeId === t.id;
+              return (
+                <MenuItem
+                  key={t.id}
+                  selected={isActive}
+                  onClick={() => handleSelectTheme(t.id)}
+                  sx={{ py: 0.5 }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
+                    <Box
+                      sx={{
+                        width: 22, height: 22, flexShrink: 0,
+                        display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden",
+                        border: `1.5px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
+                      }}
+                    >
+                      <Box sx={{ bgcolor: t.colors.editor }} />
+                      <Box sx={{ bgcolor: t.colors.sidebar }} />
+                      <Box sx={{ bgcolor: t.colors.accent }} />
+                      <Box sx={{ bgcolor: t.colors.dropdown }} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: 12, fontWeight: isActive ? 600 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {t.name}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </MenuItem>
+              );
+            })}
+          </Box>
+        )}
+      </Menu>
+
+      <Box sx={{ display: "flex", height: 120, minHeight: 120, borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}>
+        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box
+            className="clickable"
+            onClick={handleNew}
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              cursor: "pointer",
+              p: 1,
+              boxSizing: "border-box",
+              transition: "all 0.15s ease",
+              border: `2px solid transparent`,
+              "&:hover": {
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                borderColor: alpha(theme.palette.primary.main, 0.4),
+              },
+            }}
+          >
+            <AddIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
+            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>New Project</Typography>
+            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Ctrl+N</Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box
+            className="clickable"
+            onClick={handleOpen}
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              cursor: "pointer",
+              p: 1,
+              boxSizing: "border-box",
+              transition: "all 0.15s ease",
+              "&:hover": {
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+              },
+            }}
+          >
+            <FolderOpenIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
+            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Open Project</Typography>
+            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Ctrl+O</Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box
+            className="clickable"
+            onClick={handleTemplates}
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              cursor: "pointer",
+              p: 1,
+              boxSizing: "border-box",
+              transition: "all 0.15s ease",
+              "&:hover": {
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+              },
+            }}
+          >
+            <CombineColumnsIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
+            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Templates</Typography>
+            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Structure template</Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              p: 1,
+              boxSizing: "border-box",
+              opacity: 0.55,
+            }}
+          >
+            <MenuBookIcon sx={{ fontSize: 32, color: theme.palette.text.secondary, mb: 0.75 }} />
+            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Sample Screenplays</Typography>
+            <Typography sx={{ fontSize: 10, fontStyle: "italic", color: theme.palette.text.disabled }}>Coming soon</Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ width: "20%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box
+            className="clickable"
+            onClick={() => setTutorialDialogOpen(true)}
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              cursor: "pointer",
+              p: 1,
+              boxSizing: "border-box",
+              transition: "all 0.15s ease",
+              "&:hover": {
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+              },
+            }}
+          >
+            <PlayArrowIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
+            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Tutorials</Typography>
+            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Interactive tours</Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          flex: 1,
+          bgcolor: theme.palette.background.paper,
+          p: 2,
+          display: "flex",
+          flexDirection: "column",
+          boxSizing: "border-box",
+          overflow: "hidden",
+        }}
+      >
+        <Typography sx={{ fontSize: 16, fontWeight: "bold", mb: 1, color: theme.palette.text.primary }}>
+          Recent files
+        </Typography>
+
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            pr: 1,
+            "&::-webkit-scrollbar": {
+              width: "16px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: theme.palette.background.paper,
+              borderLeft: `1px solid ${theme.palette.divider}`,
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: theme.palette.text.secondary,
+              border: `3px solid ${theme.palette.background.paper}`,
+            },
+          }}
+        >
+          {recentFiles.length > 0 ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+              {recentFiles.slice(0, 10).map((item: RecentFile) => {
+                const fileType = getFileTypeIcon(item.name);
+                const directory = getDirectory(item.path);
+                const relTime = getRelativeTime(item.lastOpened);
+                return (
+                  <Box
+                    key={item.path}
+                    className="clickable"
+                    onClick={() => handleOpenRecent(item.path)}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.25,
+                      bgcolor: theme.palette.background.paper,
+                      border: `1px solid ${theme.palette.divider}`,
+                      px: 1.25,
+                      py: 0.9,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                      position: "relative",
+                      overflow: "hidden",
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.06),
+                        borderColor: alpha(theme.palette.primary.main, 0.4),
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        minWidth: 30,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: theme.palette.primary.main,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {fileType === "actone" ? (
+                        <MenuBookIcon sx={{ fontSize: 18 }} />
+                      ) : (
+                        <DescriptionIcon sx={{ fontSize: 18 }} />
+                      )}
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0.15 }}>
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: theme.palette.text.primary,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        {item.name}
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
+                        <Typography
+                          sx={{
+                            fontSize: 10,
+                            color: theme.palette.text.secondary,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            flex: 1,
+                            minWidth: 0,
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {directory}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 10,
+                            color: theme.palette.text.disabled,
+                            flexShrink: 0,
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          ·
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 10,
+                            color: theme.palette.text.disabled,
+                            flexShrink: 0,
+                            lineHeight: 1.2,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {relTime}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box
+                      className="clickable"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromRecent(item.path);
+                      }}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        p: 0.5,
+                        opacity: 0.4,
+                        transition: "opacity 0.15s ease",
+                        flexShrink: 0,
+                        "&:hover": { opacity: 1 },
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", height: "100%", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0.75 }}>
+              <MenuBookIcon sx={{ fontSize: 40, color: alpha(theme.palette.text.disabled, 0.3), mb: 0.5 }} />
+              <Typography sx={{ fontStyle: "italic", color: theme.palette.text.secondary, textAlign: "center", px: 2 }}>
+                {emptyMessage}
+              </Typography>
+              <Typography sx={{ fontSize: 10, color: theme.palette.text.disabled }}>
+                Press Ctrl+N to get started
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderTop: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+          bgcolor: alpha(theme.palette.common.black, 0.03),
+          px: 1.5,
+          py: 0.5,
+          flexShrink: 0,
+        }}
+      >
+        <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary, fontWeight: 500 }}>
+          {appVersion ? `v${appVersion} [${appChannel}]` : "version"}
+        </Typography>
+        <Typography sx={{ fontSize: 10, color: theme.palette.text.disabled, fontStyle: "italic" }}>
+          &copy; 2026 Write Up Film Service Company
+        </Typography>
+        <Box
+          className="clickable"
+          onClick={handleHelp}
+          aria-label="Help"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            width: 24,
+            height: 24,
+            borderRadius: 0,
+            "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+          }}
+        >
+          <HelpOutlinedIcon sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
+        </Box>
+      </Box>
+
+      <TutorialSelectionDialog
+        open={tutorialDialogOpen}
+        onClose={() => setTutorialDialogOpen(false)}
+        onSelectTour={handleSelectTour}
+      />
     </Box>
   );
 };

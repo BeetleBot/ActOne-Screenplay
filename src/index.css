@@ -1,7 +1,7 @@
 @import "./fonts.css";
 
 :root {
-  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-ui: "Noto Sans", sans-serif;
   --font-editor: "Courier Prime", Courier, monospace;
 
   --page-width: 816px;

@@ -13,6 +13,7 @@ export default defineConfig(async () => ({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_CHANNEL__: JSON.stringify(process.env.VITE_APP_CHANNEL || "beta"),
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

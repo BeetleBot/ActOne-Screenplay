@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { DEFAULTS } from "../constants/defaults";
+import { STORAGE_KEYS } from "../constants";
 
 export interface ThemeState {
   themeId: string;
@@ -14,7 +16,7 @@ let unlisten: (() => void) | null = null;
 const listeners = new Set<ThemeChangeCallback>();
 
 function getFallbackState(): ThemeState {
-  return { themeId: "light", appScale: 100, customThemes: "[]" };
+  return { themeId: String(DEFAULTS[STORAGE_KEYS.THEME_ID]), appScale: Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]), customThemes: "[]" };
 }
 
 export async function initThemeEngine(): Promise<ThemeState> {
