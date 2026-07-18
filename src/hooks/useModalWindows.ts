@@ -10,6 +10,14 @@ interface ModalWindowsHook {
   closeAllWindows: () => Promise<void>;
 }
 
+function resolveUrl(path: string): string {
+  const origin = window.location.origin;
+  if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+    return `${origin}${path}`;
+  }
+  return path;
+}
+
 async function createTauriWindow(
   label: string,
   url: string,
@@ -27,7 +35,7 @@ async function createTauriWindow(
   try {
     const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
     const webview = new WebviewWindow(label, {
-      url,
+      url: resolveUrl(url),
       title,
       width,
       height,

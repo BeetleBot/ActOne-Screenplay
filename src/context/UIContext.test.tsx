@@ -20,8 +20,8 @@ describe("UIContext", () => {
     expect(result.current.isZenMode).toBe(false);
     expect(result.current.typewriterMode).toBe(true);
     expect(result.current.activeTab).toBe("outline");
-    expect(result.current.zoomLevel).toBe(120);
-    expect(result.current.appScale).toBe(120);
+    expect(result.current.zoomLevel).toBe(100);
+    expect(result.current.appScale).toBe(100);
     expect(result.current.autocompleteEnabled).toBe(true);
     expect(result.current.smartQuotesEnabled).toBe(false);
     expect(result.current.matchParenthesesEnabled).toBe(true);

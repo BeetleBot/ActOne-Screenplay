@@ -348,7 +348,7 @@ interface UseCodeMirrorProdDef {
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId, scriptFileName } = useFile();
-  const { typewriterMode, hideSyntaxEnabled, hideTagsEnabled, lineFocusEnabled, activeRightPane } = useUI();
+  const { typewriterMode, hideSyntaxEnabled, hideTagsEnabled, lineFocusEnabled, activeRightPane, isZenMode } = useUI();
   const { setActiveLineId, setActiveLineNumber, setSelectedSceneId, setEditorView } = useEditor();
   const lastScriptKeyRef = useRef("");
   const currentScriptKey = `${activeFileId}-${activeScriptIndex}`;
@@ -416,6 +416,12 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       }
     }
   }, [typewriterMode]);
+
+  useEffect(() => {
+    if (!viewRef.current) return;
+    const timer = setTimeout(() => viewRef.current?.requestMeasure(), 500);
+    return () => clearTimeout(timer);
+  }, [isZenMode]);
 
   useEffect(() => {
     if (viewRef.current) {
