@@ -200,7 +200,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const handleStartDrag = async (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (target.closest("[data-no-drag]") || target.closest("button, [role='button'], a, .clickable")) return;
+    if (target.closest("[data-no-drag]") || target.closest("button, [role='button'], a, .clickable, [role='menuitem'], [role='menu'], [role='dialog'], [role='presentation']")) return;
     try {
       await getCurrentWindow().startDragging();
     } catch (e) {
