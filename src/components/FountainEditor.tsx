@@ -399,6 +399,7 @@ export const FountainEditor = React.memo(() => {
     disableScrollLock: true,
     disableAutoFocus: true,
     disableRestoreFocus: true,
+    transitionDuration: 0,
     MenuListProps: {
       autoFocusItem: false,
       dense: true,

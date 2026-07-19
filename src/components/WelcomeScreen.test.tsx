@@ -81,9 +81,9 @@ describe("WelcomeScreenWindow", () => {
     expect(screen.queryByText("Script 11.fountain")).not.toBeInTheDocument();
   });
 
-  it("renders the version number in the status bar", () => {
+  it("renders the version number in the header and status bar", () => {
     render(<WelcomeScreenWindow />);
-    expect(screen.getByText("vtest-version [beta]")).toBeInTheDocument();
+    expect(screen.getAllByText("vtest-version [beta]").length).toBe(2);
   });
 
   it("renders the Welcome To ActOne title", () => {
@@ -133,16 +133,9 @@ describe("WelcomeScreenWindow", () => {
     expect(screen.getByText("Recent files")).toBeInTheDocument();
   });
 
-  it("does NOT show update download button when no update available", () => {
+  it("does not show update button when no update available", () => {
     render(<WelcomeScreenWindow />);
-    const downloadBtns = screen.queryAllByText("↓");
-    expect(downloadBtns.length).toBe(0);
-  });
-
-  it("renders minimize and close icon buttons", () => {
-    render(<WelcomeScreenWindow />);
-    expect(screen.getByLabelText("Minimize")).toBeInTheDocument();
-    expect(screen.getByLabelText("Close")).toBeInTheDocument();
+    expect(screen.queryByText("Update Available")).not.toBeInTheDocument();
   });
 
   it("renders the Structure template subtitle on Templates", () => {

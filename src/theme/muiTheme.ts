@@ -582,7 +582,6 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
       },
       MuiPopover: {
         defaultProps: {
-          transitionDuration: 1,
           slotProps: {
             paper: {
               sx: {
@@ -602,7 +601,6 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
       },
       MuiMenu: {
         defaultProps: {
-          transitionDuration: 1,
           slotProps: {
             paper: {
               sx: {

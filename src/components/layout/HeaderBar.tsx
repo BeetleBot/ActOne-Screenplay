@@ -111,11 +111,7 @@ export const HeaderBar = React.memo(() => {
         height: isZenMode ? 0 : 40,
         minHeight: isZenMode ? 0 : 40,
         zIndex: 10,
-        // Zen mode transition support
-        opacity: isZenMode ? 0 : 1,
-        transform: isZenMode ? 'translateY(-100%)' : 'translateY(0)',
         pointerEvents: isZenMode ? 'none' : 'auto',
-        transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out, height 0.3s ease-in-out, min-height 0.3s ease-in-out',
         overflow: 'hidden',
       }}
     >

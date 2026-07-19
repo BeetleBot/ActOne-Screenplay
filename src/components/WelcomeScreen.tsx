@@ -9,7 +9,7 @@ import { Box, Typography, useTheme, alpha, Menu, MenuItem } from "@mui/material"
 import { logger } from "../utils/logger";
 import { ThemeLogo } from "./ThemeLogo";
 import { TutorialSelectionDialog } from "./OnboardingTour";
-import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIcon, DiscordIcon, PlayArrowIcon, MenuBookIcon, DescriptionIcon, ColorLensIcon, CloseIcon, MinimizeIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIcon, DiscordIcon, PlayArrowIcon, MenuBookIcon, DescriptionIcon, ColorLensIcon } from "./Icons";
 import { getRandomQuote, type Quote } from "../data/quotes";
 import { themes as themeList, ADAPTIVE_THEME_META, THEME_CATEGORIES } from "../theme/muiTheme";
 
@@ -53,7 +53,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const { openHelpWindow } = useModalWindows();
   const appVersion = __APP_VERSION__;
   const appChannel = __APP_CHANNEL__;
-  const { updateAvailable, installUpdate } = useStoreUpdateCheck();
+
   const [tutorialDialogOpen, setTutorialDialogOpen] = useState(false);
   const [quote, setQuote] = useState<Quote>(getRandomQuote());
   const handleQuoteClick = () => setQuote(getRandomQuote());
@@ -69,6 +69,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const [themeAnchor, setThemeAnchor] = useState<null | HTMLElement>(null);
   const { theme: currentThemeId, setTheme: setAppTheme, customThemes } = useAppTheme();
   const theme = useTheme();
+  const { updateAvailable, installUpdate } = useStoreUpdateCheck();
 
   const handleSelectTour = async (type: "ui" | "fountain") => {
     try {
@@ -189,25 +190,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     }
   };
 
-  const handleMinimize = async () => {
-    try {
-      await getCurrentWindow().minimize();
-    } catch (e) {
-      logger.error("welcome", "minimize failed", e);
-    }
-  };
-
-  const handleStartDrag = async (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest("[data-no-drag]") || target.closest("button, [role='button'], a, .clickable, [role='menuitem'], [role='menu'], [role='dialog'], [role='presentation']")) return;
-    try {
-      await getCurrentWindow().startDragging();
-    } catch (e) {
-      logger.error("welcome", "startDrag failed", e);
-    }
-  };
-
   const handleNew = async () => {
     if (standalone) {
       try {
@@ -300,7 +282,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
 
   return (
     <Box
-      onMouseDown={handleStartDrag}
       sx={{
         width: "100%",
         height: "100%",
@@ -310,13 +291,13 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         color: theme.palette.text.primary,
         overflow: "hidden",
         boxSizing: "border-box",
-        cursor: "grab",
         fontFamily: '"Noto Sans", sans-serif',
         "& .MuiTypography-root": { fontFamily: '"Noto Sans", sans-serif' },
       }}
     >
       <Box sx={{ display: "flex", height: 120, minHeight: 120, borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Box
+            onMouseDown={(e) => { if (e.button === 0) { getCurrentWindow().startDragging().catch(() => {}); } }}
             sx={{
               width: "20%",
               borderRight: `1px solid rgba(0,0,0,0.2)`,
@@ -327,6 +308,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               bgcolor: theme.palette.primary.main,
               p: 1,
               boxSizing: "border-box",
+              cursor: "grab",
             }}
           >
             <Box sx={{ width: 100, height: 100, color: theme.palette.primary.contrastText, lineHeight: 0, filter: `drop-shadow(0 0 12px ${alpha(theme.palette.primary.contrastText, 0.3)})` }}>
@@ -337,7 +319,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         <Box sx={{ width: "60%", display: "flex", flexDirection: "column", borderRight: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}>
           <Box
             sx={{
-              height: 60,
+              height: 40,
               borderBottom: `1px solid ${theme.palette.divider}`,
               display: "flex",
               alignItems: "center",
@@ -401,58 +383,14 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             sx={{
               height: 40,
               display: "flex",
-              borderBottom: `1px solid rgba(0,0,0,0.2)`,
+              alignItems: "center",
+              justifyContent: "center",
+              borderBottom: `1px solid ${theme.palette.divider}`,
             }}
           >
-            <Box
-              className="clickable"
-              onClick={handleMinimize}
-              aria-label="Minimize"
-              sx={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                borderRight: `1px solid ${theme.palette.divider}`,
-                "&:hover": { bgcolor: theme.palette.action.hover },
-              }}
-            >
-              <MinimizeIcon sx={{ fontSize: 14, color: theme.palette.text.primary }} />
-            </Box>
-            {updateAvailable && (
-              <Box
-                className="clickable"
-                onClick={installUpdate}
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  borderRight: `1px solid ${theme.palette.divider}`,
-                  color: theme.palette.primary.main,
-                  "&:hover": { bgcolor: theme.palette.action.hover },
-                }}
-              >
-                <Typography sx={{ fontSize: 12, fontWeight: "bold" }}>↓</Typography>
-              </Box>
-            )}
-            <Box
-              className="clickable"
-              onClick={closeWelcome}
-              aria-label="Close"
-              sx={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                "&:hover": { bgcolor: theme.palette.error.main, color: "#FFFFFF" },
-              }}
-            >
-              <CloseIcon sx={{ fontSize: 14, color: "inherit" }} />
-            </Box>
+            <Typography sx={{ fontSize: 12, fontWeight: 600, color: theme.palette.text.disabled }}>
+              {appVersion ? `v${appVersion} [${appChannel}]` : "version"}
+            </Typography>
           </Box>
 
           <Box
@@ -469,6 +407,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               justifyContent: "center",
               gap: 0.5,
               cursor: "pointer",
+              borderBottom: `1px solid ${theme.palette.divider}`,
               "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08), textDecoration: "underline" },
             }}
           >
@@ -952,9 +891,35 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           flexShrink: 0,
         }}
       >
-        <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary, fontWeight: 500 }}>
-          {appVersion ? `v${appVersion} [${appChannel}]` : "version"}
-        </Typography>
+        {updateAvailable ? (
+          <Box
+            onClick={(e) => { e.stopPropagation(); installUpdate(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            title="Click to install update from Microsoft Store"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              cursor: "pointer",
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+              color: "primary.main",
+              fontSize: 11,
+              fontWeight: 700,
+              px: 1,
+              py: 0.25,
+              borderRadius: 0,
+              "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.25) },
+            }}
+          >
+            <Typography sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
+              Update Available
+            </Typography>
+          </Box>
+        ) : (
+          <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary, fontWeight: 500 }}>
+            {appVersion ? `v${appVersion} [${appChannel}]` : "version"}
+          </Typography>
+        )}
         <Typography sx={{ fontSize: 10, color: theme.palette.text.disabled, fontStyle: "italic" }}>
           &copy; 2026 Write Up Film Service Company
         </Typography>

@@ -92,11 +92,7 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
         px: 2, 
         userSelect: "none", 
         flexShrink: isZenMode ? 1 : 0,
-        // Zen mode transition support with staggered delay (0.15s)
-        opacity: isZenMode ? 0 : 1,
-        transform: isZenMode ? 'translateY(100%)' : 'translateY(0)',
         pointerEvents: isZenMode ? 'none' : 'auto',
-        transition: 'opacity 0.3s ease-in-out 0.15s, transform 0.3s ease-in-out 0.15s, height 0.3s ease-in-out 0.15s, border-top 0.3s ease-in-out 0.15s',
         overflow: 'hidden',
       }}
     >

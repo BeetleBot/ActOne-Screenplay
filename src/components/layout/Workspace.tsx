@@ -73,10 +73,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
               borderRight: isZenMode ? '0px solid' : '1px solid',
               borderColor: 'divider', overflow: 'hidden',
               display: 'flex', flexDirection: 'column',
-              // Zen mode transition support with staggered delay (0.1s)
-              opacity: isZenMode ? 0 : 1,
               pointerEvents: isZenMode ? 'none' : 'auto',
-              transition: 'opacity 0.3s ease-in-out 0.1s, width 0.3s ease-in-out 0.1s, border-right 0.3s ease-in-out 0.1s',
             }}
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
@@ -98,11 +95,9 @@ export const Workspace = React.memo<WorkspaceProps>(({
             onMouseDown={() => setIsDragging(true)}
             sx={{
               width: isZenMode ? 0 : 4, cursor: 'col-resize', flexShrink: 0,
-              // Zen mode transition support with staggered delay (0.1s)
-              opacity: isZenMode ? 0 : 1,
               pointerEvents: isZenMode ? 'none' : 'auto',
               '&:hover': { bgcolor: 'var(--button-color)', opacity: 0.3 },
-              transition: 'background-color var(--duration-fast), opacity 0.3s ease-in-out 0.1s, width 0.3s ease-in-out 0.1s',
+              transition: 'background-color var(--duration-fast)',
             }}
           />
         </>

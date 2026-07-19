@@ -1,6 +1,7 @@
 @import "./fonts.css";
 
 :root {
+  color-scheme: light;
   --font-ui: "Noto Sans", sans-serif;
   --font-editor: "Courier Prime", Courier, monospace;
 
@@ -508,6 +509,7 @@ body {
 }
 
 body.dark-theme {
+  color-scheme: dark;
   --skeleton-base: rgba(255, 255, 255, 0.04);
   --skeleton-shine: rgba(255, 255, 255, 0.08);
 }

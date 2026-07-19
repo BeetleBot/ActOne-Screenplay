@@ -89,11 +89,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         borderRight: isZenMode ? 0 : 1,
         borderColor: 'divider',
         flexShrink: 0,
-        // Zen mode transition support with staggered delay (0.05s)
-        opacity: isZenMode ? 0 : 1,
-        transform: isZenMode ? 'translateX(-100%)' : 'translateX(0)',
         pointerEvents: isZenMode ? 'none' : 'auto',
-        transition: 'opacity 0.3s ease-in-out 0.05s, transform 0.3s ease-in-out 0.05s, width 0.3s ease-in-out 0.05s, border-right 0.3s ease-in-out 0.05s',
         overflow: 'hidden',
       }}
     >
