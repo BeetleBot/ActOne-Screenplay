@@ -20,7 +20,29 @@
 
 * [ ]  Fix the Welcome Screen Title Bar
 
-- [ ] 
+## Multi-Window Tour Infrastructure
+
+### Design
+- Tauri event-based communication between windows:
+  - `tour:announce` — main window tells modal "tour starting"
+  - `tour:step` — main window sends current step to modal
+  - `tour:step-done` — modal reports back that user completed the action
+  - `tour:cancel` / `tour:complete` — cleanup signals
+- New `TourStep.window?: string` field to mark which window a step belongs to
+- Global `CrossWindowTourCard` component mounted in `main.tsx` so it renders in every Tauri window
+- Hook `useTourCoordinator` (main window) — manages tour state, dispatches events via Tauri's event system
+- Hook `useTourListener` (modal windows) — listens for tour events, renders the card
+- Steps that open a modal (Theme Manager, Settings, X-Ray, Export, Production Breakdown) get `window: "modal-name"`, trigger the modal open, then wait for the user to interact in that window
+
+### Todo
+- [ ] Implement `useTourCoordinator` hook
+- [ ] Implement `useTourListener` hook
+- [ ] Create `CrossWindowTourCard` component
+- [ ] Mount `CrossWindowTourCard` in `main.tsx`
+- [ ] Add `window` field to `TourStep` interface
+- [ ] Wire Tauri `listen`/`emit` for cross-window events
+- [ ] Add close-window detection for modal tour steps (offer Retry/Skip)
+- [ ] Test with Theme Manager, Settings, X-Ray, Export modals
 
 ## Features to Implement
 

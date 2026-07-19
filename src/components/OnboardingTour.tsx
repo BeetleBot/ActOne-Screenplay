@@ -11,7 +11,7 @@ import {
   IconButton,
   LinearProgress,
 } from "@mui/material";
-import { CloseIcon, AutoAwesomeIcon } from "./Icons";
+import { CloseIcon } from "./Icons";
 import { useEditor } from "../context";
 import { alpha } from "@mui/material/styles";
 
@@ -26,17 +26,18 @@ interface TourStep {
   description: string;
   taskInstructions?: string;
   validate?: (text: string) => boolean;
+  detect?: () => boolean;
+  noMask?: boolean;
+  cardPosition?: "left" | "right" | "center";
+  nextLabel?: string;
+  autoAdvance?: boolean;
+  noAutoClick?: boolean;
 }
 
 const UI_STEPS: TourStep[] = [
   {
     title: "Welcome to ActOne!",
     description: "Let's take a guided tour of the workspace to get you familiar with every part of the interface.",
-  },
-  {
-    targetId: "command-palette-btn",
-    title: "Command Palette",
-    description: "The logo button at the top of the Activity Bar opens the Command Palette (Ctrl+K). Type any command — open files, toggle settings, run analyses — and find it instantly without digging through menus.",
   },
   {
     targetId: "activity-bar",
@@ -56,7 +57,7 @@ const UI_STEPS: TourStep[] = [
   {
     targetId: "activity-tab-notepad",
     title: "Notepad Panel",
-    description: "A scratchpad for quick notes, character ideas, plot points — anything you want to jot down alongside your screenplay. Notes persist with your file.",
+    description: "A scratchpad for quick notes, character ideas, plot points - anything you want to jot down alongside your screenplay. Notes persist with your file.",
   },
   {
     targetId: "activity-tab-markers",
@@ -71,7 +72,7 @@ const UI_STEPS: TourStep[] = [
   {
     targetId: "activity-tab-snapshots",
     title: "Snapshots Panel",
-    description: "Save named versions of your screenplay at any point. Browse, restore, or compare snapshots — a safety net for experimental rewrites.",
+    description: "Save named versions of your screenplay at any point. Browse, restore, or compare snapshots - a safety net for experimental rewrites.",
   },
   {
     targetId: "activity-tab-sprint",
@@ -84,14 +85,35 @@ const UI_STEPS: TourStep[] = [
     description: "Stash deleted or unused text here instead of losing it forever. Great for alternate dialogue, cut scenes, or lines you want to revisit later.",
   },
   {
+    targetId: "activity-tab-parking",
+    title: "Close the Panel",
+    description: "Click the Parking button again to close the sidebar. Activity Bar buttons toggle their panels — clicking the active button dismisses the pane. Remember this when you want to free up screen space.",
+    detect: () => {
+      const sidebar = document.getElementById("sidebar-container");
+      return !sidebar || sidebar.offsetWidth === 0;
+    },
+    noAutoClick: true,
+  },
+  {
     targetId: "quick-settings",
     title: "Quick Settings",
     description: "Click the gear icon at the bottom of the Activity Bar to open the Quick Settings menu. Toggle Typewriter Mode, switch themes, choose Letter/A4 paper size, hide Fountain markup, and open the full Settings window.",
   },
   {
+    title: "Escape to Close",
+    description: "Press Escape to close menus and dropdowns like the Quick Settings menu. It's a universal shortcut across ActOne. Note: Escape does not close sidebar panels — those need a button click on the active Activity Bar tab.",
+    detect: () => {
+      const menuPaper = Array.from(document.querySelectorAll<HTMLElement>(".MuiMenu-paper"))
+        .find((el) => el.textContent && el.textContent.includes("Quick Settings"));
+      return !menuPaper || menuPaper.offsetWidth === 0;
+    },
+    noMask: true,
+    cardPosition: "center",
+  },
+  {
     targetId: "header-bar",
     title: "The Header Bar",
-    description: "This strip holds your open file tabs — click any tab to switch, middle-click to close. Use the + button to create a new file. On the right, the window controls let you minimize, maximize, and close the app.",
+    description: "This strip holds your open file tabs - click any tab to switch, middle-click to close. Use the + button to create a new file. On the right, the window controls let you minimize, maximize, and close the app.",
   },
   {
     targetId: "editor-workspace",
@@ -105,24 +127,47 @@ const UI_STEPS: TourStep[] = [
   },
   {
     targetId: "status-file-name",
-    title: "Status Bar — File & Save Status",
+    title: "Status Bar - File & Save Status",
     description: "The left side shows the current file name (or active script name for bundles). A spinning indicator means saving is in progress; a green checkmark confirms it's saved to disk.",
   },
   {
     targetId: "status-scenes",
-    title: "Status Bar — Document Statistics",
+    title: "Status Bar - Document Statistics",
     description: "Keep an eye on your Scene count, running Word count, and your current Page number out of estimated total pages. All three update live as you type.",
   },
   {
     targetId: "status-xray",
-    title: "Status Bar — X-Ray Deep Analysis",
+    title: "Status Bar - X-Ray Deep Analysis",
     description: "The bar chart icon opens the X-Ray analysis window. It runs a deep pacing report: character speech balance, scene length distribution, page count breakdown, and more.",
+  },
+  {
+    title: "Where Did the Menu Go?",
+    description: "You've seen the panels, the header, the editor, and the status bar. But where's the File menu? How do you open a new screenplay, save, or export without menus? The answer is a single shortcut: Ctrl+K.",
+  },
+  {
+    targetId: "command-palette-btn",
+    title: "Meet the Command Palette",
+    description: "Click the logo button at the top of the Activity Bar - or press Ctrl+K - to open the Command Palette. Every feature is just a few keystrokes away.",
+    taskInstructions: "Click the logo button, or press Ctrl+K.",
+    detect: () => !!document.querySelector("[data-tour-palette]"),
+    autoAdvance: true,
+  },
+  {
+    title: "Play Around!",
+    description: "The palette filters commands as you type. Try opening a new file, zooming in, toggling Zen Mode, or searching for anything else. Run a few commands to get a feel for it - the palette closes after each one. Press Ctrl+K to bring it back anytime.",
+    noMask: true,
+    cardPosition: "left",
+    nextLabel: "Done Exploring",
+  },
+  {
+    title: "You're a Power User!",
+    description: "That's all there is to it. Ctrl+K gives you instant access to every feature in ActOne - no more digging through menus. Use it whenever you need something fast. Happy writing!",
   },
 ];
 
 const FOUNTAIN_STEPS: TourStep[] = [
   {
-    title: "Fountain Scriptwriting Tutorial",
+    title: "Basic Fountain Syntax",
     description: "Fountain is a simple markup standard that lets you write screenplays in plain text. ActOne auto-formats it into standard screenplay layout instantly. Let's learn by typing!",
   },
   {
@@ -202,17 +247,27 @@ const FOUNTAIN_STEPS: TourStep[] = [
   },
   {
     targetId: "editor-workspace",
-    title: "6. Transitions (>)",
-    description: "Transitions ending in TO: are auto-formatted right-aligned. You can force any transition by starting the line with a > symbol.",
-    taskInstructions: "Type > FADE TO BLACK. on a new line and press Enter.",
+    title: "6. Transitions (CUT TO: / DISSOLVE TO:)",
+    description: "Standard transitions like CUT TO: and DISSOLVE TO: are automatically formatted right-aligned. Just type a transition phrase ending with TO: on its own line.",
+    taskInstructions: "Type CUT TO: on a blank line and press Enter.",
     validate: (text) => {
       const lines = text.split("\n");
-      return lines.some((l) => l.trim().startsWith(">") || l.trim().endsWith("TO:"));
+      return lines.some((l) => /^[A-Z\s]+ TO:$/.test(l.trim()));
     },
   },
   {
     targetId: "editor-workspace",
-    title: "7. Forced Shots (!!)",
+    title: "7. Forced Transitions (>)",
+    description: "To force any line as a right-aligned transition, start it with a > symbol. Useful for non-standard transitions or mixed-case text.",
+    taskInstructions: "Type > FADE TO BLACK. on a new line and press Enter.",
+    validate: (text) => {
+      const lines = text.split("\n");
+      return lines.some((l) => l.trim().startsWith(">"));
+    },
+  },
+  {
+    targetId: "editor-workspace",
+    title: "8. Forced Shots (!!)",
     description: "Camera directions or shots are forced onto their own line by starting the line with double exclamation points (!!).",
     taskInstructions: "Type !! ANGLE ON THE DOOR on a new line and press Enter.",
     validate: (text) => {
@@ -222,7 +277,7 @@ const FOUNTAIN_STEPS: TourStep[] = [
   },
   {
     targetId: "editor-workspace",
-    title: "8. Complete Screenplay Demo",
+    title: "9. Complete Screenplay Demo",
     description: "Here is how a complete scene looks in Fountain format. Plain text auto-formats into standard screenplay layout instantly!",
   },
 ];
@@ -235,6 +290,8 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   const { editorView } = useEditor();
   const [activeStep, setActiveStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [sidebarRect, setSidebarRect] = useState<DOMRect | null>(null);
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
   const [taskComplete, setTaskComplete] = useState(false);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
@@ -248,6 +305,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
   const steps = activeTour === "fountain" ? FOUNTAIN_STEPS : UI_STEPS;
   const currentStep = steps[activeStep];
+  const tourName = activeTour === "fountain" ? "Fountain Syntax" : "App Tour";
 
   useEffect(() => {
     setActiveStep(0);
@@ -291,6 +349,8 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   useEffect(() => {
     if (!currentStep?.targetId) {
       setTargetRect(null);
+      setSidebarRect(null);
+      setMenuRect(null);
       return;
     }
 
@@ -298,6 +358,19 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       const element = document.getElementById(currentStep.targetId!);
       if (element) {
         setTargetRect(element.getBoundingClientRect());
+      }
+      const sidebar = document.getElementById("sidebar-container");
+      if (sidebar && sidebar.offsetWidth > 0) {
+        setSidebarRect(sidebar.getBoundingClientRect());
+      } else {
+        setSidebarRect(null);
+      }
+      const menuEl = Array.from(document.querySelectorAll<HTMLElement>(".MuiMenu-paper"))
+        .find((el) => el.textContent && el.textContent.includes("Quick Settings"));
+      if (menuEl && menuEl.offsetWidth > 0) {
+        setMenuRect(menuEl.getBoundingClientRect());
+      } else {
+        setMenuRect(null);
       }
     };
 
@@ -309,6 +382,31 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       clearInterval(interval);
     };
   }, [currentStep]);
+
+  // Auto-click Activity Bar tabs and Quick Settings when entering a step
+  useEffect(() => {
+    if (activeTour !== "ui" || !currentStep?.targetId || currentStep.noAutoClick) return;
+
+    const targetId = currentStep.targetId;
+
+    if (targetId.startsWith("activity-tab-")) {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.click();
+        // If sidebar was open with this same tab, clicking toggles it closed.
+        // Re-click after paint if the sidebar didn't open.
+        requestAnimationFrame(() => {
+          const sidebar = document.getElementById("sidebar-container");
+          if (!sidebar || sidebar.offsetWidth === 0) {
+            el.click();
+          }
+        });
+      }
+    } else if (targetId === "quick-settings") {
+      const el = document.getElementById(targetId);
+      if (el) el.click();
+    }
+  }, [activeStep, activeTour, currentStep]);
 
   // Global mouse event listeners for card dragging
   useEffect(() => {
@@ -336,7 +434,9 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   // Live validator for interactive Fountain typing
   useEffect(() => {
     if (activeTour !== "fountain" || !currentStep?.validate) {
-      setTaskComplete(true); // Auto-complete if no verification needed
+      if (!currentStep?.detect) {
+        setTaskComplete(true); // Auto-complete if no verification needed
+      }
       return;
     }
 
@@ -352,6 +452,41 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
     return () => clearInterval(interval);
   }, [activeTour, activeStep, currentStep, editorView]);
+
+  // DOM detection polling (e.g., Command Palette tour)
+  useEffect(() => {
+    if (!currentStep?.detect) return;
+
+    setTaskComplete(false);
+    const interval = setInterval(() => {
+      if (currentStep.detect!()) {
+        setTaskComplete(true);
+        if (currentStep.autoAdvance) {
+          setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+        }
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [activeStep, currentStep, steps.length]);
+
+  // Shift+Enter to advance the tour (capture phase to intercept before CodeMirror)
+  useEffect(() => {
+    if (!activeTour) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && e.shiftKey && taskComplete) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (activeStep < steps.length - 1) {
+          setActiveStep((prev) => prev + 1);
+        } else {
+          onCloseTour();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, [activeTour, taskComplete, activeStep, steps.length, onCloseTour]);
 
   if (!activeTour) return null;
 
@@ -386,17 +521,32 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     currentStep.targetId === "command-palette-btn" ||
     currentStep.targetId === "quick-settings";
 
+  const isStatusTarget = currentStep.targetId === "status-bar" ||
+    currentStep.targetId?.startsWith("status-");
+
   if (dragPosition) {
     cardStyle.left = dragPosition.x;
     cardStyle.top = dragPosition.y;
     cardStyle.transform = "scale(1.025)";
   } else if (targetRect) {
     if (isSidebarTarget) {
-      cardStyle.left = targetRect.right + 16;
-      cardStyle.top = 16;
-    } else if (currentStep.targetId === "status-bar") {
-      cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160);
-      cardStyle.bottom = (window.innerHeight - targetRect.top) + 16;
+      if (currentStep.targetId === "quick-settings" && menuRect) {
+        cardStyle.left = menuRect.right + 16;
+      } else if (sidebarRect && currentStep.targetId?.startsWith("activity-tab-") && !currentStep.noAutoClick) {
+        cardStyle.left = sidebarRect.right + 16;
+      } else {
+        cardStyle.left = targetRect.right + 16;
+      }
+      const estimatedCardHeight = 320;
+      const maxAllowedTop = window.innerHeight - estimatedCardHeight - 16;
+      cardStyle.top = Math.max(16, Math.min(targetRect.top, maxAllowedTop));
+    } else if (isStatusTarget) {
+      cardStyle.bottom = (window.innerHeight - targetRect.top) + 8;
+      if (currentStep.targetId === "status-file-name") {
+        cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160 + 300);
+      } else {
+        cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160);
+      }
     } else if (currentStep.targetId === "header-bar") {
       cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160);
       cardStyle.top = targetRect.bottom + 16;
@@ -414,10 +564,20 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       }
     }
   } else {
-    // Center of screen
-    cardStyle.left = "50%";
-    cardStyle.top = "50%";
-    cardStyle.transform = "translate(-50%, -50%)";
+    if (currentStep.cardPosition === "left") {
+      cardStyle.left = 32;
+      cardStyle.top = "50%";
+      cardStyle.transform = "translateY(-50%)";
+    } else if (currentStep.cardPosition === "right") {
+      cardStyle.right = 32;
+      cardStyle.top = "50%";
+      cardStyle.transform = "translateY(-50%)";
+    } else {
+      // Center of screen
+      cardStyle.left = "50%";
+      cardStyle.top = "50%";
+      cardStyle.transform = "translate(-50%, -50%)";
+    }
   }
 
   const progress = ((activeStep + 1) / steps.length) * 100;
@@ -425,37 +585,57 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   return (
     <Box sx={{ position: "fixed", inset: 0, zIndex: 999990, pointerEvents: "none" }}>
       {/* SVG Mask Overlay */}
-      <svg
-        style={{
-          position: "fixed",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-        }}
-      >
-        <defs>
-          <mask id="tour-mask">
-            <rect width="100%" height="100%" fill="white" />
-            {targetRect && (
-              <rect
-                x={targetRect.x - 6}
-                y={targetRect.y - 6}
-                width={targetRect.width + 12}
-                height={targetRect.height + 12}
-                rx={6}
-                fill="black"
-              />
-            )}
-          </mask>
-        </defs>
-        <rect
-          width="100%"
-          height="100%"
-          fill="rgba(0, 0, 0, 0.45)"
-          mask="url(#tour-mask)"
-        />
-      </svg>
+      {!currentStep.noMask && (
+        <svg
+          style={{
+            position: "fixed",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+          }}
+        >
+          <defs>
+            <mask id="tour-mask">
+              <rect width="100%" height="100%" fill="white" />
+              {targetRect && (
+                <rect
+                  x={targetRect.x - 6}
+                  y={targetRect.y - 6}
+                  width={targetRect.width + 12}
+                  height={targetRect.height + 12}
+                  rx={6}
+                  fill="black"
+                />
+              )}
+              {sidebarRect && currentStep.targetId?.startsWith("activity-tab-") && !currentStep.noAutoClick && (
+                <rect
+                  x={sidebarRect.x}
+                  y={sidebarRect.y}
+                  width={sidebarRect.width}
+                  height={sidebarRect.height}
+                  fill="black"
+                />
+              )}
+              {menuRect && currentStep.targetId === "quick-settings" && (
+                <rect
+                  x={menuRect.x}
+                  y={menuRect.y}
+                  width={menuRect.width}
+                  height={menuRect.height}
+                  fill="black"
+                />
+              )}
+            </mask>
+          </defs>
+          <rect
+            width="100%"
+            height="100%"
+            fill="rgba(0, 0, 0, 0.45)"
+            mask="url(#tour-mask)"
+          />
+        </svg>
+      )}
 
       {/* Floating Tour Card */}
       <Card
@@ -464,13 +644,15 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
         style={cardStyle}
         sx={{
           pointerEvents: "auto",
-          border: 1,
+          borderRadius: 0,
+          border: "1px solid",
           borderColor: "primary.main",
           background: (theme) => theme.palette.background.paper,
         }}
       >
-        <LinearProgress variant="determinate" value={progress} sx={{ height: 3 }} />
-        <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2 } }}>
+        <LinearProgress variant="determinate" value={progress} sx={{ height: 3, borderRadius: 0 }} />
+        <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
+          {/* HEADER */}
           <Box
             onMouseDown={(e) => {
               if ((e.target as HTMLElement).closest("button")) return;
@@ -487,58 +669,63 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             sx={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "flex-start",
-              mb: 1,
+              alignItems: "center",
+              px: 2.5,
+              py: 1.25,
               cursor: dragOffset ? "grabbing" : "grab",
               userSelect: "none",
+              borderBottom: "1px solid",
+              borderColor: "divider",
             }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "primary.main", display: "flex", alignItems: "center", gap: 0.5 }}>
-              <AutoAwesomeIcon sx={{ fontSize: 14 }} /> Tutorial
+            <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "primary.main" }}>
+              {tourName}
             </Typography>
             <IconButton size="small" onClick={handleClose} sx={{ p: 0, color: "text.secondary" }}>
               <CloseIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Box>
 
-          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 15, mb: 1, lineHeight: 1.25 }}>
-            {currentStep.title}
-          </Typography>
+          {/* BODY */}
+          <Box sx={{ px: 2.5, py: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 15, mb: 1, lineHeight: 1.25 }}>
+              {currentStep.title}
+            </Typography>
 
-          <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 12.5, lineHeight: 1.45, mb: 2 }}>
-            {currentStep.description}
-          </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 12.5, lineHeight: 1.45, mb: currentStep.taskInstructions ? 2 : 0 }}>
+              {currentStep.description}
+            </Typography>
 
-          {/* Interactive Writing Prompts */}
-          {activeTour === "fountain" && currentStep.taskInstructions && (
-            <Box
-              sx={{
-                bgcolor: (t) => taskComplete ? alpha(t.palette.success.main, 0.04) : alpha(t.palette.action.hover, 0.6),
-                border: "1px solid",
-                borderColor: (t) => taskComplete ? alpha(t.palette.success.main, 0.3) : t.palette.divider,
-                px: 2,
-                py: 1.5,
-                borderRadius: 0,
-                mb: 2.5,
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 800, color: taskComplete ? "success.main" : "primary.main", display: "block", mb: 0.5, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                {taskComplete ? "✓ Task Complete!" : "✏ Task Instruction:"}
-              </Typography>
-              <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, whiteSpace: "pre-line" }}>
-                {currentStep.taskInstructions}
-              </Typography>
-            </Box>
-          )}
+            {/* Interactive Task Prompts */}
+            {currentStep.taskInstructions && (
+              <Box
+                sx={{
+                  bgcolor: "background.default",
+                  border: "1px solid",
+                  borderColor: (t) => taskComplete ? alpha(t.palette.success.main, 0.4) : alpha(t.palette.primary.main, 0.4),
+                  px: 2,
+                  py: 1.5,
+                  borderRadius: 0,
+                }}
+              >
+                <Typography variant="caption" sx={{ fontWeight: 800, color: taskComplete ? "success.main" : "primary.main", display: "block", mb: 0.5, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                  {taskComplete ? "✓ Task Complete!" : "✏ Task Instruction:"}
+                </Typography>
+                <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, whiteSpace: "pre-line", color: "text.primary" }}>
+                  {currentStep.taskInstructions}
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
-          {/* Card Navigation */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+          {/* FOOTER */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 2.5, py: 1.25, borderTop: "1px solid", borderColor: "divider" }}>
             <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
               Step {activeStep + 1} of {steps.length}
             </Typography>
-            <Box sx={{ display: "flex", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               {activeStep > 0 && (
-                <Button variant="outlined" size="small" onClick={handleBack} sx={{ fontSize: 11, textTransform: "none", py: 0.25 }}>
+                <Button variant="outlined" size="small" onClick={handleBack} sx={{ borderRadius: 0, fontSize: 11, textTransform: "none", py: 0.5, px: 1.25, minWidth: 0 }}>
                   Back
                 </Button>
               )}
@@ -547,9 +734,23 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
                 size="small"
                 disabled={!taskComplete}
                 onClick={handleNext}
-                sx={{ fontSize: 11, textTransform: "none", py: 0.25 }}
+                sx={{
+                  borderRadius: 0,
+                  fontSize: 11,
+                  textTransform: "none",
+                  py: 0.4,
+                  px: 1.5,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  lineHeight: 1.2,
+                  minWidth: 80,
+                }}
               >
-                {activeStep === steps.length - 1 ? "Finish" : "Next"}
+                <span>{activeStep === steps.length - 1 ? "Finish" : (currentStep.nextLabel ?? "Next")}</span>
+                <Typography component="span" variant="caption" sx={{ fontSize: 9, opacity: 0.7, lineHeight: 1 }}>
+                  ⇧+Enter
+                </Typography>
               </Button>
             </Box>
           </Box>
@@ -617,10 +818,10 @@ export const TutorialSelectionDialog: React.FC<TutorialSelectionDialogProps> = (
             }}
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5 }}>
-              🧭 App Interface Tour
+              🧭 App Tour
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-              Explore every panel: Command Palette, all Activity Bar panels, Quick Settings, Header tabs, Editor Workspace, and all Status Bar tools.
+              Explore every part of the workspace: Activity Bar, Quick Settings, Header tabs, Editor, Status Bar - plus the fastest way to navigate ActOne.
             </Typography>
           </Box>
 
@@ -642,10 +843,10 @@ export const TutorialSelectionDialog: React.FC<TutorialSelectionDialogProps> = (
             }}
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5 }}>
-              ✍ Fountain Writing Tutorial
+              ✍ Basic Fountain Syntax
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-              Hands-on writing sandbox. Practice scene headings, dialogue, parentheticals, and shots.
+              Hands-on writing sandbox. Practice scene headings, dialogue, parentheticals, transitions, and shots.
             </Typography>
           </Box>
         </Box>

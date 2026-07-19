@@ -354,7 +354,8 @@ function AppInner() {
       setShowStructureModal(true);
       localStorage.removeItem("pending-action");
     } else if (action === "tutorial") {
-      const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" || "ui";
+      const rawType = localStorage.getItem("pending-tutorial-type");
+      const type = (rawType === "fountain" ? "fountain" : "ui") as "ui" | "fountain";
       localStorage.removeItem("pending-tutorial-type");
       localStorage.removeItem("pending-action");
       if (type === "ui") {
@@ -363,10 +364,10 @@ function AppInner() {
             const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
             if (isTauriEnv) {
               const { resolveResource } = await import("@tauri-apps/api/path");
-              const samplePath = await resolveResource("samples/BeeDetectiveV2.actone");
+              const samplePath = await resolveResource("samples/BeeDetectiveTour.actone");
               openFilePath(samplePath);
             } else {
-              const res = await fetch("/samples/BeeDetectiveV2.actone");
+              const res = await fetch("/samples/BeeDetectiveTour.actone");
               const buf = await res.arrayBuffer();
               const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
               newFile(bundle.scripts[0]?.content || "");
@@ -378,6 +379,14 @@ function AppInner() {
       } else {
         newFile("=== TUTORIAL SANDBOX ===\n\n");
       }
+
+      (async () => {
+        try {
+          const { getCurrentWindow } = await import("@tauri-apps/api/window");
+          await getCurrentWindow().maximize();
+        } catch { /* not in Tauri */ }
+      })();
+
       setActiveTour(type);
     }
 
@@ -615,7 +624,41 @@ function AppInner() {
     <TutorialSelectionDialog
       open={tutorialDialogOpen}
       onClose={() => setTutorialDialogOpen(false)}
-      onSelectTour={(type) => setActiveTour(type)}
+      onSelectTour={async (type) => {
+        setTutorialDialogOpen(false);
+
+        // Maximize the main window
+        try {
+          const { getCurrentWindow } = await import("@tauri-apps/api/window");
+          await getCurrentWindow().maximize();
+        } catch { /* not in Tauri */ }
+
+        // Prepare the right file for the tour
+        if (type === "fountain") {
+          newFile("=== TUTORIAL SANDBOX ===\n\n");
+        } else {
+          if (!activeFileId) {
+            try {
+              const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+              if (isTauriEnv) {
+                const { resolveResource } = await import("@tauri-apps/api/path");
+                const samplePath = await resolveResource("samples/BeeDetectiveTour.actone");
+                openFilePath(samplePath);
+              } else {
+                const res = await fetch("/samples/BeeDetectiveTour.actone");
+                const buf = await res.arrayBuffer();
+                const { unpackActoneBundle } = await import("./utils");
+                const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
+                newFile(bundle.scripts[0]?.content || "");
+              }
+            } catch {
+              newFile();
+            }
+          }
+        }
+
+        setActiveTour(type);
+      }}
     />
     {isDraggingOver && <DropOverlay />}
     </>

@@ -393,7 +393,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         },
       }}
     >
-      <Box sx={{ px: 2, py: 1 }}>
+      <Box data-tour-palette sx={{ px: 2, py: 1 }}>
         <TextField
           inputRef={inputRef}
           placeholder="Type a command or search..."
