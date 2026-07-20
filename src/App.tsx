@@ -59,9 +59,10 @@ function AppInner() {
         try {
           const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
           if (isTauriEnv) {
-            const { resolveResource } = await import("@tauri-apps/api/path");
-            const samplePath = await resolveResource("samples/BeeDetectiveTour.actone");
-            openFilePath(samplePath);
+            const { invoke } = await import("@tauri-apps/api/core");
+            const bytes = await invoke<number[]>("get_sample_bundle");
+            const bundle = unpackActoneBundle(new Uint8Array(bytes), "Bee Detective v2");
+            newFile(bundle.scripts[0]?.content || "");
           } else {
             const res = await fetch("/samples/BeeDetectiveTour.actone");
             const buf = await res.arrayBuffer();
@@ -94,9 +95,10 @@ function AppInner() {
         try {
           const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
           if (isTauriEnv) {
-            const { resolveResource } = await import("@tauri-apps/api/path");
-            const samplePath = await resolveResource("samples/BeeDetectiveTour.actone");
-            openFilePath(samplePath);
+            const { invoke } = await import("@tauri-apps/api/core");
+            const bytes = await invoke<number[]>("get_sample_bundle");
+            const bundle = unpackActoneBundle(new Uint8Array(bytes), "Bee Detective v2");
+            newFile(bundle.scripts[0]?.content || "");
           } else {
             const res = await fetch("/samples/BeeDetectiveTour.actone");
             const buf = await res.arrayBuffer();
@@ -483,9 +485,10 @@ function AppInner() {
           try {
             const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
             if (isTauriEnv) {
-              const { resolveResource } = await import("@tauri-apps/api/path");
-              const samplePath = await resolveResource("samples/BeeDetectiveTour.actone");
-              openFilePath(samplePath);
+              const { invoke } = await import("@tauri-apps/api/core");
+              const bytes = await invoke<number[]>("get_sample_bundle");
+              const bundle = unpackActoneBundle(new Uint8Array(bytes), "Bee Detective v2");
+              newFile(bundle.scripts[0]?.content || "");
             } else {
               const res = await fetch("/samples/BeeDetectiveTour.actone");
               const buf = await res.arrayBuffer();

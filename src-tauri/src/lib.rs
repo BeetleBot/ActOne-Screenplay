@@ -178,6 +178,11 @@ fn save_file_binary(path: String, bytes: Vec<u8>) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn get_sample_bundle() -> Vec<u8> {
+    include_bytes!("../samples/BeeDetectiveTour.actone").to_vec()
+}
+
+#[tauri::command]
 fn save_pdf_dialog(bytes: Vec<u8>) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("PDF Document", &["pdf"])
@@ -748,6 +753,7 @@ pub fn run() {
             snapshots::open_folder,
             save_theme_dialog,
             import_theme_dialog,
+            get_sample_bundle,
         ]);
 
     builder
