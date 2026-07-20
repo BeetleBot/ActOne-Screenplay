@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useFile, useUI } from "../context";
-import { CloseIcon, TextFieldsIcon } from "./Icons";
+import { TextFieldsIcon } from "./Icons";
+import { TitleBar } from "./TitleBar";
 
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
   Box,
   Typography,
   Button,
@@ -166,14 +166,13 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}>
-      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <TextFieldsIcon sx={{ fontSize: 18 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Title Page Editor</Typography>
-        </Box>
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 16 }} />
-        </IconButton>
+      <DialogTitle sx={{ m: 0, p: 0 }}>
+        <TitleBar
+          title="Title Page Editor"
+          icon={<TextFieldsIcon sx={{ fontSize: 18 }} />}
+          isModal
+          onClose={onClose}
+        />
       </DialogTitle>
 
       <Box sx={{ px: 2, py: 1 }}>

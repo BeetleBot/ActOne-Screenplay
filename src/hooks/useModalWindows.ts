@@ -4,9 +4,10 @@ import { logger } from "../utils/logger";
 interface ModalWindowsHook {
   openSettingsWindow: (tab?: string) => void;
   openHelpWindow: () => void;
-  openTagManagerWindow: () => void;
+  openTagManagerWindow: (maximize?: boolean) => void;
   openThemeManagerWindow: () => void;
   openXrayWindow: () => void;
+  openTutorialsWindow: () => void;
   closeAllWindows: () => Promise<void>;
 }
 
@@ -26,6 +27,7 @@ async function createTauriWindow(
   height: number,
   resizable: boolean,
   onClose: () => void,
+  maximize = false,
 ): Promise<boolean> {
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   if (!isTauri) {
@@ -44,6 +46,9 @@ async function createTauriWindow(
     });
     webview.once("tauri://created", () => {
       logger.info("modalWindows", `Created window: ${label}`);
+      if (maximize) {
+        webview.maximize().catch(() => {});
+      }
     });
     webview.once("tauri://error", (e) => {
       logger.error("modalWindows", `Error creating window: ${label}`, e);
@@ -83,10 +88,10 @@ export function useModalWindows(): ModalWindowsHook {
     }
   }, []);
 
-  const openTagManagerWindow = useCallback(async () => {
+  const openTagManagerWindow = useCallback(async (maximize?: boolean) => {
     if (windowsRef.current.get("tag-manager")) return;
     windowsRef.current.set("tag-manager", true);
-    const ok = await createTauriWindow("tag-manager", "/?modal=tag-manager", "ActOne – Tag Manager", 1100, 700, true, () => windowsRef.current.delete("tag-manager"));
+    const ok = await createTauriWindow("tag-manager", "/?modal=tag-manager", "ActOne – Tag Manager", 1100, 700, true, () => windowsRef.current.delete("tag-manager"), maximize);
     if (!ok) {
       windowsRef.current.delete("tag-manager");
     }
@@ -110,19 +115,32 @@ export function useModalWindows(): ModalWindowsHook {
     }
   }, []);
 
+  const openTutorialsWindow = useCallback(async () => {
+    if (windowsRef.current.get("tutorials")) return;
+    windowsRef.current.set("tutorials", true);
+    const ok = await createTauriWindow("tutorials", "/?modal=tutorials", "ActOne – Tutorials", 500, 400, false, () => windowsRef.current.delete("tutorials"));
+    if (!ok) {
+      windowsRef.current.delete("tutorials");
+    }
+  }, []);
+
   const closeAllWindows = useCallback(async () => {
-    const labels = ["settings", "help", "tag-manager", "theme-manager", "xray"];
+    const labels = ["settings", "help", "tag-manager", "theme-manager", "xray", "tutorials"];
+    const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
     for (const label of labels) {
       windowsRef.current.delete(label);
       try {
-        const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
         const win = await WebviewWindow.getByLabel(label);
-        if (win) await win.close();
+        if (win) {
+          win.close().catch((e: unknown) => {
+            logger.warn("modalWindows", `Failed to close ${label}:`, e);
+          });
+        }
       } catch (e) {
-        logger.warn("modalWindows", `Failed to close ${label}:`, e);
+        logger.warn("modalWindows", `Failed to get window ${label}:`, e);
       }
     }
   }, []);
 
-  return { openSettingsWindow, openHelpWindow, openTagManagerWindow, openThemeManagerWindow, openXrayWindow, closeAllWindows };
+  return { openSettingsWindow, openHelpWindow, openTagManagerWindow, openThemeManagerWindow, openXrayWindow, openTutorialsWindow, closeAllWindows };
 }

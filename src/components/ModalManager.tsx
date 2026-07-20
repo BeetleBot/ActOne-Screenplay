@@ -22,7 +22,7 @@ export interface ModalManagerProps {
   openTagManagerWindow?: () => void;
   openThemeManagerWindow?: () => void;
   openXrayWindow?: () => void;
-  onOpenTutorialDialog?: () => void;
+  openTutorialsWindow?: () => void;
 }
 
 export const ModalManager: React.FC<ModalManagerProps> = ({
@@ -42,7 +42,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   openTagManagerWindow,
   openThemeManagerWindow,
   openXrayWindow,
-  onOpenTutorialDialog,
+  openTutorialsWindow,
 }) => {
   return (
     <>
@@ -60,7 +60,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onOpenBreakdownModal={openTagManagerWindow || (() => {})}
           onOpenThemeManagerModal={openThemeManagerWindow || (() => {})}
           onOpenXrayModal={openXrayWindow || (() => {})}
-          onOpenTutorialDialog={onOpenTutorialDialog}
+          openTutorialsWindow={openTutorialsWindow}
           onToggleSnapshotsPanel={toggleSnapshotsPanel}
         />
       </ErrorBoundary>

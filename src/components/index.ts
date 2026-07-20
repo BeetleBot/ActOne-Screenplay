@@ -18,7 +18,8 @@ export { TitleBar } from './TitleBar';
 export { TitlePageEditorModal } from './TitlePageEditorModal';
 export { TodoView } from './TodoView';
 export { WelcomeScreenWindow } from './WelcomeScreen';
-export { OnboardingTour, TutorialSelectionDialog } from './OnboardingTour';
+export { OnboardingTour } from './OnboardingTour';
+export { CrossWindowTourCard } from './CrossWindowTourCard';
 export { AmbientPanel } from './AmbientPanel';
 export { WindowResizeHandles } from './WindowResizeHandles';
 export { SettingsWindow } from './SettingsWindow';
@@ -26,6 +27,8 @@ export { HelpWindow } from './HelpWindow';
 export { TagManagerWindow } from './TagManagerWindow';
 export { ThemeManagerWindow } from './ThemeManagerWindow';
 export { XrayWindow } from './XrayWindow';
+export { TutorialsWindow } from './TutorialsWindow';
+
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,
   ArrowDownwardIcon, ArrowUpwardIcon, AssignmentIcon, AutoAwesomeIcon,

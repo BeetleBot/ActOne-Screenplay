@@ -3,6 +3,8 @@ import { Box, Typography, TextField, Table, TableBody, TableCell, TableContainer
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { SearchIcon, DownloadIcon, LocalOfferIcon, TuneIcon, DeleteIcon } from "./Icons";
+import { CrossWindowTourCard } from "./CrossWindowTourCard";
+import { useTourListener } from "../hooks";
 import { TitleBar } from "./TitleBar";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
@@ -68,6 +70,14 @@ const TagManagerWindowContent: React.FC = () => {
   const [filePath, setFilePath] = useState<string>("");
   const [activeScriptName, setActiveScriptName] = useState<string>("");
 
+  const { currentStep: tourStep, tourName, progress, taskComplete, isLastStep, currentIndex, totalSteps, markStepDone } = useTourListener("tag-manager");
+
+  useEffect(() => {
+    if (tourStep) {
+      markStepDone();
+    }
+  }, [tourStep, markStepDone]);
+
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
@@ -108,18 +118,55 @@ const TagManagerWindowContent: React.FC = () => {
     });
   }, []);
 
-  const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
-  const muiTheme = createActOneTheme(currentThemeConfig, appScale);
+  const currentThemeConfig = useMemo(
+    () => resolveThemeConfig(themeId, customThemes, systemDark),
+    [themeId, customThemes, systemDark]
+  );
+  const muiTheme = useMemo(
+    () => createActOneTheme(currentThemeConfig, appScale),
+    [currentThemeConfig, appScale]
+  );
+
+  useEffect(() => {
+    document.body.classList.toggle("dark-theme", currentThemeConfig.isDark);
+  }, [currentThemeConfig.isDark]);
 
   return (
+    <>
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
       <TagManagerWindowContentInner
         parsedDoc={parsedDoc}
         filePath={filePath}
         activeScriptName={activeScriptName}
+        markStepDone={markStepDone}
       />
     </MuiThemeProvider>
+    {tourStep && (
+      <CrossWindowTourCard
+        step={tourStep}
+        tourName={tourName}
+        progress={progress}
+        taskComplete={taskComplete}
+        isLastStep={isLastStep}
+        stepNumber={currentIndex + 1}
+        totalSteps={totalSteps}
+        onNext={async () => {
+          try {
+            const { emitTo } = await import("@tauri-apps/api/event");
+            await emitTo("main", "tour:step-done", { stepIndex: currentIndex, window: "tag-manager" });
+            await emitTo("main", "tour:next-step", {});
+          } catch { void 0; }
+        }}
+        onCancel={async () => {
+          try {
+            const { emitTo } = await import("@tauri-apps/api/event");
+            await emitTo("main", "tour:cancel", {});
+          } catch { void 0; }
+        }}
+      />
+    )}
+    </>
   );
 };
 
@@ -128,7 +175,8 @@ const TagManagerWindowContentInner: React.FC<{
   parsedDoc: any;
   filePath: string;
   activeScriptName: string;
-}> = ({ parsedDoc, filePath, activeScriptName }) => {
+  markStepDone: () => void;
+}> = ({ parsedDoc, filePath, activeScriptName, markStepDone }) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -389,6 +437,8 @@ const TagManagerWindowContentInner: React.FC<{
       link.click();
       document.body.removeChild(link);
     }
+
+    markStepDone();
   };
 
   const handleRemoveAllTags = async () => {
@@ -576,8 +626,8 @@ const TagManagerWindowContentInner: React.FC<{
                     <TableHead>
                       <TableRow sx={(theme) => ({
                         '& .MuiTableCell-root': {
-                          bgcolor: theme.palette.mode === 'light' ? theme.palette.grey[900] : theme.palette.grey[100],
-                          color: theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.black,
+                          bgcolor: theme.palette.mode === 'light' ? theme.palette.grey[100] : theme.palette.grey[900],
+                          color: theme.palette.text.primary,
                           fontWeight: 600,
                           fontSize: 10,
                           textTransform: "uppercase",

@@ -10,6 +10,7 @@ interface TitleBarProps {
   icon?: React.ReactNode;
   updateAvailable?: boolean;
   installUpdate?: () => void;
+  isModal?: boolean;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({ 
@@ -17,7 +18,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   onClose, 
   icon,
   updateAvailable = false,
-  installUpdate
+  installUpdate,
+  isModal = false
 }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isResizable, setIsResizable] = useState(true);
@@ -98,7 +100,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   };
 
   // Calculate right padding based on controls layout
-  const controlsWidth = (isResizable ? 140 : 94) + (updateAvailable && installUpdate ? 80 : 0);
+  const controlsWidth = (isResizable && !isModal ? 140 : (isModal ? 46 : 94)) + (updateAvailable && installUpdate ? 80 : 0);
 
   return (
     <Box
@@ -133,17 +135,15 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         {icon && (
           <Box
             sx={{
-              width: 48,
+              width: 40,
               height: 40,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
+              color: "primary.main",
               flexShrink: 0,
-              borderRight: "1px solid",
-              borderColor: "rgba(0,0,0,0.15)",
               borderTopLeftRadius: 'inherit',
+              pl: 1.5,
             }}
           >
             {icon}
@@ -155,7 +155,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             fontWeight: 700, 
             fontSize: 11, 
             color: "text.secondary", 
-            pl: icon ? 0 : 1.5 
+            pl: icon ? 0.5 : 1.5 
           }}
         >
           {title.toUpperCase()}
@@ -209,23 +209,25 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           </Box>
         )}
 
-        <IconButton
-          onClick={handleMinimize}
-          title="Minimize"
-          sx={{
-            width: 48, 
-            height: 40, 
-            borderRadius: 0,
-            color: 'inherit',
-            '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
-            <path d="M2 6H10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
-        </IconButton>
+        {!isModal && (
+          <IconButton
+            onClick={handleMinimize}
+            title="Minimize"
+            sx={{
+              width: 48, 
+              height: 40, 
+              borderRadius: 0,
+              color: 'inherit',
+              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
+              <path d="M2 6H10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+          </IconButton>
+        )}
         
-        {isResizable && (
+        {!isModal && isResizable && (
           <IconButton
             onClick={handleMaximize}
             title={isMaximized ? "Restore" : "Maximize"}

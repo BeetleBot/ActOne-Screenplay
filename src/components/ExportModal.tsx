@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useFile, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
-import { CloseIcon, DownloadIcon } from "./Icons";
+import { DownloadIcon } from "./Icons";
+import { TitleBar } from "./TitleBar";
 import { SystemFontPicker } from "./SystemFontPicker";
 import { logger } from "../utils/logger";
 import { STORAGE_KEYS } from "../constants";
@@ -13,7 +14,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  IconButton,
   Box,
   Typography,
   Switch,
@@ -493,14 +493,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       transitionDuration={200}
       sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0, maxHeight: '85vh' } }}
     >
-      <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <DownloadIcon sx={{ fontSize: 18 }} />
-          <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 14 }}>Export Screenplay</Typography>
-        </Box>
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 16 }} />
-        </IconButton>
+      <DialogTitle sx={{ m: 0, p: 0 }}>
+        <TitleBar
+          title="Export Screenplay"
+          icon={<DownloadIcon sx={{ fontSize: 16 }} />}
+          isModal
+          onClose={onClose}
+        />
       </DialogTitle>
 
       <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto", display: "flex", flexDirection: "column", gap: 1.5 }}>
@@ -751,11 +750,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         disableScrollLock
         sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
       >
-        <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Format Elements</Typography>
-          <IconButton aria-label="close" onClick={() => setShowFormatPanel(false)} sx={{ color: "text.secondary" }}>
-            <CloseIcon sx={{ fontSize: 16 }} />
-          </IconButton>
+        <DialogTitle sx={{ m: 0, p: 0 }}>
+          <TitleBar
+            title="Format Elements"
+            isModal
+            onClose={() => setShowFormatPanel(false)}
+          />
         </DialogTitle>
 
         <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto" }}>
@@ -835,18 +835,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         disableScrollLock
         sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
       >
-        <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 14 }}>Watermark Options</Typography>
-          <IconButton
-            aria-label="close"
-            onClick={() => {
+        <DialogTitle sx={{ m: 0, p: 0 }}>
+          <TitleBar
+            title="Watermark Options"
+            isModal
+            onClose={() => {
               setShowWatermarkPanel(false);
               updateWatermarkSettings(currentWatermarkSettings());
             }}
-            sx={{ color: "text.secondary" }}
-          >
-            <CloseIcon sx={{ fontSize: 16 }} />
-          </IconButton>
+          />
         </DialogTitle>
 
         <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto", display: "flex", flexDirection: "column", gap: 2 }}>

@@ -39,6 +39,9 @@ export async function initThemeEngine(): Promise<ThemeState> {
     currentState = getFallbackState();
   }
 
+  // Notify any listeners that were registered before init finished
+  listeners.forEach((cb) => cb(currentState!));
+
   if (!unlisten) {
     try {
       unlisten = await listen<{ theme_id: string; app_scale: number; custom_themes: string }>("theme:state-changed", (event) => {

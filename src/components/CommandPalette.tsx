@@ -85,7 +85,7 @@ interface CommandPaletteProps {
   onOpenThemeManagerModal: () => void;
   onOpenXrayModal?: () => void;
   onToggleSnapshotsPanel?: () => void;
-  onOpenTutorialDialog?: () => void;
+  openTutorialsWindow?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -102,7 +102,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenThemeManagerModal,
   onOpenXrayModal,
   onToggleSnapshotsPanel,
-  onOpenTutorialDialog,
+  openTutorialsWindow,
 }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -294,7 +294,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
     // Help
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, shortcut: "F1", action: () => { onOpenHelpModal(); onClose(); } },
-    { id: "help-tutorial", name: "Interactive Tutorial...", category: "Help", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTutorialDialog?.(); onClose(); } },
+    { id: "help-tutorial", name: "Interactive Tutorial...", category: "Help", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { openTutorialsWindow?.(); onClose(); } },
     { id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } },
     { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://github.com/beetlebot/ActOne/issues"); onClose(); } },
   ];
@@ -375,6 +375,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       scroll="paper"
       disableScrollLock
       hideBackdrop
+      sx={{ zIndex: 1000000 }}
       slotProps={{
         paper: {
           sx: {
@@ -395,6 +396,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     >
       <Box data-tour-palette sx={{ px: 2, py: 1 }}>
         <TextField
+          autoFocus
           inputRef={inputRef}
           placeholder="Type a command or search..."
           value={search}

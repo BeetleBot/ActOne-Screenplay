@@ -22,6 +22,8 @@ import {
 } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider, useTheme, alpha } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import { CrossWindowTourCard } from "./CrossWindowTourCard";
+import { useTourListener } from "../hooks";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
@@ -1885,6 +1887,8 @@ export const XrayWindow: React.FC = () => {
   const [data, setData] = useState<XrayData | null>(null);
   const [timedOut, setTimedOut] = useState(false);
 
+  const { currentStep: tourStep, tourName, progress, taskComplete, isLastStep, currentIndex, totalSteps } = useTourListener("xray");
+
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
@@ -1962,10 +1966,21 @@ export const XrayWindow: React.FC = () => {
     }
   }, []);
 
-  const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
-  const muiTheme = createActOneTheme(currentThemeConfig, appScale);
+  const currentThemeConfig = useMemo(
+    () => resolveThemeConfig(themeId, customThemes, systemDark),
+    [themeId, customThemes, systemDark]
+  );
+  const muiTheme = useMemo(
+    () => createActOneTheme(currentThemeConfig, appScale),
+    [currentThemeConfig, appScale]
+  );
+
+  useEffect(() => {
+    document.body.classList.toggle("dark-theme", currentThemeConfig.isDark);
+  }, [currentThemeConfig.isDark]);
 
   return (
+    <>
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
       <WindowResizeHandles />
@@ -1973,6 +1988,30 @@ export const XrayWindow: React.FC = () => {
         <XrayContent data={data} onClose={handleClose} timedOut={timedOut} />
       </Box>
     </MuiThemeProvider>
+    {tourStep && (
+      <CrossWindowTourCard
+        step={tourStep}
+        tourName={tourName}
+        progress={progress}
+        taskComplete={taskComplete}
+        isLastStep={isLastStep}
+        stepNumber={currentIndex + 1}
+        totalSteps={totalSteps}
+        onNext={async () => {
+          try {
+            const { emit } = await import("@tauri-apps/api/event");
+            await emit("tour:step-done", { stepIndex: 0, window: "xray" });
+          } catch { void 0; }
+        }}
+        onCancel={async () => {
+          try {
+            const { emit } = await import("@tauri-apps/api/event");
+            await emit("tour:cancel", {});
+          } catch { void 0; }
+        }}
+      />
+    )}
+    </>
   );
 };
 

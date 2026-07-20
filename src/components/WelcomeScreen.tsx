@@ -8,13 +8,13 @@ import { useModalWindows, useStoreUpdateCheck } from "../hooks";
 import { Box, Typography, useTheme, alpha, Menu, MenuItem } from "@mui/material";
 import { logger } from "../utils/logger";
 import { ThemeLogo } from "./ThemeLogo";
-import { TutorialSelectionDialog } from "./OnboardingTour";
 import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIcon, DiscordIcon, PlayArrowIcon, MenuBookIcon, DescriptionIcon, ColorLensIcon } from "./Icons";
 import { getRandomQuote, type Quote } from "../data/quotes";
 import { themes as themeList, ADAPTIVE_THEME_META, THEME_CATEGORIES } from "../theme/muiTheme";
 
 interface WelcomeScreenWindowProps {
   standalone?: boolean;
+  onOpenTutorials?: () => void;
 }
 
 function getRelativeTime(timestamp: number): string {
@@ -48,13 +48,12 @@ function getDirectory(path: string): string {
   return parts.join("/");
 }
 
-export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false }) => {
+export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false, onOpenTutorials }) => {
   const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
-  const { openHelpWindow } = useModalWindows();
+  const { openHelpWindow, openTutorialsWindow } = useModalWindows();
   const appVersion = __APP_VERSION__;
   const appChannel = __APP_CHANNEL__;
 
-  const [tutorialDialogOpen, setTutorialDialogOpen] = useState(false);
   const [quote, setQuote] = useState<Quote>(getRandomQuote());
   const handleQuoteClick = () => setQuote(getRandomQuote());
   const emptyMessages = [
@@ -70,19 +69,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const { theme: currentThemeId, setTheme: setAppTheme, customThemes } = useAppTheme();
   const theme = useTheme();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
-
-  const handleSelectTour = async (type: "ui" | "fountain") => {
-    try {
-      localStorage.setItem("pending-action", "tutorial");
-      localStorage.setItem("pending-tutorial-type", type);
-      const created = await createEditorWindow("tutorial");
-      if (created) {
-        closeWelcome();
-      }
-    } catch (e) {
-      logger.error("welcome", "Failed to start tutorial:", e);
-    }
-  };
 
   useEffect(() => {
     invoke<string[]>("get_cli_args").then((paths) => {
@@ -684,7 +670,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         <Box sx={{ width: "20%", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Box
             className="clickable"
-            onClick={() => setTutorialDialogOpen(true)}
+            onClick={() => onOpenTutorials ? onOpenTutorials() : openTutorialsWindow()}
             sx={{
               width: "100%",
               height: "100%",
@@ -942,11 +928,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         </Box>
       </Box>
 
-      <TutorialSelectionDialog
-        open={tutorialDialogOpen}
-        onClose={() => setTutorialDialogOpen(false)}
-        onSelectTour={handleSelectTour}
-      />
     </Box>
   );
 };

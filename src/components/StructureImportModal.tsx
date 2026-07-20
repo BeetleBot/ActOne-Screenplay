@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
-import { CloseIcon, AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon, LibraryBooksIcon } from "./Icons";
+import { AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon, LibraryBooksIcon } from "./Icons";
+import { TitleBar } from "./TitleBar";
 import { logger } from "../utils/logger";
 
 import {
@@ -9,7 +10,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
   Box,
   Typography,
   Button,
@@ -111,14 +111,13 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}>
-      <DialogTitle sx={{ m: 0, px: 2.5, py: 1.75, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <LibraryBooksIcon sx={{ fontSize: 16, color: "primary.main" }} />
-          <Typography sx={{ fontWeight: 700, fontSize: 13 }}>Screenplay Structures</Typography>
-        </Box>
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", p: 0.5 }}>
-          <CloseIcon sx={{ fontSize: 16 }} />
-        </IconButton>
+      <DialogTitle sx={{ m: 0, p: 0 }}>
+        <TitleBar
+          title="Screenplay Structures"
+          icon={<LibraryBooksIcon sx={{ fontSize: 16, color: "primary.main" }} />}
+          isModal
+          onClose={onClose}
+        />
       </DialogTitle>
 
       <DialogContent dividers sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5, overflow: "hidden" }}>

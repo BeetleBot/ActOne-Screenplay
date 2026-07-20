@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { Dialog } from "@mui/material";
 import { AppProviders, useFile, useUI, useEditor, ThemeProvider, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
-import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialSelectionDialog } from "./components";
+import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialsWindow } from "./components";
 import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
@@ -14,14 +15,97 @@ const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
 const isEditorWindow = action === "new" || action === "open" || action === "template" || action === "tutorial";
 const modalParam = params.get("modal");
-const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "tag-manager" || modalParam === "theme-manager" || modalParam === "xray";
+const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "tag-manager" || modalParam === "theme-manager" || modalParam === "xray" || modalParam === "tutorials";
 
 function AppInner() {
   const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName } = useFile();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [showTutorialsModal, setShowTutorialsModal] = useState(false);
   const { confirm } = useCustomModal();
-  const [activeTour, setActiveTour] = useState<"ui" | "fountain" | null>(null);
-  const [tutorialDialogOpen, setTutorialDialogOpen] = useState(false);
+  const [activeTour, setActiveTourState] = useState<"ui" | "fountain" | "tagging" | null>(() => {
+    return (localStorage.getItem("actone-active-tour") as "ui" | "fountain" | "tagging" | null) || null;
+  });
+
+  const setActiveTour = useCallback((tour: "ui" | "fountain" | "tagging" | null) => {
+    setActiveTourState(tour);
+    if (tour) {
+      localStorage.setItem("actone-active-tour", tour);
+    } else {
+      localStorage.removeItem("actone-active-tour");
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "actone-active-tour") {
+        setActiveTourState((e.newValue as "ui" | "fountain" | "tagging" | null) || null);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const handleTutorialStart = useCallback(async (type: "ui" | "fountain" | "tagging") => {
+    try {
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      await getCurrentWindow().maximize();
+    } catch { /* not in Tauri */ }
+
+    if (type === "fountain") {
+      newFile("=== TUTORIAL SANDBOX ===\n\n");
+    } else {
+      if (!activeFileId) {
+        try {
+          const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+          if (isTauriEnv) {
+            const { resolveResource } = await import("@tauri-apps/api/path");
+            const samplePath = await resolveResource("samples/BeeDetectiveTour.actone");
+            openFilePath(samplePath);
+          } else {
+            const res = await fetch("/samples/BeeDetectiveTour.actone");
+            const buf = await res.arrayBuffer();
+            const { unpackActoneBundle } = await import("./utils");
+            const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
+            newFile(bundle.scripts[0]?.content || "");
+          }
+        } catch {
+          newFile();
+        }
+      }
+    }
+
+    setActiveTour(type);
+  }, [newFile, activeFileId, openFilePath, setActiveTour]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    const setup = async () => {
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        unlisten = await listen<{ type: "ui" | "fountain" | "tagging" }>("tutorial:start", (event) => {
+          handleTutorialStart(event.payload.type);
+        });
+      } catch { /* not in Tauri */ }
+    };
+    setup();
+    return () => { if (unlisten) unlisten(); };
+  }, [handleTutorialStart]);
+
+  // Polling fallback to guarantee communication between Tauri windows for tutorial launch
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const pendingAction = localStorage.getItem("pending-action");
+      if (pendingAction === "tutorial") {
+        const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" | "tagging" | null;
+        if (type) {
+          localStorage.removeItem("pending-action");
+          localStorage.removeItem("pending-tutorial-type");
+          handleTutorialStart(type);
+        }
+      }
+    }, 200);
+    return () => clearInterval(timer);
+  }, [handleTutorialStart]);
 
   const isStandalone = !isEditorWindow;
 
@@ -83,6 +167,8 @@ function AppInner() {
   const modalWindows = useModalWindows();
   const closeAllWindowsRef = useRef(modalWindows.closeAllWindows);
   closeAllWindowsRef.current = modalWindows.closeAllWindows;
+
+
 
   useKeyboardShortcuts({
     newFile,
@@ -354,11 +440,11 @@ function AppInner() {
       setShowStructureModal(true);
       localStorage.removeItem("pending-action");
     } else if (action === "tutorial") {
-      const rawType = localStorage.getItem("pending-tutorial-type");
-      const type = (rawType === "fountain" ? "fountain" : "ui") as "ui" | "fountain";
+      const rawType = params.get("type") || localStorage.getItem("pending-tutorial-type");
+      const type = (rawType === "fountain" ? "fountain" : rawType === "tagging" ? "tagging" : "ui") as "ui" | "fountain" | "tagging";
       localStorage.removeItem("pending-tutorial-type");
       localStorage.removeItem("pending-action");
-      if (type === "ui") {
+      if (type === "ui" || type === "tagging") {
         (async () => {
           try {
             const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -561,9 +647,35 @@ function AppInner() {
       <>
         <WindowResizeHandles resizeEnabled={false} showDragHandle />
         <ErrorBoundary name="welcome">
-          <WelcomeScreenWindow standalone />
+          <WelcomeScreenWindow standalone onOpenTutorials={() => setShowTutorialsModal(true)} />
         </ErrorBoundary>
         {isDraggingOver && <DropOverlay />}
+        {showTutorialsModal && (
+          <Dialog
+            open={showTutorialsModal}
+            onClose={() => setShowTutorialsModal(false)}
+            maxWidth="md"
+            fullWidth
+            slotProps={{
+              paper: {
+                sx: {
+                  height: 600,
+                  bgcolor: "background.paper",
+                  color: "text.primary",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  backgroundImage: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
+                  borderRadius: 0,
+                }
+              }
+            }}
+          >
+            <TutorialsWindow isModal onClose={() => setShowTutorialsModal(false)} />
+          </Dialog>
+        )}
       </>
     );
   }
@@ -614,52 +726,41 @@ function AppInner() {
         openTagManagerWindow={isModalWindow ? undefined : modalWindows.openTagManagerWindow}
         openThemeManagerWindow={isModalWindow ? undefined : modalWindows.openThemeManagerWindow}
         openXrayWindow={isModalWindow ? undefined : modalWindows.openXrayWindow}
-        onOpenTutorialDialog={() => setTutorialDialogOpen(true)}
+        openTutorialsWindow={isModalWindow ? undefined : () => setShowTutorialsModal(true)}
       />
     </div>
     <OnboardingTour
       activeTour={activeTour}
       onCloseTour={() => setActiveTour(null)}
     />
-    <TutorialSelectionDialog
-      open={tutorialDialogOpen}
-      onClose={() => setTutorialDialogOpen(false)}
-      onSelectTour={async (type) => {
-        setTutorialDialogOpen(false);
 
-        // Maximize the main window
-        try {
-          const { getCurrentWindow } = await import("@tauri-apps/api/window");
-          await getCurrentWindow().maximize();
-        } catch { /* not in Tauri */ }
-
-        // Prepare the right file for the tour
-        if (type === "fountain") {
-          newFile("=== TUTORIAL SANDBOX ===\n\n");
-        } else {
-          if (!activeFileId) {
-            try {
-              const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-              if (isTauriEnv) {
-                const { resolveResource } = await import("@tauri-apps/api/path");
-                const samplePath = await resolveResource("samples/BeeDetectiveTour.actone");
-                openFilePath(samplePath);
-              } else {
-                const res = await fetch("/samples/BeeDetectiveTour.actone");
-                const buf = await res.arrayBuffer();
-                const { unpackActoneBundle } = await import("./utils");
-                const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
-                newFile(bundle.scripts[0]?.content || "");
-              }
-            } catch {
-              newFile();
+    {showTutorialsModal && (
+      <Dialog
+        open={showTutorialsModal}
+        onClose={() => setShowTutorialsModal(false)}
+        maxWidth="md"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              height: 600,
+              bgcolor: "background.paper",
+              color: "text.primary",
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundImage: "none",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              borderRadius: 0,
             }
           }
-        }
+        }}
+      >
+        <TutorialsWindow isModal onClose={() => setShowTutorialsModal(false)} />
+      </Dialog>
+    )}
 
-        setActiveTour(type);
-      }}
-    />
     {isDraggingOver && <DropOverlay />}
     </>
   );

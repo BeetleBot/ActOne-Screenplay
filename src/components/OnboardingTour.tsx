@@ -1,37 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  IconButton,
-  LinearProgress,
-} from "@mui/material";
-import { CloseIcon } from "./Icons";
-import { useEditor } from "../context";
-import { alpha } from "@mui/material/styles";
+import { useEditor, useUI } from "../context";
+import { CrossWindowTourCard } from "./CrossWindowTourCard";
+import type { TourStep } from "../types/tour";
 
 interface OnboardingTourProps {
-  activeTour: "ui" | "fountain" | null;
+  activeTour: "ui" | "fountain" | "tagging" | null;
   onCloseTour: () => void;
-}
-
-interface TourStep {
-  targetId?: string;
-  title: string;
-  description: string;
-  taskInstructions?: string;
-  validate?: (text: string) => boolean;
-  detect?: () => boolean;
-  noMask?: boolean;
-  cardPosition?: "left" | "right" | "center";
-  nextLabel?: string;
-  autoAdvance?: boolean;
-  noAutoClick?: boolean;
 }
 
 const UI_STEPS: TourStep[] = [
@@ -286,45 +260,75 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   activeTour,
   onCloseTour,
 }) => {
-
   const { editorView } = useEditor();
-  const [activeStep, setActiveStep] = useState(0);
-  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const [sidebarRect, setSidebarRect] = useState<DOMRect | null>(null);
-  const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
+  const { hideTagsEnabled } = useUI();
+  const [activeStep, setActiveStepState] = useState(0);
   const [taskComplete, setTaskComplete] = useState(false);
-  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
-  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const sandboxCreated = useRef(false);
 
-  // Reset drag position on step transitions
-  useEffect(() => {
-    setDragPosition(null);
-    setDragOffset(null);
-  }, [activeStep]);
-
-  const steps = activeTour === "fountain" ? FOUNTAIN_STEPS : UI_STEPS;
+  const steps = activeTour === "fountain" 
+    ? FOUNTAIN_STEPS 
+    : (activeTour === "tagging" ? TAGGING_STEPS : UI_STEPS);
   const currentStep = steps[activeStep];
-  const tourName = activeTour === "fountain" ? "Fountain Syntax" : "App Tour";
+  const tourName = activeTour === "fountain" 
+    ? "Fountain Syntax" 
+    : (activeTour === "tagging" ? "Tagging Tour" : "App Tour");
+
+  const setActiveStep = (step: number | ((prev: number) => number)) => {
+    setActiveStepState(step);
+  };
 
   useEffect(() => {
-    setActiveStep(0);
+    setActiveStepState(0);
+    localStorage.removeItem("actone-tour-step");
     setTaskComplete(false);
     sandboxCreated.current = false;
   }, [activeTour]);
+
+  const handleClose = () => {
+    onCloseTour();
+  };
+
+  const handleNext = () => {
+    if (activeStep < steps.length - 1) {
+      setActiveStepState((prev) => prev + 1);
+    } else {
+      handleClose();
+    }
+  };
+
+  const handleBack = () => {
+    if (activeStep > 0) {
+      setActiveStepState((prev) => prev - 1);
+    }
+  };
+
+  const progress = ((activeStep + 1) / steps.length) * 100;
+
+  // Auto-advance action-based steps when completed
+  useEffect(() => {
+    const isActionStep = !!currentStep?.detect || 
+                        !!currentStep?.validate || 
+                        (activeTour === "tagging" && (activeStep === 3 || activeStep === 5));
+
+    if (isActionStep && taskComplete) {
+      const timer = setTimeout(() => {
+        handleNext();
+      }, 600); // Wait 600ms so user can see "Task Complete" checkmark
+      return () => clearTimeout(timer);
+    }
+  }, [taskComplete, activeStep, activeTour, currentStep]);
 
   // Handle focus, newline injection, and demo screenplay injection
   useEffect(() => {
     if (activeTour !== "fountain" || !editorView) return;
 
-    // Focus editor and place cursor at the end
     editorView.focus();
     const docLength = editorView.state.doc.length;
     editorView.dispatch({
       selection: { anchor: docLength, head: docLength }
     });
 
-    // Automatically insert a new line for new writing steps
     if (activeStep > 1 && activeStep < steps.length - 1) {
       editorView.dispatch({
         changes: { from: docLength, to: docLength, insert: "\n\n" },
@@ -333,7 +337,6 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       editorView.focus();
     }
 
-    // Inject demo screenplay on the final step
     if (activeStep === steps.length - 1) {
       const demoScene = `INT. COFFEE SHOP - DAY\n\nA young WRITER sits at a corner table, staring at a blank screen.\n\nWRITER\n(sighs)\nWhy is writing so hard?\n\nSuddenly, a beautiful idea sparks in their mind. They type furiously.\n\n!! CLOSE ON THE SCREEN\n\nWe see the words forming. It's magic.\n\n> FADE OUT.`;
       editorView.dispatch({
@@ -343,49 +346,13 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       editorView.scrollDOM.scrollTop = 0;
       editorView.focus();
     }
-  }, [activeStep, activeTour, editorView]);
+  }, [activeStep, activeTour, editorView, steps.length]);
 
-  // Handle targeting DOM elements
+  // Auto-click Activity Bar tabs, Quick Settings, and Command Palette when entering a step
   useEffect(() => {
-    if (!currentStep?.targetId) {
-      setTargetRect(null);
-      setSidebarRect(null);
-      setMenuRect(null);
-      return;
-    }
+    if (!currentStep?.targetId || currentStep.noAutoClick) return;
 
-    const updateBounds = () => {
-      const element = document.getElementById(currentStep.targetId!);
-      if (element) {
-        setTargetRect(element.getBoundingClientRect());
-      }
-      const sidebar = document.getElementById("sidebar-container");
-      if (sidebar && sidebar.offsetWidth > 0) {
-        setSidebarRect(sidebar.getBoundingClientRect());
-      } else {
-        setSidebarRect(null);
-      }
-      const menuEl = Array.from(document.querySelectorAll<HTMLElement>(".MuiMenu-paper"))
-        .find((el) => el.textContent && el.textContent.includes("Quick Settings"));
-      if (menuEl && menuEl.offsetWidth > 0) {
-        setMenuRect(menuEl.getBoundingClientRect());
-      } else {
-        setMenuRect(null);
-      }
-    };
-
-    updateBounds();
-    window.addEventListener("resize", updateBounds);
-    const interval = setInterval(updateBounds, 500); // Poll in case layouts shift
-    return () => {
-      window.removeEventListener("resize", updateBounds);
-      clearInterval(interval);
-    };
-  }, [currentStep]);
-
-  // Auto-click Activity Bar tabs and Quick Settings when entering a step
-  useEffect(() => {
-    if (activeTour !== "ui" || !currentStep?.targetId || currentStep.noAutoClick) return;
+    if (activeTour !== "ui" && activeTour !== "tagging") return;
 
     const targetId = currentStep.targetId;
 
@@ -393,8 +360,6 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       const el = document.getElementById(targetId);
       if (el) {
         el.click();
-        // If sidebar was open with this same tab, clicking toggles it closed.
-        // Re-click after paint if the sidebar didn't open.
         requestAnimationFrame(() => {
           const sidebar = document.getElementById("sidebar-container");
           if (!sidebar || sidebar.offsetWidth === 0) {
@@ -405,37 +370,27 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     } else if (targetId === "quick-settings") {
       const el = document.getElementById(targetId);
       if (el) el.click();
+    } else if (targetId === "command-palette-btn") {
+      // Don't auto-click or auto-open Command Palette; let the user do it manually
     }
   }, [activeStep, activeTour, currentStep]);
 
-  // Global mouse event listeners for card dragging
+  // Live validator for interactive typing and state configurations
   useEffect(() => {
-    if (!dragOffset) return;
+    if (activeTour === "tagging") {
+      if (activeStep === 3) {
+        setTaskComplete(hideTagsEnabled === true);
+        return;
+      }
+      if (activeStep === 5) {
+        setTaskComplete(hideTagsEnabled === false);
+        return;
+      }
+    }
 
-    const handleMouseMove = (e: MouseEvent) => {
-      setDragPosition({
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y,
-      });
-    };
-
-    const handleMouseUp = () => {
-      setDragOffset(null);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [dragOffset]);
-
-  // Live validator for interactive Fountain typing
-  useEffect(() => {
     if (activeTour !== "fountain" || !currentStep?.validate) {
       if (!currentStep?.detect) {
-        setTaskComplete(true); // Auto-complete if no verification needed
+        setTaskComplete(true);
       }
       return;
     }
@@ -451,7 +406,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     }, 200);
 
     return () => clearInterval(interval);
-  }, [activeTour, activeStep, currentStep, editorView]);
+  }, [activeTour, activeStep, currentStep, editorView, hideTagsEnabled]);
 
   // DOM detection polling (e.g., Command Palette tour)
   useEffect(() => {
@@ -470,7 +425,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     return () => clearInterval(interval);
   }, [activeStep, currentStep, steps.length]);
 
-  // Shift+Enter to advance the tour (capture phase to intercept before CodeMirror)
+  // Shift+Enter to advance the tour
   useEffect(() => {
     if (!activeTour) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -490,367 +445,78 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
   if (!activeTour) return null;
 
-  const handleClose = () => {
-    onCloseTour();
-  };
+  const currentWindow = new URLSearchParams(window.location.search).get("modal") || "main";
+  const stepWindow = currentStep.window || "main";
 
-  const handleNext = () => {
-    if (activeStep < steps.length - 1) {
-      setActiveStep((prev) => prev + 1);
-    } else {
-      handleClose();
-    }
-  };
-
-  const handleBack = () => {
-    if (activeStep > 0) {
-      setActiveStep((prev) => prev - 1);
-    }
-  };
-
-  // Card Positioning logic
-  const cardStyle: React.CSSProperties = {
-    position: "fixed",
-    zIndex: 999999,
-    width: 320,
-    transition: dragOffset ? "transform 0.15s ease-out" : "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-  };
-
-  const isSidebarTarget = currentStep.targetId === "activity-bar" ||
-    currentStep.targetId?.startsWith("activity-tab-") ||
-    currentStep.targetId === "command-palette-btn" ||
-    currentStep.targetId === "quick-settings";
-
-  const isStatusTarget = currentStep.targetId === "status-bar" ||
-    currentStep.targetId?.startsWith("status-");
-
-  if (dragPosition) {
-    cardStyle.left = dragPosition.x;
-    cardStyle.top = dragPosition.y;
-    cardStyle.transform = "scale(1.025)";
-  } else if (targetRect) {
-    if (isSidebarTarget) {
-      if (currentStep.targetId === "quick-settings" && menuRect) {
-        cardStyle.left = menuRect.right + 16;
-      } else if (sidebarRect && currentStep.targetId?.startsWith("activity-tab-") && !currentStep.noAutoClick) {
-        cardStyle.left = sidebarRect.right + 16;
-      } else {
-        cardStyle.left = targetRect.right + 16;
-      }
-      const estimatedCardHeight = 320;
-      const maxAllowedTop = window.innerHeight - estimatedCardHeight - 16;
-      cardStyle.top = Math.max(16, Math.min(targetRect.top, maxAllowedTop));
-    } else if (isStatusTarget) {
-      cardStyle.bottom = (window.innerHeight - targetRect.top) + 8;
-      if (currentStep.targetId === "status-file-name") {
-        cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160 + 300);
-      } else {
-        cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160);
-      }
-    } else if (currentStep.targetId === "header-bar") {
-      cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160);
-      cardStyle.top = targetRect.bottom + 16;
-    } else {
-      // For editor workspace: position on the left for Transitions to avoid blocking the right-aligned text,
-      // and position on the right for other editor steps.
-      if (currentStep.title.includes("Transitions")) {
-        cardStyle.left = 32;
-        cardStyle.top = "50%";
-        cardStyle.transform = "translateY(-50%)";
-      } else {
-        cardStyle.right = 32;
-        cardStyle.top = "50%";
-        cardStyle.transform = "translateY(-50%)";
-      }
-    }
-  } else {
-    if (currentStep.cardPosition === "left") {
-      cardStyle.left = 32;
-      cardStyle.top = "50%";
-      cardStyle.transform = "translateY(-50%)";
-    } else if (currentStep.cardPosition === "right") {
-      cardStyle.right = 32;
-      cardStyle.top = "50%";
-      cardStyle.transform = "translateY(-50%)";
-    } else {
-      // Center of screen
-      cardStyle.left = "50%";
-      cardStyle.top = "50%";
-      cardStyle.transform = "translate(-50%, -50%)";
-    }
+  if (stepWindow !== currentWindow) {
+    return null;
   }
 
-  const progress = ((activeStep + 1) / steps.length) * 100;
+
 
   return (
-    <Box sx={{ position: "fixed", inset: 0, zIndex: 999990, pointerEvents: "none" }}>
-      {/* SVG Mask Overlay */}
-      {!currentStep.noMask && (
-        <svg
-          style={{
-            position: "fixed",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            pointerEvents: "none",
-          }}
-        >
-          <defs>
-            <mask id="tour-mask">
-              <rect width="100%" height="100%" fill="white" />
-              {targetRect && (
-                <rect
-                  x={targetRect.x - 6}
-                  y={targetRect.y - 6}
-                  width={targetRect.width + 12}
-                  height={targetRect.height + 12}
-                  rx={6}
-                  fill="black"
-                />
-              )}
-              {sidebarRect && currentStep.targetId?.startsWith("activity-tab-") && !currentStep.noAutoClick && (
-                <rect
-                  x={sidebarRect.x}
-                  y={sidebarRect.y}
-                  width={sidebarRect.width}
-                  height={sidebarRect.height}
-                  fill="black"
-                />
-              )}
-              {menuRect && currentStep.targetId === "quick-settings" && (
-                <rect
-                  x={menuRect.x}
-                  y={menuRect.y}
-                  width={menuRect.width}
-                  height={menuRect.height}
-                  fill="black"
-                />
-              )}
-            </mask>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="rgba(0, 0, 0, 0.45)"
-            mask="url(#tour-mask)"
-          />
-        </svg>
-      )}
-
-      {/* Floating Tour Card */}
-      <Card
-        className="tour-card"
-        elevation={dragOffset ? 16 : 8}
-        style={cardStyle}
-        sx={{
-          pointerEvents: "auto",
-          borderRadius: 0,
-          border: "1px solid",
-          borderColor: "primary.main",
-          background: (theme) => theme.palette.background.paper,
-        }}
-      >
-        <LinearProgress variant="determinate" value={progress} sx={{ height: 3, borderRadius: 0 }} />
-        <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-          {/* HEADER */}
-          <Box
-            onMouseDown={(e) => {
-              if ((e.target as HTMLElement).closest("button")) return;
-              e.preventDefault();
-              const cardEl = e.currentTarget.closest(".tour-card") as HTMLElement;
-              if (cardEl) {
-                const rect = cardEl.getBoundingClientRect();
-                setDragOffset({
-                  x: e.clientX - rect.left,
-                  y: e.clientY - rect.top,
-                });
-              }
-            }}
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              px: 2.5,
-              py: 1.25,
-              cursor: dragOffset ? "grabbing" : "grab",
-              userSelect: "none",
-              borderBottom: "1px solid",
-              borderColor: "divider",
-            }}
-          >
-            <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "primary.main" }}>
-              {tourName}
-            </Typography>
-            <IconButton size="small" onClick={handleClose} sx={{ p: 0, color: "text.secondary" }}>
-              <CloseIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Box>
-
-          {/* BODY */}
-          <Box sx={{ px: 2.5, py: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 15, mb: 1, lineHeight: 1.25 }}>
-              {currentStep.title}
-            </Typography>
-
-            <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 12.5, lineHeight: 1.45, mb: currentStep.taskInstructions ? 2 : 0 }}>
-              {currentStep.description}
-            </Typography>
-
-            {/* Interactive Task Prompts */}
-            {currentStep.taskInstructions && (
-              <Box
-                sx={{
-                  bgcolor: "background.default",
-                  border: "1px solid",
-                  borderColor: (t) => taskComplete ? alpha(t.palette.success.main, 0.4) : alpha(t.palette.primary.main, 0.4),
-                  px: 2,
-                  py: 1.5,
-                  borderRadius: 0,
-                }}
-              >
-                <Typography variant="caption" sx={{ fontWeight: 800, color: taskComplete ? "success.main" : "primary.main", display: "block", mb: 0.5, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                  {taskComplete ? "✓ Task Complete!" : "✏ Task Instruction:"}
-                </Typography>
-                <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, whiteSpace: "pre-line", color: "text.primary" }}>
-                  {currentStep.taskInstructions}
-                </Typography>
-              </Box>
-            )}
-          </Box>
-
-          {/* FOOTER */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 2.5, py: 1.25, borderTop: "1px solid", borderColor: "divider" }}>
-            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-              Step {activeStep + 1} of {steps.length}
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-              {activeStep > 0 && (
-                <Button variant="outlined" size="small" onClick={handleBack} sx={{ borderRadius: 0, fontSize: 11, textTransform: "none", py: 0.5, px: 1.25, minWidth: 0 }}>
-                  Back
-                </Button>
-              )}
-              <Button
-                variant="contained"
-                size="small"
-                disabled={!taskComplete}
-                onClick={handleNext}
-                sx={{
-                  borderRadius: 0,
-                  fontSize: 11,
-                  textTransform: "none",
-                  py: 0.4,
-                  px: 1.5,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  lineHeight: 1.2,
-                  minWidth: 80,
-                }}
-              >
-                <span>{activeStep === steps.length - 1 ? "Finish" : (currentStep.nextLabel ?? "Next")}</span>
-                <Typography component="span" variant="caption" sx={{ fontSize: 9, opacity: 0.7, lineHeight: 1 }}>
-                  ⇧+Enter
-                </Typography>
-              </Button>
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
-    </Box>
+    <CrossWindowTourCard
+      step={currentStep}
+      tourName={tourName}
+      progress={progress}
+      taskComplete={taskComplete}
+      isLastStep={activeStep >= steps.length - 1}
+      stepNumber={activeStep + 1}
+      totalSteps={steps.length}
+      onNext={handleNext}
+      onBack={activeStep > 0 ? handleBack : undefined}
+      onCancel={handleClose}
+    />
   );
 };
 
-interface TutorialSelectionDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onSelectTour: (type: "ui" | "fountain") => void;
-}
+export const TAGGING_STEPS: TourStep[] = [
+  {
+    title: "Introduction to Tagging",
+    description: "Production tags help you categorize items in your screenplay (like Props, Sounds, Animals, or Costumes) for shooting. In this tour, we'll practice creating tags and managing their visibility in the editor.",
+  },
+  {
+    targetId: "editor-workspace",
+    title: "1. Create 5+ Tags",
+    description: "Highlight any word in your screenplay, hold Ctrl and right-click to open the Quick Tag menu, then pick a category.\n\nSuggested tags to create:\n- Prop: desk, phone, or mirror\n- Sound: buzzing, ring, or crash\n- Animal: Bee, butterfly, or creature\n- Set Design: Hive, Chamber, or Office\n\nTag at least 5 words to proceed.",
+    taskInstructions: "Select a word, hold Ctrl + right-click, choose a category. Repeat for at least 5 tags.",
+    detect: () => {
+      const editor = document.querySelector(".cm-editor");
+      if (!editor) return false;
+      return editor.querySelectorAll('[class*="cm-tag-"]').length >= 5;
+    },
+  },
+  {
+    targetId: "editor-workspace",
+    title: "2. Auto-Populated Cast Tags",
+    description: "You don't have to manually tag the speaking cast; they are automatically populated in the Tag Manager. Only use manual tagging for non-speaking casts if they are important for production breakdown.",
+  },
+  {
+    targetId: "command-palette-btn",
+    title: "3. Hide the Tags",
+    description: "Sometimes you want a clean reading experience without colored tag highlights. Open the Command Palette (click the logo button or press Ctrl+K), type 'Hide tags', and select the toggle command.",
+    taskInstructions: "Open Command Palette (Ctrl+K) -> Toggle 'Hide tags'.",
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Verify Tags Hidden",
+    description: "Take a moment to look at the editor. Notice that all of the colored highlights for your tags and cast members have disappeared, providing a clean canvas.",
+  },
+  {
+    targetId: "command-palette-btn",
+    title: "4. Show the Tags",
+    description: "Great! The highlights are now hidden. Now open the Command Palette again (Ctrl+K), type 'Show tags', and select the command to restore the colored highlights in the editor.",
+    taskInstructions: "Open Command Palette (Ctrl+K) -> Toggle 'Show tags'.",
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Verify Tags Visible",
+    description: "Observe the editor again. The tag highlights and cast indicators are back! This toggle makes it easy to switch between formatting and writing.",
+  },
+  {
+    title: "Tagging Tour Completed!",
+    description: "Excellent job! You've learned how to create production tags, verify auto-cast tags, and toggle tag visibility. When you want to see the full breakdown and export CSVs, you can open the Tag Manager from the Command Palette (Ctrl+K → 'Open Tag Manager').",
+  },
+];
 
-export const TutorialSelectionDialog: React.FC<TutorialSelectionDialogProps> = ({
-  open,
-  onClose,
-  onSelectTour,
-}) => {
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            p: 1,
-            borderRadius: 0,
-            border: 1,
-            borderColor: "divider",
-          },
-        },
-      }}
-    >
-      <DialogTitle sx={{ fontWeight: 800, fontSize: 16, pb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        Interactive Tutorials
-        <IconButton size="small" onClick={onClose} sx={{ color: "text.secondary" }}>
-          <CloseIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent sx={{ pb: 2 }}>
-        <Typography variant="body2" sx={{ color: "text.secondary", mb: 2, fontSize: 13 }}>
-          Select a guided walkthrough to learn the app interface or get hands-on experience formatting screenplays in Fountain.
-        </Typography>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-          <Box
-            onClick={() => { onSelectTour("ui"); onClose(); }}
-            sx={{
-              p: 2,
-              borderRadius: 0,
-              cursor: "pointer",
-              border: 1,
-              borderColor: "divider",
-              bgcolor: "background.paper",
-              transition: "all var(--duration-fast) ease",
-              "&:hover": {
-                borderColor: "primary.main",
-                bgcolor: "action.hover",
-                transform: "translateY(-1px)",
-              },
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5 }}>
-              🧭 App Tour
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-              Explore every part of the workspace: Activity Bar, Quick Settings, Header tabs, Editor, Status Bar - plus the fastest way to navigate ActOne.
-            </Typography>
-          </Box>
-
-          <Box
-            onClick={() => { onSelectTour("fountain"); onClose(); }}
-            sx={{
-              p: 2,
-              borderRadius: 0,
-              cursor: "pointer",
-              border: 1,
-              borderColor: "divider",
-              bgcolor: "background.paper",
-              transition: "all var(--duration-fast) ease",
-              "&:hover": {
-                borderColor: "primary.main",
-                bgcolor: "action.hover",
-                transform: "translateY(-1px)",
-              },
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5 }}>
-              ✍ Basic Fountain Syntax
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-              Hands-on writing sandbox. Practice scene headings, dialogue, parentheticals, transitions, and shots.
-            </Typography>
-          </Box>
-        </Box>
-      </DialogContent>
-    </Dialog>
-  );
-};

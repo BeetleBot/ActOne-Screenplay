@@ -6,6 +6,7 @@ import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { STORAGE_KEYS } from "../constants";
 import { useUI } from "./UIContext";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
+import { setPrefs } from "../theme/AppPrefsEngine";
 
 export type { CustomTheme };
 
@@ -85,6 +86,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (state.themeId !== themeRef.current) {
         setThemeState(state.themeId);
         localStorage.setItem(THEME_ID_KEY, state.themeId);
+        setPrefs({ [THEME_ID_KEY]: state.themeId });
       }
       try {
         const parsed = JSON.parse(state.customThemes);
@@ -101,6 +103,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setThemeState(t);
     localStorage.setItem(THEME_ID_KEY, t);
     engineSetTheme({ themeId: t });
+    setPrefs({ [THEME_ID_KEY]: t });
   }, []);
 
   const currentThemeConfig = useMemo(

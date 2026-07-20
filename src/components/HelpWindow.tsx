@@ -104,8 +104,18 @@ export const HelpWindow: React.FC = () => {
     });
   }, []);
 
-  const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
-  const muiTheme = createActOneTheme(currentThemeConfig, appScale);
+  const currentThemeConfig = useMemo(
+    () => resolveThemeConfig(themeId, customThemes, systemDark),
+    [themeId, customThemes, systemDark]
+  );
+  const muiTheme = useMemo(
+    () => createActOneTheme(currentThemeConfig, appScale),
+    [currentThemeConfig, appScale]
+  );
+
+  useEffect(() => {
+    document.body.classList.toggle("dark-theme", currentThemeConfig.isDark);
+  }, [currentThemeConfig.isDark]);
 
   const handleClose = async () => {
     try {
