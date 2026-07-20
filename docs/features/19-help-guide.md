@@ -16,7 +16,7 @@ The Help Guide provides 47 searchable articles across 8 categories.
    - CodeMirror editor, autocomplete, empty-line selection, search & replace, drag-to-reorder, undo/redo, keyboard shortcuts
 
 4. **Organization** (4 articles)
-   - Outline view, planning board, scripts view, parking feature
+   - Outline view, scripts view, notepad, parking feature
 
 5. **Project Management** (5 articles)
    - Characters & genders, tags & categories, scene colors, todos & markers, sprint tracking

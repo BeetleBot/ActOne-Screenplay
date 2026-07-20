@@ -4,12 +4,12 @@ import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
 import { CrossWindowTourCard } from "./CrossWindowTourCard";
+import { THEMING_STEPS } from "./OnboardingTour";
 import { createActOneTheme, deriveAllColors, themes, THEME_CATEGORIES, ADAPTIVE_THEME_META, type ThemeColors } from "../theme";
 import { resolveThemeConfig } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
 import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon, DownloadIcon, UploadIcon, ColorLensIcon } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
-import type { TourStep } from "../types/tour";
 
 const CORE_DEFAULTS = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
 const EMPTY_COLORS = deriveAllColors(CORE_DEFAULTS, false);
@@ -427,46 +427,6 @@ export const ThemeManagerWindow: React.FC = () => {
 
   const initialThemeId = useRef(themeId);
 
-  const themedTourSteps: TourStep[] = [
-    {
-      title: "Welcome to Themes",
-      description: "The Theme Manager lets you switch between built-in themes, create your own, and export/import .actheme files. Let's walk through each feature.",
-      noMask: true,
-      cardPosition: "center",
-      cardWidth: 260,
-    },
-    {
-      title: "Pick a Theme",
-      description: "Browse the theme list on the left. Each theme changes the app's entire color scheme. Try clicking a different theme to see the preview update in real time.",
-      taskInstructions: "Click any theme from the list on the left to select it.",
-      noMask: true,
-      cardPosition: "right",
-      cardWidth: 260,
-    },
-    {
-      title: "Create Custom Theme",
-      description: "Scroll down the theme list on the left. Near the bottom, in the CUSTOM THEMES section, click the Create button to build your own theme. You'll see color pickers for each UI element — pick any colors you like.",
-      taskInstructions: "Scroll down and click the Create button to open the custom theme form.",
-      noMask: true,
-      cardPosition: "right",
-      cardWidth: 260,
-    },
-    {
-      title: "Export & Import",
-      description: "After saving a custom theme, use the Export button (download icon) next to it to save as a .actheme file — share themes or back them up. Use the Import button at the top of the Custom Themes section to load a .actheme file from disk. .actheme files are plain JSON and can be edited in any text editor.",
-      noMask: true,
-      cardPosition: "center",
-      cardWidth: 260,
-    },
-    {
-      title: "Themes Complete!",
-      description: "You've learned how to pick themes, create custom ones, and work with .actheme files. Happy theming!",
-      noMask: true,
-      cardPosition: "center",
-      cardWidth: 260,
-    },
-  ];
-
   useEffect(() => {
     if (!tourActive) return;
     setTourTaskComplete(false);
@@ -489,7 +449,7 @@ export const ThemeManagerWindow: React.FC = () => {
   }, [tourActive, tourStep, themeId, showForm]);
 
   const handleTourNext = () => {
-    if (tourStep < themedTourSteps.length - 1) {
+    if (tourStep < THEMING_STEPS.length - 1) {
       setTourStep((p) => p + 1);
       setTourTaskComplete(false);
     } else {
@@ -678,13 +638,13 @@ export const ThemeManagerWindow: React.FC = () => {
       </Box>
       {tourActive && (
         <CrossWindowTourCard
-          step={themedTourSteps[tourStep]}
+          step={THEMING_STEPS[tourStep]}
           tourName="Themes"
-          progress={((tourStep + 1) / themedTourSteps.length) * 100}
+          progress={((tourStep + 1) / THEMING_STEPS.length) * 100}
           taskComplete={tourTaskComplete}
-          isLastStep={tourStep === themedTourSteps.length - 1}
+          isLastStep={tourStep === THEMING_STEPS.length - 1}
           stepNumber={tourStep + 1}
-          totalSteps={themedTourSteps.length}
+          totalSteps={THEMING_STEPS.length}
           onNext={handleTourNext}
           onBack={tourStep > 0 ? handleTourBack : undefined}
           onCancel={handleTourCancel}

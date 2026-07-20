@@ -2,7 +2,7 @@
 
 ## Entry Point
 
-**`src/main.tsx`** renders `<App />` inside a `BrowserRouter`. If the URL contains a `?modal=` query parameter, it renders a standalone modal window component instead:
+**`src/main.tsx`** renders the appropriate root component based on URL query parameters:
 
 | Param | Component |
 |-------|-----------|
@@ -12,54 +12,63 @@
 | `?modal=tag-manager` | `<TagManagerWindow />` |
 | `?modal=theme-manager` | `<ThemeManagerWindow />` |
 | `?modal=xray` | `<XrayWindow />` |
+| `?modal=tutorials` | `<TutorialsWindow />` |
 
-Global error handlers (`window.onerror`, `unhandledrejection`) are wired at startup.
+Global error handlers (`window.onerror`, `unhandledrejection`) are wired at startup. All windows share the same `index.css`.
 
-## Component Tree
+## Component Tree (Editor Window)
 
 ```
 App
-  AppProviders (8 contexts nested)
-    AppInner
-      ErrorBoundary
-        MainLayout
-          HeaderBar (tabs, window controls, title)
-          ActivityBar (sidebar icons, zoom slider, settings gear)
-          Workspace
-            SidebarViews (routes to 8 sidebar panels)
-            FountainEditor (CodeMirror 6 container)
-            SearchPanel / RightPane (optional)
-          StatusBar (word/char/page count, sprint, scene info, script switcher)
-        ModalManager
-          CommandPalette
-          ExportModal
-          StructureImportModal
-          TitlePageEditorModal
+  AppProviders (6 contexts nested)
+    ThemeProvider
+      SprintProvider
+        AppInner
+          ErrorBoundary
+            MainLayout
+              HeaderBar (file tabs, window controls, update notification)
+              ActivityBar (8 sidebar icons, command palette, quick settings menu)
+              Workspace
+                SidebarViews (routes 8 sidebar panels)
+                FountainEditor (CodeMirror 6 container)
+                SearchPanel / AmbientPanel (optional right panes)
+              StatusBar (word/char/page count, sprint, scene info, script switcher, xray, ambient)
+            ModalManager
+              CommandPalette
+              ExportModal
+              StructureImportModal
+              TitlePageEditorModal
+            OnboardingTour (active tour overlay)
 ```
 
 ## State Management
 
-ActOne uses **React Context** (not Zustand — the earlier analysis was incorrect). There are 8 context providers:
+ActOne uses **React Context** for all state management. There are 6 context providers in `AppProviders` plus 2 more in the App root:
+
+### AppProviders (nested in order)
 
 | Context | File | Purpose |
 |---------|------|---------|
-| `UIProvider` | `UIContext.tsx` | View mode, zoom level, zen mode, sidebar state |
+| `UIProvider` | `UIContext.tsx` | View mode, zoom level, zen mode, font/paper/editor prefs, ambient audio, icon style |
 | `CustomModalProvider` | `CustomModalContext.tsx` | `confirm()`-style modal dialogs |
-| `FileProvider` | `FileContext.tsx` | File open/save/close, CRLF normalization, script management |
+| `FileProvider` | `FileContext.tsx` | Multi-tab file open/save/close, CRLF normalization, script management |
 | `SnapshotProvider` | `SnapshotContext.tsx` | Snapshot creation, listing, restoration |
-| `EditorProvider` | `EditorContext.tsx` | CodeMirror editor state (view, text, selection) |
+| `EditorProvider` | `EditorContext.tsx` | CodeMirror editor state (view, line tracking, scene reordering) |
 | `ParkingProvider` | `ParkingContext.tsx` | Parking feature — stashing snippets |
-| `ThemeProvider` | `ThemeContext.tsx` | Theme state and synchronization across windows |
-| `SprintProvider` | `SprintContext.tsx` | Sprint tracking — word count goals |
 
-**Nesting order** (in `AppProviders.tsx`):
+### Wrapped outside AppProviders (in App.tsx)
+
+| Context | File | Purpose |
+|---------|------|---------|
+| `ThemeProvider` | `ThemeContext.tsx` | Theme selection, mode toggling, custom theme CRUD |
+| `SprintProvider` | `SprintContext.tsx` | Sprint tracking — timed writing sessions |
+
+**Nesting order** (in `App.tsx`):
 ```
-UIProvider
-  CustomModalProvider
-    FileProvider
-      SnapshotProvider
-        EditorProvider
-          ParkingProvider
+AppProviders
+  └── ThemeProvider
+        └── SprintProvider
+              └── AppInner
 ```
 
 ## Key Components
@@ -69,19 +78,32 @@ UIProvider
 | Component | File | Purpose |
 |-----------|------|---------|
 | `MainLayout` | `layout/MainLayout.tsx` | Grid layout combining HeaderBar, ActivityBar, Workspace, StatusBar |
-| `HeaderBar` | `layout/HeaderBar.tsx` | File tabs, window controls, multi-window actions |
-| `ActivityBar` | `layout/ActivityBar.tsx` | Sidebar icon tabs (Outline, Scripts, Characters, Statistics, Notepad, Markers, Tasks, Sprint, Parking) + zoom slider + settings |
-| `StatusBar` | `layout/StatusBar.tsx` | Word/char/page count, sprint tracker, scene location, script switcher |
-| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor |
-| `SidebarViews` | `SidebarViews.tsx` | Routes active sidebar tab to correct panel |
+| `HeaderBar` | `layout/HeaderBar.tsx` | Multi-file tabs, window controls, context menu (close/close others/close all), update banner |
+| `ActivityBar` | `layout/ActivityBar.tsx` | Command palette button, 8 sidebar icon tabs, quick settings menu with theme picker |
+| `StatusBar` | `layout/StatusBar.tsx` | Word/char/page count, sprint tracker, scene location, script switcher, save status, xray button, ambient indicator |
+| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor, manages right pane (search/ambient) |
+
+### Sidebar Panels (8 tabs)
+
+| Tab ID | Component | Purpose |
+|--------|-----------|---------|
+| `outline` | `OutlineView.tsx` | Scene/section tree with drag-reorder, colors, numbers |
+| `scripts` | `ScriptsView.tsx` | Multi-script bundle management |
+| `notepad` | Inline in `SidebarViews.tsx` | Document-wide scratchpad for notes |
+| `markers` | `MarkerView.tsx` | Line markers list |
+| `todo` | `TodoView.tsx` | To-do items |
+| `snapshots` | `SnapshotsPanel.tsx` | File snapshots/versions |
+| `sprint` | `SprintView.tsx` | Writing sprint tracker |
+| `parking` | Inline in `SidebarViews.tsx` | Parked text snippets |
 
 ### Editor
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `FountainEditor` | `FountainEditor.tsx` | Editor shell — context menus, drag-drop, right-click actions |
+| `FountainEditor` | `FountainEditor.tsx` | Editor shell — context menus, drag-drop, right-click actions, tag/format/transform menus |
 | `OutlineView` | `OutlineView.tsx` | Scene/section outline tree with drag-reorder, colors, numbers |
 | `SearchPanel` | `SearchPanel.tsx` | Find/replace panel (Ctrl+F) |
+| `AmbientPanel` | `AmbientPanel.tsx` | Ambient sound selection panel |
 
 ### Modals
 
@@ -92,129 +114,6 @@ UIProvider
 | `StructureImportModal` | `StructureImportModal.tsx` | Import story structure templates |
 | `TitlePageEditorModal` | `TitlePageEditorModal.tsx` | Edit title page fields |
 | `ModalManager` | `ModalManager.tsx` | Coordinates modal rendering |
-
-### Feature Panels (Sidebar tabs)
-
-| Panel | File | Purpose |
-|-------|------|---------|
-| `OutlineView` | `OutlineView.tsx` | Scene/section tree |
-| `ScriptsView` | `ScriptsView.tsx` | Multi-script bundle management |
-| `TodoView` | `TodoView.tsx` | To-do items |
-| `MarkerView` | `MarkerView.tsx` | Line markers |
-| `SprintView` | `SprintView.tsx` | Writing sprint tracker |
-| `SnapshotsPanel` | `SnapshotsPanel.tsx` | File snapshots/versions |
-| `TagManagerWindow` | `TagManagerWindow.tsx` | Scene tag CRUD |
-| `ThemeManagerWindow` | `ThemeManagerWindow.tsx` | Custom theme editor |
-
-### Separate Windows (rendered standalone via `?modal=`)
-
-# Frontend Architecture
-
-## Entry Point
-
-**`src/main.tsx`** renders `<App />` inside a `BrowserRouter`. If the URL contains a `?modal=` query parameter, it renders a standalone modal window component instead:
-
-| Param | Component |
-|-------|-----------|
-| _(none)_ | `<App />` |
-| `?modal=settings` | `<SettingsWindow />` |
-| `?modal=help` | `<HelpWindow />` |
-| `?modal=tag-manager` | `<TagManagerWindow />` |
-| `?modal=theme-manager` | `<ThemeManagerWindow />` |
-| `?modal=xray` | `<XrayWindow />` |
-
-Global error handlers (`window.onerror`, `unhandledrejection`) are wired at startup.
-
-## Component Tree
-
-```
-App
-  AppProviders (8 contexts nested)
-    AppInner
-      ErrorBoundary
-        MainLayout
-          HeaderBar (tabs, window controls, title)
-          ActivityBar (sidebar icons, zoom slider, settings gear)
-          Workspace
-            SidebarViews (routes to 8 sidebar panels)
-            FountainEditor (CodeMirror 6 container)
-            SearchPanel / RightPane (optional)
-          StatusBar (word/char/page count, sprint, scene info, script switcher)
-        ModalManager
-          CommandPalette
-          ExportModal
-          StructureImportModal
-          TitlePageEditorModal
-```
-
-## State Management
-
-ActOne uses **React Context** (not Zustand — the earlier analysis was incorrect). There are 8 context providers:
-
-| Context | File | Purpose |
-|---------|------|---------|
-| `UIProvider` | `UIContext.tsx` | View mode, zoom level, zen mode, sidebar state |
-| `CustomModalProvider` | `CustomModalContext.tsx` | `confirm()`-style modal dialogs |
-| `FileProvider` | `FileContext.tsx` | File open/save/close, CRLF normalization, script management |
-| `SnapshotProvider` | `SnapshotContext.tsx` | Snapshot creation, listing, restoration |
-| `EditorProvider` | `EditorContext.tsx` | CodeMirror editor state (view, text, selection) |
-| `ParkingProvider` | `ParkingContext.tsx` | Parking feature — stashing snippets |
-| `ThemeProvider` | `ThemeContext.tsx` | Theme state and synchronization across windows |
-| `SprintProvider` | `SprintContext.tsx` | Sprint tracking — word count goals |
-
-**Nesting order** (in `AppProviders.tsx`):
-```
-UIProvider
-  CustomModalProvider
-    FileProvider
-      SnapshotProvider
-        EditorProvider
-          ParkingProvider
-```
-
-## Key Components
-
-### Layout Shell
-
-| Component | File | Purpose |
-|-----------|------|---------|
-| `MainLayout` | `layout/MainLayout.tsx` | Grid layout combining HeaderBar, ActivityBar, Workspace, StatusBar |
-| `HeaderBar` | `layout/HeaderBar.tsx` | File tabs, window controls, multi-window actions |
-| `ActivityBar` | `layout/ActivityBar.tsx` | Sidebar icon tabs (Outline, Scripts, Characters, Statistics, Notepad, Markers, Tasks, Sprint, Parking) + zoom slider + settings |
-| `StatusBar` | `layout/StatusBar.tsx` | Word/char/page count, sprint tracker, scene location, script switcher |
-| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor |
-| `SidebarViews` | `SidebarViews.tsx` | Routes active sidebar tab to correct panel |
-
-### Editor
-
-| Component | File | Purpose |
-|-----------|------|---------|
-| `FountainEditor` | `FountainEditor.tsx` | Editor shell — context menus, drag-drop, right-click actions |
-| `OutlineView` | `OutlineView.tsx` | Scene/section outline tree with drag-reorder, colors, numbers |
-| `SearchPanel` | `SearchPanel.tsx` | Find/replace panel (Ctrl+F) |
-
-### Modals
-
-| Component | File | Purpose |
-|-----------|------|---------|
-| `ExportModal` | `ExportModal.tsx` | PDF/FDX/FadeIn/CSV/Fountain export with watermark settings |
-| `CommandPalette` | `CommandPalette.tsx` | Fuzzy-search command palette (Ctrl+K) |
-| `StructureImportModal` | `StructureImportModal.tsx` | Import story structure templates |
-| `TitlePageEditorModal` | `TitlePageEditorModal.tsx` | Edit title page fields |
-| `ModalManager` | `ModalManager.tsx` | Coordinates modal rendering |
-
-### Feature Panels (Sidebar tabs)
-
-| Panel | File | Purpose |
-|-------|------|---------|
-| `OutlineView` | `OutlineView.tsx` | Scene/section tree |
-| `ScriptsView` | `ScriptsView.tsx` | Multi-script bundle management |
-| `TodoView` | `TodoView.tsx` | To-do items |
-| `MarkerView` | `MarkerView.tsx` | Line markers |
-| `SprintView` | `SprintView.tsx` | Writing sprint tracker |
-| `SnapshotsPanel` | `SnapshotsPanel.tsx` | File snapshots/versions |
-| `TagManagerWindow` | `TagManagerWindow.tsx` | Scene tag CRUD |
-| `ThemeManagerWindow` | `ThemeManagerWindow.tsx` | Custom theme editor |
 
 ### Separate Windows (rendered standalone via `?modal=`)
 
@@ -223,6 +122,9 @@ UIProvider
 | `SettingsWindow` | `SettingsWindow.tsx` | All app settings |
 | `HelpWindow` | `HelpWindow.tsx` | 47 help articles in 8 categories |
 | `XrayWindow` | `XrayWindow.tsx` | Screenplay analysis dashboard |
+| `TutorialsWindow` | `TutorialsWindow.tsx` | Interactive tutorial launcher |
+| `TagManagerWindow` | `TagManagerWindow.tsx` | Scene tag CRUD |
+| `ThemeManagerWindow` | `ThemeManagerWindow.tsx` | Custom theme editor |
 
 ## Audio System
 
@@ -243,3 +145,17 @@ ActOne uses `@phosphor-icons/react` for all system icons, replacing the legacy h
 - **Dynamic Styling**: The wrapper queries `UIContext` (specifically the `iconStyle` state) to dynamically control the rendering style. The application supports three modes: `duotone` (Dual Tone), `fill` (Solid), and `regular` (Stroke).
 - **Standalone Mode Resilience**: Since secondary windows (like `SettingsWindow`, `HelpWindow`, etc.) run in separate processes without a root React Context, calling `useUI()` directly would crash the DOM render. To prevent this, the wrapper catches context lookup errors and falls back to reading the icon weight directly from `localStorage`, ensuring robust standalone window rendering.
 
+## Multi-Tab File Management
+
+FileContext supports multiple open files simultaneously, each tracked by a unique `id`:
+- Files are displayed as tabs in the `HeaderBar`
+- Right-click tab context menu: Close, Close Others, Close All
+- Middle-click to close a tab
+- Tabs show a dirty indicator (small filled circle) when unsaved changes exist
+- The `StatusBar` shows the active file name and save status ("Saving..."/"Saved")
+- On close of the last editor tab: automatically reopens the welcome window
+- On window close with dirty files: prompts Save & Exit / Close Anyway / Cancel
+
+## Clipboards & Selection Core Fixes
+
+To achieve a seamless native app writing experience, several core adjustments were made to CodeMirror event interceptors and layout coordinates. These fixes are documented in `05-editor.md`.

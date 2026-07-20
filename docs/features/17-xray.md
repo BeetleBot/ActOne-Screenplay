@@ -1,6 +1,6 @@
 # X-Ray Analysis
 
-**Window:** `?modal=xray` (2152 lines — the largest component in the application)
+**Window:** `?modal=xray` — Screenplay analysis dashboard (one of the larger components)
 
 The X-Ray window is a comprehensive screenplay analysis dashboard.
 

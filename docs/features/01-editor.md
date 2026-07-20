@@ -32,15 +32,34 @@ Straight quotes (`"` and `'`) are automatically converted to curly typographic q
 
 ### Right-Click Context Menu
 
-Opens a context menu with options:
-- **Insert Marker** — add a margin marker
-- **Set Scene Color** — color-code the current scene
-- **Add/Remove Note** — toggle `[[note]]` annotation
-- **Transform Case** — UPPERCASE, lowercase, Title Case
-- **Look Up** — open word in system dictionary
+Right-clicking opens a context menu with options:
+
+**Selection Stats** (when text is selected): word count and character count
+
+**Clipboard Actions:**
+- **Cut** / **Copy** / **Paste** — uses Tauri clipboard plugin (`@tauri-apps/plugin-clipboard-manager`)
+
+**Tagging:**
+- **Tag** → submenu with 15 production categories (Cast, Prop, VFX, SFX, Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other)
+- **Remove Tag** (if a tag exists on the current range)
+- **Quick Tag** (Ctrl+right-click to bypass the submenu)
+
+**Scene:**
+- **Highlight Scene** → submenu with 8 scene colors (Red, Orange, Yellow, Green, Blue, Purple, Pink, Clear)
+
+**Markers:**
+- **Drop Marker** → submenu with 11 marker colors (Blue, Brown, Cyan, Green, Magenta, Orange, Pink, Purple, Red, Yellow, Default)
+
+**Formatting:**
+- **Format** → submenu: Bold (`**`), Italic (`*`), Underline (`_`)
+
+**Text:**
+- **Transform Case** → submenu: UPPERCASE, Title Case, lowercase
+- **Look Up Word** — opens Google search in browser
+
+**Tasks & Parking:**
+- **Create Task** — create a to-do item from selected text
 - **Park Selection** — stash selected text for later
-- **Tag Scene** — attach production tags
-- **Create Task** — create a to-do item from line
 
 ### Zen Mode
 
@@ -67,14 +86,6 @@ Keeps your editing line vertically centered on screen. As you type, the page scr
 - **Refinement Toggles**: Case-sensitive (`Aa`) and whole-word (`\b`) matching.
 - **Flexible Replacing**: Replace single, replace selected (via checkboxes), or replace all.
 
-
-### Right-click Menu
-
-Right-clicking in the editor opens a context menu with actions that operate on the **pre-click selection** (captured before the click collapses it):
-- Cut / Copy / Paste — uses the Tauri clipboard plugin
-- Change case (Upper, Lower, Title)
-- Toggle inline formatting (**bold**, *italic*, underline)
-- Quick Tag, Park selection, Drop marker, Create task
 
 ### Dual Dialogue Indentation
 

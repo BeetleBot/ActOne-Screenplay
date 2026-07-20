@@ -35,7 +35,6 @@
 - Toggle Zen Mode
 - Toggle Typewriter Mode
 - Switch to Editor View
-- Switch to Planning Board
 - Zoom In / Zoom Out / Reset Zoom
 
 ### Navigation

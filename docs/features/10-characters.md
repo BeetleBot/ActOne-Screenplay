@@ -1,6 +1,6 @@
 # Character Management
 
-**Sidebar Tab 3** — The character panel extracts and manages character information from your screenplay.
+The character panel is embedded within the **Outline** sidebar tab as an inline sub-tab (alongside Statistics). Switch between Outline, Characters, and Statistics using tab headers inside the Outline panel.
 
 ## Character List
 

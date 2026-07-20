@@ -1,6 +1,6 @@
 # Settings
 
-**Window:** `?modal=settings` (574 lines)
+**Window:** `?modal=settings` (~574 lines)
 
 ## General
 
@@ -14,36 +14,37 @@
 
 | Setting | Description |
 |---------|-------------|
-| Font Size | Editor text size (points) |
-| Tab Size | Number of spaces per tab |
+| Font Family | Courier Prime or Courier Prime Sans |
 | Enable Autocomplete | Toggle ghost text suggestions |
 | Enable Smart Quotes | Auto-convert to curly quotes |
 | Enable Auto-Match Brackets | Auto-close parentheses, brackets, quotes |
-| Show Line Numbers | Toggle line number gutter |
-| Word Wrap | Toggle soft word wrap |
-| Typewriter Mode | Default state |
+| Typewriter Mode | Default state (on by default) |
 | Hide Fountain Markup | Show/hide formatting characters |
+| Enable Auto-Save | Toggle periodic auto-save (on by default, 5 min interval) |
+| Enable Line Focus | Dim un-focused lines |
+| Hide Tags | Hide production tag decorations |
 
 ## Audio
 
 | Setting | Description |
 |---------|-------------|
-| Ambient Sounds | Toggle ambient typing sounds (now powered by a bundled MP3 asset engine rather than procedural generation for higher quality and reliability) |
+| Ambient Sounds | Toggle ambient typing sounds (bundled MP3 asset engine) |
 
 ## Appearance
 
 | Setting | Description |
 |---------|-------------|
 | Theme | Select from 17 built-in + custom themes |
-| App Scale | UI size percentage (100/110/125/150) |
+| App Scale | UI size percentage (50–300%, step 5, default 100) |
 | Theme Manager | Open custom theme editor |
+| Interface Scale | Separate from zoom — controls overall UI chrome size |
 
 ## Export
 
 | Setting | Description |
 |---------|-------------|
-| Default Paper Size | US Letter or A4 |
-| Default Font | Courier Prime or Courier Prime Sans |
+| Default Paper Size | US Letter or A4 (default A4) |
+| Default Font | Courier Prime Sans (default) or Courier Prime |
 | Mirror Scene Numbers | Off / Left / Mirror |
 | Export Sections | Include section headers |
 | Export Synopses | Include synopsis lines |
@@ -55,9 +56,11 @@
 | Setting | Description |
 |---------|-------------|
 | Enable Snapshots | Toggle auto-snapshot feature |
+| Enable Auto Snapshots | Periodic auto-snapshots (default every 5 min) |
+| Snapshot on Save | Create snapshot on every manual save (default on) |
 | Snapshot Location | Project folder / App data / Custom |
 | Custom Path | Directory for custom snapshot storage |
-| Max Retention | Number of auto/on_save snapshots to keep |
+| Max Retention | Number of auto/on_save snapshots to keep (default 10) |
 
 ## Microsoft Store
 

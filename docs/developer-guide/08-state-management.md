@@ -4,6 +4,8 @@ ActOne uses **React Context** for all state management. Each domain has a dedica
 
 ## Context Tree
 
+The 6 core providers are nested inside `AppProviders`:
+
 ```
 UIProvider
   └── CustomModalProvider
@@ -13,58 +15,117 @@ UIProvider
                           └── ParkingProvider
 ```
 
+Two additional providers wrap `AppInner` in `App.tsx`:
+
+```
+AppProviders
+  └── ThemeProvider
+        └── SprintProvider
+              └── AppInner
+```
+
 ## Context Details
 
 ### UIContext (`src/context/UIContext.tsx`)
 
-Manages UI chrome state:
+Manages UI chrome state and editor preferences:
 
 | State | Type | Description |
 |-------|------|-------------|
+| `fontFamily` | `'courier-prime' \| 'courier-prime-sans'` | Editor font |
+| `paperSize` | `'letter' \| 'a4'` | Paper size for export |
+| `isZenMode` | `boolean` | Full-screen distraction-free mode |
+| `typewriterMode` | `boolean` | Cursor-centered scroll mode |
 | `activeTab` | `string` | Current sidebar tab ID |
-| `viewMode` | `'editor' \| 'planning'` | Current view |
-| `zenMode` | `boolean` | Full-screen editor mode |
-| `zoomLevel` | `number` | Editor zoom percentage |
-| `sidebarWidth` | `number` | Sidebar width in pixels |
-| `rightPaneOpen` | `boolean` | Right pane visibility |
-| `iconStyle` | `'fill' \| 'duotone' \| 'regular'` | Active icon style for Phosphor icons |
+| `zoomLevel` | `number` | Editor zoom percentage (50-400, step 10) |
+| `appScale` | `number` | UI scale percentage (50-300, step 5) |
+| `autocompleteEnabled` | `boolean` | Ghost text suggestions |
+| `smartQuotesEnabled` | `boolean` | Auto curly quotes |
+| `matchParenthesesEnabled` | `boolean` | Auto-close brackets |
+| `activeRightPane` | `string \| null` | Right pane type ('search' \| 'ambient' \| null) |
+| `rightPaneWidth` | `number` | Right pane width in px (240-700) |
+| `autoSaveEnabled` | `boolean` | Auto-save toggle |
+| `autoSaveInterval` | `number` | Auto-save interval in ms (default 300000) |
+| `hideSyntaxEnabled` | `boolean` | Hide Fountain markup characters |
+| `hideTagsEnabled` | `boolean` | Hide production tag decorations |
+| `lineFocusEnabled` | `boolean` | Focus on active line |
+| `fountainColorsEnabled` | `boolean` | Toggle syntax coloring |
+| `iconStyle` | `'fill' \| 'duotone' \| 'regular'` | Phosphor icon weight |
+| `activeAmbientTrack` | `string \| null` | Currently playing ambient track |
+| `ambientVolume` | `number` | Ambient volume (0-1) |
 
 ### FileContext (`src/context/FileContext.tsx`)
 
-Manages file operations and document state:
+Manages multi-tab file operations and document state:
 
 | State | Type | Description |
 |-------|------|-------------|
-| `rawText` | `string` | Current document text |
-| `filePath` | `string \| null` | Current file path |
-| `isDirty` | `boolean` | Unsaved changes flag |
+| `files` | `ScreenplayFile[]` | All open files |
+| `activeFileId` | `string` | Currently active file ID |
+| `filePath` | `string \| null` | Current file's path |
+| `rawText` | `string` | Current file's text |
+| `parsedDoc` | `FountainDocument` | Parsed screenplay document |
+| `isSaving` | `boolean` | Save in progress flag |
+| `recentFiles` | `RecentFile[]` | Recent files list (max 10) |
 | `scripts` | `ScriptInfo[]` | Multi-script bundle scripts |
 | `activeScriptIndex` | `number` | Active script index |
-| `recentFiles` | `RecentFile[]` | Recent files list |
+| `isBundle` | `boolean` | Whether current file is .actone bundle |
+| `scriptFileName` | `string` | Active script file name |
+| `activeScriptName` | `string` | Active script display name |
+| `saveStatus` | `'idle' \| 'saving' \| 'saved'` | Save operation status |
 
 | Action | Description |
 |--------|-------------|
-| `newFile()` | Create new screenplay |
+| `newFile(initialContent?)` | Create new screenplay |
 | `openFile()` | Open file via dialog |
 | `saveFile()` | Save current file |
 | `saveFileAs()` | Save with new name |
-| `setActiveScript(idx)` | Switch active script |
-| `addScript(name?)` | Add script to bundle |
-| `renameScript(idx, name)` | Rename script |
-| `deleteScript(idx)` | Remove script |
-| `closeFile()` | Close current file |
+| `selectFile(id)` | Switch active file tab |
+| `closeFile(id, force?)` | Close a specific file |
+| `closeOthers(id)` | Close all except specified |
+| `closeAll()` | Close all open files |
+| `openFilePath(path)` | Open a file by direct path |
+| `setRawText(text)` | Update document text |
+| `updateSettings(updater)` | Update settings in parsed doc |
+
+**`ScreenplayFile` structure:**
+```typescript
+interface ScreenplayFile {
+  id: string;
+  filePath: string | null;
+  rawText: string;
+  parsedDoc: FountainDocument;
+  isSaving: boolean;
+  isDirty: boolean;
+  savedText: string;
+  scripts?: ScriptInfo[];
+  activeScriptIndex?: number;
+}
+```
 
 ### EditorContext (`src/context/EditorContext.tsx`)
 
-Bridges CodeMirror state to React:
+Bridges CodeMirror state to React and provides text manipulation actions:
 
 | State | Type | Description |
 |-------|------|-------------|
+| `activeLineId` | `string \| null` | Current active line identifier |
+| `activeLineNumber` | `number` | Current line number (0-indexed, -1 if none) |
+| `selectedSceneId` | `string \| null` | Current scene identifier |
 | `editorView` | `EditorView \| null` | CM6 view instance |
-| `cursorOffset` | `number` | Current cursor position |
-| `selectedRange` | `{from, to}` | Current selection |
-| `currentLine` | `number` | Current line number |
-| `currentSceneIndex` | `number` | Current scene index |
+
+| Action | Description |
+|--------|-------------|
+| `setEditorView(view)` | Register the CM6 view |
+| `updateLineText(lineIndex, newText)` | Replace a single line's text |
+| `updateSettings(updater)` | Update document settings |
+| `reorderScenes(startIndex, endIndex)` | Drag-and-drop scene reorder |
+| `scrollToLine(lineIndex, noFocus?)` | Scroll editor to a specific line |
+| `autoAddSceneNumbers()` | Auto-number all scenes (#1#, #2#, ...) |
+| `clearSceneNumbers()` | Remove all scene numbers |
+| `setActiveLineId(id)` | Track active line |
+| `setActiveLineNumber(num)` | Track active line number |
+| `setSelectedSceneId(id)` | Track selected scene |
 
 ### ThemeContext (`src/context/ThemeContext.tsx`)
 
@@ -72,21 +133,26 @@ Manages theme state across all windows:
 
 | State | Type | Description |
 |-------|------|-------------|
-| `themeId` | `string` | Active theme ID |
-| `appScale` | `number` | UI scale percentage |
+| `theme` | `string` | Active theme ID |
+| `mode` | `'light' \| 'dark'` | Current color mode |
 | `customThemes` | `CustomTheme[]` | User-created themes |
-| `fountainColorsEnabled` | `boolean` | Syntax color toggle |
 
-Theme changes are persisted via the `set_theme_state` Rust command and broadcast to all windows via `theme:state-changed` events.
+| Action | Description |
+|--------|-------------|
+| `setTheme(id)` | Switch theme, persists to localStorage & Rust backend |
+| `toggleMode()` | Toggle light/dark (handles adaptive theme families) |
+| `addCustomTheme(name, isDark, colors)` | Create and save a custom theme (returns id) |
+| `updateCustomTheme(id, name, isDark, colors)` | Update existing custom theme |
+| `deleteCustomTheme(id)` | Remove a custom theme |
 
 ### CustomModalContext (`src/context/CustomModalContext.tsx`)
 
-Provides a declarative modal system:
+Provides a declarative modal dialog system:
 
 | Function | Description |
 |----------|-------------|
-| `showConfirm(options)` | Show confirmation dialog (returns Promise) |
-| `showPrompt(options)` | Show text input dialog (returns Promise) |
+| `showConfirm(options)` | Show confirmation dialog (returns Promise\<string\>) |
+| `showPrompt(options)` | Show text input dialog (returns Promise\<string \| null\>) |
 | `showAlert(options)` | Show alert dialog |
 
 ### SnapshotContext (`src/context/SnapshotContext.tsx`)
@@ -98,6 +164,13 @@ Manages file snapshots via Rust backend:
 | `snapshots` | `SnapshotInfo[]` | Current file's snapshots |
 | `snapshotEnabled` | `boolean` | Feature toggle |
 
+| Action | Description |
+|--------|-------------|
+| `createSnapshot(comment?)` | Create a new snapshot |
+| `deleteSnapshot(id)` | Delete a snapshot |
+| `restoreSnapshot(snapshot)` | Restore from snapshot |
+| `refreshSnapshots()` | Reload snapshot list |
+
 ### ParkingContext (`src/context/ParkingContext.tsx`)
 
 Manages the "parking" feature — stashing text snippets:
@@ -106,26 +179,35 @@ Manages the "parking" feature — stashing text snippets:
 |-------|------|-------------|
 | `parkedItems` | `ParkedItem[]` | Parked text snippets |
 
+| Action | Description |
+|--------|-------------|
+| `addItem(text)` | Add a new parked item |
+| `removeItem(id)` | Remove a specific item |
+
 ### SprintContext (`src/context/SprintContext.tsx`)
 
 Writing sprint tracker:
 
 | State | Type | Description |
 |-------|------|-------------|
-| `isActive` | `boolean` | Sprint in progress |
-| `goal` | `number` | Word count goal |
-| `elapsed` | `number` | Elapsed seconds |
-| `wordCount` | `number` | Words written this sprint |
+| `activeSprints` | `Record<string, SprintSession>` | Active sprint per file |
 | `history` | `SprintSession[]` | Past sprint sessions |
+
+| Action | Description |
+|--------|-------------|
+| `startSprint(fileId, durationMinutes, goal?)` | Start a new sprint |
+| `stopSprint(fileId)` | Stop and save sprint |
+| `getHistory()` | Return sprint history |
 
 ## Data Persistence
 
 | Data | Storage | Mechanism |
 |------|---------|-----------|
-| UI preferences | `localStorage` | Theme ID, scale, sidebar width |
+| UI preferences | `localStorage` | Theme ID, scale, sidebar width, font, paper size, etc. |
 | Recent files | `localStorage` | Recent files list |
-| Custom themes | Rust backend | `actone-theme.json` |
+| Custom themes | `localStorage` | `actone-custom-themes` key |
 | App preferences | Rust backend | `actone-prefs.json` |
+| Theme state | Rust backend | `actone-theme.json` |
 | File content | File system | Via Tauri IPC commands |
 | Bundle metadata | `.actone` ZIP | Inside bundle (characters, todos, etc.) |
 | Per-script settings | Inside bundle | Keyed by script filename |

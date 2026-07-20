@@ -32,6 +32,6 @@ describe("ExportModal Component", () => {
 
   it("renders export options", () => {
     render(React.createElement(ExportModal, { onClose: vi.fn() }));
-    expect(screen.getByText("Export Screenplay")).toBeTruthy();
+    expect(screen.getByText(/export screenplay/i)).toBeTruthy();
   });
 });

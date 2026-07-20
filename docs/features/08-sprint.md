@@ -4,7 +4,7 @@ The sprint tracker is a timed writing session tool for productivity.
 
 ## Starting a Sprint
 
-1. Set a word count goal in the Sprint sidebar tab (Tab 8)
+1. Set a word count goal in the Sprint sidebar tab (Tab 7 — Sprint)
 2. Click **Start Sprint**
 3. A timer begins counting up
 4. Words typed during the sprint are counted in real-time
@@ -12,9 +12,10 @@ The sprint tracker is a timed writing session tool for productivity.
 ## During a Sprint
 
 The status bar displays:
-- Sprint timer (MM:SS)
+- Sprint timer (MM:SS / total minutes)
 - Word count achieved
-- Progress toward goal
+- Words per minute (WPM)
+- A pulsing dot indicator
 
 The Sprint sidebar shows more detail:
 - Elapsed time

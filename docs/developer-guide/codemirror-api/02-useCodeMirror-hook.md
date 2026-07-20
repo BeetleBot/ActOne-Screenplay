@@ -1,34 +1,18 @@
 # useCodeMirror Hook
 
-**File:** `src/editor/useCodeMirror.ts` (~500 lines)
+**File:** `src/editor/useCodeMirror.ts` (~720 lines)
 
 The central React hook that creates and manages the CodeMirror 6 `EditorView` instance.
 
 ## Interface
 
 ```typescript
-function useCodeMirror({
+function useCodeMirror(
     containerRef: RefObject<HTMLDivElement | null>,
-    rawText: string,
-    isReadOnly: boolean,
-    placeholder: string,
-    theme: { isDark: boolean; fountainColors: Record<LineType, string> },
-    fontSize: number,
-    typewriterMode: boolean,
-    zenMode: boolean,
-    onTextChange: (text: string, update: ViewUpdate) => void,
-    onSelectionChange: (offset: number) => void,
-    onSceneChange: (index: number) => void,
-    editorReady: () => void,
-}): UseCodeMirrorReturn;
-
-interface UseCodeMirrorReturn {
-    editorView: EditorView | null;
-    getCursorOffset: () => number;
-    getSelectedRange: () => { from: number; to: number };
-    isEditorFocused: () => boolean;
-}
+): { current: EditorView | null };
 ```
+
+The hook takes only the container ref and reads all configuration (text, theme, font size, modes) from React contexts directly (`useFile`, `useUI`, `useTheme`). It returns a mutable ref object whose `.current` is the `EditorView` instance once mounted.
 
 ## Lifecycle
 

@@ -10,8 +10,8 @@ Snapshots are copies of your file at specific points in time, stored in a snapsh
 
 | Type | Created When | Retention |
 |------|-------------|-----------|
-| `auto` | Periodically (every few minutes) | Max 20 (configurable) |
-| `on_save` | Every manual save | Max 20 (configurable) |
+| `auto` | Periodically (every few minutes) | Max 10 (configurable) |
+| `on_save` | Every manual save | Max 10 (configurable) |
 | `manual` | User-initiated | Kept until manually deleted |
 
 ### Storage Locations

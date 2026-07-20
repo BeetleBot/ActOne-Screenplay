@@ -23,23 +23,26 @@ describe("ThemeContext", () => {
     expect(result.current.customThemes).toEqual([]);
   });
 
-  it("toggles theme mode", () => {
+  it("toggles theme mode", async () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
+    await act(async () => {});
     const initialMode = result.current.mode;
     act(() => result.current.toggleMode());
     expect(result.current.mode).not.toBe(initialMode);
   });
 
-  it("sets a specific theme", () => {
+  it("sets a specific theme", async () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
+    await act(async () => {});
     act(() => result.current.setTheme("dark"));
     expect(result.current.theme).toBe("dark");
     act(() => result.current.setTheme("light"));
     expect(result.current.theme).toBe("light");
   });
 
-  it("adds a custom theme", () => {
+  it("adds a custom theme", async () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
+    await act(async () => {});
     act(() => {
       result.current.addCustomTheme("My Theme", false, {
         editor: "#fff", text: "#000", accent: "#0061a4",
@@ -69,8 +72,9 @@ describe("ThemeContext", () => {
     expect(result.current.customThemes).toHaveLength(0);
   });
 
-  it("updates a custom theme", () => {
+  it("updates a custom theme", async () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
+    await act(async () => {});
     let id: string;
     act(() => {
       id = result.current.addCustomTheme("My Theme", false, {

@@ -16,7 +16,7 @@ FountainEditor.tsx (React shell)
 
 ## Editor Hook (`useCodeMirror.ts`)
 
-Located at `src/editor/useCodeMirror.ts` (~720 lines). This custom React hook manages the full CodeMirror lifecycle:
+Located at `src/editor/useCodeMirror.ts` (~720 lines). Returns a `ViewRef` (via `useRef`) rather than the view directly. This custom React hook manages the full CodeMirror lifecycle:
 
 - Creates `EditorView` instance
 - Configures all extensions (static + dynamic via compartments)

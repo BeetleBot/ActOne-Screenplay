@@ -8,7 +8,7 @@ interface OnboardingTourProps {
   onCloseTour: () => void;
 }
 
-const UI_STEPS: TourStep[] = [
+export const UI_STEPS: TourStep[] = [
   {
     title: "Welcome to ActOne!",
     description: "Let's take a guided tour of the workspace to get you familiar with every part of the interface.",
@@ -74,6 +74,7 @@ const UI_STEPS: TourStep[] = [
     description: "Click the gear icon at the bottom of the Activity Bar to open the Quick Settings menu. Toggle Typewriter Mode, switch themes, choose Letter/A4 paper size, hide Fountain markup, and open the full Settings window.",
   },
   {
+    targetId: "quick-settings",
     title: "Escape to Close",
     description: "Press Escape to close menus and dropdowns like the Quick Settings menu. It's a universal shortcut across ActOne. Note: Escape does not close sidebar panels — those need a button click on the active Activity Bar tab.",
     detect: () => {
@@ -138,7 +139,7 @@ const UI_STEPS: TourStep[] = [
   },
 ];
 
-const FOUNTAIN_STEPS: TourStep[] = [
+export const FOUNTAIN_STEPS: TourStep[] = [
   {
     title: "Basic Fountain Syntax",
     description: "Fountain is a simple markup standard that lets you write screenplays in plain text. ActOne auto-formats it into standard screenplay layout instantly. Let's learn by typing!",
@@ -255,7 +256,7 @@ const FOUNTAIN_STEPS: TourStep[] = [
   },
 ];
 
-const ADVANCED_STEPS: TourStep[] = [
+export const ADVANCED_STEPS: TourStep[] = [
   {
     title: "Advanced Fountain Syntax",
     description: "Let's learn six professional features: Sections, Subsections, Synopses, Scene Colours, Storyline Tags, and Markers. You'll type each one in a sandbox, then explore a full demo.",
@@ -369,6 +370,51 @@ const ADVANCED_STEPS: TourStep[] = [
   },
 ];
 
+export const THEMING_STEPS: TourStep[] = [
+  {
+    title: "Welcome to Themes",
+    description: "The Theme Manager lets you switch between built-in themes, create your own, and export/import .actheme files. Let's walk through each feature.",
+    noMask: true,
+    cardPosition: "center",
+    cardWidth: 260,
+    window: "theme-manager",
+  },
+  {
+    title: "Pick a Theme",
+    description: "Browse the theme list on the left. Each theme changes the app's entire color scheme. Try clicking a different theme to see the preview update in real time.",
+    taskInstructions: "Click any theme from the list on the left to select it.",
+    noMask: true,
+    cardPosition: "right",
+    cardWidth: 260,
+    window: "theme-manager",
+  },
+  {
+    title: "Create Custom Theme",
+    description: "Scroll down the theme list on the left. Near the bottom, in the CUSTOM THEMES section, click the Create button to build your own theme. You'll see color pickers for each UI element — pick any colors you like.",
+    taskInstructions: "Scroll down and click the Create button to open the custom theme form.",
+    noMask: true,
+    cardPosition: "right",
+    cardWidth: 260,
+    window: "theme-manager",
+  },
+  {
+    title: "Export & Import",
+    description: "After saving a custom theme, use the Export button (download icon) next to it to save as a .actheme file — share themes or back them up. Use the Import button at the top of the Custom Themes section to load a .actheme file from disk. .actheme files are plain JSON and can be edited in any text editor.",
+    noMask: true,
+    cardPosition: "center",
+    cardWidth: 260,
+    window: "theme-manager",
+  },
+  {
+    title: "Themes Complete!",
+    description: "You've learned how to pick themes, create custom ones, and work with .actheme files. Happy theming!",
+    noMask: true,
+    cardPosition: "center",
+    cardWidth: 260,
+    window: "theme-manager",
+  },
+];
+
 export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   activeTour,
   onCloseTour,
@@ -381,11 +427,11 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
   const steps = activeTour === "fountain" 
     ? FOUNTAIN_STEPS 
-    : (activeTour === "tagging" ? TAGGING_STEPS : (activeTour === "advanced" ? ADVANCED_STEPS : UI_STEPS));
+    : (activeTour === "tagging" ? TAGGING_STEPS : (activeTour === "advanced" ? ADVANCED_STEPS : (activeTour === "theming" ? THEMING_STEPS : UI_STEPS)));
   const currentStep = steps[activeStep];
   const tourName = activeTour === "fountain" 
     ? "Fountain Syntax" 
-    : (activeTour === "tagging" ? "Tagging Tour" : (activeTour === "advanced" ? "Advanced Syntax" : "App Tour"));
+    : (activeTour === "tagging" ? "Tagging Tour" : (activeTour === "advanced" ? "Advanced Syntax" : (activeTour === "theming" ? "Themes" : "App Tour")));
 
   const setActiveStep = (step: number | ((prev: number) => number)) => {
     setActiveStepState(step);

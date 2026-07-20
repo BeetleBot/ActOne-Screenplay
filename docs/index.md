@@ -22,14 +22,14 @@ Architecture, setup, and implementation details for developers working on ActOne
 | [Frontend Architecture](developer-guide/03-frontend.md) | Component tree, state management, all UI components |
 | [Editor Integration](developer-guide/05-editor.md) | CodeMirror 6 setup, extensions, editor features |
 | [Fountain Parser](developer-guide/06-fountain-parser.md) | Both frontend (TypeScript) and backend (Rust) parsers |
-| [State Management](developer-guide/08-state-management.md) | All 8 React contexts, state, actions, persistence |
+| [State Management](developer-guide/08-state-management.md) | All 6 React contexts, state, actions, persistence |
 | [Theming System](developer-guide/11-theming.md) | 17 built-in themes, category+adaptive system, custom themes, color system |
 
 ### Backend
 
 | Document | Description |
 |----------|-------------|
-| [Rust Backend](developer-guide/04-backend.md) | Architecture, modules, all 30+ Tauri commands |
+| [Rust Backend](developer-guide/04-backend.md) | Architecture, modules, all 35+ Tauri commands |
 | [PDF Export Engine](developer-guide/07-pdf-export.md) | Page layout, font system, pagination algorithm, watermarks |
 
 ### Tauri API Reference
@@ -72,7 +72,7 @@ Frontend API and data format documentation.
 | Document | Description |
 |----------|-------------|
 | [Frontend Hooks](api-reference/01-frontend-hooks.md) | useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows |
-| [Frontend Contexts](api-reference/02-frontend-contexts.md) | All 8 React context APIs with state and actions |
+| [Frontend Contexts](api-reference/02-frontend-contexts.md) | All 6 React context APIs with state and actions |
 | [.actone Bundle Format](api-reference/03-actone-bundle.md) | File structure, pack/unpack API, legacy compat |
 | [Fountain Syntax Reference](api-reference/04-fountain-syntax.md) | Complete Fountain markup reference with ActOne extensions |
 
@@ -86,8 +86,8 @@ End-user documentation for every feature in ActOne.
 |----------|-------------|
 | [Editor](features/01-editor.md) | Core editing features, syntax highlighting, smart typing |
 | [Autocomplete](features/02-autocomplete.md) | Ghost text suggestions for characters, transitions, etc. |
-| [Sidebar Panels](features/03-sidebar.md) | All 9 sidebar tabs: Outline, Scripts, Characters, etc. |
-| [Planning Board](features/04-planning-board.md) | Visual kanban scene organization |
+| [Sidebar Panels](features/03-sidebar.md) | All 8 sidebar tabs: Outline, Scripts, Notepad, etc. |
+| [Planning Board](features/04-planning-board.md) | _(Coming Soon)_ Visual kanban scene organization |
 | [Export](features/05-export.md) | PDF, FDX, FadeIn, Fountain, CSV export |
 | [Multi-Script Bundles](features/06-scripts.md) | Managing multiple scripts in .actone bundles |
 | [Parking](features/07-parking.md) | Temporary text storage |
@@ -109,7 +109,7 @@ End-user documentation for every feature in ActOne.
 
 ## Quick Links
 
-- **Source:** `src/` — React/TypeScript frontend (76 files)
-- **Backend:** `src-tauri/src/` — Rust backend (12 modules)
+- **Source:** `src/` — React/TypeScript frontend (85+ files)
+- **Backend:** `src-tauri/src/` — Rust backend (12 modules, 35+ source files)
 - **Build scripts:** `Release/` — Linux and Windows packaging
 - **Config:** `package.json`, `vite.config.ts`, `tsconfig.json`, `tauri.conf.json`

@@ -65,7 +65,6 @@ function AppInner() {
           } else {
             const res = await fetch("/samples/BeeDetectiveTour.actone");
             const buf = await res.arrayBuffer();
-            const { unpackActoneBundle } = await import("./utils");
             const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
             newFile(bundle.scripts[0]?.content || "");
           }
@@ -101,7 +100,6 @@ function AppInner() {
           } else {
             const res = await fetch("/samples/BeeDetectiveTour.actone");
             const buf = await res.arrayBuffer();
-            const { unpackActoneBundle } = await import("./utils");
             const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
             newFile(bundle.scripts[0]?.content || "");
           }

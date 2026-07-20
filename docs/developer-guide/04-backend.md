@@ -6,7 +6,7 @@
 
 ## Main Module (`lib.rs`)
 
-**`src-tauri/src/lib.rs`** (661 lines) is the heart of the backend. It contains all Tauri IPC command handlers, state management, plugin registration, and application lifecycle logic.
+**`src-tauri/src/lib.rs`** (~776 lines) is the heart of the backend. It contains all Tauri IPC command handlers, state management, plugin registration, and application lifecycle logic.
 
 ### Managed State
 
@@ -15,14 +15,14 @@ Three pieces of state are managed via `tauri::State`:
 | State Type | Wrapper | Persistence |
 |------------|---------|-------------|
 | `FontCache` | `Mutex<FontCache>` | None (rebuilt on startup) |
-| `ThemeConfig` | `Mutex<ThemeState>` | `actone-theme.json` |
-| `AppPrefsState` | `Mutex<HashMap<String,String>>` | `actone-prefs.json` |
+| `ThemeConfig` | `Mutex<ThemeState>` | `<app_data>/actone-theme.json` |
+| `AppPrefsState` | `Mutex<HashMap<String,String>>` | `<app_data>/actone-prefs.json` |
 
 ### Setup Flow
 
 1. **(Windows only)** Validates Microsoft Store license — exits with code 1 if invalid
 2. Reads CLI args, emits `file-opened` event if matching files found
-3. Initializes FontCache, ThemeConfig, AppPrefsState
+3. Initializes FontCache via cosmic-text fontdb, ThemeConfig, AppPrefsState
 4. Registers all invoke handlers
 
 ### Sub-Modules
@@ -35,13 +35,13 @@ Three pieces of state are managed via `tauri::State`:
 | `app_prefs` | `app_prefs.rs` | Generic key-value preferences |
 | `snapshots` | `snapshots.rs` | File snapshot/versioning system |
 
-## Tauri Commands (30+)
+## Tauri Commands (35+)
 
 ### File I/O
 
 | Command | Description |
 |---------|-------------|
-| `open_file_dialog` | Native file picker for `.actone`/`.fountain`/`.txt`; returns `{path, content}` |
+| `open_file_dialog` | Native file picker for `.actone`/`.fountain`/`.txt`; returns `{path, content}` (empty content for .actone) |
 | `save_file_dialog` | Save dialog for `.actone`/`.fountain`; writes content |
 | `save_file_content` | Writes string content to a given path |
 | `read_file_content` | Reads a file as UTF-8 string |
@@ -77,7 +77,7 @@ Three pieces of state are managed via `tauri::State`:
 
 | Command | Description |
 |---------|-------------|
-| `get_system_fonts` | Lists all system font families |
+| `get_system_fonts` | Lists all system font families (alphabetically sorted) |
 | `get_fonts_for_script` | Recommended fonts for a script type |
 | `get_detected_scripts` | Detects Indic scripts in text |
 
@@ -94,7 +94,7 @@ Three pieces of state are managed via `tauri::State`:
 
 | Command | Description |
 |---------|-------------|
-| `create_snapshot` | Creates a file snapshot |
+| `create_snapshot` | Creates a file snapshot (with retention pruning) |
 | `get_snapshots` | Lists snapshots for a file |
 | `delete_snapshot` | Deletes a snapshot |
 | `restore_snapshot` | Restores a file from snapshot |
@@ -105,7 +105,7 @@ Three pieces of state are managed via `tauri::State`:
 
 | Command | Description |
 |---------|-------------|
-| `get_structures` | Lists all story structure templates |
+| `get_structures` | Lists all 8 story structure templates with beats |
 | `get_structure_template` | Returns raw Fountain content for a structure |
 
 ### Licensing
@@ -121,6 +121,7 @@ The Rust backend uses Tauri's event system:
 - `theme:state-changed` — emitted when theme is updated (consumed by all windows)
 - `app-prefs:changed` — emitted when preferences change
 - `file-opened` — emitted when a file is opened via CLI args or file association
+- `editor:ready` — emitted when the editor window is ready and has handled its action
 
 ## Font Management
 
@@ -135,6 +136,6 @@ The `font_cache` module:
 The `snapshots` module provides file versioning:
 - Three location modes: `project` (`.snapshots/` next to file), `custom`, `appdata`
 - Three types: `auto`, `manual`, `on_save`
-- Configurable retention (default 20 for auto/on_save)
+- Configurable retention (default 10 for auto/on_save)
 - Index stored in `index.json` within the snapshot directory
 - Implements custom date formatting (no `chrono` dependency)

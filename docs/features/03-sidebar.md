@@ -1,16 +1,21 @@
 # Sidebar Panels
 
-The activity bar on the left side provides access to 9 sidebar panels:
+The activity bar on the left side provides access to **8 sidebar panels**. Press `Ctrl+\` to toggle sidebar visibility.
+
+## Command Palette Button
+
+At the top of the activity bar, a solid ActOne logo button opens the Command Palette (`Ctrl+K`). It has a bounce animation on click.
 
 ## Outline (Tab 1)
 
-`Ctrl+\` to toggle. Shows a tree view of the screenplay structure:
+Shows a tree view of the screenplay structure:
 
 - **Sections** (`#`, `##`, `###`) as collapsible groups
 - **Scene headings** with scene numbers and color indicators
 - **Synopsis lines** displayed beneath their scene
 - **Drag-and-drop** reordering of scenes (rearranges the document text)
 - Click any entry to jump to that line in the editor
+- **Characters & Statistics** are accessible as inline tab headers within the Outline view (not separate sidebar tabs)
 
 ## Scripts (Tab 2)
 
@@ -21,50 +26,51 @@ Only visible when a multi-script `.actone` bundle is open. Lists all scripts in 
 - `⋮` menu per script: Rename, Delete
 - **Export All** button to export each script individually
 
-## Characters (Tab 3)
+## Notepad (Tab 3)
 
-Shows the character list extracted from the screenplay:
+A simple scratchpad for notes and ideas. Content is saved in the `.actone` bundle as a per-script setting (`notepad` key).
 
-- All characters with their gender indicator
-- Click to jump to character's first appearance
-- Gender-cycle pill (toggles through gender options)
-- Sources the autocomplete character list
+- Shows a banner prompting to save as `.actone` if the file isn't already a bundle
+- Free-form text area with placeholder hints
 
-## Statistics (Tab 4)
-
-Writing statistics for the current document:
-
-- Word count
-- Character count
-- Page count (estimated)
-- Scene count
-- Dialogue vs action ratio
-
-## Notepad (Tab 5)
-
-A simple scratchpad for notes and ideas. Content is saved in the `.actone` bundle as `notepad.json`.
-
-## Markers (Tab 6)
+## Markers (Tab 4)
 
 Shows all margin markers placed in the document:
 
-- Color-coded by marker type
+- Color-coded by marker type (blue, brown, cyan, green, magenta, orange, pink, purple, red, yellow)
 - Click to jump to marker location
-- Add/remove markers from the editor context menu
+- Add markers from the editor right-click context menu
 
-## Tasks (Tab 7)
+## Tasks (Tab 5)
 
 To-do list integrated with the screenplay:
 
 - Create tasks from editor lines (right-click → "Create Task")
+- Alternatively, right-click → "Tag" → Quick Tag (Ctrl+right-click)
 - Check/uncheck completion
 - Delete tasks
-- Tasks saved in `todos.json` in the `.actone` bundle
+- Tasks saved as `todos` array in the document settings
 
-## Sprint (Tab 8)
+## Snapshots (Tab 6)
 
-Writing sprint tracker (see Sprint feature doc).
+File versioning panel (see Snapshots feature doc). Lists all snapshots with timestamps, types, and file sizes.
 
-## Parking (Tab 9)
+## Sprint (Tab 7)
 
-Temporary text storage (see Parking feature doc).
+Writing sprint tracker (see Sprint feature doc). Set goals, start/pause/resume/stop timed writing sessions.
+
+## Parking (Tab 8)
+
+Temporary text storage (see Parking feature doc). Park selected text and click to reinsert.
+
+## Quick Settings
+
+The gear icon at the bottom of the activity bar opens a Quick Settings menu with:
+- **Editor Preferences**: Typewriter Mode, Hide Fountain Markup, Syntax Colors toggles
+- **Theme**: Grid of theme swatches organized by category (Classic, Catppuccin, Pitch, Pastel, Custom), including adaptive variants, with "Open Theme Manager" button
+- **Layout & Page**: Letter/A4 paper size toggle
+- **Full Settings**: Opens the Settings window
+
+## Sidebar Width
+
+The sidebar is resizable by dragging the divider between the sidebar and the editor (200px–800px range).

@@ -56,7 +56,10 @@ Release\windows\build.bat
 |--------|-------------|
 | `npm run dev` | Vite dev server |
 | `npm run test` | Run Vitest tests |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run build` | tsc + vite build |
 | `npm run lint` | ESLint check |
+| `npm run typecheck` | TypeScript type check |
 | `npm run format` | Prettier formatting |
 | `npm run tauri dev` | Tauri + Vite dev |
 | `npm run tauri build` | Production build |

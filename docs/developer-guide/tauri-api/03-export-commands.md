@@ -58,10 +58,10 @@ invoke<string | null>("export_pdf", {
 | `watermarkColor` | `string` | `"#000000"` | Watermark color |
 | `scriptFonts` | `Record<string, string>` | `{}` | Per-script font overrides |
 
-**ElementFormats structure:**
+**ElementFormats structure (snake_case keys):**
 ```typescript
 interface ElementFormats {
-    sceneHeading: ElementFormat;
+    scene_heading: ElementFormat;
     action: ElementFormat;
     character: ElementFormat;
     parenthetical: ElementFormat;
@@ -69,7 +69,7 @@ interface ElementFormats {
     lyrics: ElementFormat;
     transition: ElementFormat;
     shot: ElementFormat;
-    centeredText: ElementFormat;
+    centered_text: ElementFormat;
 }
 interface ElementFormat { bold: boolean; italic: boolean; underline: boolean; }
 ```

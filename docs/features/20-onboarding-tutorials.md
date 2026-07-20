@@ -2,6 +2,16 @@
 
 ActOne includes an interactive tour and tutorial system designed to orient new users with the application interface and teach standard screenplay syntax using Fountain in a live sandbox environment.
 
+## Tutorials Window
+
+A dedicated **Tutorials Window** component (`src/components/TutorialsWindow.tsx`) serves as a launcher for all available tours. It can be opened via:
+
+- **Welcome Screen** → "Interactive Tutorials" launcher card
+- **Command Palette** → "Interactive Tutorial" command
+- **Programmatically** via `openTutorialsWindow()` from `useModalWindows` hook
+
+The window is rendered either as a standalone Tauri window (`?modal=tutorials`, 500×400, not resizable) or as a MUI Dialog modal inside the editor window. It displays 5 tour cards (App Tour, Fountain Syntax, Tagging, Advanced Syntax, Theming) with descriptions and a "Start" button for each.
+
 ---
 
 ## Overview

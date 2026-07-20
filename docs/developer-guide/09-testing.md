@@ -52,7 +52,7 @@ src/
     └── perScriptSettings.test.ts
 ```
 
-Approximately **25 test files** covering frontend, editor, parser, contexts, components, and utilities.
+Approximately **31 test files** covering frontend, editor, parser, contexts, components, and utilities.
 
 ## Rust Backend Tests
 

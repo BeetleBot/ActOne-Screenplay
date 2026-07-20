@@ -14,7 +14,7 @@ ActOne registers custom CodeMirror keymaps in addition to the default editor key
 
 ## Global Shortcuts (in `useKeyboardShortcuts.ts`)
 
-**File:** `src/hooks/useKeyboardShortcuts.ts` (~200 lines)
+**File:** `src/hooks/useKeyboardShortcuts.ts` (~214 lines)
 
 | Shortcut | Action |
 |----------|--------|
@@ -22,25 +22,30 @@ ActOne registers custom CodeMirror keymaps in addition to the default editor key
 | `Ctrl+O` | Open screenplay |
 | `Ctrl+S` | Save |
 | `Ctrl+Shift+S` | Save As |
-| `Ctrl+W` / `Alt+Q` | Close tab |
+| `Ctrl+W` / `Alt+Q` | Close current tab |
 | `Ctrl+P` | Export / Print |
 | `Ctrl+,` | Settings |
-| `Ctrl+F` | Find |
-| `Ctrl+Shift+F` | Find & Replace |
+| `Ctrl+F` | Find (opens search pane) |
 | `Ctrl+K` | Command Palette |
 | `Ctrl+\` | Toggle sidebar |
 | `Ctrl+Alt+Enter` | Toggle Zen Mode |
 | `Ctrl+=` | Zoom in |
 | `Ctrl+-` | Zoom out |
 | `Ctrl+0` | Reset zoom |
-| `Ctrl+Shift+P` | Switch Editor/Planning Board |
 | `Ctrl+B` | Bold (`**`) |
 | `Ctrl+I` | Italic (`*`) |
 | `Ctrl+U` | Underline (`_`) |
-| `Shift+Alt+C` | Clean spaces |
+| `Ctrl+Shift+F` | (reserved for Find & Replace) |
+| `Alt+S` | Toggle Snapshots panel |
+| `Alt+Shift+?` | Help / `F1` |
+| `Alt+=` | Interface scale in |
+| `Alt+-` | Interface scale out |
+| `Alt+0` | Reset interface scale |
 | `Escape` | Focus editor |
-| `Ctrl+Tab` | Next tab |
-| `Ctrl+Shift+Tab` | Previous tab |
+
+### Disabled State Behavior
+
+When a modal is active (`isModalActive`), only `Ctrl+K` (Command Palette) and `Ctrl+,` (Settings) remain functional. All other shortcuts are suppressed.
 
 ## Implementing New Shortcuts
 
@@ -48,14 +53,16 @@ To add a new shortcut:
 
 1. Add a `useEffect` in `useKeyboardShortcuts.ts`:
    ```typescript
-   useShortcut("Ctrl+Shift+Something", () => {
-       // handler
-   });
+   if (key === "x" && ctrl) {
+     e.preventDefault();
+     actionsRef.current.myHandler();
+     return;
+   }
    ```
 
 2. If it's editor-specific, add to the CodeMirror keymap in `useCodeMirror.ts`:
    ```typescript
    keymap.of([
-       { key: "Ctrl-Shift-something", run: myHandler },
+     { key: "Ctrl-Shift-something", run: myHandler },
    ])
    ```

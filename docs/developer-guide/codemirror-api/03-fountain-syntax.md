@@ -1,6 +1,6 @@
 # Fountain Syntax Extension
 
-**File:** `src/editor/fountainSyntax.ts` (~400 lines)
+**File:** `src/editor/fountainSyntax.ts` (~480 lines)
 
 A custom CodeMirror 6 `StateField` that provides real-time Fountain line-type classification and syntax highlighting decorations.
 

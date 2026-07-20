@@ -78,10 +78,11 @@ ActOne uses Tauri's multi-webview capability. The main window launches an editor
 
 | Window | ID | Purpose |
 |--------|----|---------|
-| Welcome | `welcome` | Initial landing (600x540, no decorations) |
-| Editor | `main` | Full screenplay editor |
-| Settings | `settings` | App settings modal |
-| Help | `help` | Help guide (47 articles) |
-| Tag Manager | `tag-manager` | Scene tag management |
-| Theme Manager | `theme-manager` | Custom theme editor |
-| X-Ray | `xray` | Screenplay analysis tools |
+| Welcome | `welcome` | Initial landing (600x540, no decorations, not resizable) |
+| Editor | `main` | Full screenplay editor (multi-tab, multi-script) |
+| Settings | `settings` | App settings modal (500x600, not resizable) |
+| Help | `help` | Help guide (47 articles across 8 categories, 900x600 resizable) |
+| Tag Manager | `tag-manager` | Scene tag & category CRUD (1100x700 resizable, can maximize) |
+| Theme Manager | `theme-manager` | Custom theme editor (700x580 resizable) |
+| X-Ray | `xray` | Screenplay analysis dashboard (700x580 resizable) |
+| Tutorials | `tutorials` | Interactive tutorial launcher (500x400, not resizable) |

@@ -1,6 +1,6 @@
 # Inline Autocomplete Extension
 
-**File:** `src/editor/inlineAutocomplete.ts` (~200 lines)
+**File:** `src/editor/inlineAutocomplete.ts` (~430 lines)
 
 A custom CodeMirror 6 `ViewPlugin` providing ghost-text autocomplete for screenplay elements.
 
