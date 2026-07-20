@@ -79,3 +79,12 @@ The theme also controls per-element syntax highlighting colors. When `fountainCo
 ## UI Scale
 
 **Quick Settings → Interface Scale** slider adjusts the overall UI size (75%–300%, step 5).
+
+## Interactive Tour
+
+The Theming tour (in Tutorials) opens the Bee Detective sample in the main window
+and the Theme Manager window with an embedded tour card. The tour covers:
+
+1. **Pick a Theme** — browse and select a different built-in theme
+2. **Create a Custom Theme** — click the Create button to open the color editor
+3. **Export & Import** — learn about .actheme files

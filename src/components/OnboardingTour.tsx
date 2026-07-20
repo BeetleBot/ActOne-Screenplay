@@ -4,7 +4,7 @@ import { CrossWindowTourCard } from "./CrossWindowTourCard";
 import type { TourStep } from "../types/tour";
 
 interface OnboardingTourProps {
-  activeTour: "ui" | "fountain" | "tagging" | null;
+  activeTour: "ui" | "fountain" | "tagging" | "advanced" | "theming" | null;
   onCloseTour: () => void;
 }
 
@@ -124,7 +124,6 @@ const UI_STEPS: TourStep[] = [
     description: "Click the logo button at the top of the Activity Bar - or press Ctrl+K - to open the Command Palette. Every feature is just a few keystrokes away.",
     taskInstructions: "Click the logo button, or press Ctrl+K.",
     detect: () => !!document.querySelector("[data-tour-palette]"),
-    autoAdvance: true,
   },
   {
     title: "Play Around!",
@@ -256,6 +255,120 @@ const FOUNTAIN_STEPS: TourStep[] = [
   },
 ];
 
+const ADVANCED_STEPS: TourStep[] = [
+  {
+    title: "Advanced Fountain Syntax",
+    description: "Let's learn six professional features: Sections, Subsections, Synopses, Scene Colours, Storyline Tags, and Markers. You'll type each one in a sandbox, then explore a full demo.",
+  },
+  {
+    title: "Sandbox Ready",
+    description: "The editor is ready with a blank file. You'll type each syntax element one at a time.",
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Sections",
+    description: "Sections divide your screenplay into major parts. Start a line with # followed by a space to create a section heading (e.g., # ACT ONE). Sections appear as bold headers in the Outline panel.",
+    taskInstructions: "Type # ACT ONE on a blank line and press Enter.",
+    validate: (text) => /^#[^#]/m.test(text),
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Subsections",
+    description: "Subsections break sections into smaller parts. Start a line with ## followed by a space (e.g., ## The Beginning). Subsections nest under sections in the Outline panel.",
+    taskInstructions: "Type ## The Beginning on a new line and press Enter.",
+    validate: (text) => /^##/m.test(text),
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Synopses",
+    description: "A synopsis is a one-line summary that goes right before a scene heading. Start the line with = and write a brief note (e.g., = The hero wakes to a new day). Synopses appear in italics in the Outline panel.",
+    taskInstructions: "Type = A hero wakes to a new day. on a new line and press Enter.",
+    validate: (text) => /^=.+/m.test(text),
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Scene Colours",
+    description: "Add a colour to any scene heading by appending [[color]] (e.g., [[blue]], [[red]], [[green]]). The scene block gets a coloured left-edge bar in the editor. Supported: blue, brown, cyan, green, magenta, orange, pink, purple, red, yellow.",
+    taskInstructions: "Type INT. HOUSE - DAY [[blue]] on a new line and press Enter.",
+    validate: (text) => {
+      const headingPattern = /^(?:INT|EXT|INT\.?\/EXT\.?)\..*\[\[(blue|brown|cyan|green|magenta|orange|pink|purple|red|yellow)\]\]/im;
+      return headingPattern.test(text);
+    },
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Storyline Tags",
+    description: "Group scenes into storylines by adding [[storyline Label]] on the heading line. Use commas for multiple labels (e.g., [[storyline Main Plot, Romance]]). Labels are case-insensitive. Storyline pills appear beside each scene in the Outline panel.",
+    taskInstructions: "Add [[storyline Main Plot]] to your scene heading (e.g., INT. HOUSE - DAY [[blue]] [[storyline Main Plot]]).",
+    validate: (text) => {
+      const headingLines = text.split('\n').filter(l => /^(?:INT|EXT)\./i.test(l.trim()));
+      return headingLines.some(l => /\[\[storyline\s*[^\]]+\]\]/i.test(l));
+    },
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Markers",
+    description: "Markers are personal bookmarks or notes for writers — a way to flag lines you want to revisit later. Use [[marker color: description]] anywhere in your script. Unlike tags, markers are NOT for production breakdown and are always stripped from final exports.",
+    taskInstructions: "On a new line, type [[marker orange: Add sound effects]] and press Enter.",
+    validate: (text) => /\[\[marker/i.test(text),
+  },
+  {
+    title: "Load Full Demo",
+    description: "Now let's load a 6-scene demo screenplay that uses every feature you just learned. Watch as the editor fills with two acts of production-ready Fountain.",
+  },
+  {
+    title: "Observe the Demo",
+    description: "Scroll through the demo. Look at how sections (#), subsections (##), synopses (=), scene colours, storyline tags, and markers all work together in a real screenplay. Take your time.",
+    noMask: true,
+    cardPosition: "left",
+  },
+  {
+    targetId: "activity-tab-outline",
+    title: "Open Scene Navigator",
+    description: "The Outline panel reveals the full structure of your screenplay.",
+    taskInstructions: "Click the Outline tab in the Activity Bar (the list icon).",
+    noAutoClick: true,
+    detect: () => {
+      const sidebar = document.getElementById("sidebar-container");
+      if (!sidebar || sidebar.offsetWidth === 0) return false;
+      return !!sidebar.querySelector('[data-scene-id]');
+    },
+  },
+  {
+    targetId: "sidebar-container",
+    title: "Explore the Navigator",
+    description: "Look at how sections (#) and subsections (##) are nested with proper indentation. Synopses (=) appear in italics beneath each scene. Coloured left-edge bars match each scene's [[color]] tag. Storyline pills appear as uppercase badges beside each heading. Click around and explore.",
+    cardPosition: "left",
+  },
+  {
+    targetId: "activity-tab-markers",
+    title: "Open Markers Pane",
+    description: "The Markers panel lists every [[marker]] you've seen, grouped by the scene they belong to.",
+    taskInstructions: "Click the Markers tab in the Activity Bar (the checkmark icon).",
+    noAutoClick: true,
+    detect: () => {
+      const sidebar = document.getElementById("sidebar-container");
+      if (!sidebar || sidebar.offsetWidth === 0) return false;
+      return !!sidebar.querySelector('[data-marker-id]');
+    },
+  },
+  {
+    targetId: "sidebar-container",
+    title: "Explore the Markers Pane",
+    description: "Each marker shows its colour dot, your note text, scene number badge, and storyline chips. Notice how markers are grouped under their parent scene. All of these will be stripped from the final export — they're just for you.",
+    cardPosition: "left",
+  },
+  {
+    targetId: "editor-workspace",
+    title: "Export Options",
+    description: "When exporting to PDF, scene colours, sections, subsections, and synopses can be included or excluded via the Export dialog options. This gives you full control over what appears in the final screenplay. Markers ([[marker ...]]) are always stripped — they're for your eyes only.",
+  },
+  {
+    title: "Advanced Syntax Complete!",
+    description: "You've mastered Sections, Subsections, Synopses, Scene Colours, Storyline Tags, and Markers. Use the Outline panel to navigate your structure, the Markers pane for personal notes, and the Export dialog to control what goes into the final PDF. Happy writing!",
+  },
+];
+
 export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   activeTour,
   onCloseTour,
@@ -268,11 +381,11 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
   const steps = activeTour === "fountain" 
     ? FOUNTAIN_STEPS 
-    : (activeTour === "tagging" ? TAGGING_STEPS : UI_STEPS);
+    : (activeTour === "tagging" ? TAGGING_STEPS : (activeTour === "advanced" ? ADVANCED_STEPS : UI_STEPS));
   const currentStep = steps[activeStep];
   const tourName = activeTour === "fountain" 
     ? "Fountain Syntax" 
-    : (activeTour === "tagging" ? "Tagging Tour" : "App Tour");
+    : (activeTour === "tagging" ? "Tagging Tour" : (activeTour === "advanced" ? "Advanced Syntax" : "App Tour"));
 
   const setActiveStep = (step: number | ((prev: number) => number)) => {
     setActiveStepState(step);
@@ -305,20 +418,6 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
   const progress = ((activeStep + 1) / steps.length) * 100;
 
-  // Auto-advance action-based steps when completed
-  useEffect(() => {
-    const isActionStep = !!currentStep?.detect || 
-                        !!currentStep?.validate || 
-                        (activeTour === "tagging" && (activeStep === 3 || activeStep === 5));
-
-    if (isActionStep && taskComplete) {
-      const timer = setTimeout(() => {
-        handleNext();
-      }, 600); // Wait 600ms so user can see "Task Complete" checkmark
-      return () => clearTimeout(timer);
-    }
-  }, [taskComplete, activeStep, activeTour, currentStep]);
-
   // Handle focus, newline injection, and demo screenplay injection
   useEffect(() => {
     if (activeTour !== "fountain" || !editorView) return;
@@ -348,11 +447,130 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     }
   }, [activeStep, activeTour, editorView, steps.length]);
 
+  // Handle advanced tour injection: sandbox at step 1, demo at step 8
+  useEffect(() => {
+    if (activeTour !== "advanced" || !editorView) return;
+
+    if (activeStep === 1) {
+      const docLength = editorView.state.doc.length;
+      editorView.dispatch({
+        changes: { from: 0, to: docLength, insert: "=== ADVANCED SANDBOX ===\n\n" },
+        selection: { anchor: docLength, head: docLength },
+      });
+      editorView.focus();
+    }
+
+    if (activeStep === 8) {
+      const demoScenes = `# ACT ONE
+
+## The Discovery
+
+INT. ABANDONED WAREHOUSE - NIGHT [[blue]] [[storyline Main Plot]]
+
+= Morales discovers a break-in at the warehouse.
+
+The cavernous space is lit only by emergency lights casting long shadows. Crates are stacked to the ceiling.
+
+[[marker red: Add sound design notes]]
+
+DETECTIVE MORALES
+(kneeling by a crate)
+There's been a break-in. Look at this lock.
+
+MORALES picks up a broken padlock, examines it under a flashlight.
+
+CUT TO:
+
+## The Interrogation
+
+INT. POLICE STATION - DAY [[red]] [[storyline Main Plot, Sub Plot B]]
+
+= Reyes pressures Morales for answers.
+
+Morales sits across from CAPTAIN REYES.
+
+CAPTAIN REYES
+The commissioner wants answers by midnight.
+
+[[marker yellow]]
+
+MORALES
+Then we'd better get to work.
+
+## A New Lead
+
+EXT. ROOFTOP - DAWN [[green]] [[storyline Sub Plot B]]
+
+= A mysterious figure watches the sunrise.
+
+A lone figure stands at the edge.
+
+[[marker orange: Check lighting]]
+
+JANE
+(whispering)
+Too late. We missed it.
+
+# ACT TWO
+
+## The Chase
+
+EXT. ALLEYWAY - NIGHT [[purple]] [[storyline Main Plot]]
+
+= Morales chases a suspect.
+
+Rain pours down. Trash cans clatter.
+
+MORALES
+(V.O.)
+This is where it ends.
+
+[[marker pink: Add stunt notes]]
+
+## The Final Confrontation
+
+INT. WAREHOUSE - DAY [[orange]] [[storyline Climax]]
+
+= The final confrontation between Morales and the suspect.
+
+MORALES
+It's over.
+
+SUSPECT
+You're too late.
+
+[[marker cyan: Record ADR line]]
+
+CUT TO:
+
+## The Resolution
+
+EXT. STREET - SUNSET [[cyan]] [[storyline Main Plot, Climax]]
+
+= Morales walks away as the case closes.
+
+Morales puts on his sunglasses.
+
+MORALES
+Another day, another case.
+
+[[marker green: Add credits music cue]]`;
+
+      const docLength = editorView.state.doc.length;
+      editorView.dispatch({
+        changes: { from: 0, to: docLength, insert: demoScenes },
+        selection: { anchor: 0, head: 0 },
+      });
+      editorView.scrollDOM.scrollTop = 0;
+      editorView.focus();
+    }
+  }, [activeTour, activeStep, editorView]);
+
   // Auto-click Activity Bar tabs, Quick Settings, and Command Palette when entering a step
   useEffect(() => {
     if (!currentStep?.targetId || currentStep.noAutoClick) return;
 
-    if (activeTour !== "ui" && activeTour !== "tagging") return;
+    if (activeTour !== "ui" && activeTour !== "tagging" && activeTour !== "advanced") return;
 
     const targetId = currentStep.targetId;
 
@@ -388,6 +606,19 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       }
     }
 
+    if (activeTour === "advanced" && currentStep?.validate) {
+      setTaskComplete(false);
+      const interval = setInterval(() => {
+        if (editorView) {
+          const text = editorView.state.doc.toString();
+          if (currentStep.validate!(text)) {
+            setTaskComplete(true);
+          }
+        }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+
     if (activeTour !== "fountain" || !currentStep?.validate) {
       if (!currentStep?.detect) {
         setTaskComplete(true);
@@ -416,9 +647,6 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     const interval = setInterval(() => {
       if (currentStep.detect!()) {
         setTaskComplete(true);
-        if (currentStep.autoAdvance) {
-          setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
-        }
       }
     }, 200);
 

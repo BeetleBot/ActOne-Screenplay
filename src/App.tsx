@@ -22,11 +22,11 @@ function AppInner() {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTutorialsModal, setShowTutorialsModal] = useState(false);
   const { confirm } = useCustomModal();
-  const [activeTour, setActiveTourState] = useState<"ui" | "fountain" | "tagging" | null>(() => {
-    return (localStorage.getItem("actone-active-tour") as "ui" | "fountain" | "tagging" | null) || null;
+  const [activeTour, setActiveTourState] = useState<"ui" | "fountain" | "tagging" | "advanced" | "theming" | null>(() => {
+    return (localStorage.getItem("actone-active-tour") as "ui" | "fountain" | "tagging" | "advanced" | "theming" | null) || null;
   });
 
-  const setActiveTour = useCallback((tour: "ui" | "fountain" | "tagging" | null) => {
+  const setActiveTour = useCallback((tour: "ui" | "fountain" | "tagging" | "advanced" | "theming" | null) => {
     setActiveTourState(tour);
     if (tour) {
       localStorage.setItem("actone-active-tour", tour);
@@ -38,21 +38,58 @@ function AppInner() {
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "actone-active-tour") {
-        setActiveTourState((e.newValue as "ui" | "fountain" | "tagging" | null) || null);
+        setActiveTourState((e.newValue as "ui" | "fountain" | "tagging" | "advanced" | "theming" | null) || null);
       }
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  const handleTutorialStart = useCallback(async (type: "ui" | "fountain" | "tagging") => {
+  const handleTutorialStart = useCallback(async (type: "ui" | "fountain" | "tagging" | "advanced" | "theming") => {
     try {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
       await getCurrentWindow().maximize();
     } catch { /* not in Tauri */ }
 
-    if (type === "fountain") {
+    if (type === "fountain" || type === "advanced") {
       newFile("=== TUTORIAL SANDBOX ===\n\n");
+      setActiveTour(type);
+    } else if (type === "theming") {
+      if (!activeFileId) {
+        try {
+          const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+          if (isTauriEnv) {
+            const { resolveResource } = await import("@tauri-apps/api/path");
+            const samplePath = await resolveResource("samples/BeeDetectiveTour.actone");
+            openFilePath(samplePath);
+          } else {
+            const res = await fetch("/samples/BeeDetectiveTour.actone");
+            const buf = await res.arrayBuffer();
+            const { unpackActoneBundle } = await import("./utils");
+            const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
+            newFile(bundle.scripts[0]?.content || "");
+          }
+        } catch {
+          newFile();
+        }
+      }
+      setTimeout(async () => {
+        try {
+          const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+          const existing = await WebviewWindow.getByLabel("theme-manager");
+          if (existing) { existing.close().catch(() => {}); }
+          const win = new WebviewWindow("theme-manager", {
+            url: "/?modal=theme-manager&tour=theming",
+            title: "ActOne – Theme Manager",
+            width: 700,
+            height: 580,
+            resizable: true,
+            decorations: false,
+          });
+          win.once("tauri://created", () => {});
+          win.once("tauri://error", () => {});
+        } catch { /* not in Tauri */ }
+      }, 500);
     } else {
       if (!activeFileId) {
         try {
@@ -72,9 +109,8 @@ function AppInner() {
           newFile();
         }
       }
+      setActiveTour(type);
     }
-
-    setActiveTour(type);
   }, [newFile, activeFileId, openFilePath, setActiveTour]);
 
   useEffect(() => {
@@ -82,7 +118,7 @@ function AppInner() {
     const setup = async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        unlisten = await listen<{ type: "ui" | "fountain" | "tagging" }>("tutorial:start", (event) => {
+        unlisten = await listen<{ type: "ui" | "fountain" | "tagging" | "advanced" | "theming" }>("tutorial:start", (event) => {
           handleTutorialStart(event.payload.type);
         });
       } catch { /* not in Tauri */ }
@@ -96,7 +132,7 @@ function AppInner() {
     const timer = setInterval(() => {
       const pendingAction = localStorage.getItem("pending-action");
       if (pendingAction === "tutorial") {
-        const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" | "tagging" | null;
+        const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" | "tagging" | "advanced" | "theming" | null;
         if (type) {
           localStorage.removeItem("pending-action");
           localStorage.removeItem("pending-tutorial-type");
@@ -441,10 +477,10 @@ function AppInner() {
       localStorage.removeItem("pending-action");
     } else if (action === "tutorial") {
       const rawType = params.get("type") || localStorage.getItem("pending-tutorial-type");
-      const type = (rawType === "fountain" ? "fountain" : rawType === "tagging" ? "tagging" : "ui") as "ui" | "fountain" | "tagging";
+      const type = (rawType === "fountain" ? "fountain" : rawType === "tagging" ? "tagging" : rawType === "advanced" ? "advanced" : rawType === "theming" ? "theming" : "ui") as "ui" | "fountain" | "tagging" | "advanced" | "theming";
       localStorage.removeItem("pending-tutorial-type");
       localStorage.removeItem("pending-action");
-      if (type === "ui" || type === "tagging") {
+      if (type === "ui" || type === "tagging" || type === "theming") {
         (async () => {
           try {
             const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -473,7 +509,27 @@ function AppInner() {
         } catch { /* not in Tauri */ }
       })();
 
-      setActiveTour(type);
+      if (type === "theming") {
+        setTimeout(async () => {
+          try {
+          const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+          const existing = await WebviewWindow.getByLabel("theme-manager");
+          if (existing) { existing.close().catch(() => {}); }
+          const win = new WebviewWindow("theme-manager", {
+            url: "/?modal=theme-manager&tour=theming",
+              title: "ActOne – Theme Manager",
+              width: 700,
+              height: 580,
+              resizable: true,
+              decorations: false,
+            });
+            win.once("tauri://created", () => {});
+            win.once("tauri://error", () => {});
+          } catch { /* not in Tauri */ }
+        }, 500);
+      } else {
+        setActiveTour(type);
+      }
     }
 
     setTimeout(async () => {
@@ -729,10 +785,12 @@ function AppInner() {
         openTutorialsWindow={isModalWindow ? undefined : () => setShowTutorialsModal(true)}
       />
     </div>
+    {activeTour !== "theming" && (
     <OnboardingTour
       activeTour={activeTour}
       onCloseTour={() => setActiveTour(null)}
     />
+    )}
 
     {showTutorialsModal && (
       <Dialog

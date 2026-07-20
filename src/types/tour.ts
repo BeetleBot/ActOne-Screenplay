@@ -19,6 +19,7 @@ export interface TourStep {
   triggerOpen?: () => void;
   noMask?: boolean;
   cardPosition?: "left" | "right" | "center";
+  cardWidth?: number;
   nextLabel?: string;
   autoAdvance?: boolean;
   noAutoClick?: boolean;

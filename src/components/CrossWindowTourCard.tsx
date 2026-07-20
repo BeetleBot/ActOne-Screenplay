@@ -102,7 +102,7 @@ export const CrossWindowTourCard: React.FC<CrossWindowTourCardProps> = ({
   const cardStyle: React.CSSProperties = {
     position: "fixed",
     zIndex: 999999,
-    width: 320,
+    width: step.cardWidth ?? 320,
     transition: dragOffset ? "transform 0.15s ease-out" : "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
   };
 
@@ -122,7 +122,7 @@ export const CrossWindowTourCard: React.FC<CrossWindowTourCardProps> = ({
     if (isSidebarTarget) {
       if (step.targetId === "quick-settings" && menuRect) {
         cardStyle.left = menuRect.right + 16;
-      } else if (sidebarRect && step.targetId?.startsWith("activity-tab-") && !step.noAutoClick) {
+      } else if (sidebarRect && step.targetId?.startsWith("activity-tab-")) {
         cardStyle.left = sidebarRect.right + 16;
       } else {
         cardStyle.left = targetRect.right + 16;

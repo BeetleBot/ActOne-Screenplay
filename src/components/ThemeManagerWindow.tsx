@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Typography, IconButton, Button, TextField, Switch } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
+import { CrossWindowTourCard } from "./CrossWindowTourCard";
 import { createActOneTheme, deriveAllColors, themes, THEME_CATEGORIES, ADAPTIVE_THEME_META, type ThemeColors } from "../theme";
 import { resolveThemeConfig } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
 import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon, DownloadIcon, UploadIcon, ColorLensIcon } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
+import type { TourStep } from "../types/tour";
 
 const CORE_DEFAULTS = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
 const EMPTY_COLORS = deriveAllColors(CORE_DEFAULTS, false);
@@ -416,6 +418,110 @@ export const ThemeManagerWindow: React.FC = () => {
     } catch { window.close(); }
   };
 
+  const params = new URLSearchParams(window.location.search);
+  const isTourMode = params.get("tour") === "theming";
+
+  const [tourActive, setTourActive] = useState(isTourMode);
+  const [tourStep, setTourStep] = useState(0);
+  const [tourTaskComplete, setTourTaskComplete] = useState(false);
+
+  const initialThemeId = useRef(themeId);
+
+  const themedTourSteps: TourStep[] = [
+    {
+      title: "Welcome to Themes",
+      description: "The Theme Manager lets you switch between built-in themes, create your own, and export/import .actheme files. Let's walk through each feature.",
+      noMask: true,
+      cardPosition: "center",
+      cardWidth: 260,
+    },
+    {
+      title: "Pick a Theme",
+      description: "Browse the theme list on the left. Each theme changes the app's entire color scheme. Try clicking a different theme to see the preview update in real time.",
+      taskInstructions: "Click any theme from the list on the left to select it.",
+      noMask: true,
+      cardPosition: "right",
+      cardWidth: 260,
+    },
+    {
+      title: "Create Custom Theme",
+      description: "Scroll down the theme list on the left. Near the bottom, in the CUSTOM THEMES section, click the Create button to build your own theme. You'll see color pickers for each UI element — pick any colors you like.",
+      taskInstructions: "Scroll down and click the Create button to open the custom theme form.",
+      noMask: true,
+      cardPosition: "right",
+      cardWidth: 260,
+    },
+    {
+      title: "Export & Import",
+      description: "After saving a custom theme, use the Export button (download icon) next to it to save as a .actheme file — share themes or back them up. Use the Import button at the top of the Custom Themes section to load a .actheme file from disk. .actheme files are plain JSON and can be edited in any text editor.",
+      noMask: true,
+      cardPosition: "center",
+      cardWidth: 260,
+    },
+    {
+      title: "Themes Complete!",
+      description: "You've learned how to pick themes, create custom ones, and work with .actheme files. Happy theming!",
+      noMask: true,
+      cardPosition: "center",
+      cardWidth: 260,
+    },
+  ];
+
+  useEffect(() => {
+    if (!tourActive) return;
+    setTourTaskComplete(false);
+
+    if (tourStep === 0 || tourStep >= 3) {
+      setTourTaskComplete(true);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      let complete = false;
+      if (tourStep === 1) complete = themeId !== initialThemeId.current;
+      else if (tourStep === 2) complete = showForm;
+      if (complete) {
+        setTourTaskComplete(true);
+        clearInterval(interval);
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [tourActive, tourStep, themeId, showForm]);
+
+  const handleTourNext = () => {
+    if (tourStep < themedTourSteps.length - 1) {
+      setTourStep((p) => p + 1);
+      setTourTaskComplete(false);
+    } else {
+      handleClose();
+    }
+  };
+
+  const handleTourBack = () => {
+    if (tourStep > 0) {
+      setTourStep((p) => p - 1);
+      setTourTaskComplete(false);
+    }
+  };
+
+  const handleTourCancel = () => {
+    setTourActive(false);
+    handleClose();
+  };
+
+  useEffect(() => {
+    if (!tourActive) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && (e.shiftKey || e.metaKey) && tourTaskComplete) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleTourNext();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, [tourActive, tourTaskComplete]);
+
   return (
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
@@ -570,6 +676,20 @@ export const ThemeManagerWindow: React.FC = () => {
           </Box>
         </Box>
       </Box>
+      {tourActive && (
+        <CrossWindowTourCard
+          step={themedTourSteps[tourStep]}
+          tourName="Themes"
+          progress={((tourStep + 1) / themedTourSteps.length) * 100}
+          taskComplete={tourTaskComplete}
+          isLastStep={tourStep === themedTourSteps.length - 1}
+          stepNumber={tourStep + 1}
+          totalSteps={themedTourSteps.length}
+          onNext={handleTourNext}
+          onBack={tourStep > 0 ? handleTourBack : undefined}
+          onCancel={handleTourCancel}
+        />
+      )}
     </MuiThemeProvider>
   );
 };

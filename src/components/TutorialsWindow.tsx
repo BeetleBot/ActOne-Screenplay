@@ -11,7 +11,7 @@ interface TutorialItem {
   id: string;
   title: string;
   description: string;
-  tourType?: "ui" | "fountain" | "tagging";
+  tourType?: "ui" | "fountain" | "tagging" | "advanced" | "theming";
   comingSoon?: boolean;
 }
 
@@ -27,7 +27,7 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
     label: "UI",
     tutorials: [
       { id: "basic-ui", title: "Basic UI", description: "Explore every part of the workspace: Activity Bar, Quick Settings, Header tabs, Editor, Status Bar — plus the fastest way to navigate ActOne.", tourType: "ui" },
-      { id: "theming", title: "Theming", description: "Customize colors and appearance to match your workflow.", comingSoon: true },
+      { id: "theming", title: "Theming", description: "Customize colors and appearance to match your workflow.", tourType: "theming" },
     ],
   },
   {
@@ -35,7 +35,7 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
     label: "WRITING",
     tutorials: [
       { id: "basic-fountain", title: "Basic Fountain Syntax", description: "Hands-on writing sandbox. Practice scene headings, dialogue, parentheticals, transitions, and shots.", tourType: "fountain" },
-      { id: "advanced-syntax", title: "Advanced Syntax", description: "Dual dialogue, notes, forced transitions, and more advanced Fountain techniques.", comingSoon: true },
+      { id: "advanced-syntax", title: "Advanced Syntax", description: "Scene colours, storylines, markers — learn production-ready Fountain features.", tourType: "advanced" },
     ],
   },
   {
@@ -92,7 +92,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
     document.body.classList.toggle("dark-theme", currentThemeConfig.isDark);
   }, [currentThemeConfig.isDark]);
 
-  const handleStartTutorial = async (tourType: "ui" | "fountain" | "tagging") => {
+  const handleStartTutorial = async (tourType: "ui" | "fountain" | "tagging" | "advanced" | "theming") => {
     localStorage.setItem("pending-tutorial-type", tourType);
     localStorage.setItem("pending-action", "tutorial");
 

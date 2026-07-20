@@ -6,9 +6,12 @@ ActOne includes an interactive tour and tutorial system designed to orient new u
 
 ## Overview
 
-The onboarding system consists of two paths:
+The onboarding system consists of five paths:
 1. **🧭 App Tour (`ui`)**: An end-to-end walkthrough of the workspace — Activity Bar panels, Header, Editor, Status Bar — finishing with a hands-on Command Palette discovery.
 2. **✍ Basic Fountain Syntax (`fountain`)**: A hands-on sandbox tutorial instructing users to type scene headings, characters, dialogue, parentheticals, transitions, and camera shots.
+3. **🏷️ Tagging Tour (`tagging`)**: Learn to create production tags, discover auto-populated Cast tags, and toggle tag visibility in the editor.
+4. **🎨 Advanced Syntax (`advanced`)**: Sections, subsections, synopses, scene colours, storyline tags, and markers — six production-ready Fountain features. Users type each syntax in a blank sandbox (like the Basic Fountain tour), then explore a 6-scene demo via the Outline navigator and Markers pane.
+5. **🎨 Theming Tour (`theming`)**: Opens the Bee Detective sample in the main window and the Theme Manager window with an embedded tour card. Covers picking a theme, creating a custom one, and exporting/importing .actheme files.
 
 ---
 
@@ -33,8 +36,14 @@ Steps can also opt out of the spotlight mask (`noMask`) so floating UI like the 
 *   **Auto-Focus**: Starting a step automatically focus-locks the cursor at the end of the text.
 *   **Auto-Newline**: Proceeding to a writing step automatically injects a double line break (`\n\n`) to place the writer on a fresh line.
 
-### 5. Silent Sandbox Destruction
-Both tours launch inside a temporary, virtual workspace sandbox. When exiting or completing the tour, the system calls `closeFile(activeFileId, true)` (with the `force` flag enabled) to silently discard edits without prompting the user with an "Unsaved Changes" dialog.
+### 5. Scene Injection (Advanced Tour)
+The Advanced Syntax tour uses two injections: a blank sandbox (`=== ADVANCED SANDBOX ===`) for typing practice (steps 3-8), then a 6-scene demo file with two acts, six sections/subsections/synopses/colours/markers, and three storylines — injected at step 9 for guided exploration via the Outline and Markers panels.
+
+### 6. Export Behaviour
+Scene colours, sections, subsections, and synopses can be included or excluded in the PDF export via the Export dialog options. Markers (`[[marker ...]]`) are always stripped from exports — they are for the writer's eyes only.
+
+### 7. Silent Sandbox Destruction
+All tours launch inside a temporary, virtual workspace sandbox. When exiting or completing the tour, the system calls `closeFile(activeFileId, true)` (with the `force` flag enabled) to silently discard edits without prompting the user with an "Unsaved Changes" dialog.
 
 ---
 
@@ -44,4 +53,5 @@ Both tours launch inside a temporary, virtual workspace sandbox. When exiting or
 *   **Trigger Component:** `WelcomeScreenWindow` renders the "Interactive Tutorials" launcher card which pops open the selection dialog.
 *   **Command Palette:** The `Interactive Tutorial` command is registered under the Help section of the command registry.
 *   **Container Component:** `App.tsx` handles the initial `?action=tutorial` query param, instantly creating the sandbox file in memory on mount to prevent rendering deadlocks, then mounts `<OnboardingTour>`.
-*   **Main Component:** `src/components/OnboardingTour.tsx` contains the tour definitions, drag event listeners, coordinate polling hooks, SVG mask elements, and typography layout.
+*   **Main Component:** `src/components/OnboardingTour.tsx` contains the tour definitions (`UI_STEPS`, `FOUNTAIN_STEPS`, `TAGGING_STEPS`, `ADVANCED_STEPS`), drag event listeners, coordinate polling hooks, SVG mask elements, and typography layout.
+*   **Theme Manager Tour:** The `"theming"` tour is rendered standalone inside `ThemeManagerWindow.tsx` when opened with `?modal=theme-manager&tour=theming`. It uses `CrossWindowTourCard` directly with its own step polling effect, rather than going through `OnboardingTour`. The main window loads the Bee Detective sample and opens the Theme Manager, but does not mount `OnboardingTour` for theming.
