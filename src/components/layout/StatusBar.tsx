@@ -2,12 +2,12 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useFile, useUI, useSprint } from "../../context";
 import { LineType } from "../../parser";
 import { countWords } from "../../utils/text";
-import { Box, Typography, Menu, MenuItem, ListItemText, IconButton } from "@mui/material";
+import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { BarChartIcon } from "../Icons";
+
 import { useEditor } from "../../context";
 
-export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }) => {
+export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
   const { isZenMode, activeAmbientTrack, stopAmbientTrack } = useUI();
   const { activeLineNumber } = useEditor();
@@ -218,17 +218,7 @@ export const StatusBar = React.memo(({ onOpenXray }: { onOpenXray?: () => void }
               ♪ {activeAmbientTrack}
             </Typography>
           )}
-          {onOpenXray && (
-            <IconButton
-              id="status-xray"
-              size="small"
-              onClick={onOpenXray}
-              sx={{ p: 0.3, color: "text.secondary", '&:hover': { color: "primary.main" } }}
-              title="X-Ray (Analysis)"
-            >
-              <BarChartIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-          )}
+
           {sprintDetails && (
           <Typography
             id="status-sprint"

@@ -30,12 +30,6 @@ export function useNativeAppBehavior(
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const ctrlOrCmd = e.ctrlKey || e.metaKey;
-      if (e.key === "F5" || e.key === "F7" || (ctrlOrCmd && e.key.toLowerCase() === "r")) {
-        e.preventDefault();
-        return;
-      }
-
       const target = e.target as HTMLElement | null;
       if (
         !target ||

@@ -14,12 +14,11 @@ export interface MainLayoutProps {
   onOpenPalette: () => void;
   onOpenBreakdownModal: () => void;
   onOpenThemeManagerModal?: () => void;
-  onOpenXray?: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
   isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
-  onOpenBreakdownModal, onOpenThemeManagerModal, onOpenXray,
+  onOpenBreakdownModal, onOpenThemeManagerModal,
 }) => {
   const { activeTab, setActiveTab } = useUI();
 
@@ -42,7 +41,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             isSidebarOpen={isSidebarOpen}
           />
         </Box>
-        <ErrorBoundary name="status"><StatusBar onOpenXray={onOpenXray} /></ErrorBoundary>
+        <ErrorBoundary name="status"><StatusBar /></ErrorBoundary>
       </Box>
     </Box>
   );

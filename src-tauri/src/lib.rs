@@ -5,6 +5,8 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::Emitter;
 use tauri::Manager;
+#[cfg(target_os = "windows")]
+use tauri_plugin_prevent_default::PlatformOptions;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ThemeState {
@@ -649,6 +651,20 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin({
+            let prevent = tauri_plugin_prevent_default::Builder::new();
+            #[cfg(target_os = "windows")]
+            let prevent = prevent.platform(
+                PlatformOptions::new()
+                    .browser_accelerator_keys(false)
+                    .general_autofill(false)
+                    .password_autosave(false)
+                    .default_script_dialogs(false)
+                    .built_in_error_page(false)
+                    .swipe_navigation(false)
+            );
+            prevent.build()
+        })
         .setup(move |app| {
             #[cfg(all(target_os = "windows", not(debug_assertions)))]
             {

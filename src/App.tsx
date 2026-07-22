@@ -755,7 +755,6 @@ function AppInner() {
               onOpenPalette={() => setIsPaletteOpen(true)}
               onOpenBreakdownModal={() => modalWindows.openTagManagerWindow()}
               onOpenThemeManagerModal={() => modalWindows.openThemeManagerWindow()}
-              onOpenXray={() => modalWindows.openXrayWindow()}
             />
           </ErrorBoundary>
         )}

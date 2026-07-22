@@ -1,96 +1,92 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   Box,
-  Typography,
-  Paper,
-  Grid,
-  Tabs,
-  Tab,
-  TextField,
-  IconButton,
-  List,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
+  IconButton,
+  InputAdornment,
   InputLabel,
-  Select,
   MenuItem,
-  Divider,
+  Paper,
+  Select,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+  Tooltip,
 } from "@mui/material";
-import { ThemeProvider as MuiThemeProvider, useTheme, alpha } from "@mui/material/styles";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { CrossWindowTourCard } from "./CrossWindowTourCard";
-import { useTourListener } from "../hooks";
-import { createActOneTheme } from "../theme";
-import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
-import { initThemeEngine, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
 import { LineType, type FountainDocument } from "../parser";
-import {
-  extractCharacters,
-  computeStats,
-  computeSceneTiming,
-  computeCharacterConnections,
-} from "../utils/analysis";
-import { getPerScriptSettingObject } from "../utils/perScriptSettings";
-import {
-  SearchIcon,
-  PersonIcon,
-  BarChartIcon,
-  TimerIcon,
-  AddIcon,
-  DeleteIcon,
-  EditIcon,
-} from "./Icons";
 import { TitleBar } from "./TitleBar";
 import { WindowResizeHandles } from "./WindowResizeHandles";
-import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
+import {
+  AddIcon,
+  BarChartIcon,
+  DeleteIcon,
+  EditIcon,
+  PersonIcon,
+  SearchIcon,
+  TimerIcon,
+} from "./Icons";
+import { createActOneTheme } from "../theme";
+import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
+import {
+  initThemeEngine,
+  onThemeChanged,
+  getInitialThemeId,
+  getInitialCustomThemes,
+} from "../theme/ThemeEngine";
+import { useTourListener } from "../hooks/useTourListener";
+import { CrossWindowTourCard } from "./CrossWindowTourCard";
+import {
+  computeStats,
+  computeSceneTiming,
+  extractCharacters,
+  type CharacterEntry,
+  type ScriptStats,
+  type SceneTiming,
+} from "../utils/analysis";
+import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 
-const ShareIconLocal = (props: SvgIconProps) => (
-  <SvgIcon {...props}>
-    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
-  </SvgIcon>
-);
+// ─── Color Palette & Helper Functions ─────────────────────────────────────
 
-const getGenderColor = (gender: string) => {
-  switch (gender?.toLowerCase()) {
-    case "male":
-      return "#2196f3"; // Blue
-    case "female":
-      return "#e91e63"; // Pink
-    case "nonbinary":
-      return "#9c27b0"; // Purple
-    default:
-      return "#9e9e9e"; // Grey (Unassigned)
-  }
+const GENDER_COLORS: Record<string, string> = {
+  male: "#2196f3",
+  female: "#e91e63",
+  nonbinary: "#9c27b0",
+  unknown: "#9e9e9e",
 };
 
-const CHART_COLORS = [
-  "#8b5cf6", // Purple
-  "#3b82f6", // Blue
-  "#10b981", // Green
-  "#f59e0b", // Orange
-  "#ef4444", // Red
-  "#ec4899", // Pink
-  "#14b8a6", // Teal
-  "#f97316", // Amber
-  "#6366f1", // Indigo
-  "#84cc16", // Lime
-];
+function getGenderColor(gender: string): string {
+  return GENDER_COLORS[gender.toLowerCase()] || GENDER_COLORS.unknown;
+}
 
 const SWATCH_COLORS = [
-  "#9c27b0", // Purple
-  "#2196f3", // Blue
-  "#00bcd4", // Teal
-  "#4caf50", // Green
-  "#ffeb3b", // Yellow
-  "#ff9800", // Orange
-  "#f44336", // Red
-  "#000000", // Black
-  "#ffffff", // White
+  "#2196f3", "#4caf50", "#ff9800", "#e91e63", "#9c27b0",
+  "#00bcd4", "#ffeb3b", "#795548", "#607d8b",
 ];
+
+function formatDuration(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s < 10 ? "0" : ""}${s}`;
+}
+
+function cleanSceneHeading(heading: string): string {
+  return heading
+    .replace(/#.*?#/g, "")
+    .replace(/^\d+\.\s*/, "")
+    .replace(/\[\[.*?\]\]/g, "")
+    .replace(/[\*_~]/g, "")
+    .trim()
+    .toUpperCase();
+}
 
 interface CharacterProfile {
   description?: string;
@@ -118,139 +114,47 @@ interface XrayContentProps {
   timedOut?: boolean;
 }
 
-// Helper to format timings
-const formatDuration = (totalSeconds: number) => {
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = Math.round(totalSeconds % 60);
-  return `${mins}:${String(secs).padStart(2, "0")}`;
-};
-
-function cleanSceneHeading(heading: string): string {
-  if (!heading) return "";
-  let cleaned = heading.replace(/#.*?#/g, "");
-  cleaned = cleaned.replace(/^\s*\d+[.\s]*/, "");
-  cleaned = cleaned.replace(/\[\[.*?\]\]/g, ""); // Strip custom double-bracket tag markers
-  cleaned = cleaned.replace(/[*_~]/g, "");
-  return cleaned.trim().toUpperCase();
-}
+// ─── Main Content Component ───────────────────────────────────────────────
 
 function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
-  const theme = useTheme();
   const [tabIndex, setTabIndex] = useState(0);
   const [characterFilter, setCharacterFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [selectedChar, setSelectedChar] = useState<string | null>(null);
+  const [pacingZoom, setPacingZoom] = useState(1.0);
 
-  // SVG network map hover state
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
-
-  // Network container adaptive sizing
-  const networkContainerRef = useRef<HTMLDivElement>(null);
-  const [networkSize, setNetworkSize] = useState({ width: 600, height: 400 });
-
-  // Pacing chart zoom state
-  const [pacingZoom, setPacingZoom] = useState(1);
   const pacingContainerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(600);
-
-  useEffect(() => {
-    if (!pacingContainerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect.width > 0) {
-          setContainerWidth(entry.contentRect.width);
-        }
-      }
-    });
-    observer.observe(pacingContainerRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  // Network container ResizeObserver
-  useEffect(() => {
-    if (!networkContainerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setNetworkSize({ width, height });
-        }
-      }
-    });
-    observer.observe(networkContainerRef.current);
-    return () => observer.disconnect();
-  }, []);
+  const timelineContainerRef = useRef<HTMLDivElement>(null);
 
   const doc = data?.parsedDoc;
-  const settings = data?.settings || {};
   const scriptFileName = data?.scriptFileName || "";
 
-  const sceneTimings = useMemo(() => {
+  const sceneTimings = useMemo<SceneTiming[]>(() => {
     if (!doc) return [];
     return computeSceneTiming(doc);
   }, [doc]);
 
-  const getSharedScenes = useCallback((charA: string, charB: string) => {
-    if (!doc) return [];
-    const shared: typeof sceneTimings = [];
-    sceneTimings.forEach((scene, sceneIdx) => {
-      let hasA = false;
-      let hasB = false;
-      let currentSceneIdx = -1;
-      for (const line of doc.lines) {
-        if (line.type === LineType.heading) {
-          currentSceneIdx++;
-        }
-        if (currentSceneIdx === sceneIdx) {
-          if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
-            const name = line.text.replace(/^@[ ]*/, "").replace(/[ ]*\^[ ]*$/, "").replace(/\s*\([^)]*\)/g, "").trim().toUpperCase();
-            if (name === charA) hasA = true;
-            if (name === charB) hasB = true;
-          }
-        }
-      }
-      if (hasA && hasB) {
-        shared.push(scene);
-      }
-    });
-    return shared;
-  }, [doc, sceneTimings]);
+  const characterProfiles = useMemo<Record<string, CharacterProfile>>(() => {
+    if (!data?.settings) return {};
+    return getPerScriptSettingObject<Record<string, CharacterProfile>>(
+      "characterProfiles",
+      data.settings,
+      scriptFileName,
+      {}
+    );
+  }, [data?.settings, scriptFileName]);
 
-  const getGroupSharedScenes = useCallback((chars: string[]) => {
-    if (!doc || chars.length < 2) return [];
-    const shared: typeof sceneTimings = [];
-    sceneTimings.forEach((scene, sceneIdx) => {
-      const presentChars = new Set<string>();
-      let currentSceneIdx = -1;
-      for (const line of doc.lines) {
-        if (line.type === LineType.heading) {
-          currentSceneIdx++;
-        }
-        if (currentSceneIdx === sceneIdx) {
-          if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
-            const name = line.text.replace(/^@[ ]*/, "").replace(/[ ]*\^[ ]*$/, "").replace(/\s*\([^)]*\)/g, "").trim().toUpperCase();
-            presentChars.add(name);
-          }
-        }
-      }
-      if (chars.every((c) => presentChars.has(c))) {
-        shared.push(scene);
-      }
-    });
-    return shared;
-  }, [doc, sceneTimings]);
+  const genders = useMemo<Record<string, string>>(() => {
+    if (!data?.settings) return {};
+    return getPerScriptSettingObject<Record<string, string>>(
+      "genders",
+      data.settings,
+      scriptFileName,
+      {}
+    );
+  }, [data?.settings, scriptFileName]);
 
-
-  // Retrieve character profiles from document settings
-  const characterProfiles = useMemo(() => {
-    return getPerScriptSettingObject<Record<string, CharacterProfile>>("characterProfiles", settings, scriptFileName, {});
-  }, [settings, scriptFileName]);
-
-  const genders = useMemo(() => {
-    return getPerScriptSettingObject<Record<string, string>>("genders", settings, scriptFileName, {});
-  }, [settings, scriptFileName]);
-
-  const characters = useMemo(() => {
+  const characters = useMemo<CharacterEntry[]>(() => {
     if (!doc) return [];
     return extractCharacters(doc, genders, characterProfiles);
   }, [doc, genders, characterProfiles]);
@@ -260,342 +164,128 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
   }, [characters]);
 
   const filteredCharacters = useMemo(() => {
-    if (!characterFilter) return characters;
-    return characters.filter((c) =>
-      c.name.toLowerCase().includes(characterFilter.toLowerCase())
-    );
-  }, [characters, characterFilter]);
+    return characters.filter((c) => {
+      const matchesSearch = c.name.toLowerCase().includes(characterFilter.toLowerCase());
+      const matchesRole = roleFilter === "all" || c.role.toLowerCase() === roleFilter.toLowerCase();
+      return matchesSearch && matchesRole;
+    });
+  }, [characters, characterFilter, roleFilter]);
 
-  const stats = useMemo(() => {
+  const stats = useMemo<ScriptStats | null>(() => {
     if (!doc) return null;
     return computeStats(doc, genders, characterProfiles);
   }, [doc, genders, characterProfiles]);
 
-
-
-  const characterConnections = useMemo(() => {
-    if (!doc) return [];
-    return computeCharacterConnections(doc);
-  }, [doc]);
-
   const totalRuntimeSeconds = useMemo(() => {
-    if (sceneTimings.length === 0) return 0;
+    if (!sceneTimings.length) return 0;
     const last = sceneTimings[sceneTimings.length - 1];
     return last.offsetSeconds + last.durationSeconds;
   }, [sceneTimings]);
 
-  // A. Dialogue distribution max words calculation
-  const maxDialogueWords = useMemo(() => {
-    if (characters.length === 0) return 1;
-    return Math.max(...characters.map((c) => c.wordCount));
-  }, [characters]);
-
-  // B. Gender Breakdown computation
+  // Gender Stats calculation
   const genderStats = useMemo(() => {
-    const map: Record<string, { characters: number; lines: number; words: number }> = {};
-    let totalWords = 0;
-    for (const char of characters) {
-      const g = char.gender || "unassigned";
-      if (!map[g]) map[g] = { characters: 0, lines: 0, words: 0 };
-      map[g].characters++;
-      map[g].lines += char.lineCount;
-      map[g].words += char.wordCount;
-      totalWords += char.wordCount;
-    }
-    return Object.entries(map).map(([gender, d], idx) => ({
-      gender: gender.charAt(0).toUpperCase() + gender.slice(1),
-      characters: d.characters,
-      lines: d.lines,
-      words: d.words,
-      percentage: totalWords > 0 ? (d.words / totalWords) * 100 : 0,
-      color: CHART_COLORS[idx % CHART_COLORS.length],
-    })).sort((a, b) => b.words - a.words);
-  }, [characters]);
+    const counts = { male: 0, female: 0, nonbinary: 0, unknown: 0 };
+    const lines = { male: 0, female: 0, nonbinary: 0, unknown: 0 };
+    const words = { male: 0, female: 0, nonbinary: 0, unknown: 0 };
 
-  // C. INT / EXT & Scene Breakdowns computation
-  const sceneBreakdowns = useMemo(() => {
-    let intCount = 0;
-    let extCount = 0;
-    let comboCount = 0;
+    characters.forEach((c) => {
+      const g = (["male", "female", "nonbinary"].includes(c.gender.toLowerCase())
+        ? c.gender.toLowerCase()
+        : "unknown") as keyof typeof counts;
+      counts[g]++;
+      lines[g] += c.lineCount;
+      words[g] += c.wordCount;
+    });
 
-    let dayCount = 0;
-    let nightCount = 0;
-    let otherCount = 0;
-
-    const lengthBuckets = [
-      { label: "< 1 page", count: 0 },
-      { label: "1-2 pages", count: 0 },
-      { label: "2-3 pages", count: 0 },
-      { label: "3-5 pages", count: 0 },
-      { label: "5+ pages", count: 0 },
-    ];
-
-    const locationMap: Record<string, number> = {};
-
-    for (const scene of sceneTimings) {
-      // INT / EXT parsing
-      const headingUpper = scene.heading.toUpperCase();
-      if (headingUpper.startsWith("INT.") || headingUpper.startsWith("INT ")) {
-        intCount++;
-      } else if (headingUpper.startsWith("EXT.") || headingUpper.startsWith("EXT ")) {
-        extCount++;
-      } else if (headingUpper.startsWith("I/E") || headingUpper.startsWith("INT/EXT")) {
-        comboCount++;
-      } else {
-        intCount++; // Default fallback
-      }
-
-      // Time of Day parsing
-      if (headingUpper.includes("- DAY") || headingUpper.includes("-DAY") || headingUpper.includes(" DAY")) {
-        dayCount++;
-      } else if (headingUpper.includes("- NIGHT") || headingUpper.includes("-NIGHT") || headingUpper.includes(" NIGHT")) {
-        nightCount++;
-      } else {
-        otherCount++;
-      }
-
-      // Length buckets
-      const pages = scene.totalWords / 250;
-      if (pages < 1) lengthBuckets[0].count++;
-      else if (pages < 2) lengthBuckets[1].count++;
-      else if (pages < 3) lengthBuckets[2].count++;
-      else if (pages < 5) lengthBuckets[3].count++;
-      else lengthBuckets[4].count++;
-
-      // Locations extraction
-      // Simple location extraction from INT. LOCATION - TIME
-      const match = scene.heading.match(/^(?:INT\.\/EXT\.|INT\.|EXT\.|I\/E)\s+(.+?)(?:\s+-\s+|$)/i);
-      const loc = (match ? match[1] : scene.heading).trim().toUpperCase();
-      locationMap[loc] = (locationMap[loc] || 0) + 1;
-    }
-
-    const topLocations = Object.entries(locationMap)
-      .map(([location, count]) => ({ location, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8);
+    const totalWords = Object.values(words).reduce((a, b) => a + b, 0);
 
     return {
-      intCount,
-      extCount,
-      comboCount,
-      dayCount,
-      nightCount,
-      otherCount,
-      lengthBuckets,
-      topLocations,
+      counts,
+      lines,
+      words,
+      totalWords,
+      percentages: {
+        male: totalWords > 0 ? Math.round((words.male / totalWords) * 100) : 0,
+        female: totalWords > 0 ? Math.round((words.female / totalWords) * 100) : 0,
+        nonbinary: totalWords > 0 ? Math.round((words.nonbinary / totalWords) * 100) : 0,
+        unknown: totalWords > 0 ? Math.round((words.unknown / totalWords) * 100) : 0,
+      },
     };
-  }, [sceneTimings]);
+  }, [characters]);
 
-  // D. Character Presence Grid computation
-  // Pre-compute which characters speak in which scene (by scene index)
-  const sceneCharacterMap = useMemo(() => {
-    if (!doc || sceneTimings.length === 0) return new Map<number, Set<string>>();
-    const map = new Map<number, Set<string>>();
-    let sceneIdx = -1;
-    for (const line of doc.lines) {
-      if (line.type === LineType.heading) {
-        sceneIdx++;
-        map.set(sceneIdx, new Set());
-      }
-      if (sceneIdx >= 0 && (line.type === LineType.character || line.type === LineType.dualDialogueCharacter)) {
-        const name = line.text.replace(/^@[ ]*/, "").replace(/[ ]*\^[ ]*$/, "").replace(/\s*\([^)]*\)/g, "").trim().toUpperCase();
-        if (name) map.get(sceneIdx)?.add(name);
-      }
-    }
-    return map;
-  }, [doc, sceneTimings]);
-
+  // Character presence matrix data
   const presenceGridData = useMemo(() => {
-    if (sceneTimings.length === 0 || characters.length === 0) return null;
-    const topChars = characters.slice(0, 20);
+    if (!doc || !sceneTimings.length) return { topChars: [], matrix: [], charTotals: [] };
+    const topChars = characters.slice(0, 15);
+    const matrix: Array<{ sceneHeading: string; presence: number[]; lineIndex: number }> = [];
+    const charTotals = new Array(topChars.length).fill(0);
 
-    return topChars.map((char) => {
-      const presence = sceneTimings.map((_, sceneIdx) => {
-        return sceneCharacterMap.get(sceneIdx)?.has(char.name) ?? false;
+    sceneTimings.forEach((st) => {
+      const rowPresence: number[] = [];
+      topChars.forEach((c, cIdx) => {
+        let dialogueWordsInScene = 0;
+        let currentSpeaker = "";
+
+        for (let i = st.lineIndex; i < doc.lines.length; i++) {
+          const line = doc.lines[i];
+          if (i > st.lineIndex && line.type === LineType.heading) break;
+
+          if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
+            currentSpeaker = line.text.replace(/^@[ ]*/, "").replace(/[ ]*\^[ ]*$/, "").replace(/\s*\([^)]*\)/g, "").trim().toUpperCase();
+          } else if ((line.type === LineType.dialogue || line.type === LineType.dualDialogue) && currentSpeaker === c.name) {
+            const words = line.text.trim().split(/\s+/).filter((w) => w !== "").length;
+            dialogueWordsInScene += words;
+          }
+        }
+
+        rowPresence.push(dialogueWordsInScene);
+        if (dialogueWordsInScene > 0) {
+          charTotals[cIdx]++;
+        }
       });
 
-      return {
-        name: char.name,
-        color: characterProfiles[char.name]?.color || getGenderColor(char.gender),
-        presence,
-      };
-    });
-  }, [sceneTimings, characters, sceneCharacterMap, characterProfiles]);
-
-  // SVG network map connections computation
-  const connectionsSvg = useMemo(() => {
-    if (characters.length === 0) return null;
-    const width = networkSize.width;
-    const height = networkSize.height;
-    const cx = width / 2;
-    const cy = height / 2;
-    const r = Math.min(width, height) * 0.32;
-
-    const activeChars = characters.slice(0, 12);
-    const charCount = activeChars.length;
-
-    const positions = activeChars.map((char, index) => {
-      const angle = (index * 2 * Math.PI) / charCount - Math.PI / 2;
-      return {
-        name: char.name,
-        color: characterProfiles[char.name]?.color || getGenderColor(char.gender),
-        x: cx + r * Math.cos(angle),
-        y: cy + r * Math.sin(angle),
-      };
+      matrix.push({
+        sceneHeading: cleanSceneHeading(st.heading),
+        presence: rowPresence,
+        lineIndex: st.lineIndex,
+      });
     });
 
-    const activeConnections = characterConnections.filter(
-      (c) =>
-        positions.some((p) => p.name === c.source) &&
-        positions.some((p) => p.name === c.target)
-    );
+    return { topChars, matrix, charTotals };
+  }, [doc, sceneTimings, characters]);
 
-    const maxInteractions = Math.max(1, ...activeConnections.map((c) => c.interactions));
-    const hasSelection = selectedNodes.size > 0;
-
-    return (
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
-        {activeConnections.map((conn, idx) => {
-          const p1 = positions.find((p) => p.name === conn.source)!;
-          const p2 = positions.find((p) => p.name === conn.target)!;
-          
-          const isConnectionSelected =
-            selectedNodes.has(conn.source) && selectedNodes.has(conn.target);
-
-          // When multiple selected: only show connections between selected nodes
-          // When single selected: highlight that node's connections
-          // When hovering (no selection): highlight hovered node's connections
-          const isHighlighted = hasSelection
-            ? isConnectionSelected
-            : (hoveredNode === conn.source || hoveredNode === conn.target);
-
-          const isDimmed = (hasSelection || hoveredNode) && !isHighlighted;
-
-          let strokeColor: string;
-          let opacity: number;
-          if (isConnectionSelected && hasSelection) {
-            strokeColor = theme.palette.primary.main;
-            opacity = 1;
-          } else if (isHighlighted) {
-            strokeColor = theme.palette.primary.main;
-            opacity = 1;
-          } else if (isDimmed) {
-            strokeColor = theme.palette.divider;
-            opacity = 0.05;
-          } else {
-            strokeColor = theme.palette.divider;
-            opacity = 0.25;
-          }
-          const strokeWidth = 1 + (conn.interactions / maxInteractions) * 5;
-
-          return (
-            <g key={idx}>
-              <line
-                x1={p1.x}
-                y1={p1.y}
-                x2={p2.x}
-                y2={p2.y}
-                stroke={strokeColor}
-                strokeWidth={strokeWidth}
-                strokeOpacity={opacity}
-              />
-            </g>
-          );
-        })}
-
-        {positions.map((pos) => {
-          const isSelected = selectedNodes.has(pos.name);
-          const isHighlighted = hoveredNode === pos.name || isSelected;
-          const isDimmed = (hasSelection || hoveredNode)
-            ? !isSelected && hoveredNode !== pos.name
-            : false;
-          const radius = isSelected ? 12 : hoveredNode === pos.name ? 10 : 8;
-
-          return (
-            <g
-              key={pos.name}
-              style={{ cursor: "pointer" }}
-              onMouseEnter={() => setHoveredNode(pos.name)}
-              onMouseLeave={() => setHoveredNode(null)}
-              onClick={() => {
-                setSelectedNodes((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(pos.name)) {
-                    next.delete(pos.name);
-                  } else {
-                    next.add(pos.name);
-                  }
-                  return next;
-                });
-              }}
-            >
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r={radius}
-                fill={pos.color}
-                stroke={theme.palette.background.paper}
-                strokeWidth={isHighlighted ? 2.5 : 1}
-                style={{ opacity: isDimmed ? 0.35 : 1 }}
-              />
-              <text
-                x={pos.x}
-                y={pos.y - radius - 4}
-                textAnchor="middle"
-                fontSize="9"
-                fontWeight={isHighlighted ? "700" : "500"}
-                fill={isSelected ? theme.palette.primary.main : isHighlighted ? theme.palette.primary.main : theme.palette.text.primary}
-                style={{
-                  opacity: isDimmed ? 0.3 : 1,
-                  paintOrder: "stroke",
-                  stroke: theme.palette.background.default,
-                  strokeWidth: 2,
-                }}
-              >
-                {pos.name}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    );
-  }, [characters, characterProfiles, characterConnections, hoveredNode, selectedNodes, networkSize, theme]);
-
-  // Edit Modal save function
-  const handleSaveProfile = async (charName: string, updatedProfile: CharacterProfile) => {
+  // IPC event emission helper
+  const handleScrollToLine = useCallback(async (lineIndex: number) => {
     try {
       const { emit } = await import("@tauri-apps/api/event");
-      emit("modal:xray:save-profile", { characterName: charName, profile: updatedProfile });
-    } catch (e) {
-      console.error("Failed to save character profile:", e);
+      await emit("modal:xray:scroll-to-line", { lineIndex });
+    } catch {
+      // not in Tauri
     }
-  };
+  }, []);
 
-  const getCharacterAppearanceCount = (charName: string) => {
-    if (!doc) return 0;
-    let count = 0;
-    let activeSceneHasChar = false;
-    for (const line of doc.lines) {
-      if (line.type === LineType.heading) {
-        if (activeSceneHasChar) count++;
-        activeSceneHasChar = false;
-      } else if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
-        const name = line.text.replace(/^@[ ]*/, "").replace(/[ ]*\^[ ]*$/, "").replace(/\s*\([^)]*\)/g, "").trim().toUpperCase();
-        if (name === charName) {
-          activeSceneHasChar = true;
-        }
+  const handleSaveProfile = useCallback(
+    async (charName: string, updatedProfile: CharacterProfile) => {
+      try {
+        const { emit } = await import("@tauri-apps/api/event");
+        await emit("modal:xray:save-profile", {
+          characterName: charName,
+          profile: updatedProfile,
+        });
+      } catch {
+        // not in Tauri
       }
-    }
-    if (activeSceneHasChar) count++;
-    return count;
-  };
+    },
+    []
+  );
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "background.default", color: "text.primary", overflow: "hidden" }}>
       {onClose && (
         <TitleBar title="X-Ray Analysis" onClose={onClose} icon={<BarChartIcon sx={{ fontSize: 16 }} />} />
       )}
-      {/* Header bar */}
+
+      {/* Header Tabs */}
       <Box
         data-tauri-drag-region
         sx={{
@@ -631,15 +321,14 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
               },
             }}
           >
-            <Tab label="Statistics" />
-            <Tab label="Timing" icon={<TimerIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
+            <Tab label="Overview & Stats" icon={<BarChartIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
+            <Tab label="Pacing & Timeline" icon={<TimerIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
             <Tab label="Characters" icon={<PersonIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
-            <Tab label="Connections" icon={<ShareIconLocal sx={{ fontSize: 15 }} />} iconPosition="start" />
           </Tabs>
         )}
       </Box>
 
-      {/* Content wrapper */}
+      {/* Content Body */}
       <Box sx={{ flex: 1, overflowY: "auto", p: 3 }}>
         {timedOut && !data ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 2, p: 4 }}>
@@ -653,1231 +342,838 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
           </Box>
         ) : null}
 
-        {/* Tab 0: Comprehensive Script Statistics (matching screenshots 1, 2, 3) */}
+        {/* ─── TAB 0: OVERVIEW & STATS ────────────────────────────────────────── */}
         {tabIndex === 0 && stats && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {/* Overview Cards */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* 4 Hero KPI Cards */}
             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
-              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
-                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2rem", color: "text.primary" }}>
-                  {stats.pages}
+              <Paper elevation={1} sx={{ p: 2, borderRadius: 2, bgcolor: "background.paper" }}>
+                <Typography color="text.secondary" sx={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+                  Pages & Runtime
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase" }}>
-                  Pages
-                </Typography>
-                <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.7rem", mt: 0.5 }}>
-                  Est. {formatDuration(totalRuntimeSeconds)}
+                <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{stats.pages}</Typography>
+                <Typography color="text.secondary" sx={{ fontSize: 11, mt: 0.5 }}>
+                  Est. Runtime: <strong>{formatDuration(totalRuntimeSeconds)}</strong>
                 </Typography>
               </Paper>
 
-              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
-                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2rem", color: "text.primary" }}>
-                  {stats.headingCount}
+              <Paper elevation={1} sx={{ p: 2, borderRadius: 2, bgcolor: "background.paper" }}>
+                <Typography color="text.secondary" sx={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+                  Scenes & Pace
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase" }}>
-                  Scenes
-                </Typography>
-                <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.7rem", mt: 0.5 }}>
-                  Avg {(stats.pages / Math.max(1, stats.headingCount)).toFixed(1)} pages
+                <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{stats.headingCount}</Typography>
+                <Typography color="text.secondary" sx={{ fontSize: 11, mt: 0.5 }}>
+                  Avg <strong>{(stats.pages / (stats.headingCount || 1)).toFixed(1)}</strong> pgs / scene
                 </Typography>
               </Paper>
 
-              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
-                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2rem", color: "text.primary" }}>
-                  {characters.length}
+              <Paper elevation={1} sx={{ p: 2, borderRadius: 2, bgcolor: "background.paper" }}>
+                <Typography color="text.secondary" sx={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+                  Words & Density
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase" }}>
-                  Characters
-                </Typography>
-                <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.7rem", mt: 0.5 }}>
-                  {totalDialogueLines} dialogue lines
-                </Typography>
-              </Paper>
-
-              <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
-                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2rem", color: "text.primary" }}>
+                <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>
                   {stats.totalWords.toLocaleString()}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase" }}>
-                  Words
-                </Typography>
-                <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.7rem", mt: 0.5 }}>
-                  {Math.round(stats.totalWords / Math.max(1, stats.pages))} per page
+                <Typography color="text.secondary" sx={{ fontSize: 11, mt: 0.5 }}>
+                  Avg <strong>{Math.round(stats.totalWords / (stats.pages || 1))}</strong> words / pg
                 </Typography>
               </Paper>
-            </Box>
 
-            {/* Dialogue Distribution */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.primary", mb: 2 }}>
-                Dialogue Distribution
-              </Typography>
-              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
-                  {characters.slice(0, 15).map((char, idx) => {
-                    const profile = characterProfiles[char.name] || {};
-                    const swatchColor = profile.color || CHART_COLORS[idx % CHART_COLORS.length];
-                    const barWidth = maxDialogueWords > 0 ? (char.wordCount / maxDialogueWords) * 100 : 0;
-
-                    return (
-                      <Box key={char.name} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Typography variant="caption" sx={{ width: 100, textAlign: "right", fontWeight: 700, fontSize: "0.7rem", color: "text.secondary" }}>
-                          {char.name}
-                        </Typography>
-                        <Box sx={{ flex: 1, bgcolor: "action.hover", height: 16, borderRadius: 0, overflow: "hidden" }}>
-                          <Box sx={{ width: `${barWidth}%`, height: "100%", bgcolor: swatchColor, borderRadius: 0, transition: "width var(--duration-slow) ease" }} />
-                        </Box>
-                        <Typography variant="caption" sx={{ width: 40, fontWeight: 600, fontSize: "0.75rem", color: "text.primary" }}>
-                          {char.wordCount}
-                        </Typography>
-                      </Box>
-                    );
-                  })}
-                </Box>
-
-                {/* Grid Table */}
-                <Box sx={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", color: "var(--text-muted, #aaa)" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid", borderBottomColor: "var(--border-color, #2d2d2d)", textAlign: "left" }}>
-                        <th style={{ padding: "8px 12px", color: "var(--text-main, #fff)" }}>CHARACTER</th>
-                        <th style={{ padding: "8px 12px", color: "var(--text-main, #fff)" }}>LINES</th>
-                        <th style={{ padding: "8px 12px", color: "var(--text-main, #fff)" }}>WORDS</th>
-                        <th style={{ padding: "8px 12px", color: "var(--text-main, #fff)" }}>% DIALOGUE</th>
-                        <th style={{ padding: "8px 12px", color: "var(--text-main, #fff)" }}>SCENES</th>
-                        <th style={{ padding: "8px 12px", color: "var(--text-main, #fff)" }}>ROLE</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {characters.map((c, idx) => {
-                        const profile = characterProfiles[c.name] || {};
-                        const swatchColor = profile.color || CHART_COLORS[idx % CHART_COLORS.length];
-                        return (
-                          <tr key={c.name} style={{ borderBottom: "1px solid", borderBottomColor: "var(--border-color, #202020)" }}>
-                            <td style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 8, color: "var(--text-main, #fff)" }}>
-                              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: swatchColor }} />
-                              {c.name}
-                            </td>
-                            <td style={{ padding: "8px 12px" }}>{c.lineCount}</td>
-                            <td style={{ padding: "8px 12px" }}>{c.wordCount}</td>
-                            <td style={{ padding: "8px 12px" }}>{c.dialoguePercentage.toFixed(1)}%</td>
-                            <td style={{ padding: "8px 12px" }}>{c.sceneCount}</td>
-                            <td style={{ padding: "8px 12px" }}>{c.role || "—"}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </Box>
-              </Paper>
-            </Box>
-
-            {/* Gender Analysis */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.primary", mb: 2 }}>
-                Gender Analysis
-              </Typography>
-              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
-                <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 4, alignItems: "center" }}>
-                <Box sx={{ display: "flex", justifyContent: "center", flexShrink: 0, width: 160 }}>
-                  {/* SVG Donut Chart */}
-                  <Box sx={{ width: 160, height: 160, position: "relative" }}>
-                    <svg width="100%" height="100%" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="35" fill="none" stroke="var(--border-color, #2d2d2d)" strokeWidth="12" />
-                      {genderStats.map((g) => {
-                        const totalPercentageBefore = genderStats.slice(0, genderStats.indexOf(g)).reduce((sum, item) => sum + item.percentage, 0);
-                        const strokeDasharray = `${(g.percentage * 2 * Math.PI * 35) / 100} ${2 * Math.PI * 35}`;
-                        const strokeDashoffset = `${-(totalPercentageBefore * 2 * Math.PI * 35) / 100}`;
-                        return (
-                          <circle
-                            key={g.gender}
-                            cx="50"
-                            cy="50"
-                            r="35"
-                            fill="none"
-                            stroke={g.color}
-                            strokeWidth="12"
-                            strokeDasharray={strokeDasharray}
-                            strokeDashoffset={strokeDashoffset}
-                            transform="rotate(-90 50 50)"
-                            style={{ transition: "stroke-dasharray 0.5s ease" }}
-                          />
-                        );
-                      })}
-                    </svg>
-                  </Box>
-                </Box>
-                <Box sx={{ flex: 1, width: "100%" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", color: "#aaa" }}>
-                      <thead>
-                        <tr style={{ borderBottom: "1px solid #2d2d2d", textAlign: "left" }}>
-                          <th style={{ padding: "8px 12px", color: "#fff" }}>GENDER</th>
-                          <th style={{ padding: "8px 12px", color: "#fff" }}>CHARACTERS</th>
-                          <th style={{ padding: "8px 12px", color: "#fff" }}>LINES</th>
-                          <th style={{ padding: "8px 12px", color: "#fff" }}>WORDS</th>
-                          <th style={{ padding: "8px 12px", color: "#fff" }}>%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {genderStats.map((g) => (
-                          <tr key={g.gender} style={{ borderBottom: "1px solid #202020" }}>
-                            <td style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 8, color: "#fff" }}>
-                              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: g.color }} />
-                              {g.gender}
-                            </td>
-                            <td style={{ padding: "8px 12px" }}>{g.characters}</td>
-                            <td style={{ padding: "8px 12px" }}>{g.lines}</td>
-                            <td style={{ padding: "8px 12px" }}>{g.words}</td>
-                            <td style={{ padding: "8px 12px" }}>{g.percentage.toFixed(1)}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </Box>
-                </Box>
-              </Paper>
-            </Box>
-
-            {/* Scene Breakdown */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#fff", mb: 2 }}>
-                Scene Breakdown
-              </Typography>
-              <Grid container spacing={2}>
-                {/* INT / EXT Donut */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                      INTERIOR / EXTERIOR
-                    </Typography>
-                    <Box sx={{ width: 100, height: 100, mx: "auto", my: 2, position: "relative" }}>
-                      <svg width="100%" height="100%" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="35" fill="none" stroke="var(--border-color, #2d2d2d)" strokeWidth="10" />
-                        {(() => {
-                          const total = sceneBreakdowns.intCount + sceneBreakdowns.extCount + sceneBreakdowns.comboCount;
-                          const intPct = total > 0 ? (sceneBreakdowns.intCount / total) * 100 : 100;
-                          return (
-                            <circle
-                              cx="50"
-                              cy="50"
-                              r="35"
-                              fill="none"
-                              stroke="#3b82f6"
-                              strokeWidth="10"
-                              strokeDasharray={`${(intPct * 2 * Math.PI * 35) / 100} ${2 * Math.PI * 35}`}
-                              transform="rotate(-90 50 50)"
-                            />
-                          );
-                        })()}
-                      </svg>
-                      <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "text.primary" }}>
-                          INT {sceneBreakdowns.intCount}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Paper>
-                </Grid>
-
-                {/* Time of Day Donut */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                      TIME OF DAY
-                    </Typography>
-                    <Box sx={{ width: 100, height: 100, mx: "auto", my: 2, position: "relative" }}>
-                      <svg width="100%" height="100%" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="35" fill="none" stroke="var(--border-color, #2d2d2d)" strokeWidth="10" />
-                        {(() => {
-                          const total = sceneBreakdowns.dayCount + sceneBreakdowns.nightCount + sceneBreakdowns.otherCount;
-                          const dayPct = total > 0 ? (sceneBreakdowns.dayCount / total) * 100 : 0;
-                          const nightPct = total > 0 ? (sceneBreakdowns.nightCount / total) * 100 : 0;
-
-                          const dashDay = `${(dayPct * 2 * Math.PI * 35) / 100} ${2 * Math.PI * 35}`;
-                          const dashNight = `${(nightPct * 2 * Math.PI * 35) / 100} ${2 * Math.PI * 35}`;
-                          const offsetNight = `${-(dayPct * 2 * Math.PI * 35) / 100}`;
-
-                          return (
-                            <>
-                              <circle
-                                cx="50"
-                                cy="50"
-                                r="35"
-                                fill="none"
-                                stroke="#f59e0b"
-                                strokeWidth="10"
-                                strokeDasharray={dashDay}
-                                transform="rotate(-90 50 50)"
-                              />
-                              <circle
-                                cx="50"
-                                cy="50"
-                                r="35"
-                                fill="none"
-                                stroke="#8b5cf6"
-                                strokeWidth="10"
-                                strokeDasharray={dashNight}
-                                strokeDashoffset={offsetNight}
-                                transform="rotate(-90 50 50)"
-                              />
-                            </>
-                          );
-                        })()}
-                      </svg>
-                      <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.6rem", display: "block", color: "text.primary" }}>
-                          Day {sceneBreakdowns.dayCount}
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.6rem", display: "block", color: "#8b5cf6" }}>
-                          Night {sceneBreakdowns.nightCount}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Paper>
-                </Grid>
-
-                {/* Scene Length Distribution */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, textAlign: "center" }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                      SCENE LENGTH DISTRIBUTION
-                    </Typography>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", height: 120, px: 1, pt: 2, pb: 4 }}>
-                      {(() => {
-                        const counts = sceneBreakdowns.lengthBuckets.map((b) => b.count);
-                        const maxCount = Math.max(1, ...counts);
-                        return sceneBreakdowns.lengthBuckets.map((b) => {
-                          const heightPct = (b.count / maxCount) * 100;
-                          return (
-                            <Box key={b.label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end", position: "relative" }}>
-                              <Typography variant="caption" sx={{ fontSize: "0.6rem", fontWeight: 700, mb: 0.5, color: "text.primary" }}>
-                                {b.count}
-                              </Typography>
-                              <Box sx={{ width: 14, height: `${heightPct * 0.6}%`, bgcolor: "primary.main", borderRadius: 0, minHeight: b.count > 0 ? 4 : 0 }} />
-                              <Box sx={{ position: "absolute", bottom: -24, left: "50%", transform: "translateX(-50%)", width: "100%", textAlign: "center" }}>
-                                <Typography variant="caption" sx={{ fontSize: "0.5rem", color: "text.secondary", whiteSpace: "nowrap", display: "block" }}>
-                                  {b.label}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          );
-                        });
-                      })()}
-                    </Box>
-                  </Paper>
-                </Grid>
-
-                {/* Top Locations */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textAlign: "center", display: "block", mb: 1 }}>
-                      TOP LOCATIONS
-                    </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, height: 110, overflowY: "auto" }}>
-                      {sceneBreakdowns.topLocations.map((loc) => (
-                        <Box key={loc.location} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <Typography variant="caption" sx={{ fontSize: "0.65rem", fontWeight: 600, color: "text.secondary", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", width: "80%" }}>
-                            {loc.location}
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 700, color: "#14b8a6" }}>
-                            {loc.count}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </Box>
-
-            {/* Pacing Chart */}
-            <Box ref={pacingContainerRef}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.primary" }}>
-                  Pacing — Dialogue vs Action by Scene
+              <Paper elevation={1} sx={{ p: 2, borderRadius: 2, bgcolor: "background.paper" }}>
+                <Typography color="text.secondary" sx={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+                  Speaking Cast
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6rem" }}>
-                  Ctrl+Scroll to zoom · {Math.round(pacingZoom * 100)}%
+                <Typography sx={{ fontSize: 24, fontWeight: 800, mt: 0.5 }}>{characters.length}</Typography>
+                <Typography color="text.secondary" sx={{ fontSize: 11, mt: 0.5 }}>
+                  Total <strong>{totalDialogueLines}</strong> dialogue lines
                 </Typography>
-              </Box>
-              <Paper
-                elevation={0}
-                sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}
-                onWheel={(e) => {
-                  if (e.ctrlKey || e.metaKey) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setPacingZoom((prev) => Math.min(5, Math.max(0.5, prev + (e.deltaY < 0 ? 0.15 : -0.15))));
-                  }
-                }}
-              >
-                <Box sx={{ overflowX: "auto", overflowY: "hidden" }}>
-                  {(() => {
-                    const count = sceneTimings.length;
-                    if (count === 0) return null;
-
-                    // Fits the window by default (zoom = 1), scales/scrolls when zoomed
-                    const marginLeft = 40;
-                    const marginRight = 20;
-                    const availableWidth = Math.max(400, containerWidth - 36); // subtract padding
-                    const width = Math.max(availableWidth, availableWidth * pacingZoom);
-                    const height = 180;
-
-                    const maxVal = Math.max(10, ...sceneTimings.map((s) => Math.max(s.dialogueWords, s.actionWords)));
-
-                    const pointsD = sceneTimings.map((s, idx) => {
-                      const x = count === 1 ? marginLeft : (idx / (count - 1)) * (width - marginLeft - marginRight) + marginLeft;
-                      const y = height - 20 - (s.dialogueWords / maxVal) * (height - 40);
-                      return `${x},${y}`;
-                    });
-
-                    const pointsA = sceneTimings.map((s, idx) => {
-                      const x = count === 1 ? marginLeft : (idx / (count - 1)) * (width - marginLeft - marginRight) + marginLeft;
-                      const y = height - 20 - (s.actionWords / maxVal) * (height - 40);
-                      return `${x},${y}`;
-                    });
-
-                    const lastX = count === 1 ? marginLeft : width - marginRight;
-                    const pathDialogue = `M ${pointsD[0]} L ${pointsD.slice(1).join(" L ")} L ${lastX},${height - 20} L ${marginLeft},${height - 20} Z`;
-                    const pathAction = `M ${pointsA[0]} L ${pointsA.slice(1).join(" L ")} L ${lastX},${height - 20} L ${marginLeft},${height - 20} Z`;
-
-                    // Only show scene labels when they won't overlap
-                    const labelInterval = Math.max(1, Math.ceil(count / (width / 30)));
-
-                    return (
-                      <svg width={width} height={height} style={{ display: "block" }}>
-                        {/* Horizontal Grid lines */}
-                        <line x1={marginLeft} y1={height - 20} x2={width - marginRight} y2={height - 20} stroke="var(--border-color, #2d2d2d)" strokeWidth="1" />
-                        <line x1={marginLeft} y1={(height - 20) / 2} x2={width - marginRight} y2={(height - 20) / 2} stroke="var(--border-color, #202020)" strokeWidth="1" strokeDasharray="3 3" />
-                        <line x1={marginLeft} y1="20" x2={width - marginRight} y2="20" stroke="var(--border-color, #202020)" strokeWidth="1" strokeDasharray="3 3" />
-
-                        {/* Y-axis Ticks */}
-                        <text x="30" y="24" fill="var(--text-secondary, #666)" fontSize="8" textAnchor="end">{maxVal}</text>
-                        <text x="30" y={(height - 20) / 2 + 3} fill="var(--text-secondary, #666)" fontSize="8" textAnchor="end">{Math.round(maxVal / 2)}</text>
-                        <text x="30" y={height - 18} fill="var(--text-secondary, #666)" fontSize="8" textAnchor="end">0</text>
-
-                        {/* Action Area */}
-                        <path d={pathAction} fill={alpha(theme.palette.warning.main, 0.2)} stroke={theme.palette.warning.main} strokeWidth="1.5" />
-                        {/* Dialogue Area */}
-                        <path d={pathDialogue} fill={alpha(theme.palette.info.main, 0.25)} stroke={theme.palette.info.main} strokeWidth="1.5" />
-
-                        {/* X-axis Scene Markers — skip labels to prevent overlap */}
-                        {sceneTimings.map((_, idx) => {
-                          if (idx % labelInterval !== 0 && idx !== count - 1) return null;
-                          const x = count === 1 ? marginLeft : (idx / (count - 1)) * (width - marginLeft - marginRight) + marginLeft;
-                          return (
-                            <text key={idx} x={x} y={height - 5} fill="var(--text-secondary, #666)" fontSize="8" textAnchor="middle">
-                              S{idx + 1}
-                            </text>
-                          );
-                        })}
-                      </svg>
-                    );
-                  })()}
-                </Box>
-                <Box sx={{ display: "flex", justifyContent: "center", gap: 3, mt: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ width: 10, height: 10, bgcolor: "#f59e0b", borderRadius: 0 }} />
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Action</Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ width: 10, height: 10, bgcolor: "#3b82f6", borderRadius: 0 }} />
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Dialogue</Typography>
-                  </Box>
-                </Box>
               </Paper>
             </Box>
 
-            {/* Character Presence Grid */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "text.primary", mb: 2 }}>
-                Character Presence by Scene
+            {/* Act Structure & Balance */}
+            <Paper elevation={1} sx={{ p: 2.5, borderRadius: 2, bgcolor: "background.paper" }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, mb: 1.5 }}>
+                Act Structure & Balance
               </Typography>
-              <Paper elevation={0} sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
-                <Box sx={{ overflowX: "auto" }}>
-                  <table style={{ borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        <th style={{ width: 120, textAlign: "left", fontSize: "0.75rem", padding: "4px 8px", color: "var(--text-main, #fff)" }}>Character</th>
-                        {sceneTimings.map((_, idx) => (
-                          <th key={idx} style={{ width: 28, textAlign: "center", fontSize: "0.7rem", padding: "4px 2px", color: "var(--text-secondary, #666)" }}>
-                            {idx + 1}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {presenceGridData?.map((row) => (
-                        <tr key={row.name}>
-                          <td style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", fontSize: "0.75rem", color: "var(--text-main, #fff)" }}>
-                            <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: row.color }} />
-                            {row.name}
-                          </td>
-                          {row.presence.map((isPresent, sceneIdx) => (
-                            <td key={sceneIdx} style={{ padding: "4px 2px" }}>
-                              <Box
-                                sx={{
-                                  width: 14,
-                                  height: 14,
-                                  mx: "auto",
-                                  borderRadius: 0,
-                                  bgcolor: isPresent ? "primary.main" : "action.hover",
-                                }}
-                              />
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Box>
-              </Paper>
-            </Box>
-          </Box>
-        )}
 
-        {/* Tab 1: Timing Report Table (matching screenshot 4) */}
-        {tabIndex === 1 && sceneTimings.length > 0 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: "uppercase", color: "text.primary" }}>
-                Timing Report — Est. {formatDuration(totalRuntimeSeconds)}
-              </Typography>
-            </Box>
-
-            <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0 }}>
-              <Box sx={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", color: "var(--text-muted, #aaa)" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid", borderBottomColor: "var(--border-color, #2d2d2d)", textAlign: "left" }}>
-                      <th style={{ padding: "10px 8px", width: 40, color: "var(--text-secondary, #666)" }}>#</th>
-                      <th style={{ padding: "10px 8px", color: "var(--text-main, #fff)" }}>SCENE</th>
-                      <th style={{ padding: "10px 8px", color: "var(--text-main, #fff)", textAlign: "right" }}>DIALOGUE</th>
-                      <th style={{ padding: "10px 8px", color: "var(--text-main, #fff)", textAlign: "right" }}>ACTION</th>
-                      <th style={{ padding: "10px 8px", color: "var(--text-main, #fff)", textAlign: "right" }}>EST.</th>
-                      <th style={{ padding: "10px 8px", color: "var(--text-main, #fff)", textAlign: "right" }}>CUMULATIVE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sceneTimings.map((t, idx) => {
-                      // Timing calculations
-                      const estDialogueSecs = Math.round((t.dialogueWords / 250) * 60);
-                      const estActionSecs = Math.round((t.actionWords / 250) * 60);
-
+              {stats.acts.length > 0 ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {/* Multi-segment Act Bar */}
+                  <Box sx={{ height: 24, width: "100%", borderRadius: 1.5, overflow: "hidden", display: "flex", bgcolor: "action.hover" }}>
+                    {stats.acts.map((act, i) => {
+                      const colors = ["#2196f3", "#4caf50", "#ff9800", "#9c27b0", "#e91e63"];
+                      const bg = colors[i % colors.length];
                       return (
-                        <tr
-                          key={idx}
-                          style={{ borderBottom: "1px solid", borderBottomColor: "var(--border-color, #202020)", cursor: "pointer" }}
-                          onDoubleClick={async () => {
-                            try {
-                              const { emit } = await import("@tauri-apps/api/event");
-                              emit("modal:xray:scroll-to-line", { lineIndex: t.lineIndex });
-                            } catch (e) {
-                              console.error("Failed to emit scroll to line:", e);
-                            }
-                          }}
-                        >
-                          <td style={{ padding: "10px 8px", color: "var(--text-secondary, #666)" }}>{idx + 1}</td>
-                          <td style={{ padding: "10px 8px", color: "var(--text-main, #fff)", fontWeight: 500 }}>{cleanSceneHeading(t.heading)}</td>
-                          <td style={{ padding: "10px 8px", textAlign: "right" }}>{formatDuration(estDialogueSecs)}</td>
-                          <td style={{ padding: "10px 8px", textAlign: "right" }}>{formatDuration(estActionSecs)}</td>
-                          <td style={{ padding: "10px 8px", textAlign: "right", color: "#10b981", fontWeight: 700 }}>
-                            {formatDuration(t.durationSeconds)}
-                          </td>
-                          <td style={{ padding: "10px 8px", textAlign: "right" }}>
-                            {formatDuration(t.offsetSeconds)}
-                          </td>
-                        </tr>
+                        <Tooltip key={act.title} title={`${act.title}: ${act.percentage}% (${act.wordCount} words, ${act.sceneCount} scenes) — Click to jump`}>
+                          <Box
+                            onClick={() => handleScrollToLine(act.lineIndex)}
+                            sx={{
+                              width: `${act.percentage}%`,
+                              bgcolor: bg,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              px: 0.5,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              cursor: "pointer",
+                              transition: "transform 0.1s, opacity 0.15s",
+                              "&:hover": { opacity: 0.85, transform: "scaleY(1.08)" },
+                            }}
+                          >
+                            {act.percentage > 8 ? `${act.title} (${act.percentage}%)` : ""}
+                          </Box>
+                        </Tooltip>
                       );
                     })}
-                    <tr style={{ borderTop: "2px solid", borderTopColor: "var(--border-color, #2d2d2d)", fontWeight: 800 }}>
-                      <td style={{ padding: "12px 8px" }}></td>
-                      <td style={{ padding: "12px 8px", color: "var(--text-main, #fff)" }}>TOTAL</td>
-                      <td style={{ padding: "12px 8px" }}></td>
-                      <td style={{ padding: "12px 8px" }}></td>
-                      <td style={{ padding: "12px 8px" }}></td>
-                      <td style={{ padding: "12px 8px", textAlign: "right", color: "#10b981" }}>
-                        {formatDuration(totalRuntimeSeconds)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.7rem", mt: 1, fontStyle: "italic" }}>
-                  Approximate reading time based on ~250 words per minute (industry standard: 1 page ≈ 1 minute of screen time).
-                </Typography>
-              </Box>
-            </Paper>
-          </Box>
-        )}
+                  </Box>
 
-        {/* Tab 2: Characters */}
-        {tabIndex === 2 && (
-          <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
-            <TextField
-              value={characterFilter}
-              onChange={(e) => setCharacterFilter(e.target.value)}
-              placeholder="Search characters..."
-              size="small"
-              fullWidth
-              slotProps={{
-                input: {
-                  sx: {
-                    color: "text.primary",
-                    bgcolor: "background.paper",
-                    borderColor: "divider",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" }
-                  },
-                  startAdornment: (
-                    <Box sx={{ display: "flex", color: "text.secondary", mr: 1 }}>
-                      <SearchIcon sx={{ fontSize: 16 }} />
-                    </Box>
-                  ),
-                },
-              }}
-            />
-            {filteredCharacters.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                {characters.length === 0
-                  ? "No characters found in screenplay."
-                  : "No characters matching search."}
-              </Typography>
-            ) : (
-              <List disablePadding sx={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 1 }}>
-                {filteredCharacters.map((char, idx) => {
-                  const profile = characterProfiles[char.name] || {};
-                  const swatchColor = profile.color || CHART_COLORS[idx % CHART_COLORS.length];
-                  const currentCharGender = profile.gender || genders[char.name] || "unknown";
-                  const currentCharRole = profile.role || "";
-
-                  return (
-                    <Box
-                      key={char.name}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        p: 1,
-                        borderRadius: 0,
-                        bgcolor: "background.paper",
-                        border: "1px solid",
-                        borderColor: "divider",
-                        transition: "background-color var(--duration-fast)",
-                        "&:hover": { bgcolor: "action.hover" },
-                      }}
-                    >
-                      {/* Left section: Color Swatch + Name & Lines info */}
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1, minWidth: 0 }}>
-                        <Box
-                          sx={{
-                            width: 22,
-                            height: 22,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: 0,
-                            bgcolor: `${swatchColor}18`,
-                            flexShrink: 0,
-                          }}
-                        >
-                          <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: swatchColor, flexShrink: 0 }} />
-                        </Box>
-                        <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-                          <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {char.name}
-                          </Typography>
-                          <Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
-                            {char.lineCount} lines | {char.wordCount} words
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      {/* Middle-Right section: Dropdowns for quick selection */}
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mr: 1 }}>
-                        {/* Gender Select dropdown */}
-                        <FormControl size="small" sx={{ width: 110 }}>
-                          <Select
-                            value={currentCharGender}
-                            onChange={(e) => {
-                              const updatedProfile = { ...profile, gender: e.target.value };
-                              handleSaveProfile(char.name, updatedProfile);
-                            }}
-                            sx={{
-                              fontSize: "0.75rem",
-                              height: 28,
-                              color: "text.primary",
-                              "& .MuiSelect-select": { py: 0.5 },
-                              "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" }
-                            }}
-                          >
-                            <MenuItem value="male" sx={{ fontSize: "0.75rem" }}>Male</MenuItem>
-                            <MenuItem value="female" sx={{ fontSize: "0.75rem" }}>Female</MenuItem>
-                            <MenuItem value="nonbinary" sx={{ fontSize: "0.75rem" }}>Nonbinary</MenuItem>
-                            <MenuItem value="unknown" sx={{ fontSize: "0.75rem" }}>Unknown</MenuItem>
-                          </Select>
-                        </FormControl>
-
-                        {/* Role Select dropdown */}
-                        <FormControl size="small" sx={{ width: 120 }}>
-                          <Select
-                            value={currentCharRole}
-                            onChange={(e) => {
-                              const updatedProfile = { ...profile, role: e.target.value };
-                              handleSaveProfile(char.name, updatedProfile);
-                            }}
-                            displayEmpty
-                            sx={{
-                              fontSize: "0.75rem",
-                              height: 28,
-                              color: "text.primary",
-                              "& .MuiSelect-select": { py: 0.5 },
-                              "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" }
-                            }}
-                          >
-                            <MenuItem value="" sx={{ fontSize: "0.75rem" }}><em>No Role</em></MenuItem>
-                            <MenuItem value="Protagonist" sx={{ fontSize: "0.75rem" }}>Protagonist</MenuItem>
-                            <MenuItem value="Antagonist" sx={{ fontSize: "0.75rem" }}>Antagonist</MenuItem>
-                            <MenuItem value="Supporting" sx={{ fontSize: "0.75rem" }}>Supporting</MenuItem>
-                            <MenuItem value="Minor" sx={{ fontSize: "0.75rem" }}>Minor</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Box>
-
-                      {/* Far Right: Edit Button */}
-                      <IconButton
-                        size="small"
-                        onClick={() => setSelectedChar(char.name)}
-                        sx={{ color: "text.secondary", "&:hover": { color: "primary.main" } }}
-                        title="Edit details (Backstory, Arc, Relationships)"
+                  {/* Act details grid */}
+                  <Box sx={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(stats.acts.length, 5)}, 1fr)`, gap: 1.5 }}>
+                    {stats.acts.map((act) => (
+                      <Paper
+                        key={act.title}
+                        variant="outlined"
+                        onClick={() => handleScrollToLine(act.lineIndex)}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                          "&:hover": { borderColor: "primary.main", bgcolor: "action.hover", transform: "translateY(-1px)" },
+                        }}
                       >
-                        <EditIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
+                        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "primary.main" }}>
+                          {act.title}
+                        </Typography>
+                        <Typography sx={{ fontSize: 11, color: "text.secondary", mt: 0.5 }}>
+                          {act.wordCount.toLocaleString()} words ({act.percentage}%)
+                        </Typography>
+                        <Typography sx={{ fontSize: 10, color: "text.secondary" }}>
+                          {act.sceneCount} scenes
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                    No Act Section Headings detected. Tip: Add <code># Act 1</code>, <code># Act 2</code> headings in Fountain to automatically track structural balance!
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+
+            {/* Script Composition & Speech Insights */}
+            <Box sx={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 2 }}>
+              {/* Script Composition Bar */}
+              <Paper elevation={1} sx={{ p: 2.5, borderRadius: 2, bgcolor: "background.paper" }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 700, mb: 1.5 }}>
+                  Script Composition
+                </Typography>
+                <Box sx={{ height: 20, width: "100%", borderRadius: 1, overflow: "hidden", display: "flex", mb: 2 }}>
+                  <Box sx={{ width: `${stats.dialoguePct}%`, bgcolor: "info.main", title: `Dialogue: ${stats.dialoguePct}%` }} />
+                  <Box sx={{ width: `${stats.actionPct}%`, bgcolor: "warning.main", title: `Action: ${stats.actionPct}%` }} />
+                  <Box sx={{ width: `${100 - stats.dialoguePct - stats.actionPct}%`, bgcolor: "action.disabled", title: "Other" }} />
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 3, justifyContent: "space-around" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "info.main" }} />
+                    <Box>
+                      <Typography sx={{ fontSize: 11, color: "text.secondary" }}>Dialogue</Typography>
+                      <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{stats.dialoguePct}%</Typography>
                     </Box>
-                  );
-                })}
-              </List>
-            )}
-          </Box>
-        )}
-
-        {/* Tab 3: Character Connections Network Map */}
-        {tabIndex === 3 && (
-          <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
-            {/* Header controls */}
-            <Box sx={{ display: "flex", flexDirection: "column" }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Character Interactions
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.65rem" }}>
-                Click to select · Multi-select to compare
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
-              {/* Left Side: Network Map */}
-              <Paper elevation={0} sx={{ flex: 1, p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, display: "flex", flexDirection: "column", overflow: "auto", minWidth: 0 }}>
-                <Box ref={networkContainerRef} sx={{ flex: 1, width: '100%', height: '100%', display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {connectionsSvg}
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "warning.main" }} />
+                    <Box>
+                      <Typography sx={{ fontSize: 11, color: "text.secondary" }}>Action</Typography>
+                      <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{stats.actionPct}%</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "action.disabled" }} />
+                    <Box>
+                      <Typography sx={{ fontSize: 11, color: "text.secondary" }}>Other</Typography>
+                      <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
+                        {100 - stats.dialoguePct - stats.actionPct}%
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
               </Paper>
 
-              {/* Right Side: Detail panel */}
-              <Paper elevation={0} sx={{ width: 280, flexShrink: 0, p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 0, display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
-                {selectedNodes.size >= 2 ? (
-                  /* Multi-select group view */
-                  <>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        SELECTED GROUP
+              {/* Speech & Density Highlights */}
+              <Paper elevation={1} sx={{ p: 2.5, borderRadius: 2, bgcolor: "background.paper", display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
+                  Speech Complexity & Density
+                </Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+                  <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}>
+                    <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+                      Avg Words / Speech
+                    </Typography>
+                    <Typography sx={{ fontSize: 18, fontWeight: 800, mt: 0.5 }}>
+                      {stats.avgWordsPerSpeech}
+                    </Typography>
+                  </Box>
+
+                  {stats.busiestScene ? (
+                    <Box
+                      onClick={() => handleScrollToLine(stats.busiestScene!.lineIndex)}
+                      sx={{
+                        p: 1.5,
+                        bgcolor: "action.hover",
+                        borderRadius: 1.5,
+                        cursor: "pointer",
+                        transition: "background-color 0.15s",
+                        "&:hover": { bgcolor: "action.selected" },
+                      }}
+                    >
+                      <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+                        Busiest Scene ({stats.busiestScene.characterCount} chars)
                       </Typography>
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1 }}>
-                        {Array.from(selectedNodes).map((name) => (
-                          <Typography key={name} variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.8rem", color: "text.primary" }}>
-                            {name}{Array.from(selectedNodes).indexOf(name) < selectedNodes.size - 1 ? " ·" : ""}
-                          </Typography>
-                        ))}
-                      </Box>
+                      <Typography sx={{ fontSize: 12, fontWeight: 800, mt: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {cleanSceneHeading(stats.busiestScene.heading)}
+                      </Typography>
                     </Box>
+                  ) : (
+                    <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}>
+                      <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+                        Avg Chars / Scene
+                      </Typography>
+                      <Typography sx={{ fontSize: 18, fontWeight: 800, mt: 0.5 }}>
+                        {stats.avgCharsPerScene}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
 
-                    <Divider sx={{ borderColor: "divider" }} />
-
-                    {/* Shared Scenes where ALL selected characters appear */}
-                    {(() => {
-                      const chars = Array.from(selectedNodes);
-                      const sharedScenes = getGroupSharedScenes(chars);
-                      return (
-                        <>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover", p: 1, borderRadius: 0 }}>
-                            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                              Shared Scenes
-                            </Typography>
-                            <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", fontSize: "0.95rem" }}>
-                              {sharedScenes.length}
-                            </Typography>
-                          </Box>
-
-                          <Divider sx={{ borderColor: "divider" }} />
-
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, flex: 1, minHeight: 0 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                              SCENES WITH ALL SELECTED
-                            </Typography>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, overflowY: "auto", flex: 1 }}>
-                              {sharedScenes.map((s, idx) => (
-                                <Box
-                                  key={idx}
-                                  sx={{ p: 0.75, bgcolor: "action.hover", borderRadius: 0, borderLeft: "2px solid", borderLeftColor: "primary.main", cursor: "pointer" }}
-                                  onDoubleClick={async () => {
-                                    try {
-                                      const { emit } = await import("@tauri-apps/api/event");
-                                      emit("modal:xray:scroll-to-line", { lineIndex: s.lineIndex });
-                                    } catch (e) {
-                                      console.error("Failed to scroll to scene line:", e);
-                                    }
-                                  }}
-                                >
-                                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.6rem", display: "block", color: "text.primary", lineHeight: 1.3 }}>
-                                    {cleanSceneHeading(s.heading)}
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ fontSize: "0.55rem", color: "text.secondary" }}>
-                                    {formatDuration(s.durationSeconds)} est. | @{formatDuration(s.offsetSeconds)}
-                                  </Typography>
-                                </Box>
-                              ))}
-                              {sharedScenes.length === 0 && (
-                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: "0.6rem" }}>
-                                  No shared speaking scenes.
-                                </Typography>
-                              )}
-                            </Box>
-                          </Box>
-                        </>
-                      );
-                    })()}
-                  </>
-                ) : selectedNodes.size === 1 ? (
-                  /* Single selection character detail view */
-                  (() => {
-                    const singleSelectedNode = Array.from(selectedNodes)[0];
-                    return (
-                      <>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: characterProfiles[singleSelectedNode]?.color || getGenderColor(genders[singleSelectedNode]), flexShrink: 0 }} />
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.85rem", color: "text.primary" }}>
-                            {singleSelectedNode}
-                          </Typography>
-                        </Box>
-
-                        <Divider sx={{ borderColor: "divider" }} />
-
-                        {/* Co-occurrence bars */}
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                            Scene co-occurrences
-                          </Typography>
-                          {characterConnections
-                            .filter((c) => c.source === singleSelectedNode || c.target === singleSelectedNode)
-                            .sort((a, b) => b.interactions - a.interactions)
-                            .map((c) => {
-                              const peer = c.source === singleSelectedNode ? c.target : c.source;
-                              const peerProfile = characterProfiles[peer] || {};
-                              const peerColor = peerProfile.color || getGenderColor(genders[peer]);
-                              const maxInt = Math.max(1, ...characterConnections
-                                .filter((cc) => cc.source === singleSelectedNode || cc.target === singleSelectedNode)
-                                .map((cc) => cc.interactions));
-                              const pct = (c.interactions / maxInt) * 100;
-
-                              return (
-                                <Box
-                                  key={peer}
-                                  sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", "&:hover": { bgcolor: "action.hover" }, borderRadius: 0, px: 0.5, py: 0.25 }}
-                                  onClick={() => setHoveredNode(peer)}
-                                >
-                                  <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: peerColor, flexShrink: 0 }} />
-                                  <Typography variant="caption" sx={{ width: 70, fontWeight: 600, fontSize: "0.6rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "text.primary" }}>
-                                    {peer}
-                                  </Typography>
-                                  <Box sx={{ flex: 1, bgcolor: "action.hover", height: 6, borderRadius: 0, overflow: "hidden" }}>
-                                    <Box sx={{ width: `${pct}%`, height: "100%", bgcolor: peerColor, borderRadius: 0, transition: "width var(--duration-slow) ease" }} />
-                                  </Box>
-                                  <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "0.6rem", color: "text.primary", minWidth: 18, textAlign: "right" }}>
-                                    {c.interactions}
-                                  </Typography>
-                                </Box>
-                              );
-                            })}
-                        </Box>
-
-                        <Divider sx={{ borderColor: "divider" }} />
-
-                        {/* Shared scenes */}
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, flex: 1, minHeight: 0 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                            Shared scenes
-                          </Typography>
-                          {(() => {
-                            const peer = hoveredNode && hoveredNode !== singleSelectedNode ? hoveredNode :
-                              characterConnections.find((c) => c.source === singleSelectedNode || c.target === singleSelectedNode)?.source === singleSelectedNode ?
-                              characterConnections.find((c) => c.source === singleSelectedNode || c.target === singleSelectedNode)?.target :
-                              characterConnections.find((c) => c.source === singleSelectedNode || c.target === singleSelectedNode)?.source;
-
-                            if (!peer) {
-                              return (
-                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: "0.65rem" }}>
-                                  No connections found.
-                                </Typography>
-                              );
-                            }
-
-                            const shared = getSharedScenes(singleSelectedNode, peer);
-                            return (
-                              <>
-                                <Typography variant="caption" sx={{ fontSize: "0.6rem", color: "primary.main", fontWeight: 700 }}>
-                                  with {peer} ({shared.length} scenes)
-                                </Typography>
-                                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, overflowY: "auto", flex: 1 }}>
-                                  {shared.map((s, idx) => (
-                                    <Box
-                                      key={idx}
-                                      sx={{ p: 0.75, bgcolor: "action.hover", borderRadius: 0, borderLeft: "2px solid", borderLeftColor: "primary.main", cursor: "pointer" }}
-                                      onDoubleClick={async () => {
-                                        try {
-                                          const { emit } = await import("@tauri-apps/api/event");
-                                          emit("modal:xray:scroll-to-line", { lineIndex: s.lineIndex });
-                                        } catch (e) {
-                                          console.error("Failed to scroll to scene line:", e);
-                                        }
-                                      }}
-                                    >
-                                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.6rem", display: "block", color: "text.primary", lineHeight: 1.3 }}>
-                                        {cleanSceneHeading(s.heading)}
-                                      </Typography>
-                                      <Typography variant="caption" sx={{ fontSize: "0.55rem", color: "text.secondary" }}>
-                                        {formatDuration(s.durationSeconds)} est. | @{formatDuration(s.offsetSeconds)}
-                                      </Typography>
-                                    </Box>
-                                  ))}
-                                  {shared.length === 0 && (
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: "0.6rem" }}>
-                                      No shared speaking scenes.
-                                    </Typography>
-                                  )}
-                                </Box>
-                              </>
-                            );
-                          })()}
-                        </Box>
-                      </>
-                    );
-                  })()
-                ) : (
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", flexDirection: "column", gap: 1 }}>
-                    <PersonIcon sx={{ fontSize: 28, color: "text.secondary", opacity: 0.4 }} />
-                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: "0.7rem", textAlign: "center" }}>
-                      Click a character to see their interaction details
+                {stats.longestMonologue && (
+                  <Box
+                    onClick={() => handleScrollToLine(stats.longestMonologue!.lineIndex)}
+                    sx={{
+                      p: 1.5,
+                      border: "1px dashed",
+                      borderColor: "primary.main",
+                      borderRadius: 1.5,
+                      cursor: "pointer",
+                      "&:hover": { bgcolor: "action.hover" },
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 10, fontWeight: 700, color: "primary.main", textTransform: "uppercase" }}>
+                      Longest Monologue ({stats.longestMonologue.wordCount} words)
+                    </Typography>
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, mt: 0.25 }}>
+                      {stats.longestMonologue.character}
+                    </Typography>
+                    <Typography sx={{ fontSize: 10, color: "text.secondary", fontStyle: "italic", mt: 0.5 }}>
+                      &ldquo;{stats.longestMonologue.textSnippet}&rdquo;
                     </Typography>
                   </Box>
                 )}
               </Paper>
             </Box>
+
+            {/* Environment & Location Analysis */}
+            <Paper elevation={1} sx={{ p: 2.5, borderRadius: 2, bgcolor: "background.paper" }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, mb: 2 }}>
+                Environment & Location Insights
+              </Typography>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr", gap: 3 }}>
+                {/* INT / EXT Stacked Bar */}
+                <Box>
+                  <Typography sx={{ fontSize: 11, color: "text.secondary", fontWeight: 700, mb: 1 }}>
+                    SETTING BREAKDOWN
+                  </Typography>
+                  {stats.headingCount > 0 && (
+                    <>
+                      <Box sx={{ height: 16, borderRadius: 1, overflow: "hidden", display: "flex", mb: 1, bgcolor: "action.disabledBackground" }}>
+                        {stats.settingStats.map((st, idx) => {
+                          const palette = ["#2196f3", "#4caf50", "#ff9800", "#9c27b0", "#00bcd4", "#795548"];
+                          const color = st.name === "INT" ? "#2196f3" : st.name === "EXT" ? "#4caf50" : st.name === "INT/EXT" ? "#ff9800" : palette[idx % palette.length];
+                          return (
+                            <Tooltip key={st.name} title={`${st.name}: ${st.count} scenes (${st.percentage}%)`}>
+                              <Box sx={{ width: `${st.percentage}%`, bgcolor: color }} />
+                            </Tooltip>
+                          );
+                        })}
+                      </Box>
+                      <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", fontSize: 11, color: "text.secondary" }}>
+                        {stats.settingStats.map((st, idx) => {
+                          const palette = ["#2196f3", "#4caf50", "#ff9800", "#9c27b0", "#00bcd4", "#795548"];
+                          const color = st.name === "INT" ? "#2196f3" : st.name === "EXT" ? "#4caf50" : st.name === "INT/EXT" ? "#ff9800" : palette[idx % palette.length];
+                          return (
+                            <span key={st.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: color, display: "inline-block" }} />
+                              {st.name}: {st.count} ({st.percentage}%)
+                            </span>
+                          );
+                        })}
+                      </Box>
+                    </>
+                  )}
+                </Box>
+
+                {/* Day / Night / All Times Stacked Bar */}
+                <Box>
+                  <Typography sx={{ fontSize: 11, color: "text.secondary", fontWeight: 700, mb: 1 }}>
+                    TIME OF DAY BREAKDOWN
+                  </Typography>
+                  {stats.headingCount > 0 && (() => {
+                    const getTimeColor = (name: string, index: number) => {
+                      const upper = name.toUpperCase();
+                      if (upper === "DAY") return "#ffb74d";
+                      if (upper === "NIGHT") return "#7e57c2";
+                      if (upper.includes("MORNING") || upper.includes("DAWN")) return "#ff9800";
+                      if (upper.includes("EVENING") || upper.includes("DUSK")) return "#e91e63";
+                      if (upper.includes("AFTERNOON")) return "#fbc02d";
+                      if (upper.includes("CONTINUOUS")) return "#4caf50";
+                      if (upper.includes("LATER")) return "#00bcd4";
+                      if (upper.includes("SAME")) return "#8e24aa";
+                      const palette = ["#00acc1", "#3949ab", "#d81b60", "#00897b", "#7cb342", "#fb8c00"];
+                      return palette[index % palette.length];
+                    };
+
+                    return (
+                      <>
+                        <Box sx={{ height: 16, borderRadius: 1, overflow: "hidden", display: "flex", mb: 1, bgcolor: "action.disabledBackground" }}>
+                          {stats.timeOfDayStats.map((t, idx) => (
+                            <Tooltip key={t.name} title={`${t.name}: ${t.count} scenes (${t.percentage}%)`}>
+                              <Box sx={{ width: `${t.percentage}%`, bgcolor: getTimeColor(t.name, idx) }} />
+                            </Tooltip>
+                          ))}
+                        </Box>
+                        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", fontSize: 11, color: "text.secondary", maxHeight: 90, overflowY: "auto" }}>
+                          {stats.timeOfDayStats.map((t, idx) => (
+                            <span key={t.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: getTimeColor(t.name, idx), display: "inline-block" }} />
+                              {t.name}: {t.count} ({t.percentage}%)
+                            </span>
+                          ))}
+                        </Box>
+                      </>
+                    );
+                  })()}
+                </Box>
+
+                {/* Top Locations List */}
+                <Box>
+                  <Typography sx={{ fontSize: 11, color: "text.secondary", fontWeight: 700, mb: 1 }}>
+                    TOP LOCATIONS
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, maxHeight: 110, overflowY: "auto" }}>
+                    {stats.locations.map((loc) => (
+                      <Box key={loc.name} sx={{ display: "flex", justifyContent: "space-between", fontSize: 11, px: 1, py: 0.25, bgcolor: "action.hover", borderRadius: 1 }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {loc.name}
+                        </Typography>
+                        <Chip label={loc.count} size="small" sx={{ height: 16, fontSize: 10, fontWeight: 700 }} />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Box>
+            </Paper>
+          </Box>
+        )}
+
+        {/* ─── TAB 1: PACING & TIMELINE ────────────────────────────────────────── */}
+        {tabIndex === 1 && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Interactive Visual Script Timeline */}
+            <Paper elevation={1} sx={{ p: 2.5, borderRadius: 2, bgcolor: "background.paper" }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, mb: 1.5 }}>
+                Interactive Script Sequence Timeline
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: "text.secondary", mb: 2 }}>
+                Each block represents a scene. Width is proportional to scene length. Double-click any scene to jump to it in the editor.
+              </Typography>
+
+              <Box
+                ref={timelineContainerRef}
+                sx={{
+                  display: "flex",
+                  gap: "2px",
+                  height: 48,
+                  width: "100%",
+                  bgcolor: "action.hover",
+                  borderRadius: 1.5,
+                  p: 0.5,
+                  overflowX: "auto",
+                }}
+              >
+                {sceneTimings.map((st, i) => {
+                  const pct = totalRuntimeSeconds > 0 ? (st.durationSeconds / totalRuntimeSeconds) * 100 : 100 / sceneTimings.length;
+                  const isExt = st.heading.toUpperCase().includes("EXT");
+                  const bg = isExt ? "#4caf50" : "#2196f3";
+
+                  return (
+                    <Tooltip key={i} title={`Scene ${i + 1}: ${cleanSceneHeading(st.heading)} (${formatDuration(st.durationSeconds)})`}>
+                      <Box
+                        onDoubleClick={() => handleScrollToLine(st.lineIndex)}
+                        sx={{
+                          flexBasis: `${pct}%`,
+                          flexShrink: 0,
+                          minWidth: 12,
+                          height: "100%",
+                          bgcolor: bg,
+                          borderRadius: 0.75,
+                          cursor: "pointer",
+                          opacity: 0.85,
+                          transition: "opacity 0.15s",
+                          "&:hover": { opacity: 1, transform: "scaleY(1.05)" },
+                        }}
+                      />
+                    </Tooltip>
+                  );
+                })}
+              </Box>
+            </Paper>
+
+            {/* Pacing Chart (Dialogue vs Action Density) */}
+            <Paper elevation={1} sx={{ p: 2.5, borderRadius: 2, bgcolor: "background.paper" }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
+                    Scene Pacing Chart (Dialogue vs Action Density)
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: "text.secondary", mt: 0.25 }}>
+                    Click any scene bar to jump to it in the editor.
+                  </Typography>
+                </Box>
+
+                {/* Legend & Zoom Controls */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  <Box sx={{ display: "flex", gap: 2, fontSize: 11, color: "text.secondary" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#2196f3", display: "inline-block" }} />
+                      Dialogue Words
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#ff9800", display: "inline-block" }} />
+                      Action Words
+                    </span>
+                  </Box>
+
+                  <Box sx={{ display: "flex", gap: 0.5, bgcolor: "action.hover", p: 0.5, borderRadius: 1.5 }}>
+                    {[1.0, 1.5, 2.0].map((z) => (
+                      <Button
+                        key={z}
+                        size="small"
+                        variant={pacingZoom === z ? "contained" : "text"}
+                        onClick={() => setPacingZoom(z)}
+                        sx={{
+                          minWidth: 36,
+                          height: 24,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          py: 0,
+                          px: 1,
+                          boxShadow: "none",
+                        }}
+                      >
+                        {z}x
+                      </Button>
+                    ))}
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Chart Body */}
+              <Box ref={pacingContainerRef} sx={{ height: 220, width: "100%", overflowX: "auto", pt: 1 }}>
+                {sceneTimings.length > 0 && (() => {
+                  const maxWords = Math.max(
+                    ...sceneTimings.map((s) => Math.max(s.dialogueWords, s.actionWords)),
+                    50
+                  );
+                  const avgWords = Math.round(
+                    sceneTimings.reduce((sum, s) => sum + s.totalWords, 0) / (sceneTimings.length || 1)
+                  );
+                  const chartHeight = 160;
+                  const colWidth = 32;
+                  const totalWidth = Math.max(sceneTimings.length * colWidth, 600) * pacingZoom;
+
+                  return (
+                    <Box sx={{ minWidth: totalWidth, height: "100%", position: "relative" }}>
+                      <svg width="100%" height={chartHeight + 30} viewBox={`0 0 ${sceneTimings.length * colWidth + 20} ${chartHeight + 30}`}>
+                        {/* Background Grid Lines */}
+                        <line x1="0" y1="20" x2={sceneTimings.length * colWidth + 20} y2="20" stroke="rgba(255,255,255,0.06)" strokeDasharray="3" />
+                        <line x1="0" y1={chartHeight / 2} x2={sceneTimings.length * colWidth + 20} y2={chartHeight / 2} stroke="rgba(255,255,255,0.06)" strokeDasharray="3" />
+                        <line x1="0" y1={chartHeight} x2={sceneTimings.length * colWidth + 20} y2={chartHeight} stroke="rgba(255,255,255,0.12)" />
+
+                        {/* Average Reference Line */}
+                        {avgWords > 0 && (() => {
+                          const avgY = chartHeight - (avgWords / (maxWords * 2)) * chartHeight;
+                          return (
+                            <g>
+                              <line x1="0" y1={avgY} x2={sceneTimings.length * colWidth + 20} y2={avgY} stroke="#ffeb3b" strokeDasharray="4" strokeWidth="1" opacity="0.6" />
+                              <text x={sceneTimings.length * colWidth + 10} y={avgY - 3} fill="#ffeb3b" fontSize="8" textAnchor="end" opacity="0.8">
+                                Avg Scene ({avgWords}w)
+                              </text>
+                            </g>
+                          );
+                        })()}
+
+                        {/* Scene Bars */}
+                        {sceneTimings.map((st, i) => {
+                          const x = i * colWidth + 10;
+                          const diaH = Math.max(4, (st.dialogueWords / maxWords) * (chartHeight - 20));
+                          const actH = Math.max(4, (st.actionWords / maxWords) * (chartHeight - 20));
+
+                          return (
+                            <Tooltip
+                              key={i}
+                              title={
+                                <Box sx={{ p: 0.5 }}>
+                                  <Typography sx={{ fontSize: 11, fontWeight: 800 }}>
+                                    Scene {i + 1}: {cleanSceneHeading(st.heading)}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: 10, color: "#90caf9", mt: 0.5 }}>
+                                    Dialogue: {st.dialogueWords} words
+                                  </Typography>
+                                  <Typography sx={{ fontSize: 10, color: "#ffcc80" }}>
+                                    Action: {st.actionWords} words
+                                  </Typography>
+                                  <Typography sx={{ fontSize: 9, color: "#bbb", mt: 0.5, fontStyle: "italic" }}>
+                                    Click to jump to line {st.lineIndex + 1}
+                                  </Typography>
+                                </Box>
+                              }
+                            >
+                              <g
+                                onClick={() => handleScrollToLine(st.lineIndex)}
+                                style={{ cursor: "pointer" }}
+                              >
+                                {/* Dialogue Bar */}
+                                <rect
+                                  x={x}
+                                  y={chartHeight - diaH}
+                                  width="9"
+                                  height={diaH}
+                                  fill="#2196f3"
+                                  rx="2"
+                                  opacity="0.9"
+                                />
+                                {/* Action Bar */}
+                                <rect
+                                  x={x + 11}
+                                  y={chartHeight - actH}
+                                  width="9"
+                                  height={actH}
+                                  fill="#ff9800"
+                                  rx="2"
+                                  opacity="0.9"
+                                />
+                                {/* Scene Label on X Axis */}
+                                <text
+                                  x={x + 10}
+                                  y={chartHeight + 16}
+                                  fill="rgba(255,255,255,0.5)"
+                                  fontSize="9"
+                                  fontWeight="600"
+                                  textAnchor="middle"
+                                >
+                                  {i + 1}
+                                </text>
+                              </g>
+                            </Tooltip>
+                          );
+                        })}
+                      </svg>
+                    </Box>
+                  );
+                })()}
+              </Box>
+            </Paper>
+
+            {/* Character Presence Matrix Grid */}
+            <Paper elevation={1} sx={{ p: 2.5, borderRadius: 2, bgcolor: "background.paper" }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, mb: 1.5 }}>
+                Character Scene Presence Matrix
+              </Typography>
+
+              <Box sx={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", padding: "6px" }}>Character</th>
+                      {presenceGridData.matrix.map((_, i) => (
+                        <th key={i} style={{ padding: "4px", fontSize: 9 }}>S{i + 1}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {presenceGridData.topChars.map((char, cIdx) => (
+                      <tr key={char.name} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td style={{ padding: "6px", fontWeight: 700 }}>{char.name}</td>
+                        {presenceGridData.matrix.map((row, rIdx) => {
+                          const val = row.presence[cIdx];
+                          const bg = val > 0 ? `rgba(33, 150, 243, ${Math.min(1, 0.2 + val / 100)})` : "transparent";
+                          return (
+                            <td key={rIdx} onClick={() => handleScrollToLine(row.lineIndex)} style={{ textAlign: "center", cursor: "pointer" }}>
+                              <Box sx={{ width: 14, height: 14, borderRadius: "3px", bgcolor: bg, margin: "auto" }} />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Box>
+            </Paper>
+          </Box>
+        )}
+
+        {/* ─── TAB 2: CHARACTERS ──────────────────────────────────────────────── */}
+        {tabIndex === 2 && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Gender Analysis Card */}
+            <Paper elevation={1} sx={{ p: 2.5, borderRadius: 2, bgcolor: "background.paper" }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, mb: 2 }}>
+                Demographic & Gender Analysis
+              </Typography>
+              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
+                {(["male", "female", "nonbinary", "unknown"] as const).map((g) => (
+                  <Paper key={g} variant="outlined" sx={{ p: 1.5, borderRadius: 1.5, borderLeft: 4, borderColor: getGenderColor(g) }}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+                      {g}
+                    </Typography>
+                    <Typography sx={{ fontSize: 20, fontWeight: 800, mt: 0.5 }}>
+                      {genderStats.counts[g]} <span style={{ fontSize: 12, fontWeight: 400 }}>chars</span>
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
+                      {genderStats.percentages[g]}% of dialogue words
+                    </Typography>
+                  </Paper>
+                ))}
+              </Box>
+            </Paper>
+
+            {/* Filterable Character Directory */}
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <TextField
+                size="small"
+                placeholder="Search characters..."
+                value={characterFilter}
+                onChange={(e) => setCharacterFilter(e.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ fontSize: 18 }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{ width: 260 }}
+              />
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel sx={{ fontSize: 12 }}>Filter by Role</InputLabel>
+                <Select
+                  value={roleFilter}
+                  label="Filter by Role"
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  sx={{ fontSize: 12 }}
+                >
+                  <MenuItem value="all">All Roles</MenuItem>
+                  <MenuItem value="protagonist">Protagonist</MenuItem>
+                  <MenuItem value="antagonist">Antagonist</MenuItem>
+                  <MenuItem value="supporting">Supporting</MenuItem>
+                  <MenuItem value="minor">Minor</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            {/* Character Cards Grid */}
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 2 }}>
+              {filteredCharacters.map((char) => (
+                <Paper key={char.name} elevation={1} sx={{ p: 2, borderRadius: 2, bgcolor: "background.paper", display: "flex", flexDirection: "column", gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: char.color || getGenderColor(char.gender) }} />
+                      <Typography sx={{ fontSize: 14, fontWeight: 800 }}>{char.name}</Typography>
+                    </Box>
+                    <IconButton size="small" onClick={() => setSelectedChar(char.name)}>
+                      <EditIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
+
+                  <Box sx={{ display: "flex", gap: 2, fontSize: 11, color: "text.secondary" }}>
+                    <span>{char.lineCount} lines</span>
+                    <span>{char.wordCount} words</span>
+                    <span>{char.dialoguePercentage.toFixed(1)}% dialogue</span>
+                  </Box>
+
+                  <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+                    <Chip label={char.gender} size="small" sx={{ fontSize: 10, height: 20 }} />
+                    <Chip label={char.role || "Unassigned"} size="small" variant="outlined" sx={{ fontSize: 10, height: 20 }} />
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
           </Box>
         )}
       </Box>
 
-      {/* Rocky-style Character Edit Dialog */}
+      {/* Character Profile Modal */}
       {selectedChar && (
         <CharacterEditModal
-          characterName={selectedChar}
-          open={!!selectedChar}
+          charName={selectedChar}
+          profile={characterProfiles[selectedChar] || {}}
           onClose={() => setSelectedChar(null)}
-          allCharacters={characters.map((c) => c.name)}
-          existingProfile={characterProfiles[selectedChar] || {}}
-          genderFromGendersSetting={genders[selectedChar] || "unknown"}
-          appearsInCount={getCharacterAppearanceCount(selectedChar)}
-          onSave={handleSaveProfile}
+          onSave={(p) => {
+            handleSaveProfile(selectedChar, p);
+            setSelectedChar(null);
+          }}
         />
       )}
     </Box>
   );
 }
 
-// Dialog Modal Component
+// ─── Character Edit Modal Component ──────────────────────────────────────────
+
 interface CharacterEditModalProps {
-  characterName: string;
-  open: boolean;
+  charName: string;
+  profile: CharacterProfile;
   onClose: () => void;
-  allCharacters: string[];
-  existingProfile: CharacterProfile;
-  genderFromGendersSetting: string;
-  appearsInCount: number;
-  onSave: (charName: string, updatedProfile: CharacterProfile) => Promise<void>;
+  onSave: (profile: CharacterProfile) => void;
 }
 
-function CharacterEditModal({
-  characterName,
-  open,
-  onClose,
-  allCharacters,
-  existingProfile,
-  genderFromGendersSetting,
-  appearsInCount,
-  onSave,
-}: CharacterEditModalProps) {
-  const theme = useTheme();
-  const [description, setDescription] = useState(existingProfile.description || "");
-  const [role, setRole] = useState(existingProfile.role || "");
-  const [gender, setGender] = useState(existingProfile.gender || genderFromGendersSetting || "unknown");
-  const [age, setAge] = useState(existingProfile.age || "");
-  const [backstory, setBackstory] = useState(existingProfile.backstory || "");
-  const [arc, setArc] = useState(existingProfile.arc || "");
-  const [color, setColor] = useState(existingProfile.color || getGenderColor(gender));
-  const [highlight, setHighlight] = useState(existingProfile.highlight ?? true);
-
+function CharacterEditModal({ charName, profile, onClose, onSave }: CharacterEditModalProps) {
+  const [description, setDescription] = useState(profile.description || "");
+  const [role, setRole] = useState(profile.role || "");
+  const [gender, setGender] = useState(profile.gender || "unknown");
+  const [age, setAge] = useState(profile.age || "");
+  const [backstory, setBackstory] = useState(profile.backstory || "");
+  const [arc, setArc] = useState(profile.arc || "");
+  const [color, setColor] = useState(profile.color || "");
   const [relationships, setRelationships] = useState<Array<{ target: string; type: string }>>(
-    existingProfile.relationships || []
+    profile.relationships || []
   );
+
   const [newRelTarget, setNewRelTarget] = useState("");
   const [newRelType, setNewRelType] = useState("");
 
   const handleAddRelationship = () => {
     if (!newRelTarget || !newRelType) return;
-    if (relationships.some((r) => r.target === newRelTarget)) return;
     setRelationships([...relationships, { target: newRelTarget, type: newRelType }]);
     setNewRelTarget("");
     setNewRelType("");
   };
 
-  const handleRemoveRelationship = (target: string) => {
-    setRelationships(relationships.filter((r) => r.target !== target));
+  const handleRemoveRelationship = (idx: number) => {
+    setRelationships(relationships.filter((_, i) => i !== idx));
   };
-
-  const handleSave = () => {
-    const updatedProfile = {
-      description,
-      role,
-      gender,
-      age,
-      backstory,
-      arc,
-      color,
-      highlight,
-      relationships,
-    };
-    onSave(characterName, updatedProfile);
-    onClose();
-  };
-
-  const peerCharacters = allCharacters.filter((name) => name !== characterName);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { bgcolor: theme.palette.background.paper, color: theme.palette.text.primary, border: 1, borderColor: theme.palette.divider } } }}>
-      <DialogTitle sx={{ fontWeight: 800, fontSize: "1.1rem", textTransform: "uppercase", pb: 1 }}>
-        {characterName}
-      </DialogTitle>
-      <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2, borderColor: theme.palette.divider }}>
-        <TextField
-          label="DESCRIPTION"
-          placeholder="e.g. A weary detective in his 50s, haunted by a cold case..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          multiline
-          rows={2}
-          fullWidth
-          slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
-        />
+    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ fontWeight: 800 }}>Edit Character Profile: {charName}</DialogTitle>
+      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+        <TextField label="Description" multiline rows={2} fullWidth value={description} onChange={(e) => setDescription(e.target.value)} size="small" />
 
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 4 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel shrink id="role-select-label" sx={{ color: theme.palette.text.secondary }}>ROLE</InputLabel>
-              <Select
-                labelId="role-select-label"
-                label="ROLE"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                displayEmpty
-                sx={{ color: theme.palette.text.primary, "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.divider } }}
-              >
-                <MenuItem value=""><em>None</em></MenuItem>
-                <MenuItem value="Protagonist">Protagonist</MenuItem>
-                <MenuItem value="Antagonist">Antagonist</MenuItem>
-                <MenuItem value="Supporting">Supporting</MenuItem>
-                <MenuItem value="Minor">Minor</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 4 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel shrink id="gender-select-label" sx={{ color: theme.palette.text.secondary }}>GENDER</InputLabel>
-              <Select
-                labelId="gender-select-label"
-                label="GENDER"
-                value={gender}
-                onChange={(e) => {
-                  setGender(e.target.value);
-                  setColor(getGenderColor(e.target.value));
-                }}
-                sx={{ color: theme.palette.text.primary, "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.divider } }}
-              >
-                <MenuItem value="male">Male</MenuItem>
-                <MenuItem value="female">Female</MenuItem>
-                <MenuItem value="nonbinary">Nonbinary</MenuItem>
-                <MenuItem value="unknown">Unknown</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 4 }}>
-            <TextField
-              label="AGE"
-              placeholder="e.g. 30s"
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              size="small"
-              fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
-              sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
-            />
-          </Grid>
-        </Grid>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2 }}>
+          <FormControl size="small">
+            <InputLabel>Role</InputLabel>
+            <Select value={role} label="Role" onChange={(e) => setRole(e.target.value)}>
+              <MenuItem value="Protagonist">Protagonist</MenuItem>
+              <MenuItem value="Antagonist">Antagonist</MenuItem>
+              <MenuItem value="Supporting">Supporting</MenuItem>
+              <MenuItem value="Minor">Minor</MenuItem>
+            </Select>
+          </FormControl>
 
-        <TextField
-          label="BACKSTORY"
-          placeholder="Character history, motivations, secrets..."
-          value={backstory}
-          onChange={(e) => setBackstory(e.target.value)}
-          multiline
-          rows={2}
-          fullWidth
-          slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
-        />
+          <FormControl size="small">
+            <InputLabel>Gender</InputLabel>
+            <Select value={gender} label="Gender" onChange={(e) => setGender(e.target.value)}>
+              <MenuItem value="male">Male</MenuItem>
+              <MenuItem value="female">Female</MenuItem>
+              <MenuItem value="nonbinary">Nonbinary</MenuItem>
+              <MenuItem value="unknown">Unknown</MenuItem>
+            </Select>
+          </FormControl>
 
-        <TextField
-          label="CHARACTER ARC"
-          placeholder="How does this character change through the story..."
-          value={arc}
-          onChange={(e) => setArc(e.target.value)}
-          multiline
-          rows={2}
-          fullWidth
-          slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
-        />
+          <TextField label="Age" value={age} onChange={(e) => setAge(e.target.value)} size="small" />
+        </Box>
 
+        <TextField label="Backstory" multiline rows={2} fullWidth value={backstory} onChange={(e) => setBackstory(e.target.value)} size="small" />
+        <TextField label="Character Arc" multiline rows={2} fullWidth value={arc} onChange={(e) => setArc(e.target.value)} size="small" />
+
+        {/* Color Swatch Picker */}
         <Box>
-          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", display: "block", mb: 1, color: theme.palette.text.secondary }}>
-            COLOR PROFILE
-          </Typography>
-          <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center" }}>
+          <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 1 }}>Color Swatch</Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
             {SWATCH_COLORS.map((c) => (
-              <IconButton
+              <Box
                 key={c}
                 onClick={() => setColor(c)}
                 sx={{
                   width: 24,
                   height: 24,
+                  borderRadius: "50%",
                   bgcolor: c,
-                  border: color === c ? 2 : 0,
-                  borderColor: theme.palette.getContrastText(theme.palette.background.paper),
-                  "&:hover": { bgcolor: c, opacity: 0.8 },
+                  cursor: "pointer",
+                  border: color === c ? "2px solid #fff" : "none",
                 }}
               />
             ))}
-            <Button
-              variant={highlight ? "contained" : "outlined"}
-              size="small"
-              onClick={() => setHighlight(!highlight)}
-              sx={{ textTransform: "none", ml: "auto", fontSize: 10, py: 0.25, color: theme.palette.text.primary, borderColor: theme.palette.divider }}
-            >
-              Highlight: {highlight ? "On" : "Off"}
-            </Button>
           </Box>
         </Box>
 
-        <Divider sx={{ borderColor: theme.palette.divider }} />
-
-        <Box>
-          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", display: "block", mb: 1, color: theme.palette.text.secondary }}>
-            RELATIONSHIPS
-          </Typography>
-          {relationships.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", fontSize: 11 }}>
-              No relationships defined yet.
-            </Typography>
-          ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mb: 1.5 }}>
-              {relationships.map((r) => (
-                <Box
-                  key={r.target}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    bgcolor: theme.palette.action.hover,
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 0,
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 600 }}>
-                    {r.target} — {r.type}
-                  </Typography>
-                  <IconButton size="small" onClick={() => handleRemoveRelationship(r.target)} sx={{ color: theme.palette.text.secondary }}>
-                    <DeleteIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                </Box>
-              ))}
+        {/* Relationships Manager */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Typography sx={{ fontSize: 12, fontWeight: 700 }}>Relationships</Typography>
+          {relationships.map((rel, idx) => (
+            <Box key={idx} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "action.hover", p: 1, borderRadius: 1 }}>
+              <Typography sx={{ fontSize: 12 }}>
+                {rel.target} &mdash; <strong>{rel.type}</strong>
+              </Typography>
+              <IconButton size="small" onClick={() => handleRemoveRelationship(idx)}>
+                <DeleteIcon sx={{ fontSize: 16 }} />
+              </IconButton>
             </Box>
-          )}
-
-          <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center" }}>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel id="rel-target-label" sx={{ color: theme.palette.text.secondary }}>Character</InputLabel>
-              <Select
-                labelId="rel-target-label"
-                value={newRelTarget}
-                onChange={(e) => setNewRelTarget(e.target.value)}
-                label="Character"
-                sx={{ color: theme.palette.text.primary, "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.divider } }}
-              >
-                {peerCharacters.map((name) => (
-                  <MenuItem key={name} value={name}>
-                    {name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              label="Relation Type"
-              placeholder="e.g. Partner"
-              value={newRelType}
-              onChange={(e) => setNewRelType(e.target.value)}
-              size="small"
-              fullWidth
-              sx={{ "& label": { color: theme.palette.text.secondary }, "& .MuiInputBase-input": { color: theme.palette.text.primary } }}
-            />
-            <IconButton onClick={handleAddRelationship} color="primary" disabled={!newRelTarget || !newRelType}>
+          ))}
+          <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+            <TextField placeholder="Target Name" size="small" value={newRelTarget} onChange={(e) => setNewRelTarget(e.target.value)} />
+            <TextField placeholder="Relation (e.g. Rival)" size="small" value={newRelType} onChange={(e) => setNewRelType(e.target.value)} />
+            <IconButton onClick={handleAddRelationship} color="primary">
               <AddIcon />
             </IconButton>
           </Box>
         </Box>
-
-        <Divider sx={{ borderColor: theme.palette.divider }} />
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
-          APPEARS IN ({appearsInCount} SCENES)
-        </Typography>
       </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} color="inherit" sx={{ color: theme.palette.text.secondary }}>
-          Cancel
-        </Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
-          Save
+
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          variant="contained"
+          onClick={() =>
+            onSave({
+              description,
+              role,
+              gender,
+              age,
+              backstory,
+              arc,
+              color,
+              relationships,
+            })
+          }
+        >
+          Save Profile
         </Button>
       </DialogActions>
     </Dialog>
   );
 }
+
+// ─── Outer Window Container Component ─────────────────────────────────────
 
 export const XrayWindow: React.FC = () => {
   const [themeId, setThemeId] = useState(() => getInitialThemeId());
@@ -1925,10 +1221,12 @@ export const XrayWindow: React.FC = () => {
         // not in Tauri
       }
     };
+
     let cleanup: (() => void) | undefined;
     setup().then((fn) => {
       cleanup = fn;
     });
+
     return () => {
       cancelled = true;
       clearTimeout(timeout);
@@ -1981,38 +1279,40 @@ export const XrayWindow: React.FC = () => {
 
   return (
     <>
-    <MuiThemeProvider theme={muiTheme}>
-      <CssBaseline />
-      <WindowResizeHandles />
-      <Box sx={{ height: "100vh", overflow: "hidden", zoom: `${appScale}%` }}>
-        <XrayContent data={data} onClose={handleClose} timedOut={timedOut} />
-      </Box>
-    </MuiThemeProvider>
-    {tourStep && (
-      <CrossWindowTourCard
-        step={tourStep}
-        tourName={tourName}
-        progress={progress}
-        taskComplete={taskComplete}
-        isLastStep={isLastStep}
-        stepNumber={currentIndex + 1}
-        totalSteps={totalSteps}
-        onNext={async () => {
-          try {
-            const { emit } = await import("@tauri-apps/api/event");
-            await emit("tour:step-done", { stepIndex: 0, window: "xray" });
-          } catch { void 0; }
-        }}
-        onCancel={async () => {
-          try {
-            const { emit } = await import("@tauri-apps/api/event");
-            await emit("tour:cancel", {});
-          } catch { void 0; }
-        }}
-      />
-    )}
+      <MuiThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <WindowResizeHandles />
+        <Box sx={{ height: "100vh", overflow: "hidden", zoom: `${appScale}%` }}>
+          <XrayContent data={data} onClose={handleClose} timedOut={timedOut} />
+        </Box>
+      </MuiThemeProvider>
+      {tourStep && (
+        <CrossWindowTourCard
+          step={tourStep}
+          tourName={tourName}
+          progress={progress}
+          taskComplete={taskComplete}
+          isLastStep={isLastStep}
+          stepNumber={currentIndex + 1}
+          totalSteps={totalSteps}
+          onNext={async () => {
+            try {
+              const { emit } = await import("@tauri-apps/api/event");
+              await emit("tour:step-done", { stepIndex: 0, window: "xray" });
+            } catch {
+              void 0;
+            }
+          }}
+          onCancel={async () => {
+            try {
+              const { emit } = await import("@tauri-apps/api/event");
+              await emit("tour:cancel", {});
+            } catch {
+              void 0;
+            }
+          }}
+        />
+      )}
     </>
   );
 };
-
-

@@ -42,10 +42,7 @@ export const isDialogueType = (t: number) =>
 export const isDualType = (t: number) =>
   t === LINE_DUAL_CHARACTER || t === LINE_DUAL_DIALOGUE || t === LINE_DUAL_PARENTHETICAL;
 
-export const needsBlankAfterEnter = (t: number) =>
-  t === LINE_HEADING || t === LINE_ACTION || t === LINE_DIALOGUE ||
-  t === LINE_DUAL_DIALOGUE || t === LINE_TRANSITION ||
-  t === LINE_SHOT || t === LINE_SECTION || t === LINE_SYNOPSE;
+export const needsBlankAfterEnter = (t: number) => !isDialogueType(t);
 
 export const classifyLines = (doc: { line: (n: number) => { text: string }; lines: number }): number[] => {
   const types: number[] = [];

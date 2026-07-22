@@ -560,6 +560,15 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
           disableTouchRipple: true,
         },
       },
+      MuiTextField: {
+        defaultProps: {
+          slotProps: {
+            input: {
+              autoComplete: "off"
+            }
+          }
+        }
+      },
       MuiDialog: {
         defaultProps: {
           transitionDuration: 0,

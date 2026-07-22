@@ -409,6 +409,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           size="small"
           slotProps={{
             input: {
+              autoComplete: "off",
               sx: {
                 fontSize: "0.85rem",
                 "& fieldset": { border: "none" },
