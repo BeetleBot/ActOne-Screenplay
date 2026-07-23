@@ -103,3 +103,45 @@ Closes all open modal sub-windows (settings, help, tag-manager, theme-manager, x
 - **Deduplication**: Each window label is tracked in a `windowsRef` Map to prevent duplicate instances.
 - **Close behavior**: Closing the main editor window triggers `closeAllWindows()` before destroying the main window. Closing the last editor tab reopens the welcome window and destroys the editor.
 - **Resilience**: All Tauri API calls are wrapped in try/catch; the hook falls back gracefully in browser dev mode.
+
+## AI Hooks (v0.4.0+)
+
+### `useAIChat(filePath, activeFileId)`
+
+Per-file AI chat sessions with streaming and @command support. Returns:
+
+| Return | Type | Description |
+|--------|------|-------------|
+| `sessions` | `ChatSession[]` | All stored sessions for the current file |
+| `activeSessionId` | `string \| null` | Currently active session ID |
+| `turns` | `ChatTurn[]` | Messages in the active session |
+| `streaming` | `boolean` | True while a response is being generated |
+| `error` | `string \| null` | Last error message |
+| `send(text, action?)` | `(text: string, action?: string) => void` | Send a message (optionally with @command action) |
+| `stop()` | `() => void` | Abort the current streaming response |
+| `newSession()` | `() => void` | Create a new empty session |
+| `selectSession(id)` | `(id: string) => void` | Switch to a different session |
+| `clear()` | `() => void` | Clear the active session |
+
+### `usePromptConfig()`
+
+Reactive AI configuration reader using `useSyncExternalStore`. Returns a `PromptConfig` object with all AI settings (provider, model, apiEndpoint, apiKey, apiModel, systemPrompt, temperature settings, Ollama URL, and @command instructions). Written via `setPromptConfigField(key, value)` and `notifyConfigChange()`.
+
+### `notifyConfigChange()`
+
+Manually triggers all `usePromptConfig` subscribers to re-read from localStorage. Used by SettingsWindow when modifying API list entries via `selectApi`, `addApi`, `removeApi`.
+
+### `createAIProvider(config)`
+
+Factory that returns an `AIProvider` instance based on config:
+- `"openai-compatible"` → `OpenAICompatibleProvider(endpoint, apiKey, model)`
+- `"ollama"` → `OllamaProvider(ollamaUrl, model)`
+- `"none"` → `null`
+
+### `fetchModels(provider)`
+
+Fetches available model names from Ollama (`/api/tags`) with 3-second timeout. Returns `string[]`. Returns empty array for OpenAI-compatible (models are managed via the API list).
+
+### `checkProviderAvailability()`
+
+Pings the Ollama server to check if it's running. Returns `boolean`. Currently only checks Ollama. Returns false for other providers.

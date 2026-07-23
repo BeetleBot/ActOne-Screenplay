@@ -68,3 +68,16 @@
 |---------|-------------|
 | License Status | Shows active/inactive |
 | (Windows only) | |
+
+## Muse
+
+| Setting | Description |
+|---------|-------------|
+| Provider | `"none"`, `"openai-compatible"`, or `"ollama"` |
+| Configure Providers | Nested dialog to manage multiple OpenAI-compatible API entries (name, endpoint, API key, model per entry) |
+| Model | Active model (from selected API entry for OpenAI, or Ollama model list) |
+| Temperature (Chat) | Slider 0.0-1.0 (default 0.7) — controls response randomness |
+| Custom Instructions | Nested dialog to customize system prompts for @write-scene, @q, @lookup, @synonyms |
+| System Prompt | Text area for customizing the main Muse personality prompt |
+
+See `features/21-muse.md` for complete Muse documentation.

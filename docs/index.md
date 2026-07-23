@@ -71,7 +71,7 @@ Frontend API and data format documentation.
 
 | Document | Description |
 |----------|-------------|
-| [Frontend Hooks](api-reference/01-frontend-hooks.md) | useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows |
+| [Frontend Hooks](api-reference/01-frontend-hooks.md) | useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows, useAIChat, usePromptConfig |
 | [Frontend Contexts](api-reference/02-frontend-contexts.md) | All 6 React context APIs with state and actions |
 | [.actone Bundle Format](api-reference/03-actone-bundle.md) | File structure, pack/unpack API, legacy compat |
 | [Fountain Syntax Reference](api-reference/04-fountain-syntax.md) | Complete Fountain markup reference with ActOne extensions |
@@ -102,8 +102,9 @@ End-user documentation for every feature in ActOne.
 | [Tag Manager](features/16-tag-manager.md) | Production tags and categories |
 | [X-Ray Analysis](features/17-xray.md) | Screenplay analysis dashboard |
 | [Settings](features/18-settings.md) | All configuration options |
-| [Help Guide](features/19-help-guide.md) | Built-in 47-article help system |
+| [Help Guide](features/19-help-guide.md) | Built-in 51-article help system |
 | [Interactive Tutorials](features/20-onboarding-tutorials.md) | User onboarding and Fountain writing tours |
+| [Muse AI Assistant](features/21-muse.md) | AI screenwriting assistant (v0.4.0+) |
 
 ---
 

@@ -1049,6 +1049,137 @@ ActOne features a strict **flat geometric aesthetic**:
 - **Hide Fountain Markup**: Clean reading view (hide prefixes on non-active lines).
 - **Focus Mode**: Dim all lines except the active cursor line.`,
   },
+  // ===== AI & MUSE =====
+  {
+    id: "muse-overview",
+    title: "Muse AI Assistant Overview",
+    category: "AI & Muse",
+    tags: ["muse", "ai", "assistant", "overview", "help"],
+    relatedIds: ["muse-configure", "muse-commands", "muse-chat"],
+    content: `**Muse** is ActOne's AI screenwriting assistant — kind, intelligent, and concise. It helps you write scenes, research terms, look up definitions, and brainstorm ideas without leaving your editor.
+
+**How to open Muse:**
+- Press \`Ctrl+Alt+P\` (or \`Ctrl+K\` → "Toggle Muse").
+- Click the robot icon on the right side of the Status Bar.
+- The Muse panel opens on the right side of the window.
+
+**Status Bar icon colors:**
+- **Green**: AI provider is configured and ready.
+- **Red**: No AI provider configured — click the icon to open Settings.
+
+**Key features:**
+- **Chat**: Ask questions about screenwriting, get feedback on your script, or brainstorm ideas.
+- **@ Commands**: Type \`@write-scene\`, \`@q\`, \`@lookup\`, or \`@synonyms\` in the chat input for specialized actions.
+- **Per-file history**: Each screenplay has its own separate chat history, stored in localStorage.
+- **Streaming responses**: Muse streams its replies in real-time as they generate.
+- **Copy & Insert**: Copy any response or insert Fountain-formatted text directly at your cursor position.`,
+  },
+  {
+    id: "muse-configure",
+    title: "Configuring Muse (AI Providers)",
+    category: "AI & Muse",
+    tags: ["muse", "ai", "configure", "setup", "provider", "api", "openai", "ollama"],
+    relatedIds: ["muse-overview", "muse-commands", "settings-overview"],
+    content: `Before using Muse, you need to configure an AI provider. Go to **Settings** (\`Ctrl+,\`) → **Muse** tab or open the Command Palette (\`Ctrl+K\`) → "Open Settings" → select the Muse tab.
+
+**Supported Providers:**
+
+**1. OpenAI API** — Use any OpenAI-compatible API endpoint.
+  - **Provider dropdown**: Select "OpenAI API".
+  - **Active Model**: Choose from your configured API entries in the dropdown.
+  - **Configure Providers**: Click "Configure Providers" to manage multiple API connections.
+    - Click **"Add API"** to create a new entry.
+    - Fill in: **Name**, **Endpoint URL**, **API Key**, and **Model**.
+    - Click an entry card to select it as active.
+    - Use the pencil icon to edit, trash icon to delete.
+    - The endpoint URL is used as-is — no \`/chat/completions\` is appended automatically.
+
+**2. Ollama (Local)** — Run models locally on your machine.
+  - **Provider dropdown**: Select "Ollama (Local)".
+  - **Ollama URL**: Defaults to \`http://localhost:11434\`.
+  - **Model**: Select from the dropdown of models available on your Ollama server.
+
+**System Prompt:**
+- The default system prompt defines Muse's personality: kind, intelligent, concise, and screenwriting-focused.
+- You can customize the system prompt via **Settings → Muse → System Prompt**.
+- Specialty prompts for @ commands (write-scene, q, lookup, synonyms) can be customized under **Custom Instructions** in the Providers dialog.
+
+**Temperature:**
+- Controls randomness (0.0 = deterministic, 1.0 = creative).
+- Default chat temperature: 0.7; rephrase temperature: 0.1.`,
+  },
+  {
+    id: "muse-commands",
+    title: "Muse @ Commands",
+    category: "AI & Muse",
+    tags: ["muse", "commands", "@write-scene", "@q", "@lookup", "@synonyms"],
+    relatedIds: ["muse-overview", "muse-configure", "muse-chat"],
+    content: `Muse supports **@ commands** — type them in the chat input for specialized actions:
+
+**@write-scene**
+  Generates a Fountain-formatted scene based on your description.
+  - Type \`@write-scene\` followed by your scene description.
+  - Muse outputs the scene wrapped in a \`\`\`fountain\`\`\` code block.
+  - Use the **Insert** button to insert the scene at your cursor in the editor.
+  - The response is post-processed to ensure only the Fountain block is kept.
+
+**@q**
+  Asks a question about your current screenplay document.
+  - Type \`@q\` followed by your question.
+  - Muse receives the full screenplay text as context and answers based on it.
+  - Useful for: "What is the theme?", "How many scenes have John?"
+
+**@lookup**
+  Defines a term or concept.
+  - Type \`@lookup\` followed by the term.
+  - Muse returns a concise 1-2 sentence definition.
+  - No preamble, no extra context — just the definition.
+
+**@synonyms**
+  Lists alternative words.
+  - Type \`@synonyms\` followed by the word.
+  - Muse returns 6-10 synonyms as a markdown bullet list.
+
+**Using @ commands:**
+- Type \`@\` in the chat input to see the autocomplete suggestions dropdown.
+- Press \`Enter\` or \`Tab\` to select a command, then type your request.
+- Click the \`@command\` tag to remove it and edit the input.
+- You can also type the command directly: \`@write-scene A tense car chase through city streets\``,
+  },
+  {
+    id: "muse-chat",
+    title: "Using Muse Chat",
+    category: "AI & Muse",
+    tags: ["muse", "chat", "conversation", "history", "streaming"],
+    relatedIds: ["muse-overview", "muse-commands", "muse-configure"],
+    content: `The Muse panel provides a full chat interface:
+
+**Starting a conversation:**
+- Type in the "Message Muse..." input and press \`Enter\` (or click the send button).
+- Press \`Shift+Enter\` for a newline without sending.
+- Muse streams the response in real-time.
+
+**Chat history:**
+- Each screenplay file has its own separate chat history (keyed by file path in localStorage).
+- Click the **clock icon** to view and switch between past chat sessions.
+- Click the **+ icon** to start a new chat session for the current file.
+- Click the **trash icon** to clear the current session's messages.
+
+**Working with responses:**
+- **Copy** — Hover over a Muse response and click the copy button in the top-right corner to copy the full response text.
+- **Insert** — Fountain blocks (\`\`\`fountain\`\`\`) have an Insert button that places the scene text directly at your cursor in the editor.
+- **Error copy** — If an error occurs, the error message has a copy button for easy debugging.
+
+**Provider & Model selector:**
+- The **Provider** dropdown at the bottom of the panel lets you switch between OpenAI API and Ollama.
+- The **Active Model** dropdown shows all configured API entries (for OpenAI) or available models (for Ollama).
+- Selecting a different API entry updates the endpoint, API key, and model automatically.
+
+**Tips:**
+- Muse's context includes your current screenplay for document-aware answers.
+- Use \`@q\` with a question about your script for document-specific responses.
+- Muse remembers the conversation within a session, so you can ask follow-up questions.`,
+  },
 ];
 
 export const categories = [
@@ -1060,4 +1191,5 @@ export const categories = [
   "Files & Projects",
   "Export",
   "Settings & Customization",
+  "AI & Muse",
 ];

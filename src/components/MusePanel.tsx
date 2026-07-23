@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, UIEvent } from "react";
+import { useState, useCallback, useEffect, useRef, UIEvent, useMemo } from "react";
 import { Box, Typography, IconButton, Menu, MenuItem, ListItemText, Select, FormControl } from "@mui/material";
 import { usePromptConfig, setPromptConfigField, fetchModels } from "../hooks/usePromptConfig";
 import { useAIChat } from "../hooks/useAIChat";
@@ -6,6 +6,8 @@ import { useFile } from "../context/FileContext";
 import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon } from "./Icons";
 import { AIChatMessage } from "./ai/AIChatMessage";
 import { AIChatComposer, type ComposerAction } from "./ai/AIChatComposer";
+import { STORAGE_KEYS } from "../constants";
+import type { ApiEntry } from "../constants";
 
 
 import "../styles/ai-chat.css";
@@ -20,6 +22,12 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
 
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [historyAnchorEl, setHistoryAnchorEl] = useState<null | HTMLElement>(null);
+  const apiList = useMemo(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST);
+      return raw ? JSON.parse(raw) as ApiEntry[] : [];
+    } catch { return []; }
+  }, [promptConfig]);
 
   useEffect(() => {
     if (promptConfig.provider === "none" || promptConfig.provider === "openai-compatible") {
@@ -234,21 +242,31 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
                 </Typography>
                 <FormControl size="small" fullWidth>
                   <Select
-                    value={promptConfig.provider === "openai-compatible" ? (promptConfig.apiModel || "") : (promptConfig.model || "")}
+                    value={promptConfig.provider === "openai-compatible" ? (apiList.find(a => a.model === promptConfig.apiModel)?.id || "") : (promptConfig.model || "")}
                     onChange={(e) => {
-                      const nextModel = e.target.value;
                       if (promptConfig.provider === "openai-compatible") {
-                        setPromptConfigField("apiModel", nextModel);
+                        const entry = apiList.find(a => a.id === e.target.value);
+                        if (entry) {
+                          setPromptConfigField("apiModel", entry.model);
+                          setPromptConfigField("apiEndpoint", entry.endpoint);
+                          setPromptConfigField("apiKey", entry.apiKey);
+                        }
                       } else {
-                        setPromptConfigField("model", nextModel);
+                        setPromptConfigField("model", e.target.value);
                       }
                     }}
                     sx={{ fontSize: "11px", borderRadius: 0, height: 30 }}
                   >
                     {promptConfig.provider === "openai-compatible" ? (
-                      <MenuItem value={promptConfig.apiModel || "deepseek-v4-flash-free"}>
-                        {promptConfig.apiModel || "deepseek-v4-flash-free"}
-                      </MenuItem>
+                      apiList.length > 0 ? (
+                        apiList.map((entry) => (
+                          <MenuItem key={entry.id} value={entry.id}>
+                            {entry.name}: {entry.model || "(no model)"}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem value="">(no APIs configured)</MenuItem>
+                      )
                     ) : (
                       availableModels.length > 0 ? (
                         availableModels.map(m => (

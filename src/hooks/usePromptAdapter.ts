@@ -6,11 +6,16 @@ import { FOUNTAIN_SYNTAX_RULES } from "../constants";
 
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
-const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+function isTauriEnv(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 
 function customFetch(url: string, init?: RequestInit) {
-  if (isTauriEnv) {
-    return tauriFetch(url, init);
+  if (isTauriEnv()) {
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
+    const headers = new Headers(init?.headers);
+    if (isLocalhost) headers.set("Origin", "http://localhost");
+    return tauriFetch(url, { ...init, headers });
   }
   return fetch(url, init);
 }
@@ -70,7 +75,7 @@ export function usePromptAdapter(messagesRef?: { current: ChatMessage[] }): Chat
 
       const model = config.provider === "openai-compatible" && config.apiModel ? config.apiModel : config.model;
 
-      const useStreaming = !(isTauriEnv && config.provider === "openai-compatible");
+      const useStreaming = !(isTauriEnv() && config.provider === "openai-compatible");
 
       const isCustomApi = config.provider === "openai-compatible";
 

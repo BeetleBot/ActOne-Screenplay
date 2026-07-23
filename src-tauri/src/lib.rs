@@ -71,6 +71,7 @@ mod structures;
 mod font_cache;
 mod app_prefs;
 mod snapshots;
+mod ollama;
 
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
@@ -771,6 +772,9 @@ pub fn run() {
             save_theme_dialog,
             import_theme_dialog,
             get_sample_bundle,
+            ollama::ollama_check,
+            ollama::ollama_list_models,
+            ollama::ollama_chat,
         ]);
 
     builder

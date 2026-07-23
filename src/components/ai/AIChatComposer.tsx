@@ -44,6 +44,7 @@ export function AIChatComposer({
   const [body, setBody] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const [lastSent, setLastSent] = useState<{ mode: ComposerAction | null; body: string } | null>(null);
 
   // ── Autocomplete ──
   const showSuggestions = useMemo(() => {
@@ -83,6 +84,7 @@ export function AIChatComposer({
     if (streaming || disabled) return;
     const fullText = mode ? `@${mode} ${raw}` : raw;
     onSend(fullText, mode ?? undefined);
+    setLastSent({ mode, body: raw });
     setMode(null);
     setBody("");
     const el = textareaRef.current as HTMLTextAreaElement;
@@ -137,6 +139,12 @@ export function AIChatComposer({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (streaming && e.key === "Escape") {
+        e.preventDefault();
+        onStop();
+        return;
+      }
+
       // Don't handle keyboard shortcuts when in autocomplete mode
       if (showSuggestions && filteredSuggestions.length > 0) {
         if (e.key === "ArrowDown") {
@@ -161,6 +169,14 @@ export function AIChatComposer({
         }
       }
 
+      // Restore last sent message on ArrowUp if input is empty
+      if (e.key === "ArrowUp" && body === "" && !mode && lastSent) {
+        e.preventDefault();
+        setMode(lastSent.mode);
+        setBody(lastSent.body);
+        return;
+      }
+
       // Backspace when body is empty and mode is set → clear mode
       if (mode && e.key === "Backspace" && body === "") {
         e.preventDefault();
@@ -178,7 +194,7 @@ export function AIChatComposer({
         submit();
       }
     },
-    [submit, showSuggestions, filteredSuggestions, suggestionIndex, selectSuggestion, mode, body],
+    [submit, showSuggestions, filteredSuggestions, suggestionIndex, selectSuggestion, mode, body, lastSent, streaming, onStop],
   );
 
   const meta = mode ? ACTION_META[mode] : null;

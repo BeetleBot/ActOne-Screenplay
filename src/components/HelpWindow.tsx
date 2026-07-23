@@ -139,7 +139,10 @@ export const HelpWindow: React.FC = () => {
 const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedArticleId, setSelectedArticleId] = useState("welcome-screen");
+  const [selectedArticleId, setSelectedArticleId] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("article") || "welcome-screen";
+  });
   const listApi = useRef<{ scrollToRow: (config: { index: number; align: string }) => void } | null>(null);
 
   const isSearching = searchQuery.trim().length > 0;

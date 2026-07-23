@@ -142,3 +142,33 @@ export const RobotIcon: React.FC<IconProps> = (props) => {
     </SvgIcon>
   );
 };
+
+/* ── Brain icon for Muse ── */
+const MUSE_CIRCLE = "M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2";
+const MUSE_INNER = "M12 15c-2.287 0-4.35.961-5.808 2.5A7.98 7.98 0 0 0 12 20a7.98 7.98 0 0 0 5.807-2.5A7.98 7.98 0 0 0 12 15M12.47 5.32a.506.506 0 0 0-.94 0l-.254.61a4.37 4.37 0 0 1-2.25 2.327l-.718.32a.53.53 0 0 0 0 .962l.76.338a4.37 4.37 0 0 1 2.22 2.25l.245.566c.18.414.753.414.934 0l.247-.565a4.36 4.36 0 0 1 2.219-2.251l.76-.338a.53.53 0 0 0 0-.963l-.718-.32a4.37 4.37 0 0 1-2.251-2.325z";
+const MUSE_FULL = "M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m0 13c-2.287 0-4.35.961-5.808 2.5A7.98 7.98 0 0 0 12 20a7.98 7.98 0 0 0 5.807-2.5A7.98 7.98 0 0 0 12 15m.47-9.68a.506.506 0 0 0-.94 0l-.254.61a4.37 4.37 0 0 1-2.25 2.327l-.718.32a.53.53 0 0 0 0 .962l.76.338a4.37 4.37 0 0 1 2.22 2.25l.245.566c.18.414.753.414.934 0l.247-.565a4.36 4.36 0 0 1 2.219-2.251l.76-.338a.53.53 0 0 0 0-.963l-.718-.32a4.37 4.37 0 0 1-2.251-2.325z";
+
+export const MuseIcon: React.FC<IconProps> = (props) => {
+  let iconStyle: any = "fill";
+  try {
+    const ui = useUI();
+    iconStyle = ui.iconStyle;
+  } catch {
+    iconStyle = localStorage.getItem("actone-icon-style") || "fill";
+  }
+  const thin = iconStyle === "thin" || iconStyle === "outline";
+  return (
+    <SvgIcon viewBox="0 0 24 24" {...props}>
+      {iconStyle === "duotone" ? (
+        <>
+          <path d={MUSE_CIRCLE} opacity="0.2" />
+          <path d={MUSE_INNER} />
+        </>
+      ) : thin ? (
+        <path d={MUSE_FULL} fill="none" stroke="currentColor" strokeWidth={2} />
+      ) : (
+        <path d={MUSE_FULL} />
+      )}
+    </SvgIcon>
+  );
+};

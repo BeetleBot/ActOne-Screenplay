@@ -2,12 +2,18 @@ import { useSyncExternalStore } from "react";
 import { STORAGE_KEYS } from "../constants";
 import { DEFAULTS } from "../constants/defaults";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
+import { invoke } from "@tauri-apps/api/core";
 
-const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+function isTauriEnv(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 
 function platformFetch(url: string, init?: RequestInit) {
-  if (isTauriEnv) {
-    return tauriFetch(url, init);
+  if (isTauriEnv()) {
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
+    const headers = new Headers(init?.headers);
+    if (isLocalhost) headers.set("Origin", "http://localhost");
+    return tauriFetch(url, { ...init, headers });
   }
   return fetch(url, init);
 }
@@ -122,7 +128,7 @@ function subscribeToConfig(cb: () => void) {
   return () => listeners.delete(cb);
 }
 
-function notifyConfigChange() {
+export function notifyConfigChange() {
   listeners.forEach((cb) => cb());
 }
 
@@ -172,6 +178,9 @@ export async function fetchModels(provider: PromptProvider): Promise<string[]> {
   try {
     if (provider === "ollama") {
       const base = localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) || "http://localhost:11434";
+      if (isTauriEnv()) {
+        return await invoke<string[]>("ollama_list_models", { url: base });
+      }
       const res = await platformFetch(`${base.replace(/\/+$/, "")}/api/tags`, { signal: AbortSignal.timeout(3000) });
       if (!res.ok) return [];
       const data = await res.json() as { models?: { name: string }[] };
@@ -186,6 +195,9 @@ export async function fetchModels(provider: PromptProvider): Promise<string[]> {
 export async function checkProviderAvailability(): Promise<boolean> {
   const ollamaUrl = localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) || "http://localhost:11434";
   try {
+    if (isTauriEnv()) {
+      return await invoke<boolean>("ollama_check", { url: ollamaUrl });
+    }
     const res = await platformFetch(`${ollamaUrl.replace(/\/+$/, "")}/`, { signal: AbortSignal.timeout(1500) });
     return res.ok;
   } catch {

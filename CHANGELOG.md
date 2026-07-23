@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0] - 2026-07-24
+
+- 🤖 AI – completely Bring Your Own Model (Either Local or by API).
+- 💬 Chat interface – custom sidebar panel now features complete session history and advanced prompt configuration.
+- 📐 Layout updates – streamlined MainLayout header bar with status bar indicators and removed the deprecated X-Ray launch button.
+- ✍️ Smart editing – simplified blank line insertion logic after specific active fountain elements, improved key press detection, and cleaned up window native application keyboard shortcut event handling.
+- 🎨 UI components – default properties configured for text fields to ensure consistent input text box styling.
+- 📊 Script analysis – advanced metrics added for calculating acts, scenes, and settings. Get much better statistical details on all active project reports.
+- 🧹 Deprecated cleanup – completely removed the legacy moodist subproject code files to keep our active repository clean and lightweight.
+
 ## [0.2.16] - 2026-07-06
 
 ### Added

@@ -6,16 +6,15 @@ import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
 import { useEditor } from "../../context";
-import { RobotIcon } from "../Icons";
-import { STORAGE_KEYS } from "../../constants";
-import { useModalWindows } from "../../hooks/useModalWindows";
+import { DownloadIcon } from "../Icons";
+import { useStoreUpdateCheck } from "../../hooks";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
-  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, activeRightPane, setActiveRightPane } = useUI();
+  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState } = useUI();
   const { activeLineNumber } = useEditor();
   const { activeSprints } = useSprint();
-  const { openSettingsWindow } = useModalWindows();
+  const { updateAvailable, installUpdate } = useStoreUpdateCheck();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [tick, setTick] = useState(0);
 
@@ -374,6 +373,33 @@ export const StatusBar = React.memo(() => {
         )}
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
+          {updateAvailable && (
+            <Box
+              onClick={() => installUpdate()}
+              title="Click to install update from Microsoft Store"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                mr: 1,
+                pr: 1.5,
+                pl: 0.5,
+                cursor: 'pointer',
+                color: 'primary.main',
+                fontSize: 11,
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                borderRight: 1,
+                borderColor: 'divider',
+                flexShrink: 0,
+                transition: 'opacity 0.2s ease',
+                '&:hover': { opacity: 0.7 }
+              }}
+            >
+              <DownloadIcon sx={{ fontSize: 14 }} />
+              Update
+            </Box>
+          )}
           <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
             Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
           </Typography>
@@ -384,32 +410,6 @@ export const StatusBar = React.memo(() => {
             Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
           </Typography>
         </Box>
-          <Box
-            id="status-muse"
-            onClick={() => {
-              const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "none";
-              if (provider === "none") {
-                openSettingsWindow("muse");
-              } else {
-                setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");
-              }
-            }}
-            title="Muse"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              cursor: "pointer",
-              ml: 1,
-              color: (t) => {
-                const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "none";
-                return provider === "none" ? t.palette.error.main : t.palette.success.main;
-              },
-              flexShrink: 0,
-              "&:hover": { opacity: 0.7 },
-            }}
-          >
-            <RobotIcon sx={{ fontSize: 15 }} />
-          </Box>
         </Box>
       </Box>
   );

@@ -33,7 +33,7 @@ import type { ApiEntry } from "../constants";
 import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 import { invoke } from "@tauri-apps/api/core";
-import { fetchModels, checkProviderAvailability } from "../hooks/usePromptConfig";
+import { fetchModels, checkProviderAvailability, notifyConfigChange } from "../hooks/usePromptConfig";
 
 function readLocal(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -111,14 +111,23 @@ export const SettingsWindow: React.FC = () => {
     const entry: ApiEntry = { id, name: `API ${apiList.length + 1}`, endpoint: "", apiKey: "", model: "" };
     saveApiList([...apiList, entry]);
     setEditingApiId(id);
-    selectApi(id);
+    localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
+    localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
+    localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+    setSelectedApiId(id);
+    notifyConfigChange();
   };
   const removeApi = (id: string) => {
     const updated = apiList.filter(e => e.id !== id);
     saveApiList(updated);
     if (selectedApiId === id) {
       if (updated.length > 0) {
-        selectApi(updated[0].id);
+        const entry = updated[0];
+        localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
+        localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
+        localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+        setSelectedApiId(updated[0].id);
+        notifyConfigChange();
       } else {
         setSelectedApiId(null);
       }
@@ -143,6 +152,7 @@ export const SettingsWindow: React.FC = () => {
       localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
       localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
     }
+    notifyConfigChange();
   };
   const [ollamaUrl, setOllamaUrl] = useState(() => readLocal(STORAGE_KEYS.PROMPT_OLLAMA_URL, String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL])));
   const [writeSceneInstructions, setWriteSceneInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS])));
@@ -792,6 +802,7 @@ export const SettingsWindow: React.FC = () => {
           )}
           {activeTab === 3 && (
             <Box>
+
               {promptProvider !== "none" && providerStatus !== null && !providerStatus && promptProvider !== "openai-compatible" ? (
                 <Box sx={{ border: '1px solid', borderColor: 'error.main', borderRadius: 0, p: 2, mb: 1.5, bgcolor: 'error.dark', color: 'error.contrastText' }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
@@ -1135,20 +1146,24 @@ export const SettingsWindow: React.FC = () => {
                           MODEL
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'flex-start' }}>
-                          <TextField
+                          <Select
                             fullWidth
                             size="small"
                             value={promptModel}
-                            onChange={(e) => { const v = e.target.value; setPromptModel(v); localStorage.setItem(STORAGE_KEYS.PROMPT_MODEL, v); }}
-                            placeholder="e.g. llama3.2"
-                            slotProps={{ htmlInput: { list: "ollama-model-suggestions" } }}
-                            sx={{ '& input': { fontSize: 12 } }}
-                          />
-                          <datalist id="ollama-model-suggestions">
-                            {availableModels.map((m) => (
-                              <option key={m} value={m} />
-                            ))}
-                          </datalist>
+                            onChange={(e) => { const v = e.target.value as string; setPromptModel(v); localStorage.setItem(STORAGE_KEYS.PROMPT_MODEL, v); }}
+                            sx={{ '& .MuiSelect-select': { fontSize: 12, py: 1, minHeight: 0 } }}
+                          >
+                            {availableModels.length > 0 ? (
+                              availableModels.map((m) => (
+                                <MenuItem key={m} value={m} sx={{ fontSize: 12 }}>{m}</MenuItem>
+                              ))
+                            ) : (
+                              <MenuItem value={promptModel} sx={{ fontSize: 12 }}>{promptModel || "Loading models..."}</MenuItem>
+                            )}
+                            {availableModels.length > 0 && !availableModels.includes(promptModel) && promptModel && (
+                              <MenuItem value={promptModel} sx={{ fontSize: 12 }}>{promptModel}</MenuItem>
+                            )}
+                          </Select>
                           <IconButton
                             size="small"
                             onClick={() => {
@@ -1186,6 +1201,7 @@ export const SettingsWindow: React.FC = () => {
                         apiList.map((entry) => (
                           <Box
                             key={entry.id}
+                            onClick={() => selectApi(entry.id)}
                             sx={{
                               border: '1px solid',
                               borderColor: selectedApiId === entry.id ? 'primary.main' : 'divider',
@@ -1193,6 +1209,7 @@ export const SettingsWindow: React.FC = () => {
                               p: 1.5,
                               mb: 2,
                               bgcolor: selectedApiId === entry.id ? 'action.selected' : 'transparent',
+                              cursor: 'pointer',
                             }}
                           >
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>

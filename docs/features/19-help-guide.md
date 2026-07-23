@@ -1,8 +1,8 @@
 # Help Guide
 
-**Window:** `?modal=help` (451 lines, 1053-line help articles data)
+**Window:** `?modal=help` (~580 lines HelpWindow, ~1220-line help articles data)
 
-The Help Guide provides 47 searchable articles across 8 categories.
+The Help Guide provides 51 searchable articles across 9 categories.
 
 ## Categories
 
@@ -29,6 +29,9 @@ The Help Guide provides 47 searchable articles across 8 categories.
 
 8. **Cross-Platform & Technical** (2 articles)
    - Running outside Tauri, Windows vs Linux behavior
+
+9. **AI & Muse** (4 articles) *(new in v0.4.0)*
+   - Muse AI overview, configuring providers, @commands reference, chat usage guide
 
 ## Features
 

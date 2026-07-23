@@ -3,7 +3,7 @@ import { logger } from "../utils/logger";
 
 interface ModalWindowsHook {
   openSettingsWindow: (tab?: string) => void;
-  openHelpWindow: () => void;
+  openHelpWindow: (articleId?: string) => void;
   openTagManagerWindow: (maximize?: boolean) => void;
   openThemeManagerWindow: () => void;
   openXrayWindow: () => void;
@@ -79,10 +79,11 @@ export function useModalWindows(): ModalWindowsHook {
     }
   }, []);
 
-  const openHelpWindow = useCallback(async () => {
+  const openHelpWindow = useCallback(async (articleId?: string) => {
     if (windowsRef.current.get("help")) return;
     windowsRef.current.set("help", true);
-    const ok = await createTauriWindow("help", "/?modal=help", "ActOne – Help", 900, 600, true, () => windowsRef.current.delete("help"));
+    const path = articleId ? `/?modal=help&article=${articleId}` : "/?modal=help";
+    const ok = await createTauriWindow("help", path, "ActOne – Help", 900, 600, true, () => windowsRef.current.delete("help"));
     if (!ok) {
       windowsRef.current.delete("help");
     }

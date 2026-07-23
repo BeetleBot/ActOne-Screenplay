@@ -18,7 +18,8 @@ MyScreenplay.actone
 ├── notepad.json                   # Notepad content
 ├── sprint_data.json               # Sprint history
 ├── production_tags.json           # Production tags/categories
-└── marker.json                    # Line markers
+├── marker.json                    # Line markers
+└── muse.json                      # AI config / system prompt (v0.4.0+; legacy: prompt.json)
 
 [4-byte magic header: "ACT1"]
 ```

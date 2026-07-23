@@ -9,18 +9,19 @@ import Tooltip from "@mui/material/Tooltip";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
-import { CloseIcon, AddIcon, DownloadIcon } from "../Icons";
+import { CloseIcon, AddIcon, MuseIcon } from "../Icons";
 import { logger } from "../../utils/logger";
-import { useStoreUpdateCheck } from "../../hooks";
+import { STORAGE_KEYS } from "../../constants";
+import { useModalWindows } from "../../hooks/useModalWindows";
 
 export const HeaderBar = React.memo(() => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
-  const { isZenMode } = useUI();
+  const { isZenMode, activeRightPane, setActiveRightPane } = useUI();
+  const { openSettingsWindow } = useModalWindows();
   const [isMaximized, setIsMaximized] = useState(false);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; fileId: string } | null>(null);
-  const { updateAvailable, installUpdate } = useStoreUpdateCheck();
 
   const handleContextMenu = (e: React.MouseEvent, fileId: string) => {
     e.preventDefault();
@@ -227,36 +228,6 @@ export const HeaderBar = React.memo(() => {
           </Tooltip>
         </Box>
 
-        {updateAvailable && (
-          <Box
-            onClick={(e) => { e.stopPropagation(); installUpdate(); }}
-            onMouseDown={(e) => e.stopPropagation()}
-            title="Click to install update from Microsoft Store"
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              height: 40,
-              px: 1.25,
-              cursor: 'pointer',
-              bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
-              color: 'primary.main',
-              fontSize: 11,
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              borderLeft: 1,
-              borderColor: 'divider',
-              flexShrink: 0,
-              transition: 'background-color 0.2s ease',
-              '&:hover': {
-                bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
-              },
-            }}
-          >
-            <DownloadIcon sx={{ fontSize: 12 }} />
-            Update
-          </Box>
-        )}
         <Box 
           sx={{ 
             display: 'flex', 
@@ -274,11 +245,34 @@ export const HeaderBar = React.memo(() => {
           onMouseDown={(e) => e.stopPropagation()}
         >
           <IconButton
+            onClick={() => {
+              const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "none";
+              if (provider === "none") {
+                openSettingsWindow("muse");
+              } else {
+                setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");
+              }
+            }}
+            title="Muse"
+            sx={{
+              width: 48, height: 40, borderRadius: 0,
+              color: (t) => {
+                const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "none";
+                return provider === "none" ? t.palette.error.main : t.palette.success.main;
+              },
+              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+            }}
+          >
+            <MuseIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+          <IconButton
             onClick={handleMinimize}
             title="Minimize"
             sx={{
               width: 48, height: 40, borderRadius: 0,
               color: 'inherit',
+              borderLeft: 1,
+              borderColor: 'divider',
               '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
             }}
           >

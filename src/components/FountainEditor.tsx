@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo } from "react";
 import { useFile, useUI, useEditor, useParking, useCustomModal } from "../context";
 import { LineType } from "../parser";
-import { usePromptConfig, getEndpointForProvider } from "../hooks/usePromptConfig";
+import { usePromptConfig } from "../hooks/usePromptConfig";
 import { useCodeMirror } from "../editor";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -14,16 +14,7 @@ import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 import { updateTagsEffect, tagStateField } from "../editor/tagState";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
 
-import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
-const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-
-function customFetch(url: string, init?: RequestInit) {
-  if (isTauriEnv) {
-    return tauriFetch(url, init);
-  }
-  return fetch(url, init);
-}
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -521,7 +512,7 @@ export const FountainEditor = React.memo(() => {
     });
 
     try {
-      const endpoint = getEndpointForProvider(promptConfig.provider, promptConfig);
+
       let userRephrasePrompt = "";
       if (preset === "punchy") {
         userRephrasePrompt = "You are a professional screenwriting rephrasing tool. Rephrase the user's text to make it extremely punchy, tight, and concise (shorten the text).";
@@ -551,43 +542,17 @@ export const FountainEditor = React.memo(() => {
         FOUNTAIN_SYNTAX_RULES
       ].join("\n");
 
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (promptConfig.provider === "openai-compatible" && promptConfig.apiKey) {
-        headers["Authorization"] = `Bearer ${promptConfig.apiKey}`;
-      }
-      const model = promptConfig.provider === "openai-compatible" && promptConfig.apiModel ? promptConfig.apiModel : promptConfig.model;
+      const provider = createAIProvider(promptConfig);
+      if (!provider) throw new Error("No AI provider configured");
 
-      const isCustomApi = promptConfig.provider === "openai-compatible";
-      const res = await (isCustomApi
-        ? customFetch(`${endpoint.replace(/\/+$/, "")}/chat/completions`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: promptContext }
-              ],
-              temperature: promptConfig.rephraseTemp,
-              stream: false
-            })
-          })
-        : fetch(`${endpoint.replace(/\/+$/, "")}/chat/completions`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: promptContext }
-              ],
-              temperature: promptConfig.rephraseTemp
-            })
-          }));
-
-      if (!res.ok) throw new Error("API failed");
-      const data = await res.json();
-      let rephrased = data.choices?.[0]?.message?.content?.trim() || cleanBody;
+      let rephrased = await provider.chat(
+        [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: promptContext }
+        ],
+        { temperature: promptConfig.rephraseTemp }
+      );
+      if (!rephrased) rephrased = cleanBody;
 
       // Fail-safe: if original text was non-Latin and response is strictly Latin, the LLM translated it. Reject translation and keep original!
       const responseContainsNonLatin = /[^\u0000-\u007F\u0080-\u00FF\u0100-\u017F\u0180-\u024F\u2000-\u206F]/.test(rephrased);
@@ -701,7 +666,7 @@ export const FountainEditor = React.memo(() => {
       const cleanBody = lineData.map(ld => ld.clean).join("\n");
       const isSingleLine = lineData.length === 1;
 
-      const endpoint = getEndpointForProvider(promptConfig.provider, promptConfig);
+
       const systemPrompt = [
         promptConfig.translatePrompt || "You are a professional translation tool. Translate the user's text to the specified language.",
         "",
@@ -726,46 +691,17 @@ export const FountainEditor = React.memo(() => {
         "Follow these strict Fountain syntax rules:",
         FOUNTAIN_SYNTAX_RULES
       ].join("\n");
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (promptConfig.provider === "openai-compatible" && promptConfig.apiKey) {
-        headers["Authorization"] = `Bearer ${promptConfig.apiKey}`;
-      }
-      const model = promptConfig.provider === "openai-compatible" && promptConfig.apiModel ? promptConfig.apiModel : promptConfig.model;
+      const provider = createAIProvider(promptConfig);
+      if (!provider) throw new Error("No AI provider configured");
 
-      const isCustomApi = promptConfig.provider === "openai-compatible";
-      const res = await (isCustomApi
-        ? customFetch(`${endpoint.replace(/\/+$/, "")}/chat/completions`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: cleanBody }
-              ],
-              temperature: promptConfig.translateTemp,
-              stream: false
-            })
-          })
-        : fetch(`${endpoint.replace(/\/+$/, "")}/chat/completions`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: cleanBody }
-              ],
-              temperature: promptConfig.translateTemp
-            })
-          }));
-
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "Unknown error");
-        throw new Error(`Translation API error (${res.status}): ${errText}`);
-      }
-      const data = await res.json();
-      let translated = data.choices?.[0]?.message?.content?.trim() || cleanBody;
+      let translated = await provider.chat(
+        [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: cleanBody }
+        ],
+        { temperature: promptConfig.translateTemp }
+      );
+      if (!translated) translated = cleanBody;
 
       const resLines = translated.split(/\r?\n/);
       const finalLines = lineData.map((ld, i) => {

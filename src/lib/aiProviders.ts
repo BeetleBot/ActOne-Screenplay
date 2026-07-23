@@ -1,11 +1,18 @@
 import { PromptConfig } from "../hooks/usePromptConfig";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
-const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+function isTauriEnv(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 
 function platformFetch(url: string, init?: RequestInit) {
-  if (isTauriEnv) {
-    return tauriFetch(url, init);
+  if (isTauriEnv()) {
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
+    const headers = new Headers(init?.headers);
+    if (isLocalhost) headers.set("Origin", "http://localhost");
+    return tauriFetch(url, { ...init, headers });
   }
   return fetch(url, init);
 }
@@ -121,6 +128,39 @@ export class OllamaProvider implements AIProvider {
     if (options.system) payload.push({ role: "system", content: options.system });
     payload.push(...messages);
 
+    // ── Tauri: route through Rust proxy (no CORS issues) ──────────────
+    if (isTauriEnv()) {
+      const sessionId = crypto.randomUUID();
+
+      const unlisten = await listen<{ session_id: string; delta: string }>(
+        "ollama-chat-chunk",
+        (event) => {
+          if (event.payload.session_id === sessionId) {
+            options.onChunk?.(event.payload.delta);
+          }
+        },
+      );
+
+      // If the caller aborts, clean up the listener
+      const abortHandler = () => unlisten();
+      options.signal?.addEventListener("abort", abortHandler, { once: true });
+
+      try {
+        const result = await invoke<string>("ollama_chat", {
+          sessionId,
+          url: this.baseUrl,
+          model: this.model || "llama3.2",
+          messages: payload,
+          temperature: options.temperature,
+        });
+        return result;
+      } finally {
+        unlisten();
+        options.signal?.removeEventListener("abort", abortHandler);
+      }
+    }
+
+    // ── Browser fallback (dev without Tauri) ───────────────────────────
     const response = await platformFetch(`${this.baseUrl.replace(/\/+$/, "")}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
