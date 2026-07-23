@@ -7,7 +7,7 @@ import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
 import { FountainEditor } from "../FountainEditor";
 import { AmbientPanel } from "../AmbientPanel";
-import { PromptPanel } from "../PromptPanel";
+import { MusePanel } from "../MusePanel";
 
 
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -154,8 +154,8 @@ export const Workspace = React.memo<WorkspaceProps>(({
       )}
 
       {activeRightPane === "prompt" && (
-        <RightPane type="prompt" onClose={() => setActiveRightPane(null)} errorBoundaryName="prompt-pane" ariaLabel="AI Prompt">
-          <PromptPanel onInsertAtCursor={handleInsertAtCursor} />
+        <RightPane type="prompt" onClose={() => setActiveRightPane(null)} errorBoundaryName="prompt-pane" ariaLabel="Muse">
+          <MusePanel onInsertAtCursor={handleInsertAtCursor} />
         </RightPane>
       )}
     </Box>

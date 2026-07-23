@@ -1,5 +1,5 @@
 import { type ChangeEvent, type KeyboardEvent, useCallback, useRef, useState, useMemo, useEffect } from "react";
-import { Box, IconButton, Typography } from "@mui/material";
+import { Box, IconButton, Typography, useTheme } from "@mui/material";
 import { SendIcon, StopIcon } from "../Icons";
 
 const MAX_TEXTAREA_HEIGHT = 120;
@@ -13,13 +13,6 @@ interface AIChatComposerProps {
   onSend: (text: string, action?: ComposerAction) => void;
   onStop: () => void;
 }
-
-const ACTION_META: Record<ComposerAction, { label: string; color: string }> = {
-  "write-scene": { label: "write-scene", color: "var(--primary-main, #90caf9)" },
-  "q": { label: "q", color: "var(--secondary-main, #ce93d8)" },
-  "lookup": { label: "lookup", color: "var(--info-main, #90caf9)" },
-  "synonyms": { label: "synonyms", color: "var(--warning-main, #ffb74d)" },
-};
 
 const ALL_COMMANDS: ComposerAction[] = ["write-scene", "q", "lookup", "synonyms"];
 
@@ -40,6 +33,13 @@ export function AIChatComposer({
   onSend,
   onStop,
 }: AIChatComposerProps) {
+  const theme = useTheme();
+  const ACTION_META: Record<ComposerAction, { label: string; color: string }> = {
+    "write-scene": { label: "write-scene", color: theme.palette.primary.main },
+    "q": { label: "q", color: theme.palette.secondary.main },
+    "lookup": { label: "lookup", color: theme.palette.info.main },
+    "synonyms": { label: "synonyms", color: theme.palette.warning.main },
+  };
   const [mode, setMode] = useState<ComposerAction | null>(null);
   const [body, setBody] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -185,10 +185,11 @@ export function AIChatComposer({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 1, borderTop: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5 }}>
         <Box
           sx={{
             flex: 1,
+            minWidth: 0,
             display: "flex",
             alignItems: "center",
             border: "1px solid",
@@ -304,8 +305,8 @@ export function AIChatComposer({
           aria-label={streaming ? "Stop generating" : "Send message"}
           title={streaming ? "Stop" : "Send"}
           sx={{
-            width: 36,
-            height: 36,
+            width: 32,
+            height: 32,
             borderRadius: 0,
             bgcolor: meta ? meta.color : "primary.main",
             color: "primary.contrastText",

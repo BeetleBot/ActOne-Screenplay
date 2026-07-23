@@ -42,8 +42,8 @@ export const STORAGE_KEYS = {
   PROMPT_API_ENDPOINT: "actone-prompt-api-endpoint",
   PROMPT_API_KEY: "actone-prompt-api-key",
   PROMPT_API_MODEL: "actone-prompt-api-model",
+  PROMPT_API_LIST: "actone-prompt-api-list",
   PROMPT_OLLAMA_URL: "actone-prompt-ollama-url",
-  PROMPT_LM_STUDIO_URL: "actone-prompt-lm-studio-url",
   PROMPT_WRITESCENE_INSTRUCTIONS: "actone-prompt-writescene-instructions",
   PROMPT_Q_INSTRUCTIONS: "actone-prompt-q-instructions",
   PROMPT_SYNONYMS_INSTRUCTIONS: "actone-prompt-synonyms-instructions",
@@ -108,6 +108,14 @@ export const FOUNTAIN_SYNTAX_RULES = [
 export const PILL_RADIUS = "0px";
 
 export const MAX_RECENT_FILES = 10;
+
+export interface ApiEntry {
+  id: string;
+  name: string;
+  endpoint: string;
+  apiKey: string;
+  model: string;
+}
 
 export interface Category {
   key: string;

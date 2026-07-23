@@ -624,14 +624,14 @@ export const FountainEditor = React.memo(() => {
 
     if (action === "lookup") {
       setActiveRightPane("prompt");
-      setActiveTab("prompt");
+      setActiveTab("muse");
       (window as any).pendingPromptAction = { action: "lookup", text };
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("prompt-lookup", { detail: text }));
       }, 100);
     } else if (action === "synonyms") {
       setActiveRightPane("prompt");
-      setActiveTab("prompt");
+      setActiveTab("muse");
       (window as any).pendingPromptAction = { action: "synonyms", text };
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("prompt-synonyms", { detail: text }));

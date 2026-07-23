@@ -23,9 +23,9 @@
   font-family: inherit;
   font-size: 0.8125rem;
   line-height: 1.5;
-  padding: 8px 10px;
-  min-height: 36px;
-  height: 36px;
+  padding: 6px 8px;
+  min-height: 32px;
+  height: 32px;
   max-height: 120px;
   overflow-y: hidden;
   box-sizing: border-box;

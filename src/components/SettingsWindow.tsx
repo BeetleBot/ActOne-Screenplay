@@ -23,12 +23,13 @@ import {
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
-import { SettingsIcon, RestartAltIcon } from "./Icons";
+import { SettingsIcon, RestartAltIcon, AddIcon, DeleteIcon, EditIcon } from "./Icons";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
 import { initPrefsEngine, setPrefs, onPrefsChanged } from "../theme/AppPrefsEngine";
 import { STORAGE_KEYS, FOUNTAIN_SYNTAX_RULES } from "../constants";
+import type { ApiEntry } from "../constants";
 import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 import { invoke } from "@tauri-apps/api/core";
@@ -93,11 +94,57 @@ export const SettingsWindow: React.FC = () => {
     return parseFloat(raw) || 0.1;
   });
   const [showModelsPanel, setShowModelsPanel] = useState(false);
-  const [apiEndpoint, setApiEndpoint] = useState(() => readLocal(STORAGE_KEYS.PROMPT_API_ENDPOINT, String(DEFAULTS[STORAGE_KEYS.PROMPT_API_ENDPOINT])));
-  const [apiKey, setApiKey] = useState(() => readLocal(STORAGE_KEYS.PROMPT_API_KEY, String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY])));
-  const [apiModel, setApiModel] = useState(() => readLocal(STORAGE_KEYS.PROMPT_API_MODEL, String(DEFAULTS[STORAGE_KEYS.PROMPT_API_MODEL])));
+  const [apiList, setApiList] = useState<ApiEntry[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [selectedApiId, setSelectedApiId] = useState<string | null>(null);
+  const [editingApiId, setEditingApiId] = useState<string | null>(null);
+  const saveApiList = (entries: ApiEntry[]) => {
+    localStorage.setItem(STORAGE_KEYS.PROMPT_API_LIST, JSON.stringify(entries));
+    setApiList(entries);
+  };
+  const addApi = () => {
+    const id = crypto.randomUUID();
+    const entry: ApiEntry = { id, name: `API ${apiList.length + 1}`, endpoint: "", apiKey: "", model: "" };
+    saveApiList([...apiList, entry]);
+    setEditingApiId(id);
+    selectApi(id);
+  };
+  const removeApi = (id: string) => {
+    const updated = apiList.filter(e => e.id !== id);
+    saveApiList(updated);
+    if (selectedApiId === id) {
+      if (updated.length > 0) {
+        selectApi(updated[0].id);
+      } else {
+        setSelectedApiId(null);
+      }
+    }
+    if (editingApiId === id) setEditingApiId(null);
+  };
+  const updateApi = (id: string, field: keyof ApiEntry, value: string) => {
+    const updated = apiList.map(e => e.id === id ? { ...e, [field]: value } : e);
+    saveApiList(updated);
+    const entry = updated.find(e => e.id === id);
+    if (entry && selectedApiId === id) {
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+    }
+  };
+  const selectApi = (id: string) => {
+    setSelectedApiId(id);
+    const entry = apiList.find(e => e.id === id);
+    if (entry) {
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+    }
+  };
   const [ollamaUrl, setOllamaUrl] = useState(() => readLocal(STORAGE_KEYS.PROMPT_OLLAMA_URL, String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL])));
-  const [lmStudioUrl, setLmStudioUrl] = useState(() => readLocal(STORAGE_KEYS.PROMPT_LM_STUDIO_URL, String(DEFAULTS[STORAGE_KEYS.PROMPT_LM_STUDIO_URL])));
   const [writeSceneInstructions, setWriteSceneInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS])));
   const [qInstructions, setQInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS])));
   const [synonymsInstructions, setSynonymsInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS])));
@@ -114,7 +161,7 @@ export const SettingsWindow: React.FC = () => {
     }
     let cancelled = false;
     setModelsLoading(true);
-    fetchModels(promptProvider as "ollama" | "lm-studio").then((models) => {
+    fetchModels(promptProvider as "ollama").then((models) => {
       if (cancelled) return;
       setAvailableModels(models);
       setModelsLoading(false);
@@ -133,12 +180,12 @@ export const SettingsWindow: React.FC = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab");
       if (tabParam === "snapshots") return 2;
-      if (tabParam === "prompt") return 3;
+      if (tabParam === "muse" || tabParam === "prompt") return 3;
     } catch { void 0; }
     return 0;
   });
 
-  const [providerStatus, setProviderStatus] = useState<{ ollama: boolean, "lm-studio": boolean } | null>(null);
+  const [providerStatus, setProviderStatus] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (activeTab !== 3) return;
@@ -147,19 +194,6 @@ export const SettingsWindow: React.FC = () => {
       const status = await checkProviderAvailability();
       if (isActive) {
         setProviderStatus(status);
-        // Auto-switch provider if the selected local one is not running but the other is
-        setPromptProvider(prev => {
-          if (prev === "none" || prev === "openai-compatible") return prev;
-          if (prev === "ollama" && !status.ollama && status["lm-studio"]) {
-            localStorage.setItem(STORAGE_KEYS.PROMPT_PROVIDER, "lm-studio");
-            return "lm-studio";
-          }
-          if (prev === "lm-studio" && !status["lm-studio"] && status.ollama) {
-            localStorage.setItem(STORAGE_KEYS.PROMPT_PROVIDER, "ollama");
-            return "ollama";
-          }
-          return prev;
-        });
       }
     };
     check();
@@ -428,7 +462,7 @@ export const SettingsWindow: React.FC = () => {
             <ToggleButton value={0} sx={{ fontSize: 12, py: 0.3 }}>General</ToggleButton>
             <ToggleButton value={1} sx={{ fontSize: 12, py: 0.3 }}>Editor</ToggleButton>
             <ToggleButton value={2} sx={{ fontSize: 12, py: 0.3 }}>Snapshots</ToggleButton>
-            <ToggleButton value={3} sx={{ fontSize: 12, py: 0.3 }}>Prompt</ToggleButton>
+            <ToggleButton value={3} sx={{ fontSize: 12, py: 0.3 }}>Muse</ToggleButton>
           </ToggleButtonGroup>
         </Box>
         <Box sx={{ flex: 1, overflow: "auto", px: 2, py: 1.5 }}>
@@ -758,13 +792,13 @@ export const SettingsWindow: React.FC = () => {
           )}
           {activeTab === 3 && (
             <Box>
-              {promptProvider !== "none" && providerStatus && !providerStatus.ollama && !providerStatus["lm-studio"] && promptProvider !== "openai-compatible" ? (
+              {promptProvider !== "none" && providerStatus !== null && !providerStatus && promptProvider !== "openai-compatible" ? (
                 <Box sx={{ border: '1px solid', borderColor: 'error.main', borderRadius: 0, p: 2, mb: 1.5, bgcolor: 'error.dark', color: 'error.contrastText' }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                     No AI Providers Detected
                   </Typography>
                   <Typography variant="body2" sx={{ fontSize: 12, opacity: 0.9 }}>
-                    Neither Ollama nor LM Studio is currently running on your computer. Please install and start one of these applications to configure your Prompt assistant.
+                    Ollama is not currently running on your computer. Please install and start Ollama to configure Muse.
                   </Typography>
                 </Box>
               ) : null}
@@ -786,8 +820,7 @@ export const SettingsWindow: React.FC = () => {
                 >
                   <ToggleButton value="none" sx={{ fontSize: 12, py: 0.3 }}>None</ToggleButton>
                   <ToggleButton value="ollama" sx={{ fontSize: 12, py: 0.3 }}>Ollama</ToggleButton>
-                  <ToggleButton value="lm-studio" sx={{ fontSize: 12, py: 0.3 }}>LM Studio</ToggleButton>
-                  <ToggleButton value="openai-compatible" sx={{ fontSize: 12, py: 0.3 }}>API</ToggleButton>
+                  <ToggleButton value="openai-compatible" sx={{ fontSize: 12, py: 0.3 }}>OpenAI API</ToggleButton>
                 </ToggleButtonGroup>
                 {promptProvider !== "none" && (
                   <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
@@ -1069,7 +1102,7 @@ export const SettingsWindow: React.FC = () => {
                 <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto" }}>
                   {promptProvider === "none" && (
                     <Typography variant="body2" sx={{ fontSize: 12, color: 'text.secondary', py: 2, textAlign: 'center' }}>
-                      Select a provider from the Prompt tab to configure it.
+                      Select a provider from the Muse tab to configure it.
                     </Typography>
                   )}
 
@@ -1091,9 +1124,9 @@ export const SettingsWindow: React.FC = () => {
                           sx={{ '& input': { fontSize: 12 }, mb: 0.5 }}
                         />
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: providerStatus?.ollama ? 'success.main' : 'error.main', flexShrink: 0 }} />
-                          <Typography variant="caption" sx={{ fontSize: 10, color: providerStatus?.ollama ? 'success.main' : 'error.main' }}>
-                            {providerStatus?.ollama ? 'Running' : 'Not detected'}
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: providerStatus ? 'success.main' : 'error.main', flexShrink: 0 }} />
+                          <Typography variant="caption" sx={{ fontSize: 10, color: providerStatus ? 'success.main' : 'error.main' }}>
+                            {providerStatus ? 'Running' : 'Not detected'}
                           </Typography>
                         </Box>
                       </Box>
@@ -1140,118 +1173,117 @@ export const SettingsWindow: React.FC = () => {
                     </Box>
                   )}
 
-                  {promptProvider === "lm-studio" && (
-                    <Box>
-                      <Box sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                          LM STUDIO URL
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                          The base URL of your LM Studio server
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          value={lmStudioUrl}
-                          onChange={(e) => { const v = e.target.value; setLmStudioUrl(v); localStorage.setItem(STORAGE_KEYS.PROMPT_LM_STUDIO_URL, v); }}
-                          placeholder="http://localhost:1234"
-                          sx={{ '& input': { fontSize: 12 }, mb: 0.5 }}
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: providerStatus?.["lm-studio"] ? 'success.main' : 'error.main', flexShrink: 0 }} />
-                          <Typography variant="caption" sx={{ fontSize: 10, color: providerStatus?.["lm-studio"] ? 'success.main' : 'error.main' }}>
-                            {providerStatus?.["lm-studio"] ? 'Running' : 'Not detected'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                          MODEL
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'flex-start' }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            value={promptModel}
-                            onChange={(e) => { const v = e.target.value; setPromptModel(v); localStorage.setItem(STORAGE_KEYS.PROMPT_MODEL, v); }}
-                            placeholder="e.g. local-model"
-                            slotProps={{ htmlInput: { list: "lm-model-suggestions" } }}
-                            sx={{ '& input': { fontSize: 12 } }}
-                          />
-                          <datalist id="lm-model-suggestions">
-                            {availableModels.map((m) => (
-                              <option key={m} value={m} />
-                            ))}
-                          </datalist>
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setModelsLoading(true);
-                              fetchModels("lm-studio").then((models) => {
-                                setAvailableModels(models);
-                                setModelsLoading(false);
-                              });
-                            }}
-                            sx={{ mt: 0.3 }}
-                          >
-                            <RestartAltIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                        </Box>
-                        {modelsLoading && <CircularProgress size={14} sx={{ mt: 0.5 }} />}
-                        {!modelsLoading && availableModels.length > 0 && (
-                          <Typography variant="caption" sx={{ fontSize: 9, color: 'success.main', display: 'block', mt: 0.5 }}>
-                            {availableModels.length} model(s) available
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  )}
-
                   {promptProvider === "openai-compatible" && (
                     <Box>
-                      <Box sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                          ENDPOINT URL
+                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 1.5 }}>
+                        API CONFIGURATIONS
+                      </Typography>
+                      {apiList.length === 0 ? (
+                        <Typography variant="body2" sx={{ fontSize: 12, color: 'text.secondary', py: 2, textAlign: 'center' }}>
+                          No APIs configured. Click "Add API" to get started.
                         </Typography>
-                        <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                          Full base URL (the adapter appends /chat/completions)
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          value={apiEndpoint}
-                          onChange={(e) => { const v = e.target.value; setApiEndpoint(v); localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, v); }}
-                          placeholder="https://api.openai.com/v1"
-                          sx={{ '& input': { fontSize: 12 } }}
-                        />
-                      </Box>
-                      <Box sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                          API KEY
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          type="password"
-                          value={apiKey}
-                          onChange={(e) => { const v = e.target.value; setApiKey(v); localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, v); }}
-                          placeholder="sk-..."
-                          sx={{ '& input': { fontSize: 12 } }}
-                        />
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                          MODEL
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          value={apiModel}
-                          onChange={(e) => { const v = e.target.value; setApiModel(v); localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, v); }}
-                          placeholder="e.g. gpt-4o-mini"
-                          sx={{ '& input': { fontSize: 12 } }}
-                        />
-                      </Box>
+                      ) : (
+                        apiList.map((entry) => (
+                          <Box
+                            key={entry.id}
+                            sx={{
+                              border: '1px solid',
+                              borderColor: selectedApiId === entry.id ? 'primary.main' : 'divider',
+                              borderRadius: 0,
+                              p: 1.5,
+                              mb: 2,
+                              bgcolor: selectedApiId === entry.id ? 'action.selected' : 'transparent',
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                {selectedApiId === entry.id && (
+                                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
+                                )}
+                                {editingApiId === entry.id ? (
+                                  <TextField
+                                    size="small"
+                                    value={entry.name}
+                                    onChange={(e) => updateApi(entry.id, "name", e.target.value)}
+                                    sx={{ '& input': { fontSize: 11, py: 0.3 }, width: 160 }}
+                                    placeholder="API Name"
+                                  />
+                                ) : (
+                                  <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary' }}>
+                                    {entry.name}
+                                  </Typography>
+                                )}
+                              </Box>
+                              <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setEditingApiId(editingApiId === entry.id ? null : entry.id)}
+                                  sx={{ p: 0.3 }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => removeApi(entry.id)}
+                                  sx={{ p: 0.3, color: 'error.main' }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            </Box>
+                            {editingApiId === entry.id ? (
+                              <Box>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="Endpoint URL"
+                                  value={entry.endpoint}
+                                  onChange={(e) => updateApi(entry.id, "endpoint", e.target.value)}
+                                  placeholder="https://api.openai.com/v1/chat/completions"
+                                  sx={{ '& input': { fontSize: 11 }, mb: 1 }}
+                                />
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="API Key"
+                                  type="password"
+                                  value={entry.apiKey}
+                                  onChange={(e) => updateApi(entry.id, "apiKey", e.target.value)}
+                                  placeholder="sk-..."
+                                  sx={{ '& input': { fontSize: 11 }, mb: 1 }}
+                                />
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="Model"
+                                  value={entry.model}
+                                  onChange={(e) => updateApi(entry.id, "model", e.target.value)}
+                                  placeholder="e.g. gpt-4o-mini"
+                                  sx={{ '& input': { fontSize: 11 } }}
+                                />
+                              </Box>
+                            ) : (
+                              <Box>
+                                <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.3 }}>
+                                  {entry.endpoint || '(no endpoint)'}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', display: 'block' }}>
+                                  {entry.model || '(no model)'}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        ))
+                      )}
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<AddIcon />}
+                        onClick={addApi}
+                        sx={{ fontSize: 11, borderRadius: 0, mt: 1 }}
+                      >
+                        Add API
+                      </Button>
                     </Box>
                   )}
                 </DialogContent>

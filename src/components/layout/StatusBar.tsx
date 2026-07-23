@@ -6,12 +6,16 @@ import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
 import { useEditor } from "../../context";
+import { RobotIcon } from "../Icons";
+import { STORAGE_KEYS } from "../../constants";
+import { useModalWindows } from "../../hooks/useModalWindows";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
-  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState } = useUI();
+  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, activeRightPane, setActiveRightPane } = useUI();
   const { activeLineNumber } = useEditor();
   const { activeSprints } = useSprint();
+  const { openSettingsWindow } = useModalWindows();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [tick, setTick] = useState(0);
 
@@ -380,7 +384,33 @@ export const StatusBar = React.memo(() => {
             Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
           </Typography>
         </Box>
+          <Box
+            id="status-muse"
+            onClick={() => {
+              const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "none";
+              if (provider === "none") {
+                openSettingsWindow("muse");
+              } else {
+                setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");
+              }
+            }}
+            title="Muse"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+              ml: 1,
+              color: (t) => {
+                const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "none";
+                return provider === "none" ? t.palette.error.main : t.palette.success.main;
+              },
+              flexShrink: 0,
+              "&:hover": { opacity: 0.7 },
+            }}
+          >
+            <RobotIcon sx={{ fontSize: 15 }} />
+          </Box>
+        </Box>
       </Box>
-    </Box>
   );
 });

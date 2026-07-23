@@ -60,6 +60,12 @@
 }
 
 /* Allow text selection only in editor content and form fields */
+.ai-chat-messages,
+.ai-chat-messages * {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
 .cm-content {
   user-select: text !important;
   -webkit-user-select: text !important;

@@ -1,20 +1,20 @@
 import { useState, useCallback, useEffect, useRef, UIEvent } from "react";
-import { Box, Typography, IconButton, Menu, MenuItem, ListItemText } from "@mui/material";
+import { Box, Typography, IconButton, Menu, MenuItem, ListItemText, Select, FormControl } from "@mui/material";
 import { usePromptConfig, setPromptConfigField, fetchModels } from "../hooks/usePromptConfig";
 import { useAIChat } from "../hooks/useAIChat";
 import { useFile } from "../context/FileContext";
-import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon } from "./Icons";
+import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon } from "./Icons";
 import { AIChatMessage } from "./ai/AIChatMessage";
 import { AIChatComposer, type ComposerAction } from "./ai/AIChatComposer";
-import { AIQuickActions, AIAction } from "./ai/AIQuickActions";
+
 
 import "../styles/ai-chat.css";
 
-interface PromptPanelProps {
+interface MusePanelProps {
   onInsertAtCursor?: (text: string) => void;
 }
 
-export const PromptPanel: React.FC<PromptPanelProps> = ({ onInsertAtCursor }) => {
+export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
   const { parsedDoc, filePath, activeFileId } = useFile();
   const promptConfig = usePromptConfig();
 
@@ -57,24 +57,12 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({ onInsertAtCursor }) =>
     if (el && pinnedRef.current) el.scrollTop = el.scrollHeight;
   }, [chat.turns]);
 
-  const handleQuickAction = useCallback((action: AIAction) => {
-    let content = "";
-    if (action === "summarize") content = "Please summarize the document.";
-    else if (action === "analyzeTone") content = "Analyze the tone of the document.";
-    else if (action === "checkSpelling") content = "Check the document for spelling errors.";
-    if (content) {
-      chat.send(content, action);
-    }
-  }, [chat]);
-
   const handleSend = useCallback((text: string, action?: ComposerAction) => {
-    // Strip @command prefix from content sent to AI, keep full text for display
     const m = text.match(/^@(write-scene|q|lookup|synonyms)\s+(.*)/);
     const content = m ? m[2] : text;
     chat.send(content, text, action ?? "chat");
   }, [chat]);
 
-  // ── Listen for lookup/synonyms events from FountainEditor ──
   useEffect(() => {
     const handleLookup = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
@@ -104,7 +92,7 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({ onInsertAtCursor }) =>
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 2, pr: 4.5, height: 40, minHeight: 40, borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-          Prompt
+          Muse
         </Typography>
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
           <IconButton size="small" onClick={() => chat.newSession()} title="New Chat">
@@ -170,6 +158,7 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({ onInsertAtCursor }) =>
         <Box
           ref={bodyRef}
           onScroll={handleScroll}
+          className="ai-chat-messages"
           sx={{
             flex: 1,
             minHeight: 0,
@@ -188,7 +177,7 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({ onInsertAtCursor }) =>
           )}
           {chat.turns.length === 0 && (
             <Box sx={{ color: "text.secondary", fontSize: "0.78rem", textAlign: "center", py: 5, px: 2, lineHeight: 1.5 }}>
-              {parsedDoc.screenplayText ? "Start a conversation about your document..." : "Open a document to chat about it..."}
+              {parsedDoc.screenplayText ? "Start a conversation about your screenplay..." : "Open a screenplay to chat about it..."}
             </Box>
           )}
           {chat.turns.map((turn, index) => (
@@ -202,94 +191,88 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({ onInsertAtCursor }) =>
             />
           ))}
           {chat.error && (
-            <Box sx={{ color: "error.main", fontSize: "0.75rem", px: 1.5, py: 1, border: "1px solid", borderColor: "error.main" }}>
-              {chat.error}
+            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, color: "error.main", fontSize: "0.75rem", px: 1.5, py: 1, border: "1px solid", borderColor: "error.main" }}>
+              <Typography variant="inherit" sx={{ flex: 1, minWidth: 0, wordBreak: "break-all" }}>
+                {chat.error}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={() => navigator.clipboard.writeText(chat.error!)}
+                sx={{ p: 0.3, mt: -0.3, color: "error.main", flexShrink: 0 }}
+              >
+                <ContentCopyIcon fontSize="inherit" />
+              </IconButton>
             </Box>
           )}
         </Box>
 
-        <Box sx={{ p: 1.5, borderTop: "1px solid", borderColor: "divider", bgcolor: "background.default", display: "flex", flexDirection: "column", gap: 1 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 9, color: "text.secondary", letterSpacing: "0.05em" }}>
-                PROVIDER:
-              </Typography>
-              <select
-                value={promptConfig.provider}
-                onChange={(e) => {
-                  setPromptConfigField("provider", e.target.value as any);
-                }}
-                style={{
-                  backgroundColor: "var(--background-paper, #1e1e1e)",
-                  color: "var(--text-primary, #ffffff)",
-                  border: "1px solid var(--divider, #333333)",
-                  borderRadius: "0px",
-                  padding: "2px 6px",
-                  fontSize: "10px",
-                  fontFamily: "inherit",
-                  outline: "none",
-                  cursor: "pointer"
-                }}
-              >
-                <option value="openai-compatible">API (OpenAI Compatible)</option>
-                <option value="ollama">Ollama (Local)</option>
-                <option value="lm-studio">LM Studio (Local)</option>
-                <option value="none">Disabled</option>
-              </select>
-            </Box>
+        <Box sx={{ borderTop: "1px solid", borderColor: "divider", bgcolor: "action.hover", display: "flex", flexDirection: "column", pb: 1.5 }}>
+          <Box sx={{ px: 1.5, pt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.375 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 9, color: "text.secondary", letterSpacing: "0.04em" }}>
+                  Provider
+                </Typography>
+                <FormControl size="small" fullWidth>
+                  <Select
+                    value={promptConfig.provider}
+                    onChange={(e) => {
+                      setPromptConfigField("provider", e.target.value as any);
+                    }}
+                    sx={{ fontSize: "11px", borderRadius: 0, height: 30 }}
+                  >
+                    <MenuItem value="openai-compatible">OpenAI API</MenuItem>
+                    <MenuItem value="ollama">Ollama (Local)</MenuItem>
+                    <MenuItem value="none">Disabled</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
 
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 9, color: "text.secondary", letterSpacing: "0.05em" }}>
-                ACTIVE MODEL:
-              </Typography>
-              <select
-                value={promptConfig.provider === "openai-compatible" ? (promptConfig.apiModel || "") : (promptConfig.model || "")}
-                onChange={(e) => {
-                  const nextModel = e.target.value;
-                  if (promptConfig.provider === "openai-compatible") {
-                    setPromptConfigField("apiModel", nextModel);
-                  } else {
-                    setPromptConfigField("model", nextModel);
-                  }
-                }}
-                style={{
-                  backgroundColor: "var(--background-paper, #1e1e1e)",
-                  color: "var(--text-primary, #ffffff)",
-                  border: "1px solid var(--divider, #333333)",
-                  borderRadius: "0px",
-                  padding: "2px 6px",
-                  fontSize: "10px",
-                  fontFamily: "inherit",
-                  outline: "none",
-                  cursor: "pointer"
-                }}
-              >
-                {promptConfig.provider === "openai-compatible" ? (
-                  <option value={promptConfig.apiModel || "deepseek-v4-flash-free"}>
-                    {promptConfig.apiModel || "deepseek-v4-flash-free"}
-                  </option>
-                ) : (
-                  availableModels.length > 0 ? (
-                    availableModels.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))
-                  ) : (
-                    <option value={promptConfig.model || ""}>{promptConfig.model || "Loading models..."}</option>
-                  )
-                )}
-              </select>
+              <Box sx={{ flex: 1.4, display: "flex", flexDirection: "column", gap: 0.375 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: 9, color: "text.secondary", letterSpacing: "0.04em" }}>
+                  Active Model
+                </Typography>
+                <FormControl size="small" fullWidth>
+                  <Select
+                    value={promptConfig.provider === "openai-compatible" ? (promptConfig.apiModel || "") : (promptConfig.model || "")}
+                    onChange={(e) => {
+                      const nextModel = e.target.value;
+                      if (promptConfig.provider === "openai-compatible") {
+                        setPromptConfigField("apiModel", nextModel);
+                      } else {
+                        setPromptConfigField("model", nextModel);
+                      }
+                    }}
+                    sx={{ fontSize: "11px", borderRadius: 0, height: 30 }}
+                  >
+                    {promptConfig.provider === "openai-compatible" ? (
+                      <MenuItem value={promptConfig.apiModel || "deepseek-v4-flash-free"}>
+                        {promptConfig.apiModel || "deepseek-v4-flash-free"}
+                      </MenuItem>
+                    ) : (
+                      availableModels.length > 0 ? (
+                        availableModels.map(m => (
+                          <MenuItem key={m} value={m}>{m}</MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem value={promptConfig.model || ""}>{promptConfig.model || "Loading models..."}</MenuItem>
+                      )
+                    )}
+                  </Select>
+                </FormControl>
+              </Box>
             </Box>
           </Box>
 
-          <AIQuickActions onAction={handleQuickAction} disabled={chat.streaming} />
-
-          <AIChatComposer
-            streaming={chat.streaming}
-            disabled={promptConfig.provider === "none"}
-            placeholder={parsedDoc.screenplayText ? "Message AI Assistant..." : "Open a document first..."}
-            onSend={handleSend}
-            onStop={chat.stop}
-          />
+          <Box sx={{ pt: 0.75 }}>
+            <AIChatComposer
+              streaming={chat.streaming}
+              disabled={promptConfig.provider === "none"}
+              placeholder={parsedDoc.screenplayText ? "Message Muse..." : "Open a screenplay first..."}
+              onSend={handleSend}
+              onStop={chat.stop}
+            />
+          </Box>
         </Box>
       </Box>
     </Box>

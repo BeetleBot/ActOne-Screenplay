@@ -69,12 +69,14 @@ export function AIChatMessage({ turn, pending, onInsertAtCursor }: AIChatMessage
             py: 1.25,
             fontSize: "0.8125rem",
             lineHeight: 1.6,
+            userSelect: "text",
             "& p": { m: 0, mb: 0.75 },
             "& p:last-child": { mb: 0 },
             "& ul, & ol": { my: 0.5, pl: 2.5 },
             "& li": { mb: 0.5 },
             "& strong, & b": { fontWeight: 700 },
             "& code": { fontFamily: "monospace", fontSize: "0.75rem", opacity: 0.85 },
+            "& ::selection": { bgcolor: "rgba(255,255,255,0.25)" },
           }}
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -92,7 +94,7 @@ export function AIChatMessage({ turn, pending, onInsertAtCursor }: AIChatMessage
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, pl: 0.25 }}>
           <AutoAwesomeIcon sx={{ fontSize: 12, color: "primary.main" }} />
           <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", color: "primary.main", letterSpacing: "0.06em" }}>
-            ACTONE AI
+            MUSE
           </Typography>
         </Box>
         <Box
@@ -143,7 +145,7 @@ export function AIChatMessage({ turn, pending, onInsertAtCursor }: AIChatMessage
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <AutoAwesomeIcon sx={{ fontSize: 12, color: "primary.main" }} />
           <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", color: "primary.main", letterSpacing: "0.06em" }}>
-            ACTONE AI
+            MUSE
           </Typography>
         </Box>
         <Tooltip title={copied ? "Copied!" : "Copy"} placement="left">
@@ -181,6 +183,7 @@ export function AIChatMessage({ turn, pending, onInsertAtCursor }: AIChatMessage
           fontSize: "0.8125rem",
           lineHeight: 1.7,
           color: "text.primary",
+          userSelect: "text",
           "& p": { m: 0, mb: 1 },
           "& p:last-child": { mb: 0 },
           "& h1, & h2, & h3, & h4": { fontWeight: 700, mt: 1.5, mb: 0.75, lineHeight: 1.3, color: "text.primary" },

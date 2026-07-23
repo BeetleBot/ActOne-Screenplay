@@ -12,7 +12,7 @@ function platformFetch(url: string, init?: RequestInit) {
   return fetch(url, init);
 }
 
-export type PromptProvider = "none" | "ollama" | "lm-studio" | "openai-compatible";
+export type PromptProvider = "none" | "ollama" | "openai-compatible";
 
 export interface PromptConfig {
   provider: PromptProvider;
@@ -28,7 +28,6 @@ export interface PromptConfig {
   apiKey: string;
   apiModel: string;
   ollamaUrl: string;
-  lmStudioUrl: string;
   writeSceneInstructions: string;
   qInstructions: string;
   synonymsInstructions: string;
@@ -62,7 +61,6 @@ function getConfig(): PromptConfig {
         apiKey: localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY]),
         apiModel: localStorage.getItem(STORAGE_KEYS.PROMPT_API_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_MODEL]),
         ollamaUrl: localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL]),
-        lmStudioUrl: localStorage.getItem(STORAGE_KEYS.PROMPT_LM_STUDIO_URL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_LM_STUDIO_URL]),
         writeSceneInstructions: localStorage.getItem(STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS]),
         qInstructions: localStorage.getItem(STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS]),
         synonymsInstructions: localStorage.getItem(STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS]),
@@ -83,7 +81,6 @@ function getConfig(): PromptConfig {
       apiKey: "",
       apiModel: "",
       ollamaUrl: "http://localhost:11434",
-      lmStudioUrl: "http://localhost:1234",
       writeSceneInstructions: "",
       qInstructions: "",
       synonymsInstructions: "",
@@ -106,7 +103,6 @@ function getConfig(): PromptConfig {
     cachedConfig.apiKey === newConfig.apiKey &&
     cachedConfig.apiModel === newConfig.apiModel &&
     cachedConfig.ollamaUrl === newConfig.ollamaUrl &&
-    cachedConfig.lmStudioUrl === newConfig.lmStudioUrl &&
     cachedConfig.writeSceneInstructions === newConfig.writeSceneInstructions &&
     cachedConfig.qInstructions === newConfig.qInstructions &&
     cachedConfig.synonymsInstructions === newConfig.synonymsInstructions &&
@@ -149,7 +145,6 @@ export function setPromptConfigField(key: keyof PromptConfig, value: string | nu
     apiKey: STORAGE_KEYS.PROMPT_API_KEY,
     apiModel: STORAGE_KEYS.PROMPT_API_MODEL,
     ollamaUrl: STORAGE_KEYS.PROMPT_OLLAMA_URL,
-    lmStudioUrl: STORAGE_KEYS.PROMPT_LM_STUDIO_URL,
     writeSceneInstructions: STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS,
     qInstructions: STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS,
     synonymsInstructions: STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS,
@@ -167,10 +162,6 @@ export function getEndpointForProvider(provider: PromptProvider, config?: Prompt
     const base = config?.ollamaUrl || "http://localhost:11434";
     return `${base.replace(/\/+$/, "")}/v1`;
   }
-  if (provider === "lm-studio") {
-    const base = config?.lmStudioUrl || "http://localhost:1234";
-    return `${base.replace(/\/+$/, "")}/v1`;
-  }
   if (provider === "openai-compatible") {
     return config?.apiEndpoint || "";
   }
@@ -186,25 +177,18 @@ export async function fetchModels(provider: PromptProvider): Promise<string[]> {
       const data = await res.json() as { models?: { name: string }[] };
       return (data.models ?? []).map((m) => m.name.replace(/:latest$/, ""));
     }
-    if (provider === "lm-studio") {
-      const base = localStorage.getItem(STORAGE_KEYS.PROMPT_LM_STUDIO_URL) || "http://localhost:1234";
-      const res = await platformFetch(`${base.replace(/\/+$/, "")}/v1/models`, { signal: AbortSignal.timeout(3000) });
-      if (!res.ok) return [];
-      const data = await res.json() as { data?: { id: string }[] };
-      return (data.data ?? []).map((m) => m.id);
-    }
     return [];
   } catch {
     return [];
   }
 }
 
-export async function checkProviderAvailability(): Promise<{ ollama: boolean, "lm-studio": boolean }> {
+export async function checkProviderAvailability(): Promise<boolean> {
   const ollamaUrl = localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) || "http://localhost:11434";
-  const lmStudioUrl = localStorage.getItem(STORAGE_KEYS.PROMPT_LM_STUDIO_URL) || "http://localhost:1234";
-  const [ollamaOk, lmStudioOk] = await Promise.all([
-    platformFetch(`${ollamaUrl.replace(/\/+$/, "")}/`, { signal: AbortSignal.timeout(1500) }).then(res => res.ok).catch(() => false),
-    platformFetch(`${lmStudioUrl.replace(/\/+$/, "")}/v1/models`, { signal: AbortSignal.timeout(1500) }).then(res => res.ok).catch(() => false)
-  ]);
-  return { ollama: ollamaOk, "lm-studio": lmStudioOk };
+  try {
+    const res = await platformFetch(`${ollamaUrl.replace(/\/+$/, "")}/`, { signal: AbortSignal.timeout(1500) });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

@@ -78,7 +78,7 @@ export class OpenAICompatibleProvider implements AIProvider {
       headers.Authorization = `Bearer ${this.apiKey}`;
     }
 
-    const response = await platformFetch(`${this.endpoint.replace(/\/+$/, "")}/chat/completions`, {
+    const response = await platformFetch(this.endpoint.replace(/\/+$/, ""), {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -163,49 +163,6 @@ export class OllamaProvider implements AIProvider {
   }
 }
 
-export class LMStudioProvider implements AIProvider {
-  constructor(
-    private baseUrl: string,
-    private model: string,
-  ) {}
-
-  async chat(messages: ChatMessage[], options: ChatOptions = {}): Promise<string> {
-    const payload: Array<{ role: string; content: string }> = [];
-    if (options.system) payload.push({ role: "system", content: options.system });
-    payload.push(...messages);
-
-    const response = await platformFetch(`${this.baseUrl.replace(/\/+$/, "")}/v1/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: this.model || "local-model",
-        messages: payload,
-        stream: true,
-        temperature: options.temperature,
-      }),
-      signal: options.signal,
-    });
-
-    if (!response.ok) {
-      const err = await response.text().catch(() => "Unknown error");
-      throw new Error(`LM Studio error (${response.status}): ${err}`);
-    }
-
-    let text = "";
-    await streamLines(response, (line) => {
-      const event = sseData(line) as {
-        choices?: Array<{ delta?: { content?: string } }>;
-      } | null;
-      const delta = event?.choices?.[0]?.delta?.content;
-      if (typeof delta === "string" && delta) {
-        text += delta;
-        options.onChunk?.(delta);
-      }
-    });
-    return text;
-  }
-}
-
 export function createAIProvider(config: PromptConfig): AIProvider | null {
   switch (config.provider) {
     case "openai-compatible": {
@@ -214,9 +171,6 @@ export function createAIProvider(config: PromptConfig): AIProvider | null {
     }
     case "ollama": {
       return new OllamaProvider(config.ollamaUrl || "http://localhost:11434", config.model);
-    }
-    case "lm-studio": {
-      return new LMStudioProvider(config.lmStudioUrl || "http://localhost:1234", config.model);
     }
     default:
       return null;

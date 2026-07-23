@@ -56,7 +56,8 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const notepadData = tryParse("notepad.json", "");
   const sprintData = tryParse("sprint_data.json", []);
   const productionTagsData = migrateProductionTags(tryParse("production_tags.json", { tags: [], definitions: [] }));
-  const promptChatsData = tryParse("prompt.json", { conversations: [], activeConversationId: null });
+  const promptChatsData = tryParse("muse.json",
+    tryParse("prompt.json", { conversations: [], activeConversationId: null }));
 
   let scripts: ScriptInfo[];
 
@@ -150,7 +151,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
     "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
     "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
-    "prompt.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
+    "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
   };
 
   if (scripts.length > 1) {
