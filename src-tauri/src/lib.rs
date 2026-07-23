@@ -651,6 +651,7 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_http::init())
         .plugin({
             let prevent = tauri_plugin_prevent_default::Builder::new();
             #[cfg(target_os = "windows")]

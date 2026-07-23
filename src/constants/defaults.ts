@@ -1,6 +1,6 @@
 import { STORAGE_KEYS } from "../constants";
 
-export const DEFAULTS: Record<string, string | number | boolean> = {
+export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
   [STORAGE_KEYS.THEME_ID]: "adaptive",
   [STORAGE_KEYS.APP_ICON]: "light",
   [STORAGE_KEYS.ICON_STYLE]: "fill",
@@ -30,6 +30,25 @@ export const DEFAULTS: Record<string, string | number | boolean> = {
   [STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL]: 5,
   [STORAGE_KEYS.SNAPSHOT_ON_SAVE]: true,
   [STORAGE_KEYS.SNAPSHOT_MAX_RETENTION]: 10,
+
+  [STORAGE_KEYS.PROMPT_PROVIDER]: "none",
+  [STORAGE_KEYS.PROMPT_MODEL]: "llama3.2",
+  [STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]: "You are a helpful screenwriting assistant. Answer questions concisely and helpfully.",
+  [STORAGE_KEYS.PROMPT_REPHRASE_PROMPT]: "You are a professional screenwriting rephrasing tool. Rephrase the user's text.",
+  [STORAGE_KEYS.PROMPT_CHAT_TEMP]: 0.7,
+  [STORAGE_KEYS.PROMPT_REPHRASE_TEMP]: 0.1,
+  [STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES]: ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Hindi", "Japanese", "Chinese"],
+  [STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT]: "You are a professional translation tool. Translate the user's text to the specified language. Preserve the original meaning, tone, and structure. Respond ONLY with the translated text — no explanations, quotes, or additional text.",
+  [STORAGE_KEYS.PROMPT_TRANSLATE_TEMP]: 0.1,
+  [STORAGE_KEYS.PROMPT_API_ENDPOINT]: "",
+  [STORAGE_KEYS.PROMPT_API_KEY]: "",
+  [STORAGE_KEYS.PROMPT_API_MODEL]: "",
+  [STORAGE_KEYS.PROMPT_OLLAMA_URL]: "http://localhost:11434",
+  [STORAGE_KEYS.PROMPT_LM_STUDIO_URL]: "http://localhost:1234",
+  [STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS]: "",
+  [STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS]: "",
+  [STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS]: "",
+  [STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS]: "",
 };
 
 export const RESET_SETTINGS: ReadonlySet<string> = new Set([

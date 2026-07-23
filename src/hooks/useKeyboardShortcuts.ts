@@ -20,6 +20,7 @@ interface ShortcutActions {
   closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
+  togglePrompt?: () => void;
   openHelp?: () => void;
   toggleSnapshotsPanel?: () => void;
   isDisabled?: boolean;
@@ -70,6 +71,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (e.altKey && e.key.toLowerCase() === "s") {
         e.preventDefault();
         actionsRef.current.toggleSnapshotsPanel?.();
+        return;
+      }
+
+      if (e.altKey && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        actionsRef.current.togglePrompt?.();
         return;
       }
 
@@ -138,6 +145,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "s" && !shift) {
         e.preventDefault();
         actionsRef.current.saveFile();
+        return;
+      }
+
+      if (key === "p" && alt) {
+        e.preventDefault();
+        actionsRef.current.togglePrompt?.();
         return;
       }
 

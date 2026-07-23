@@ -34,6 +34,7 @@ zip = "2"
 dunce = "1.0"
 tauri-plugin-clipboard-manager = "~2.0"
 tauri-plugin-prevent-default = { version = "5", features = ["platform-windows"] }
+tauri-plugin-http = "2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.62", features = ["Services_Store", "Foundation"] }

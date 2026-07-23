@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
-import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon, BarChartIcon, CameraIcon, MusicNoteIcon } from "./Icons";
+import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon, BarChartIcon, CameraIcon, MusicNoteIcon, ChatDotsIcon } from "./Icons";
 import { logger } from "../utils/logger";
 
 
@@ -85,6 +85,7 @@ interface CommandPaletteProps {
   onOpenThemeManagerModal: () => void;
   onOpenXrayModal?: () => void;
   onToggleSnapshotsPanel?: () => void;
+  onTogglePrompt?: () => void;
   openTutorialsWindow?: () => void;
 }
 
@@ -102,6 +103,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenThemeManagerModal,
   onOpenXrayModal,
   onToggleSnapshotsPanel,
+  onTogglePrompt,
   openTutorialsWindow,
 }) => {
   const theme = useTheme();
@@ -274,6 +276,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-hide-tags", name: hideTagsEnabled ? "Show Tags" : "Hide the Tags", category: "View", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { setHideTagsEnabled(!hideTagsEnabled); onClose(); } },
     { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },
+    { id: "view-prompt", name: "Toggle AI Prompt", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Alt+P", action: () => { onTogglePrompt?.(); onClose(); } },
     // Format
     { id: "format-tag-manager", name: "Open Tag Manager...", category: "Format", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBreakdownModal(); onClose(); } },
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },

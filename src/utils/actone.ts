@@ -16,6 +16,7 @@ export interface ActoneBundle {
   scripts: ScriptInfo[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
+  promptChats?: { conversations: unknown[]; activeConversationId: string | null };
 }
 
 export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): ActoneBundle {
@@ -55,6 +56,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const notepadData = tryParse("notepad.json", "");
   const sprintData = tryParse("sprint_data.json", []);
   const productionTagsData = migrateProductionTags(tryParse("production_tags.json", { tags: [], definitions: [] }));
+  const promptChatsData = tryParse("prompt.json", { conversations: [], activeConversationId: null });
 
   let scripts: ScriptInfo[];
 
@@ -62,6 +64,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
     ...parsedSettings,
     sprintHistory: sprintData,
     productionTags: productionTagsData,
+    promptChats: promptChatsData,
   };
 
   if (unzipped["fountain.json"]) {
@@ -109,13 +112,13 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
     settings.todos = todosData;
     settings.parking = parkingData;
   }
-  return { scripts, settings };
+  return { scripts, settings, promptChats: promptChatsData as ActoneBundle["promptChats"] };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string, any>): Uint8Array {
   const {
-    genders, todos, parking, notepad, sprintHistory: sprintData, productionTags, ...restSettings
+    genders, todos, parking, notepad, sprintHistory: sprintData, productionTags, promptChats, ...restSettings
   } = settings || {};
 
   const resolvePerScript = (key: string, scripts: ScriptInfo[]): unknown => {
@@ -147,6 +150,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
     "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
     "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
+    "prompt.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
   };
 
   if (scripts.length > 1) {

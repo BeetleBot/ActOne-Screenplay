@@ -52,6 +52,10 @@ export interface UIContextProps {
   setFountainColorsEnabled: (enabled: boolean) => void;
   iconStyle: 'fill' | 'duotone' | 'regular';
   setIconStyle: (style: 'fill' | 'duotone' | 'regular') => void;
+  aiStatus: string | null;
+  setAiStatus: (status: string | null) => void;
+  translationState: 'idle' | 'running' | 'paused' | 'cancelled';
+  setTranslationState: (state: 'idle' | 'running' | 'paused' | 'cancelled') => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -157,6 +161,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const stored = localStorage.getItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED);
     return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]);
   });
+  const [aiStatus, setAiStatus] = useState<string | null>(null);
+  const [translationState, setTranslationState] = useState<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
 
 
 
@@ -421,6 +427,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setFountainColorsEnabled,
         iconStyle,
         setIconStyle,
+        aiStatus,
+        setAiStatus,
+        translationState,
+        setTranslationState,
         activeAmbientTrack,
         playAmbientTrack,
         stopAmbientTrack,

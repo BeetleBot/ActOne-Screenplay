@@ -11,6 +11,12 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "@mui/icons-material/Done": path.resolve(__dirname, "src/mui-icons/Done.tsx"),
+      "@mui/icons-material/DoneAll": path.resolve(__dirname, "src/mui-icons/DoneAll.tsx"),
+    },
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __APP_CHANNEL__: JSON.stringify(process.env.VITE_APP_CHANNEL || "beta"),

@@ -135,15 +135,17 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         {icon && (
           <Box
             sx={{
-              width: 40,
+              width: 48,
               height: 40,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "primary.main",
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
               flexShrink: 0,
+              borderRight: "1px solid",
+              borderColor: "rgba(0,0,0,0.15)",
               borderTopLeftRadius: 'inherit',
-              pl: 1.5,
             }}
           >
             {icon}
@@ -155,7 +157,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             fontWeight: 700, 
             fontSize: 11, 
             color: "text.secondary", 
-            pl: icon ? 0.5 : 1.5 
+            pl: icon ? 0 : 1.5 
           }}
         >
           {title.toUpperCase()}

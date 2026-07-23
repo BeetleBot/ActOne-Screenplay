@@ -13,7 +13,7 @@ import {
   Sidebar, MagnifyingGlassPlus, MagnifyingGlassMinus, Camera, CheckSquareOffset,
   Garage, Command, DotsThree, DotsSix, Books, Pencil, DiscordLogo,
   SquaresFour, FolderStar, TreeStructure, Rows, ListMagnifyingGlass, GoogleLogo, FolderSimplePlus,
-  Minus
+  Minus, ChatDots, PaperPlaneRight
 } from '@phosphor-icons/react';
 
 type IconProps = SvgIconProps & {
@@ -113,3 +113,5 @@ export const ListMagnifyingGlassIcon = createPhosphorIcon(ListMagnifyingGlass);
 export const GoogleLogoIcon = createPhosphorIcon(GoogleLogo);
 export const FolderSimplePlusIcon = createPhosphorIcon(FolderSimplePlus);
 export const MinimizeIcon = createPhosphorIcon(Minus);
+export const ChatDotsIcon = createPhosphorIcon(ChatDots);
+export const SendIcon = createPhosphorIcon(PaperPlaneRight);

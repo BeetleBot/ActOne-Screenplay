@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useUI, useEditor } from "../../context";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -7,6 +7,8 @@ import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
 import { FountainEditor } from "../FountainEditor";
 import { AmbientPanel } from "../AmbientPanel";
+import { PromptPanel } from "../PromptPanel";
+
 
 import { ErrorBoundary } from "../ErrorBoundary";
 
@@ -57,6 +59,17 @@ export const Workspace = React.memo<WorkspaceProps>(({
     }
     return () => { document.removeEventListener("mousemove", handleMouseMove); document.removeEventListener("mouseup", handleMouseUp); };
   }, [isDragging]);
+
+  const handleInsertAtCursor = useCallback((text: string) => {
+    const view = editorView;
+    if (!view) return;
+    const sel = view.state.selection.main;
+    view.dispatch({
+      changes: { from: sel.from, to: sel.to, insert: `\n\n${text}` },
+      selection: { anchor: sel.from + text.length + 2 },
+    });
+    view.focus();
+  }, [editorView]);
 
   return (
     <Box className="app-workspace" sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -137,6 +150,12 @@ export const Workspace = React.memo<WorkspaceProps>(({
       {activeRightPane === "ambient" && (
         <RightPane type="ambient" onClose={() => setActiveRightPane(null)} errorBoundaryName="ambient-pane" ariaLabel="Ambient Sounds">
           <AmbientPanel />
+        </RightPane>
+      )}
+
+      {activeRightPane === "prompt" && (
+        <RightPane type="prompt" onClose={() => setActiveRightPane(null)} errorBoundaryName="prompt-pane" ariaLabel="AI Prompt">
+          <PromptPanel onInsertAtCursor={handleInsertAtCursor} />
         </RightPane>
       )}
     </Box>

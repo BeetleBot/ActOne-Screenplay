@@ -11,24 +11,28 @@ import {
   ToggleButton,
   TextField,
   Button,
+  IconButton,
+  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
+  Chip,
 } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
-import { SettingsIcon } from "./Icons";
+import { SettingsIcon, RestartAltIcon } from "./Icons";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
 import { initPrefsEngine, setPrefs, onPrefsChanged } from "../theme/AppPrefsEngine";
-import { STORAGE_KEYS } from "../constants";
+import { STORAGE_KEYS, FOUNTAIN_SYNTAX_RULES } from "../constants";
 import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 import { invoke } from "@tauri-apps/api/core";
+import { fetchModels, checkProviderAvailability } from "../hooks/usePromptConfig";
 
 function readLocal(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -65,6 +69,63 @@ export const SettingsWindow: React.FC = () => {
   const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED])));
   const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, String(DEFAULTS[STORAGE_KEYS.ICON_STYLE])) as string);
   const [appIcon, setAppIcon] = useState(() => readLocal(STORAGE_KEYS.APP_ICON, String(DEFAULTS[STORAGE_KEYS.APP_ICON])) as string);
+  const [promptModel, setPromptModel] = useState(() => readLocal(STORAGE_KEYS.PROMPT_MODEL, String(DEFAULTS[STORAGE_KEYS.PROMPT_MODEL])));
+  const [promptProvider, setPromptProvider] = useState(() => readLocal(STORAGE_KEYS.PROMPT_PROVIDER, String(DEFAULTS[STORAGE_KEYS.PROMPT_PROVIDER])));
+  const [promptSystemPrompt, setPromptSystemPrompt] = useState(() => readLocal(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT, String(DEFAULTS[STORAGE_KEYS.PROMPT_SYSTEM_PROMPT])));
+  const [promptRephrasePrompt, setPromptRephrasePrompt] = useState(() => readLocal(STORAGE_KEYS.PROMPT_REPHRASE_PROMPT, String(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_PROMPT])));
+  const [promptChatTemp, setPromptChatTemp] = useState(() => {
+    const raw = readLocal(STORAGE_KEYS.PROMPT_CHAT_TEMP, String(DEFAULTS[STORAGE_KEYS.PROMPT_CHAT_TEMP]));
+    return parseFloat(raw) || 0.7;
+  });
+  const [promptRephraseTemp, setPromptRephraseTemp] = useState(() => {
+    const raw = readLocal(STORAGE_KEYS.PROMPT_REPHRASE_TEMP, String(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_TEMP]));
+    return parseFloat(raw) || 0.1;
+  });
+  const [promptTranslateLangs, setPromptTranslateLangs] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES);
+      return raw ? JSON.parse(raw) : [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])];
+    } catch { return [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])]; }
+  });
+  const [promptTranslatePrompt, setPromptTranslatePrompt] = useState(() => readLocal(STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT, String(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT])));
+  const [promptTranslateTemp, setPromptTranslateTemp] = useState(() => {
+    const raw = readLocal(STORAGE_KEYS.PROMPT_TRANSLATE_TEMP, String(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_TEMP]));
+    return parseFloat(raw) || 0.1;
+  });
+  const [showModelsPanel, setShowModelsPanel] = useState(false);
+  const [apiEndpoint, setApiEndpoint] = useState(() => readLocal(STORAGE_KEYS.PROMPT_API_ENDPOINT, String(DEFAULTS[STORAGE_KEYS.PROMPT_API_ENDPOINT])));
+  const [apiKey, setApiKey] = useState(() => readLocal(STORAGE_KEYS.PROMPT_API_KEY, String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY])));
+  const [apiModel, setApiModel] = useState(() => readLocal(STORAGE_KEYS.PROMPT_API_MODEL, String(DEFAULTS[STORAGE_KEYS.PROMPT_API_MODEL])));
+  const [ollamaUrl, setOllamaUrl] = useState(() => readLocal(STORAGE_KEYS.PROMPT_OLLAMA_URL, String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL])));
+  const [lmStudioUrl, setLmStudioUrl] = useState(() => readLocal(STORAGE_KEYS.PROMPT_LM_STUDIO_URL, String(DEFAULTS[STORAGE_KEYS.PROMPT_LM_STUDIO_URL])));
+  const [writeSceneInstructions, setWriteSceneInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS])));
+  const [qInstructions, setQInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS])));
+  const [synonymsInstructions, setSynonymsInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS])));
+  const [lookupInstructions, setLookupInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS])));
+  const [customInstructionsOpen, setCustomInstructionsOpen] = useState(false);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+
+  useEffect(() => {
+    if (promptProvider === "none" || promptProvider === "openai-compatible") {
+      setAvailableModels([]);
+      setModelsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setModelsLoading(true);
+    fetchModels(promptProvider as "ollama" | "lm-studio").then((models) => {
+      if (cancelled) return;
+      setAvailableModels(models);
+      setModelsLoading(false);
+      if (models.length > 0 && (!promptModel || !models.includes(promptModel))) {
+        setPromptModel(models[0]);
+        localStorage.setItem(STORAGE_KEYS.PROMPT_MODEL, models[0]);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [promptProvider]);
+  
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const activeFilePathRef = useRef<string>("");
   const [activeTab, setActiveTab] = useState(() => {
@@ -72,9 +133,39 @@ export const SettingsWindow: React.FC = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab");
       if (tabParam === "snapshots") return 2;
+      if (tabParam === "prompt") return 3;
     } catch { void 0; }
     return 0;
   });
+
+  const [providerStatus, setProviderStatus] = useState<{ ollama: boolean, "lm-studio": boolean } | null>(null);
+
+  useEffect(() => {
+    if (activeTab !== 3) return;
+    let isActive = true;
+    const check = async () => {
+      const status = await checkProviderAvailability();
+      if (isActive) {
+        setProviderStatus(status);
+        // Auto-switch provider if the selected local one is not running but the other is
+        setPromptProvider(prev => {
+          if (prev === "none" || prev === "openai-compatible") return prev;
+          if (prev === "ollama" && !status.ollama && status["lm-studio"]) {
+            localStorage.setItem(STORAGE_KEYS.PROMPT_PROVIDER, "lm-studio");
+            return "lm-studio";
+          }
+          if (prev === "lm-studio" && !status["lm-studio"] && status.ollama) {
+            localStorage.setItem(STORAGE_KEYS.PROMPT_PROVIDER, "ollama");
+            return "ollama";
+          }
+          return prev;
+        });
+      }
+    };
+    check();
+    const int = setInterval(check, 3000);
+    return () => { isActive = false; clearInterval(int); };
+  }, [activeTab]);
   const handleResetSettings = () => {
     const settingKeys = Object.keys(DEFAULTS);
     settingKeys.forEach((key) => {
@@ -337,6 +428,7 @@ export const SettingsWindow: React.FC = () => {
             <ToggleButton value={0} sx={{ fontSize: 12, py: 0.3 }}>General</ToggleButton>
             <ToggleButton value={1} sx={{ fontSize: 12, py: 0.3 }}>Editor</ToggleButton>
             <ToggleButton value={2} sx={{ fontSize: 12, py: 0.3 }}>Snapshots</ToggleButton>
+            <ToggleButton value={3} sx={{ fontSize: 12, py: 0.3 }}>Prompt</ToggleButton>
           </ToggleButtonGroup>
         </Box>
         <Box sx={{ flex: 1, overflow: "auto", px: 2, py: 1.5 }}>
@@ -355,7 +447,7 @@ export const SettingsWindow: React.FC = () => {
                   >
                     <MenuItem value="letter">Letter</MenuItem>
                     <MenuItem value="a4">A4</MenuItem>
-                  </Select>
+                </Select>
                 </Box>
                 <Box sx={{ mt: 1.25 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
@@ -662,6 +754,508 @@ export const SettingsWindow: React.FC = () => {
                   </Box>
                 </>
               )}
+            </Box>
+          )}
+          {activeTab === 3 && (
+            <Box>
+              {promptProvider !== "none" && providerStatus && !providerStatus.ollama && !providerStatus["lm-studio"] && promptProvider !== "openai-compatible" ? (
+                <Box sx={{ border: '1px solid', borderColor: 'error.main', borderRadius: 0, p: 2, mb: 1.5, bgcolor: 'error.dark', color: 'error.contrastText' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                    No AI Providers Detected
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: 12, opacity: 0.9 }}>
+                    Neither Ollama nor LM Studio is currently running on your computer. Please install and start one of these applications to configure your Prompt assistant.
+                  </Typography>
+                </Box>
+              ) : null}
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  PROVIDER
+                </Typography>
+                <ToggleButtonGroup
+                  value={promptProvider}
+                  exclusive
+                  fullWidth
+                  size="small"
+                  onChange={(_, val) => {
+                    if (val) {
+                      setPromptProvider(val);
+                      localStorage.setItem(STORAGE_KEYS.PROMPT_PROVIDER, val);
+                    }
+                  }}
+                >
+                  <ToggleButton value="none" sx={{ fontSize: 12, py: 0.3 }}>None</ToggleButton>
+                  <ToggleButton value="ollama" sx={{ fontSize: 12, py: 0.3 }}>Ollama</ToggleButton>
+                  <ToggleButton value="lm-studio" sx={{ fontSize: 12, py: 0.3 }}>LM Studio</ToggleButton>
+                  <ToggleButton value="openai-compatible" sx={{ fontSize: 12, py: 0.3 }}>API</ToggleButton>
+                </ToggleButtonGroup>
+                {promptProvider !== "none" && (
+                  <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{ fontSize: 10, borderRadius: 0 }}
+                      onClick={() => setShowModelsPanel(true)}
+                    >
+                      Configure Providers
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, display: 'block', mb: 1.5 }}>
+                  CHAT CREATIVITY (TEMPERATURE: {promptChatTemp.toFixed(1)})
+                </Typography>
+                <Box sx={{ px: 1, display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Precise</Typography>
+                  <Slider
+                    size="small"
+                    value={promptChatTemp}
+                    min={0.0}
+                    max={1.0}
+                    step={0.1}
+                    onChange={(_, val) => {
+                      const num = val as number;
+                      setPromptChatTemp(num);
+                      localStorage.setItem(STORAGE_KEYS.PROMPT_CHAT_TEMP, String(num));
+                    }}
+                    valueLabelDisplay="auto"
+                    sx={{ flexGrow: 1 }}
+                  />
+                  <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Creative</Typography>
+                </Box>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 9, color: 'text.secondary', display: 'block', mb: 1 }}>
+                  REPHRASE CREATIVITY (TEMPERATURE: {promptRephraseTemp.toFixed(1)})
+                </Typography>
+                <Box sx={{ px: 1, display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Precise</Typography>
+                  <Slider
+                    size="small"
+                    value={promptRephraseTemp}
+                    min={0.0}
+                    max={1.0}
+                    step={0.1}
+                    onChange={(_, val) => {
+                      const num = val as number;
+                      setPromptRephraseTemp(num);
+                      localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_TEMP, String(num));
+                    }}
+                    valueLabelDisplay="auto"
+                    sx={{ flexGrow: 1 }}
+                  />
+                  <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Creative</Typography>
+                </Box>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 9, color: 'text.secondary', display: 'block', mb: 1 }}>
+                  TRANSLATE CREATIVITY (TEMPERATURE: {promptTranslateTemp.toFixed(1)})
+                </Typography>
+                <Box sx={{ px: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Precise</Typography>
+                  <Slider
+                    size="small"
+                    value={promptTranslateTemp}
+                    min={0.0}
+                    max={1.0}
+                    step={0.1}
+                    onChange={(_, val) => {
+                      const num = val as number;
+                      setPromptTranslateTemp(num);
+                      localStorage.setItem(STORAGE_KEYS.PROMPT_TRANSLATE_TEMP, String(num));
+                    }}
+                    valueLabelDisplay="auto"
+                    sx={{ flexGrow: 1 }}
+                  />
+                  <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Creative</Typography>
+                </Box>
+              </Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  TRANSLATE LANGUAGES
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', display: 'block', mb: 1 }}>
+                  Languages shown in the Translate context menu
+                </Typography>
+                <Select
+                  multiple
+                  fullWidth
+                  size="small"
+                  value={promptTranslateLangs}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const next = typeof val === "string" ? val.split(",") : val;
+                    setPromptTranslateLangs(next);
+                    localStorage.setItem(STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES, JSON.stringify(next));
+                  }}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3 }}>
+                      {(selected as string[]).map(v => <Chip key={v} label={v} size="small" sx={{ borderRadius: 0, fontSize: 10, height: 20 }} />)}
+                    </Box>
+                  )}
+                >
+                  {["Arabic", "Chinese", "Dutch", "English", "French", "German", "Greek", "Hebrew", "Hindi", "Italian", "Japanese", "Korean", "Norwegian", "Polish", "Portuguese", "Russian", "Spanish", "Swedish", "Tamil", "Telugu", "Thai", "Turkish", "Ukrainian", "Vietnamese"].map(lang => (
+                    <MenuItem key={lang} value={lang} sx={{ fontSize: 12 }}>
+                      {lang}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  size="small"
+                  onClick={() => setCustomInstructionsOpen(true)}
+                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
+                >
+                  Custom Instructions
+                </Button>
+              </Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mt: 1.5, bgcolor: 'action.hover', maxHeight: 200, overflow: 'auto' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  FOUNTAIN RULES (AUTOMATICALLY ENFORCED)
+                </Typography>
+                <Typography sx={{ m: 0, fontSize: 11, color: 'text.secondary', lineHeight: 1.5, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                  {FOUNTAIN_SYNTAX_RULES}
+                </Typography>
+              </Box>
+
+              {/* Custom Instructions Dialog */}
+              <Dialog
+                open={customInstructionsOpen}
+                onClose={() => setCustomInstructionsOpen(false)}
+                fullWidth
+                maxWidth="sm"
+                disableScrollLock
+                sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
+              >
+                <DialogTitle sx={{ m: 0, p: 0 }}>
+                  <TitleBar
+                    title="Custom Instructions"
+                    isModal
+                    onClose={() => setCustomInstructionsOpen(false)}
+                  />
+                </DialogTitle>
+                <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto" }}>
+                  <Box sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      GENERAL INSTRUCTIONS (PROMPT PANE)
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={2}
+                      maxRows={4}
+                      value={promptSystemPrompt}
+                      onChange={(e) => { const v = e.target.value; setPromptSystemPrompt(v); localStorage.setItem(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT, v); }}
+                      placeholder="Enter writing style, persona, or behavioral rules for the chat assistant..."
+                      sx={{ '& textarea': { fontSize: 12 } }}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      REPHRASE INSTRUCTIONS
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={2}
+                      maxRows={4}
+                      value={promptRephrasePrompt}
+                      onChange={(e) => { const v = e.target.value; setPromptRephrasePrompt(v); localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PROMPT, v); }}
+                      placeholder="Enter instructions on how the AI should rewrite your text..."
+                      sx={{ '& textarea': { fontSize: 12 } }}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      TRANSLATE INSTRUCTIONS
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={2}
+                      maxRows={4}
+                      value={promptTranslatePrompt}
+                      onChange={(e) => { const v = e.target.value; setPromptTranslatePrompt(v); localStorage.setItem(STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT, v); }}
+                      placeholder="Enter translation instructions..."
+                      sx={{ '& textarea': { fontSize: 12 } }}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      @WRITE-SCENE INSTRUCTIONS
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={2}
+                      maxRows={4}
+                      value={writeSceneInstructions}
+                      onChange={(e) => { const v = e.target.value; setWriteSceneInstructions(v); localStorage.setItem(STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS, v); }}
+                      placeholder="Extra instructions for the write-scene mini-agent..."
+                      sx={{ '& textarea': { fontSize: 12 } }}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      @Q INSTRUCTIONS
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={2}
+                      maxRows={4}
+                      value={qInstructions}
+                      onChange={(e) => { const v = e.target.value; setQInstructions(v); localStorage.setItem(STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS, v); }}
+                      placeholder="Extra instructions for the @q mini-agent..."
+                      sx={{ '& textarea': { fontSize: 12 } }}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      @SYNONYMS INSTRUCTIONS
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={2}
+                      maxRows={4}
+                      value={synonymsInstructions}
+                      onChange={(e) => { const v = e.target.value; setSynonymsInstructions(v); localStorage.setItem(STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS, v); }}
+                      placeholder="Extra instructions for the @synonyms mini-agent..."
+                      sx={{ '& textarea': { fontSize: 12 } }}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      @LOOKUP INSTRUCTIONS
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={2}
+                      maxRows={4}
+                      value={lookupInstructions}
+                      onChange={(e) => { const v = e.target.value; setLookupInstructions(v); localStorage.setItem(STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS, v); }}
+                      placeholder="Extra instructions for the @lookup mini-agent..."
+                      sx={{ '& textarea': { fontSize: 12 } }}
+                    />
+                  </Box>
+                </DialogContent>
+              </Dialog>
+
+              {/* Nested Configure Providers Dialog */}
+              <Dialog
+                open={showModelsPanel}
+                onClose={() => setShowModelsPanel(false)}
+                fullWidth
+                maxWidth="xs"
+                disableScrollLock
+                sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
+              >
+                <DialogTitle sx={{ m: 0, p: 0 }}>
+                  <TitleBar
+                    title="Configure Providers"
+                    isModal
+                    onClose={() => setShowModelsPanel(false)}
+                  />
+                </DialogTitle>
+                <DialogContent dividers sx={{ px: 2, py: 1.5, overflow: "auto" }}>
+                  {promptProvider === "none" && (
+                    <Typography variant="body2" sx={{ fontSize: 12, color: 'text.secondary', py: 2, textAlign: 'center' }}>
+                      Select a provider from the Prompt tab to configure it.
+                    </Typography>
+                  )}
+
+                  {promptProvider === "ollama" && (
+                    <Box>
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          OLLAMA URL
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          The base URL of your Ollama server
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={ollamaUrl}
+                          onChange={(e) => { const v = e.target.value; setOllamaUrl(v); localStorage.setItem(STORAGE_KEYS.PROMPT_OLLAMA_URL, v); }}
+                          placeholder="http://localhost:11434"
+                          sx={{ '& input': { fontSize: 12 }, mb: 0.5 }}
+                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: providerStatus?.ollama ? 'success.main' : 'error.main', flexShrink: 0 }} />
+                          <Typography variant="caption" sx={{ fontSize: 10, color: providerStatus?.ollama ? 'success.main' : 'error.main' }}>
+                            {providerStatus?.ollama ? 'Running' : 'Not detected'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          MODEL
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'flex-start' }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            value={promptModel}
+                            onChange={(e) => { const v = e.target.value; setPromptModel(v); localStorage.setItem(STORAGE_KEYS.PROMPT_MODEL, v); }}
+                            placeholder="e.g. llama3.2"
+                            slotProps={{ htmlInput: { list: "ollama-model-suggestions" } }}
+                            sx={{ '& input': { fontSize: 12 } }}
+                          />
+                          <datalist id="ollama-model-suggestions">
+                            {availableModels.map((m) => (
+                              <option key={m} value={m} />
+                            ))}
+                          </datalist>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setModelsLoading(true);
+                              fetchModels("ollama").then((models) => {
+                                setAvailableModels(models);
+                                setModelsLoading(false);
+                              });
+                            }}
+                            sx={{ mt: 0.3 }}
+                          >
+                            <RestartAltIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Box>
+                        {modelsLoading && <CircularProgress size={14} sx={{ mt: 0.5 }} />}
+                        {!modelsLoading && availableModels.length > 0 && (
+                          <Typography variant="caption" sx={{ fontSize: 9, color: 'success.main', display: 'block', mt: 0.5 }}>
+                            {availableModels.length} model(s) available
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {promptProvider === "lm-studio" && (
+                    <Box>
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          LM STUDIO URL
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          The base URL of your LM Studio server
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={lmStudioUrl}
+                          onChange={(e) => { const v = e.target.value; setLmStudioUrl(v); localStorage.setItem(STORAGE_KEYS.PROMPT_LM_STUDIO_URL, v); }}
+                          placeholder="http://localhost:1234"
+                          sx={{ '& input': { fontSize: 12 }, mb: 0.5 }}
+                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: providerStatus?.["lm-studio"] ? 'success.main' : 'error.main', flexShrink: 0 }} />
+                          <Typography variant="caption" sx={{ fontSize: 10, color: providerStatus?.["lm-studio"] ? 'success.main' : 'error.main' }}>
+                            {providerStatus?.["lm-studio"] ? 'Running' : 'Not detected'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          MODEL
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'flex-start' }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            value={promptModel}
+                            onChange={(e) => { const v = e.target.value; setPromptModel(v); localStorage.setItem(STORAGE_KEYS.PROMPT_MODEL, v); }}
+                            placeholder="e.g. local-model"
+                            slotProps={{ htmlInput: { list: "lm-model-suggestions" } }}
+                            sx={{ '& input': { fontSize: 12 } }}
+                          />
+                          <datalist id="lm-model-suggestions">
+                            {availableModels.map((m) => (
+                              <option key={m} value={m} />
+                            ))}
+                          </datalist>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setModelsLoading(true);
+                              fetchModels("lm-studio").then((models) => {
+                                setAvailableModels(models);
+                                setModelsLoading(false);
+                              });
+                            }}
+                            sx={{ mt: 0.3 }}
+                          >
+                            <RestartAltIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Box>
+                        {modelsLoading && <CircularProgress size={14} sx={{ mt: 0.5 }} />}
+                        {!modelsLoading && availableModels.length > 0 && (
+                          <Typography variant="caption" sx={{ fontSize: 9, color: 'success.main', display: 'block', mt: 0.5 }}>
+                            {availableModels.length} model(s) available
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {promptProvider === "openai-compatible" && (
+                    <Box>
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          ENDPOINT URL
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          Full base URL (the adapter appends /chat/completions)
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={apiEndpoint}
+                          onChange={(e) => { const v = e.target.value; setApiEndpoint(v); localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, v); }}
+                          placeholder="https://api.openai.com/v1"
+                          sx={{ '& input': { fontSize: 12 } }}
+                        />
+                      </Box>
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          API KEY
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          type="password"
+                          value={apiKey}
+                          onChange={(e) => { const v = e.target.value; setApiKey(v); localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, v); }}
+                          placeholder="sk-..."
+                          sx={{ '& input': { fontSize: 12 } }}
+                        />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                          MODEL
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={apiModel}
+                          onChange={(e) => { const v = e.target.value; setApiModel(v); localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, v); }}
+                          placeholder="e.g. gpt-4o-mini"
+                          sx={{ '& input': { fontSize: 12 } }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                </DialogContent>
+              </Dialog>
             </Box>
           )}
         </Box>

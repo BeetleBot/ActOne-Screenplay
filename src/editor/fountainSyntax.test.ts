@@ -176,7 +176,7 @@ describe("needsBlankAfterEnter", () => {
     expect(needsBlankAfterEnter(LINE_SYNOPSE)).toBe(true);
   });
 
-  it("returns false for other types", () => {
+  it("returns false for character, parenthetical, and empty", () => {
     expect(needsBlankAfterEnter(LINE_EMPTY)).toBe(false);
     expect(needsBlankAfterEnter(LINE_CHARACTER)).toBe(false);
     expect(needsBlankAfterEnter(LINE_PARENTHETICAL)).toBe(false);

@@ -9,7 +9,7 @@ import { useEditor } from "../../context";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
-  const { isZenMode, activeAmbientTrack, stopAmbientTrack } = useUI();
+  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState } = useUI();
   const { activeLineNumber } = useEditor();
   const { activeSprints } = useSprint();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -159,6 +159,128 @@ export const StatusBar = React.memo(() => {
             <Typography variant="caption" sx={{ fontSize: 10, color: saveStatus === "saved" ? "#4caf50" : "text.secondary", fontWeight: 500 }}>
               {saveStatus === "saving" ? "Saving..." : "Saved"}
             </Typography>
+          </Box>
+        )}
+        {aiStatus && (
+          <Box
+            id="status-ai-status"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.75,
+              flexShrink: 0,
+              px: 1,
+              py: 0.2,
+              borderRadius: "4px",
+              bgcolor: (t) =>
+                /error|fail|credits/i.test(aiStatus)
+                  ? alpha(t.palette.error.main, 0.1)
+                  : alpha(t.palette.primary.main, 0.1),
+            }}
+          >
+            {!/error|fail|credits/i.test(aiStatus) && translationState !== "paused" && (
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  border: "1.5px solid",
+                  borderColor: "primary.main",
+                  borderTopColor: "transparent",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+            )}
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: 10,
+                fontWeight: 600,
+                color: (t) =>
+                  /error|fail|credits/i.test(aiStatus)
+                    ? t.palette.error.main
+                    : t.palette.primary.main,
+              }}
+            >
+              {aiStatus}
+            </Typography>
+
+            {/Translating|Preparing|Paused/i.test(aiStatus || "") && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, ml: 1 }}>
+                {translationState !== "paused" ? (
+                  <Box
+                    component="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTranslationState("paused");
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      px: 0.8,
+                      py: 0.1,
+                      border: "none",
+                      borderRadius: "3px",
+                      bgcolor: "primary.main",
+                      color: "#fff",
+                      lineHeight: 1.4,
+                      "&:hover": { opacity: 0.85 }
+                    }}
+                    title="Pause Translation"
+                  >
+                    ⏸ Pause
+                  </Box>
+                ) : (
+                  <Box
+                    component="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTranslationState("running");
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      px: 0.8,
+                      py: 0.1,
+                      border: "none",
+                      borderRadius: "3px",
+                      bgcolor: "#2e7d32",
+                      color: "#fff",
+                      lineHeight: 1.4,
+                      "&:hover": { opacity: 0.85 }
+                    }}
+                    title="Resume Translation"
+                  >
+                    ▶ Resume
+                  </Box>
+                )}
+                <Box
+                  component="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTranslationState("cancelled");
+                  }}
+                  sx={{
+                    cursor: "pointer",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    px: 0.8,
+                    py: 0.1,
+                    border: "none",
+                    borderRadius: "3px",
+                    bgcolor: "#d32f2f",
+                    color: "#fff",
+                    lineHeight: 1.4,
+                    "&:hover": { opacity: 0.85 }
+                  }}
+                  title="Cancel Translation"
+                >
+                  ⏹ Stop
+                </Box>
+              </Box>
+            )}
           </Box>
         )}
 

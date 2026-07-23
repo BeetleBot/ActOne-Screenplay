@@ -1,0 +1,38 @@
+/* ai-chat.css — structural only. All colors are via MUI theme sx props. */
+
+/* Typing bounce keyframe referenced in AIChatMessage via sx animation string */
+@keyframes ai-typing-bounce {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+/* Native textarea reset (can't be expressed via MUI sx) */
+.ai-composer-textarea {
+  flex: 1;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  padding: 8px 10px;
+  min-height: 36px;
+  height: 36px;
+  max-height: 120px;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.ai-composer-textarea::placeholder {
+  color: inherit;
+  opacity: 0.42;
+}

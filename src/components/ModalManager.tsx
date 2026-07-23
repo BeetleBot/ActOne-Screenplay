@@ -17,6 +17,7 @@ export interface ModalManagerProps {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
   toggleSnapshotsPanel?: () => void;
+  togglePrompt?: () => void;
   openSettingsWindow?: () => void;
   openHelpWindow?: () => void;
   openTagManagerWindow?: () => void;
@@ -37,6 +38,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   isSidebarOpen,
   toggleSidebar,
   toggleSnapshotsPanel,
+  togglePrompt,
   openSettingsWindow,
   openHelpWindow,
   openTagManagerWindow,
@@ -62,6 +64,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onOpenXrayModal={openXrayWindow || (() => {})}
           openTutorialsWindow={openTutorialsWindow}
           onToggleSnapshotsPanel={toggleSnapshotsPanel}
+          onTogglePrompt={togglePrompt}
         />
       </ErrorBoundary>
       <ErrorBoundary name="export-modal">{showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}</ErrorBoundary>
