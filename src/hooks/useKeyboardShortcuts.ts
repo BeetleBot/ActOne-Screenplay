@@ -74,7 +74,7 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
         return;
       }
 
-      if (e.altKey && e.key.toLowerCase() === "p") {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "m") {
         e.preventDefault();
         actionsRef.current.togglePrompt?.();
         return;
@@ -145,12 +145,6 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "s" && !shift) {
         e.preventDefault();
         actionsRef.current.saveFile();
-        return;
-      }
-
-      if (key === "p" && alt) {
-        e.preventDefault();
-        actionsRef.current.togglePrompt?.();
         return;
       }
 

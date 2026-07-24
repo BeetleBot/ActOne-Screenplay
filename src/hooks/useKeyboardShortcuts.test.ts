@@ -23,6 +23,7 @@ describe("useKeyboardShortcuts", () => {
       closeFile: vi.fn(),
       openSettings: vi.fn(),
       toggleSearch: vi.fn(),
+      togglePrompt: vi.fn(),
     };
   }
 
@@ -157,6 +158,28 @@ describe("useKeyboardShortcuts", () => {
     renderHook(() => useKeyboardShortcuts(actions));
     fireKey("Enter", { ctrl: true, alt: true });
     expect(actions.toggleZenMode).toHaveBeenCalled();
+  });
+
+  it("calls togglePrompt on Alt+M", () => {
+    const actions = createActions();
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("m", { alt: true });
+    expect(actions.togglePrompt).toHaveBeenCalled();
+  });
+
+  it("does NOT call togglePrompt on Alt+P", () => {
+    const actions = createActions();
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("p", { alt: true });
+    expect(actions.togglePrompt).not.toHaveBeenCalled();
+  });
+
+  it("does NOT call togglePrompt on Ctrl+P (should call exportPDF)", () => {
+    const actions = createActions();
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("p", { ctrl: true });
+    expect(actions.togglePrompt).not.toHaveBeenCalled();
+    expect(actions.exportPDF).toHaveBeenCalled();
   });
 
 });
