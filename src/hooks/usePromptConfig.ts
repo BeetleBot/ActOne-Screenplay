@@ -24,7 +24,7 @@ export interface PromptConfig {
   provider: PromptProvider;
   model: string;
   systemPrompt: string;
-  rephrasePrompt: string;
+  rephrasePresets: { name: string; prompt: string }[];
   chatTemp: number;
   rephraseTemp: number;
   translateLanguages: string[];
@@ -49,15 +49,24 @@ function getConfig(): PromptConfig {
     const rawRep = localStorage.getItem(STORAGE_KEYS.PROMPT_REPHRASE_TEMP);
     const rawTransTemp = localStorage.getItem(STORAGE_KEYS.PROMPT_TRANSLATE_TEMP);
     let translateLangs: string[];
+    let rephrasePresets: { name: string; prompt: string }[];
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES);
       translateLangs = raw ? JSON.parse(raw) : [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])];
     } catch { translateLangs = [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])]; }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS);
+      rephrasePresets = raw ? JSON.parse(raw) : JSON.parse(String(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_PRESETS]));
+    } catch { rephrasePresets = []; }
+    const standardPreset = { name: "Standard", prompt: "You are a professional screenwriting rephrasing tool. Rephrase the user's text. Never use dashes or hyphens (- or -- or —) unless part of a necessary compound word like 'co-working' or 'ten-year-old'. Use commas, full stops, or conjunctions (and, but, so) instead." };
+    if (!rephrasePresets.some(p => p.name === "Standard")) {
+      rephrasePresets = [standardPreset, ...rephrasePresets];
+    }
       newConfig = {
         provider: (localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) as PromptProvider | null) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_PROVIDER]) as PromptProvider,
         model: localStorage.getItem(STORAGE_KEYS.PROMPT_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_MODEL]),
         systemPrompt: localStorage.getItem(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]),
-        rephrasePrompt: localStorage.getItem(STORAGE_KEYS.PROMPT_REPHRASE_PROMPT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_PROMPT]),
+        rephrasePresets,
         chatTemp: rawChat !== null ? parseFloat(rawChat) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_CHAT_TEMP]),
         rephraseTemp: rawRep !== null ? parseFloat(rawRep) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_TEMP]),
         translateLanguages: translateLangs,
@@ -77,7 +86,7 @@ function getConfig(): PromptConfig {
       provider: "none",
       model: String(DEFAULTS[STORAGE_KEYS.PROMPT_MODEL]),
       systemPrompt: String(DEFAULTS[STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]),
-      rephrasePrompt: String(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_PROMPT]),
+      rephrasePresets: [],
       chatTemp: Number(DEFAULTS[STORAGE_KEYS.PROMPT_CHAT_TEMP]),
       rephraseTemp: Number(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_TEMP]),
       translateLanguages: [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])],
@@ -99,7 +108,7 @@ function getConfig(): PromptConfig {
     cachedConfig.provider === newConfig.provider &&
     cachedConfig.model === newConfig.model &&
     cachedConfig.systemPrompt === newConfig.systemPrompt &&
-    cachedConfig.rephrasePrompt === newConfig.rephrasePrompt &&
+    JSON.stringify(cachedConfig.rephrasePresets) === JSON.stringify(newConfig.rephrasePresets) &&
     cachedConfig.chatTemp === newConfig.chatTemp &&
     cachedConfig.rephraseTemp === newConfig.rephraseTemp &&
     JSON.stringify(cachedConfig.translateLanguages) === JSON.stringify(newConfig.translateLanguages) &&
@@ -141,7 +150,7 @@ export function setPromptConfigField(key: keyof PromptConfig, value: string | nu
     provider: STORAGE_KEYS.PROMPT_PROVIDER,
     model: STORAGE_KEYS.PROMPT_MODEL,
     systemPrompt: STORAGE_KEYS.PROMPT_SYSTEM_PROMPT,
-    rephrasePrompt: STORAGE_KEYS.PROMPT_REPHRASE_PROMPT,
+    rephrasePresets: STORAGE_KEYS.PROMPT_REPHRASE_PRESETS,
     chatTemp: STORAGE_KEYS.PROMPT_CHAT_TEMP,
     rephraseTemp: STORAGE_KEYS.PROMPT_REPHRASE_TEMP,
     translateLanguages: STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES,
@@ -157,7 +166,7 @@ export function setPromptConfigField(key: keyof PromptConfig, value: string | nu
     lookupInstructions: STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS,
   };
   try {
-    const stored = key === "translateLanguages" ? JSON.stringify(value) : String(value);
+    const stored = key === "translateLanguages" || key === "rephrasePresets" ? JSON.stringify(value) : String(value);
     localStorage.setItem(storageMap[key], stored);
   } catch { /* ignore */ }
   notifyConfigChange();

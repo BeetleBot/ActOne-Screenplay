@@ -129,6 +129,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.body.classList.toggle("dark-theme", mode === "dark");
   }, [mode]);
 
+  useEffect(() => {
+    setPrefs({ [STORAGE_KEYS.APP_ICON]: mode === "dark" ? "dark" : "light" });
+  }, [mode]);
+
   const { appScale, fountainColorsEnabled } = useUI();
 
   const muiTheme = useMemo(() => createActOneTheme(currentThemeConfig, appScale, fountainColorsEnabled), [currentThemeConfig, appScale, fountainColorsEnabled]);

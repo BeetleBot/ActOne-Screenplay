@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useSyncExternalStore } from 'react';
 import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { useUI } from '../context/UIContext';
 import {
   ClipboardText, Plus, PlusCircle, Archive, ArrowCircleDown, ArrowDown, ArrowUp,
   Sparkle, ChartBar, BookmarkSimple, Bug, Check, CheckCircle, CaretRight, X,
@@ -15,20 +14,28 @@ import {
   SquaresFour, FolderStar, TreeStructure, Rows, ListMagnifyingGlass, GoogleLogo, FolderSimplePlus,
   Minus, ChatDots, PaperPlaneRight
 } from '@phosphor-icons/react';
+import { STORAGE_KEYS } from "../constants";
 
 type IconProps = SvgIconProps & {
   sx?: SxProps<Theme>;
 };
 
+function iconStyleSubscribe(cb: () => void) {
+  window.addEventListener("settings-changed", cb);
+  return () => window.removeEventListener("settings-changed", cb);
+}
+
+function getIconStyleSnapshot() {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.ICON_STYLE) || "fill";
+  } catch {
+    return "fill";
+  }
+}
+
 function createPhosphorIcon(PhosphorComponent: React.ElementType): React.FC<IconProps> {
   return (props) => {
-    let iconStyle: any = "fill";
-    try {
-      const ui = useUI();
-      iconStyle = ui.iconStyle;
-    } catch {
-      iconStyle = localStorage.getItem("actone-icon-style") || "fill";
-    }
+    const iconStyle = useSyncExternalStore(iconStyleSubscribe, getIconStyleSnapshot);
     return (
       <SvgIcon component={PhosphorComponent} weight={iconStyle} inheritViewBox {...props} />
     );
@@ -117,58 +124,20 @@ export const ChatDotsIcon = createPhosphorIcon(ChatDots);
 export const SendIcon = createPhosphorIcon(PaperPlaneRight);
 
 export const RobotIcon: React.FC<IconProps> = (props) => {
-  let iconStyle: any = "fill";
-  try {
-    const ui = useUI();
-    iconStyle = ui.iconStyle;
-  } catch {
-    iconStyle = localStorage.getItem("actone-icon-style") || "fill";
-  }
-  const d = iconStyle === "thin" || iconStyle === "outline"
-    ? "M200,52H132V16a4,4,0,0,0-8,0V52H56A28.03146,28.03146,0,0,0,28,80V192a28.03146,28.03146,0,0,0,28,28H200a28.03146,28.03146,0,0,0,28-28V80A28.03146,28.03146,0,0,0,200,52Zm20,140a20.0226,20.0226,0,0,1-20,20H56a20.0226,20.0226,0,0,1-20-20V80A20.0226,20.0226,0,0,1,56,60H200a20.0226,20.0226,0,0,1,20,20Zm-56-52H92a24,24,0,0,0,0,48h72a24,24,0,0,0,0-48Zm-20,8v32H112V148ZM76,164a16.01833,16.01833,0,0,1,16-16h12v32H92A16.01833,16.01833,0,0,1,76,164Zm88,16H152V148h12a16,16,0,0,1,0,32ZM76,108a8,8,0,1,1,8,8A8.00009,8.00009,0,0,1,76,108Zm88,0a8,8,0,1,1,8,8A8.00009,8.00009,0,0,1,164,108Z"
-    : iconStyle === "duotone"
-    ? "M200,56H56A23.99994,23.99994,0,0,0,32,80V192a23.99994,23.99994,0,0,0,24,24H200a23.99994,23.99994,0,0,0,24-24V80A23.99994,23.99994,0,0,0,200,56ZM164,184H92a20,20,0,0,1,0-40h72a20,20,0,0,1,0,40Z"
-    : "M200,48H136V16a8,8,0,0,0-16,0V48H56A32.03635,32.03635,0,0,0,24,80V192a32.03635,32.03635,0,0,0,32,32H200a32.03635,32.03635,0,0,0,32-32V80A32.03635,32.03635,0,0,0,200,48ZM72,108a12,12,0,1,1,12,12A12,12,0,0,1,72,108Zm28,76H92a16,16,0,0,1,0-32h8Zm40,0H116V152h24Zm24,0h-8V152h8a16,16,0,0,1,0,32Zm8-64a12,12,0,1,1,12-12A12,12,0,0,1,172,120Z";
   return (
     <SvgIcon viewBox="0 0 256 256" {...props}>
-      {iconStyle === "duotone" ? (
-        <>
-          <path d={d} opacity="0.2" />
-          <path d="M200,48H136V16a8,8,0,0,0-16,0V48H56A32.03635,32.03635,0,0,0,24,80V192a32.03635,32.03635,0,0,0,32,32H200a32.03635,32.03635,0,0,0,32-32V80A32.03635,32.03635,0,0,0,200,48ZM72,108a12,12,0,1,1,12,12A12,12,0,0,1,72,108Zm28,76H92a16,16,0,0,1,0-32h8Zm40,0H116V152h24Zm24,0h-8V152h8a16,16,0,0,1,0,32Zm8-64a12,12,0,1,1,12-12A12,12,0,0,1,172,120Z" />
-        </>
-      ) : (
-        <path d={d} />
-      )}
+      <path d="M200,48H136V16a8,8,0,0,0-16,0V48H56A32.03635,32.03635,0,0,0,24,80V192a32.03635,32.03635,0,0,0,32,32H200a32.03635,32.03635,0,0,0,32-32V80A32.03635,32.03635,0,0,0,200,48ZM72,108a12,12,0,1,1,12,12A12,12,0,0,1,72,108Zm28,76H92a16,16,0,0,1,0-32h8Zm40,0H116V152h24Zm24,0h-8V152h8a16,16,0,0,1,0,32Zm8-64a12,12,0,1,1,12-12A12,12,0,0,1,172,120Z" />
     </SvgIcon>
   );
 };
 
 /* ── Brain icon for Muse ── */
-const MUSE_CIRCLE = "M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2";
-const MUSE_INNER = "M12 15c-2.287 0-4.35.961-5.808 2.5A7.98 7.98 0 0 0 12 20a7.98 7.98 0 0 0 5.807-2.5A7.98 7.98 0 0 0 12 15M12.47 5.32a.506.506 0 0 0-.94 0l-.254.61a4.37 4.37 0 0 1-2.25 2.327l-.718.32a.53.53 0 0 0 0 .962l.76.338a4.37 4.37 0 0 1 2.22 2.25l.245.566c.18.414.753.414.934 0l.247-.565a4.36 4.36 0 0 1 2.219-2.251l.76-.338a.53.53 0 0 0 0-.963l-.718-.32a4.37 4.37 0 0 1-2.251-2.325z";
-const MUSE_FULL = "M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m0 13c-2.287 0-4.35.961-5.808 2.5A7.98 7.98 0 0 0 12 20a7.98 7.98 0 0 0 5.807-2.5A7.98 7.98 0 0 0 12 15m.47-9.68a.506.506 0 0 0-.94 0l-.254.61a4.37 4.37 0 0 1-2.25 2.327l-.718.32a.53.53 0 0 0 0 .962l.76.338a4.37 4.37 0 0 1 2.22 2.25l.245.566c.18.414.753.414.934 0l.247-.565a4.36 4.36 0 0 1 2.219-2.251l.76-.338a.53.53 0 0 0 0-.963l-.718-.32a4.37 4.37 0 0 1-2.251-2.325z";
+const MUSE_PATH = "M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m0 13c-2.287 0-4.35.961-5.808 2.5A7.98 7.98 0 0 0 12 20a7.98 7.98 0 0 0 5.807-2.5A7.98 7.98 0 0 0 12 15m.47-9.68a.506.506 0 0 0-.94 0l-.254.61a4.37 4.37 0 0 1-2.25 2.327l-.718.32a.53.53 0 0 0 0 .962l.76.338a4.37 4.37 0 0 1 2.22 2.25l.245.566c.18.414.753.414.934 0l.247-.565a4.36 4.36 0 0 1 2.219-2.251l.76-.338a.53.53 0 0 0 0-.963l-.718-.32a4.37 4.37 0 0 1-2.251-2.325z";
 
 export const MuseIcon: React.FC<IconProps> = (props) => {
-  let iconStyle: any = "fill";
-  try {
-    const ui = useUI();
-    iconStyle = ui.iconStyle;
-  } catch {
-    iconStyle = localStorage.getItem("actone-icon-style") || "fill";
-  }
-  const thin = iconStyle === "thin" || iconStyle === "outline";
   return (
     <SvgIcon viewBox="0 0 24 24" {...props}>
-      {iconStyle === "duotone" ? (
-        <>
-          <path d={MUSE_CIRCLE} opacity="0.2" />
-          <path d={MUSE_INNER} />
-        </>
-      ) : thin ? (
-        <path d={MUSE_FULL} fill="none" stroke="currentColor" strokeWidth={2} />
-      ) : (
-        <path d={MUSE_FULL} />
-      )}
+      <path d={MUSE_PATH} />
     </SvgIcon>
   );
 };

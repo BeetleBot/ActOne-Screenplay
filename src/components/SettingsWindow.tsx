@@ -69,11 +69,16 @@ export const SettingsWindow: React.FC = () => {
   const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION])));
   const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED])));
   const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, String(DEFAULTS[STORAGE_KEYS.ICON_STYLE])) as string);
-  const [appIcon, setAppIcon] = useState(() => readLocal(STORAGE_KEYS.APP_ICON, String(DEFAULTS[STORAGE_KEYS.APP_ICON])) as string);
   const [promptModel, setPromptModel] = useState(() => readLocal(STORAGE_KEYS.PROMPT_MODEL, String(DEFAULTS[STORAGE_KEYS.PROMPT_MODEL])));
   const [promptProvider, setPromptProvider] = useState(() => readLocal(STORAGE_KEYS.PROMPT_PROVIDER, String(DEFAULTS[STORAGE_KEYS.PROMPT_PROVIDER])));
   const [promptSystemPrompt, setPromptSystemPrompt] = useState(() => readLocal(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT, String(DEFAULTS[STORAGE_KEYS.PROMPT_SYSTEM_PROMPT])));
-  const [promptRephrasePrompt, setPromptRephrasePrompt] = useState(() => readLocal(STORAGE_KEYS.PROMPT_REPHRASE_PROMPT, String(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_PROMPT])));
+  const [promptRephrasePresets, setPromptRephrasePresets] = useState<{ name: string; prompt: string }[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS);
+      const parsed: { name: string; prompt: string }[] = raw ? JSON.parse(raw) : JSON.parse(String(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_PRESETS]));
+      return parsed.filter(p => p.name !== "Standard");
+    } catch { return []; }
+  });
   const [promptChatTemp, setPromptChatTemp] = useState(() => {
     const raw = readLocal(STORAGE_KEYS.PROMPT_CHAT_TEMP, String(DEFAULTS[STORAGE_KEYS.PROMPT_CHAT_TEMP]));
     return parseFloat(raw) || 0.7;
@@ -243,7 +248,6 @@ export const SettingsWindow: React.FC = () => {
     setSnapshotMaxRetention(Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION]));
     setFountainColorsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]));
     setIconStyle(String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]));
-    setAppIcon(String(DEFAULTS[STORAGE_KEYS.APP_ICON]));
 
     emitUpdate(STORAGE_KEYS.THEME_ID, String(DEFAULTS[STORAGE_KEYS.THEME_ID]));
     emitUpdate(STORAGE_KEYS.FONT_FAMILY, String(DEFAULTS[STORAGE_KEYS.FONT_FAMILY]));
@@ -268,7 +272,6 @@ export const SettingsWindow: React.FC = () => {
     emitUpdate(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION]));
     emitUpdate(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]));
     emitUpdate(STORAGE_KEYS.ICON_STYLE, String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]));
-    emitUpdate(STORAGE_KEYS.APP_ICON, String(DEFAULTS[STORAGE_KEYS.APP_ICON]));
     engineSetTheme({ themeId: String(DEFAULTS[STORAGE_KEYS.THEME_ID]), appScale: Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]) });
 
     setResetDialogOpen(false);
@@ -321,7 +324,6 @@ export const SettingsWindow: React.FC = () => {
           setSnapshotMaxRetention(d.snapshotMaxRetention || 20);
           setFountainColorsEnabled(d.fountainColorsEnabled !== false);
           setIconStyle(d.iconStyle ?? "fill");
-          setAppIcon(d.appIcon ?? "light");
           activeFilePathRef.current = d.activeFilePath || "";
         });
         return unlisten;
@@ -429,9 +431,6 @@ export const SettingsWindow: React.FC = () => {
     if (prefs[STORAGE_KEYS.ICON_STYLE] !== undefined && prefs[STORAGE_KEYS.ICON_STYLE] !== iconStyle) {
       setIconStyle(prefs[STORAGE_KEYS.ICON_STYLE]);
     }
-    if (prefs[STORAGE_KEYS.APP_ICON] !== undefined && prefs[STORAGE_KEYS.APP_ICON] !== appIcon) {
-      setAppIcon(prefs[STORAGE_KEYS.APP_ICON]);
-    }
   }
 
   const emitUpdate = (storageKey: string, value: string | number | boolean) => {
@@ -522,20 +521,6 @@ export const SettingsWindow: React.FC = () => {
                   <MenuItem value="duotone">Dual Tone</MenuItem>
                   <MenuItem value="fill">Solid (Filled)</MenuItem>
                   <MenuItem value="regular">Stroke (Regular)</MenuItem>
-                </Select>
-              </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
-                  APP ICON (LOGO)
-                </Typography>
-                <Select
-                  fullWidth
-                  size="small"
-                  value={appIcon}
-                  onChange={(e) => { const v = e.target.value as string; setAppIcon(v); localStorage.setItem(STORAGE_KEYS.APP_ICON, v); emitUpdate(STORAGE_KEYS.APP_ICON, v); }}
-                >
-                  <MenuItem value="light">Light Logo (Default)</MenuItem>
-                  <MenuItem value="dark">Dark Logo</MenuItem>
                 </Select>
               </Box>
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
@@ -997,19 +982,69 @@ export const SettingsWindow: React.FC = () => {
                   </Box>
                   <Box sx={{ mb: 1.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                      REPHRASE INSTRUCTIONS
+                      REPHRASE PRESETS
                     </Typography>
-                    <TextField
-                      fullWidth
+                    {promptRephrasePresets.map((preset, i) => (
+                      <Box key={i} sx={{ mb: 1.5, p: 1, borderRadius: 1, bgcolor: "action.hover" }}>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
+                          <TextField
+                            size="small"
+                            value={preset.name}
+                            onChange={(e) => {
+                              const next = [...promptRephrasePresets];
+                              next[i] = { ...next[i], name: e.target.value };
+                              setPromptRephrasePresets(next);
+                              localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS, JSON.stringify(next));
+                              notifyConfigChange();
+                            }}
+                            placeholder="Preset name"
+                            sx={{ flex: 1, '& input': { fontSize: 12, fontWeight: 600 } }}
+                          />
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              const next = promptRephrasePresets.filter((_, idx) => idx !== i);
+                              setPromptRephrasePresets(next);
+                              localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS, JSON.stringify(next));
+                              notifyConfigChange();
+                            }}
+                            disabled={preset.name === "Standard"}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          multiline
+                          minRows={1}
+                          maxRows={3}
+                          value={preset.prompt}
+                          onChange={(e) => {
+                            const next = [...promptRephrasePresets];
+                            next[i] = { ...next[i], prompt: e.target.value };
+                            setPromptRephrasePresets(next);
+                            localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS, JSON.stringify(next));
+                            notifyConfigChange();
+                          }}
+                          placeholder="Enter instructions on how the AI should rewrite your text..."
+                          sx={{ '& textarea': { fontSize: 12 } }}
+                        />
+                      </Box>
+                    ))}
+                    <Button
                       size="small"
-                      multiline
-                      minRows={2}
-                      maxRows={4}
-                      value={promptRephrasePrompt}
-                      onChange={(e) => { const v = e.target.value; setPromptRephrasePrompt(v); localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PROMPT, v); }}
-                      placeholder="Enter instructions on how the AI should rewrite your text..."
-                      sx={{ '& textarea': { fontSize: 12 } }}
-                    />
+                      startIcon={<AddIcon />}
+                      onClick={() => {
+                        const next = [...promptRephrasePresets, { name: "New Preset", prompt: "" }];
+                        setPromptRephrasePresets(next);
+                        localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS, JSON.stringify(next));
+                        notifyConfigChange();
+                      }}
+                      sx={{ fontSize: 11 }}
+                    >
+                      Add Preset
+                    </Button>
                   </Box>
                   <Box sx={{ mb: 1.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
@@ -1355,6 +1390,5 @@ interface SettingsInitData {
   snapshotMaxRetention: number;
   fountainColorsEnabled: boolean;
   iconStyle?: string;
-  appIcon?: string;
   activeFilePath?: string;
 }

@@ -445,7 +445,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         }}
       >
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, fontWeight: 500 }}>
-          ActOne v{__APP_VERSION__} &copy; 2026 Write Up Film Service Company
+          ActOne v{__APP_VERSION__}
         </Typography>
         <Button
           onClick={openFountainGuide}

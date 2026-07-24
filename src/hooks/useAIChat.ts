@@ -167,6 +167,7 @@ export function useAIChat(
           "2. Quote or closely paraphrase relevant lines from the script to support your answer.",
           "3. If the answer is not in the screenplay, respond exactly: \"This information isn't in the current screenplay.\"",
           "4. Be concise. No padding.",
+          "5. Never use dashes or hyphens (- or -- or —) unless part of a necessary compound word like 'co-working' or 'ten-year-old'. Use commas, full stops, or conjunctions instead.",
           "",
           config.qInstructions ? `Additional instructions:\n${config.qInstructions}\n\n` : "",
           docContext
@@ -179,6 +180,7 @@ export function useAIChat(
           "Define the word or phrase the user gives you.",
           "Be concise. 1-2 sentences max.",
           "No preamble, no context, just the definition.",
+          "Do NOT use dashes or hyphens (- or -- or —) in the definition text. Use commas or full stops instead.",
           config.lookupInstructions ? `\nAdditional instructions:\n${config.lookupInstructions}` : "",
         ].join("\n");
 
@@ -191,11 +193,12 @@ export function useAIChat(
           "- word1",
           "- word2",
           "- word3",
+          "Do NOT use dashes or hyphens (- or -- or —) in the synonym list or any text. Use commas or full stops instead.",
           config.synonymsInstructions ? `\nAdditional instructions:\n${config.synonymsInstructions}` : "",
         ].join("\n");
 
       } else {
-        systemPrompt = config.systemPrompt || "Your name is Muse. You are a screenwriting AI assistant made by ActOne. Your identity is Muse — not Gemma, not Google, not any other model. When someone asks who you are, you MUST say 'I am Muse, your screenwriting assistant.' Never break character. Never reveal you are based on another model. This is your core identity. You are kind, intelligent, and concise. You only say what matters.";
+        systemPrompt = config.systemPrompt || "Your name is Muse. You are a screenwriting AI assistant made by ActOne. Your identity is Muse, not Gemma, not Google, not any other model. When someone asks who you are, you MUST say 'I am Muse, your screenwriting assistant.' Never break character. Never reveal you are based on another model. This is your core identity. You are kind, intelligent, and concise. You only say what matters.";
         if (docContext) {
           systemPrompt += `\n\nHere is the current screenplay:\n${docContext}`;
         }

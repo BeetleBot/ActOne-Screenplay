@@ -415,7 +415,7 @@ export const FountainEditor = React.memo(() => {
     handleClose();
   };
 
-  const performInlineRephrase = async (text: string, preset?: "punchy" | "dramatic" | "action" | "custom") => {
+  const performInlineRephrase = async (text: string, userPrompt: string) => {
     if (!view) return;
     const snap = menuSelectionRef.current || view.state.selection.main;
     if (!snap) return;
@@ -514,19 +514,8 @@ export const FountainEditor = React.memo(() => {
 
     try {
 
-      let userRephrasePrompt = "";
-      if (preset === "punchy") {
-        userRephrasePrompt = "You are a professional screenwriting rephrasing tool. Rephrase the user's text to make it extremely punchy, tight, and concise (shorten the text).";
-      } else if (preset === "dramatic") {
-        userRephrasePrompt = "You are a professional screenwriting rephrasing tool. Rephrase the user's text to make it dramatic, atmospheric, and highly descriptive (enhance the description).";
-      } else if (preset === "action") {
-        userRephrasePrompt = "You are a professional screenwriting rephrasing tool. Rephrase the user's text to be highly action-focused, using strong, active, and visual verbs.";
-      } else {
-        // default or custom
-        userRephrasePrompt = promptConfig.rephrasePrompt || "You are a professional screenwriting rephrasing tool. Rephrase the user's text.";
-      }
       const systemPrompt = [
-        userRephrasePrompt,
+        userPrompt,
         "",
         "Instructions:",
         "1. Rephrase ONLY the text enclosed in '>>> TEXT TO REPHRASE:\\n...\\n<<<'.",
@@ -534,7 +523,8 @@ export const FountainEditor = React.memo(() => {
         "3. Do NOT rewrite the surrounding context or add any new scene headings, actions, or dialogue.",
         "4. Your output MUST match the number of lines and structure of the selected text exactly. Do not merge lines or split single lines into multiple paragraphs.",
         "5. Do NOT translate the text. Rephrase strictly in the exact same language as the target text (e.g. if the target text is in Tamil, your response MUST be in Tamil).",
-        "6. Do NOT change the capitalization or convert lowercase text into ALL CAPS unless the original target text was already in ALL CAPS.",
+        "6. Do NOT use dashes or hyphens (- or -- or —) unless part of a necessary compound word like 'co-working' or 'ten-year-old'. Use commas, full stops, or conjunctions (and, but, so) instead.",
+        "7. Do NOT change the capitalization or convert lowercase text into ALL CAPS unless the original target text was already in ALL CAPS.",
         isSingleLine
           ? "7. Respond ONLY with the rephrased text on a SINGLE line. Do NOT add any newlines, line breaks, or carriage returns. Do not add any introductory text, quotes, or explanations."
           : "7. Respond ONLY with the rephrased text. Do NOT introduce any new line breaks, extra blank lines, or structural divisions that were not present in the original text. Rephrase the text as-is, preserving the exact line-by-line structure and any internal formatting/syntax.",
@@ -605,14 +595,14 @@ export const FountainEditor = React.memo(() => {
     }
   };
 
-  const handleRephraseClick = async (preset: "punchy" | "dramatic" | "action" | "custom") => {
+  const handleRephraseClick = async (userPrompt: string) => {
     setRephraseMenuAnchorEl(null);
     setPromptMenuAnchorEl(null);
     const text = menuSelectionRef.current?.text ?? selectedText;
     handleClose();
     if (!text || !text.trim()) return;
 
-    await performInlineRephrase(text, preset);
+    await performInlineRephrase(text, userPrompt);
   };
 
   const handleTranslateClick = async (lang: string) => {
@@ -1320,18 +1310,15 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         }}
         {...menuProps}
       >
-        <MenuItem onClick={() => handleRephraseClick("punchy")}>
-          <ListItemText primary="Punchy (Shorten)" />
-        </MenuItem>
-        <MenuItem onClick={() => handleRephraseClick("dramatic")}>
-          <ListItemText primary="Dramatic (Enhance description)" />
-        </MenuItem>
-        <MenuItem onClick={() => handleRephraseClick("action")}>
-          <ListItemText primary="Action-focused (More visual verbs)" />
-        </MenuItem>
-        <MenuItem onClick={() => handleRephraseClick("custom")}>
-          <ListItemText primary="Custom (Uses settings custom prompt)" />
-        </MenuItem>
+        {promptConfig.rephrasePresets.map((preset) => (
+          <MenuItem
+            key={preset.name}
+            onClick={() => handleRephraseClick(preset.prompt)}
+            disabled={!preset.prompt.trim()}
+          >
+            <ListItemText primary={preset.name || "Untitled"} />
+          </MenuItem>
+        ))}
       </Menu>
 
       <Menu

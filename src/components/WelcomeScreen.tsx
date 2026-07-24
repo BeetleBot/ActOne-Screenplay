@@ -907,7 +907,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           </Typography>
         )}
         <Typography sx={{ fontSize: 10, color: theme.palette.text.disabled, fontStyle: "italic" }}>
-          &copy; 2026 Write Up Film Service Company
+          &copy; 2026 ActOne
         </Typography>
         <Box
           className="clickable"

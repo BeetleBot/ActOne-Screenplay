@@ -50,8 +50,8 @@ export interface UIContextProps {
   setLineFocusEnabled: (enabled: boolean) => void;
   fountainColorsEnabled: boolean;
   setFountainColorsEnabled: (enabled: boolean) => void;
-  iconStyle: 'fill' | 'duotone' | 'regular';
-  setIconStyle: (style: 'fill' | 'duotone' | 'regular') => void;
+  iconStyle: string;
+  setIconStyle: (style: string) => void;
   aiStatus: string | null;
   setAiStatus: (status: string | null) => void;
   translationState: 'idle' | 'running' | 'paused' | 'cancelled';
@@ -117,7 +117,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           setFountainColorsEnabledState(strVal !== "false");
           break;
         case STORAGE_KEYS.ICON_STYLE:
-          setIconStyleState(strVal as "fill" | "duotone" | "regular");
+          setIconStyleState(strVal || "fill");
           break;
         case STORAGE_KEYS.THEME_ID:
           forceUpdate(n => n + 1);
@@ -241,9 +241,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const stored = localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED);
     return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]);
   });
-
-  const [iconStyle, setIconStyleState] = useState<'fill' | 'duotone' | 'regular'>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.ICON_STYLE) as 'fill' | 'duotone' | 'regular' | null) ?? String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]) as 'fill' | 'duotone' | 'regular';
+  const [iconStyle, setIconStyleState] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEYS.ICON_STYLE) || String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]);
   });
 
   useEffect(() => {
@@ -373,7 +372,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, enabled ? "true" : "false");
   };
 
-  const setIconStyle = (style: 'fill' | 'duotone' | 'regular') => {
+  const setIconStyle = (style: string) => {
     setIconStyleState(style);
     localStorage.setItem(STORAGE_KEYS.ICON_STYLE, style);
     broadcastSetting(STORAGE_KEYS.ICON_STYLE, style);

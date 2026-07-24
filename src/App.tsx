@@ -322,7 +322,6 @@ function AppInner() {
             snapshotOnSave: readBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE),
             fountainColorsEnabled: readBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED),
             iconStyle: readLS(STORAGE_KEYS.ICON_STYLE) ?? DEFAULTS[STORAGE_KEYS.ICON_STYLE] as string,
-            appIcon: readLS(STORAGE_KEYS.APP_ICON) ?? DEFAULTS[STORAGE_KEYS.APP_ICON] as string,
             activeFilePath: activeFileIdRef.current || "",
           });
         });
