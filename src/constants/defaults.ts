@@ -37,7 +37,7 @@ export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
   [STORAGE_KEYS.PROMPT_REPHRASE_PROMPT]: "You are a professional screenwriting rephrasing tool. Rephrase the user's text.",
   [STORAGE_KEYS.PROMPT_CHAT_TEMP]: 0.7,
   [STORAGE_KEYS.PROMPT_REPHRASE_TEMP]: 0.1,
-  [STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES]: ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Hindi", "Japanese", "Chinese"],
+  [STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES]: ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Hindi (Devanagari)", "Tamil", "Japanese", "Chinese"],
   [STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT]: "You are a professional translation tool. Translate the user's text to the specified language. Preserve the original meaning, tone, and structure. Respond ONLY with the translated text — no explanations, quotes, or additional text.",
   [STORAGE_KEYS.PROMPT_TRANSLATE_TEMP]: 0.1,
   [STORAGE_KEYS.PROMPT_API_ENDPOINT]: "",

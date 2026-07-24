@@ -2,6 +2,7 @@ import React, { useRef, useState, useMemo } from "react";
 import { useFile, useUI, useEditor, useParking, useCustomModal } from "../context";
 import { LineType } from "../parser";
 import { usePromptConfig } from "../hooks/usePromptConfig";
+import { getLanguageDetails } from "../constants/languages";
 import { useCodeMirror } from "../editor";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -667,6 +668,9 @@ export const FountainEditor = React.memo(() => {
       const isSingleLine = lineData.length === 1;
 
 
+      const ld = getLanguageDetails(lang);
+      const langInfo = `"${lang}" (language code: ${ld.code}, native name: ${ld.native})`;
+
       const systemPrompt = [
         promptConfig.translatePrompt || "You are a professional translation tool. Translate the user's text to the specified language.",
         "",
@@ -677,7 +681,10 @@ export const FountainEditor = React.memo(() => {
         "4. DO NOT translate Character Names (character lines in ALL CAPS above dialogue). Keep character names in original ALL CAPS as written.",
         "",
         "WHAT TO TRANSLATE:",
-        `5. Translate ONLY Action descriptions, Dialogue text, Parentheticals, and Synopsis text into ${lang}.`,
+        `5. Translate ONLY Action descriptions, Dialogue text, Parentheticals, and Synopsis text into ${langInfo}.`,
+        `   The output MUST be written in ${ld.native} script (${ld.code}).`,
+        ld.example ? `   Example of this language: "${ld.example}"` : "",
+        `   NEVER output text in Tamil, Hindi, or any other Indian language unless ${ld.code} explicitly requires it.`,
         "",
         "FORMATTING INSTRUCTIONS:",
         "6. Do not add explanations, intro text, quotes, or conversational filler.",
@@ -892,11 +899,17 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
       const BATCH_SIZE = 20; // translate 20 lines per API call
       const totalBatches = Math.ceil(translatableIndices.length / BATCH_SIZE) || 1;
 
+      const ld = getLanguageDetails(lang);
+      const langInfo = `"${lang}" (language code: ${ld.code}, native name: ${ld.native})`;
+
       const systemPrompt = [
-        `You are a professional translation tool. Translate the user's text lines to ${lang}.`,
+        `You are a professional translation tool. Translate the user's text lines to ${langInfo}.`,
+        `The output MUST be written in ${ld.native} script (${ld.code}).`,
+        ld.example ? `Example of this language: "${ld.example}"` : "",
+        `NEVER output text in Tamil, Hindi, or any other Indian language unless ${ld.code} explicitly requires it.`,
         "",
         "CRITICAL INSTRUCTIONS:",
-        `1. Translate each input line into ${lang}.`,
+        `1. Translate each input line into ${langInfo}.`,
         "2. You MUST return EXACTLY the same number of lines as provided in the input.",
         "3. Do NOT combine multiple lines into a paragraph. Do NOT omit any lines.",
         "4. Respond ONLY with the translated lines, one per line. Do not add conversational text, line numbers, or explanations."
@@ -1064,7 +1077,7 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
           <ListItemIcon>
             <AutoAwesomeIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Prompt" />
+          <ListItemText primary="Muse" />
           <ChevronRightIcon fontSize="small" sx={{ ml: "auto", opacity: 0.5 }} />
         </MenuItem>
 
