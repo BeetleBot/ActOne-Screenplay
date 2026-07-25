@@ -235,27 +235,44 @@ const typewriterCompartment = new Compartment();
 
 const typewriterScrollPlugin = ViewPlugin.fromClass(
   class {
+    lastBlockFrom: number = -1;
+
     update(update: ViewUpdate) {
       if (update.docChanged && update.state.selection.main.empty) {
         const head = update.state.selection.main.head;
         update.view.requestMeasure({
-          read(view) {
+          read: (view) => {
+            const block = view.lineBlockAt(head);
+            if (block.from === this.lastBlockFrom) {
+              return null;
+            }
+            this.lastBlockFrom = block.from;
+
             const coords = view.coordsAtPos(head);
             const scrollContainer = view.dom.closest('.editor-scroll-area');
             if (!coords || !scrollContainer) return null;
 
             const containerRect = scrollContainer.getBoundingClientRect();
+            const scrollTop = scrollContainer.scrollTop;
             const cursorY = (coords.top + coords.bottom) / 2;
-            const containerCenterY = containerRect.top + containerRect.height / 2;
+            const absoluteCursorY = cursorY - containerRect.top + scrollTop;
+            const targetScrollTop = absoluteCursorY - containerRect.height / 2;
+
+            if (Math.abs(targetScrollTop - scrollTop) <= 1.0) {
+              return null;
+            }
 
             return {
               scrollContainer,
-              diff: cursorY - containerCenterY,
+              targetScrollTop,
             };
           },
           write(measureResult) {
-            if (measureResult && Math.abs(measureResult.diff) > 0.5) {
-              measureResult.scrollContainer.scrollTop += measureResult.diff;
+            if (measureResult) {
+              measureResult.scrollContainer.scrollTo({
+                top: measureResult.targetScrollTop,
+                behavior: 'smooth'
+              });
             }
           }
         });
