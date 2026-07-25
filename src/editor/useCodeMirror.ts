@@ -699,6 +699,10 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           view.setState(newState);
         }
 
+        requestAnimationFrame(() => {
+          view.focus();
+        });
+
         pendingScrollToRef.current = null;
       } else {
         // Same script, check if text changed externally (e.g. disk reload / sync / AI translation)
