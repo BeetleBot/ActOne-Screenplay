@@ -47,7 +47,7 @@ invoke<string | null>("save_file_dialog", { content: string });
 
 ## `save_file_content`
 
-Writes string content to a specific file path (no dialog).
+Writes string content to a specific file path (no dialog). Writes are performed **atomically** (via a temporary file in the same directory, which is renamed upon successful write completion) to prevent file truncation or corruption.
 
 ```typescript
 invoke<void>("save_file_content", { path: string, content: string });
@@ -92,7 +92,7 @@ invoke<number[]>("read_file_binary", { path: string });
 
 ## `save_file_binary`
 
-Writes bytes to a specific file path.
+Writes bytes to a specific file path. Writes are performed **atomically** (via a temporary file in the same directory, which is renamed upon successful write completion) to prevent file truncation or corruption.
 
 ```typescript
 invoke<void>("save_file_binary", { path: string, bytes: number[] });

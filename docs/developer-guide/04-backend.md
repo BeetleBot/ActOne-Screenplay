@@ -43,10 +43,10 @@ Three pieces of state are managed via `tauri::State`:
 |---------|-------------|
 | `open_file_dialog` | Native file picker for `.actone`/`.fountain`/`.txt`; returns `{path, content}` (empty content for .actone) |
 | `save_file_dialog` | Save dialog for `.actone`/`.fountain`; writes content |
-| `save_file_content` | Writes string content to a given path |
+| `save_file_content` | Writes string content atomically to a given path |
 | `read_file_content` | Reads a file as UTF-8 string |
 | `read_file_binary` | Reads a file as bytes |
-| `save_file_binary` | Writes bytes to a file |
+| `save_file_binary` | Writes bytes atomically to a file |
 | `file_exists` | Checks if a file exists |
 | `import_fountain_dialog` | File picker for `.fountain`/`.txt` only |
 | `pick_directory` | Directory picker |

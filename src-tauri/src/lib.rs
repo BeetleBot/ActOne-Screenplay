@@ -105,9 +105,30 @@ fn import_fountain_dialog() -> Option<serde_json::Value> {
     Some(serde_json::json!({ "path": path_str, "content": content }))
 }
 
+fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(path: P, data: C) -> Result<(), String> {
+    let path = path.as_ref();
+    let parent = path.parent().unwrap_or_else(|| std::path::Path::new(""));
+    let temp_name = format!(
+        ".{}.tmp",
+        path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("temp_save")
+    );
+    let temp_path = parent.join(temp_name);
+    
+    fs::write(&temp_path, data).map_err(|e| e.to_string())?;
+    
+    if let Err(e) = fs::rename(&temp_path, path) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(e.to_string());
+    }
+    
+    Ok(())
+}
+
 #[tauri::command]
 fn save_file_content(path: String, content: String) -> Result<(), String> {
-    fs::write(path, content).map_err(|e| e.to_string())
+    write_file_atomically(path, content)
 }
 
 #[tauri::command]
@@ -131,7 +152,7 @@ fn save_file_dialog(content: String) -> Option<String> {
         return Some(path);
     }
 
-    if fs::write(&file_path, content).is_ok() {
+    if write_file_atomically(&file_path, content).is_ok() {
         return Some(path);
     }
     None
@@ -177,7 +198,7 @@ fn file_exists(path: String) -> bool {
 
 #[tauri::command]
 fn save_file_binary(path: String, bytes: Vec<u8>) -> Result<(), String> {
-    fs::write(path, bytes).map_err(|e| e.to_string())
+    write_file_atomically(path, bytes)
 }
 
 #[tauri::command]
