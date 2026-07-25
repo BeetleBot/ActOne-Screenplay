@@ -101,7 +101,7 @@ body {
   color: var(--text-main);
   background: var(--bg-app);
   overflow: hidden;
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
   -webkit-font-smoothing: antialiased;
   text-rendering: auto;

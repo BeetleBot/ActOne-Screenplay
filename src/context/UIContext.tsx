@@ -245,13 +245,27 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem(STORAGE_KEYS.ICON_STYLE) || String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]);
   });
 
+  const wasMaximizedBeforeZenRef = React.useRef(false);
+
   useEffect(() => {
     const applyZenMode = async () => {
       let tauriSuccess = false;
       const win = getTauriWindow();
       if (win) {
         try {
-          await win.setFullscreen(isZenMode);
+          if (isZenMode) {
+            const maximized = await win.isMaximized();
+            wasMaximizedBeforeZenRef.current = maximized;
+            if (maximized) {
+              await win.unmaximize();
+            }
+            await win.setFullscreen(true);
+          } else {
+            await win.setFullscreen(false);
+            if (wasMaximizedBeforeZenRef.current) {
+              await win.maximize();
+            }
+          }
           tauriSuccess = true;
         } catch (e) {
           logger.warn("ui", "Failed to set Tauri fullscreen:", e);
