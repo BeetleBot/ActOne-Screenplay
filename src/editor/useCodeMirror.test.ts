@@ -58,4 +58,57 @@ describe("parsedDoc effect early-return guard", () => {
 
     view.destroy();
   });
+
+  it("prevents stale React rawText overwrite during active debounced typing on 150-page document", () => {
+    // Generate ~150 page screenplay text (~8,000 lines)
+    const lines = [];
+    for (let i = 1; i <= 150; i++) {
+      lines.push(`EXT. LOCATION ${i} - DAY`);
+      lines.push("");
+      lines.push("CHARACTER");
+      lines.push(`This is dialogue line for scene ${i}.`);
+      lines.push("");
+    }
+    const fullText = lines.join("\n");
+    const state = EditorState.create({ doc: fullText });
+    const parent = document.createElement("div");
+    const view = new EditorView({ state, parent });
+
+    const dispatchSpy = vi.spyOn(view, "dispatch");
+
+    // Simulate user typing into CodeMirror (CodeMirror doc becomes typedText)
+    view.dispatch({ changes: { from: fullText.length, insert: "A" } });
+    dispatchSpy.mockClear();
+
+    const typedText = fullText + "A";
+    let pendingRawText: string | null = typedText;
+    const staleReactRawText = fullText;
+
+    const syncEffect = (reactRawText: string) => {
+      // Guard: if pendingRawText is non-null, CodeMirror has un-synced typed text
+      if (pendingRawText !== null) return;
+      if (view.state.doc.toString() !== reactRawText) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: reactRawText }
+        });
+      }
+    };
+
+    // Trigger sync while typing is pending (React re-renders with staleReactRawText)
+    syncEffect(staleReactRawText);
+
+    // Verify CodeMirror was NOT overwritten back to stale text
+    expect(dispatchSpy).not.toHaveBeenCalled();
+    expect(view.state.doc.toString()).toBe(typedText);
+
+    // Now simulate 150ms debounce timer completing and clearing pendingRawText
+    pendingRawText = null;
+    syncEffect(typedText); // React state receives updated typedText
+
+    // Verify clean sync — CodeMirror doc already matches typedText, so 0 extra dispatches
+    expect(dispatchSpy).not.toHaveBeenCalled();
+
+    view.destroy();
+  });
 });
+

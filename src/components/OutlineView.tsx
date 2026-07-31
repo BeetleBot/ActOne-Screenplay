@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useFile, useEditor } from "../context";
+import { useFile, useEditor, useCursor } from "../context";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
 import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon, InfoOutlinedIcon } from "./Icons";
@@ -109,7 +109,8 @@ export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
 
 export const OutlineView = React.memo(() => {
   const { parsedDoc } = useFile();
-  const { scrollToLine, activeLineNumber, setSelectedSceneId, reorderScenes } = useEditor();
+  const { scrollToLine, reorderScenes } = useEditor();
+  const { activeLineNumber, setSelectedSceneId } = useCursor();
 
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [searchQuery, setSearchQuery] = useState("");
@@ -270,49 +271,23 @@ export const OutlineView = React.memo(() => {
   const tree = useMemo(() => buildTree(visibleItems, collapsedSections), [visibleItems, collapsedSections]);
   const selectable = useMemo(() => flattenSelectable(tree), [tree]);
 
-  const [scrollTop, setScrollTop] = useState(0);
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
-  };
-
-  const flattenedNodes = useMemo(() => {
-    const list: TreeNode[] = [];
-    const walk = (nodes: TreeNode[]) => {
-      for (const node of nodes) {
-        list.push(node);
-        if (!collapsedSections[node.item.line.id] && node.children.length > 0) {
-          walk(node.children);
-        }
+  const selectableMap = useMemo(() => {
+    const map = new Map<string, number>();
+    selectable.forEach((node, idx) => {
+      if (node?.item?.line?.id) {
+        map.set(node.item.line.id, idx);
       }
-    };
-    walk(tree);
-    return list;
-  }, [tree, collapsedSections]);
-
-  const ITEM_HEIGHT = 32;
-  const TOTAL_ITEMS = flattenedNodes.length;
-
-  const virtualWindow = useMemo(() => {
-    if (TOTAL_ITEMS <= 50) {
-      return { startIndex: 0, endIndex: TOTAL_ITEMS, paddingTop: 0, paddingBottom: 0 };
-    }
-    const containerHeight = listRef.current?.clientHeight || 600;
-    const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - 5);
-    const endIndex = Math.min(TOTAL_ITEMS, Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT) + 5);
-
-    const paddingTop = startIndex * ITEM_HEIGHT;
-    const paddingBottom = (TOTAL_ITEMS - endIndex) * ITEM_HEIGHT;
-
-    return { startIndex, endIndex, paddingTop, paddingBottom };
-  }, [TOTAL_ITEMS, scrollTop]);
+    });
+    return map;
+  }, [selectable]);
 
   let activeSelectableIdx = -1;
   if (activeLineNumber >= 0 && activeLineNumber < parsedDoc.lines.length) {
     for (let i = activeLineNumber; i >= 0; i--) {
       const line = parsedDoc.lines[i];
       if (line.isOutlineElement && line.type !== LineType.synopse) {
-        const found = selectable.findIndex((g) => g.item.line.id === line.id);
-        if (found !== -1) { activeSelectableIdx = found; break; }
+        const found = selectableMap.get(line.id);
+        if (found !== undefined) { activeSelectableIdx = found; break; }
       }
     }
   }
@@ -321,7 +296,7 @@ export const OutlineView = React.memo(() => {
   // Scroll active into view
   useEffect(() => {
     if (activeItemRef.current) {
-      activeItemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      activeItemRef.current.scrollIntoView({ behavior: "auto", block: "nearest" });
     }
   }, [activeSelectableIdx]);
 
@@ -795,9 +770,6 @@ export const OutlineView = React.memo(() => {
     );
   };
 
-  const renderTree = (nodes: TreeNode[]): React.ReactNode[] =>
-    nodes.map(renderTreeNode);
-
   const fontSizeMap = {
     small: "11px",
     normal: "12.5px",
@@ -1051,7 +1023,6 @@ export const OutlineView = React.memo(() => {
         ref={listRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        onScroll={handleScroll}
         role="listbox"
         aria-label="Scene navigator"
         sx={{
@@ -1066,8 +1037,8 @@ export const OutlineView = React.memo(() => {
             No outline elements match your criteria.
           </Typography>
         ) : (
-          <List disablePadding sx={{ display: "flex", flexDirection: "column", pt: `${virtualWindow.paddingTop}px`, pb: `${virtualWindow.paddingBottom}px` }}>
-            {flattenedNodes.slice(virtualWindow.startIndex, virtualWindow.endIndex).map(renderTreeNode)}
+          <List disablePadding sx={{ display: "flex", flexDirection: "column" }}>
+            {tree.map(renderTreeNode)}
           </List>
         )}
       </Box>

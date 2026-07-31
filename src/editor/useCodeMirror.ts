@@ -4,7 +4,7 @@ import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip, placeholder, 
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { search, setSearchQuery, getSearchQuery } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
-import { useFile, useUI, useEditor } from "../context";
+import { useFile, useUI, useEditor, useCursor } from "../context";
 import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
 import { CATEGORIES, STORAGE_KEYS } from "../constants";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource, cachedCharactersField, cachedLocationsField } from "./inlineAutocomplete";
@@ -371,7 +371,8 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId, scriptFileName } = useFile();
   const { typewriterMode, hideSyntaxEnabled, hideTagsEnabled, lineFocusEnabled, activeRightPane, isZenMode } = useUI();
-  const { setActiveLineId, setActiveLineNumber, setSelectedSceneId, setEditorView } = useEditor();
+  const { setEditorView } = useEditor();
+  const { setActiveLineId, setActiveLineNumber, setSelectedSceneId } = useCursor();
   const lastScriptKeyRef = useRef("");
   const currentScriptKey = `${activeFileId}-${activeScriptIndex}`;
   const statesRef = useRef<Record<string, EditorState>>({});
@@ -386,6 +387,10 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
   useEffect(() => {
     setRawTextRef.current = setRawText;
   }, [setRawText]);
+
+  const rawTextDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRawTextRef = useRef<string | null>(null);
+  const cursorDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setActiveLineIdRef = useRef(setActiveLineId);
   useEffect(() => {
@@ -599,12 +604,23 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
-          setRawTextRef.current(update.state.doc.toString());
+          const docStr = update.state.doc.toString();
+          pendingRawTextRef.current = docStr;
+          if (rawTextDebounceTimerRef.current !== null) {
+            clearTimeout(rawTextDebounceTimerRef.current);
+          }
+          rawTextDebounceTimerRef.current = setTimeout(() => {
+            rawTextDebounceTimerRef.current = null;
+            if (pendingRawTextRef.current !== null) {
+              setRawTextRef.current(pendingRawTextRef.current);
+              pendingRawTextRef.current = null;
+            }
+          }, 150);
         }
 
         const prevTags = update.startState.field(tagStateField, false);
         const currTags = update.state.field(tagStateField, false);
-        if (currTags && prevTags && currTags !== prevTags) {
+        if (currTags && prevTags && currTags !== prevTags && !update.docChanged) {
           updateSettingsRef.current((prev) => {
             return {
               ...prev,
@@ -617,7 +633,13 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           const pos = update.state.selection.main.head;
           const lineNum = update.state.doc.lineAt(pos).number;
           const idx = lineNum - 1;
-          setActiveLineNumberRef.current(idx);
+          if (cursorDebounceTimerRef.current !== null) {
+            clearTimeout(cursorDebounceTimerRef.current);
+          }
+          cursorDebounceTimerRef.current = setTimeout(() => {
+            cursorDebounceTimerRef.current = null;
+            setActiveLineNumberRef.current(idx);
+          }, 50);
         }
       }),
     ];
@@ -667,6 +689,12 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     }
 
     return () => {
+      if (rawTextDebounceTimerRef.current !== null) {
+        clearTimeout(rawTextDebounceTimerRef.current);
+      }
+      if (pendingRawTextRef.current !== null) {
+        setRawTextRef.current(pendingRawTextRef.current);
+      }
       view.destroy();
       setEditorView(null);
     };
@@ -707,7 +735,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         pendingScrollToRef.current = null;
       } else {
         // Same script, check if text changed externally (e.g. disk reload / sync / AI translation)
-        if (view.state.doc.toString() !== rawText) {
+        if (pendingRawTextRef.current === null && view.state.doc.toString() !== rawText) {
           const scrollArea = view.dom.closest('.editor-scroll-area') as HTMLElement | null;
           const savedScrollTop = scrollArea ? scrollArea.scrollTop : null;
 

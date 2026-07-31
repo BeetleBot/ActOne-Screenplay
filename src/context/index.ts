@@ -5,6 +5,8 @@ export { UIProvider, useUI } from './UIContext';
 export type { UIContextProps } from './UIContext';
 export { EditorProvider, useEditor } from './EditorContext';
 export type { EditorContextProps } from './EditorContext';
+export { CursorProvider, useCursor } from './CursorContext';
+export type { CursorContextProps } from './CursorContext';
 export { ThemeProvider, useTheme } from './ThemeContext';
 export type { ThemeContextProps, CustomTheme } from './ThemeContext';
 export { ParkingProvider, useParking } from './ParkingContext';

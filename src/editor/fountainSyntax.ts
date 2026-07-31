@@ -242,8 +242,25 @@ const computeFountainDecorations = (state: EditorState, lineTypes: number[], hid
   const allDecos: { from: number; to: number; dec: Decoration }[] = [];
   const doc = state.doc;
   const activeLineNum = state.selection ? state.doc.lineAt(state.selection.main.head).number : -1;
-
-
+  const prodTags = state.field(tagStateField, false);
+  const activeTags: { from: number; to: number; type: string }[] = [];
+  if (!hideTagsEnabled && !rightPaneOpen && prodTags && prodTags.tags && prodTags.tags.length > 0) {
+    const tagDefMap = new Map<string, string>();
+    if (prodTags.definitions) {
+      for (const def of prodTags.definitions) {
+        tagDefMap.set(def.id, def.type);
+      }
+    }
+    for (const tag of prodTags.tags) {
+      if (tag.range) {
+        const [start, len] = tag.range;
+        if (len > 0) {
+          const type = tag.type || tagDefMap.get(tag.definitionId) || "";
+          activeTags.push({ from: start, to: start + len, type });
+        }
+      }
+    }
+  }
 
   for (let i = 1; i <= doc.lines; i++) {
     const line = doc.line(i);
@@ -373,26 +390,16 @@ const computeFountainDecorations = (state: EditorState, lineTypes: number[], hid
       }
     }
 
-    const prodTags = state.field(tagStateField, false);
-    if (!hideTagsEnabled && !rightPaneOpen && prodTags && prodTags.tags) {
-      const tagDefMap = new Map<string, string>();
-      if (prodTags.definitions) {
-        for (const def of prodTags.definitions) {
-          tagDefMap.set(def.id, def.type);
-        }
-      }
-      for (const tag of prodTags.tags) {
-        if (tag.range) {
-          const [start, len] = tag.range;
-          const end = start + len;
-          const tagFrom = Math.max(line.from, start);
-          const tagTo = Math.min(line.to, end);
+    if (activeTags.length > 0) {
+      for (const tag of activeTags) {
+        if (tag.to > line.from && tag.from < line.to) {
+          const tagFrom = Math.max(line.from, tag.from);
+          const tagTo = Math.min(line.to, tag.to);
           if (tagFrom < tagTo) {
-            const type = tag.type || tagDefMap.get(tag.definitionId) || "";
             lineDecos.push({
               from: tagFrom,
               to: tagTo,
-              dec: Decoration.mark({ class: `cm-tag-${type}` })
+              dec: Decoration.mark({ class: `cm-tag-${tag.type}` })
             });
           }
         }

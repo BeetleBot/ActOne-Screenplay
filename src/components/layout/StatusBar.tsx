@@ -5,14 +5,14 @@ import { countWords } from "../../utils/text";
 import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
-import { useEditor } from "../../context";
+import { useEditor, useCursor } from "../../context";
 import { DownloadIcon } from "../Icons";
 import { useStoreUpdateCheck } from "../../hooks";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
   const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState } = useUI();
-  const { activeLineNumber } = useEditor();
+  const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -29,25 +29,48 @@ export const StatusBar = React.memo(() => {
     }
   }, [currentSprint]);
 
+  const { editorView } = useEditor();
+
+  const selectionStats = useMemo(() => {
+    if (!editorView) return null;
+    const sel = editorView.state.selection.main;
+    if (sel.empty) return null;
+    const text = editorView.state.sliceDoc(sel.from, sel.to);
+    const words = countWords(text);
+    const chars = text.length;
+    return { words, chars };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorView, editorView?.state.selection.main.from, editorView?.state.selection.main.to, rawText]);
+
   const stats = useMemo(() => {
     const text = rawText || "";
     const words = countWords(text);
     const chars = text.length;
-    const pages = parsedDoc?.pageBreaks ? parsedDoc.pageBreaks.length + 1 : 1;
+    const docLinesCount = text ? text.split("\n").length : 1;
+    const currentLineNumber = Math.max(1, activeLineNumber + 1);
 
+    let pages = 1;
     let currentPage = 1;
-    if (parsedDoc?.lines && parsedDoc.pageBreaks) {
-      const idx = activeLineNumber >= 0 && activeLineNumber < parsedDoc.lines.length
-        ? activeLineNumber
-        : -1;
-      if (idx !== -1) {
-        currentPage = parsedDoc.pageBreaks.filter(b => b <= idx).length + 1;
-      }
+
+    if (parsedDoc?.pageBreaks && parsedDoc.pageBreaks.length > 0) {
+      pages = parsedDoc.pageBreaks.length + 1;
+      currentPage = parsedDoc.pageBreaks.filter(b => b <= currentLineNumber).length + 1;
+    } else {
+      pages = Math.max(1, Math.ceil(docLinesCount / 54));
+      currentPage = Math.max(1, Math.ceil(currentLineNumber / 54));
     }
+
+    currentPage = Math.min(currentPage, pages);
 
     const sceneCount = parsedDoc?.lines ? parsedDoc.lines.filter(l => l.type === LineType.heading).length : 0;
 
-    return { words, chars, pages, currentPage, sceneCount };
+    return { 
+      words: words.toLocaleString(), 
+      chars: chars.toLocaleString(), 
+      pages: pages.toLocaleString(), 
+      currentPage: currentPage.toLocaleString(), 
+      sceneCount: sceneCount.toLocaleString() 
+    };
   }, [rawText, parsedDoc, activeLineNumber]);
 
   const sprintDetails = useMemo(() => {
@@ -399,6 +422,11 @@ export const StatusBar = React.memo(() => {
               <DownloadIcon sx={{ fontSize: 14 }} />
               Update
             </Box>
+          )}
+          {selectionStats && (
+            <Typography id="status-selection" variant="caption" sx={{ fontSize: 11, color: "primary.main", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Selection: <strong style={{ color: "var(--text-main)" }}>{selectionStats.words.toLocaleString()} words ({selectionStats.chars.toLocaleString()} chars)</strong>
+            </Typography>
           )}
           <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
             Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>

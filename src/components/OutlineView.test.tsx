@@ -16,9 +16,12 @@ vi.mock("../context", () => ({
   }),
   useEditor: () => ({
     scrollToLine: mockScrollToLine,
+    reorderScenes: mockReorderScenes,
+  }),
+  useCursor: () => ({
+    activeLineNumber: -1,
     selectedSceneId: null,
     setSelectedSceneId: mockSetSelectedSceneId,
-    reorderScenes: mockReorderScenes,
   }),
 }));
 

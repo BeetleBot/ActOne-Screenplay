@@ -5,13 +5,7 @@ import { ParsedLine, LineType } from "../parser";
 import { logger } from "../utils/logger";
 
 export interface EditorContextProps {
-  activeLineId: string | null;
-  activeLineNumber: number;
-  selectedSceneId: string | null;
   editorView: EditorView | null;
-  setActiveLineId: (id: string | null) => void;
-  setActiveLineNumber: (num: number) => void;
-  setSelectedSceneId: (id: string | null) => void;
   updateLineText: (lineIndex: number, newText: string) => void;
   updateSettings: (updater: SettingsUpdater) => void;
   reorderScenes: (startIndex: number, endIndex: number) => void;
@@ -31,10 +25,6 @@ export const useEditor = () => {
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { parsedDoc, setRawText, updateSettings } = useFile();
-  
-  const [activeLineId, setActiveLineId] = useState<string | null>(null);
-  const [activeLineNumber, setActiveLineNumber] = useState<number>(-1);
-  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [editorView, setEditorViewState] = useState<EditorView | null>(null);
 
   const setEditorView = (view: EditorView | null) => {
@@ -139,13 +129,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <EditorContext.Provider
       value={{
-        activeLineId,
-        activeLineNumber,
-        selectedSceneId,
         editorView,
-        setActiveLineId,
-        setActiveLineNumber,
-        setSelectedSceneId,
         updateLineText,
         updateSettings,
         reorderScenes,

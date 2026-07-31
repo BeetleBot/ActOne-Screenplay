@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { parseScreenplay, FountainDocument } from "../parser";
+import { parseScreenplayAsync } from "../utils/asyncParser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundle } from "../utils";
@@ -317,9 +318,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (parseTimeoutRef.current !== null) {
       clearTimeout(parseTimeoutRef.current);
     }
-    parseTimeoutRef.current = setTimeout(() => {
+    parseTimeoutRef.current = setTimeout(async () => {
       parseTimeoutRef.current = null;
-      const doc = parseScreenplay(normalized, paperSize);
+      const doc = await parseScreenplayAsync(normalized, paperSize);
       setFiles(prev => prev.map(f => {
         if (f.id === activeFileId) {
           const mergedSettings = doc.settings && Object.keys(doc.settings).length > 0
@@ -357,9 +358,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 300);
   };
 
-  const updateFileScriptContent = useCallback((fileId: string, scriptIndex: number | undefined, text: string) => {
+  const updateFileScriptContent = useCallback(async (fileId: string, scriptIndex: number | undefined, text: string) => {
     const normalized = text.replace(/\r\n/g, "\n");
-    const doc = parseScreenplay(normalized, paperSize);
+    const doc = await parseScreenplayAsync(normalized, paperSize);
 
     setFiles(prev => prev.map(f => {
       if (f.id === fileId) {
