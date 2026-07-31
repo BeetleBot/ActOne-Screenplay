@@ -26,7 +26,7 @@ src/
   context/
     FileContext.tsx           — File open/save/close, CRLF normalization, path parsing
     EditorContext.tsx         — CodeMirror document state, block reordering
-    UIContext.tsx             — View mode (editor/board), zoom, zen mode, fullscreen
+    UIContext.tsx             — View mode, zoom, zen mode, fullscreen
     AppProviders.tsx          — Composes all context providers
     CustomModalContext.tsx     — confirm()-style modal dialogs
     SprintContext.tsx         — Sprint tracking feature
@@ -40,13 +40,11 @@ src/
 
   components/
     FountainEditor.tsx        — CodeMirror 6 editor instance
-    PlanningBoard.tsx         — Visual board view with drag-to-reorder cards
     OutlineView.tsx           — Sidebar outline tree with scene reordering
     ScriptsView.tsx           — Script bundle management
     SearchPanel.tsx           — Floating search/replace panel
     StatusBar.tsx             — Status bar with mode toggle + file stats
     HeaderBar.tsx             — Title bar with window controls
-    Workspace.tsx             — Conditional render of editor vs planning board
     MainLayout.tsx            — Layout shell (sidebar, workspace, statusbar)
     ActivityBar.tsx           — Sidebar activity switcher
     Icons.tsx                 — All SVG icon components
@@ -69,7 +67,6 @@ src/
     FountainParser.ts         — Fountain screenplay parser (PEG-style)
 
   utils/
-    boardUtils.ts             — parseBlocks / serializeBlocks for planning board
     text.ts                   — Text manipulation utilities
     actone.ts                 — .actone archive format read/write
     window.ts                 — getTauriWindow() guard (null outside Tauri)
