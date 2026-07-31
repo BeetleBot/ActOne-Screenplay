@@ -122,7 +122,23 @@ export const cachedCharactersField = StateField.define<Set<string>>({
   update(value, tr) {
     if (!tr.docChanged) return value;
     const types = tr.state.field(lineTypesField, false);
-    return types ? extractCharacters(tr.state, types) : value;
+    if (!types) return value;
+
+    let characterLineChanged = false;
+    tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
+      if (characterLineChanged) return;
+      const startLine = tr.state.doc.lineAt(fromB).number;
+      const endLine = tr.state.doc.lineAt(Math.min(toB, tr.state.doc.length)).number;
+      for (let l = startLine; l <= endLine; l++) {
+        if (types[l - 1] === LINE_CHARACTER || types[l - 1] === LINE_DUAL_CHARACTER) {
+          characterLineChanged = true;
+          break;
+        }
+      }
+    });
+
+    if (!characterLineChanged && value.size > 0) return value;
+    return extractCharacters(tr.state, types);
   },
 });
 
@@ -134,7 +150,23 @@ export const cachedLocationsField = StateField.define<Set<string>>({
   update(value, tr) {
     if (!tr.docChanged) return value;
     const types = tr.state.field(lineTypesField, false);
-    return types ? extractLocations(tr.state, types) : value;
+    if (!types) return value;
+
+    let headingLineChanged = false;
+    tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
+      if (headingLineChanged) return;
+      const startLine = tr.state.doc.lineAt(fromB).number;
+      const endLine = tr.state.doc.lineAt(Math.min(toB, tr.state.doc.length)).number;
+      for (let l = startLine; l <= endLine; l++) {
+        if (types[l - 1] === LINE_HEADING) {
+          headingLineChanged = true;
+          break;
+        }
+      }
+    });
+
+    if (!headingLineChanged && value.size > 0) return value;
+    return extractLocations(tr.state, types);
   },
 });
 

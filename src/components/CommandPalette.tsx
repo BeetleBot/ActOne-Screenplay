@@ -89,7 +89,7 @@ interface CommandPaletteProps {
   openTutorialsWindow?: () => void;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({
+export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   isOpen,
   onClose,
   onExportPDF,
@@ -263,6 +263,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-tab-snapshots", name: "Switch Sidebar Tab: Snapshots", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("snapshots"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-sprint", name: "Switch Sidebar Tab: Sprint", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("sprint"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-parking", name: "Switch Sidebar Tab: Parking", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("parking"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "view-tab-muse", name: "Switch Sidebar Tab: Muse", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("muse"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "audio-ambient-open", name: "Ambient Sounds: Open Control Panel...", category: "Audio", icon: <MusicNoteIcon sx={{ fontSize: 16 }} />, action: () => { setActiveRightPane("ambient"); onClose(); } },
     { id: "audio-ambient-stop", name: "Ambient Sounds: Stop Playback", category: "Audio", icon: <MusicNoteIcon sx={{ fontSize: 16 }} />, action: () => { stopAmbientTrack(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
@@ -278,6 +279,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },
     { id: "view-prompt", name: "Toggle Muse", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+M", action: () => { onTogglePrompt?.(); onClose(); } },
     { id: "view-prompt-open", name: "Open Muse", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, action: () => { setActiveRightPane("prompt"); onClose(); } },
+    { id: "view-prompt-pane", name: "Open Muse Pane", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, action: () => { setActiveRightPane("prompt"); onClose(); } },
     // Format
     { id: "format-tag-manager", name: "Open Tag Manager...", category: "Format", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBreakdownModal(); onClose(); } },
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },
@@ -511,4 +513,4 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       </Box>
     </Dialog>
   );
-};
+});

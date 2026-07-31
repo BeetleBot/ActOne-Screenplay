@@ -144,12 +144,26 @@ export const OutlineView = React.memo(() => {
     setCollapsedSections((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Build raw items
+  // Signature key that only changes when structural outline elements (Headings, Sections, Synopses, Storylines, Colors) change
+  const outlineSignature = useMemo(() => {
+    let sig = "";
+    const lines = parsedDoc.lines;
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (l.isOutlineElement || l.type === LineType.synopse) {
+        sig += `${i}:${l.id}:${l.type}:${l.sectionDepth || 0}:${l.color || ""}:${l.storylines ? l.storylines.join(",") : ""}:${l.text};`;
+      }
+    }
+    return sig;
+  }, [parsedDoc.lines]);
+
+  // Build raw items based on outlineSignature so standard dialogue/action typing does not recreate this array
   const rawOutlineItems: OutlineItem[] = useMemo(
     () => parsedDoc.lines
       .map((line, index) => ({ line, index }))
       .filter(({ line }) => line.isOutlineElement || line.type === LineType.synopse),
-    [parsedDoc.lines]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [outlineSignature]
   );
 
   // Scenes-only list for drag-and-drop indexing
@@ -188,16 +202,16 @@ export const OutlineView = React.memo(() => {
 
   // Filter + collapse
   const visibleItems: OutlineItem[] = useMemo(() => {
-    const getSynopsisPrecedingScene = (lineIdx: number) => {
-      for (let j = lineIdx - 1; j >= 0; j--) {
-        const l = parsedDoc.lines[j];
+    const getSynopsisPrecedingScene = (rawIdx: number) => {
+      for (let j = rawIdx - 1; j >= 0; j--) {
+        const l = rawOutlineItems[j].line;
         if (l.type === LineType.heading) return l;
         if (l.type === LineType.section) return null;
       }
       return null;
     };
 
-    const filtered = rawOutlineItems.filter((item) => {
+    const filtered = rawOutlineItems.filter((item, rawIdx) => {
       const isSection = item.line.type === LineType.section;
       const isSynopsis = item.line.type === LineType.synopse;
       const isScene = !isSection && !isSynopsis;
@@ -209,7 +223,7 @@ export const OutlineView = React.memo(() => {
       let itemStorylines = isScene ? item.line.storylines : undefined;
 
       if (isSynopsis) {
-        const parentScene = getSynopsisPrecedingScene(item.index);
+        const parentScene = getSynopsisPrecedingScene(rawIdx);
         if (parentScene) {
           itemColor = parentScene.color;
           itemStorylines = parentScene.storylines;
@@ -251,10 +265,46 @@ export const OutlineView = React.memo(() => {
       }
     }
     return result;
-  }, [rawOutlineItems, showSections, showScenes, showSynopses, searchQuery, collapsedSections, selectedColor, selectedStoryline, parsedDoc.lines]);
+  }, [rawOutlineItems, showSections, showScenes, showSynopses, searchQuery, collapsedSections, selectedColor, selectedStoryline]);
 
   const tree = useMemo(() => buildTree(visibleItems, collapsedSections), [visibleItems, collapsedSections]);
   const selectable = useMemo(() => flattenSelectable(tree), [tree]);
+
+  const [scrollTop, setScrollTop] = useState(0);
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  };
+
+  const flattenedNodes = useMemo(() => {
+    const list: TreeNode[] = [];
+    const walk = (nodes: TreeNode[]) => {
+      for (const node of nodes) {
+        list.push(node);
+        if (!collapsedSections[node.item.line.id] && node.children.length > 0) {
+          walk(node.children);
+        }
+      }
+    };
+    walk(tree);
+    return list;
+  }, [tree, collapsedSections]);
+
+  const ITEM_HEIGHT = 32;
+  const TOTAL_ITEMS = flattenedNodes.length;
+
+  const virtualWindow = useMemo(() => {
+    if (TOTAL_ITEMS <= 50) {
+      return { startIndex: 0, endIndex: TOTAL_ITEMS, paddingTop: 0, paddingBottom: 0 };
+    }
+    const containerHeight = listRef.current?.clientHeight || 600;
+    const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - 5);
+    const endIndex = Math.min(TOTAL_ITEMS, Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT) + 5);
+
+    const paddingTop = startIndex * ITEM_HEIGHT;
+    const paddingBottom = (TOTAL_ITEMS - endIndex) * ITEM_HEIGHT;
+
+    return { startIndex, endIndex, paddingTop, paddingBottom };
+  }, [TOTAL_ITEMS, scrollTop]);
 
   let activeSelectableIdx = -1;
   if (activeLineNumber >= 0 && activeLineNumber < parsedDoc.lines.length) {
@@ -1001,6 +1051,7 @@ export const OutlineView = React.memo(() => {
         ref={listRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
+        onScroll={handleScroll}
         role="listbox"
         aria-label="Scene navigator"
         sx={{
@@ -1015,8 +1066,8 @@ export const OutlineView = React.memo(() => {
             No outline elements match your criteria.
           </Typography>
         ) : (
-          <List disablePadding sx={{ display: "flex", flexDirection: "column" }}>
-            {renderTree(tree)}
+          <List disablePadding sx={{ display: "flex", flexDirection: "column", pt: `${virtualWindow.paddingTop}px`, pb: `${virtualWindow.paddingBottom}px` }}>
+            {flattenedNodes.slice(virtualWindow.startIndex, virtualWindow.endIndex).map(renderTreeNode)}
           </List>
         )}
       </Box>

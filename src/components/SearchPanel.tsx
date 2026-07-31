@@ -27,7 +27,7 @@ interface SearchResult {
   sceneContext: string;
 }
 
-export const SearchPanel: React.FC = () => {
+export const SearchPanel: React.FC = React.memo(() => {
   const { editorView } = useEditor();
   const { parsedDoc } = useFile();
   const { confirm } = useCustomModal();
@@ -714,4 +714,4 @@ export const SearchPanel: React.FC = () => {
       </Box>
     </Box>
   );
-};
+});
