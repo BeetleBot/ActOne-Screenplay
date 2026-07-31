@@ -33,7 +33,7 @@ pub fn detect_scripts(text: &str) -> Vec<String> {
 
 fn bundled_fonts_for_script(script: &str) -> Vec<String> {
     match script {
-        "tamil" => vec!["Mukta Malar", "Hind Madurai", "Noto Sans Tamil"],
+        "tamil" => vec!["Mukta Malar", "Noto Sans Tamil"],
         "devanagari" => vec!["Mukta", "Noto Sans Devanagari"],
         "telugu" => vec!["Noto Sans Telugu", "Hind Guntur"],
         "kannada" => vec!["Noto Sans Kannada", "Baloo Tamma 2"],

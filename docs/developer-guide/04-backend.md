@@ -62,6 +62,8 @@ Three pieces of state are managed via `tauri::State`:
 | `save_pdf_dialog` | Save dialog for `.pdf` |
 | `select_watermark_image` | File picker for watermark images |
 
+`PdfExportConfig` includes `scene_page_breaks` — when `true`, every scene heading starts on a new page (PDF export only).
+
 ### Other Export
 
 | Command | Description |

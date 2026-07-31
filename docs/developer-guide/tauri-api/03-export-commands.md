@@ -15,6 +15,7 @@ invoke<string | null>("export_pdf", {
     exportSynopses: boolean,
     exportTitlePage: boolean,
     exportSceneColors: boolean,
+    scenePageBreaks: boolean,
     revisedLines: number[],
     watermarkHeader: string,
     watermarkFooter: string,
@@ -45,6 +46,7 @@ invoke<string | null>("export_pdf", {
 | `exportSynopses` | `boolean` | `true` | Include synopsis lines |
 | `exportTitlePage` | `boolean` | `true` | Include title page |
 | `exportSceneColors` | `boolean` | `true` | Include scene colors |
+| `scenePageBreaks` | `boolean` | `false` | Start each scene heading on a new page |
 | `revisedLines` | `number[]` | `[]` | Line numbers to mark as revised |
 | `watermarkHeader` | `string` | `""` | Header watermark text |
 | `watermarkFooter` | `string` | `""` | Footer watermark text |
@@ -93,6 +95,7 @@ invoke<number[] | null>("generate_pdf_bytes", {
     exportSynopses: boolean,
     exportTitlePage: boolean,
     exportSceneColors: boolean,
+    scenePageBreaks: boolean,
     revisedLines: number[],
     watermarkHeader: string,
     watermarkFooter: string,

@@ -525,9 +525,6 @@ pub fn get_krilla_font(
         "Noto Sans Gurmukhi" | "Mukta Mahee" => {
             if is_bold { all_fonts.indic.noto_sans_gurmukhi_bold.clone() } else { all_fonts.indic.noto_sans_gurmukhi_regular.clone() }
         }
-        "Hind Madurai" => {
-            if is_bold { all_fonts.indic.hind_madurai_bold.clone() } else { all_fonts.indic.hind_madurai_regular.clone() }
-        }
         "Hind Guntur" => {
             if is_bold { all_fonts.indic.hind_guntur_bold.clone() } else { all_fonts.indic.hind_guntur_regular.clone() }
         }

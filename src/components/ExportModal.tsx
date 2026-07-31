@@ -162,6 +162,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
   const [exportSynopses, setExportSynopses] = useState(false);
   const [exportTitlePage, setExportTitlePage] = useState(true);
   const [exportSceneColors, setExportSceneColors] = useState(false);
+  const [scenePageBreaks, setScenePageBreaks] = useState(false);
   const [selectedFont, setSelectedFont] = useState<string>(fontFamily);
   
   const savedWatermarks = parsedDoc?.settings?.watermarkSettings;
@@ -286,6 +287,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           exportSynopses,
           exportTitlePage,
           exportSceneColors,
+          scenePageBreaks,
           revisedLines,
           watermarkHeaderEnabled,
           watermarkHeaderText,
@@ -451,6 +453,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
             exportSynopses,
             exportTitlePage,
             exportSceneColors,
+            scenePageBreaks,
             revisedLines,
             watermarkHeaderEnabled,
             watermarkHeaderText,
@@ -592,6 +595,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
                 <FormControlLabel
                   control={<Switch size="small" checked={exportSynopses} onChange={(e) => setExportSynopses(e.target.checked)} />}
                   label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Synopsis (=)</Typography>}
+                  sx={{ mx: 0, flex: 1 }}
+                />
+              </Box>
+              <Box sx={{ display: "flex", gap: 1.5 }}>
+                <FormControlLabel
+                  control={<Switch size="small" checked={scenePageBreaks} onChange={(e) => setScenePageBreaks(e.target.checked)} />}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Start Each Scene on New Page</Typography>}
                   sx={{ mx: 0, flex: 1 }}
                 />
               </Box>

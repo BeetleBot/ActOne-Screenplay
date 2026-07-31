@@ -14,6 +14,7 @@ Professional-grade screenplay PDF generation using ActOne's custom krilla + cosm
 - Per-element formatting (bold/italic/underline for each element type)
 - Mirror scene numbers: Off, Left side only, Mirror (both sides)
 - Include/exclude: sections, synopses, title page, scene colors
+- Start each scene on a new page: forces a page break before every scene heading
 
 **Watermarks:**
 - Header text (centered, top)

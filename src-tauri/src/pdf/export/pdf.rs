@@ -34,7 +34,7 @@ const FONTS: [&[u8]; 8] = [
     include_bytes!("fonts/CourierPrimeSans-BoldItalic.ttf"),
 ];
 
-const NOTO_FONTS: [&[u8]; 35] = [
+const NOTO_FONTS: [&[u8]; 33] = [
     // 0-15: Existing fonts (kept for backward compatibility)
     include_bytes!("fonts/MuktaMalar-Regular.ttf"),     // 0 - Tamil
     include_bytes!("fonts/MuktaMalar-Bold.ttf"),        // 1
@@ -52,26 +52,24 @@ const NOTO_FONTS: [&[u8]; 35] = [
     include_bytes!("fonts/MuktaVaani-Bold.ttf"),        // 13
     include_bytes!("fonts/MuktaMahee-Regular.ttf"),     // 14 - Punjabi
     include_bytes!("fonts/MuktaMahee-Bold.ttf"),        // 15
-    // 16-33: Indian language fonts
-    include_bytes!("fonts/HindMadurai-Regular.ttf"),    // 16 - Tamil
-    include_bytes!("fonts/HindMadurai-Bold.ttf"),       // 17
-    include_bytes!("fonts/HindGuntur-Regular.ttf"),     // 18 - Telugu
-    include_bytes!("fonts/HindGuntur-Bold.ttf"),        // 19
-    include_bytes!("fonts/HindSiliguri-Regular.ttf"),   // 20 - Bengali
-    include_bytes!("fonts/HindSiliguri-Bold.ttf"),      // 21
-    include_bytes!("fonts/HindVadodara-Regular.ttf"),   // 22 - Gujarati
-    include_bytes!("fonts/HindVadodara-Bold.ttf"),      // 23
-    include_bytes!("fonts/BalooTamma2-Regular.ttf"),    // 24 - Kannada
-    include_bytes!("fonts/BalooTamma2-Bold.ttf"),       // 25
-    include_bytes!("fonts/BalooChettan2-Regular.ttf"),  // 26 - Malayalam
-    include_bytes!("fonts/BalooChettan2-Bold.ttf"),     // 27
-    include_bytes!("fonts/BalooPaaji2-Regular.ttf"),    // 28 - Punjabi
-    include_bytes!("fonts/BalooPaaji2-Bold.ttf"),       // 29
-    include_bytes!("fonts/BalooBhaina2-Regular.ttf"),   // 30 - Oriya
-    include_bytes!("fonts/BalooBhaina2-Bold.ttf"),      // 31
-    include_bytes!("fonts/NotoSansTamil-Regular.ttf"),  // 32 - Tamil alt (user preference)
-    include_bytes!("fonts/NotoSansTamil-Bold.ttf"),     // 33
-    include_bytes!("fonts/NotoSansSymbols2-Regular.ttf"), // 34 - Symbol fallback
+    // 16-31: Indian language fonts
+    include_bytes!("fonts/HindGuntur-Regular.ttf"),     // 16 - Telugu
+    include_bytes!("fonts/HindGuntur-Bold.ttf"),        // 17
+    include_bytes!("fonts/HindSiliguri-Regular.ttf"),   // 18 - Bengali
+    include_bytes!("fonts/HindSiliguri-Bold.ttf"),      // 19
+    include_bytes!("fonts/HindVadodara-Regular.ttf"),   // 20 - Gujarati
+    include_bytes!("fonts/HindVadodara-Bold.ttf"),      // 21
+    include_bytes!("fonts/BalooTamma2-Regular.ttf"),    // 22 - Kannada
+    include_bytes!("fonts/BalooTamma2-Bold.ttf"),       // 23
+    include_bytes!("fonts/BalooChettan2-Regular.ttf"),  // 24 - Malayalam
+    include_bytes!("fonts/BalooChettan2-Bold.ttf"),     // 25
+    include_bytes!("fonts/BalooPaaji2-Regular.ttf"),    // 26 - Punjabi
+    include_bytes!("fonts/BalooPaaji2-Bold.ttf"),       // 27
+    include_bytes!("fonts/BalooBhaina2-Regular.ttf"),   // 28 - Oriya
+    include_bytes!("fonts/BalooBhaina2-Bold.ttf"),      // 29
+    include_bytes!("fonts/NotoSansTamil-Regular.ttf"),  // 30 - Tamil alt (user preference)
+    include_bytes!("fonts/NotoSansTamil-Bold.ttf"),     // 31
+    include_bytes!("fonts/NotoSansSymbols2-Regular.ttf"), // 32 - Symbol fallback
 ];
 
 pub struct PdfExporter {
@@ -84,6 +82,7 @@ pub struct PdfExporter {
     pub revised_lines: Vec<bool>,
     pub title_page: bool,
     pub scene_colors: bool,
+    pub scene_page_breaks: bool,
     pub watermark_header_enabled: bool,
     pub watermark_header_text: String,
     pub watermark_header_opacity: f32,
@@ -111,6 +110,7 @@ impl Default for PdfExporter {
             revised_lines: Vec::new(),
             title_page: true,
             scene_colors: false,
+            scene_page_breaks: false,
             watermark_header_enabled: false,
             watermark_header_text: String::new(),
             watermark_header_opacity: 1.0,
@@ -195,48 +195,44 @@ fn load_indic_fonts() -> std::io::Result<IndicFonts> {
             .ok_or_else(|| std::io::Error::other("failed to load noto sans gurmukhi regular"))?,
         noto_sans_gurmukhi_bold: Font::new(NOTO_FONTS[15].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load noto sans gurmukhi bold"))?,
-        hind_madurai_regular: Font::new(NOTO_FONTS[16].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load hind madurai regular"))?,
-        hind_madurai_bold: Font::new(NOTO_FONTS[17].into(), 0)
-            .ok_or_else(|| std::io::Error::other("failed to load hind madurai bold"))?,
-        hind_guntur_regular: Font::new(NOTO_FONTS[18].into(), 0)
+        hind_guntur_regular: Font::new(NOTO_FONTS[16].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load hind guntur regular"))?,
-        hind_guntur_bold: Font::new(NOTO_FONTS[19].into(), 0)
+        hind_guntur_bold: Font::new(NOTO_FONTS[17].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load hind guntur bold"))?,
-        hind_siliguri_regular: Font::new(NOTO_FONTS[20].into(), 0)
+        hind_siliguri_regular: Font::new(NOTO_FONTS[18].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load hind siliguri regular"))?,
-        hind_siliguri_bold: Font::new(NOTO_FONTS[21].into(), 0)
+        hind_siliguri_bold: Font::new(NOTO_FONTS[19].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load hind siliguri bold"))?,
-        hind_vadodara_regular: Font::new(NOTO_FONTS[22].into(), 0)
+        hind_vadodara_regular: Font::new(NOTO_FONTS[20].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load hind vadodara regular"))?,
-        hind_vadodara_bold: Font::new(NOTO_FONTS[23].into(), 0)
+        hind_vadodara_bold: Font::new(NOTO_FONTS[21].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load hind vadodara bold"))?,
-        baloo_tamma_2_regular: Font::new(NOTO_FONTS[24].into(), 0)
+        baloo_tamma_2_regular: Font::new(NOTO_FONTS[22].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load baloo tamma 2 regular"))?,
-        baloo_tamma_2_bold: Font::new(NOTO_FONTS[25].into(), 0)
+        baloo_tamma_2_bold: Font::new(NOTO_FONTS[23].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load baloo tamma 2 bold"))?,
-        baloo_chettan_2_regular: Font::new(NOTO_FONTS[26].into(), 0)
+        baloo_chettan_2_regular: Font::new(NOTO_FONTS[24].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load baloo chettan 2 regular"))?,
-        baloo_chettan_2_bold: Font::new(NOTO_FONTS[27].into(), 0)
+        baloo_chettan_2_bold: Font::new(NOTO_FONTS[25].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load baloo chettan 2 bold"))?,
-        baloo_paaji_2_regular: Font::new(NOTO_FONTS[28].into(), 0)
+        baloo_paaji_2_regular: Font::new(NOTO_FONTS[26].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load baloo paaji 2 regular"))?,
-        baloo_paaji_2_bold: Font::new(NOTO_FONTS[29].into(), 0)
+        baloo_paaji_2_bold: Font::new(NOTO_FONTS[27].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load baloo paaji 2 bold"))?,
-        baloo_bhaina_2_regular: Font::new(NOTO_FONTS[30].into(), 0)
+        baloo_bhaina_2_regular: Font::new(NOTO_FONTS[28].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load baloo bhaina 2 regular"))?,
-        baloo_bhaina_2_bold: Font::new(NOTO_FONTS[31].into(), 0)
+        baloo_bhaina_2_bold: Font::new(NOTO_FONTS[29].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load baloo bhaina 2 bold"))?,
-        noto_sans_tamil_regular: Font::new(NOTO_FONTS[32].into(), 0)
+        noto_sans_tamil_regular: Font::new(NOTO_FONTS[30].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load noto sans tamil regular"))?,
-        noto_sans_tamil_bold: Font::new(NOTO_FONTS[33].into(), 0)
+        noto_sans_tamil_bold: Font::new(NOTO_FONTS[31].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load noto sans tamil bold"))?,
     })
 }
 
 fn load_symbol_fonts() -> std::io::Result<SymbolFonts> {
     Ok(SymbolFonts {
-        regular: Font::new(NOTO_FONTS[34].into(), 0)
+        regular: Font::new(NOTO_FONTS[32].into(), 0)
             .ok_or_else(|| std::io::Error::other("failed to load symbol font"))?,
     })
 }
@@ -521,6 +517,10 @@ impl PdfExporter {
 
                 match &element {
                     Element::Heading { slug, number, color } => {
+                        if self.scene_page_breaks && *ctx.y_position > top {
+                            break;
+                        }
+
                         let heading_height = measure_element_height(
                             ctx.font_system,
                             slug,
@@ -1277,6 +1277,50 @@ This is action.
         let mut out = Vec::new();
         let res = exporter.export(&screenplay, &mut out);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_scene_page_breaks() {
+        let mut text = String::from(".SCENE 1\n\n");
+        for i in 1..=40 {
+            text.push_str(&format!("Action line {}.\n", i));
+        }
+        text.push_str("\n.SCENE 2\n\nAction line 41.\n");
+        let screenplay = crate::pdf::parse(&text);
+
+        let scene2_line = screenplay
+            .elements
+            .iter()
+            .filter(|span| matches!(&span.inner, Element::Heading { .. }))
+            .nth(1)
+            .expect("expected two scene headings")
+            .start_line;
+
+        let exporter_off = PdfExporter {
+            title_page: false,
+            scene_page_breaks: false,
+            ..Default::default()
+        };
+        let breaks_off = exporter_off.get_page_breaks(&screenplay).unwrap();
+
+        let exporter_on = PdfExporter {
+            title_page: false,
+            scene_page_breaks: true,
+            ..Default::default()
+        };
+        let breaks_on = exporter_on.get_page_breaks(&screenplay).unwrap();
+
+        assert!(
+            breaks_off.iter().all(|b| *b != scene2_line),
+            "scene 2 should not force a page break when option is off, got breaks {:?}",
+            breaks_off
+        );
+        assert!(
+            breaks_on.contains(&scene2_line),
+            "scene 2 should start a new page when option is on, got breaks {:?}",
+            breaks_on
+        );
+        assert!(breaks_on.len() > breaks_off.len());
     }
 
     #[test]

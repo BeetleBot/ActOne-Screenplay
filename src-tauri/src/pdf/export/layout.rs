@@ -190,8 +190,6 @@ pub struct IndicFonts {
     pub noto_sans_gujarati_bold: Font,
     pub noto_sans_gurmukhi_regular: Font,
     pub noto_sans_gurmukhi_bold: Font,
-    pub hind_madurai_regular: Font,
-    pub hind_madurai_bold: Font,
     pub hind_guntur_regular: Font,
     pub hind_guntur_bold: Font,
     pub hind_siliguri_regular: Font,

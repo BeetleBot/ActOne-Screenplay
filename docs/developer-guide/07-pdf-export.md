@@ -64,7 +64,7 @@ krilla Document → bytes
 ### Font Architecture
 
 Three tiers of fonts:
-1. **44 embedded fonts** compiled into the binary via `include_bytes!`
+1. **41 embedded fonts** compiled into the binary via `include_bytes!`
 2. **System fonts** loaded via cosmic-text's fontdb
 3. **User-specified script font overrides** (`script_fonts: HashMap<String, String>`)
 
@@ -75,7 +75,6 @@ Three tiers of fonts:
 | Courier Prime | Regular, Bold, Italic, BoldItalic | Screenplay standard |
 | Courier Prime Sans | Regular, Bold, Italic, BoldItalic | Screenplay standard (sans) |
 | Mukta Malar (×2) | Regular, Bold | Tamil |
-| Hind Madurai (×2) | Regular, Bold | Tamil |
 | Noto Sans Tamil (×2) | Regular, Bold | Tamil |
 | Mukta (×2) | Regular, Bold | Hindi/Devanagari |
 | Noto Sans Telugu (×2) | Regular, Bold | Telugu |

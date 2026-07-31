@@ -34,4 +34,9 @@ describe("ExportModal Component", () => {
     render(React.createElement(ExportModal, { onClose: vi.fn() }));
     expect(screen.getByText(/export screenplay/i)).toBeTruthy();
   });
+
+  it("renders start-each-scene-on-new-page option in PDF pane", () => {
+    render(React.createElement(ExportModal, { onClose: vi.fn() }));
+    expect(screen.getByText(/start each scene on new page/i)).toBeTruthy();
+  });
 });

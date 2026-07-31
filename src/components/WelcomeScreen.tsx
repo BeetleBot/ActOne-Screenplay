@@ -386,8 +386,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             className="clickable"
             onClick={() => {
               import("@tauri-apps/plugin-opener")
-                .then(({ openUrl }) => openUrl("https://discord.gg/RgP4tGHZz"))
-                .catch(() => window.open("https://discord.gg/RgP4tGHZz", "_blank"));
+                .then(({ openUrl }) => openUrl("https://discord.gg/zpFPpdAxnW"))
+                .catch(() => window.open("https://discord.gg/zpFPpdAxnW", "_blank"));
             }}
             sx={{
               height: 40,
