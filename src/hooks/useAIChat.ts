@@ -44,7 +44,7 @@ export function useAIChat(
   activeFileId: string,
 ) {
   const config = usePromptConfig();
-  const { setAiStatus } = useUI();
+  const { setAiStatus, registerTranslationAbort } = useUI();
 
   const storageKey = getStorageKey(filePath, activeFileId);
   const storageKeyRef = useRef(storageKey);
@@ -112,6 +112,7 @@ export function useAIChat(
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
+      registerTranslationAbort(controller);
       setError(null);
 
       const history: ChatMessage[] = turnsRef.current
@@ -259,13 +260,14 @@ export function useAIChat(
         }
         updateActiveSessionTurns((prev) => prev.filter((turn) => turn.id !== assistantId || turn.content));
       } finally {
+        registerTranslationAbort(null);
         if (abortRef.current === controller) {
           abortRef.current = null;
           setStreaming(false);
         }
       }
     },
-    [config, getDocContext, setAiStatus, updateActiveSessionTurns]
+    [config, getDocContext, setAiStatus, updateActiveSessionTurns, registerTranslationAbort]
   );
 
   const newSession = useCallback(() => {

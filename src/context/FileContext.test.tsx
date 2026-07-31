@@ -114,6 +114,61 @@ describe("FileContext", () => {
     expect(result.current.saveStatus).toBe("saved");
   });
 
+  it("duplicates a script with a custom name when provided", async () => {
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      result.current.newFile();
+    });
+
+    await act(async () => {
+      const newName = await result.current.duplicateScript(0, "Untitled-Tamil");
+      expect(newName).toBe("Untitled-Tamil");
+    });
+
+    expect(result.current.scripts.map((s) => s.name)).toEqual(["Untitled", "Untitled-Tamil"]);
+    expect(result.current.activeScriptIndex).toBe(1);
+  });
+
+  it("falls back to a unique suffixed name when the custom name already exists", async () => {
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      result.current.newFile();
+    });
+
+    await act(async () => {
+      const first = await result.current.duplicateScript(0, "Untitled-Tamil");
+      expect(first).toBe("Untitled-Tamil");
+    });
+
+    await act(async () => {
+      const second = await result.current.duplicateScript(0, "Untitled-Tamil");
+      expect(second).toBe("Untitled-Tamil (2)");
+    });
+
+    expect(result.current.scripts.map((s) => s.name)).toEqual([
+      "Untitled",
+      "Untitled-Tamil (2)",
+      "Untitled-Tamil",
+    ]);
+  });
+
+  it("uses the default suffixed name when no custom name is provided", async () => {
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      result.current.newFile();
+    });
+
+    await act(async () => {
+      const newName = await result.current.duplicateScript(0);
+      expect(newName).toBe("Untitled (2)");
+    });
+
+    expect(result.current.scripts.map((s) => s.name)).toEqual(["Untitled", "Untitled (2)"]);
+  });
+
 });
 
 

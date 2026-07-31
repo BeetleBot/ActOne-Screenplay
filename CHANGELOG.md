@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.3] - 2026-08-01
+
+### Added
+- 📤 **Export Pane Overhaul** – Redesigned the screenplay Export Modal into a modern, compact, two-column window with a vertical format sidebar and fixed height (`520px`) to eliminate layout jumping.
+- ⏹️ **Immediate AI Cancel/Stop** – Integrated a global Stop button in the status bar with pulsing square indicator to immediately terminate active Muse chat generation or document translation tasks.
+- ⚙️ **Atomic File Writing** – Reimplemented Rust file saving (`save_file_content` and `save_file_binary`) to write to a temp file first and rename it, preventing 0-byte file corruption on OS crashes.
+- ⚡ **Web Worker Background Parser** – Offloaded Fountain script AST parsing to a background Web Worker thread, eliminating typing lag and keeping the main UI thread completely fluid.
+- 🗂️ **Virtualized Outline View** – Virtualized rendering of the screenplay outline panel, allowing navigation of scripts with thousands of scenes with zero lag.
+- 📜 **Dialog-aware Typewriter Scroll** – Enhanced Zen-mode typewriter scrolling with smooth CSS transitions and dialogue block tracking.
+- 🏷️ **Clean Translation Names** – Translated scripts are now automatically named `[ScriptName]-[Language]` (e.g. `Script-Tamil`) rather than appending duplicate counters like `Script (2)`.
+
+### Changed / Improved
+- **MUI Icon Overhaul** – Replaced broken font icon buttons (B/I/U element style selectors) in the Export dialog with high-legibility native text styling and a clear heading row.
+- **Watermark Controls** – Compacted watermark security preferences (headers, footers, center text/images) into inline cards with opacity sliders.
+- **Editor Responsiveness** – Optimized tag state lookups, decreased editor debouncing timers, and broadened CodeMirror viewport margins to speed up typing on massive screenplays.
+
 ## [0.4.0] - 2026-07-24
 
 - 🤖 AI – completely Bring Your Own Model (Either Local or by API).

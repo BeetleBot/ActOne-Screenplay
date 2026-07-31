@@ -813,4 +813,15 @@ button:active,
 .MuiTooltip-tooltip,
 .MuiAutocomplete-paper > * {
   zoom: var(--app-scale, 100%);
-}
+}
+/* Status bar animations */
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes actone-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.35); }
+}

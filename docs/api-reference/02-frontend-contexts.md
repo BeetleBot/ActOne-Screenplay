@@ -64,8 +64,11 @@ updateSettings(updater: SettingsUpdater): void;
 setActiveScript(index: number): void;
 addScript(name?: string): void;
 renameScript(index: number, newName: string): void;
+duplicateScript(index: number, name?: string): Promise<string | null>;
 deleteScript(index: number): void;
 ```
+
+`duplicateScript` copies the script at `index`, inserting the copy right after it and making it active. The copy is named `name` when provided (made unique with a ` (n)` suffix on collision); otherwise it falls back to the source name with a ` (n)` suffix.
 
 ### ScriptInfo
 
@@ -155,6 +158,8 @@ interface UIContextValue {
     iconStyle: 'fill' | 'duotone' | 'regular';
     activeAmbientTrack: string | null;
     ambientVolume: number;
+    aiStatus: string | null;
+    translationState: 'idle' | 'running' | 'paused' | 'cancelled';
 }
 ```
 
@@ -183,6 +188,10 @@ setIconStyle(style: 'fill' | 'duotone' | 'regular'): void;
 playAmbientTrack(track: string): void;
 stopAmbientTrack(): void;
 setAmbientVolume(vol: number): void;
+setAiStatus(status: string | null): void;
+setTranslationState(state: 'idle' | 'running' | 'paused' | 'cancelled'): void;
+registerTranslationAbort(controller: AbortController | null): void;
+cancelTranslation(): void;
 ```
 
 ## ThemeContext

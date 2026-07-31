@@ -61,7 +61,7 @@ export interface FileContextProps {
   addScript: (name?: string) => Promise<string | null>;
   importScript: () => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
-  duplicateScript: (index: number) => Promise<string | null>;
+  duplicateScript: (index: number, name?: string) => Promise<string | null>;
   deleteScript: (index: number) => Promise<boolean>;
   moveScript: (fromIndex: number, toIndex: number) => Promise<void>;
   saveStatus: "idle" | "saving" | "saved";
@@ -1127,12 +1127,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [files, activeFileId, confirm]);
 
-  const duplicateScript = useCallback(async (index: number): Promise<string | null> => {
+  const duplicateScript = useCallback(async (index: number, name?: string): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return null;
 
     const source = file.scripts[index];
-    const newName = getUniqueName(source.name, file.scripts);
+    const newName = getUniqueName(name?.trim() || source.name, file.scripts);
     const newFileName = `${sanitizeFileName(newName)}.fountain`;
     const newScript: ScriptInfo = {
       name: newName,

@@ -793,6 +793,7 @@ pub fn run() {
             ollama::ollama_check,
             ollama::ollama_list_models,
             ollama::ollama_chat,
+            ollama::cancel_ollama_chat,
         ]);
 
     builder

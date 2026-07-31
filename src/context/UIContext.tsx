@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { STORAGE_KEYS } from "../constants";
 import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
@@ -56,6 +56,8 @@ export interface UIContextProps {
   setAiStatus: (status: string | null) => void;
   translationState: 'idle' | 'running' | 'paused' | 'cancelled';
   setTranslationState: (state: 'idle' | 'running' | 'paused' | 'cancelled') => void;
+  registerTranslationAbort: (controller: AbortController | null) => void;
+  cancelTranslation: () => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -163,6 +165,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   });
   const [aiStatus, setAiStatus] = useState<string | null>(null);
   const [translationState, setTranslationState] = useState<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
+  const translationAbortRef = useRef<AbortController | null>(null);
+
+  const registerTranslationAbort = useCallback((controller: AbortController | null) => {
+    translationAbortRef.current = controller;
+  }, []);
+
+  const cancelTranslation = useCallback(() => {
+    setTranslationState("cancelled");
+    translationAbortRef.current?.abort();
+  }, []);
 
 
 
@@ -444,6 +456,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAiStatus,
         translationState,
         setTranslationState,
+        registerTranslationAbort,
+        cancelTranslation,
         activeAmbientTrack,
         playAmbientTrack,
         stopAmbientTrack,

@@ -11,7 +11,7 @@ import { useStoreUpdateCheck } from "../../hooks";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
-  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState } = useUI();
+  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, cancelTranslation } = useUI();
   const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
@@ -39,7 +39,6 @@ export const StatusBar = React.memo(() => {
     const words = countWords(text);
     const chars = text.length;
     return { words, chars };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editorView, editorView?.state.selection.main.from, editorView?.state.selection.main.to, rawText]);
 
   const stats = useMemo(() => {
@@ -49,18 +48,15 @@ export const StatusBar = React.memo(() => {
     const docLinesCount = text ? text.split("\n").length : 1;
     const currentLineNumber = Math.max(1, activeLineNumber + 1);
 
-    let pages = 1;
-    let currentPage = 1;
+    const pages = parsedDoc?.pageBreaks && parsedDoc.pageBreaks.length > 0
+      ? parsedDoc.pageBreaks.length + 1
+      : Math.max(1, Math.ceil(docLinesCount / 54));
 
-    if (parsedDoc?.pageBreaks && parsedDoc.pageBreaks.length > 0) {
-      pages = parsedDoc.pageBreaks.length + 1;
-      currentPage = parsedDoc.pageBreaks.filter(b => b <= currentLineNumber).length + 1;
-    } else {
-      pages = Math.max(1, Math.ceil(docLinesCount / 54));
-      currentPage = Math.max(1, Math.ceil(currentLineNumber / 54));
-    }
+    const calculatedCurrentPage = parsedDoc?.pageBreaks && parsedDoc.pageBreaks.length > 0
+      ? parsedDoc.pageBreaks.filter(b => b <= currentLineNumber).length + 1
+      : Math.max(1, Math.ceil(currentLineNumber / 54));
 
-    currentPage = Math.min(currentPage, pages);
+    const currentPage = Math.min(calculatedCurrentPage, pages);
 
     const sceneCount = parsedDoc?.lines ? parsedDoc.lines.filter(l => l.type === LineType.heading).length : 0;
 
@@ -170,10 +166,6 @@ export const StatusBar = React.memo(() => {
                   borderTopColor: "transparent",
                   borderRadius: "50%",
                   animation: "spin 0.8s linear infinite",
-                  "@keyframes spin": {
-                    "0%": { transform: "rotate(0deg)" },
-                    "100%": { transform: "rotate(360deg)" }
-                  }
                 }}
               />
             )}
@@ -187,128 +179,148 @@ export const StatusBar = React.memo(() => {
             </Typography>
           </Box>
         )}
-        {aiStatus && (
-          <Box
-            id="status-ai-status"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.75,
-              flexShrink: 0,
-              px: 1,
-              py: 0.2,
-              borderRadius: "4px",
-              bgcolor: (t) =>
-                /error|fail|credits/i.test(aiStatus)
-                  ? alpha(t.palette.error.main, 0.1)
-                  : alpha(t.palette.primary.main, 0.1),
-            }}
-          >
-            {!/error|fail|credits/i.test(aiStatus) && translationState !== "paused" && (
-              <Box
-                sx={{
-                  width: 8,
-                  height: 8,
-                  border: "1.5px solid",
-                  borderColor: "primary.main",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite",
-                }}
-              />
-            )}
-            <Typography
-              variant="caption"
+        {aiStatus && (() => {
+          const isAiActive = !/error|fail|credits|completed|cancelled/i.test(aiStatus);
+          return (
+            <Box
+              id="status-ai-status"
               sx={{
-                fontSize: 10,
-                fontWeight: 600,
-                color: (t) =>
+                display: "flex",
+                alignItems: "center",
+                gap: 0.75,
+                flexShrink: 0,
+                px: 1,
+                py: 0.2,
+                borderRadius: "4px",
+                bgcolor: (t) =>
                   /error|fail|credits/i.test(aiStatus)
-                    ? t.palette.error.main
-                    : t.palette.primary.main,
+                    ? alpha(t.palette.error.main, 0.1)
+                    : alpha(t.palette.primary.main, 0.1),
               }}
             >
-              {aiStatus}
-            </Typography>
-
-            {/Translating|Preparing|Paused/i.test(aiStatus || "") && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, ml: 1 }}>
-                {translationState !== "paused" ? (
-                  <Box
-                    component="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTranslationState("paused");
-                    }}
-                    sx={{
-                      cursor: "pointer",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      px: 0.8,
-                      py: 0.1,
-                      border: "none",
-                      borderRadius: "3px",
-                      bgcolor: "primary.main",
-                      color: "#fff",
-                      lineHeight: 1.4,
-                      "&:hover": { opacity: 0.85 }
-                    }}
-                    title="Pause Translation"
-                  >
-                    ⏸ Pause
-                  </Box>
-                ) : (
-                  <Box
-                    component="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTranslationState("running");
-                    }}
-                    sx={{
-                      cursor: "pointer",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      px: 0.8,
-                      py: 0.1,
-                      border: "none",
-                      borderRadius: "3px",
-                      bgcolor: "#2e7d32",
-                      color: "#fff",
-                      lineHeight: 1.4,
-                      "&:hover": { opacity: 0.85 }
-                    }}
-                    title="Resume Translation"
-                  >
-                    ▶ Resume
-                  </Box>
-                )}
+              {isAiActive && translationState !== "paused" && (
                 <Box
-                  component="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setTranslationState("cancelled");
-                  }}
                   sx={{
-                    cursor: "pointer",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    px: 0.8,
-                    py: 0.1,
-                    border: "none",
-                    borderRadius: "3px",
-                    bgcolor: "#d32f2f",
-                    color: "#fff",
-                    lineHeight: 1.4,
-                    "&:hover": { opacity: 0.85 }
+                    width: 8,
+                    height: 8,
+                    bgcolor: "primary.main",
+                    borderRadius: "1px",
+                    animation: "actone-pulse 1s ease-in-out infinite",
                   }}
-                  title="Cancel Translation"
-                >
-                  ⏹ Stop
+                />
+              )}
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: (t) =>
+                    /error|fail|credits/i.test(aiStatus)
+                      ? t.palette.error.main
+                      : t.palette.primary.main,
+                }}
+              >
+                {aiStatus}
+              </Typography>
+
+              {isAiActive && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, ml: 1 }}>
+                  {/* Pause/Resume buttons only for Translation */}
+                  {/Translating|Preparing|Paused/i.test(aiStatus) && (
+                    <>
+                      {translationState !== "paused" ? (
+                        <Box
+                          component="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTranslationState("paused");
+                          }}
+                          sx={{
+                            cursor: "pointer",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            px: 0.8,
+                            py: 0.1,
+                            border: "none",
+                            borderRadius: "3px",
+                            bgcolor: "primary.main",
+                            color: "#fff",
+                            lineHeight: 1.4,
+                            "&:hover": { opacity: 0.85 }
+                          }}
+                          title="Pause Translation"
+                        >
+                          ⏸ Pause
+                        </Box>
+                      ) : (
+                        <Box
+                          component="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTranslationState("running");
+                          }}
+                          sx={{
+                            cursor: "pointer",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            px: 0.8,
+                            py: 0.1,
+                            border: "none",
+                            borderRadius: "3px",
+                            bgcolor: "#2e7d32",
+                            color: "#fff",
+                            lineHeight: 1.4,
+                            "&:hover": { opacity: 0.85 }
+                          }}
+                          title="Resume Translation"
+                        >
+                          ▶ Resume
+                        </Box>
+                      )}
+                    </>
+                  )}
+
+                  {/* Stop button for any active AI process */}
+                  <Box
+                    component="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      cancelTranslation();
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      px: 0.8,
+                      py: 0.1,
+                      border: "none",
+                      borderRadius: "3px",
+                      bgcolor: "#d32f2f",
+                      color: "#fff",
+                      lineHeight: 1.4,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      "&:hover": { opacity: 0.85 }
+                    }}
+                    title="Stop AI Process"
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        bgcolor: "#fff",
+                        borderRadius: "1px",
+                        animation: "actone-pulse 1.2s ease-in-out infinite",
+                      }}
+                    />
+                    Stop
+                  </Box>
                 </Box>
-              </Box>
-            )}
-          </Box>
-        )}
+              )}
+            </Box>
+          );
+        })()}
 
         {isBundle && scripts.length > 0 && (
           <Menu

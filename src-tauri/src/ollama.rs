@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
 use tauri::Emitter;
 use futures_util::StreamExt;
+use std::sync::LazyLock;
+use std::sync::Mutex;
+use std::collections::HashSet;
+
+static CANCELLED_SESSIONS: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
 
 // ── Response types for parsing Ollama JSON ──────────────────────────────────
 
@@ -42,6 +47,13 @@ pub struct ChatMessage {
 }
 
 // ── Commands ────────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn cancel_ollama_chat(session_id: String) {
+    if let Ok(mut cancelled) = CANCELLED_SESSIONS.lock() {
+        cancelled.insert(session_id);
+    }
+}
 
 /// Health-check: GET {url}/ — returns true if Ollama is reachable.
 #[tauri::command]
@@ -95,6 +107,10 @@ pub async fn ollama_chat(
     messages: Vec<ChatMessage>,
     temperature: Option<f64>,
 ) -> Result<String, String> {
+    if let Ok(mut cancelled) = CANCELLED_SESSIONS.lock() {
+        cancelled.remove(&session_id);
+    }
+
     let target = format!("{}/api/chat", url.trim_end_matches('/'));
 
     let mut body = serde_json::json!({
@@ -125,6 +141,11 @@ pub async fn ollama_chat(
     let mut buffer = String::new();
 
     while let Some(chunk) = stream.next().await {
+        if let Ok(cancelled) = CANCELLED_SESSIONS.lock() {
+            if cancelled.contains(&session_id) {
+                return Err("Aborted".to_string());
+            }
+        }
         let bytes = chunk.map_err(|e| format!("Stream error: {}", e))?;
         buffer.push_str(&String::from_utf8_lossy(&bytes));
 

@@ -60,10 +60,10 @@ import { createAIProvider } from "../lib/aiProviders";
 
 export const FountainEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { fontFamily, setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState } = useUI();
+  const { fontFamily, setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, registerTranslationAbort } = useUI();
   const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>(translationState);
   translationStateRef.current = translationState;
-  const { parsedDoc, scriptFileName, activeScriptIndex, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
+  const { parsedDoc, scriptFileName, activeScriptIndex, activeScriptName, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
   const { updateSettings } = useEditor();
   const parking = useParking();
   const { prompt: showPrompt } = useCustomModal();
@@ -844,9 +844,13 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
 
     setTranslatingLang(lang);
 
+    const controller = new AbortController();
+    registerTranslationAbort(controller);
+
     try {
       const targetFileId = activeFileId;
-      const duplicatedName = await duplicateScript(activeScriptIndex);
+      const cleanScriptName = activeScriptName.replace(/\.fountain$/i, "").trim();
+      const duplicatedName = await duplicateScript(activeScriptIndex, `${cleanScriptName}-${lang}`);
       if (!duplicatedName) throw new Error("Failed to duplicate script");
       
       const targetScriptIndex = activeScriptIndex + 1;
@@ -887,6 +891,8 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
       ].join("\n");
 
       for (let b = 0; b < totalBatches; b++) {
+        setTranslationState("running");
+
         // Pause loop
         while ((translationStateRef.current as string) === "paused") {
           setAiStatus(`Translation Paused (Part ${b + 1}/${totalBatches})`);
@@ -913,6 +919,7 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         await provider.chat([{ role: "user", content: userPrompt }], {
           system: systemPrompt,
           temperature: promptConfig.translateTemp,
+          signal: controller.signal,
           onChunk: (delta) => {
             translatedBatchText += delta;
           }
@@ -939,11 +946,17 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         setTimeout(() => setAiStatus(null), 4000);
       }
     } catch (err: any) {
-      const errMsg = err?.message || String(err);
-      logger.error("editor", "Whole document translation failed", err);
-      setAiStatus(`AI Error: ${errMsg.slice(0, 60)}`);
-      setTimeout(() => setAiStatus(null), 8000);
+      if (err?.name !== "AbortError") {
+        const errMsg = err?.message || String(err);
+        logger.error("editor", "Whole document translation failed", err);
+        setAiStatus(`AI Error: ${errMsg.slice(0, 60)}`);
+        setTimeout(() => setAiStatus(null), 8000);
+      } else {
+        setAiStatus("Translation Cancelled.");
+        setTimeout(() => setAiStatus(null), 3000);
+      }
     } finally {
+      registerTranslationAbort(null);
       setTranslatingLang(null);
       setTranslationState("idle");
     }

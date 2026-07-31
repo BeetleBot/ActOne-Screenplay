@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import React from "react";
 import { UIProvider, useUI } from "./UIContext";
@@ -100,5 +100,31 @@ describe("UIContext", () => {
     expect(result.current.rightPaneWidth).toBe(240);
     act(() => result.current.setRightPaneWidth(1000));
     expect(result.current.rightPaneWidth).toBe(700);
+  });
+
+  it("cancelTranslation marks state cancelled and aborts the registered controller", () => {
+    const { result } = renderHook(() => useUI(), { wrapper });
+
+    const controller = new AbortController();
+    const abortSpy = vi.fn();
+    controller.abort = abortSpy;
+
+    act(() => {
+      result.current.registerTranslationAbort(controller);
+      result.current.cancelTranslation();
+    });
+
+    expect(result.current.translationState).toBe("cancelled");
+    expect(abortSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancelTranslation does not throw when no controller is registered", () => {
+    const { result } = renderHook(() => useUI(), { wrapper });
+
+    act(() => {
+      result.current.cancelTranslation();
+    });
+
+    expect(result.current.translationState).toBe("cancelled");
   });
 });

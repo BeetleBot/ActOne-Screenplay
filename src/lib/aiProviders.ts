@@ -142,7 +142,10 @@ export class OllamaProvider implements AIProvider {
       );
 
       // If the caller aborts, clean up the listener
-      const abortHandler = () => unlisten();
+      const abortHandler = () => {
+        unlisten();
+        invoke("cancel_ollama_chat", { sessionId }).catch(() => {});
+      };
       options.signal?.addEventListener("abort", abortHandler, { once: true });
 
       try {
