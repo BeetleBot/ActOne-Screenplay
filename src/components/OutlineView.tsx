@@ -282,11 +282,20 @@ export const OutlineView = React.memo(() => {
 
   let activeSelectableIdx = -1;
   if (activeLineNumber >= 0 && activeLineNumber < parsedDoc.lines.length) {
-    for (let i = activeLineNumber; i >= 0; i--) {
-      const line = parsedDoc.lines[i];
-      if (line.isOutlineElement && line.type !== LineType.synopse) {
-        const found = selectableMap.get(line.id);
-        if (found !== undefined) { activeSelectableIdx = found; break; }
+    if (parsedDoc.lineToSceneMap) {
+      const activeSceneId = parsedDoc.lineToSceneMap[activeLineNumber];
+      if (activeSceneId) {
+        const found = selectableMap.get(activeSceneId);
+        if (found !== undefined) activeSelectableIdx = found;
+      }
+    }
+    if (activeSelectableIdx === -1) {
+      for (let i = activeLineNumber; i >= 0; i--) {
+        const line = parsedDoc.lines[i];
+        if (line.isOutlineElement && line.type !== LineType.synopse) {
+          const found = selectableMap.get(line.id);
+          if (found !== undefined) { activeSelectableIdx = found; break; }
+        }
       }
     }
   }

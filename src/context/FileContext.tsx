@@ -381,7 +381,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : prevDoc.settings;
         return { ...doc, settings: mergedSettings };
       });
-    }, lowPowerModeRef.current ? 800 : 300);
+    }, lowPowerModeRef.current ? 800 : 100);
   };
 
   const updateFileScriptContent = useCallback(async (fileId: string, scriptIndex: number | undefined, text: string) => {

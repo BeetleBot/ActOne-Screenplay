@@ -367,6 +367,29 @@ interface UseCodeMirrorProdDef {
   colorOverride: string | null;
 }
 
+function fastTagsEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (!a || !b) return a === b;
+  const aTags = a.tags || [];
+  const bTags = b.tags || [];
+  if (aTags.length !== bTags.length) return false;
+  const aDefs = a.definitions || [];
+  const bDefs = b.definitions || [];
+  if (aDefs.length !== bDefs.length) return false;
+  for (let i = 0; i < aTags.length; i++) {
+    const tA = aTags[i];
+    const tB = bTags[i];
+    if (tA.definitionId !== tB.definitionId || tA.type !== tB.type) return false;
+    if (tA.range?.[0] !== tB.range?.[0] || tA.range?.[1] !== tB.range?.[1]) return false;
+  }
+  for (let i = 0; i < aDefs.length; i++) {
+    const dA = aDefs[i];
+    const dB = bDefs[i];
+    if (dA.id !== dB.id || dA.name !== dB.name || dA.type !== dB.type || dA.colorOverride !== dB.colorOverride) return false;
+  }
+  return true;
+}
+
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId, scriptFileName } = useFile();
@@ -480,7 +503,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     if (viewRef.current) {
       const prodTags = getPerScriptSettingObject("productionTags", parsedDoc.settings, scriptFileName, { tags: [], definitions: [] });
       const currentTags = viewRef.current.state.field(tagStateField, false);
-      if (currentTags && JSON.stringify(prodTags) !== JSON.stringify(currentTags)) {
+      if (currentTags && !fastTagsEqual(prodTags, currentTags)) {
         viewRef.current.dispatch({
           effects: setTagsEffect.of(prodTags)
         });
@@ -615,7 +638,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
               setRawTextRef.current(pendingRawTextRef.current);
               pendingRawTextRef.current = null;
             }
-          }, 150);
+          }, 50);
         }
 
         const prevTags = update.startState.field(tagStateField, false);

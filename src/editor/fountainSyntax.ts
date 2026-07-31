@@ -274,8 +274,9 @@ export const computeFountainDecorations = (
     : [{ from: 0, to: doc.length }];
 
   for (const r of ranges) {
-    const fromPos = Math.max(0, Math.min(r.from, doc.length));
-    const toPos = Math.max(0, Math.min(r.to, doc.length));
+    const margin = visibleRanges && visibleRanges.length > 0 ? 4000 : 0;
+    const fromPos = Math.max(0, Math.min(r.from - margin, doc.length));
+    const toPos = Math.max(0, Math.min(r.to + margin, doc.length));
     const startLine = doc.lineAt(fromPos).number;
     const endLine = doc.lineAt(toPos).number;
 

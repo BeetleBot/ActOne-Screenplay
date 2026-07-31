@@ -188,7 +188,7 @@ describe("needsBlankAfterEnter", () => {
 describe("computeFountainDecorations viewport bounds", () => {
   it("computes decorations restricted to visibleRanges", () => {
     const lines = [];
-    for (let i = 1; i <= 100; i++) {
+    for (let i = 1; i <= 500; i++) {
       lines.push(`EXT. LOCATION ${i} - DAY\n\nAction line ${i}.\n`);
     }
     const text = lines.join("\n");

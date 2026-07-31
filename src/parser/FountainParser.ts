@@ -48,6 +48,7 @@ export interface FountainDocument {
   settings: any;
   screenplayText: string;
   pageBreaks?: number[];
+  lineToSceneMap?: (string | null)[];
 }
 
 const SUPPORTED_COLORS = [
@@ -343,13 +344,24 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
     parsedLines.push(line);
   }
 
+  const lineToSceneMap: (string | null)[] = new Array(parsedLines.length);
+  let currentSceneId: string | null = null;
+  for (let i = 0; i < parsedLines.length; i++) {
+    const l = parsedLines[i];
+    if (l.type === LineType.heading) {
+      currentSceneId = l.id;
+    }
+    lineToSceneMap[i] = currentSceneId;
+  }
+
   const pageBreaks = paginateScreenplay(parsedLines, paperSize);
 
   return {
     lines: parsedLines,
     settings,
     screenplayText,
-    pageBreaks
+    pageBreaks,
+    lineToSceneMap
   };
 }
 
