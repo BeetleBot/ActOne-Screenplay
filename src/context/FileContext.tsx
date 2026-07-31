@@ -3,6 +3,7 @@ import { parseScreenplay, FountainDocument } from "../parser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundle } from "../utils";
+import { parseFdxToFountain } from "../utils/text";
 import type { ScriptInfo } from "../utils";
 import { logger } from "../utils/logger";
 import { useCustomModal } from "./CustomModalContext";
@@ -49,6 +50,7 @@ export interface FileContextProps {
   openFilePath: (path: string) => Promise<void>;
   removeFromRecent: (path: string) => void;
   updateSettings: (updater: SettingsUpdater) => void;
+  updateFileScriptContent: (fileId: string, scriptIndex: number | undefined, text: string) => void;
   scripts: ScriptInfo[];
   activeScriptIndex: number;
   activeScriptName: string;
@@ -137,7 +139,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSaving, setIsSaving] = useState(false);
   const [scriptsState, setScriptsState] = useState<ScriptInfo[]>([]);
   const [activeScriptIndex, setActiveScriptIndexState] = useState<number>(0);
-  const parseRafRef = useRef<number | null>(null);
+  const parseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeScriptIndexRef = useRef(activeScriptIndex);
+  useEffect(() => {
+    activeScriptIndexRef.current = activeScriptIndex;
+  }, [activeScriptIndex]);
 
   const isBundleDirty = useCallback((scripts: ScriptInfo[]): boolean => {
     return scripts.some(s => s.content !== s.savedContent);
@@ -308,11 +314,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const normalized = text.replace(/\r\n/g, "\n");
     setRawTextState(normalized);
 
-    if (parseRafRef.current !== null) {
-      cancelAnimationFrame(parseRafRef.current);
+    if (parseTimeoutRef.current !== null) {
+      clearTimeout(parseTimeoutRef.current);
     }
-    parseRafRef.current = requestAnimationFrame(() => {
-      parseRafRef.current = null;
+    parseTimeoutRef.current = setTimeout(() => {
+      parseTimeoutRef.current = null;
       const doc = parseScreenplay(normalized, paperSize);
       setFiles(prev => prev.map(f => {
         if (f.id === activeFileId) {
@@ -348,8 +354,50 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : prevDoc.settings;
         return { ...doc, settings: mergedSettings };
       });
-    });
+    }, 300);
   };
+
+  const updateFileScriptContent = useCallback((fileId: string, scriptIndex: number | undefined, text: string) => {
+    const normalized = text.replace(/\r\n/g, "\n");
+    const doc = parseScreenplay(normalized, paperSize);
+
+    setFiles(prev => prev.map(f => {
+      if (f.id === fileId) {
+        const mergedSettings = doc.settings && Object.keys(doc.settings).length > 0
+          ? doc.settings
+          : f.parsedDoc.settings;
+
+        let updatedScripts = f.scripts;
+        const targetIdx = scriptIndex ?? f.activeScriptIndex ?? 0;
+        if (updatedScripts && updatedScripts.length > 0) {
+          updatedScripts = updatedScripts.map((s, i) =>
+            i === targetIdx ? { ...s, content: normalized } : s
+          );
+        }
+
+        const isDirty = updatedScripts && updatedScripts.length > 0
+          ? isBundleDirty(updatedScripts)
+          : normalized !== f.savedText;
+
+        const isCurrentlyActive = (f.id === activeFileIdRef.current) &&
+          (!updatedScripts || targetIdx === activeScriptIndexRef.current);
+
+        if (isCurrentlyActive) {
+          setRawTextState(normalized);
+          setParsedDoc({ ...doc, settings: mergedSettings });
+        }
+
+        return {
+          ...f,
+          rawText: isCurrentlyActive ? normalized : (targetIdx === f.activeScriptIndex ? normalized : f.rawText),
+          isDirty,
+          parsedDoc: isCurrentlyActive ? { ...doc, settings: mergedSettings } : (targetIdx === f.activeScriptIndex ? { ...doc, settings: mergedSettings } : f.parsedDoc),
+          scripts: updatedScripts,
+        };
+      }
+      return f;
+    }));
+  }, [paperSize, isBundleDirty]);
 
   const updateSettings = (updater: SettingsUpdater) => {
     setFiles(prev => prev.map(f => {
@@ -564,7 +612,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       res = await new Promise<{ path: string; content: string; settings?: Record<string, unknown> } | null>((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".fountain,.txt,.actone";
+        input.accept = ".actone";
         input.onchange = async () => {
           const file = input.files?.[0];
           if (!file) {
@@ -1154,8 +1202,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const result = await invoke<{ path: string; content: string } | null>("import_fountain_dialog");
         if (!result) return null;
-        fileName = result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt)$/i, "") || "Imported";
-        content = result.content;
+        fileName = result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein)$/i, "") || "Imported";
+        content = parseFdxToFountain(result.content);
       } catch (e) {
         logger.error("file", "Import script dialog failed", e);
         return null;
@@ -1164,12 +1212,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       content = await new Promise<string | null>((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".fountain,.txt";
+        input.accept = ".fountain,.txt,.fdx,.fadein";
         input.onchange = async () => {
           const f = input.files?.[0];
           if (!f) { resolve(null); return; }
-          fileName = f.name.replace(/\.(fountain|txt)$/i, "");
-          resolve(await f.text());
+          fileName = f.name.replace(/\.(fountain|txt|fdx|fadein)$/i, "");
+          const text = await f.text();
+          resolve(parseFdxToFountain(text));
         };
         input.click();
       });
@@ -1307,8 +1356,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     return () => {
-      if (parseRafRef.current !== null) {
-        cancelAnimationFrame(parseRafRef.current);
+      if (parseTimeoutRef.current !== null) {
+        clearTimeout(parseTimeoutRef.current);
       }
     };
   }, []);
@@ -1326,6 +1375,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         rawText,
         parsedDoc,
         setRawText,
+        updateFileScriptContent,
         openFile,
         saveFile,
         saveFileAs,

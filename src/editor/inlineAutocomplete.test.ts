@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { EditorState } from "@codemirror/state";
-import { testComputeSuggestion } from "./inlineAutocomplete";
+import { testComputeSuggestion, cachedCharactersField, cachedLocationsField } from "./inlineAutocomplete";
+import { lineTypesField } from "./fountainSyntax";
+
+const testExtensions = [lineTypesField, cachedCharactersField, cachedLocationsField];
 
 function stateWithContent(text: string, cursorLine: number, cursorCol: number) {
   const doc = EditorState.create({ doc: text }).doc;
@@ -8,6 +11,7 @@ function stateWithContent(text: string, cursorLine: number, cursorCol: number) {
   return EditorState.create({
     doc: text,
     selection: { anchor: line.from + cursorCol, head: line.from + cursorCol },
+    extensions: testExtensions,
   });
 }
 
@@ -18,6 +22,7 @@ function createState(text: string) {
   return EditorState.create({
     doc: text,
     selection: { anchor: line.from + 6, head: line.from + 6 },
+    extensions: testExtensions,
   });
 }
 

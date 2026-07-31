@@ -7,7 +7,7 @@ import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor } from "../context";
 import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
 import { CATEGORIES, STORAGE_KEYS } from "../constants";
-import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource } from "./inlineAutocomplete";
+import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource, cachedCharactersField, cachedLocationsField } from "./inlineAutocomplete";
 import { 
   fountainHighlightField, 
   updateParsedDocEffect,
@@ -15,7 +15,7 @@ import {
   updateHideTagsEffect,
   updateScriptFileNameEffect,
   updateRightPaneOpenEffect,
-  classifyLines,
+  lineTypesField,
   needsBlankAfterEnter,
   LINE_CHARACTER,
   LINE_DIALOGUE,
@@ -124,8 +124,8 @@ const fountainEnterHandler = (view: EditorView): boolean => {
     return false;
   }
 
-  const lineTypes = classifyLines(state.doc);
-  const currentType = lineTypes[line.number - 1];
+  const lineTypes = state.field(lineTypesField, false);
+  const currentType = lineTypes ? lineTypes[line.number - 1] : 0;
 
   if (line.text.trim().length === 0 || !needsBlankAfterEnter(currentType)) return false;
 
@@ -152,8 +152,8 @@ const fountainParenHandler = (view: EditorView): boolean => {
   if (prevLine.text.trim() !== "") return false;
 
   if (prevLineNum < 2) return false;
-  const lineTypes = classifyLines(state.doc);
-  const prevPrevType = lineTypes[prevLineNum - 2];
+  const lineTypes = state.field(lineTypesField, false);
+  const prevPrevType = lineTypes ? lineTypes[prevLineNum - 2] : 0;
 
   if (prevPrevType === LINE_DIALOGUE || prevPrevType === LINE_DUAL_DIALOGUE ||
       prevPrevType === LINE_CHARACTER || prevPrevType === LINE_DUAL_CHARACTER ||
@@ -281,7 +281,6 @@ const typewriterScrollPlugin = ViewPlugin.fromClass(
   }
 );
 
-const fadedLineDeco = Decoration.line({ class: "cm-faded-line" });
 const activeLineDeco = Decoration.line({ class: "cm-activeLine-always" });
 
 const activeLineAlwaysPlugin = ViewPlugin.fromClass(
@@ -292,28 +291,27 @@ const activeLineAlwaysPlugin = ViewPlugin.fromClass(
       this.decorations = this.getDecos(view);
     }
 
-    update(_update: ViewUpdate) {
-      this.decorations = this.getDecos(_update.view);
+    update(update: ViewUpdate) {
+      if (update.selectionSet || update.docChanged) {
+        this.decorations = this.getDecos(update.view);
+      }
     }
 
     getDecos(view: EditorView): DecorationSet {
-      const state = view.state;
-      const pos = state.selection.main.head;
-      const activeLine = state.doc.lineAt(pos);
+      const pos = view.state.selection.main.head;
+      const activeLine = view.state.doc.lineAt(pos);
       const focusEnabled = localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true";
       const builder = new RangeSetBuilder<Decoration>();
+      builder.add(activeLine.from, activeLine.from, activeLineDeco);
 
       if (focusEnabled) {
-        for (let i = 1; i <= state.doc.lines; i++) {
-          const line = state.doc.line(i);
-          if (line.number === activeLine.number) {
-            builder.add(line.from, line.from, activeLineDeco);
-          } else {
-            builder.add(line.from, line.from, fadedLineDeco);
-          }
+        const editorDom = view.dom;
+        if (!editorDom.classList.contains("cm-line-focus-mode")) {
+          editorDom.classList.add("cm-line-focus-mode");
         }
       } else {
-        builder.add(activeLine.from, activeLine.from, activeLineDeco);
+        const editorDom = view.dom;
+        editorDom.classList.remove("cm-line-focus-mode");
       }
 
       return builder.finish();
@@ -513,8 +511,8 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           if (fountainParenHandler(view)) return true;
           const { head } = view.state.selection.main;
           const line = view.state.doc.lineAt(head);
-          const types = classifyLines(view.state.doc);
-          const lineType = types[line.number - 1];
+          const types = view.state.field(lineTypesField, false);
+          const lineType = types ? types[line.number - 1] : 0;
           if (lineType === LINE_CHARACTER || lineType === LINE_DUAL_CHARACTER) return false;
           if (localStorage.getItem("actone-match-parentheses-enabled") === "true") {
             const after = line.text.substring(head - line.from);
@@ -588,6 +586,9 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       emptyLineSelectionPlugin,
       editorTheme,
       placeholder("Start writing here"),
+      lineTypesField,
+      cachedCharactersField,
+      cachedLocationsField,
       fountainHighlightField,
       smartQuotesExtension,
       search(),

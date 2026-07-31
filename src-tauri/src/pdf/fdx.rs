@@ -155,14 +155,7 @@ fn element_to_fdx(el: &Element, _line_idx: usize) -> String {
                 rich_to_fdx_text(rs)
             )
         }
-        Element::Section { text, depth } => {
-            let fd_type = format!("Outline {}", depth);
-            format!(
-                "      <Paragraph Type=\"{}\">\n{}      </Paragraph>\n",
-                fd_type,
-                rich_to_fdx_text(text)
-            )
-        }
+        Element::Section { .. } => String::new(),
         Element::Shot(rs) => {
             format!(
                 "      <Paragraph Type=\"Shot\">\n{}      </Paragraph>\n",

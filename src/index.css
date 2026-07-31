@@ -247,9 +247,13 @@ body {
   background-color: transparent !important;
 }
 
-.cm-faded-line {
+.cm-line-focus-mode .cm-line {
   opacity: 0.35;
   transition: opacity var(--duration-normal) ease-in-out;
+}
+
+.cm-line-focus-mode .cm-activeLine-always {
+  opacity: 1;
 }
 
 .cm-search-match {

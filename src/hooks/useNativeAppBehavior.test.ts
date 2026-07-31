@@ -13,7 +13,7 @@ describe("useNativeAppBehavior", () => {
 
   it("prevents F5 key", () => {
     renderHook(() => useNativeAppBehavior());
-    const event = new KeyboardEvent("keydown", { key: "F5", cancelable: true });
+    const event = new KeyboardEvent("keydown", { key: "F5", cancelable: true, bubbles: true });
     const preventDefaultSpy = vi.spyOn(event, "preventDefault");
     window.dispatchEvent(event);
     expect(preventDefaultSpy).toHaveBeenCalled();
@@ -21,7 +21,7 @@ describe("useNativeAppBehavior", () => {
 
   it("prevents Ctrl+R", () => {
     renderHook(() => useNativeAppBehavior());
-    const event = new KeyboardEvent("keydown", { key: "r", ctrlKey: true, cancelable: true });
+    const event = new KeyboardEvent("keydown", { key: "r", ctrlKey: true, cancelable: true, bubbles: true });
     const preventDefaultSpy = vi.spyOn(event, "preventDefault");
     window.dispatchEvent(event);
     expect(preventDefaultSpy).toHaveBeenCalled();

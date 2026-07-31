@@ -63,7 +63,7 @@ export const FountainEditor = React.memo(() => {
   const { fontFamily, setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState } = useUI();
   const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>(translationState);
   translationStateRef.current = translationState;
-  const { parsedDoc, scriptFileName, activeScriptIndex, duplicateScript, setRawText } = useFile();
+  const { parsedDoc, scriptFileName, activeScriptIndex, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
   const { updateSettings } = useEditor();
   const parking = useParking();
   const { prompt: showPrompt } = useCustomModal();
@@ -864,11 +864,11 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
     setTranslatingLang(lang);
 
     try {
+      const targetFileId = activeFileId;
       const duplicatedName = await duplicateScript(activeScriptIndex);
       if (!duplicatedName) throw new Error("Failed to duplicate script");
       
-      // Allow React state to finish mounting/switching active script
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      const targetScriptIndex = activeScriptIndex + 1;
 
       // Build initial document with non-translatable lines in place
       const currentDocLines = analyzedLines.map(item => {
@@ -876,7 +876,7 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         return item.indent + item.prefix + item.cleanText + item.suffix;
       });
       
-      setRawText(currentDocLines.join("\n"));
+      updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
 
       // Collect all indices of translatable lines
       const translatableIndices: number[] = [];
@@ -943,14 +943,14 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
           break;
         }
 
-        // Sync batch update to document
+        // Sync batch update to target document/script
         const resLines = translatedBatchText.split(/\r?\n/);
         batchIndices.forEach((lineIdx, i) => {
           const item = analyzedLines[lineIdx];
           const translatedText = resLines[i] !== undefined && resLines[i].trim() ? resLines[i].trim() : item.cleanText;
           currentDocLines[lineIdx] = item.indent + item.prefix + translatedText + item.suffix;
         });
-        setRawText(currentDocLines.join("\n"));
+        updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
       }
 
       if ((translationStateRef.current as string) !== "cancelled") {
@@ -1290,7 +1290,7 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
             }}
             sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
           >
-            <ListItemText primary="Translate Whole Document" />
+            <ListItemText primary="Translate Whole Script" />
             <ChevronRightIcon fontSize="small" sx={{ ml: 1, opacity: 0.5 }} />
           </MenuItem>
         )}

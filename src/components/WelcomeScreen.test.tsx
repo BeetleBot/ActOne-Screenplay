@@ -101,20 +101,16 @@ describe("WelcomeScreenWindow", () => {
     render(<WelcomeScreenWindow />);
     expect(screen.getByText("New Project")).toBeInTheDocument();
     expect(screen.getByText("Open Project")).toBeInTheDocument();
+    expect(screen.getByText("Import Script")).toBeInTheDocument();
     expect(screen.getByText("Templates")).toBeInTheDocument();
-    expect(screen.getByText("Sample Screenplays")).toBeInTheDocument();
     expect(screen.getByText("Tutorials")).toBeInTheDocument();
   });
 
-  it("shows keyboard shortcut hints on New and Open", () => {
+  it("shows keyboard shortcut hints and descriptions", () => {
     render(<WelcomeScreenWindow />);
     expect(screen.getByText("Ctrl+N")).toBeInTheDocument();
-    expect(screen.getByText("Ctrl+O")).toBeInTheDocument();
-  });
-
-  it("shows Coming soon on Sample Screenplays", () => {
-    render(<WelcomeScreenWindow />);
-    expect(screen.getByText("Coming soon")).toBeInTheDocument();
+    expect(screen.getByText(".actone files")).toBeInTheDocument();
+    expect(screen.getByText("FDX, FadeIn, Fountain")).toBeInTheDocument();
   });
 
   it("shows Interactive tours on Tutorials", () => {

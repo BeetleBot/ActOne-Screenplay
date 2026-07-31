@@ -120,6 +120,104 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
   return types;
 };
 
+const classifyLineAt = (doc: { line: (n: number) => { text: string }; lines: number }, lineNum: number, prevType: number): number => {
+  const text = doc.line(lineNum).text;
+  const trimmed = text.trim();
+  let type = LINE_ACTION;
+
+  if (trimmed === "") {
+    type = LINE_EMPTY;
+  } else if (/^#{1,2}(?:[^#]|$)/.test(trimmed)) {
+    type = LINE_SECTION;
+  } else if (trimmed.startsWith("=")) {
+    type = (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") ? LINE_PAGEBREAK : LINE_SYNOPSE;
+  } else if (trimmed.startsWith("~")) {
+    type = LINE_LYRICS;
+  } else if (trimmed.startsWith(".") && !trimmed.startsWith("..")) {
+    type = LINE_HEADING;
+  } else if (trimmed.startsWith(">") && trimmed.endsWith("<")) {
+    type = LINE_CENTERED;
+  } else if (trimmed.startsWith(">")) {
+    type = LINE_TRANSITION;
+  } else if (trimmed.startsWith("!!")) {
+    type = LINE_SHOT;
+  } else if (trimmed.startsWith("!")) {
+    type = LINE_ACTION;
+  } else if (trimmed.startsWith("@")) {
+    type = LINE_CHARACTER;
+  } else {
+    const isAllCaps = trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
+    const isHeadingPrefix = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(trimmed);
+
+    if (isHeadingPrefix && (prevType === LINE_EMPTY || lineNum === 1)) {
+      type = LINE_HEADING;
+    } else if (isAllCaps && trimmed.endsWith("TO:") && (prevType === LINE_EMPTY || lineNum === 1)) {
+      type = LINE_TRANSITION;
+    } else if (isAllCaps && (prevType === LINE_EMPTY || lineNum === 1)) {
+      type = trimmed.endsWith("^") ? LINE_DUAL_CHARACTER : LINE_CHARACTER;
+    } else if (trimmed.startsWith("(") && trimmed.endsWith(")") && isDialogueType(prevType)) {
+      type = isDualType(prevType) ? LINE_DUAL_PARENTHETICAL : LINE_PARENTHETICAL;
+    } else if (isDialogueType(prevType)) {
+      type = isDualType(prevType) ? LINE_DUAL_DIALOGUE : LINE_DIALOGUE;
+    }
+  }
+
+  return type;
+};
+
+export const lineTypesField = StateField.define<number[]>({
+  create(state) {
+    return classifyLines(state.doc);
+  },
+  update(types, tr) {
+    if (!tr.docChanged) return types;
+
+    let firstChangedLine = tr.state.doc.lines;
+    let lastChangedLine = 1;
+    tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
+      const startLine = tr.state.doc.lineAt(fromB).number;
+      const endLine = tr.state.doc.lineAt(Math.min(toB, tr.state.doc.length)).number;
+      if (startLine < firstChangedLine) firstChangedLine = startLine;
+      if (endLine > lastChangedLine) lastChangedLine = endLine;
+    });
+
+    const oldLineCount = tr.startState.doc.lines;
+    const newLineCount = tr.state.doc.lines;
+    const lineCountDelta = newLineCount - oldLineCount;
+
+    const newTypes = new Array<number>(newLineCount);
+
+    for (let i = 0; i < firstChangedLine - 1 && i < types.length; i++) {
+      newTypes[i] = types[i];
+    }
+
+    const reclassifyFrom = Math.max(1, firstChangedLine);
+    for (let i = reclassifyFrom; i <= newLineCount; i++) {
+      const prevType = i > 1 ? newTypes[i - 2] : LINE_EMPTY;
+      const newType = classifyLineAt(tr.state.doc, i, prevType);
+      newTypes[i - 1] = newType;
+
+      if (i > lastChangedLine && i - 1 < types.length + lineCountDelta) {
+        const oldIdx = i - 1 - lineCountDelta;
+        if (oldIdx >= 0 && oldIdx < types.length && newType === types[oldIdx]) {
+          for (let j = i; j < newLineCount; j++) {
+            const srcIdx = j - lineCountDelta;
+            if (srcIdx >= 0 && srcIdx < types.length) {
+              newTypes[j] = types[srcIdx];
+            } else {
+              const pt = j > 0 ? newTypes[j - 1] : LINE_EMPTY;
+              newTypes[j] = classifyLineAt(tr.state.doc, j + 1, pt);
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    return newTypes;
+  },
+});
+
 const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_HEADING]: "cm-fountain-heading",
   [LINE_CHARACTER]: "cm-fountain-character",
@@ -139,20 +237,11 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_SHOT]: "cm-fountain-shot",
 };
 
-const computeFountainDecorations = (state: EditorState, docObj: FountainDocument | null, hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, rightPaneOpen: boolean): DecorationSet => {
+const computeFountainDecorations = (state: EditorState, lineTypes: number[], hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, rightPaneOpen: boolean): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const allDecos: { from: number; to: number; dec: Decoration }[] = [];
   const doc = state.doc;
-  const parsedDocLines = docObj?.lines;
-  const lineTypesFallback = (parsedDocLines && parsedDocLines.length === doc.lines)
-    ? parsedDocLines.map(p => p.type)
-    : null;
   const activeLineNum = state.selection ? state.doc.lineAt(state.selection.main.head).number : -1;
-  const lineTypes = lineTypesFallback ? [...lineTypesFallback] : classifyLines(doc);
-  if (lineTypesFallback && activeLineNum > 0 && activeLineNum <= lineTypes.length) {
-    const realTimeTypes = classifyLines(doc);
-    lineTypes[activeLineNum - 1] = realTimeTypes[activeLineNum - 1];
-  }
 
 
 
@@ -383,15 +472,18 @@ export const fountainHighlightField = StateField.define<{
   hideSyntaxEnabled: boolean;
   hideTagsEnabled: boolean;
   rightPaneOpen: boolean;
+  prevActiveLineNum: number;
 }>({
   create(state) {
+    const types = state.field(lineTypesField);
     return {
-      decorations: computeFountainDecorations(state, null, false, false, false),
+      decorations: computeFountainDecorations(state, types, false, false, false),
       doc: null,
       displaySettings: defaultDisplaySettings,
       hideSyntaxEnabled: false,
       hideTagsEnabled: false,
       rightPaneOpen: false,
+      prevActiveLineNum: -1,
     };
   },
   update(value, tr) {
@@ -424,24 +516,35 @@ export const fountainHighlightField = StateField.define<{
         rightPaneChanged = true;
       }
     }
-    if (
+
+    const needsRebuild =
       tr.docChanged ||
-      tr.selection ||
       doc !== value.doc ||
       displaySettings !== value.displaySettings ||
       hideSyntaxChanged ||
       hideTagsChanged ||
-      rightPaneChanged
-    ) {
+      rightPaneChanged;
+
+    const currentLineNum = tr.state.selection ? tr.state.doc.lineAt(tr.state.selection.main.head).number : -1;
+    const selectionMoved = tr.selection && currentLineNum !== value.prevActiveLineNum;
+
+    if (needsRebuild || (selectionMoved && hideSyntaxEnabled)) {
+      const types = tr.state.field(lineTypesField);
       return {
-        decorations: computeFountainDecorations(tr.state, doc, hideSyntaxEnabled, hideTagsEnabled, rightPaneOpen),
+        decorations: computeFountainDecorations(tr.state, types, hideSyntaxEnabled, hideTagsEnabled, rightPaneOpen),
         doc,
         displaySettings,
         hideSyntaxEnabled,
         hideTagsEnabled,
         rightPaneOpen,
+        prevActiveLineNum: currentLineNum,
       };
     }
+
+    if (selectionMoved) {
+      return { ...value, prevActiveLineNum: currentLineNum };
+    }
+
     return value;
   },
   provide: (f) => EditorView.decorations.from(f, (val) => val.decorations),

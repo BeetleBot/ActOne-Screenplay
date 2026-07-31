@@ -2,7 +2,7 @@ import { StateField, EditorState } from "@codemirror/state";
 import { Decoration } from "@codemirror/view";
 import { EditorView, WidgetType, keymap } from "@codemirror/view";
 import { CompletionContext, CompletionResult, startCompletion } from "@codemirror/autocomplete";
-import { classifyLines, LINE_CHARACTER, LINE_DUAL_CHARACTER, LINE_HEADING, LINE_ACTION } from "./fountainSyntax";
+import { lineTypesField, LINE_CHARACTER, LINE_DUAL_CHARACTER, LINE_HEADING, LINE_ACTION } from "./fountainSyntax";
 
 class GhostTextWidget extends WidgetType {
   constructor(readonly text: string, readonly hint?: string) { super(); }
@@ -78,9 +78,8 @@ const CHARACTER_EXTENSIONS = [
   "(SINGING)",
 ];
 
-function computeCharacters(state: EditorState, excludeLine?: number): Set<string> {
+function extractCharacters(state: EditorState, types: number[], excludeLine?: number): Set<string> {
   const chars = new Set<string>();
-  const types = classifyLines(state.doc);
   for (let i = 1; i <= state.doc.lines; i++) {
     if (i === excludeLine) continue;
     if (types[i - 1] === LINE_CHARACTER || types[i - 1] === LINE_DUAL_CHARACTER) {
@@ -92,9 +91,8 @@ function computeCharacters(state: EditorState, excludeLine?: number): Set<string
   return chars;
 }
 
-function computeLocations(state: EditorState, excludeLine?: number): Set<string> {
+function extractLocations(state: EditorState, types: number[], excludeLine?: number): Set<string> {
   const locs = new Set<string>();
-  const types = classifyLines(state.doc);
   for (let i = 1; i <= state.doc.lines; i++) {
     if (i === excludeLine) continue;
     if (types[i - 1] === LINE_HEADING) {
@@ -116,6 +114,30 @@ function computeLocations(state: EditorState, excludeLine?: number): Set<string>
   return locs;
 }
 
+export const cachedCharactersField = StateField.define<Set<string>>({
+  create(state) {
+    const types = state.field(lineTypesField, false);
+    return types ? extractCharacters(state, types) : new Set();
+  },
+  update(value, tr) {
+    if (!tr.docChanged) return value;
+    const types = tr.state.field(lineTypesField, false);
+    return types ? extractCharacters(tr.state, types) : value;
+  },
+});
+
+export const cachedLocationsField = StateField.define<Set<string>>({
+  create(state) {
+    const types = state.field(lineTypesField, false);
+    return types ? extractLocations(state, types) : new Set();
+  },
+  update(value, tr) {
+    if (!tr.docChanged) return value;
+    const types = tr.state.field(lineTypesField, false);
+    return types ? extractLocations(tr.state, types) : value;
+  },
+});
+
 function computeSuggestion(state: EditorState): SuggestionData | null {
   const { head } = state.selection.main;
   if (!state.selection.main.empty) return null;
@@ -127,9 +149,9 @@ function computeSuggestion(state: EditorState): SuggestionData | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
-  const types = classifyLines(state.doc);
+  const types = state.field(lineTypesField, false);
+  if (!types) return null;
   const type = types[line.number - 1];
-  const currentLine = line.number;
 
   if (type === LINE_CHARACTER || type === LINE_DUAL_CHARACTER) {
     const parenIndex = trimmed.lastIndexOf("(");
@@ -156,7 +178,7 @@ function computeSuggestion(state: EditorState): SuggestionData | null {
     const prefix = trimmed.startsWith("@") ? trimmed.substring(1).trimStart() : trimmed;
     if (!prefix) return null;
     const upperPrefix = prefix.toUpperCase();
-    const chars = computeCharacters(state, currentLine);
+    const chars = state.field(cachedCharactersField, false) || new Set<string>();
     let best: string | null = null;
     for (const c of chars) {
       if (c.startsWith(upperPrefix) && c.length > upperPrefix.length) {
@@ -183,7 +205,7 @@ function computeSuggestion(state: EditorState): SuggestionData | null {
     const typedLoc = input.trim().toUpperCase();
     if (!typedLoc) return null;
 
-    const locs = computeLocations(state, currentLine);
+    const locs = state.field(cachedLocationsField, false) || new Set<string>();
     let best: string | null = null;
     for (const l of locs) {
       if (l.startsWith(typedLoc) && l.length > typedLoc.length) {
@@ -204,7 +226,7 @@ function computeSuggestion(state: EditorState): SuggestionData | null {
     const prefix = hasForceMarker ? trimmed.substring(1).trimStart() : trimmed;
     if (!hasForceMarker && (!/^[A-Z][A-Z\s.'-]*$/.test(prefix) || prefix.length < 2)) return null;
     const upperPrefix = prefix.toUpperCase();
-    const chars = computeCharacters(state, currentLine);
+    const chars = state.field(cachedCharactersField, false) || new Set<string>();
     let best: string | null = null;
     for (const c of chars) {
       if (c.startsWith(upperPrefix) && c.length > upperPrefix.length) {
@@ -274,7 +296,8 @@ export function fountainCompletionSource(context: CompletionContext): Completion
   const trimmed = line.text.trim();
   if (!trimmed) return null;
 
-  const types = classifyLines(state.doc);
+  const types = state.field(lineTypesField, false);
+  if (!types) return null;
   const type = types[line.number - 1];
 
   if (type === LINE_CHARACTER || type === LINE_DUAL_CHARACTER) {
@@ -306,7 +329,7 @@ export function fountainCompletionSource(context: CompletionContext): Completion
     const prefix = trimmed.startsWith("@") ? trimmed.substring(1).trimStart() : trimmed;
     if (!prefix) return null;
     const upperPrefix = prefix.toUpperCase();
-    const chars = computeCharacters(state, line.number);
+    const chars = state.field(cachedCharactersField, false) || new Set<string>();
     const options = [...chars]
       .filter(c => c.startsWith(upperPrefix))
       .sort()
@@ -336,7 +359,7 @@ export function fountainCompletionSource(context: CompletionContext): Completion
     const typedLoc = input.trim().toUpperCase();
     if (!typedLoc) return null;
 
-    const locs = computeLocations(state, line.number);
+    const locs = state.field(cachedLocationsField, false) || new Set<string>();
     const options = [...locs]
       .filter(l => l.startsWith(typedLoc))
       .sort()
@@ -361,7 +384,7 @@ export function fountainCompletionSource(context: CompletionContext): Completion
     if (!prefix) return null;
     if (!hasForceMarker && (!/^[A-Z][A-Z\s.'-]*$/.test(prefix) || prefix.length < 2)) return null;
     const upperPrefix = prefix.toUpperCase();
-    const chars = computeCharacters(state, line.number);
+    const chars = state.field(cachedCharactersField, false) || new Set<string>();
     const options = [...chars]
       .filter(c => c.startsWith(upperPrefix))
       .sort()

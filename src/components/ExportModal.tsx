@@ -349,19 +349,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
 
   const handleExportFDX = async () => {
     try {
+      const cleaned = stripFountainForExport(rawText, {
+        sections: false,
+        synopses: false,
+        titlePage: exportTitlePage,
+      });
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
         const result = await invoke<string | null>("export_fdx", {
-          fountainText: rawText,
+          fountainText: cleaned,
           defaultDirectory: getLastExportDir(),
         });
         if (result) saveLastExportDir(result);
       } else {
-        const cleaned = stripFountainForExport(rawText, {
-          sections: false,
-          synopses: false,
-          titlePage: true,
-        });
         const bundleName = filePath
           ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"
           : "Untitled";
@@ -382,10 +382,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
 
   const handleExportFadeIn = async () => {
     try {
+      const cleaned = stripFountainForExport(rawText, {
+        sections: false,
+        synopses: false,
+        titlePage: exportTitlePage,
+      });
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
         const result = await invoke<string | null>("export_fadein", {
-          fountainText: rawText,
+          fountainText: cleaned,
           defaultDirectory: getLastExportDir(),
         });
         if (result) saveLastExportDir(result);
@@ -394,7 +399,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt)$/i, "") || "Untitled"
           : "Untitled";
         const scriptSuffix = isBundle ? `_${activeScriptName}` : "";
-        const blob = new Blob([rawText], { type: "application/octet-stream" });
+        const blob = new Blob([cleaned], { type: "application/octet-stream" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -425,11 +430,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           await invoke("save_file_content", { path: `${dir}/${sanitizedName}.fountain`, content: cleaned })
             .catch(e => logger.error("export", `Batch fountain failed for ${sanitizedName}`, e));
         } else if (format === "fdx") {
-          const fdx = await invoke<string>("generate_fdx_string", { fountainText: script.content });
+          const cleaned = stripFountainForExport(script.content, { sections: false, synopses: false, titlePage: exportTitlePage });
+          const fdx = await invoke<string>("generate_fdx_string", { fountainText: cleaned });
           await invoke("save_file_content", { path: `${dir}/${sanitizedName}.fdx`, content: fdx })
             .catch(e => logger.error("export", `Batch FDX failed for ${sanitizedName}`, e));
         } else if (format === "fadein") {
-          const bytes = await invoke<number[]>("generate_fadein_bytes", { fountainText: script.content });
+          const cleaned = stripFountainForExport(script.content, { sections: false, synopses: false, titlePage: exportTitlePage });
+          const bytes = await invoke<number[]>("generate_fadein_bytes", { fountainText: cleaned });
           await invoke("save_file_binary", { path: `${dir}/${sanitizedName}.fadein`, bytes })
             .catch(e => logger.error("export", `Batch FadeIn failed for ${sanitizedName}`, e));
         } else if (format === "pdf") {

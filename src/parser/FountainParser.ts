@@ -54,7 +54,10 @@ const SUPPORTED_COLORS = [
   "blue", "brown", "cyan", "green", "magenta", "none", "orange", "pink", "purple", "red", "yellow"
 ];
 
-function generateUUID(): string {
+function generateUUID(index?: number, text?: string): string {
+  if (index !== undefined && text !== undefined) {
+    return `L${index}:${text.length}:${text.charCodeAt(0) || 0}`;
+  }
   return "line-" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
@@ -132,7 +135,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
           inTitlePage = false;
         }
         parsedLines.push({
-          id: generateUUID(),
+          id: generateUUID(i, rawLine),
           text: rawLine,
           type: LineType.empty,
           isOutlineElement: false
@@ -155,7 +158,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
 
         lastTitlePageType = type;
         parsedLines.push({
-          id: generateUUID(),
+          id: generateUUID(i, rawLine),
           text: rawLine,
           type,
           isOutlineElement: false
@@ -163,7 +166,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
         continue;
       } else if (trimmed.startsWith(" ") || trimmed.startsWith("\t") || parsedLines.length > 0) {
         parsedLines.push({
-          id: generateUUID(),
+          id: generateUUID(i, rawLine),
           text: rawLine,
           type: lastTitlePageType,
           isOutlineElement: false
@@ -324,7 +327,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
     }
 
     const line: ParsedLine = {
-      id: generateUUID(),
+      id: generateUUID(i, rawLine),
       text: rawLine,
       type,
       sceneNumber,

@@ -13,7 +13,7 @@ import { unpackActoneBundle } from "./utils";
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
-const isEditorWindow = action === "new" || action === "open" || action === "template" || action === "tutorial";
+const isEditorWindow = action === "new" || action === "open" || action === "import" || action === "template" || action === "tutorial";
 const modalParam = params.get("modal");
 const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "tag-manager" || modalParam === "theme-manager" || modalParam === "xray" || modalParam === "tutorials";
 
@@ -482,6 +482,11 @@ function AppInner() {
       localStorage.removeItem("pending-open-path");
       localStorage.removeItem("pending-action");
       if (path) openFilePath(path);
+    } else if (action === "import") {
+      const content = localStorage.getItem("pending-import-content") || "";
+      localStorage.removeItem("pending-import-content");
+      localStorage.removeItem("pending-action");
+      newFile(content);
     } else if (action === "template") {
       newFile();
       setShowStructureModal(true);

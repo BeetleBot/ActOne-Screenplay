@@ -37,8 +37,13 @@ export function useNativeAppBehavior(
         target.tagName === "TEXTAREA" || 
         target.tagName === "SELECT" || 
         target.contentEditable === "true" ||
-        target.closest(".cm-content")
+        (typeof target.closest === "function" && target.closest(".cm-content"))
       ) {
+        return;
+      }
+
+      if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r")) {
+        e.preventDefault();
         return;
       }
 

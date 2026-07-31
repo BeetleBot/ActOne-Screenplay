@@ -12,6 +12,7 @@ import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIc
 import { getRandomQuote, type Quote } from "../data/quotes";
 import { themes as themeList, ADAPTIVE_THEME_META, THEME_CATEGORIES } from "../theme/muiTheme";
 
+
 interface WelcomeScreenWindowProps {
   standalone?: boolean;
   onOpenTutorials?: () => void;
@@ -217,6 +218,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     }
     await openFile();
   };
+
+
 
   const handleTemplates = async () => {
     if (standalone) {
@@ -615,7 +618,29 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           >
             <FolderOpenIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
             <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Open Project</Typography>
-            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Ctrl+O</Typography>
+            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>.actone files</Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              cursor: "not-allowed",
+              opacity: 0.5,
+              p: 1,
+              boxSizing: "border-box",
+            }}
+          >
+            <DescriptionIcon sx={{ fontSize: 32, color: theme.palette.text.disabled, mb: 0.75 }} />
+            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.disabled }}>Import Script</Typography>
+            <Typography sx={{ fontSize: 10, color: theme.palette.text.disabled }}>FDX, FadeIn, Fountain (Coming soon)</Typography>
           </Box>
         </Box>
 
@@ -643,27 +668,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             <CombineColumnsIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
             <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Templates</Typography>
             <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Structure template</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box
-            sx={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              p: 1,
-              boxSizing: "border-box",
-              opacity: 0.55,
-            }}
-          >
-            <MenuBookIcon sx={{ fontSize: 32, color: theme.palette.text.secondary, mb: 0.75 }} />
-            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Sample Screenplays</Typography>
-            <Typography sx={{ fontSize: 10, fontStyle: "italic", color: theme.palette.text.disabled }}>Coming soon</Typography>
           </Box>
         </Box>
 

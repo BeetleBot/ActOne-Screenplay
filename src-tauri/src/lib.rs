@@ -76,29 +76,20 @@ mod ollama;
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
     let file = rfd::FileDialog::new()
-        .add_filter("ActOne & Fountain", &["actone", "fountain", "txt"])
-        .add_filter("All Files", &["*"])
+        .add_filter("ActOne Projects", &["actone"])
         .pick_file()?;
 
     let path_str = file.to_string_lossy().to_string();
-    if path_str.to_ascii_lowercase().ends_with(".actone") {
-        return Some(serde_json::json!({
-            "path": path_str,
-            "content": ""
-        }));
-    }
-
-    let content = fs::read_to_string(&file).ok()?;
     Some(serde_json::json!({
         "path": path_str,
-        "content": content
+        "content": ""
     }))
 }
 
 #[tauri::command]
 fn import_fountain_dialog() -> Option<serde_json::Value> {
     let file = rfd::FileDialog::new()
-        .add_filter("Fountain Files", &["fountain", "txt"])
+        .add_filter("Script Files", &["fountain", "txt", "fdx", "fadein"])
         .pick_file()?;
     let path_str = file.to_string_lossy().to_string();
     let content = fs::read_to_string(&file).ok()?;
