@@ -2,12 +2,14 @@ import { describe, it, expect } from "vitest";
 import { EditorState } from "@codemirror/state";
 import {
   classifyLines, isDialogueType, isDualType, needsBlankAfterEnter,
+  computeFountainDecorations, lineTypesField,
   LINE_EMPTY, LINE_SECTION, LINE_SYNOPSE, LINE_TITLE_PAGE,
   LINE_HEADING, LINE_ACTION, LINE_CHARACTER, LINE_PARENTHETICAL,
   LINE_DIALOGUE, LINE_DUAL_CHARACTER, LINE_DUAL_PARENTHETICAL,
   LINE_DUAL_DIALOGUE, LINE_TRANSITION, LINE_LYRICS, LINE_PAGEBREAK,
   LINE_CENTERED, LINE_SHOT,
 } from "./fountainSyntax";
+import { tagStateField } from "./tagState";
 
 function classify(text: string): number[] {
   const state = EditorState.create({ doc: text });
@@ -180,5 +182,27 @@ describe("needsBlankAfterEnter", () => {
     expect(needsBlankAfterEnter(LINE_EMPTY)).toBe(false);
     expect(needsBlankAfterEnter(LINE_CHARACTER)).toBe(false);
     expect(needsBlankAfterEnter(LINE_PARENTHETICAL)).toBe(false);
+  });
+});
+
+describe("computeFountainDecorations viewport bounds", () => {
+  it("computes decorations restricted to visibleRanges", () => {
+    const lines = [];
+    for (let i = 1; i <= 100; i++) {
+      lines.push(`EXT. LOCATION ${i} - DAY\n\nAction line ${i}.\n`);
+    }
+    const text = lines.join("\n");
+    const state = EditorState.create({ doc: text, extensions: [lineTypesField, tagStateField] });
+    const types = state.field(lineTypesField);
+
+    // Full doc compute
+    const fullDecos = computeFountainDecorations(state, types, false, false, false);
+    expect(fullDecos.size).toBeGreaterThan(0);
+
+    // Viewport compute for lines 1..10
+    const line10To = state.doc.line(10).to;
+    const viewportDecos = computeFountainDecorations(state, types, false, false, false, [{ from: 0, to: line10To }]);
+    expect(viewportDecos.size).toBeGreaterThan(0);
+    expect(viewportDecos.size).toBeLessThan(fullDecos.size);
   });
 });

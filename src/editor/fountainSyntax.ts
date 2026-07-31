@@ -1,5 +1,5 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
-import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
+import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from "@codemirror/view";
 import { FountainDocument } from "../parser";
 import { tagStateField } from "./tagState";
 
@@ -237,7 +237,14 @@ const TYPE_TO_CLASS: Record<number, string> = {
   [LINE_SHOT]: "cm-fountain-shot",
 };
 
-const computeFountainDecorations = (state: EditorState, lineTypes: number[], hideSyntaxEnabled: boolean, hideTagsEnabled: boolean, rightPaneOpen: boolean): DecorationSet => {
+export const computeFountainDecorations = (
+  state: EditorState,
+  lineTypes: number[],
+  hideSyntaxEnabled: boolean,
+  hideTagsEnabled: boolean,
+  rightPaneOpen: boolean,
+  visibleRanges?: readonly { from: number; to: number }[]
+): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const allDecos: { from: number; to: number; dec: Decoration }[] = [];
   const doc = state.doc;
@@ -262,7 +269,17 @@ const computeFountainDecorations = (state: EditorState, lineTypes: number[], hid
     }
   }
 
-  for (let i = 1; i <= doc.lines; i++) {
+  const ranges = (visibleRanges && visibleRanges.length > 0)
+    ? visibleRanges
+    : [{ from: 0, to: doc.length }];
+
+  for (const r of ranges) {
+    const fromPos = Math.max(0, Math.min(r.from, doc.length));
+    const toPos = Math.max(0, Math.min(r.to, doc.length));
+    const startLine = doc.lineAt(fromPos).number;
+    const endLine = doc.lineAt(toPos).number;
+
+    for (let i = startLine; i <= endLine; i++) {
     const line = doc.line(i);
     const trimmed = line.text.trim();
     const type = lineTypes[i - 1];
@@ -460,6 +477,7 @@ const computeFountainDecorations = (state: EditorState, lineTypes: number[], hid
       allDecos.push(d);
     }
   }
+  }
 
   allDecos.sort((a, b) => a.from - b.from || a.to - b.to);
 
@@ -556,5 +574,76 @@ export const fountainHighlightField = StateField.define<{
   },
   provide: (f) => EditorView.decorations.from(f, (val) => val.decorations),
 });
+
+export const fountainHighlightPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    doc: FountainDocument | null = null;
+    displaySettings: PageBreakDisplaySettings = defaultDisplaySettings;
+    hideSyntaxEnabled: boolean = false;
+    hideTagsEnabled: boolean = false;
+    rightPaneOpen: boolean = false;
+
+    constructor(view: EditorView) {
+      const types = view.state.field(lineTypesField);
+      this.decorations = computeFountainDecorations(
+        view.state,
+        types,
+        this.hideSyntaxEnabled,
+        this.hideTagsEnabled,
+        this.rightPaneOpen,
+        view.visibleRanges
+      );
+    }
+
+    update(update: ViewUpdate) {
+      let changed = false;
+      for (const tr of update.transactions) {
+        for (const effect of tr.effects) {
+          if (effect.is(updateParsedDocEffect)) {
+            this.doc = effect.value;
+            changed = true;
+          }
+          if (effect.is(updatePageBreakDisplayEffect)) {
+            this.displaySettings = effect.value;
+            changed = true;
+          }
+          if (effect.is(updateHideSyntaxEffect)) {
+            this.hideSyntaxEnabled = effect.value;
+            changed = true;
+          }
+          if (effect.is(updateHideTagsEffect)) {
+            this.hideTagsEnabled = effect.value;
+            changed = true;
+          }
+          if (effect.is(updateRightPaneOpenEffect)) {
+            this.rightPaneOpen = effect.value;
+            changed = true;
+          }
+        }
+      }
+
+      if (
+        changed ||
+        update.docChanged ||
+        update.viewportChanged ||
+        update.selectionSet
+      ) {
+        const types = update.state.field(lineTypesField);
+        this.decorations = computeFountainDecorations(
+          update.state,
+          types,
+          this.hideSyntaxEnabled,
+          this.hideTagsEnabled,
+          this.rightPaneOpen,
+          update.view.visibleRanges
+        );
+      }
+    }
+  },
+  {
+    decorations: (v) => v.decorations,
+  }
+);
 
 

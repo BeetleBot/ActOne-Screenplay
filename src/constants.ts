@@ -18,6 +18,7 @@ export const STORAGE_KEYS = {
   HIDE_SYNTAX_ENABLED: "actone-hide-syntax-enabled",
   HIDE_TAGS_ENABLED: "actone-hide-tags-enabled",
   LINE_FOCUS_ENABLED: "actone-line-focus-enabled",
+  LOW_POWER_MODE: "actone-low-power-mode",
   SNAPSHOTS_ENABLED: "actone-snapshots-enabled",
   SNAPSHOT_LOCATION: "actone-snapshot-location",
   SNAPSHOT_CUSTOM_PATH: "actone-snapshot-custom-path",

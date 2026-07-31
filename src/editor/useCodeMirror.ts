@@ -9,7 +9,7 @@ import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perS
 import { CATEGORIES, STORAGE_KEYS } from "../constants";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource, cachedCharactersField, cachedLocationsField } from "./inlineAutocomplete";
 import { 
-  fountainHighlightField, 
+  fountainHighlightPlugin,
   updateParsedDocEffect,
   updateHideSyntaxEffect,
   updateHideTagsEffect,
@@ -594,7 +594,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       lineTypesField,
       cachedCharactersField,
       cachedLocationsField,
-      fountainHighlightField,
+      fountainHighlightPlugin,
       smartQuotesExtension,
       search(),
       searchHighlightField,

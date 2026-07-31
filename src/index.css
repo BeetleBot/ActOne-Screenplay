@@ -1,5 +1,17 @@
 @import "./fonts.css";
 
+/* Low Power / Battery Saver Mode overrides */
+body.low-power-mode *,
+body.low-power-mode *::before,
+body.low-power-mode *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
 :root {
   color-scheme: light;
   --font-ui: "Noto Sans", sans-serif;

@@ -18,7 +18,6 @@ import {
   Popover,
   Grid,
   Badge,
-  Divider,
   Tooltip,
 } from "@mui/material";
 
@@ -520,21 +519,19 @@ export const OutlineView = React.memo(() => {
     );
   };
 
-  const renderTreeNode = (node: TreeNode): React.ReactNode => {
+  const renderTreeNode = (node: TreeNode, renderChildren = true) => {
     const { item, children, synopses } = node;
     const { line } = item;
     const isSection = line.type === LineType.section;
     const isSynopsis = line.type === LineType.synopse;
-    const isScene = !isSection && !isSynopsis;
-    const isSelectable = isSection || isScene;
-    const isActive = isSelectable && (
-      line.id === selectable[activeSelectableIdx]?.item.line.id
-    );
+    const isScene = line.type === LineType.heading;
+    const isCollapsed = collapsedSections[line.id];
+    const isDragging = draggedItemIdx === item.index;
+    const isDragOver = dragOverItemIdx === item.index;
+
+    const isActive = line.id === selectable[activeSelectableIdx]?.item.line.id;
     const sceneColor = getSceneColor(line);
     const sceneIndex = isScene ? scenesItems.findIndex((s) => s.line.id === line.id) : -1;
-    const isDragging = isScene && draggedItemIdx === sceneIndex;
-    const isDragOver = isScene && dragOverItemIdx === sceneIndex;
-    const isCollapsed = !!collapsedSections[line.id];
 
     if (isSection) {
       return (
@@ -575,7 +572,7 @@ export const OutlineView = React.memo(() => {
               secondary={showSynopses && renderOutlineSynopses(synopses)}
             />
           </ListItemButton>
-          {!isCollapsed && children.length > 0 && (
+          {!isCollapsed && renderChildren && children.length > 0 && (
             <Box sx={{
               display: "flex",
               flexDirection: "column",
@@ -584,7 +581,7 @@ export const OutlineView = React.memo(() => {
               ml: 1.1,
               pl: 0,
             }}>
-              {children.map(renderTreeNode)}
+              {children.map((c) => renderTreeNode(c))}
             </Box>
           )}
         </Box>
@@ -775,6 +772,34 @@ export const OutlineView = React.memo(() => {
     normal: "12.5px",
     large: "14px",
   };
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(500);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  }, []);
+
+  useEffect(() => {
+    if (!listRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(listRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const flatNodes = useMemo(() => flattenSelectable(tree), [tree]);
+  const defaultItemHeight = outlineFontSize === "small" ? 28 : outlineFontSize === "large" ? 38 : 32;
+  const overscan = 6;
+
+  const startIndex = Math.max(0, Math.floor(scrollTop / defaultItemHeight) - overscan);
+  const endIndex = Math.min(flatNodes.length, Math.ceil((scrollTop + containerHeight) / defaultItemHeight) + overscan);
+
+  const visibleNodes = flatNodes.slice(startIndex, endIndex);
+  const paddingTop = startIndex * defaultItemHeight;
+  const paddingBottom = Math.max(0, (flatNodes.length - endIndex) * defaultItemHeight);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -861,118 +886,104 @@ export const OutlineView = React.memo(() => {
       </Box>
 
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 1.5, gap: 1, overflow: "hidden" }}>
-
-      <Box sx={{ display: "flex", gap: 0, alignItems: "stretch" }}>
-        <TextField
-          placeholder="Search outline..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          size="small"
-          fullWidth
-          slotProps={{
-            input: {
-              sx: {
-                bgcolor: "background.paper",
-                fontSize: "0.75rem",
-                "& fieldset": { border: "none" },
-              },
-              startAdornment: (
-                <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
-                  <SearchIcon  />
-                </Box>
-              ),
-              endAdornment: searchQuery && (
-                <IconButton size="small" onClick={() => setSearchQuery("")}>
-                  <CloseIcon  />
-                </IconButton>
-              )
-            }
-          }}
-        />
-        <IconButton
-          size="small"
-          onClick={(e) => setFilterAnchorEl(e.currentTarget)}
-          sx={{
-            border: "1px solid",
-            borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
-            bgcolor: activeFilterCount > 0 ? "action.selected" : "action.hover",
-            borderRadius: 0,
-            height: "auto",
-            minHeight: 0,
-            minWidth: 0,
-            alignSelf: "stretch",
-            width: 32,
-            p: 0.3,
-          }}
-        >
-          <Badge badgeContent={activeFilterCount} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}>
-            <TuneIcon sx={{ fontSize: 14 }} />
-          </Badge>
-        </IconButton>
-      </Box>
-
-      <Popover
+        <Box sx={{ display: "flex", gap: 0, alignItems: "stretch" }}>
+          <TextField
+            placeholder="Search outline..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            fullWidth
+            slotProps={{
+              input: {
+                sx: {
+                  bgcolor: "background.paper",
+                  fontSize: "0.75rem",
+                  "& fieldset": { border: "none" },
+                },
+                startAdornment: (
+                  <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
+                    <SearchIcon />
+                  </Box>
+                ),
+                endAdornment: searchQuery && (
+                  <IconButton size="small" onClick={() => setSearchQuery("")}>
+                    <CloseIcon />
+                  </IconButton>
+                )
+              }
+            }}
+          />
+          <IconButton
+            size="small"
+            onClick={(e) => setFilterAnchorEl(e.currentTarget)}
+            sx={{
+              border: "1px solid",
+              borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
+              bgcolor: activeFilterCount > 0 ? "action.selected" : "action.hover",
+              borderRadius: 0,
+              height: "auto",
+              minHeight: 0,
+              minWidth: 0,
+              alignSelf: "stretch",
+              width: 32,
+              p: 0.3,
+            }}
+          >
+            <Badge badgeContent={activeFilterCount} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}>
+              <TuneIcon sx={{ fontSize: 14 }} />
+            </Badge>
+          </IconButton>
+        </Box>
+        <Popover
         open={Boolean(filterAnchorEl)}
         anchorEl={filterAnchorEl}
         onClose={() => setFilterAnchorEl(null)}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        slotProps={{
-          paper: {
-            sx: { p: 2, width: 280, display: "flex", flexDirection: "column", gap: 1.5 },
-          },
-        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { p: 1.5, width: 260, borderRadius: 0 } } }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.75rem" }}>
-            Outline Filters
-          </Typography>
-          {activeFilterCount > 0 && (
-            <Chip
-              label="Clear All"
-              size="small"
-              onClick={() => {
-                setSelectedColor(null);
-                setSelectedStoryline(null);
-              }}
-              sx={{ height: 18, fontSize: 10, cursor: "pointer", borderRadius: 0 }}
-            />
-          )}
-        </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 1 }}>
+          Filter Outline
+        </Typography>
 
-        <Divider />
-
-        <Box>
+        <Box sx={{ mb: 1.5 }}>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
             Scene Color
           </Typography>
           <Grid container spacing={0.5}>
-            {Object.entries(colorStats).map(([color, count]) => {
-              const isSelected = selectedColor === color;
-              const colorVal = color.startsWith("#") ? color : `var(--scene-color-${color})`;
+            {[
+              { id: null, label: "All Colors" },
+              { id: "orange", label: "Orange" },
+              { id: "blue", label: "Blue" },
+              { id: "green", label: "Green" },
+              { id: "yellow", label: "Yellow" },
+              { id: "purple", label: "Purple" },
+              { id: "pink", label: "Pink" },
+              { id: "brown", label: "Brown" },
+              { id: "red", label: "Red" },
+            ].map(({ id, label }) => {
+              const count = id === null ? Object.values(colorStats).reduce((a, b) => a + b, 0) : (colorStats[id] || 0);
+              if (id !== null && count === 0) return null;
+              const isSelected = selectedColor === id;
+              const hex = id ? getSceneColor({ color: id } as any) : undefined;
               return (
-                <Grid key={color}>
+                <Grid key={id ?? "all"}>
                   <Chip
-                    label={`${color} (${count})`}
+                    label={`${label} (${count})`}
                     size="small"
-                    onClick={() => setSelectedColor(isSelected ? null : color)}
+                    onClick={() => setSelectedColor(isSelected ? null : id)}
                     sx={{
                       fontSize: 9.5,
                       height: 20,
                       borderRadius: 0,
                       fontWeight: isSelected ? 700 : 500,
-                      border: `1.5px solid ${colorVal}`,
-                      bgcolor: isSelected ? colorVal : "transparent",
-                      color: isSelected ? (theme) => theme.palette.common.white : "text.secondary",
+                      border: "1px solid",
+                      borderColor: isSelected ? (hex || "primary.main") : "divider",
+                      bgcolor: isSelected ? (hex || "primary.main") : "transparent",
+                      color: isSelected ? "#fff" : "text.secondary",
                       cursor: "pointer",
                       "&:hover": {
-                        bgcolor: isSelected ? colorVal : "action.hover",
+                        bgcolor: isSelected ? (hex || "primary.main") : "action.hover",
                       },
                     }}
                   />
@@ -1023,6 +1034,7 @@ export const OutlineView = React.memo(() => {
         ref={listRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
+        onScroll={handleScroll}
         role="listbox"
         aria-label="Scene navigator"
         sx={{
@@ -1032,13 +1044,13 @@ export const OutlineView = React.memo(() => {
           fontSize: fontSizeMap[outlineFontSize],
         }}
       >
-        {tree.length === 0 ? (
+        {flatNodes.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center", fontStyle: "italic" }}>
             No outline elements match your criteria.
           </Typography>
         ) : (
-          <List disablePadding sx={{ display: "flex", flexDirection: "column" }}>
-            {tree.map(renderTreeNode)}
+          <List disablePadding sx={{ display: "flex", flexDirection: "column", pt: `${paddingTop}px`, pb: `${paddingBottom}px` }}>
+            {visibleNodes.map((node) => renderTreeNode(node, false))}
           </List>
         )}
       </Box>
@@ -1046,4 +1058,3 @@ export const OutlineView = React.memo(() => {
     </Box>
   );
 });
-
