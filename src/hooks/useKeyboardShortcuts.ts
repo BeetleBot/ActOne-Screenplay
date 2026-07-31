@@ -25,33 +25,7 @@ interface ShortcutActions {
   toggleSnapshotsPanel?: () => void;
   isDisabled?: boolean;
 }
-
-function toggleInlineMarker(view: EditorView | null, marker: string) {
-  if (!view) return;
-
-  const { from, to } = view.state.selection.main;
-
-  if (from === to) return;
-
-  const selectedText = view.state.sliceDoc(from, to);
-
-  const isWrapped =
-    selectedText.startsWith(marker) && selectedText.endsWith(marker) && selectedText.length > marker.length * 2;
-
-  if (isWrapped) {
-    const unwrapped = selectedText.slice(marker.length, -marker.length);
-    view.dispatch({
-      changes: { from, to, insert: unwrapped },
-      selection: { anchor: from, head: from + unwrapped.length },
-    });
-  } else {
-    const wrapped = marker + selectedText + marker;
-    view.dispatch({
-      changes: { from, to, insert: wrapped },
-      selection: { anchor: from, head: from + wrapped.length },
-    });
-  }
-}
+import { toggleInlineMarker } from "../editor/formatUtils";
 
 export function useKeyboardShortcuts(actions: ShortcutActions) {
   const actionsRef = useRef(actions);

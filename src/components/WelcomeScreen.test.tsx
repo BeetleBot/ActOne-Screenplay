@@ -110,7 +110,7 @@ describe("WelcomeScreenWindow", () => {
     render(<WelcomeScreenWindow />);
     expect(screen.getByText("Ctrl+N")).toBeInTheDocument();
     expect(screen.getByText(".actone files")).toBeInTheDocument();
-    expect(screen.getByText("FDX, FadeIn, Fountain")).toBeInTheDocument();
+    expect(screen.getByText("FDX, FadeIn, Fountain (Coming soon)")).toBeInTheDocument();
   });
 
   it("shows Interactive tours on Tutorials", () => {

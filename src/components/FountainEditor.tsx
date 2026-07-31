@@ -14,7 +14,7 @@ import { CATEGORIES, FOUNTAIN_SYNTAX_RULES } from "../constants";
 import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 import { updateTagsEffect, tagStateField } from "../editor/tagState";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
-
+import { toggleInlineMarker as toggleInlineMarkerShared } from "../editor/formatUtils";
 
 
 const HIGHLIGHT_COLORS = [
@@ -259,28 +259,9 @@ export const FountainEditor = React.memo(() => {
   };
 
   const toggleInlineMarker = (marker: string) => {
+    if (!view) return;
     const snap = menuSelectionRef.current;
-    if (!view || !snap) return;
-    const from = snap.from;
-    const to = snap.to;
-    const snapText = snap.text;
-
-    const isWrapped =
-      snapText.startsWith(marker) && snapText.endsWith(marker) && snapText.length > marker.length * 2;
-
-    if (isWrapped) {
-      const unwrapped = snapText.slice(marker.length, -marker.length);
-      view.dispatch({
-        changes: { from, to, insert: unwrapped },
-        selection: { anchor: from, head: from + unwrapped.length },
-      });
-    } else {
-      const wrapped = marker + snapText + marker;
-      view.dispatch({
-        changes: { from, to, insert: wrapped },
-        selection: { anchor: from, head: from + wrapped.length },
-      });
-    }
+    toggleInlineMarkerShared(view, marker, snap || undefined);
     handleClose();
   };
 
