@@ -5,10 +5,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useModalWindows, useStoreUpdateCheck } from "../hooks";
-import { Box, Typography, useTheme, alpha, Menu, MenuItem } from "@mui/material";
+import { Box, Typography, useTheme, alpha, Menu, MenuItem, IconButton, Tooltip } from "@mui/material";
 import { logger } from "../utils/logger";
 import { ThemeLogo } from "./ThemeLogo";
-import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIcon, DiscordIcon, PlayArrowIcon, MenuBookIcon, DescriptionIcon, ColorLensIcon } from "./Icons";
+import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIcon, DiscordIcon, PlayArrowIcon, MenuBookIcon, DescriptionIcon, ColorLensIcon, DownloadIcon } from "./Icons";
 import { getRandomQuote, type Quote } from "../data/quotes";
 import { themes as themeList, ADAPTIVE_THEME_META, THEME_CATEGORIES } from "../theme/muiTheme";
 
@@ -337,10 +337,12 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               <Typography
                 sx={{
                   fontStyle: "italic",
-                  fontSize: 15,
-                  fontWeight: 500,
+                  fontSize: 13.5,
+                  fontWeight: 400,
                   color: theme.palette.text.secondary,
-                  lineHeight: 1.3,
+                  lineHeight: 1.45,
+                  letterSpacing: 0.1,
+                  fontFamily: '"Georgia", "Times New Roman", serif !important',
                 }}
               >
                 &ldquo;{quote.text}&rdquo;
@@ -348,9 +350,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               <Typography
                 sx={{
                   fontSize: 11,
-                  fontWeight: 400,
+                  fontWeight: 500,
                   color: theme.palette.text.disabled,
                   lineHeight: 1.2,
+                  letterSpacing: 0.3,
+                  fontFamily: '"Noto Sans", sans-serif !important',
                 }}
               >
                 &mdash; {quote.author}
@@ -874,61 +878,67 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderTop: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-          bgcolor: alpha(theme.palette.common.black, 0.03),
-          px: 1.5,
-          py: 0.5,
+          height: 36,
+          minHeight: 36,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.02)"),
+          px: 2,
           flexShrink: 0,
         }}
       >
-        {updateAvailable ? (
-          <Box
-            onClick={(e) => { e.stopPropagation(); installUpdate(); }}
-            onMouseDown={(e) => e.stopPropagation()}
-            title="Click to install update from Microsoft Store"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              cursor: "pointer",
-              bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
-              color: "primary.main",
-              fontSize: 11,
-              fontWeight: 700,
-              px: 1,
-              py: 0.25,
-              borderRadius: 0,
-              "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.25) },
-            }}
-          >
-            <Typography sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
-              Update Available
+        <Box sx={{ display: "flex", alignItems: "center", minWidth: 120 }}>
+          {updateAvailable ? (
+            <Box
+              onClick={(e) => { e.stopPropagation(); installUpdate(); }}
+              onMouseDown={(e) => e.stopPropagation()}
+              title="Click to install update from Microsoft Store"
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.75,
+                cursor: "pointer",
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                color: "primary.main",
+                fontSize: 11,
+                fontWeight: 600,
+                px: 1.25,
+                py: 0.3,
+                transition: "all 0.15s ease",
+                "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.22) },
+              }}
+            >
+              <DownloadIcon sx={{ fontSize: 13 }} />
+              <Typography sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1, letterSpacing: 0.2 }}>
+                Update Available
+              </Typography>
+            </Box>
+          ) : (
+            <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, fontWeight: 500, fontFamily: "monospace" }}>
+              {appVersion ? `v${appVersion} [${appChannel}]` : "v0.4.3"}
             </Typography>
-          </Box>
-        ) : (
-          <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary, fontWeight: 500 }}>
-            {appVersion ? `v${appVersion} [${appChannel}]` : "version"}
-          </Typography>
-        )}
-        <Typography sx={{ fontSize: 10, color: theme.palette.text.disabled, fontStyle: "italic" }}>
+          )}
+        </Box>
+
+        <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, fontWeight: 500, letterSpacing: 0.2 }}>
           &copy; 2026 ActOne
         </Typography>
-        <Box
-          className="clickable"
-          onClick={handleHelp}
-          aria-label="Help"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            width: 24,
-            height: 24,
-            borderRadius: 0,
-            "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
-          }}
-        >
-          <HelpOutlinedIcon sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
+
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", minWidth: 120 }}>
+          <Tooltip title="Help & Documentation">
+            <IconButton
+              onClick={handleHelp}
+              aria-label="Help"
+              size="small"
+              sx={{
+                p: 0.5,
+                color: theme.palette.text.secondary,
+                "&:hover": { color: theme.palette.text.primary, bgcolor: alpha(theme.palette.primary.main, 0.08) },
+              }}
+            >
+              <HelpOutlinedIcon sx={{ fontSize: 15 }} />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
 

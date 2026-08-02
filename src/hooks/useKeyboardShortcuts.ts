@@ -20,7 +20,7 @@ interface ShortcutActions {
   closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
-  togglePrompt?: () => void;
+  openMusePane?: () => void;
   openHelp?: () => void;
   toggleSnapshotsPanel?: () => void;
   isDisabled?: boolean;
@@ -50,7 +50,7 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
 
       if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "m") {
         e.preventDefault();
-        actionsRef.current.togglePrompt?.();
+        actionsRef.current.openMusePane?.();
         return;
       }
 

@@ -85,7 +85,7 @@ interface CommandPaletteProps {
   onOpenThemeManagerModal: () => void;
   onOpenXrayModal?: () => void;
   onToggleSnapshotsPanel?: () => void;
-  onTogglePrompt?: () => void;
+  onOpenMuseSettings?: () => void;
   openTutorialsWindow?: () => void;
 }
 
@@ -103,7 +103,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   onOpenThemeManagerModal,
   onOpenXrayModal,
   onToggleSnapshotsPanel,
-  onTogglePrompt,
+  onOpenMuseSettings,
   openTutorialsWindow,
 }) => {
   const theme = useTheme();
@@ -263,7 +263,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-tab-snapshots", name: "Switch Sidebar Tab: Snapshots", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("snapshots"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-sprint", name: "Switch Sidebar Tab: Sprint", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("sprint"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
     { id: "view-tab-parking", name: "Switch Sidebar Tab: Parking", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("parking"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-muse", name: "Switch Sidebar Tab: Muse", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("muse"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
+    { id: "muse-open-pane", name: "Open Muse Pane", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+M", action: () => { setActiveRightPane("prompt"); onClose(); } },
+    { id: "muse-open-settings", name: "Open Muse Settings", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenMuseSettings?.(); onClose(); } },
     { id: "audio-ambient-open", name: "Ambient Sounds: Open Control Panel...", category: "Audio", icon: <MusicNoteIcon sx={{ fontSize: 16 }} />, action: () => { setActiveRightPane("ambient"); onClose(); } },
     { id: "audio-ambient-stop", name: "Ambient Sounds: Stop Playback", category: "Audio", icon: <MusicNoteIcon sx={{ fontSize: 16 }} />, action: () => { stopAmbientTrack(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
@@ -277,9 +278,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-hide-tags", name: hideTagsEnabled ? "Show Tags" : "Hide the Tags", category: "View", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { setHideTagsEnabled(!hideTagsEnabled); onClose(); } },
     { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },
-    { id: "view-prompt", name: "Toggle Muse", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+M", action: () => { onTogglePrompt?.(); onClose(); } },
-    { id: "view-prompt-open", name: "Open Muse", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, action: () => { setActiveRightPane("prompt"); onClose(); } },
-    { id: "view-prompt-pane", name: "Open Muse Pane", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, action: () => { setActiveRightPane("prompt"); onClose(); } },
     // Format
     { id: "format-tag-manager", name: "Open Tag Manager...", category: "Format", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBreakdownModal(); onClose(); } },
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },

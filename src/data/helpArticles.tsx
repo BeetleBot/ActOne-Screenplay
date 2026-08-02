@@ -1059,13 +1059,13 @@ ActOne features a strict **flat geometric aesthetic**:
     content: `**Muse** is ActOne's AI screenwriting assistant — kind, intelligent, and concise. It helps you write scenes, research terms, look up definitions, and brainstorm ideas without leaving your editor.
 
 **How to open Muse:**
-- Press \`Alt+M\` (or \`Ctrl+K\` → "Toggle Muse").
-- Click the robot icon on the right side of the Status Bar.
+- Press \`Alt+M\` (or \`Ctrl+K\` → "Open Muse Pane").
+- Click the Muse square at the far right of the Status Bar.
 - The Muse panel opens on the right side of the window.
 
-**Status Bar icon colors:**
-- **Green**: AI provider is configured and ready.
-- **Red**: No AI provider configured — click the icon to open Settings.
+**Status Bar indicator:**
+- **Green**: AI provider is configured and ready — click to open the Muse pane.
+- **Red**: No AI provider configured — click to open Muse Settings.
 
 **Key features:**
 - **Chat**: Ask questions about screenwriting, get feedback on your script, or brainstorm ideas.

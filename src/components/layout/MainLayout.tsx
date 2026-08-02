@@ -24,16 +24,18 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   return (
     <Box sx={{ display: 'flex', height: '100%', width: '100%', flex: 1, overflow: 'hidden' }}>
-      <ActivityBar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
-        onOpenSettingsModal={onOpenSettingsModal}
-        onOpenBreakdownModal={onOpenBreakdownModal}
-        onOpenThemeManagerModal={onOpenThemeManagerModal}
-        onOpenPalette={onOpenPalette}
-      />
+      <ErrorBoundary name="activity">
+        <ActivityBar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          onOpenSettingsModal={onOpenSettingsModal}
+          onOpenBreakdownModal={onOpenBreakdownModal}
+          onOpenThemeManagerModal={onOpenThemeManagerModal}
+          onOpenPalette={onOpenPalette}
+        />
+      </ErrorBoundary>
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
         <ErrorBoundary name="header"><HeaderBar /></ErrorBoundary>
         <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>

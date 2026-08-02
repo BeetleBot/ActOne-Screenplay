@@ -131,13 +131,18 @@ export const RobotIcon: React.FC<IconProps> = (props) => {
   );
 };
 
-/* ── Brain icon for Muse ── */
-const MUSE_PATH = "M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m0 13c-2.287 0-4.35.961-5.808 2.5A7.98 7.98 0 0 0 12 20a7.98 7.98 0 0 0 5.807-2.5A7.98 7.98 0 0 0 12 15m.47-9.68a.506.506 0 0 0-.94 0l-.254.61a4.37 4.37 0 0 1-2.25 2.327l-.718.32a.53.53 0 0 0 0 .962l.76.338a4.37 4.37 0 0 1 2.22 2.25l.245.566c.18.414.753.414.934 0l.247-.565a4.36 4.36 0 0 1 2.219-2.251l.76-.338a.53.53 0 0 0 0-.963l-.718-.32a4.37 4.37 0 0 1-2.251-2.325z";
-
+/* ── Faceted Geometric Star Icon for Muse ── */
 export const MuseIcon: React.FC<IconProps> = (props) => {
   return (
-    <SvgIcon viewBox="0 0 24 24" {...props}>
-      <path d={MUSE_PATH} />
+    <SvgIcon viewBox="0 0 24 24" fill="none" {...props}>
+      <path
+        d="M12 2L14.6 9.4L22 12L14.6 14.6L12 22L9.4 14.6L2 12L9.4 9.4Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="0.8"
+        strokeLinejoin="miter"
+      />
     </SvgIcon>
   );
 };
+

@@ -63,6 +63,12 @@ Architecture, setup, and implementation details for developers working on ActOne
 | [Testing](developer-guide/09-testing.md) | Vitest setup, test patterns, Rust tests |
 | [Build & Deploy](developer-guide/10-build-deploy.md) | Build process, Linux/Windows packaging, CI/CD |
 
+### Reliability
+
+| Document | Description |
+|----------|-------------|
+| [Error Reporting](features/22-error-reporting.md) | Automatic Discord crash reports, severity-based recovery, compact crash window |
+
 ---
 
 ## API Reference

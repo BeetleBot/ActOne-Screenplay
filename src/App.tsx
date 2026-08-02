@@ -226,11 +226,7 @@ function AppInner() {
     openSettings: useCallback(() => { modalWindows.openSettingsWindow(); }, [modalWindows]),
     openHelp: useCallback(() => { modalWindows.openHelpWindow(); }, [modalWindows]),
     toggleSearch: useCallback(() => setActiveRightPane(activeRightPane === "search" ? null : "search"), [activeRightPane, setActiveRightPane]),
-    togglePrompt: useCallback(() => {
-      const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "ollama";
-      if (provider === "none") return;
-      setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");
-    }, [activeRightPane, setActiveRightPane]),
+    openMusePane: useCallback(() => setActiveRightPane("prompt"), [setActiveRightPane]),
     toggleSnapshotsPanel: useCallback(() => {
       if (isSidebarOpen && activeTab === "snapshots") {
         setIsSidebarOpen(false);
@@ -793,7 +789,6 @@ function AppInner() {
             setIsSidebarOpen(true);
           }
         }}
-        togglePrompt={() => setActiveRightPane(activeRightPane === "prompt" ? null : "prompt")}
         openSettingsWindow={isModalWindow ? undefined : modalWindows.openSettingsWindow}
         openHelpWindow={isModalWindow ? undefined : modalWindows.openHelpWindow}
         openTagManagerWindow={isModalWindow ? undefined : modalWindows.openTagManagerWindow}
@@ -843,7 +838,7 @@ function AppInner() {
 
 function App() {
   return (
-    <ErrorBoundary>
+    <ErrorBoundary fullScreen name="app-root">
       <AppProviders>
         <ThemeProvider>
           <SprintProvider>

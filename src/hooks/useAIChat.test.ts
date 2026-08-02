@@ -15,6 +15,7 @@ vi.mock("./usePromptConfig", () => ({
 vi.mock("../context", () => ({
   useUI: () => ({
     setAiStatus: vi.fn(),
+    registerTranslationAbort: vi.fn(),
   }),
 }));
 

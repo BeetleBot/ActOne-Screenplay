@@ -2,6 +2,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use std::sync::OnceLock;
+use std::io::Write;
 use serde::{Deserialize, Serialize};
 use tauri::Emitter;
 use tauri::Manager;
@@ -65,6 +67,18 @@ fn set_theme_state(
 }
 
 static CLI_ARGS_READ: AtomicBool = AtomicBool::new(false);
+static PANIC_LOG_PATH: OnceLock<PathBuf> = OnceLock::new();
+
+fn install_panic_hook(path: PathBuf) {
+    let _ = PANIC_LOG_PATH.set(path);
+    std::panic::set_hook(Box::new(|panic| {
+        let path = PANIC_LOG_PATH.get().cloned().unwrap_or_else(|| PathBuf::from("actone-panics.log"));
+        if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+        if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(path) {
+            let _ = writeln!(file, "{panic}\n");
+        }
+    }));
+}
 
 pub mod pdf;
 mod structures;
@@ -686,6 +700,9 @@ pub fn run() {
             prevent.build()
         })
         .setup(move |app| {
+            let panic_path = app.path().app_data_dir().unwrap_or_else(|_| PathBuf::from("."))
+                .join("actone-panics.log");
+            install_panic_hook(panic_path);
             #[cfg(all(target_os = "windows", not(debug_assertions)))]
             {
                 use windows::Services::Store::StoreContext;
@@ -772,9 +789,14 @@ pub fn run() {
             get_cli_args,
             generate_fdx_string,
             generate_fadein_bytes,
-            import_fountain_dialog,
-            check_microsoft_store_license,
-            get_target_os,
+             import_fountain_dialog,
+             check_microsoft_store_license,
+             get_system_info,
+             send_error_report,
+             flush_pending_panics,
+             reload_window,
+             restart_app,
+             get_target_os,
             check_for_store_update,
             install_store_update,
             select_watermark_image,
@@ -819,4 +841,67 @@ pub fn run() {
                 }
             }
         });
+}
+
+#[derive(Serialize)]
+pub struct SystemInfo {
+    os: String,
+    os_version: String,
+    architecture: String,
+    cpu_model: String,
+    cpu_count: usize,
+    total_memory_mb: u64,
+    available_memory_mb: u64,
+}
+
+#[tauri::command]
+fn get_system_info() -> SystemInfo {
+    let mut system = sysinfo::System::new_all();
+    system.refresh_all();
+    SystemInfo {
+        os: std::env::consts::OS.to_string(),
+        os_version: sysinfo::System::long_os_version().unwrap_or_else(|| "unknown".to_string()),
+        architecture: std::env::consts::ARCH.to_string(),
+        cpu_model: system.cpus().first().map(|cpu| cpu.brand().to_string()).unwrap_or_else(|| "unknown".to_string()),
+        cpu_count: system.cpus().len(),
+        total_memory_mb: system.total_memory() / 1024 / 1024,
+        available_memory_mb: system.available_memory() / 1024 / 1024,
+    }
+}
+
+#[tauri::command]
+async fn send_error_report(webhook_url: String, payload: String) -> Result<(), String> {
+    reqwest::Client::new()
+        .post(webhook_url)
+        .header("Content-Type", "application/json")
+        .body(payload)
+        .send()
+        .await
+        .map_err(|error| error.to_string())?
+        .error_for_status()
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn flush_pending_panics() -> Result<String, String> {
+    let path = PANIC_LOG_PATH.get().cloned().unwrap_or_else(|| PathBuf::from("actone-panics.log"));
+    if !path.exists() { return Ok(String::new()); }
+    let content = fs::read_to_string(&path).map_err(|error| error.to_string())?;
+    let _ = fs::remove_file(path);
+    Ok(content)
+}
+
+#[tauri::command]
+fn reload_window(app: tauri::AppHandle, label: String) -> Result<(), String> {
+    let target = if label.is_empty() { "main".to_string() } else { label };
+    let webview = app
+        .get_webview_window(&target)
+        .ok_or_else(|| format!("window '{target}' not found"))?;
+    webview.eval("window.location.reload()").map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn restart_app(app: tauri::AppHandle) {
+    app.restart();
 }

@@ -131,17 +131,13 @@ Renders Fountain-formatted text within assistant messages:
 - Copy button to copy the Fountain text
 - Insert button to place the text at cursor position in the editor
 
-### RobotIcon (StatusBar)
+### Muse status indicator (StatusBar)
 
-The RobotIcon in `src/components/Icons.tsx` provides three SVG variants selected by `iconStyle` setting:
-- **thin**: Light outline style
-- **fill**: Solid fill style (default)
-- **duotone**: Two-tone style
+The Muse indicator is a solid square at the far right of the status bar (`src/components/layout/StatusBar.tsx`) that spans the full height of the bar and touches its top, bottom, and right edges:
+- **Green** when a provider is configured — click to toggle the Muse right pane
+- **Red** when provider is "none" — click to open Muse settings (`openSettingsWindow("muse")`)
 
-Placed on the right side of the Status Bar, borderless:
-- **Green** when a provider is configured and ready
-- **Red** when provider is "none" (click to open Muse settings)
-- **Click behavior**: Disabled → `openSettingsWindow("muse")`, Enabled → toggle right pane
+No pulse animation; a subtle press (scale) animation plays on click. The Muse icon was removed from the header bar; Muse is opened from the status indicator, the Command Palette ("Open Muse Pane" / "Open Muse Settings"), or the `Alt+M` shortcut (opens the Muse pane).
 
 ---
 
@@ -254,8 +250,8 @@ All general chat prompts include Fountain formatting rules (scene headings, acti
 | `src/constants.ts` | `ApiEntry` interface, `STORAGE_KEYS` for AI |
 | `src/constants/defaults.ts` | Default config values |
 | `src/components/Icons.tsx` | RobotIcon component |
-| `src/components/layout/StatusBar.tsx` | Muse icon in status bar |
+| `src/components/layout/StatusBar.tsx` | Muse status indicator (green/red square at far right) |
 | `src/components/SettingsWindow.tsx` | Multi-API management UI |
-| `src/components/CommandPalette.tsx` | "Toggle Muse" / "Open Muse" commands |
+| `src/components/CommandPalette.tsx` | "Open Muse Pane" / "Open Muse Settings" commands |
 | `src/utils/actone.ts` | Bundle pack/unpack (muse.json) |
 | `walkthrough.md` | End-user feature walkthrough (deprecated — see docs/) |

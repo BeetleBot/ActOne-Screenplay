@@ -6,17 +6,34 @@ import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
 import { useEditor, useCursor } from "../../context";
-import { DownloadIcon } from "../Icons";
+import { DownloadIcon, MuseIcon } from "../Icons";
 import { useStoreUpdateCheck } from "../../hooks";
+import { usePromptConfig } from "../../hooks/usePromptConfig";
+import { useModalWindows } from "../../hooks/useModalWindows";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
-  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, cancelTranslation } = useUI();
+  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, cancelTranslation, activeRightPane, setActiveRightPane } = useUI();
   const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
+  const { provider } = usePromptConfig();
+  const { openSettingsWindow } = useModalWindows();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [tick, setTick] = useState(0);
+
+  const museConfigured = provider !== "none";
+
+  const handleMuseIndicatorClick = () => {
+    // Yield execution so click/release animation paints immediately before pane toggle
+    setTimeout(() => {
+      if (museConfigured) {
+        setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");
+      } else {
+        openSettingsWindow("muse");
+      }
+    }, 0);
+  };
 
   const currentSprint = activeSprints[activeFileId];
 
@@ -111,7 +128,8 @@ export const StatusBar = React.memo(() => {
         display: "flex", 
         alignItems: "center", 
         justifyContent: "space-between", 
-        px: 2, 
+        pl: 2, 
+        pr: 0, 
         userSelect: "none", 
         flexShrink: isZenMode ? 1 : 0,
         pointerEvents: isZenMode ? 'none' : 'auto',
@@ -347,109 +365,166 @@ export const StatusBar = React.memo(() => {
         )}
       </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 3 }, flexShrink: 0 }}>
-          {activeAmbientTrack && (
-            <Typography
-              id="status-ambient"
-              variant="caption"
-              onClick={stopAmbientTrack}
-              sx={{
-                fontSize: 10,
-                color: "primary.main",
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-                cursor: "pointer",
-                bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-                border: "1px solid",
-                borderColor: (t) => alpha(t.palette.primary.main, 0.15),
-                px: 1.2,
-                py: 0.25,
-                borderRadius: 0,
-                transition: "all var(--duration-normal) ease",
-                "&:hover": {
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
-                },
-              }}
-              title={`Click to stop: ${activeAmbientTrack}`}
-            >
-              <span className="ambient-pulse" style={{ display: "inline-block", width: 4, height: 4, borderRadius: "50%", backgroundColor: "currentColor" }} />
-              ♪ {activeAmbientTrack}
-            </Typography>
-          )}
+        <Box sx={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, flexShrink: 0, mr: 2 }}>
+            {activeAmbientTrack && (
+              <Typography
+                id="status-ambient"
+                variant="caption"
+                onClick={stopAmbientTrack}
+                sx={{
+                  fontSize: 10,
+                  color: "primary.main",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  cursor: "pointer",
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                  border: "1px solid",
+                  borderColor: (t) => alpha(t.palette.primary.main, 0.15),
+                  px: 1.2,
+                  py: 0.25,
+                  borderRadius: 0,
+                  transition: "all var(--duration-normal) ease",
+                  "&:hover": {
+                    bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+                  },
+                }}
+                title={`Click to stop: ${activeAmbientTrack}`}
+              >
+                <span className="ambient-pulse" style={{ display: "inline-block", width: 4, height: 4, borderRadius: "50%", backgroundColor: "currentColor" }} />
+                ♪ {activeAmbientTrack}
+              </Typography>
+            )}
 
-          {sprintDetails && (
-          <Typography
-            id="status-sprint"
-            variant="caption" 
-            sx={{ 
-              fontSize: 11, 
-              color: "primary.main", 
-              fontWeight: 500, 
-              display: "flex", 
+            {sprintDetails && (
+              <Typography
+                id="status-sprint"
+                variant="caption" 
+                sx={{ 
+                  fontSize: 11, 
+                  color: "primary.main", 
+                  fontWeight: 500, 
+                  display: "flex", 
+                  alignItems: "center",
+                  mr: 1,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0
+                }}
+              >
+                <span style={{ 
+                  display: "inline-block", 
+                  width: 6, 
+                  height: 6, 
+                  borderRadius: "50%", 
+                  backgroundColor: "var(--accent-color)", 
+                  marginRight: 6,
+                  flexShrink: 0
+                }}></span>
+                Sprint: <strong style={{ color: "var(--text-main)", marginLeft: 3 }}>{sprintDetails.timeStr} / {sprintDetails.total}m</strong>&nbsp;({sprintDetails.wpm} WPM)
+              </Typography>
+            )}
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
+              {updateAvailable && (
+                <Box
+                  onClick={() => installUpdate()}
+                  title="Click to install update from Microsoft Store"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    mr: 1,
+                    pr: 1.5,
+                    pl: 0.5,
+                    cursor: 'pointer',
+                    color: 'primary.main',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    borderRight: 1,
+                    borderColor: 'divider',
+                    flexShrink: 0,
+                    transition: 'opacity 0.2s ease',
+                    '&:hover': { opacity: 0.7 }
+                  }}
+                >
+                  <DownloadIcon sx={{ fontSize: 14 }} />
+                  Update
+                </Box>
+              )}
+              {selectionStats && (
+                <Typography id="status-selection" variant="caption" sx={{ fontSize: 11, color: "primary.main", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  Selection: <strong style={{ color: "var(--text-main)" }}>{selectionStats.words.toLocaleString()} words ({selectionStats.chars.toLocaleString()} chars)</strong>
+                </Typography>
+              )}
+              <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
+                Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
+              </Typography>
+              <Typography id="status-words" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
+                Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
+              </Typography>
+              <Typography id="status-page" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap" }}>
+                Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
+              </Typography>
+            </Box>
+          </Box>
+          <Box
+            id="status-muse"
+            component="button"
+            role="button"
+            onClick={handleMuseIndicatorClick}
+            title={museConfigured ? "Muse is configured — click to open the Muse pane" : "Muse is not configured — click to open Muse settings"}
+            aria-label={museConfigured ? "Open Muse pane" : "Open Muse settings"}
+            sx={{
+              width: 28,
+              alignSelf: "stretch",
+              ml: 0,
+              flexShrink: 0,
+              display: "flex",
               alignItems: "center",
-              mr: 1,
-              whiteSpace: "nowrap",
-              flexShrink: 0
+              justifyContent: "center",
+              bgcolor: museConfigured ? "success.main" : "error.main",
+              background: museConfigured
+                ? "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)"
+                : "linear-gradient(135deg, #ef5350 0%, #c62828 100%)",
+              borderRadius: 0,
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              position: "relative",
+              overflow: "hidden",
+              transition: "box-shadow 0.15s ease",
+              "@keyframes museGlow": {
+                "0%, 100%": { boxShadow: "inset 0 0 3px rgba(255,255,255,0.15)" },
+                "50%": { boxShadow: "inset 0 0 8px rgba(255,255,255,0.3)" },
+              },
+              "@keyframes museGreenFade": {
+                "0%, 100%": { opacity: 0.75 },
+                "50%": { opacity: 1 },
+              },
+              "@keyframes activityIconBounce": {
+                "0%": { transform: "scale(1)" },
+                "40%": { transform: "scale(0.78)" },
+                "70%": { transform: "scale(1.12)" },
+                "100%": { transform: "scale(1)" },
+              },
+              animation: museConfigured ? "museGlow 3s ease-in-out infinite" : "none",
+              "&:active .muse-icon": {
+                animation: "activityIconBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              },
             }}
           >
-            <span style={{ 
-              display: "inline-block", 
-              width: 6, 
-              height: 6, 
-              borderRadius: "50%", 
-              backgroundColor: "var(--accent-color)", 
-              marginRight: 6,
-              flexShrink: 0
-            }}></span>
-            Sprint: <strong style={{ color: "var(--text-main)", marginLeft: 3 }}>{sprintDetails.timeStr} / {sprintDetails.total}m</strong>&nbsp;({sprintDetails.wpm} WPM)
-          </Typography>
-        )}
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
-          {updateAvailable && (
-            <Box
-              onClick={() => installUpdate()}
-              title="Click to install update from Microsoft Store"
+            <MuseIcon
+              className="muse-icon"
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                mr: 1,
-                pr: 1.5,
-                pl: 0.5,
-                cursor: 'pointer',
-                color: 'primary.main',
-                fontSize: 11,
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-                borderRight: 1,
-                borderColor: 'divider',
-                flexShrink: 0,
-                transition: 'opacity 0.2s ease',
-                '&:hover': { opacity: 0.7 }
+                fontSize: 15,
+                color: museConfigured ? "#c8e6c9" : "#ffcdd2",
+                animation: museConfigured ? "museGreenFade 2.8s ease-in-out infinite" : "none",
               }}
-            >
-              <DownloadIcon sx={{ fontSize: 14 }} />
-              Update
-            </Box>
-          )}
-          {selectionStats && (
-            <Typography id="status-selection" variant="caption" sx={{ fontSize: 11, color: "primary.main", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Selection: <strong style={{ color: "var(--text-main)" }}>{selectionStats.words.toLocaleString()} words ({selectionStats.chars.toLocaleString()} chars)</strong>
-            </Typography>
-          )}
-          <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
-            Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
-          </Typography>
-          <Typography id="status-words" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
-            Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
-          </Typography>
-          <Typography id="status-page" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap" }}>
-            Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
-          </Typography>
-        </Box>
+            />
+          </Box>
         </Box>
       </Box>
   );

@@ -1,6 +1,7 @@
 export { MainLayout } from './layout';
 export { CommandPalette } from './CommandPalette';
 export { ErrorBoundary } from './ErrorBoundary';
+export { CrashScreen } from './CrashScreen';
 export { ExportModal } from './ExportModal';
 export { FountainEditor } from './FountainEditor';
 export { MarkerView } from './MarkerView';

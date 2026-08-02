@@ -5,6 +5,38 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ActOne</title>
+    <script>
+      (function () {
+        var queueKey = "actone-error-report-queue";
+        window.addEventListener("error", function (event) {
+          if (window.__actoneErrorModuleLoaded) return;
+          var root = document.getElementById("root");
+          if (root && root.childElementCount) return;
+          var message = event.message || "ActOne failed before the editor loaded";
+          var code = "ACT-PRE-" + Date.now().toString(36).toUpperCase();
+          var report = { code: code, timestamp: new Date().toISOString(), type: "pre-mount", severity: "window", message: message, stack: event.error && event.error.stack, appVersion: "unknown", userAgent: navigator.userAgent, occurrence: 1 };
+          try { var queue = JSON.parse(localStorage.getItem(queueKey) || "[]"); queue.push(report); localStorage.setItem(queueKey, JSON.stringify(queue.slice(-50))); } catch (_) {}
+          var screen = document.createElement("div");
+          screen.style.cssText = "position:fixed;inset:0;background:radial-gradient(1200px 600px at 50% -10%,#232733 0%,#0e1015 60%,#0a0c10 100%);display:flex;align-items:center;justify-content:center;padding:24px;z-index:2147483647;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+          screen.innerHTML =
+            "<div style='width:min(560px,100%);background:#171a21;border:1px solid #2b3140;border-radius:16px;padding:36px 32px;box-shadow:0 24px 80px rgba(0,0,0,.35)'>" +
+            "<div style='display:flex;gap:14px;align-items:flex-start'>" +
+            "<div style='flex-shrink:0;width:42px;height:42px;border-radius:13px;background:rgba(239,83,80,.14);color:#ef5350;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700'>&#9888;</div>" +
+            "<div><h1 style='margin:0;font-size:20px;font-weight:700;color:#eef1f6;letter-spacing:-.01em'>ActOne could not start</h1>" +
+            "<p style='margin:6px 0 0;font-size:13.5px;color:#98a1b3;line-height:1.55'>The editor stopped before it could load. Your saved work is safe on disk.</p></div>" +
+            "</div>" +
+            "<div style='margin-top:20px;background:#101319;border:1px solid #2b3140;border-radius:10px;padding:13px 15px;font-size:13.5px;color:#eef1f6;word-break:break-word'>" + message.replace(/</g, "&lt;") + "</div>" +
+            "<div style='margin-top:16px'><div style='font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#98a1b3'>Error code</div>" +
+            "<div style='margin-top:5px;display:inline-block;background:#101319;border:1px solid #2e3544;border-radius:7px;padding:7px 11px;font-family:Consolas,monospace;font-size:14.5px;font-weight:600;color:#ff8a80;letter-spacing:.02em'>" + code + "</div></div>" +
+            "<div style='display:flex;align-items:center;gap:10px;margin-top:26px'>" +
+            "<button style='background:#ef5350;color:#fff;border:none;border-radius:9px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18)'>Restart App</button>" +
+            "<span style='font-size:12px;color:#7d8798'>A crash report is sent automatically</span>" +
+            "</div></div>";
+          screen.querySelector("button").onclick = function () { location.reload(); };
+          document.body.appendChild(screen);
+        }, true);
+      }());
+    </script>
   </head>
 
   <body>

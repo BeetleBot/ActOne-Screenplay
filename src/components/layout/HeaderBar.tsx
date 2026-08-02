@@ -9,15 +9,12 @@ import Tooltip from "@mui/material/Tooltip";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
-import { CloseIcon, AddIcon, MuseIcon } from "../Icons";
+import { CloseIcon, AddIcon } from "../Icons";
 import { logger } from "../../utils/logger";
-import { STORAGE_KEYS } from "../../constants";
-import { useModalWindows } from "../../hooks/useModalWindows";
 
 export const HeaderBar = React.memo(() => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
-  const { isZenMode, activeRightPane, setActiveRightPane } = useUI();
-  const { openSettingsWindow } = useModalWindows();
+  const { isZenMode } = useUI();
   const [isMaximized, setIsMaximized] = useState(false);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -244,27 +241,6 @@ export const HeaderBar = React.memo(() => {
           }} 
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <IconButton
-            onClick={() => {
-              const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "none";
-              if (provider === "none") {
-                openSettingsWindow("muse");
-              } else {
-                setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");
-              }
-            }}
-            title="Muse"
-            sx={{
-              width: 48, height: 40, borderRadius: 0,
-              color: (t) => {
-                const provider = localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) ?? "none";
-                return provider === "none" ? t.palette.error.main : t.palette.success.main;
-              },
-              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
-            }}
-          >
-            <MuseIcon sx={{ fontSize: 16 }} />
-          </IconButton>
           <IconButton
             onClick={handleMinimize}
             title="Minimize"

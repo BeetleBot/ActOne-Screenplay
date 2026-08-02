@@ -23,7 +23,7 @@ describe("useKeyboardShortcuts", () => {
       closeFile: vi.fn(),
       openSettings: vi.fn(),
       toggleSearch: vi.fn(),
-      togglePrompt: vi.fn(),
+      openMusePane: vi.fn(),
     };
   }
 
@@ -160,25 +160,25 @@ describe("useKeyboardShortcuts", () => {
     expect(actions.toggleZenMode).toHaveBeenCalled();
   });
 
-  it("calls togglePrompt on Alt+M", () => {
+  it("calls openMusePane on Alt+M", () => {
     const actions = createActions();
     renderHook(() => useKeyboardShortcuts(actions));
     fireKey("m", { alt: true });
-    expect(actions.togglePrompt).toHaveBeenCalled();
+    expect(actions.openMusePane).toHaveBeenCalled();
   });
 
-  it("does NOT call togglePrompt on Alt+P", () => {
+  it("does NOT call openMusePane on Alt+P", () => {
     const actions = createActions();
     renderHook(() => useKeyboardShortcuts(actions));
     fireKey("p", { alt: true });
-    expect(actions.togglePrompt).not.toHaveBeenCalled();
+    expect(actions.openMusePane).not.toHaveBeenCalled();
   });
 
-  it("does NOT call togglePrompt on Ctrl+P (should call exportPDF)", () => {
+  it("does NOT call openMusePane on Ctrl+P (should call exportPDF)", () => {
     const actions = createActions();
     renderHook(() => useKeyboardShortcuts(actions));
     fireKey("p", { ctrl: true });
-    expect(actions.togglePrompt).not.toHaveBeenCalled();
+    expect(actions.openMusePane).not.toHaveBeenCalled();
     expect(actions.exportPDF).toHaveBeenCalled();
   });
 
