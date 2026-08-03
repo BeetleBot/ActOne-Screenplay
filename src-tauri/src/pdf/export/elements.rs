@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use cosmic_text::{Attrs, Buffer, Family, FontSystem, Metrics, Shaping, Weight};
 use krilla::{
-    geom::{PathBuilder, Point, Rect},
+    geom::{PathBuilder, Point, Rect, Transform},
     surface::Surface,
 };
 
@@ -92,6 +92,7 @@ pub struct ShapedRun {
     pub text: String,
     pub x_offset: f32,
     pub paragraph_family: String,
+    pub is_italic: bool,
 }
 
 pub struct ShapedLine {
@@ -110,6 +111,7 @@ fn adjust_and_rebuild_run(
     mut glyphs: Vec<KrillaGlyphWrapper>,
     x_offset: f32,
     paragraph_family: &str,
+    is_italic: bool,
 ) -> ShapedRun {
     if glyphs.is_empty() {
         return ShapedRun {
@@ -118,6 +120,7 @@ fn adjust_and_rebuild_run(
             text: String::new(),
             x_offset,
             paragraph_family: paragraph_family.to_string(),
+            is_italic,
         };
     }
     let min_start = glyphs.iter().map(|g| g.start).min().unwrap();
@@ -135,6 +138,7 @@ fn adjust_and_rebuild_run(
         text,
         x_offset,
         paragraph_family: paragraph_family.to_string(),
+        is_italic,
     }
 }
 
@@ -266,13 +270,20 @@ fn shape_rich_string(
         .or_else(|| script_family_for_text(&plain).map(String::from))
         .unwrap_or_else(|| base_family.to_string());
 
+    // Build italic span map: (byte_start, byte_end) for each italic region
+    let mut italic_spans: Vec<(usize, usize)> = Vec::new();
     // Build underline span map: (byte_start, byte_end) for each underlined region
     let mut underline_spans: Vec<(usize, usize)> = Vec::new();
     let mut span_offset = 0;
     for element in &content.elements {
         let byte_len = element.text.len();
-        if byte_len > 0 && element.is_underline() {
-            underline_spans.push((span_offset, span_offset + byte_len));
+        if byte_len > 0 {
+            if element.is_italic() {
+                italic_spans.push((span_offset, span_offset + byte_len));
+            }
+            if element.is_underline() {
+                underline_spans.push((span_offset, span_offset + byte_len));
+            }
         }
         span_offset += byte_len;
     }
@@ -291,9 +302,6 @@ fn shape_rich_string(
         if element.is_bold() {
             base_attrs = base_attrs.weight(Weight::BOLD);
         }
-        if element.is_italic() {
-            base_attrs = base_attrs.style(cosmic_text::Style::Italic);
-        }
 
         let ranges = split_indices_by_script(&element.text);
         for (start, end, is_eng) in ranges {
@@ -301,8 +309,13 @@ fn shape_rich_string(
             let mut attrs = base_attrs;
             if is_eng {
                 attrs = attrs.family(Family::Name(base_family));
+                if element.is_italic() {
+                    attrs = attrs.style(cosmic_text::Style::Italic);
+                }
             } else {
                 attrs = attrs.family(Family::Name(&family_name));
+                // Explicitly keep Normal style for Indic fonts so cosmic-text doesn't fall back to Courier Prime Italic
+                attrs = attrs.style(cosmic_text::Style::Normal);
             }
             spans.push((substring, attrs));
         }
@@ -317,22 +330,10 @@ fn shape_rich_string(
         let mut current_font_id = None;
         let mut current_glyphs = Vec::new();
         let mut current_start_x = 0.0;
+        let mut current_is_italic = false;
         let mut underline_x_ranges: Vec<(f32, f32)> = Vec::new();
 
         for glyph in run.glyphs.iter() {
-            if current_font_id.is_none() {
-                current_font_id = Some(glyph.font_id);
-                current_start_x = glyph.x;
-            } else if Some(glyph.font_id) != current_font_id {
-                let font_id = current_font_id.unwrap();
-                let run_obj = adjust_and_rebuild_run(&plain, font_id, current_glyphs, current_start_x, &family_name);
-                runs_in_line.push(run_obj);
-
-                current_font_id = Some(glyph.font_id);
-                current_glyphs = Vec::new();
-                current_start_x = glyph.x;
-            }
-
             let mut start = glyph.start;
             let mut end = glyph.end;
             while start > 0 && !plain.is_char_boundary(start) {
@@ -340,6 +341,25 @@ fn shape_rich_string(
             }
             while end < plain.len() && !plain.is_char_boundary(end) {
                 end += 1;
+            }
+
+            let glyph_is_italic = italic_spans.iter().any(|(it_start, it_end)| {
+                start < *it_end && end > *it_start
+            });
+
+            if current_font_id.is_none() {
+                current_font_id = Some(glyph.font_id);
+                current_start_x = glyph.x;
+                current_is_italic = glyph_is_italic;
+            } else if Some(glyph.font_id) != current_font_id || glyph_is_italic != current_is_italic {
+                let font_id = current_font_id.unwrap();
+                let run_obj = adjust_and_rebuild_run(&plain, font_id, current_glyphs, current_start_x, &family_name, current_is_italic);
+                runs_in_line.push(run_obj);
+
+                current_font_id = Some(glyph.font_id);
+                current_glyphs = Vec::new();
+                current_start_x = glyph.x;
+                current_is_italic = glyph_is_italic;
             }
 
             // Check if this glyph falls within any underline span
@@ -361,7 +381,7 @@ fn shape_rich_string(
         }
 
         if let Some(font_id) = current_font_id {
-            let run_obj = adjust_and_rebuild_run(&plain, font_id, current_glyphs, current_start_x, &family_name);
+            let run_obj = adjust_and_rebuild_run(&plain, font_id, current_glyphs, current_start_x, &family_name, current_is_italic);
             runs_in_line.push(run_obj);
         }
 
@@ -397,6 +417,7 @@ fn shape_rich_string(
                 text: plain,
                 x_offset: 0.0,
                 paragraph_family: family_name.clone(),
+                is_italic: false,
             }],
             width: 0.0,
             underline_ranges: vec![],
@@ -596,6 +617,22 @@ fn draw_shaped_line(
                 &run.paragraph_family,
             );
             let run_start_x = x + run.x_offset;
+            let need_synthetic_italic = run.is_italic && run.text.chars().any(|c| !c.is_ascii());
+
+            if need_synthetic_italic {
+                // Apply a horizontal skew matrix relative to (run_start_x, y) for synthetic italic / oblique text
+                let skew_x = -0.22_f32; // ~12.4 degrees rightward slant
+                let shear_transform = Transform::from_row(
+                    1.0,
+                    0.0,
+                    skew_x,
+                    1.0,
+                    -skew_x * y,
+                    0.0,
+                );
+                ctx.surface.push_transform(&shear_transform);
+            }
+
             ctx.surface.draw_glyphs(
                 Point::from_xy(run_start_x, y),
                 &run.glyphs,
@@ -604,6 +641,10 @@ fn draw_shaped_line(
                 font_size,
                 false, // outlined
             );
+
+            if need_synthetic_italic {
+                ctx.surface.pop();
+            }
         }
     }
 

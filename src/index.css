@@ -15,7 +15,8 @@ body.low-power-mode *::after {
 :root {
   color-scheme: light;
   --font-ui: "Noto Sans", sans-serif;
-  --font-editor: "Courier Prime", Courier, monospace;
+  --font-editor-indic: "Mukta Malar", "Mukta", "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Malayalam", "Noto Sans Kannada", "Noto Sans Bengali", "Noto Sans Gujarati", "Noto Sans Devanagari", "Noto Sans Oriya", "Noto Sans Gurmukhi", "Mukta Vaani", "Mukta Mahee", "Hind Guntur", "Hind Siliguri", "Hind Vadodara", "Baloo Tamma 2", "Baloo Chettan 2", "Baloo Paaji 2", "Baloo Bhaina 2", "Noto Sans", sans-serif;
+  --font-editor: "Courier Prime", var(--font-editor-indic), Courier, monospace;
 
   --page-width: 816px;
   --margin-left: 144px;
@@ -493,12 +494,12 @@ body {
 /* Custom PageBreak Widget & Font wrappers */
 .editor-font-wrapper.courier-prime .cm-content,
 .editor-font-wrapper.courier-prime .cm-scroller {
-  font-family: "Courier Prime", Courier, monospace !important;
+  font-family: "Courier Prime", var(--font-editor-indic), Courier, monospace !important;
 }
 
 .editor-font-wrapper.courier-prime-sans .cm-content,
 .editor-font-wrapper.courier-prime-sans .cm-scroller {
-  font-family: "Courier Prime Sans", sans-serif !important;
+  font-family: "Courier Prime Sans", var(--font-editor-indic), sans-serif !important;
 }
 
 .cm-fountain-pagebreak-widget {

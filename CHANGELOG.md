@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.4] - 2026-08-03
+
+### Added
+- 🚨 **Severity-based Crash Recovery** – Crashes are classified by severity (`pane` / `window` / `app`) and recovered based on where the failure happened, not the error type: contained pane failures show an inline Retry bar and keep the app running, window-level failures open a compact crash window with a Reload action, and app-level failures offer a full Restart.
+- 🪟 **Compact Crash Window** – New standalone 540×480 crash window showing the error code, diagnostics, and severity-matched recovery actions (`Reload Window` / `Restart App`) with Dismiss and Copy options.
+- 🎛️ **Recovery Commands** – Added `reload_window(label)` (reloads only the affected webview so other windows survive) and `restart_app` Tauri commands.
+- 🟩 **Muse Status Indicator** – The Muse entry moved from the header bar to a full-height square at the far right of the status bar: green when an AI provider is configured (click toggles the Muse pane), red when none is set (click opens Muse Settings).
+- 🎯 **Consolidated Muse Commands** – The Command Palette now offers exactly two Muse entries — "Open Muse Pane" (`Alt+M`) and "Open Muse Settings" — replacing the four overlapping options (Toggle Muse, Open Muse, Open Muse Pane, Switch Sidebar Tab: Muse).
+
+### Changed / Improved
+- **Always-Complete Diagnostics** – Crash reports merge system info at send time, so reports captured before OS/CPU/RAM resolution still ship with full system details in Discord.
+- **Cleaner Discord Embeds** – Footer simplified to "Automatic crash report"; added a Scope field reporting crash severity.
+- **Dev-Safe Reporting** – Reports are captured and surfaced in the crash UI but never queued or posted to Discord during development (`npm run dev` / `npm run tauri dev`); only production builds send.
+
+### Removed
+- **Previous-Session Crash Detection** – Removed heartbeat/clean-exit tracking, the startup "previous session crashed" notice, and the `webview-crash` report type. A crashed session already sent its report live, and Alt+F4 no longer triggers false positives.
+- **Title Bar Muse Button** – Removed in favor of the status bar indicator and Command Palette.
+
+### Fixed
+- **Muse AI Test Regression** – Fixed the `useAIChat` test that failed on the `registerTranslationAbort` mock introduced during 0.4.3's AI cancellation work.
+
 ## [0.4.3] - 2026-08-01
 
 ### Added
