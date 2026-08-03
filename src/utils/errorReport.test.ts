@@ -24,7 +24,7 @@ beforeEach(() => {
 describe("captureError", () => {
   it("assigns an error code with version, time and stack hash", () => {
     const report = captureError({ type: "render", error: new Error("boom") });
-    expect(report.code).toMatch(/^ACT-0\.4\.3-[0-9A-Z]+-[0-9A-Z]{6}$/);
+    expect(report.code).toMatch(/^ACT-0\.4\.3-[0-9A-Z]+-[0-9A-Z]{4}-[0-9A-Z]{6}$/);
   });
 
   it("captures message and stack from an Error", () => {

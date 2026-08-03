@@ -374,6 +374,9 @@ body {
 
 .cm-fountain-underline {
   text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 3px !important;
+  text-decoration-skip-ink: none !important;
 }
 
 .cm-fountain-syntax {

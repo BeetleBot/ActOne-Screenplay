@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.5] - 2026-08-03
+
+### Changed / Improved
+- 🇮🇳 **Indic Font & Typography Support** – Integrated comprehensive Indic script fonts (Mukta Malar, Mukta, Noto Sans Telugu/Tamil/Malayalam/Kannada/Bengali/Gujarati/Devanagari/Oriya/Gurmukhi) in the editor font stack and resolved fallback italic glyph rendering.
+- ✒️ **Non-English Underline Offset** – Configured `text-underline-offset: 3px` and `text-decoration-skip-ink: none` for `.cm-fountain-underline` to ensure underlines clear low glyph descenders and vowel signs in complex scripts.
+- 📄 **PDF Italic Export** – Enhanced backend Rust PDF export engine to support italic text rendering across script elements.
+
 ## [0.4.4] - 2026-08-03
 
 ### Added
