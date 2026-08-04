@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { SettingsWindow } from "./components/SettingsWindow";
 import { HelpWindow } from "./components/HelpWindow";
-import { TagManagerWindow } from "./components/TagManagerWindow";
 import { ThemeManagerWindow } from "./components/ThemeManagerWindow";
 import { XrayWindow } from "./components/XrayWindow";
 import { TutorialsWindow } from "./components/TutorialsWindow";
@@ -61,8 +60,6 @@ if (modalParam === "crash") {
   rootElement = modalWrapper(<ErrorBoundary fullScreen name="settings-window"><SettingsWindow /></ErrorBoundary>);
 } else if (modalParam === "help") {
   rootElement = modalWrapper(<ErrorBoundary fullScreen name="help-window"><HelpWindow /></ErrorBoundary>);
-} else if (modalParam === "tag-manager") {
-  rootElement = modalWrapper(<ErrorBoundary fullScreen name="tag-manager-window"><TagManagerWindow /></ErrorBoundary>);
 } else if (modalParam === "theme-manager") {
   rootElement = modalWrapper(<ErrorBoundary fullScreen name="theme-manager-window"><ThemeManagerWindow /></ErrorBoundary>);
 } else if (modalParam === "xray") {

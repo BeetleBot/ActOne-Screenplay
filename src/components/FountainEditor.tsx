@@ -7,12 +7,10 @@ import { useCodeMirror } from "../editor";
 import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import type { Theme } from "@mui/material/styles";
-import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, LocalOfferIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, GoogleLogoIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, DeleteIcon, ChevronRightIcon, AutoAwesomeIcon } from "./Icons";
+import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, GoogleLogoIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, ChevronRightIcon, AutoAwesomeIcon } from "./Icons";
 import { logger } from "../utils/logger";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { CATEGORIES, FOUNTAIN_SYNTAX_RULES } from "../constants";
-import { getPerScriptSettingObject } from "../utils/perScriptSettings";
-import { updateTagsEffect, tagStateField } from "../editor/tagState";
+import { FOUNTAIN_SYNTAX_RULES } from "../constants";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
 import { toggleInlineMarker as toggleInlineMarkerShared } from "../editor/formatUtils";
 
@@ -42,20 +40,6 @@ const MARKER_COLORS = [
   { key: "none", label: "Default (Orange)", color: "var(--cat-other)" }
 ];
 
-interface ProdTagItem {
-  range?: [number, number];
-  definitionId: string;
-  type?: string;
-  sceneId?: string;
-}
-
-interface ProdDef {
-  id: string;
-  name: string;
-  type: string;
-  colorOverride: string | null;
-}
-
 import { createAIProvider } from "../lib/aiProviders";
 
 export const FountainEditor = React.memo(() => {
@@ -63,7 +47,7 @@ export const FountainEditor = React.memo(() => {
   const { fontFamily, setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, registerTranslationAbort } = useUI();
   const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>(translationState);
   translationStateRef.current = translationState;
-  const { parsedDoc, scriptFileName, activeScriptIndex, activeScriptName, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
+  const { parsedDoc, activeScriptIndex, activeScriptName, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
   const { updateSettings } = useEditor();
   const parking = useParking();
   const { prompt: showPrompt } = useCustomModal();
@@ -71,8 +55,6 @@ export const FountainEditor = React.memo(() => {
   const viewRef = useCodeMirror(containerRef);
 
   const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number } | null>(null);
-  const [quickTagMode, setQuickTagMode] = useState(false);
-  const [subMenuAnchorEl, setSubMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [promptMenuAnchorEl, setPromptMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [rephraseMenuAnchorEl, setRephraseMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [formatMenuAnchorEl, setFormatMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -123,33 +105,6 @@ export const FountainEditor = React.memo(() => {
     return null;
   }, [parsedDoc?.lines, view, selection]);
 
-  const existingTag = useMemo(() => {
-    if (!view) return null;
-    // When context menu is open, use the snapshot cursor (captured before CodeMirror collapsed selection).
-    // When menu is closed, fall back to the live cursor for any passive checks.
-    const cursor = contextMenu
-      ? (menuSelectionRef.current?.from ?? selection?.from)
-      : selection?.from;
-    if (cursor == null) return null;
-
-    const prodTags = getPerScriptSettingObject<{ tags: ProdTagItem[]; definitions: ProdDef[] }>("productionTags", parsedDoc.settings, scriptFileName, { tags: [], definitions: [] });
-    if (!prodTags || !prodTags.tags) return null;
-
-    const tag = prodTags.tags.find((t) => {
-      if (!t.range) return false;
-      const [start, len] = t.range;
-      return cursor >= start && cursor <= start + len;
-    });
-
-    if (tag) {
-      const def = prodTags.definitions?.find((d) => d.id === tag.definitionId);
-      if (!def) return null;
-      const catLabel = CATEGORIES.find(c => c.key === def.type)?.label || def.type;
-      return { tag, def, catLabel };
-    }
-    return null;
-  }, [contextMenu, parsedDoc.settings?.productionTags, view, selection, scriptFileName]);
-
   // Capture selection on right-click mousedown — this fires BEFORE CodeMirror's mousedown
   // handler, so the selection is still intact at this point.
   const handleMouseDown = (event: React.MouseEvent) => {
@@ -166,9 +121,6 @@ export const FountainEditor = React.memo(() => {
 
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
-    // menuSelectionRef was already set in handleMouseDown (before CodeMirror collapsed it).
-    // Nothing to re-read here — just open the menu.
-    setQuickTagMode(event.ctrlKey || event.metaKey);
     setContextMenu({
       mouseX: event.clientX,
       mouseY: event.clientY,
@@ -177,8 +129,6 @@ export const FountainEditor = React.memo(() => {
 
   const handleClose = () => {
     setContextMenu(null);
-    setQuickTagMode(false);
-    setSubMenuAnchorEl(null);
     setPromptMenuAnchorEl(null);
     setRephraseMenuAnchorEl(null);
     setFormatMenuAnchorEl(null);
@@ -192,71 +142,7 @@ export const FountainEditor = React.memo(() => {
     setTimeout(() => viewRef.current?.focus(), 0);
   };
 
-  const handleRemoveTag = () => {
-    if (!existingTag || !view) return;
-    const currentTags = view.state.field(tagStateField, false);
-    if (!currentTags) return;
-    
-    const tags = (currentTags.tags || []).filter((t) => t !== existingTag.tag);
-    view.dispatch({
-      effects: updateTagsEffect.of({
-        ...currentTags,
-        tags
-      })
-    });
-    handleClose();
-  };
 
-  const handleTagClick = (category: string) => {
-    const snap = menuSelectionRef.current;
-    if (!view || !snap) return;
-    const from = snap.from;
-    const to = snap.to;
-    const text = snap.text.trim();
-    if (!text) return;
-
-    const currentTags = view.state.field(tagStateField, false);
-    if (!currentTags) return;
-    
-    const tags = [...(currentTags.tags || [])];
-    const definitions = [...(currentTags.definitions || [])];
-
-    let def = definitions.find((d) => d.name.toLowerCase() === text.toLowerCase() && d.type === category);
-    if (!def) {
-      def = {
-        id: "def-" + Math.random().toString(36).substring(2, 9),
-        name: text,
-        type: category,
-        colorOverride: null
-      };
-      definitions.push(def);
-    }
-
-    const existingTagIdx = tags.findIndex((t) => t.range && t.range[0] === from && t.range[1] === (to - from));
-    if (existingTagIdx !== -1) {
-      tags[existingTagIdx] = {
-        ...tags[existingTagIdx],
-        type: category,
-        definitionId: def.id
-      };
-    } else {
-      tags.push({
-        range: [from, to - from],
-        type: category,
-        definitionId: def.id,
-        sceneId: ""
-      });
-    }
-
-    view.dispatch({
-      effects: updateTagsEffect.of({
-        tags,
-        definitions
-      })
-    });
-
-    handleClose();
-  };
 
   const toggleInlineMarker = (marker: string) => {
     if (!view) return;
@@ -1009,41 +895,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         }
         {...menuProps}
       >
-        {quickTagMode ? (
-          <>
-            {menuHasSelection && (
-              <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
-                  QUICK TAG
-                </Typography>
-              </Box>
-            )}
-            {CATEGORIES.map((cat) => (
-              <MenuItem key={cat.key} onClick={() => handleTagClick(cat.key)} disabled={!menuHasSelection}>
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    backgroundColor: cat.color,
-                    mr: 1.5,
-                    flexShrink: 0
-                  }}
-                />
-                <ListItemText primary={cat.label} />
-              </MenuItem>
-            ))}
-            {existingTag && (
-              <MenuItem onClick={handleRemoveTag}>
-                <ListItemIcon>
-                  <DeleteIcon fontSize="small" color="error" />
-                </ListItemIcon>
-                <ListItemText primary="Remove Tag" secondary={existingTag.def?.name || "unnamed"} />
-              </MenuItem>
-            )}
-          </>
-        ) : (
-          <>
         {menuHasSelection && (
           <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
@@ -1089,42 +940,9 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         <Divider />
 
         <MenuItem
-          disabled={!menuHasSelection}
-          onClick={(e) => {
-            setSubMenuAnchorEl(e.currentTarget);
-            setFormatMenuAnchorEl(null);
-            setHighlightMenuAnchorEl(null);
-            setMarkerMenuAnchorEl(null);
-            setTransformMenuAnchorEl(null);
-          }}
-          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <ListItemIcon>
-              <LocalOfferIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Tag" />
-          </Box>
-          <ChevronRightIcon fontSize="small" sx={{ opacity: 0.5 }} />
-        </MenuItem>
-
-        {existingTag && (
-          <MenuItem onClick={handleRemoveTag}>
-            <ListItemIcon>
-              <DeleteIcon fontSize="small" color="error" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Remove Tag" 
-              secondary={existingTag.def?.name || "unnamed"}
-            />
-          </MenuItem>
-        )}
-
-        <MenuItem
           disabled={!currentSceneLine}
           onClick={(e) => {
             setHighlightMenuAnchorEl(e.currentTarget);
-            setSubMenuAnchorEl(null);
             setFormatMenuAnchorEl(null);
             setMarkerMenuAnchorEl(null);
             setTransformMenuAnchorEl(null);
@@ -1143,7 +961,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         <MenuItem
           onClick={(e) => {
             setMarkerMenuAnchorEl(e.currentTarget);
-            setSubMenuAnchorEl(null);
             setFormatMenuAnchorEl(null);
             setHighlightMenuAnchorEl(null);
             setTransformMenuAnchorEl(null);
@@ -1165,7 +982,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
           disabled={!menuHasSelection}
           onClick={(e) => {
             setFormatMenuAnchorEl(e.currentTarget);
-            setSubMenuAnchorEl(null);
             setHighlightMenuAnchorEl(null);
             setMarkerMenuAnchorEl(null);
             setTransformMenuAnchorEl(null);
@@ -1185,7 +1001,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
           disabled={!menuHasSelection}
           onClick={(e) => {
             setTransformMenuAnchorEl(e.currentTarget);
-            setSubMenuAnchorEl(null);
             setFormatMenuAnchorEl(null);
             setHighlightMenuAnchorEl(null);
             setMarkerMenuAnchorEl(null);
@@ -1232,8 +1047,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
           </ListItemIcon>
           <ListItemText primary="Park Selection" />
         </MenuItem>
-        </>
-        )}
       </Menu>
 
       <Menu
@@ -1346,36 +1159,7 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         ))}
       </Menu>
 
-      <Menu
-        open={subMenuAnchorEl !== null}
-        anchorEl={subMenuAnchorEl}
-        onClose={() => setSubMenuAnchorEl(null)}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        {...menuProps}
-      >
-        {CATEGORIES.map((cat) => (
-          <MenuItem key={cat.key} onClick={() => handleTagClick(cat.key)}>
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                backgroundColor: cat.color,
-                mr: 1.5,
-                flexShrink: 0
-              }}
-            />
-            <ListItemText primary={cat.label} />
-          </MenuItem>
-        ))}
-      </Menu>
+
 
       <Menu
         open={highlightMenuAnchorEl !== null}

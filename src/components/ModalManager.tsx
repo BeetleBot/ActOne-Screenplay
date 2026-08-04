@@ -19,7 +19,6 @@ export interface ModalManagerProps {
   toggleSnapshotsPanel?: () => void;
   openSettingsWindow?: (tab?: string) => void;
   openHelpWindow?: () => void;
-  openTagManagerWindow?: () => void;
   openThemeManagerWindow?: () => void;
   openXrayWindow?: () => void;
   openTutorialsWindow?: () => void;
@@ -39,7 +38,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   toggleSnapshotsPanel,
   openSettingsWindow,
   openHelpWindow,
-  openTagManagerWindow,
   openThemeManagerWindow,
   openXrayWindow,
   openTutorialsWindow,
@@ -57,7 +55,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onOpenSettingsModal={openSettingsWindow || (() => {})}
           onOpenTitlePageModal={() => setShowTitlePageModal(true)}
           onOpenHelpModal={openHelpWindow || (() => {})}
-          onOpenBreakdownModal={openTagManagerWindow || (() => {})}
           onOpenThemeManagerModal={openThemeManagerWindow || (() => {})}
           onOpenXrayModal={openXrayWindow || (() => {})}
           openTutorialsWindow={openTutorialsWindow}

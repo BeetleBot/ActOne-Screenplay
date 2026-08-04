@@ -1,18 +1,16 @@
 import { useEffect, useRef } from "react";
 import { EditorState, Compartment, Transaction, RangeSetBuilder, StateField } from "@codemirror/state";
-import { EditorView, ViewPlugin, ViewUpdate, keymap, hoverTooltip, placeholder, Decoration, DecorationSet } from "@codemirror/view";
+import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { search, setSearchQuery, getSearchQuery } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useFile, useUI, useEditor, useCursor } from "../context";
-import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
-import { CATEGORIES, STORAGE_KEYS } from "../constants";
+import { STORAGE_KEYS } from "../constants";
 import { ghostSuggestionField, ghostSuggestionKeymap, fountainCompletionSource, cachedCharactersField, cachedLocationsField } from "./inlineAutocomplete";
 import { 
   fountainHighlightPlugin,
   updateParsedDocEffect,
   updateHideSyntaxEffect,
-  updateHideTagsEffect,
   updateScriptFileNameEffect,
   updateRightPaneOpenEffect,
   lineTypesField,
@@ -25,7 +23,6 @@ import {
   LINE_DUAL_PARENTHETICAL
 } from "./fountainSyntax";
 import { emptyLineSelectionPlugin } from "./emptyLineSelection";
-import { tagStateField, tagInvertedEffects, setTagsEffect } from "./tagState";
 import { rephraseHighlightField } from "./rephraseState";
 
 const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
@@ -355,45 +352,12 @@ const searchHighlightField = StateField.define<DecorationSet>({
 });
 
 
-interface UseCodeMirrorProdTagItem {
-  range?: [number, number];
-  definitionId: string;
-  type?: string;
-}
-interface UseCodeMirrorProdDef {
-  id: string;
-  name: string;
-  type: string;
-  colorOverride: string | null;
-}
 
-function fastTagsEqual(a: any, b: any): boolean {
-  if (a === b) return true;
-  if (!a || !b) return a === b;
-  const aTags = a.tags || [];
-  const bTags = b.tags || [];
-  if (aTags.length !== bTags.length) return false;
-  const aDefs = a.definitions || [];
-  const bDefs = b.definitions || [];
-  if (aDefs.length !== bDefs.length) return false;
-  for (let i = 0; i < aTags.length; i++) {
-    const tA = aTags[i];
-    const tB = bTags[i];
-    if (tA.definitionId !== tB.definitionId || tA.type !== tB.type) return false;
-    if (tA.range?.[0] !== tB.range?.[0] || tA.range?.[1] !== tB.range?.[1]) return false;
-  }
-  for (let i = 0; i < aDefs.length; i++) {
-    const dA = aDefs[i];
-    const dB = bDefs[i];
-    if (dA.id !== dB.id || dA.name !== dB.name || dA.type !== dB.type || dA.colorOverride !== dB.colorOverride) return false;
-  }
-  return true;
-}
 
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId, scriptFileName } = useFile();
-  const { typewriterMode, hideSyntaxEnabled, hideTagsEnabled, lineFocusEnabled, activeRightPane, isZenMode } = useUI();
+  const { typewriterMode, hideSyntaxEnabled, lineFocusEnabled, activeRightPane, isZenMode } = useUI();
   const { setEditorView } = useEditor();
   const { setActiveLineId, setActiveLineNumber, setSelectedSceneId } = useCursor();
   const lastScriptKeyRef = useRef("");
@@ -486,30 +450,10 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
   useEffect(() => {
     if (viewRef.current) {
       viewRef.current.dispatch({
-        effects: updateHideTagsEffect.of(hideTagsEnabled)
-      });
-    }
-  }, [hideTagsEnabled]);
-
-  useEffect(() => {
-    if (viewRef.current) {
-      viewRef.current.dispatch({
         effects: updateRightPaneOpenEffect.of(activeRightPane !== null)
       });
     }
   }, [activeRightPane]);
-
-  useEffect(() => {
-    if (viewRef.current) {
-      const prodTags = getPerScriptSettingObject("productionTags", parsedDoc.settings, scriptFileName, { tags: [], definitions: [] });
-      const currentTags = viewRef.current.state.field(tagStateField, false);
-      if (currentTags && !fastTagsEqual(prodTags, currentTags)) {
-        viewRef.current.dispatch({
-          effects: setTagsEffect.of(prodTags)
-        });
-      }
-    }
-  }, [parsedDoc.settings, scriptFileName]);
 
   useEffect(() => {
     if (viewRef.current) {
@@ -564,42 +508,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       }
     ]);
 
-    const prodTagsTooltip = hoverTooltip((view, pos) => {
-      const settings = parsedDocRef.current.settings;
-      const prodTags = getPerScriptSettingObject<{ tags: UseCodeMirrorProdTagItem[]; definitions: UseCodeMirrorProdDef[] }>("productionTags", settings, scriptFileNameRef.current, { tags: [], definitions: [] });
-      if (!prodTags || !prodTags.tags) return null;
-
-      for (const tag of prodTags.tags) {
-        if (tag.range) {
-          const [start, len] = tag.range;
-          if (pos >= start && pos <= start + len) {
-            const def = prodTags.definitions?.find((d) => d.id === tag.definitionId);
-            const name = def ? def.name : view.state.sliceDoc(start, start + len);
-            const type = tag.type || (def?.type as string) || "";
-            const categoryLabel = CATEGORIES.find(c => c.key === type)?.label || type;
-            
-            return {
-              pos: start,
-              end: start + len,
-              above: true,
-              create() {
-                const dom = document.createElement("div");
-                dom.className = "cm-tag-tooltip";
-                dom.textContent = `${categoryLabel}: ${name}`;
-                return { dom };
-              }
-            };
-          }
-        }
-      }
-      return null;
-    });
-
-    const initialProdTags = getPerScriptSettingObject("productionTags", parsedDocRef.current.settings, scriptFileNameRef.current, { tags: [], definitions: [] });
-
     const extensions = [
-      tagStateField.init(() => initialProdTags),
-      tagInvertedEffects,
       history(),
       ghostSuggestionField,
       ghostSuggestionKeymap(),
@@ -621,7 +530,6 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       smartQuotesExtension,
       search(),
       searchHighlightField,
-      prodTagsTooltip,
       rephraseHighlightField,
 
       typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
@@ -639,17 +547,6 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
               pendingRawTextRef.current = null;
             }
           }, 50);
-        }
-
-        const prevTags = update.startState.field(tagStateField, false);
-        const currTags = update.state.field(tagStateField, false);
-        if (currTags && prevTags && currTags !== prevTags && !update.docChanged) {
-          updateSettingsRef.current((prev) => {
-            return {
-              ...prev,
-              ...updatePerScriptSetting(prev, "productionTags", scriptFileNameRef.current, currTags)
-            };
-          });
         }
 
         if (update.selectionSet || update.docChanged) {
@@ -685,7 +582,6 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     view.dispatch({
       selection: { anchor: 0, head: 0 },
       effects: [
-        updateHideTagsEffect.of(hideTagsEnabled),
         updateHideSyntaxEffect.of(hideSyntaxEnabled),
         updateRightPaneOpenEffect.of(activeRightPane !== null),
       ]
@@ -740,13 +636,9 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         if (statesRef.current[currentScriptKey]) {
           view.setState(statesRef.current[currentScriptKey]);
         } else {
-          const initialProdTags = getPerScriptSettingObject("productionTags", parsedDocRef.current.settings, scriptFileNameRef.current, { tags: [], definitions: [] });
           const newState = EditorState.create({
             doc: rawText,
-            extensions: [
-              tagStateField.init(() => initialProdTags),
-              ...extensionsRef.current.slice(1)
-            ]
+            extensions: extensionsRef.current
           });
           view.setState(newState);
         }

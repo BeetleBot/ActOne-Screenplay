@@ -58,7 +58,6 @@ export const SettingsWindow: React.FC = () => {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTO_SAVE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED])));
   const [autoSaveInterval, setAutoSaveInterval] = useState(() => readLocalNum(STORAGE_KEYS.AUTO_SAVE_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL])));
   const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED])));
-  const [hideTagsEnabled, setHideTagsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_TAGS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_TAGS_ENABLED])));
   const [lineFocusEnabled, setLineFocusEnabled] = useState(() => readLocalBool(STORAGE_KEYS.LINE_FOCUS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED])));
   const [lowPowerMode, setLowPowerModeState] = useState(() => readLocalBool(STORAGE_KEYS.LOW_POWER_MODE, Boolean(DEFAULTS[STORAGE_KEYS.LOW_POWER_MODE])));
   const [snapshotsEnabled, setSnapshotsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOTS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED])));
@@ -238,7 +237,6 @@ export const SettingsWindow: React.FC = () => {
     setAutoSaveEnabled(Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED]));
     setAutoSaveInterval(Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
     setHideSyntaxEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
-    setHideTagsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_TAGS_ENABLED]));
     setLineFocusEnabled(Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
     setLowPowerModeState(Boolean(DEFAULTS[STORAGE_KEYS.LOW_POWER_MODE]));
     setSnapshotsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]));
@@ -263,7 +261,6 @@ export const SettingsWindow: React.FC = () => {
     emitUpdate(STORAGE_KEYS.AUTO_SAVE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED]));
     emitUpdate(STORAGE_KEYS.AUTO_SAVE_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
     emitUpdate(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
-    emitUpdate(STORAGE_KEYS.HIDE_TAGS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_TAGS_ENABLED]));
     emitUpdate(STORAGE_KEYS.LINE_FOCUS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
     emitUpdate(STORAGE_KEYS.SNAPSHOTS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]));
     emitUpdate(STORAGE_KEYS.SNAPSHOT_LOCATION, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION]));
@@ -315,7 +312,6 @@ export const SettingsWindow: React.FC = () => {
           setAutoSaveEnabled(d.autoSaveEnabled);
           setAutoSaveInterval(d.autoSaveInterval);
           setHideSyntaxEnabled(d.hideSyntaxEnabled);
-          setHideTagsEnabled(d.hideTagsEnabled);
           setLineFocusEnabled(d.lineFocusEnabled);
           setSnapshotsEnabled(d.snapshotsEnabled);
           setSnapshotLocation(d.snapshotLocation);
@@ -399,9 +395,6 @@ export const SettingsWindow: React.FC = () => {
     }
     if (prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] !== undefined && prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] !== String(hideSyntaxEnabled)) {
       setHideSyntaxEnabled(prefs[STORAGE_KEYS.HIDE_SYNTAX_ENABLED] === "true");
-    }
-    if (prefs[STORAGE_KEYS.HIDE_TAGS_ENABLED] !== undefined && prefs[STORAGE_KEYS.HIDE_TAGS_ENABLED] !== String(hideTagsEnabled)) {
-      setHideTagsEnabled(prefs[STORAGE_KEYS.HIDE_TAGS_ENABLED] === "true");
     }
     if (prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== undefined && prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== String(lineFocusEnabled)) {
       setLineFocusEnabled(prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] === "true");
@@ -680,19 +673,13 @@ export const SettingsWindow: React.FC = () => {
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5 }}>
                   <FormControlLabel
-                    control={<Switch size="small" checked={hideTagsEnabled}
-                      onChange={(e) => { const v = e.target.checked; setHideTagsEnabled(v); localStorage.setItem(STORAGE_KEYS.HIDE_TAGS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.HIDE_TAGS_ENABLED, v); }}
-                    />}
-                    label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Hide the Tags</Typography>}
-                    sx={{ mx: 0, flex: 1 }}
-                  />
-                  <FormControlLabel
                     control={<Switch size="small" checked={fountainColorsEnabled}
                       onChange={(e) => { const v = e.target.checked; setFountainColorsEnabled(v); localStorage.setItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, v); }}
                     />}
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Syntax Colors</Typography>}
                     sx={{ mx: 0, flex: 1 }}
                   />
+                  <Box sx={{ flex: 1 }} />
                 </Box>
               </Box>
             </Box>

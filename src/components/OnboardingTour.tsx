@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useEditor, useUI } from "../context";
+import { useEditor } from "../context";
 import { CrossWindowTourCard } from "./CrossWindowTourCard";
 import type { TourStep } from "../types/tour";
 
 interface OnboardingTourProps {
-  activeTour: "ui" | "fountain" | "tagging" | "advanced" | "theming" | null;
+  activeTour: "ui" | "fountain" | "advanced" | "theming" | null;
   onCloseTour: () => void;
 }
 
@@ -420,18 +420,17 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   onCloseTour,
 }) => {
   const { editorView } = useEditor();
-  const { hideTagsEnabled } = useUI();
   const [activeStep, setActiveStepState] = useState(0);
   const [taskComplete, setTaskComplete] = useState(false);
   const sandboxCreated = useRef(false);
 
   const steps = activeTour === "fountain" 
     ? FOUNTAIN_STEPS 
-    : (activeTour === "tagging" ? TAGGING_STEPS : (activeTour === "advanced" ? ADVANCED_STEPS : (activeTour === "theming" ? THEMING_STEPS : UI_STEPS)));
+    : (activeTour === "advanced" ? ADVANCED_STEPS : (activeTour === "theming" ? THEMING_STEPS : UI_STEPS));
   const currentStep = steps[activeStep];
   const tourName = activeTour === "fountain" 
     ? "Fountain Syntax" 
-    : (activeTour === "tagging" ? "Tagging Tour" : (activeTour === "advanced" ? "Advanced Syntax" : (activeTour === "theming" ? "Themes" : "App Tour")));
+    : (activeTour === "advanced" ? "Advanced Syntax" : (activeTour === "theming" ? "Themes" : "App Tour"));
 
   const setActiveStep = (step: number | ((prev: number) => number)) => {
     setActiveStepState(step);
@@ -616,7 +615,7 @@ Another day, another case.
   useEffect(() => {
     if (!currentStep?.targetId || currentStep.noAutoClick) return;
 
-    if (activeTour !== "ui" && activeTour !== "tagging" && activeTour !== "advanced") return;
+    if (activeTour !== "ui" && activeTour !== "advanced") return;
 
     const targetId = currentStep.targetId;
 
@@ -641,17 +640,6 @@ Another day, another case.
 
   // Live validator for interactive typing and state configurations
   useEffect(() => {
-    if (activeTour === "tagging") {
-      if (activeStep === 3) {
-        setTaskComplete(hideTagsEnabled === true);
-        return;
-      }
-      if (activeStep === 5) {
-        setTaskComplete(hideTagsEnabled === false);
-        return;
-      }
-    }
-
     if (activeTour === "advanced" && currentStep?.validate) {
       setTaskComplete(false);
       const interval = setInterval(() => {
@@ -683,7 +671,7 @@ Another day, another case.
     }, 200);
 
     return () => clearInterval(interval);
-  }, [activeTour, activeStep, currentStep, editorView, hideTagsEnabled]);
+  }, [activeTour, activeStep, currentStep, editorView]);
 
   // DOM detection polling (e.g., Command Palette tour)
   useEffect(() => {
@@ -744,53 +732,5 @@ Another day, another case.
   );
 };
 
-export const TAGGING_STEPS: TourStep[] = [
-  {
-    title: "Introduction to Tagging",
-    description: "Production tags help you categorize items in your screenplay (like Props, Sounds, Animals, or Costumes) for shooting. In this tour, we'll practice creating tags and managing their visibility in the editor.",
-  },
-  {
-    targetId: "editor-workspace",
-    title: "1. Create 5+ Tags",
-    description: "Highlight any word in your screenplay, hold Ctrl and right-click to open the Quick Tag menu, then pick a category.\n\nSuggested tags to create:\n- Prop: desk, phone, or mirror\n- Sound: buzzing, ring, or crash\n- Animal: Bee, butterfly, or creature\n- Set Design: Hive, Chamber, or Office\n\nTag at least 5 words to proceed.",
-    taskInstructions: "Select a word, hold Ctrl + right-click, choose a category. Repeat for at least 5 tags.",
-    detect: () => {
-      const editor = document.querySelector(".cm-editor");
-      if (!editor) return false;
-      return editor.querySelectorAll('[class*="cm-tag-"]').length >= 5;
-    },
-  },
-  {
-    targetId: "editor-workspace",
-    title: "2. Auto-Populated Cast Tags",
-    description: "You don't have to manually tag the speaking cast; they are automatically populated in the Tag Manager. Only use manual tagging for non-speaking casts if they are important for production breakdown.",
-  },
-  {
-    targetId: "command-palette-btn",
-    title: "3. Hide the Tags",
-    description: "Sometimes you want a clean reading experience without colored tag highlights. Open the Command Palette (click the logo button or press Ctrl+K), type 'Hide tags', and select the toggle command.",
-    taskInstructions: "Open Command Palette (Ctrl+K) -> Toggle 'Hide tags'.",
-  },
-  {
-    targetId: "editor-workspace",
-    title: "Verify Tags Hidden",
-    description: "Take a moment to look at the editor. Notice that all of the colored highlights for your tags and cast members have disappeared, providing a clean canvas.",
-  },
-  {
-    targetId: "command-palette-btn",
-    title: "4. Show the Tags",
-    description: "Great! The highlights are now hidden. Now open the Command Palette again (Ctrl+K), type 'Show tags', and select the command to restore the colored highlights in the editor.",
-    taskInstructions: "Open Command Palette (Ctrl+K) -> Toggle 'Show tags'.",
-  },
-  {
-    targetId: "editor-workspace",
-    title: "Verify Tags Visible",
-    description: "Observe the editor again. The tag highlights and cast indicators are back! This toggle makes it easy to switch between formatting and writing.",
-  },
-  {
-    title: "Tagging Tour Completed!",
-    description: "Excellent job! You've learned how to create production tags, verify auto-cast tags, and toggle tag visibility. When you want to see the full breakdown and export CSVs, you can open the Tag Manager from the Command Palette (Ctrl+K → 'Open Tag Manager').",
-  },
-];
 
 

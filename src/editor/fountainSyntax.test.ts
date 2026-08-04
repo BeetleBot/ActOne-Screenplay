@@ -9,7 +9,7 @@ import {
   LINE_DUAL_DIALOGUE, LINE_TRANSITION, LINE_LYRICS, LINE_PAGEBREAK,
   LINE_CENTERED, LINE_SHOT,
 } from "./fountainSyntax";
-import { tagStateField } from "./tagState";
+
 
 function classify(text: string): number[] {
   const state = EditorState.create({ doc: text });
@@ -192,16 +192,16 @@ describe("computeFountainDecorations viewport bounds", () => {
       lines.push(`EXT. LOCATION ${i} - DAY\n\nAction line ${i}.\n`);
     }
     const text = lines.join("\n");
-    const state = EditorState.create({ doc: text, extensions: [lineTypesField, tagStateField] });
+    const state = EditorState.create({ doc: text, extensions: [lineTypesField] });
     const types = state.field(lineTypesField);
 
     // Full doc compute
-    const fullDecos = computeFountainDecorations(state, types, false, false, false);
+    const fullDecos = computeFountainDecorations(state, types, false);
     expect(fullDecos.size).toBeGreaterThan(0);
 
     // Viewport compute for lines 1..10
     const line10To = state.doc.line(10).to;
-    const viewportDecos = computeFountainDecorations(state, types, false, false, false, [{ from: 0, to: line10To }]);
+    const viewportDecos = computeFountainDecorations(state, types, false, [{ from: 0, to: line10To }]);
     expect(viewportDecos.size).toBeGreaterThan(0);
     expect(viewportDecos.size).toBeLessThan(fullDecos.size);
   });

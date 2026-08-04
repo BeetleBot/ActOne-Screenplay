@@ -83,7 +83,7 @@ export function useTourCoordinator({
     if (!isTauri) return;
     try {
       const { emitTo } = await import("@tauri-apps/api/event");
-      const windows: TourWindow[] = ["settings", "theme-manager", "xray", "tag-manager"];
+      const windows: TourWindow[] = ["settings", "theme-manager", "xray"];
       for (const w of windows) {
         await emitTo(w, "tour:cancel", {});
       }
@@ -97,7 +97,7 @@ export function useTourCoordinator({
     if (!isTauri) return;
     try {
       const { emitTo } = await import("@tauri-apps/api/event");
-      const windows: TourWindow[] = ["settings", "theme-manager", "xray", "tag-manager"];
+      const windows: TourWindow[] = ["settings", "theme-manager", "xray"];
       for (const w of windows) {
         await emitTo(w, "tour:complete", {});
       }
@@ -123,7 +123,7 @@ export function useTourCoordinator({
       if (!step.validate && !step.detect) {
         setTaskComplete(true);
       }
-    } else if (["settings", "theme-manager", "xray", "tag-manager"].includes(windowName)) {
+    } else if (["settings", "theme-manager", "xray"].includes(windowName)) {
       // Tauri window step: open the window
       if (openModalWindow) {
         openModalWindow(windowName as TourWindow);
@@ -186,7 +186,7 @@ export function useTourCoordinator({
       if (stepIndex >= 0) {
         setClosedWindowStep(null);
         const w = closedWindowStep.window;
-        if (w && openModalWindow && ["settings", "theme-manager", "xray", "tag-manager"].includes(w)) {
+        if (w && openModalWindow && ["settings", "theme-manager", "xray"].includes(w)) {
           openModalWindow(w);
           setTimeout(() => emitStep(stepIndex), 300);
         }

@@ -304,26 +304,45 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
             value={tabIndex}
             onChange={(_, v) => setTabIndex(v)}
             sx={{
-              minHeight: 32,
+              minHeight: 28,
+              height: 28,
+              bgcolor: "action.hover",
+              borderRadius: "4px",
+              p: "2px",
+              "& .MuiTabs-indicator": {
+                bgcolor: "background.paper",
+                borderRadius: "3px",
+                height: "calc(100% - 4px)",
+                top: 2,
+                bottom: 2,
+                boxShadow: "0px 1px 3px rgba(0,0,0,0.08)",
+                transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+              },
               "& .MuiTab-root": {
-                minHeight: 32,
+                minHeight: 24,
+                height: 24,
                 py: 0,
-                fontSize: 12,
+                px: 1.5,
+                fontSize: 11,
                 textTransform: "none",
                 fontWeight: 600,
                 color: "text.secondary",
+                borderRadius: "3px",
+                transition: "color 0.2s ease",
+                zIndex: 1,
+                gap: 0.75,
                 "&.Mui-selected": {
-                  color: "primary.main",
+                  color: "text.primary",
                 },
-              },
-              "& .MuiTabs-indicator": {
-                bgcolor: "primary.main",
+                "& .MuiSvgIcon-root": {
+                  fontSize: 13,
+                }
               },
             }}
           >
-            <Tab label="Overview & Stats" icon={<BarChartIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
-            <Tab label="Pacing & Timeline" icon={<TimerIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
-            <Tab label="Characters" icon={<PersonIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
+            <Tab label="Overview & Stats" icon={<BarChartIcon />} iconPosition="start" />
+            <Tab label="Pacing & Timeline" icon={<TimerIcon />} iconPosition="start" />
+            <Tab label="Characters" icon={<PersonIcon />} iconPosition="start" />
           </Tabs>
         )}
       </Box>

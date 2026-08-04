@@ -3,7 +3,6 @@ export type TourWindow =
   | "settings"
   | "theme-manager"
   | "xray"
-  | "tag-manager"
   | "export"
   | "structure"
   | "title-page";

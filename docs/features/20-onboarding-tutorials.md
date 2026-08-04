@@ -10,18 +10,17 @@ A dedicated **Tutorials Window** component (`src/components/TutorialsWindow.tsx`
 - **Command Palette** → "Interactive Tutorial" command
 - **Programmatically** via `openTutorialsWindow()` from `useModalWindows` hook
 
-The window is rendered either as a standalone Tauri window (`?modal=tutorials`, 500×400, not resizable) or as a MUI Dialog modal inside the editor window. It displays 5 tour cards (App Tour, Fountain Syntax, Tagging, Advanced Syntax, Theming) with descriptions and a "Start" button for each.
+The window is rendered either as a standalone Tauri window (`?modal=tutorials`, 500×400, not resizable) or as a MUI Dialog modal inside the editor window. It displays 4 tour cards (App Tour, Fountain Syntax, Advanced Syntax, Theming) with descriptions and a "Start" button for each.
 
 ---
 
 ## Overview
 
-The onboarding system consists of five paths:
+The onboarding system consists of four paths:
 1. **🧭 App Tour (`ui`)**: An end-to-end walkthrough of the workspace — Activity Bar panels, Header, Editor, Status Bar — finishing with a hands-on Command Palette discovery.
 2. **✍ Basic Fountain Syntax (`fountain`)**: A hands-on sandbox tutorial instructing users to type scene headings, characters, dialogue, parentheticals, transitions, and camera shots.
-3. **🏷️ Tagging Tour (`tagging`)**: Learn to create production tags, discover auto-populated Cast tags, and toggle tag visibility in the editor.
-4. **🎨 Advanced Syntax (`advanced`)**: Sections, subsections, synopses, scene colours, storyline tags, and markers — six production-ready Fountain features. Users type each syntax in a blank sandbox (like the Basic Fountain tour), then explore a 6-scene demo via the Outline navigator and Markers pane.
-5. **🎨 Theming Tour (`theming`)**: Opens the Bee Detective sample in the main window and the Theme Manager window with an embedded tour card. Covers picking a theme, creating a custom one, and exporting/importing .actheme files.
+3. **🎨 Advanced Syntax (`advanced`)**: Sections, subsections, synopses, scene colours, storyline tags, and markers — six production-ready Fountain features. Users type each syntax in a blank sandbox (like the Basic Fountain tour), then explore a 6-scene demo via the Outline navigator and Markers pane.
+4. **🎨 Theming Tour (`theming`)**: Opens the Bee Detective sample in the main window and the Theme Manager window with an embedded tour card. Covers picking a theme, creating a custom one, and exporting/importing .actheme files.
 
 ---
 
@@ -63,5 +62,5 @@ All tours launch inside a temporary, virtual workspace sandbox. When exiting or 
 *   **Trigger Component:** `WelcomeScreenWindow` renders the "Interactive Tutorials" launcher card which pops open the selection dialog.
 *   **Command Palette:** The `Interactive Tutorial` command is registered under the Help section of the command registry.
 *   **Container Component:** `App.tsx` handles the initial `?action=tutorial` query param, instantly creating the sandbox file in memory on mount to prevent rendering deadlocks, then mounts `<OnboardingTour>`.
-*   **Main Component:** `src/components/OnboardingTour.tsx` contains the tour definitions (`UI_STEPS`, `FOUNTAIN_STEPS`, `TAGGING_STEPS`, `ADVANCED_STEPS`), drag event listeners, coordinate polling hooks, SVG mask elements, and typography layout.
+*   **Main Component:** `src/components/OnboardingTour.tsx` contains the tour definitions (`UI_STEPS`, `FOUNTAIN_STEPS`, `ADVANCED_STEPS`), drag event listeners, coordinate polling hooks, SVG mask elements, and typography layout.
 *   **Theme Manager Tour:** The `"theming"` tour is rendered standalone inside `ThemeManagerWindow.tsx` when opened with `?modal=theme-manager&tour=theming`. It uses `CrossWindowTourCard` directly with its own step polling effect, rather than going through `OnboardingTour`. The main window loads the Bee Detective sample and opens the Theme Manager, but does not mount `OnboardingTour` for theming.

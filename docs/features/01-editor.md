@@ -39,10 +39,6 @@ Right-clicking opens a context menu with options:
 **Clipboard Actions:**
 - **Cut** / **Copy** / **Paste** — uses Tauri clipboard plugin (`@tauri-apps/plugin-clipboard-manager`)
 
-**Tagging:**
-- **Tag** → submenu with 15 production categories (Cast, Prop, VFX, SFX, Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other)
-- **Remove Tag** (if a tag exists on the current range)
-- **Quick Tag** (Ctrl+right-click to bypass the submenu)
 
 **Scene:**
 - **Highlight Scene** → submenu with 8 scene colors (Red, Orange, Yellow, Green, Blue, Purple, Pink, Clear)

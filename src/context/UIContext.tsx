@@ -44,8 +44,6 @@ export interface UIContextProps {
   setAutoSaveInterval: (interval: number) => void;
   hideSyntaxEnabled: boolean;
   setHideSyntaxEnabled: (enabled: boolean) => void;
-  hideTagsEnabled: boolean;
-  setHideTagsEnabled: (enabled: boolean) => void;
   lineFocusEnabled: boolean;
   setLineFocusEnabled: (enabled: boolean) => void;
   fountainColorsEnabled: boolean;
@@ -109,9 +107,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         case STORAGE_KEYS.HIDE_SYNTAX_ENABLED:
           setHideSyntaxEnabledState(strVal === "true");
           break;
-        case STORAGE_KEYS.HIDE_TAGS_ENABLED:
-          setHideTagsEnabledState(strVal === "true");
-          break;
+
         case STORAGE_KEYS.LINE_FOCUS_ENABLED:
           setLineFocusEnabledState(strVal === "true");
           break;
@@ -189,11 +185,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [hideSyntaxEnabled, setHideSyntaxEnabledState] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.HIDE_SYNTAX_ENABLED);
     return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]);
-  });
-
-  const [hideTagsEnabled, setHideTagsEnabledState] = useState<boolean>(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.HIDE_TAGS_ENABLED);
-    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.HIDE_TAGS_ENABLED]);
   });
 
   const [activeRightPane, setActiveRightPaneState] = useState<string | null>(null);
@@ -380,12 +371,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, String(enabled));
   };
 
-  const setHideTagsEnabled = (enabled: boolean) => {
-    setHideTagsEnabledState(enabled);
-    localStorage.setItem(STORAGE_KEYS.HIDE_TAGS_ENABLED, String(enabled));
-    broadcastSetting(STORAGE_KEYS.HIDE_TAGS_ENABLED, String(enabled));
-  };
-
   const setLineFocusEnabled = (enabled: boolean) => {
     setLineFocusEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
@@ -444,8 +429,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAutoSaveInterval,
         hideSyntaxEnabled,
         setHideSyntaxEnabled,
-        hideTagsEnabled,
-        setHideTagsEnabled,
         lineFocusEnabled,
         setLineFocusEnabled,
         fountainColorsEnabled,

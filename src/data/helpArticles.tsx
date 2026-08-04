@@ -123,9 +123,9 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 
 **Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, Replace.
 
-**View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Reset Interface Scale, Show/Hide Fountain Markup, Show/Hide Tags, Open X-Ray Analysis, Show Snapshots.
+**View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Reset Interface Scale, Show/Hide Fountain Markup, Open X-Ray Analysis, Show Snapshots.
 
-**Format:** Tag Manager, Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers.
+**Format:** Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers.
 
 **Settings:** Open Settings, Set Font (Courier Prime / Courier Prime Sans), Set Paper Size (Letter / A4), Theme Manager.
 
@@ -678,25 +678,18 @@ Persists in .actone bundle settings.`,
     title: "Editor Context Menu",
     category: "Workspace & Views",
     tags: ["right click", "context menu", "menu"],
-    relatedIds: ["scene-highlighting", "tag-manager", "transform-case", "parking", "notes-markers"],
-    content: `Right-click anywhere in the editor for quick access. Press <kbd>Ctrl</kbd> while right-clicking for **Quick Tag Mode** (direct access to production tags without the submenu).
-
-**Normal mode:**
+    relatedIds: ["scene-highlighting", "transform-case", "parking", "notes-markers"],
+    content: `Right-click anywhere in the editor for quick access:
 
 - **Selection Stats** (if text selected): word count and character count.
 - **Cut / Copy / Paste** — standard clipboard (disabled without selection).
-- **Tag** → submenu with 15 production categories: Cast (Character), Prop, VFX, SFX (Special Effect), Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other. If cursor is on an existing tag, shows **Remove Tag**.
 - **Highlight Scene** → 7 colors: Red, Orange, Yellow, Green, Blue, Purple, Pink, plus Clear.
 - **Drop Marker** → submenu with 11 colors (Blue, Brown, Cyan, Green, Magenta, Orange, Pink, Purple, Red, Yellow, Default Orange). Prompts for a description.
 - **Format** → Bold, Italic, Underline.
 - **Transform Case** → UPPERCASE, Title Case, lowercase.
 - **Look Up Word** → Google search selection.
 - **Create Task** → adds selected text as a to-do item.
-- **Park Selection** → cuts selected text and stores in Parking sidebar.
-
-**Quick Tag Mode (<kbd>Ctrl</kbd>+right-click):**
-
-Shows clickable colored dots for each category. Click a dot to tag the selected text directly without navigating a submenu. If the cursor is already on a tagged word, shows a "Remove" option.`,
+- **Park Selection** → cuts selected text and stores in Parking sidebar.`,
   },
   {
     id: "status-bar",
@@ -766,7 +759,7 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
     title: "Scene Highlighting (Color Coding)",
     category: "Production Features",
     tags: ["highlight", "color", "scene", "color code"],
-    relatedIds: ["tag-manager", "notes-markers", "outline-navigator"],
+    relatedIds: ["notes-markers", "outline-navigator"],
     content: `Right-click a scene heading and choose **Highlight Scene** → pick a color (Red, Orange, Yellow, Green, Blue, Purple, Pink) or **Clear Highlight** to remove it. Color is stored as \`[[color name]]\` on the scene heading line. Hex codes also work: \`[[#ff0000]]\`
 
 **7 supported named colors:** red, orange, yellow, green, blue, purple, pink.
@@ -774,32 +767,11 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
 Highlighted scenes show a colored left border in the editor, a colored dot in the Outline Navigator, and are exported as color-tagged elements in FDX format. The Outline Navigator's filter popover lets you filter by scene color with count badges.`,
   },
   {
-    id: "tag-manager",
-    title: "Tag Manager",
-    category: "Production Features",
-    tags: ["tag", "breakdown", "props", "cast", "vfx", "production"],
-    relatedIds: ["scene-highlighting", "notes-markers", "context-menu"],
-    content: `Tag production elements directly in your script without cluttering the text. Select text, right-click → **Tag**, and choose a category (or <kbd>Ctrl</kbd>+right-click for Quick Tag Mode):
-
-**15 categories:** Cast (Character), Prop, VFX, SFX (Special Effect), Camera, Animal, Extras, Vehicle, Costume, Makeup, Music, Sound, Stunt, Set Design, Other.
-
-Character names are automatically detected and tagged as Cast. Tags are serialized in .actone bundles as \`production_tags.json\`.
-
-Open the **Tag Manager** (Command Palette → "Open Tag Manager…") with two tabs:
-
-- **Tag Reports** — Two views:
-  - **Scene by Scene**: a dense table showing all scenes with their tags in category columns. Filter by category and search by scene or tag name. Click any tag to jump directly to that scene. Export the breakdown as CSV.
-  - **List by Tag**: accordion list grouped by category → definition → scene list. Each definition shows its usage count and clickable scene entries.
-- **Edit Tags** — Browse all tag definitions organized by category. Select a definition to view a detail panel with rename (inline text field + save/cancel), two-click delete confirmation, and a table of all tagged scenes with clickable navigation.
-
-Quick-tag from the editor with <kbd>Ctrl</kbd>+right-click to bypass the tag type menu.`,
-  },
-  {
     id: "notes-markers",
     title: "Color Markers & Notes",
     category: "Production Features",
     tags: ["markers", "notes", "[[ ]]", "inline comments", "color"],
-    relatedIds: ["markers-list", "tag-manager"],
+    relatedIds: ["markers-list"],
     content: `Insert inline notes anywhere using double-bracket syntax: \`[[marker color: description]]\`
 
 **Example:** \`[[marker red: Fix description here]]\`
@@ -823,7 +795,7 @@ Storyline labels appear as uppercase pill badges in the Outline Navigator per sc
     title: "Structure Templates",
     category: "Production Features",
     tags: ["template", "structure", "three act", "save the cat", "beat sheet"],
-    relatedIds: ["tag-manager", "sections", "outline-navigator"],
+    relatedIds: ["sections", "outline-navigator"],
     content: `Open the Command Palette → "Import Structure Template" to browse and insert predefined screenplay structures. 8 built-in templates:
 
 1. **Three-Act Structure** (10 beats) — Classical Western filmmaking.

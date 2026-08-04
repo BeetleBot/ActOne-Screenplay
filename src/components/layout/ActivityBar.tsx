@@ -25,14 +25,13 @@ interface ActivityBarProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   onOpenSettingsModal: () => void;
-  onOpenBreakdownModal: () => void;
   onOpenThemeManagerModal?: () => void;
   onOpenPalette?: () => void;
 }
 
 export const ActivityBar = React.memo<ActivityBarProps>(({
   activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen,
-  onOpenSettingsModal, onOpenBreakdownModal, onOpenThemeManagerModal, onOpenPalette,
+  onOpenSettingsModal, onOpenThemeManagerModal, onOpenPalette,
 }) => {
   const {
     paperSize, setPaperSize,
@@ -56,10 +55,6 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   }, []);
 
   const handleClick = (tab: string) => {
-    if (tab === "tags") {
-      onOpenBreakdownModal();
-      return;
-    }
     if (isSidebarOpen && activeTab === tab) setIsSidebarOpen(false);
     else { setActiveTab(tab); setIsSidebarOpen(true); }
   };

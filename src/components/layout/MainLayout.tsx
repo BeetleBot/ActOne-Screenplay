@@ -12,13 +12,12 @@ export interface MainLayoutProps {
   setIsSidebarOpen: (open: boolean) => void;
   onOpenSettingsModal: () => void;
   onOpenPalette: () => void;
-  onOpenBreakdownModal: () => void;
   onOpenThemeManagerModal?: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
   isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
-  onOpenBreakdownModal, onOpenThemeManagerModal,
+  onOpenThemeManagerModal,
 }) => {
   const { activeTab, setActiveTab } = useUI();
 
@@ -31,7 +30,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
           onOpenSettingsModal={onOpenSettingsModal}
-          onOpenBreakdownModal={onOpenBreakdownModal}
           onOpenThemeManagerModal={onOpenThemeManagerModal}
           onOpenPalette={onOpenPalette}
         />

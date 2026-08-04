@@ -1,12 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { UI_STEPS, FOUNTAIN_STEPS, ADVANCED_STEPS, THEMING_STEPS, TAGGING_STEPS } from "./OnboardingTour";
+import { UI_STEPS, FOUNTAIN_STEPS, ADVANCED_STEPS, THEMING_STEPS } from "./OnboardingTour";
 import type { TourStep } from "../types/tour";
 
 const ALL_STEP_SETS: [string, TourStep[], number][] = [
   ["UI_STEPS", UI_STEPS, UI_STEPS.length],
   ["FOUNTAIN_STEPS", FOUNTAIN_STEPS, FOUNTAIN_STEPS.length],
   ["ADVANCED_STEPS", ADVANCED_STEPS, ADVANCED_STEPS.length],
-  ["TAGGING_STEPS", TAGGING_STEPS, TAGGING_STEPS.length],
   ["THEMING_STEPS", THEMING_STEPS, THEMING_STEPS.length],
 ];
 
@@ -29,7 +28,7 @@ describe("Tour step arrays", () => {
 
   describe("window property is valid when present", () => {
     it.each(ALL_STEP_SETS)("%s", (_name, steps) => {
-      const validWindows = ["main", "settings", "theme-manager", "xray", "tag-manager", "export", "structure", "title-page"];
+      const validWindows = ["main", "settings", "theme-manager", "xray", "export", "structure", "title-page"];
       for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
         if (step.window) {
@@ -140,23 +139,6 @@ describe("ADVANCED_STEPS", () => {
       } else {
         expect(step.validate, `Step ${i}: "${step.title}" missing validate`).toBeDefined();
       }
-    }
-  });
-});
-
-describe("TAGGING_STEPS", () => {
-  it("starts with a welcome step", () => {
-    expect(TAGGING_STEPS[0].title).toContain("Tagging");
-  });
-
-  it("has the correct number of steps", () => {
-    expect(TAGGING_STEPS.length).toBeGreaterThanOrEqual(6);
-  });
-
-  it("has targetId for action steps", () => {
-    for (let i = 1; i < TAGGING_STEPS.length - 1; i++) {
-      const step = TAGGING_STEPS[i];
-      expect(step.targetId, `Step ${i} "${step.title}" missing targetId`).toBeTruthy();
     }
   });
 });

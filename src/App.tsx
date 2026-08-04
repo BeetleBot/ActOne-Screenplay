@@ -15,18 +15,18 @@ const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
 const isEditorWindow = action === "new" || action === "open" || action === "import" || action === "template" || action === "tutorial";
 const modalParam = params.get("modal");
-const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "tag-manager" || modalParam === "theme-manager" || modalParam === "xray" || modalParam === "tutorials";
+const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "theme-manager" || modalParam === "xray" || modalParam === "tutorials";
 
 function AppInner() {
   const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName } = useFile();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTutorialsModal, setShowTutorialsModal] = useState(false);
   const { confirm } = useCustomModal();
-  const [activeTour, setActiveTourState] = useState<"ui" | "fountain" | "tagging" | "advanced" | "theming" | null>(() => {
-    return (localStorage.getItem("actone-active-tour") as "ui" | "fountain" | "tagging" | "advanced" | "theming" | null) || null;
+  const [activeTour, setActiveTourState] = useState<"ui" | "fountain" | "advanced" | "theming" | null>(() => {
+    return (localStorage.getItem("actone-active-tour") as "ui" | "fountain" | "advanced" | "theming" | null) || null;
   });
 
-  const setActiveTour = useCallback((tour: "ui" | "fountain" | "tagging" | "advanced" | "theming" | null) => {
+  const setActiveTour = useCallback((tour: "ui" | "fountain" | "advanced" | "theming" | null) => {
     setActiveTourState(tour);
     if (tour) {
       localStorage.setItem("actone-active-tour", tour);
@@ -38,14 +38,14 @@ function AppInner() {
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "actone-active-tour") {
-        setActiveTourState((e.newValue as "ui" | "fountain" | "tagging" | "advanced" | "theming" | null) || null);
+        setActiveTourState((e.newValue as "ui" | "fountain" | "advanced" | "theming" | null) || null);
       }
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  const handleTutorialStart = useCallback(async (type: "ui" | "fountain" | "tagging" | "advanced" | "theming") => {
+  const handleTutorialStart = useCallback(async (type: "ui" | "fountain" | "advanced" | "theming") => {
     try {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
       await getCurrentWindow().maximize();
@@ -118,7 +118,7 @@ function AppInner() {
     const setup = async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        unlisten = await listen<{ type: "ui" | "fountain" | "tagging" | "advanced" | "theming" }>("tutorial:start", (event) => {
+        unlisten = await listen<{ type: "ui" | "fountain" | "advanced" | "theming" }>("tutorial:start", (event) => {
           handleTutorialStart(event.payload.type);
         });
       } catch { /* not in Tauri */ }
@@ -132,7 +132,7 @@ function AppInner() {
     const timer = setInterval(() => {
       const pendingAction = localStorage.getItem("pending-action");
       if (pendingAction === "tutorial") {
-        const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" | "tagging" | "advanced" | "theming" | null;
+        const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" | "advanced" | "theming" | null;
         if (type) {
           localStorage.removeItem("pending-action");
           localStorage.removeItem("pending-tutorial-type");
@@ -329,56 +329,6 @@ function AppInner() {
           setPrefs({ [key]: String(value) });
         });
 
-        const u3 = await listen("modal:tag-manager:ready", () => {
-          const activeFile = filesRef.current.find(f => f.id === activeFileIdRef.current);
-          const doc = parsedDocRef.current;
-          const resolvedSet = {
-            ...(doc?.settings || {}),
-            productionTags: getPerScriptSettingObject("productionTags", doc?.settings, scriptFileNameRef.current, { tags: [], definitions: [] }),
-          };
-          emit("modal:tag-manager:init", {
-            parsedDoc: { ...doc, settings: resolvedSet },
-            filePath: activeFile?.filePath || "",
-            activeScriptName: "",
-          });
-        });
-
-        const u5 = await listen<{ pos: number }>("modal:tag-manager:scroll-to", (event) => {
-          if (editorViewRef.current) {
-            const ev = editorViewRef.current;
-            ev.dispatch({
-              selection: { anchor: event.payload.pos },
-              effects: EditorView.scrollIntoView(event.payload.pos, { y: "center" }),
-            });
-            ev.focus();
-          }
-        });
-
-        const u6 = await listen<{ action: string; defId?: string; newName?: string }>("modal:tag-manager:update-settings", (event) => {
-          const { action, defId, newName } = event.payload;
-          const sf = scriptFileNameRef.current;
-          if (action === "rename" && newName) {
-            updateSettingsRef.current((prev) => {
-              const prevProdTags = getPerScriptSettingObject<{ tags: Array<{ range?: [number, number]; definitionId: string; type?: string; sceneId?: string }>; definitions: Array<{ id: string; name: string; type: string; colorOverride: string | null }> }>("productionTags", prev, sf, { tags: [], definitions: [] });
-              const definitions = (prevProdTags.definitions || []).map((d) =>
-                d.id === defId ? { ...d, name: newName } : d
-              );
-              return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { ...prevProdTags, definitions }) };
-            });
-          } else if (action === "delete") {
-            updateSettingsRef.current((prev) => {
-              const prevProdTags = getPerScriptSettingObject<{ tags: Array<{ range?: [number, number]; definitionId: string; type?: string; sceneId?: string }>; definitions: Array<{ id: string; name: string; type: string; colorOverride: string | null }> }>("productionTags", prev, sf, { tags: [], definitions: [] });
-              const definitions = (prevProdTags.definitions || []).filter((d) => d.id !== defId);
-              const tags = (prevProdTags.tags || []).filter((t) => t.definitionId !== defId);
-              return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { tags, definitions }) };
-            });
-          } else if (action === "remove-all") {
-            updateSettingsRef.current((prev) => {
-              return { ...prev, ...updatePerScriptSetting(prev, "productionTags", sf, { tags: [], definitions: [] }) };
-            });
-          }
-        });
-
         const u7 = await listen("modal:xray:ready", () => {
           emit("modal:xray:init", {
             parsedDoc: parsedDocRef.current,
@@ -435,7 +385,7 @@ function AppInner() {
           }
         });
 
-        unlisteners = [u1, u2, u3, u5, u6, u7, u8, u9].filter(Boolean) as (() => void)[];
+        unlisteners = [u1, u2, u7, u8, u9].filter(Boolean) as (() => void)[];
       } catch (e) {
         logger.error("app", "Failed to set up modal event listeners:", e);
       }
@@ -489,10 +439,10 @@ function AppInner() {
       localStorage.removeItem("pending-action");
     } else if (action === "tutorial") {
       const rawType = params.get("type") || localStorage.getItem("pending-tutorial-type");
-      const type = (rawType === "fountain" ? "fountain" : rawType === "tagging" ? "tagging" : rawType === "advanced" ? "advanced" : rawType === "theming" ? "theming" : "ui") as "ui" | "fountain" | "tagging" | "advanced" | "theming";
+      const type = (rawType === "fountain" ? "fountain" : rawType === "advanced" ? "advanced" : rawType === "theming" ? "theming" : "ui") as "ui" | "fountain" | "advanced" | "theming";
       localStorage.removeItem("pending-tutorial-type");
       localStorage.removeItem("pending-action");
-      if (type === "ui" || type === "tagging" || type === "theming") {
+      if (type === "ui" || type === "theming") {
         (async () => {
           try {
             const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -765,7 +715,6 @@ function AppInner() {
               setIsSidebarOpen={setIsSidebarOpen}
               onOpenSettingsModal={() => modalWindows.openSettingsWindow()}
               onOpenPalette={() => setIsPaletteOpen(true)}
-              onOpenBreakdownModal={() => modalWindows.openTagManagerWindow()}
               onOpenThemeManagerModal={() => modalWindows.openThemeManagerWindow()}
             />
           </ErrorBoundary>
@@ -791,7 +740,6 @@ function AppInner() {
         }}
         openSettingsWindow={isModalWindow ? undefined : modalWindows.openSettingsWindow}
         openHelpWindow={isModalWindow ? undefined : modalWindows.openHelpWindow}
-        openTagManagerWindow={isModalWindow ? undefined : modalWindows.openTagManagerWindow}
         openThemeManagerWindow={isModalWindow ? undefined : modalWindows.openThemeManagerWindow}
         openXrayWindow={isModalWindow ? undefined : modalWindows.openXrayWindow}
         openTutorialsWindow={isModalWindow ? undefined : () => setShowTutorialsModal(true)}

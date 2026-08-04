@@ -25,7 +25,6 @@ export { AmbientPanel } from './AmbientPanel';
 export { WindowResizeHandles } from './WindowResizeHandles';
 export { SettingsWindow } from './SettingsWindow';
 export { HelpWindow } from './HelpWindow';
-export { TagManagerWindow } from './TagManagerWindow';
 export { ThemeManagerWindow } from './ThemeManagerWindow';
 export { XrayWindow } from './XrayWindow';
 export { TutorialsWindow } from './TutorialsWindow';

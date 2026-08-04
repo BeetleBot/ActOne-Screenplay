@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
-import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, ViewSidebarIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FindReplaceIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, LocalOfferIcon, ColorLensIcon, BarChartIcon, CameraIcon, MusicNoteIcon, ChatDotsIcon } from "./Icons";
+import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, ColorLensIcon, BarChartIcon, CameraIcon } from "./Icons";
 import { logger } from "../utils/logger";
 
 
@@ -75,13 +75,12 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onExportPDF: () => void;
-  toggleSidebar: () => void;
-  isSidebarOpen: boolean;
+  toggleSidebar?: () => void;
+  isSidebarOpen?: boolean;
   onOpenStructureModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenTitlePageModal: () => void;
   onOpenHelpModal: () => void;
-  onOpenBreakdownModal: () => void;
   onOpenThemeManagerModal: () => void;
   onOpenXrayModal?: () => void;
   onToggleSnapshotsPanel?: () => void;
@@ -93,17 +92,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   isOpen,
   onClose,
   onExportPDF,
-  toggleSidebar,
-  isSidebarOpen,
   onOpenStructureModal,
   onOpenSettingsModal,
   onOpenTitlePageModal,
   onOpenHelpModal,
-  onOpenBreakdownModal,
   onOpenThemeManagerModal,
   onOpenXrayModal,
   onToggleSnapshotsPanel,
-  onOpenMuseSettings,
   openTutorialsWindow,
 }) => {
   const theme = useTheme();
@@ -131,10 +126,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   const {
     typewriterMode,
     setTypewriterMode,
-    setActiveTab,
     setFontFamily,
     setPaperSize,
-    setActiveRightPane,
     isZenMode,
     setIsZenMode,
     zoomLevel,
@@ -143,11 +136,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     setAppScale,
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
-    hideTagsEnabled,
-    setHideTagsEnabled,
     lineFocusEnabled,
     setLineFocusEnabled,
-    stopAmbientTrack,
   } = useUI();
 
   const openUrl = (url: string) => {
@@ -249,24 +239,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "edit-redo", name: "Redo", category: "Edit", icon: <ContentCutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Y", action: handleRedo },
     { id: "edit-cut", name: "Cut Selected", category: "Edit", icon: <ContentCutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+X", action: () => handleEditorAction("cut") },
     { id: "edit-copy", name: "Copy Selected", category: "Edit", icon: <ContentCopyIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+C", action: () => handleEditorAction("copy") },
-    { id: "edit-paste", name: "Paste", category: "Edit", icon: <AssignmentIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
-    { id: "edit-search", name: "Find / Search Screenplay...", category: "Edit", icon: <SearchIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+F", action: () => { setActiveRightPane("search"); onClose(); } },
-    { id: "edit-replace", name: "Find and Replace...", category: "Edit", icon: <FindReplaceIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+F", action: () => { setActiveRightPane("search"); onClose(); } },
+    { id: "edit-paste", name: "Paste Clipboard", category: "Edit", icon: <AssignmentIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
+    { id: "edit-find", name: "Find in Screenplay", category: "Edit", icon: <SearchIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+F", action: () => handleEditorAction("find") },
 
     // View
-    { id: "view-sidebar", name: isSidebarOpen ? "Hide Sidebar Outline" : "Show Sidebar Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } },
-    { id: "view-tab-outline", name: "Switch Sidebar Tab: Outline", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("outline"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-scripts", name: "Switch Sidebar Tab: Scripts", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("scripts"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-notepad", name: "Switch Sidebar Tab: Notepad", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("notepad"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-markers", name: "Switch Sidebar Tab: Markers", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("markers"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-todo", name: "Switch Sidebar Tab: Tasks", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("todo"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-snapshots", name: "Switch Sidebar Tab: Snapshots", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("snapshots"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-sprint", name: "Switch Sidebar Tab: Sprint", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("sprint"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "view-tab-parking", name: "Switch Sidebar Tab: Parking", category: "View", icon: <ViewSidebarIcon sx={{ fontSize: 16 }} />, action: () => { setActiveTab("parking"); if (!isSidebarOpen) toggleSidebar(); onClose(); } },
-    { id: "muse-open-pane", name: "Open Muse Pane", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+M", action: () => { setActiveRightPane("prompt"); onClose(); } },
-    { id: "muse-open-settings", name: "Open Muse Settings", category: "View", icon: <ChatDotsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenMuseSettings?.(); onClose(); } },
-    { id: "audio-ambient-open", name: "Ambient Sounds: Open Control Panel...", category: "Audio", icon: <MusicNoteIcon sx={{ fontSize: 16 }} />, action: () => { setActiveRightPane("ambient"); onClose(); } },
-    { id: "audio-ambient-stop", name: "Ambient Sounds: Stop Playback", category: "Audio", icon: <MusicNoteIcon sx={{ fontSize: 16 }} />, action: () => { stopAmbientTrack(); onClose(); } },
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <FullscreenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },
     { id: "view-focus-mode", name: lineFocusEnabled ? "Disable Focus Mode" : "Enable Focus Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setLineFocusEnabled(!lineFocusEnabled); onClose(); } },
@@ -275,26 +251,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-zoom-reset", name: `Reset Editor Scale (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
     { id: "view-interface-scale-reset", name: `Reset Interface Scale (${appScale}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, action: () => { setAppScale(100); onClose(); } },
     { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
-    { id: "view-hide-tags", name: hideTagsEnabled ? "Show Tags" : "Hide the Tags", category: "View", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { setHideTagsEnabled(!hideTagsEnabled); onClose(); } },
     { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },
+
     // Format
-    { id: "format-tag-manager", name: "Open Tag Manager...", category: "Format", icon: <LocalOfferIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBreakdownModal(); onClose(); } },
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },
     { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenStructureModal(); onClose(); } },
     { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },
     { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <DeleteIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Clear all scene numbers?")) clearSceneNumbers(); onClose(); } },
 
     // Settings
-
     { id: "settings-modal", name: "Open Settings...", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+,", action: () => { onOpenSettingsModal(); onClose(); } },
     { id: "settings-font-prime", name: "Set Font: Courier Prime", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setFontFamily("courier-prime"); onClose(); } },
     { id: "settings-font-sans", name: "Set Font: Courier Prime Sans", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setFontFamily("courier-prime-sans"); onClose(); } },
     { id: "settings-paper-letter", name: "Set Paper Size: US Letter", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setPaperSize("letter"); onClose(); } },
     { id: "settings-paper-a4", name: "Set Paper Size: A4", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setPaperSize("a4"); onClose(); } },
     { id: "settings-theme-manager", name: "Open Theme Manager...", category: "Settings", icon: <ColorLensIcon sx={{ fontSize: 16 }} />, action: () => { onOpenThemeManagerModal(); onClose(); } },
-
-
 
     // Help
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, shortcut: "F1", action: () => { onOpenHelpModal(); onClose(); } },

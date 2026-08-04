@@ -45,7 +45,7 @@ describe("TourStep type", () => {
 
 describe("TourWindow type", () => {
   it("allows all valid window values", () => {
-    const windows: TourWindow[] = ["main", "settings", "theme-manager", "xray", "tag-manager", "export", "structure", "title-page"];
+    const windows: TourWindow[] = ["main", "settings", "theme-manager", "xray", "export", "structure", "title-page"];
     for (const w of windows) {
       const step: TourStep = { title: "Test", description: "Test", window: w };
       expect(step.window).toBe(w);

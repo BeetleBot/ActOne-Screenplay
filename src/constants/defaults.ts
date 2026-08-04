@@ -17,7 +17,6 @@ export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
   [STORAGE_KEYS.SMART_QUOTES_ENABLED]: false,
   [STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]: true,
   [STORAGE_KEYS.HIDE_SYNTAX_ENABLED]: false,
-  [STORAGE_KEYS.HIDE_TAGS_ENABLED]: false,
   [STORAGE_KEYS.LINE_FOCUS_ENABLED]: false,
   [STORAGE_KEYS.LOW_POWER_MODE]: false,
 

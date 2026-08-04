@@ -1,7 +1,6 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from "@codemirror/view";
 import { FountainDocument } from "../parser";
-import { tagStateField } from "./tagState";
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
 
@@ -12,7 +11,6 @@ export interface PageBreakDisplaySettings {
 
 export const updatePageBreakDisplayEffect = StateEffect.define<PageBreakDisplaySettings>();
 export const updateHideSyntaxEffect = StateEffect.define<boolean>();
-export const updateHideTagsEffect = StateEffect.define<boolean>();
 export const updateScriptFileNameEffect = StateEffect.define<string>();
 export const updateRightPaneOpenEffect = StateEffect.define<boolean>();
 
@@ -241,33 +239,12 @@ export const computeFountainDecorations = (
   state: EditorState,
   lineTypes: number[],
   hideSyntaxEnabled: boolean,
-  hideTagsEnabled: boolean,
-  rightPaneOpen: boolean,
   visibleRanges?: readonly { from: number; to: number }[]
 ): DecorationSet => {
   const builder = new RangeSetBuilder<Decoration>();
   const allDecos: { from: number; to: number; dec: Decoration }[] = [];
   const doc = state.doc;
   const activeLineNum = state.selection ? state.doc.lineAt(state.selection.main.head).number : -1;
-  const prodTags = state.field(tagStateField, false);
-  const activeTags: { from: number; to: number; type: string }[] = [];
-  if (!hideTagsEnabled && !rightPaneOpen && prodTags && prodTags.tags && prodTags.tags.length > 0) {
-    const tagDefMap = new Map<string, string>();
-    if (prodTags.definitions) {
-      for (const def of prodTags.definitions) {
-        tagDefMap.set(def.id, def.type);
-      }
-    }
-    for (const tag of prodTags.tags) {
-      if (tag.range) {
-        const [start, len] = tag.range;
-        if (len > 0) {
-          const type = tag.type || tagDefMap.get(tag.definitionId) || "";
-          activeTags.push({ from: start, to: start + len, type });
-        }
-      }
-    }
-  }
 
   const ranges = (visibleRanges && visibleRanges.length > 0)
     ? visibleRanges
@@ -408,21 +385,7 @@ export const computeFountainDecorations = (
       }
     }
 
-    if (activeTags.length > 0) {
-      for (const tag of activeTags) {
-        if (tag.to > line.from && tag.from < line.to) {
-          const tagFrom = Math.max(line.from, tag.from);
-          const tagTo = Math.min(line.to, tag.to);
-          if (tagFrom < tagTo) {
-            lineDecos.push({
-              from: tagFrom,
-              to: tagTo,
-              dec: Decoration.mark({ class: `cm-tag-${tag.type}` })
-            });
-          }
-        }
-      }
-    }
+
 
     // Markdown Parsing
     const text = line.text;
@@ -496,18 +459,16 @@ export const fountainHighlightField = StateField.define<{
   doc: FountainDocument | null;
   displaySettings: PageBreakDisplaySettings;
   hideSyntaxEnabled: boolean;
-  hideTagsEnabled: boolean;
   rightPaneOpen: boolean;
   prevActiveLineNum: number;
 }>({
   create(state) {
     const types = state.field(lineTypesField);
     return {
-      decorations: computeFountainDecorations(state, types, false, false, false),
+      decorations: computeFountainDecorations(state, types, false),
       doc: null,
       displaySettings: defaultDisplaySettings,
       hideSyntaxEnabled: false,
-      hideTagsEnabled: false,
       rightPaneOpen: false,
       prevActiveLineNum: -1,
     };
@@ -516,10 +477,8 @@ export const fountainHighlightField = StateField.define<{
     let doc = value.doc;
     let displaySettings = value.displaySettings;
     let hideSyntaxEnabled = value.hideSyntaxEnabled;
-    let hideTagsEnabled = value.hideTagsEnabled;
     let rightPaneOpen = value.rightPaneOpen;
     let hideSyntaxChanged = false;
-    let hideTagsChanged = false;
     let rightPaneChanged = false;
 
     for (const effect of tr.effects) {
@@ -533,10 +492,6 @@ export const fountainHighlightField = StateField.define<{
         hideSyntaxEnabled = effect.value;
         hideSyntaxChanged = true;
       }
-      if (effect.is(updateHideTagsEffect)) {
-        hideTagsEnabled = effect.value;
-        hideTagsChanged = true;
-      }
       if (effect.is(updateRightPaneOpenEffect)) {
         rightPaneOpen = effect.value;
         rightPaneChanged = true;
@@ -548,7 +503,6 @@ export const fountainHighlightField = StateField.define<{
       doc !== value.doc ||
       displaySettings !== value.displaySettings ||
       hideSyntaxChanged ||
-      hideTagsChanged ||
       rightPaneChanged;
 
     const currentLineNum = tr.state.selection ? tr.state.doc.lineAt(tr.state.selection.main.head).number : -1;
@@ -557,11 +511,10 @@ export const fountainHighlightField = StateField.define<{
     if (needsRebuild || (selectionMoved && hideSyntaxEnabled)) {
       const types = tr.state.field(lineTypesField);
       return {
-        decorations: computeFountainDecorations(tr.state, types, hideSyntaxEnabled, hideTagsEnabled, rightPaneOpen),
+        decorations: computeFountainDecorations(tr.state, types, hideSyntaxEnabled),
         doc,
         displaySettings,
         hideSyntaxEnabled,
-        hideTagsEnabled,
         rightPaneOpen,
         prevActiveLineNum: currentLineNum,
       };
@@ -582,7 +535,6 @@ export const fountainHighlightPlugin = ViewPlugin.fromClass(
     doc: FountainDocument | null = null;
     displaySettings: PageBreakDisplaySettings = defaultDisplaySettings;
     hideSyntaxEnabled: boolean = false;
-    hideTagsEnabled: boolean = false;
     rightPaneOpen: boolean = false;
 
     constructor(view: EditorView) {
@@ -591,8 +543,6 @@ export const fountainHighlightPlugin = ViewPlugin.fromClass(
         view.state,
         types,
         this.hideSyntaxEnabled,
-        this.hideTagsEnabled,
-        this.rightPaneOpen,
         view.visibleRanges
       );
     }
@@ -613,10 +563,6 @@ export const fountainHighlightPlugin = ViewPlugin.fromClass(
             this.hideSyntaxEnabled = effect.value;
             changed = true;
           }
-          if (effect.is(updateHideTagsEffect)) {
-            this.hideTagsEnabled = effect.value;
-            changed = true;
-          }
           if (effect.is(updateRightPaneOpenEffect)) {
             this.rightPaneOpen = effect.value;
             changed = true;
@@ -635,8 +581,6 @@ export const fountainHighlightPlugin = ViewPlugin.fromClass(
           update.state,
           types,
           this.hideSyntaxEnabled,
-          this.hideTagsEnabled,
-          this.rightPaneOpen,
           update.view.visibleRanges
         );
       }

@@ -16,7 +16,6 @@ export const STORAGE_KEYS = {
   ACTIVE_SPRINTS: "actone-active-sprints",
   SPRINT_HISTORY: "actone-sprint-history",
   HIDE_SYNTAX_ENABLED: "actone-hide-syntax-enabled",
-  HIDE_TAGS_ENABLED: "actone-hide-tags-enabled",
   LINE_FOCUS_ENABLED: "actone-line-focus-enabled",
   LOW_POWER_MODE: "actone-low-power-mode",
   SNAPSHOTS_ENABLED: "actone-snapshots-enabled",
@@ -119,26 +118,4 @@ export interface ApiEntry {
   model: string;
 }
 
-export interface Category {
-  key: string;
-  label: string;
-  color: string;
-}
 
-export const CATEGORIES: Category[] = [
-  { key: "cast", label: "Cast (Character)", color: "var(--cat-cast)" },
-  { key: "prop", label: "Prop", color: "var(--cat-prop)" },
-  { key: "vfx", label: "VFX", color: "var(--cat-vfx)" },
-  { key: "sfx", label: "SFX (Special Effect)", color: "var(--cat-sfx)" },
-  { key: "camera", label: "Camera", color: "var(--cat-camera)" },
-  { key: "animal", label: "Animal", color: "var(--cat-animal)" },
-  { key: "extras", label: "Extras", color: "var(--cat-extras)" },
-  { key: "vehicle", label: "Vehicle", color: "var(--cat-vehicle)" },
-  { key: "costume", label: "Costume", color: "var(--cat-costume)" },
-  { key: "makeup", label: "Makeup", color: "var(--cat-makeup)" },
-  { key: "music", label: "Music", color: "var(--cat-music)" },
-  { key: "sound", label: "Sound", color: "var(--cat-sound)" },
-  { key: "stunt", label: "Stunt", color: "var(--cat-stunt)" },
-  { key: "setDesign", label: "Set Design", color: "var(--cat-setDesign)" },
-  { key: "other", label: "Other (Generic)", color: "var(--cat-other)" }
-];
