@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use tauri::Emitter;
 use tauri::Manager;
 
 pub struct AppPrefsState(pub Mutex<HashMap<String, String>>);
+
+static HELD_ICONS: OnceLock<Mutex<Vec<tauri::image::Image>>> = OnceLock::new();
 
 fn prefs_file_path(app: &tauri::AppHandle) -> PathBuf {
     app.path().app_data_dir()
@@ -29,6 +31,15 @@ pub fn apply_app_icon(app: &tauri::AppHandle, use_dark: bool) -> Result<(), Stri
     let raw_rgba = img.into_raw();
 
     let image = tauri::image::Image::new_owned(raw_rgba, width, height);
+
+    // Keep the image alive by storing it in the global state
+    let icons_mutex = HELD_ICONS.get_or_init(|| Mutex::new(Vec::new()));
+    if let Ok(mut guard) = icons_mutex.lock() {
+        guard.push(image.clone());
+        if guard.len() > 5 {
+            guard.remove(0);
+        }
+    }
 
     for window in app.webview_windows().values() {
         let _ = window.set_icon(image.clone());
