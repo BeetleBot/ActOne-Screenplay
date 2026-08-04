@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ExportModal } from './ExportModal';
 import { StructureImportModal } from './StructureImportModal';
 import { CommandPalette } from './CommandPalette';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
+import { AboutModal } from './AboutModal';
 import { ErrorBoundary } from './ErrorBoundary';
 
 export interface ModalManagerProps {
@@ -22,6 +23,8 @@ export interface ModalManagerProps {
   openThemeManagerWindow?: () => void;
   openXrayWindow?: () => void;
   openTutorialsWindow?: () => void;
+  showAboutModal?: boolean;
+  setShowAboutModal?: (open: boolean) => void;
 }
 
 export const ModalManager: React.FC<ModalManagerProps> = ({
@@ -41,7 +44,13 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   openThemeManagerWindow,
   openXrayWindow,
   openTutorialsWindow,
+  showAboutModal: externalShowAbout,
+  setShowAboutModal: externalSetShowAbout,
 }) => {
+  const [localShowAbout, setLocalShowAbout] = useState(false);
+  const showAbout = externalShowAbout !== undefined ? externalShowAbout : localShowAbout;
+  const setShowAbout = externalSetShowAbout || setLocalShowAbout;
+
   return (
     <>
       <ErrorBoundary name="command-palette">
@@ -60,11 +69,13 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           openTutorialsWindow={openTutorialsWindow}
           onToggleSnapshotsPanel={toggleSnapshotsPanel}
           onOpenMuseSettings={() => openSettingsWindow?.("muse")}
+          onOpenAboutModal={() => setShowAbout(true)}
         />
       </ErrorBoundary>
       <ErrorBoundary name="export-modal">{showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="about-modal">{showAbout && <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />}</ErrorBoundary>
     </>
   );
 };

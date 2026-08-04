@@ -86,6 +86,7 @@ interface CommandPaletteProps {
   onToggleSnapshotsPanel?: () => void;
   onOpenMuseSettings?: () => void;
   openTutorialsWindow?: () => void;
+  onOpenAboutModal?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
@@ -100,6 +101,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   onOpenXrayModal,
   onToggleSnapshotsPanel,
   openTutorialsWindow,
+  onOpenAboutModal,
 }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -269,6 +271,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "settings-theme-manager", name: "Open Theme Manager...", category: "Settings", icon: <ColorLensIcon sx={{ fontSize: 16 }} />, action: () => { onOpenThemeManagerModal(); onClose(); } },
 
     // Help
+    { id: "help-about", name: "About ActOne", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, action: () => { onOpenAboutModal?.(); onClose(); } },
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, shortcut: "F1", action: () => { onOpenHelpModal(); onClose(); } },
     { id: "help-tutorial", name: "Interactive Tutorial...", category: "Help", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { openTutorialsWindow?.(); onClose(); } },
     { id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } },
