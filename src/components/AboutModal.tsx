@@ -11,14 +11,15 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  CloseIcon,
   ContentCopyIcon,
   CheckIcon,
   OpenInNewIcon,
   SendIcon,
   ColorLensIcon,
   InfoOutlinedIcon,
+  HelpOutlinedIcon,
 } from './Icons';
+import { TitleBar } from './TitleBar';
 import { ThemeLogo } from './ThemeLogo';
 import { useTheme as useAppTheme } from '../context';
 import { resolveThemeConfig } from '../theme/themeUtils';
@@ -66,119 +67,135 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
       slotProps={{
         paper: {
           sx: {
-            borderRadius: '16px',
+            borderRadius: 0,
             bgcolor: 'background.paper',
             color: 'text.primary',
             backgroundImage: 'none',
             border: '1px solid',
             borderColor: 'divider',
             boxShadow: isDark
-              ? '0 24px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08)'
-              : '0 24px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+              ? '0 16px 32px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08)'
+              : '0 16px 32px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
             overflow: 'hidden',
           },
         },
       }}
     >
-      <Box sx={{ position: 'relative', pt: 4, pb: 3, px: 3, textAlign: 'center' }}>
-        <IconButton
-          onClick={onClose}
-          sx={{
-            position: 'absolute',
-            right: 12,
-            top: 12,
-            color: 'text.secondary',
-            '&:hover': {
-              color: 'text.primary',
-              bgcolor: 'action.hover',
-            },
-          }}
-        >
-          <CloseIcon sx={{ fontSize: 18 }} />
-        </IconButton>
-
+      <TitleBar title="About ActOne" onClose={onClose} icon={<HelpOutlinedIcon sx={{ fontSize: 16 }} />} isModal />
+      
+      <Box sx={{ p: 2.5 }}>
+        {/* Header Hero Section */}
         <Box
           sx={{
-            width: 72,
-            height: 72,
-            mx: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            p: 2,
             mb: 2,
-            borderRadius: '18px',
             bgcolor: 'action.hover',
             border: '1px solid',
             borderColor: 'divider',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)',
-            p: 1.5,
+            borderRadius: 0,
           }}
         >
-          <Box sx={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'primary.main' }}>
+          <Box
+            sx={{
+              width: 54,
+              height: 54,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              p: 1.25,
+              borderRadius: 0,
+            }}
+          >
             <ThemeLogo variant="solid" />
+          </Box>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+              ActOne
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25, fontSize: 11, fontWeight: 500 }}>
+              Native Fountain Screenplay Studio
+            </Typography>
           </Box>
         </Box>
 
-        <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 0.5 }}>
-          ActOne
-        </Typography>
-
-        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-          Native Fountain Screenplay Studio
-        </Typography>
-
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+        {/* Technical Chips */}
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
           <Chip
-            icon={<InfoOutlinedIcon sx={{ fontSize: 14 }} />}
-            label={version}
+            icon={<InfoOutlinedIcon sx={{ fontSize: 13 }} />}
+            label={`VERSION ${version.toUpperCase()}`}
             size="small"
             sx={{
+              borderRadius: 0,
               fontWeight: 700,
-              fontSize: '0.75rem',
+              fontSize: '0.68rem',
+              letterSpacing: '0.04em',
               bgcolor: 'action.selected',
               color: 'text.primary',
+              height: 24,
+              border: '1px solid',
+              borderColor: 'divider',
             }}
           />
           <Chip
-            icon={<ColorLensIcon sx={{ fontSize: 14 }} />}
-            label={displayThemeName}
+            icon={<ColorLensIcon sx={{ fontSize: 13 }} />}
+            label={displayThemeName.toUpperCase()}
             size="small"
             sx={{
-              fontWeight: 600,
-              fontSize: '0.75rem',
+              borderRadius: 0,
+              fontWeight: 700,
+              fontSize: '0.68rem',
+              letterSpacing: '0.04em',
               bgcolor: 'action.selected',
               color: 'text.primary',
+              height: 24,
+              border: '1px solid',
+              borderColor: 'divider',
             }}
           />
         </Box>
 
-        <DialogContent sx={{ p: 0, mb: 3 }}>
+        {/* Resources Card */}
+        <DialogContent sx={{ p: 0, mb: 2.5 }}>
           <Box
             sx={{
-              bgcolor: 'action.hover',
-              borderRadius: '12px',
-              p: 2,
+              bgcolor: 'background.paper',
+              borderRadius: 0,
               display: 'flex',
               flexDirection: 'column',
-              gap: 1.5,
               border: '1px solid',
               borderColor: 'divider',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: 1.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                <OpenInNewIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  ActOne Website
+                <OpenInNewIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>
+                  ActOne Studio Website
                 </Typography>
               </Box>
               <Button
                 size="small"
                 onClick={() => handleOpenUrl(actoneUrl)}
                 sx={{
+                  borderRadius: 0,
                   textTransform: 'none',
                   fontWeight: 700,
-                  fontSize: '0.8rem',
+                  fontSize: '0.75rem',
                   color: 'primary.main',
                   p: '2px 8px',
                   minWidth: 'auto',
@@ -188,10 +205,19 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               </Button>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: 1.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                <OpenInNewIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                <OpenInNewIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>
                   Fount TUI Website
                 </Typography>
               </Box>
@@ -199,9 +225,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 size="small"
                 onClick={() => handleOpenUrl(fountUrl)}
                 sx={{
+                  borderRadius: 0,
                   textTransform: 'none',
                   fontWeight: 700,
-                  fontSize: '0.8rem',
+                  fontSize: '0.75rem',
                   color: 'primary.main',
                   p: '2px 8px',
                   minWidth: 'auto',
@@ -211,10 +238,17 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               </Button>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: 1.5,
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                <SendIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                <SendIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>
                   Support Email
                 </Typography>
               </Box>
@@ -223,14 +257,14 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                   variant="body2"
                   sx={{
                     fontFamily: 'monospace',
-                    fontSize: '0.78rem',
+                    fontSize: '0.75rem',
                     color: 'text.primary',
                   }}
                 >
                   {supportEmail}
                 </Typography>
                 <Tooltip title={copied ? 'Copied!' : 'Copy Support Email'}>
-                  <IconButton size="small" onClick={handleCopyEmail} sx={{ p: '2px' }}>
+                  <IconButton size="small" onClick={handleCopyEmail} sx={{ p: '2px', borderRadius: 0 }}>
                     {copied ? (
                       <CheckIcon sx={{ fontSize: 14, color: 'success.main' }} />
                     ) : (
@@ -243,11 +277,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           </Box>
         </DialogContent>
 
-        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', textAlign: 'center', fontSize: 10.5, fontWeight: 500 }}>
           © 2026 iyal.ink — Tools for the story in progress.
         </Typography>
       </Box>
     </Dialog>
   );
 };
+
 
