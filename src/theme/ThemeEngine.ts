@@ -22,6 +22,20 @@ function getFallbackState(): ThemeState {
 export async function initThemeEngine(): Promise<ThemeState> {
   if (currentState) return currentState;
 
+  // Read local cache immediately to prevent async startup blocking
+  try {
+    const cachedThemeId = localStorage.getItem("actone-theme-id");
+    const cachedAppScale = localStorage.getItem("actone-app-scale");
+    const cachedCustom = localStorage.getItem("actone-custom-themes");
+    if (cachedThemeId) {
+      currentState = {
+        themeId: cachedThemeId,
+        appScale: cachedAppScale ? Number(cachedAppScale) : Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]),
+        customThemes: cachedCustom || "[]",
+      };
+    }
+  } catch {}
+
   try {
     const result = await invoke<{ theme_id: string; app_scale: number; custom_themes: string }>("get_theme_state");
     currentState = {
@@ -29,17 +43,17 @@ export async function initThemeEngine(): Promise<ThemeState> {
       appScale: result.app_scale,
       customThemes: result.custom_themes,
     };
-    // Sync to localStorage immediately to prevent FOUC on future window loads
     try {
       localStorage.setItem("actone-theme-id", result.theme_id);
       localStorage.setItem("actone-custom-themes", result.custom_themes);
       localStorage.setItem("actone-app-scale", String(result.app_scale));
-    } catch { /* localStorage may fail in some environments */ }
+    } catch {}
   } catch {
-    currentState = getFallbackState();
+    if (!currentState) {
+      currentState = getFallbackState();
+    }
   }
 
-  // Notify any listeners that were registered before init finished
   listeners.forEach((cb) => cb(currentState!));
 
   if (!unlisten) {

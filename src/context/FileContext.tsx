@@ -427,17 +427,19 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-  // Validate recent files on startup — remove any that no longer exist
+  // Validate recent files on startup in non-blocking parallel background tasks
   useEffect(() => {
     if (!isTauri || recentFiles.length === 0) return;
-    (async () => {
-      for (const f of recentFiles) {
+    Promise.allSettled(
+      recentFiles.map(async (f) => {
         try {
           const exists = await invoke<boolean>("file_exists", { path: f.path });
           if (!exists) removeFromRecent(f.path);
-        } catch (e) { logger.warn("file", "Failed to check file existence", e); }
-      }
-    })();
+        } catch (e) {
+          logger.warn("file", "Failed to check file existence", e);
+        }
+      })
+    );
   }, []); // run once on mount
 
   useEffect(() => {
