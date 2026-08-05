@@ -18,7 +18,6 @@ export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
   [STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]: true,
   [STORAGE_KEYS.HIDE_SYNTAX_ENABLED]: false,
   [STORAGE_KEYS.LINE_FOCUS_ENABLED]: false,
-  [STORAGE_KEYS.LOW_POWER_MODE]: false,
 
   [STORAGE_KEYS.AUTO_SAVE_ENABLED]: true,
   [STORAGE_KEYS.AUTO_SAVE_INTERVAL]: 300000,

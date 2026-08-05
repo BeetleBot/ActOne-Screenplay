@@ -59,7 +59,6 @@ export const SettingsWindow: React.FC = () => {
   const [autoSaveInterval, setAutoSaveInterval] = useState(() => readLocalNum(STORAGE_KEYS.AUTO_SAVE_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL])));
   const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED])));
   const [lineFocusEnabled, setLineFocusEnabled] = useState(() => readLocalBool(STORAGE_KEYS.LINE_FOCUS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED])));
-  const [lowPowerMode, setLowPowerModeState] = useState(() => readLocalBool(STORAGE_KEYS.LOW_POWER_MODE, Boolean(DEFAULTS[STORAGE_KEYS.LOW_POWER_MODE])));
   const [snapshotsEnabled, setSnapshotsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOTS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED])));
   const [snapshotLocation, setSnapshotLocation] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_LOCATION, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION])) as "project" | "app_data" | "custom");
   const [snapshotCustomPath, setSnapshotCustomPath] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH] as string)));
@@ -238,7 +237,6 @@ export const SettingsWindow: React.FC = () => {
     setAutoSaveInterval(Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
     setHideSyntaxEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
     setLineFocusEnabled(Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
-    setLowPowerModeState(Boolean(DEFAULTS[STORAGE_KEYS.LOW_POWER_MODE]));
     setSnapshotsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]));
     setSnapshotLocation(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION]) as "project" | "app_data" | "custom");
     setSnapshotCustomPath(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH]));
@@ -517,28 +515,6 @@ export const SettingsWindow: React.FC = () => {
                   <MenuItem value="fill">Solid (Filled)</MenuItem>
                   <MenuItem value="regular">Stroke (Regular)</MenuItem>
                 </Select>
-              </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
-                  PERFORMANCE
-                </Typography>
-                <FormControlLabel
-                  control={<Switch size="small" checked={lowPowerMode}
-                    onChange={(e) => {
-                      const v = e.target.checked;
-                      setLowPowerModeState(v);
-                      localStorage.setItem(STORAGE_KEYS.LOW_POWER_MODE, String(v));
-                      emitUpdate(STORAGE_KEYS.LOW_POWER_MODE, v);
-                      if (v) { document.body.classList.add("low-power-mode"); }
-                      else { document.body.classList.remove("low-power-mode"); }
-                    }}
-                  />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Low Power / Battery Saver Mode</Typography>}
-                  sx={{ mx: 0 }}
-                />
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontSize: 10.5 }}>
-                  Extends parse debounces, disables GPU backdrop blurs and CSS transitions to conserve battery and CPU.
-                </Typography>
               </Box>
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>

@@ -65,8 +65,6 @@ export interface FileContextProps {
   deleteScript: (index: number) => Promise<boolean>;
   moveScript: (fromIndex: number, toIndex: number) => Promise<void>;
   saveStatus: "idle" | "saving" | "saved";
-  lowPowerMode: boolean;
-  setLowPowerMode: (enabled: boolean) => void;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -136,29 +134,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const [lowPowerMode, setLowPowerModeState] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.LOW_POWER_MODE) === "true";
-  });
-  const lowPowerModeRef = useRef(lowPowerMode);
-  lowPowerModeRef.current = lowPowerMode;
-
-  const setLowPowerMode = (enabled: boolean) => {
-    setLowPowerModeState(enabled);
-    localStorage.setItem(STORAGE_KEYS.LOW_POWER_MODE, String(enabled));
-    if (enabled) {
-      document.body.classList.add("low-power-mode");
-    } else {
-      document.body.classList.remove("low-power-mode");
-    }
-  };
-
-  useEffect(() => {
-    if (lowPowerMode) {
-      document.body.classList.add("low-power-mode");
-    } else {
-      document.body.classList.remove("low-power-mode");
-    }
-  }, [lowPowerMode]);
 
   const [rawText, setRawTextState] = useState<string>(defaultText);
   const [parsedDoc, setParsedDoc] = useState<FountainDocument>(() => parseScreenplay(defaultText, paperSize));
@@ -381,7 +356,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : prevDoc.settings;
         return { ...doc, settings: mergedSettings };
       });
-    }, lowPowerModeRef.current ? 800 : 100);
+    }, 100);
   };
 
   const updateFileScriptContent = useCallback(async (fileId: string, scriptIndex: number | undefined, text: string) => {
@@ -1428,8 +1403,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteScript,
         moveScript,
         saveStatus,
-        lowPowerMode,
-        setLowPowerMode,
       }}
     >
       {children}
