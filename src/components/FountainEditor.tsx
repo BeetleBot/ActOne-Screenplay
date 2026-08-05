@@ -1,13 +1,11 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import React, { useRef, useState, useMemo } from "react";
 import { useFile, useUI, useEditor, useParking, useCustomModal } from "../context";
 import { LineType } from "../parser";
 import { usePromptConfig } from "../hooks/usePromptConfig";
 import { getLanguageDetails } from "../constants/languages";
 import { useCodeMirror } from "../editor";
-import { Menu, MenuItem, Divider, ListItemIcon, ListItemText, Typography, Box } from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import type { Theme } from "@mui/material/styles";
-import { ContentCutIcon, ContentCopyIcon, AssignmentIcon, BookmarkIcon, ColorLensIcon, TextFieldsIcon, GoogleLogoIcon, TaskAltIcon, ArchiveIcon, FormatBoldIcon, FormatItalicIcon, FormatUnderlinedIcon, ChevronRightIcon, AutoAwesomeIcon } from "./Icons";
+import { Menu, MenuItem, Submenu, PredefinedMenuItem } from "@tauri-apps/api/menu";
 import { logger } from "../utils/logger";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { FOUNTAIN_SYNTAX_RULES } from "../constants";
@@ -54,14 +52,6 @@ export const FountainEditor = React.memo(() => {
   
   const viewRef = useCodeMirror(containerRef);
 
-  const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number } | null>(null);
-  const [promptMenuAnchorEl, setPromptMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [rephraseMenuAnchorEl, setRephraseMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [formatMenuAnchorEl, setFormatMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [highlightMenuAnchorEl, setHighlightMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [markerMenuAnchorEl, setMarkerMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [transformMenuAnchorEl, setTransformMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [translateMenuAnchorEl, setTranslateMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [translatingLang, setTranslatingLang] = useState<string | null>(null);
 
   const promptConfig = usePromptConfig();
@@ -77,18 +67,7 @@ export const FountainEditor = React.memo(() => {
   const selectedText = (view && selection && hasSelection) ? view.state.sliceDoc(selection.from, selection.to) : "";
 
   // These are derived from the snapshotted selection so they remain stable while the menu is open.
-  const menuHasSelection = menuSelectionRef.current !== null && menuSelectionRef.current.from !== menuSelectionRef.current.to;
-  const menuSelectedText = menuSelectionRef.current?.text ?? "";
 
-  const wordCount = useMemo(() => {
-    const text = contextMenu ? menuSelectedText : selectedText;
-    if (!text) return 0;
-    const trimmed = text.trim();
-    if (!trimmed) return 0;
-    return trimmed.split(/\s+/).length;
-  }, [selectedText, menuSelectedText, contextMenu]);
-
-  const charCount = contextMenu ? menuSelectedText.length : selectedText.length;
 
   const currentSceneLine = useMemo(() => {
     if (!view || !selection || !parsedDoc?.lines) return null;
@@ -119,23 +98,118 @@ export const FountainEditor = React.memo(() => {
     };
   };
 
-  const handleContextMenu = (event: React.MouseEvent) => {
+  const handleContextMenu = async (event: React.MouseEvent) => {
     event.preventDefault();
-    setContextMenu({
-      mouseX: event.clientX,
-      mouseY: event.clientY,
-    });
+
+    const v = viewRef.current;
+    if (v) {
+      const sel = v.state.selection.main;
+      menuSelectionRef.current = {
+        from: sel.from,
+        to: sel.to,
+        text: sel.from !== sel.to ? v.state.sliceDoc(sel.from, sel.to) : "",
+      };
+    }
+
+    const hasSel = menuSelectionRef.current !== null && menuSelectionRef.current.from !== menuSelectionRef.current.to;
+    const isSceneLine = currentSceneLine !== null;
+
+    try {
+      const items = [];
+
+      const museItems = [];
+      if (hasSel) {
+        museItems.push(await MenuItem.new({ text: "Look up", action: () => handlePromptAction("lookup") }));
+        museItems.push(await MenuItem.new({ text: "Synonyms", action: () => handlePromptAction("synonyms") }));
+        
+        const rephraseItems = [];
+        for (const preset of promptConfig.rephrasePresets) {
+          rephraseItems.push(
+            await MenuItem.new({ 
+              text: preset.name || "Untitled", 
+              enabled: !!preset.prompt.trim(),
+              action: () => handleRephraseClick(preset.prompt) 
+            })
+          );
+        }
+        museItems.push(await Submenu.new({ text: "Rephrase", items: rephraseItems }));
+
+        const translateItems = [];
+        for (const lang of promptConfig.translateLanguages) {
+          translateItems.push(
+            await MenuItem.new({
+              text: lang,
+              enabled: translatingLang !== lang,
+              action: () => handleTranslateClick(lang)
+            })
+          );
+        }
+        museItems.push(await Submenu.new({ text: "Translate", items: translateItems }));
+      } else {
+        const translateWholeItems = [];
+        for (const lang of promptConfig.translateLanguages) {
+          translateWholeItems.push(
+            await MenuItem.new({
+              text: lang,
+              enabled: translatingLang !== lang,
+              action: () => handleTranslateWholeDocument(lang)
+            })
+          );
+        }
+        museItems.push(await Submenu.new({ text: "Translate Whole Script", items: translateWholeItems }));
+      }
+
+      items.push(await Submenu.new({ text: "Muse", items: museItems }));
+      items.push(await PredefinedMenuItem.new({ item: 'Separator' }));
+
+      items.push(await MenuItem.new({ text: 'Cut', enabled: hasSel, action: () => handleEditorAction("cut") }));
+      items.push(await MenuItem.new({ text: 'Copy', enabled: hasSel, action: () => handleEditorAction("copy") }));
+      items.push(await MenuItem.new({ text: 'Paste', action: () => handleEditorAction("paste") }));
+
+      items.push(await PredefinedMenuItem.new({ item: 'Separator' }));
+
+      const highlightItems = [];
+      for (const col of HIGHLIGHT_COLORS) {
+        highlightItems.push(await MenuItem.new({ text: col.label, action: () => handleHighlightScene(col.key) }));
+      }
+      items.push(await Submenu.new({ text: "Highlight Scene", enabled: isSceneLine, items: highlightItems }));
+
+      const markerItems = [];
+      for (const col of MARKER_COLORS) {
+        markerItems.push(await MenuItem.new({ text: col.label, action: () => handleDropMarkerWithColor(col.key) }));
+      }
+      items.push(await Submenu.new({ text: "Drop Marker", items: markerItems }));
+
+      items.push(await PredefinedMenuItem.new({ item: 'Separator' }));
+
+      const formatItems = [];
+      formatItems.push(await MenuItem.new({ text: "Bold", action: () => toggleInlineMarker("**") }));
+      formatItems.push(await MenuItem.new({ text: "Italic", action: () => toggleInlineMarker("*") }));
+      formatItems.push(await MenuItem.new({ text: "Underline", action: () => toggleInlineMarker("_") }));
+      items.push(await Submenu.new({ text: "Format", enabled: hasSel, items: formatItems }));
+
+      const transformItems = [];
+      transformItems.push(await MenuItem.new({ text: "UPPERCASE", action: () => handleTransformCase("upper") }));
+      transformItems.push(await MenuItem.new({ text: "Title Case", action: () => handleTransformCase("title") }));
+      transformItems.push(await MenuItem.new({ text: "lowercase", action: () => handleTransformCase("lower") }));
+      items.push(await Submenu.new({ text: "Transform Case", enabled: hasSel, items: transformItems }));
+
+      items.push(await MenuItem.new({ text: "Look Up Word", enabled: hasSel, action: () => handleLookUpSelection() }));
+
+      items.push(await PredefinedMenuItem.new({ item: 'Separator' }));
+
+      items.push(await MenuItem.new({ text: "Create Task", enabled: hasSel, action: () => handleCreateTaskFromSelection() }));
+      items.push(await MenuItem.new({ text: "Park Selection", enabled: hasSel, action: () => handleParkSelection() }));
+
+      const menu = await Menu.new({ items });
+      await menu.popup(undefined, getCurrentWindow());
+      setTimeout(() => viewRef.current?.focus(), 0);
+    } catch (err) {
+      logger.error("editor", "Failed to open native context menu", err);
+    }
   };
 
   const handleClose = () => {
-    setContextMenu(null);
-    setPromptMenuAnchorEl(null);
-    setRephraseMenuAnchorEl(null);
-    setFormatMenuAnchorEl(null);
-    setHighlightMenuAnchorEl(null);
-    setMarkerMenuAnchorEl(null);
-    setTransformMenuAnchorEl(null);
-    setTranslateMenuAnchorEl(null);
     setTranslatingLang(null);
     menuSelectionRef.current = null;
     // Restore editor focus after the menu is fully closed.
@@ -440,7 +514,6 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handlePromptAction = async (action: "lookup" | "synonyms" | "rephrase") => {
-    setPromptMenuAnchorEl(null);
     const text = menuSelectionRef.current?.text ?? selectedText;
     handleClose();
     if (!text || !text.trim()) return;
@@ -463,8 +536,6 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handleRephraseClick = async (userPrompt: string) => {
-    setRephraseMenuAnchorEl(null);
-    setPromptMenuAnchorEl(null);
     const text = menuSelectionRef.current?.text ?? selectedText;
     handleClose();
     if (!text || !text.trim()) return;
@@ -473,8 +544,6 @@ export const FountainEditor = React.memo(() => {
   };
 
   const handleTranslateClick = async (lang: string) => {
-    setTranslateMenuAnchorEl(null);
-    setPromptMenuAnchorEl(null);
     setTranslatingLang(lang);
     setAiStatus(`Translating to ${lang}...`);
     const text = menuSelectionRef.current?.text ?? selectedText;
@@ -848,33 +917,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
     }
   };
 
-  const menuProps = {
-    disableScrollLock: true,
-    disableAutoFocus: true,
-    disableRestoreFocus: true,
-    transitionDuration: 0,
-    MenuListProps: {
-      autoFocusItem: false,
-      dense: true,
-    },
-    slotProps: {
-      backdrop: {
-        sx: { backdropFilter: "none", WebkitBackdropFilter: "none" },
-        onClick: handleClose
-      },
-      paper: {
-        sx: (theme: Theme) => ({
-          borderRadius: 0,
-          boxShadow: `0px 4px 16px ${alpha(theme.palette.common.black, 0.15)}`,
-          border: "1px solid",
-          borderColor: "divider",
-          minWidth: 180,
-          py: 0.25,
-        })
-      }
-    }
-  };
-
   return (
     <div 
       className={`editor-font-wrapper ${fontFamily}`} 
@@ -883,404 +925,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
       onContextMenu={handleContextMenu}
     >
       <div ref={containerRef} style={{ flex: 1, minHeight: "100%", cursor: "text" }} onClick={() => viewRef.current?.focus()} />
-      
-      <Menu
-        open={contextMenu !== null}
-        onClose={handleClose}
-        anchorReference="anchorPosition"
-        anchorPosition={
-          contextMenu !== null
-            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-            : undefined
-        }
-        {...menuProps}
-      >
-        {menuHasSelection && (
-          <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider", mb: 0.5 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block" }}>
-              SELECTION STATS
-            </Typography>
-            <Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
-              {wordCount} {wordCount === 1 ? "word" : "words"} • {charCount} {charCount === 1 ? "char" : "chars"}
-            </Typography>
-          </Box>
-        )}
-
-        <MenuItem 
-          onClick={(e) => setPromptMenuAnchorEl(e.currentTarget)}
-        >
-          <ListItemIcon>
-            <AutoAwesomeIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Muse" />
-          <ChevronRightIcon fontSize="small" sx={{ ml: "auto", opacity: 0.5 }} />
-        </MenuItem>
-
-        <MenuItem disabled={!menuHasSelection} onClick={() => handleEditorAction("cut")}>
-          <ListItemIcon>
-            <ContentCutIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Cut" />
-        </MenuItem>
-        
-        <MenuItem disabled={!menuHasSelection} onClick={() => handleEditorAction("copy")}>
-          <ListItemIcon>
-            <ContentCopyIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Copy" />
-        </MenuItem>
-        
-        <MenuItem onClick={() => handleEditorAction("paste")}>
-          <ListItemIcon>
-            <AssignmentIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Paste" />
-        </MenuItem>
-
-        <Divider />
-
-        <MenuItem
-          disabled={!currentSceneLine}
-          onClick={(e) => {
-            setHighlightMenuAnchorEl(e.currentTarget);
-            setFormatMenuAnchorEl(null);
-            setMarkerMenuAnchorEl(null);
-            setTransformMenuAnchorEl(null);
-          }}
-          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <ListItemIcon>
-              <ColorLensIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Highlight Scene" />
-          </Box>
-          <ChevronRightIcon fontSize="small" sx={{ opacity: 0.5 }} />
-        </MenuItem>
-
-        <MenuItem
-          onClick={(e) => {
-            setMarkerMenuAnchorEl(e.currentTarget);
-            setFormatMenuAnchorEl(null);
-            setHighlightMenuAnchorEl(null);
-            setTransformMenuAnchorEl(null);
-          }}
-          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <ListItemIcon>
-              <BookmarkIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Drop Marker" />
-          </Box>
-          <ChevronRightIcon fontSize="small" sx={{ opacity: 0.5 }} />
-        </MenuItem>
-
-        <Divider />
-
-        <MenuItem
-          disabled={!menuHasSelection}
-          onClick={(e) => {
-            setFormatMenuAnchorEl(e.currentTarget);
-            setHighlightMenuAnchorEl(null);
-            setMarkerMenuAnchorEl(null);
-            setTransformMenuAnchorEl(null);
-          }}
-          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <ListItemIcon>
-              <FormatBoldIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Format" />
-          </Box>
-          <ChevronRightIcon fontSize="small" sx={{ opacity: 0.5 }} />
-        </MenuItem>
-
-        <MenuItem
-          disabled={!menuHasSelection}
-          onClick={(e) => {
-            setTransformMenuAnchorEl(e.currentTarget);
-            setFormatMenuAnchorEl(null);
-            setHighlightMenuAnchorEl(null);
-            setMarkerMenuAnchorEl(null);
-          }}
-          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <ListItemIcon>
-              <TextFieldsIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Transform Case" />
-          </Box>
-          <ChevronRightIcon fontSize="small" sx={{ opacity: 0.5 }} />
-        </MenuItem>
-
-        <MenuItem
-          disabled={!menuHasSelection}
-          onClick={handleLookUpSelection}
-        >
-          <ListItemIcon>
-            <GoogleLogoIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Look Up Word" />
-        </MenuItem>
-
-        <Divider />
-
-        <MenuItem
-          disabled={!menuHasSelection}
-          onClick={handleCreateTaskFromSelection}
-        >
-          <ListItemIcon>
-            <TaskAltIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Create Task" />
-        </MenuItem>
-
-        <MenuItem
-          disabled={!menuHasSelection}
-          onClick={handleParkSelection}
-        >
-          <ListItemIcon>
-            <ArchiveIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Park Selection" />
-        </MenuItem>
-      </Menu>
-
-      <Menu
-        open={promptMenuAnchorEl !== null}
-        anchorEl={promptMenuAnchorEl}
-        onClose={() => setPromptMenuAnchorEl(null)}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        {...menuProps}
-      >
-        {menuHasSelection ? (
-          <>
-            <MenuItem onClick={() => handlePromptAction("lookup")}>
-              <ListItemText primary="Look up" />
-            </MenuItem>
-            <MenuItem onClick={() => handlePromptAction("synonyms")}>
-              <ListItemText primary="Synonyms" />
-            </MenuItem>
-            <MenuItem
-              onClick={(e) => {
-                setRephraseMenuAnchorEl(e.currentTarget);
-              }}
-              sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-            >
-              <ListItemText primary="Rephrase" />
-              <ChevronRightIcon fontSize="small" sx={{ ml: 1, opacity: 0.5 }} />
-            </MenuItem>
-            <MenuItem
-              onClick={(e) => {
-                setTranslateMenuAnchorEl(e.currentTarget);
-              }}
-              sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-            >
-              <ListItemText primary="Translate" />
-              <ChevronRightIcon fontSize="small" sx={{ ml: 1, opacity: 0.5 }} />
-            </MenuItem>
-          </>
-        ) : (
-          <MenuItem
-            onClick={(e) => {
-              setTranslateMenuAnchorEl(e.currentTarget);
-            }}
-            sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-          >
-            <ListItemText primary="Translate Whole Script" />
-            <ChevronRightIcon fontSize="small" sx={{ ml: 1, opacity: 0.5 }} />
-          </MenuItem>
-        )}
-      </Menu>
-
-      <Menu
-        open={rephraseMenuAnchorEl !== null}
-        anchorEl={rephraseMenuAnchorEl}
-        onClose={() => setRephraseMenuAnchorEl(null)}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        {...menuProps}
-      >
-        {promptConfig.rephrasePresets.map((preset) => (
-          <MenuItem
-            key={preset.name}
-            onClick={() => handleRephraseClick(preset.prompt)}
-            disabled={!preset.prompt.trim()}
-          >
-            <ListItemText primary={preset.name || "Untitled"} />
-          </MenuItem>
-        ))}
-      </Menu>
-
-      <Menu
-        open={translateMenuAnchorEl !== null}
-        anchorEl={translateMenuAnchorEl}
-        onClose={() => setTranslateMenuAnchorEl(null)}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        {...menuProps}
-      >
-        {promptConfig.translateLanguages.map(lang => (
-          <MenuItem 
-            key={lang} 
-            onClick={() => {
-              if (menuHasSelection) {
-                handleTranslateClick(lang);
-              } else {
-                handleTranslateWholeDocument(lang);
-              }
-            }} 
-            disabled={translatingLang === lang}
-          >
-            <ListItemText primary={translatingLang === lang ? `Translating to ${lang}...` : lang} />
-          </MenuItem>
-        ))}
-      </Menu>
-
-
-
-      <Menu
-        open={highlightMenuAnchorEl !== null}
-        anchorEl={highlightMenuAnchorEl}
-        onClose={() => setHighlightMenuAnchorEl(null)}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        {...menuProps}
-      >
-        {HIGHLIGHT_COLORS.map((col) => (
-          <MenuItem key={col.key} onClick={() => handleHighlightScene(col.key)}>
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                backgroundColor: col.color,
-                mr: 1.5,
-                flexShrink: 0
-              }}
-            />
-            <ListItemText primary={col.label} />
-          </MenuItem>
-        ))}
-      </Menu>
-
-      <Menu
-        open={markerMenuAnchorEl !== null}
-        anchorEl={markerMenuAnchorEl}
-        onClose={() => setMarkerMenuAnchorEl(null)}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        {...menuProps}
-      >
-        {MARKER_COLORS.map((col) => (
-          <MenuItem key={col.key} onClick={() => handleDropMarkerWithColor(col.key)}>
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                backgroundColor: col.color,
-                mr: 1.5,
-                flexShrink: 0
-              }}
-            />
-            <ListItemText primary={col.label} />
-          </MenuItem>
-        ))}
-      </Menu>
-
-      <Menu
-        open={formatMenuAnchorEl !== null}
-        anchorEl={formatMenuAnchorEl}
-        onClose={() => setFormatMenuAnchorEl(null)}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        {...menuProps}
-      >
-        <MenuItem disabled={!menuHasSelection} onClick={() => toggleInlineMarker("**")}>
-          <ListItemIcon>
-            <FormatBoldIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Bold" />
-        </MenuItem>
-        <MenuItem disabled={!menuHasSelection} onClick={() => toggleInlineMarker("*")}>
-          <ListItemIcon>
-            <FormatItalicIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Italic" />
-        </MenuItem>
-        <MenuItem disabled={!menuHasSelection} onClick={() => toggleInlineMarker("_")}>
-          <ListItemIcon>
-            <FormatUnderlinedIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Underline" />
-        </MenuItem>
-      </Menu>
-
-      <Menu
-        open={transformMenuAnchorEl !== null}
-        anchorEl={transformMenuAnchorEl}
-        onClose={() => setTransformMenuAnchorEl(null)}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        {...menuProps}
-      >
-        <MenuItem disabled={!menuHasSelection} onClick={() => handleTransformCase("upper")}>
-          <ListItemText primary="UPPERCASE" />
-        </MenuItem>
-        <MenuItem disabled={!menuHasSelection} onClick={() => handleTransformCase("title")}>
-          <ListItemText primary="Title Case" />
-        </MenuItem>
-        <MenuItem disabled={!menuHasSelection} onClick={() => handleTransformCase("lower")}>
-          <ListItemText primary="lowercase" />
-        </MenuItem>
-      </Menu>
     </div>
   );
 });

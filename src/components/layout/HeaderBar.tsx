@@ -1,3 +1,4 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import React, { useState, useEffect, useRef } from "react";
 import { useFile, useUI } from "../../context";
 import { getTauriWindow } from "../../utils";
@@ -6,9 +7,7 @@ import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemText from "@mui/material/ListItemText";
+import { Menu, MenuItem } from "@tauri-apps/api/menu";
 import { CloseIcon, AddIcon } from "../Icons";
 import { logger } from "../../utils/logger";
 
@@ -18,14 +17,21 @@ export const HeaderBar = React.memo(() => {
   const [isMaximized, setIsMaximized] = useState(false);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
-  const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; fileId: string } | null>(null);
-
-  const handleContextMenu = (e: React.MouseEvent, fileId: string) => {
+  const handleContextMenu = async (e: React.MouseEvent, fileId: string) => {
     e.preventDefault();
-    setMenuAnchor({ el: e.currentTarget as HTMLElement, fileId });
+    try {
+      const menu = await Menu.new({
+        items: [
+          await MenuItem.new({ text: 'Close', action: () => closeFile(fileId) }),
+          await MenuItem.new({ text: 'Close Others', action: () => closeOthers(fileId) }),
+          await MenuItem.new({ text: 'Close All', action: () => closeAll() })
+        ]
+      });
+      await menu.popup(undefined, getCurrentWindow());
+    } catch (err) {
+      logger.error("header", "Failed to open native context menu", err);
+    }
   };
-
-  const handleCloseMenu = () => setMenuAnchor(null);
 
   useEffect(() => {
     const checkMaximized = async () => {
@@ -296,25 +302,6 @@ export const HeaderBar = React.memo(() => {
         </Box>
       </Box>
 
-      <Menu
-        anchorEl={menuAnchor?.el}
-        open={Boolean(menuAnchor)}
-        onClose={handleCloseMenu}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { minWidth: 160 } } }}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <MenuItem onClick={() => { if (menuAnchor) { closeFile(menuAnchor.fileId); handleCloseMenu(); } }}>
-          <ListItemText primary="Close" />
-        </MenuItem>
-        <MenuItem onClick={() => { if (menuAnchor) { closeOthers(menuAnchor.fileId); handleCloseMenu(); } }}>
-          <ListItemText primary="Close Others" />
-        </MenuItem>
-        <MenuItem onClick={() => { closeAll(); handleCloseMenu(); }}>
-          <ListItemText primary="Close All" />
-        </MenuItem>
-      </Menu>
     </AppBar>
   );
 });

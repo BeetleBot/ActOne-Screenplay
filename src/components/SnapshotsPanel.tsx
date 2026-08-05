@@ -1,5 +1,7 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import React, { useState, useCallback } from "react";
-import { Box, Typography, IconButton, Button, TextField, List, ListItemButton, Divider, Menu, MenuItem, Tooltip } from "@mui/material";
+import { Box, Typography, IconButton, Button, TextField, List, ListItemButton, Tooltip } from "@mui/material";
+import { Menu, MenuItem, PredefinedMenuItem } from "@tauri-apps/api/menu";
 import type { Theme } from "@mui/material/styles";
 import { useSnapshots, type SnapshotInfo } from "../context/SnapshotContext";
 import { useCustomModal } from "../context/CustomModalContext";
@@ -57,7 +59,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
   const { openSettingsWindow } = useModalWindows();
   const [comment, setComment] = useState("");
   const [tag, setTag] = useState("");
-  const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; info: SnapshotInfo } | null>(null);
+
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const handleCreate = useCallback(async () => {
@@ -67,12 +69,12 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
   }, [createSnapshot, comment, tag]);
 
   const handleOpenAsFile = useCallback(async (info: SnapshotInfo) => {
-    setMenuState(null);
+
     await openSnapshotAsFile(info);
   }, [openSnapshotAsFile]);
 
   const handleDelete = useCallback(async (info: SnapshotInfo) => {
-    setMenuState(null);
+
     const result = await confirm({
       title: "Delete Snapshot",
       message: `Delete snapshot from ${formatSnapshotDateTime(info.created_at)}?\n\nThis action cannot be undone.`,
@@ -237,9 +239,20 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                 <ListItemButton
                   key={info.id}
                   dense
-                  onContextMenu={(e) => {
+                  onContextMenu={async (e) => {
                     e.preventDefault();
-                    setMenuState({ anchorEl: e.currentTarget, info });
+                    try {
+                      const menu = await Menu.new({
+                        items: [
+                          await MenuItem.new({ text: "Open as New File", action: () => handleOpenAsFile(info) }),
+                          await PredefinedMenuItem.new({ item: "Separator" }),
+                          await MenuItem.new({ text: "Delete", action: () => handleDelete(info) })
+                        ]
+                      });
+                      await menu.popup(undefined, getCurrentWindow());
+                    } catch (err) {
+                      console.error("Failed to open snapshot context menu", err);
+                    }
                   }}
                   sx={(theme) => {
                     const colors = getSnapshotColors(info.snapshot_type, theme);
@@ -333,9 +346,20 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                   </Box>
                   <IconButton
                     size="small"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      setMenuState({ anchorEl: e.currentTarget, info });
+                      try {
+                        const menu = await Menu.new({
+                          items: [
+                            await MenuItem.new({ text: "Open as New File", action: () => handleOpenAsFile(info) }),
+                            await PredefinedMenuItem.new({ item: "Separator" }),
+                            await MenuItem.new({ text: "Delete", action: () => handleDelete(info) })
+                          ]
+                        });
+                        await menu.popup(undefined, getCurrentWindow());
+                      } catch (err) {
+                        console.error("Failed to open snapshot context menu", err);
+                      }
                     }}
                     sx={{ opacity: 0.5, "&:hover": { opacity: 1 }, flexShrink: 0, alignSelf: "center", ml: 0.5 }}
                   >
@@ -349,23 +373,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
         )}
       </Box>
 
-      {/* Context menu */}
-      <Menu
-        anchorEl={menuState?.anchorEl}
-        open={!!menuState}
-        onClose={() => setMenuState(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { minWidth: 130 } } }}
-      >
-        <MenuItem onClick={() => menuState && handleOpenAsFile(menuState.info)} dense sx={{ fontSize: 12 }}>
-          Open as New File
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={() => menuState && handleDelete(menuState.info)} dense sx={{ fontSize: 12, color: "error.main" }}>
-          Delete
-        </MenuItem>
-      </Menu>
+
       </Box>
     </Box>
   );
