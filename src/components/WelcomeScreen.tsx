@@ -316,7 +316,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             }}
           >
             <Typography sx={{ fontWeight: 800, fontSize: 18, letterSpacing: "-0.01em", color: theme.palette.text.primary }}>
-              Welcome To ActOne!
+              Welcome To ActOne Screenplay!
             </Typography>
           </Box>
           <Box
