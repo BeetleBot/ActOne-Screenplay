@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.7] - 2026-08-05
+
+### Added
+- ✨ **Fix Formatting Feature** – Introduced a standalone screenplay layout formatting engine (`src/utils/fixFormatting.ts`) accessible via the Command Palette (`Ctrl+K`). Automatically collapses dialogue blank lines, enforces 1 blank line between elements, preserves multi-line action paragraphs, trims whitespace after forced syntax symbols (`.`, `#`, `=`, `@`, `!`, `~`), trims inline notes (`[[ ]]`), and normalizes title page headers.
+- 📊 **Fix Formatting Summary Modal** – Added a 0px border-radius summary modal (`FixFormattingModal.tsx`) that opens upon completion of Fix Formatting, displaying a breakdown of lines removed, dialogue spaces collapsed, syntax prefixes trimmed, and note spaces cleaned.
+- 📚 **Help Guide & Docs Integration** – Added a dedicated "Fix Formatting" article to the Help Guide (`src/data/helpArticles.tsx`) and updated feature documentation (`13-command-palette.md`, `19-help-guide.md`).
+
+### Changed / Improved
+- ⚡ **Accelerated Startup & Welcome Screen** – Parallelized initial recent file `file_exists` filesystem checks using `Promise.allSettled()` and pre-cached theme state synchronously from `localStorage`, eliminating load lag on Windows and Linux.
+- 🎨 **App Re-branding & Title** – Updated Welcome Screen header title to **"Welcome To ActOne Screenplay!"**.
+- 🔲 **Studio-Style About Modal** – Redesigned `AboutModal.tsx` with a sharp 0px border-radius layout, integrated `<TitleBar />`, and squarish container cards.
+- 🏷️ **Copyright Tag Link** – Replaced plain copyright text in AboutModal and WelcomeScreen footers with a tag badge containing a clickable `iyal.ink` link.
+- 🔒 **Viewport & Scroll Lock** – Added root-level scroll position snapshotting in `useModals.ts` to prevent editor viewport jumps when opening or closing modals.
+
+### Removed
+- 🔋 **Low Power Mode Removal** – Removed deprecated Low Power / Battery Saver mode settings, CSS overrides (`body.low-power-mode`), and parse-delay throttle logic across the app.
+
 ## [0.4.5] - 2026-08-03
 
 ### Changed / Improved
