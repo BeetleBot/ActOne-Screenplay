@@ -97,7 +97,7 @@ Keeps the cursor vertically centered — the page scrolls around the cursor inst
 To achieve a seamless native app writing experience, several core adjustments were made to CodeMirror event interceptors and layout coordinates:
 
 ### 1. Clipboard Context Actions (Copy, Cut, Paste)
-Due to standard browser sandbox restrictions on clipboards, context menu actions (right-click menu) often fail. We resolved this by:
+Due to standard browser sandbox restrictions on clipboards, right-click actions must use the same application clipboard path as keyboard and toolbar actions. The themed HTML context menu calls the editor actions directly, and we resolved this by:
 *   Integrating `navigator.clipboard` APIs directly inside layout actions.
 *   Forcing clipboard updates into the system ring buffer so native OS level clipboard registers (Ctrl+C, Ctrl+X, Ctrl+V) sync perfectly with toolbar actions.
 

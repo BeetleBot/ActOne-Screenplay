@@ -1,16 +1,15 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import React, { useRef, useState, useMemo } from "react";
 import { useFile, useUI, useEditor, useParking, useCustomModal } from "../context";
 import { LineType } from "../parser";
 import { usePromptConfig } from "../hooks/usePromptConfig";
 import { getLanguageDetails } from "../constants/languages";
 import { useCodeMirror } from "../editor";
-import { Menu, MenuItem, Submenu, PredefinedMenuItem } from "@tauri-apps/api/menu";
 import { logger } from "../utils/logger";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { FOUNTAIN_SYNTAX_RULES } from "../constants";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
 import { toggleInlineMarker as toggleInlineMarkerShared } from "../editor/formatUtils";
+import { ContextMenu, type ContextMenuItem, type ContextMenuItemDef } from "./ContextMenu";
 
 
 const HIGHLIGHT_COLORS = [
@@ -53,6 +52,7 @@ export const FountainEditor = React.memo(() => {
   const viewRef = useCodeMirror(containerRef);
 
   const [translatingLang, setTranslatingLang] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
 
   const promptConfig = usePromptConfig();
 
@@ -98,7 +98,7 @@ export const FountainEditor = React.memo(() => {
     };
   };
 
-  const handleContextMenu = async (event: React.MouseEvent) => {
+  const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
 
     const v = viewRef.current;
@@ -114,99 +114,78 @@ export const FountainEditor = React.memo(() => {
     const hasSel = menuSelectionRef.current !== null && menuSelectionRef.current.from !== menuSelectionRef.current.to;
     const isSceneLine = currentSceneLine !== null;
 
-    try {
-      const items = [];
-
-      const museItems = [];
-      if (hasSel) {
-        museItems.push(await MenuItem.new({ text: "Look up", action: () => handlePromptAction("lookup") }));
-        museItems.push(await MenuItem.new({ text: "Synonyms", action: () => handlePromptAction("synonyms") }));
-        
-        const rephraseItems = [];
-        for (const preset of promptConfig.rephrasePresets) {
-          rephraseItems.push(
-            await MenuItem.new({ 
-              text: preset.name || "Untitled", 
+    const museItems: ContextMenuItemDef[] = hasSel
+      ? [
+          { label: "Look up", action: () => handlePromptAction("lookup") },
+          { label: "Synonyms", action: () => handlePromptAction("synonyms") },
+          {
+            label: "Rephrase",
+            children: promptConfig.rephrasePresets.map((preset) => ({
+              label: preset.name || "Untitled",
               enabled: !!preset.prompt.trim(),
-              action: () => handleRephraseClick(preset.prompt) 
-            })
-          );
-        }
-        museItems.push(await Submenu.new({ text: "Rephrase", items: rephraseItems }));
-
-        const translateItems = [];
-        for (const lang of promptConfig.translateLanguages) {
-          translateItems.push(
-            await MenuItem.new({
-              text: lang,
+              action: () => handleRephraseClick(preset.prompt),
+            })),
+          },
+          {
+            label: "Translate",
+            children: promptConfig.translateLanguages.map((lang) => ({
+              label: lang,
               enabled: translatingLang !== lang,
-              action: () => handleTranslateClick(lang)
-            })
-          );
-        }
-        museItems.push(await Submenu.new({ text: "Translate", items: translateItems }));
-      } else {
-        const translateWholeItems = [];
-        for (const lang of promptConfig.translateLanguages) {
-          translateWholeItems.push(
-            await MenuItem.new({
-              text: lang,
-              enabled: translatingLang !== lang,
-              action: () => handleTranslateWholeDocument(lang)
-            })
-          );
-        }
-        museItems.push(await Submenu.new({ text: "Translate Whole Script", items: translateWholeItems }));
-      }
+              action: () => handleTranslateClick(lang),
+            })),
+          },
+        ]
+      : [{
+          label: "Translate Whole Script",
+          children: promptConfig.translateLanguages.map((lang) => ({
+            label: lang,
+            enabled: translatingLang !== lang,
+            action: () => handleTranslateWholeDocument(lang),
+          })),
+        }];
 
-      items.push(await Submenu.new({ text: "Muse", items: museItems }));
-      items.push(await PredefinedMenuItem.new({ item: 'Separator' }));
+    const items: ContextMenuItem[] = [
+      { label: "Muse", children: museItems },
+      "separator",
+      { label: "Cut", enabled: hasSel, action: () => handleEditorAction("cut") },
+      { label: "Copy", enabled: hasSel, action: () => handleEditorAction("copy") },
+      { label: "Paste", action: () => handleEditorAction("paste") },
+      "separator",
+      {
+        label: "Highlight Scene",
+        enabled: isSceneLine,
+        children: HIGHLIGHT_COLORS.map((col) => ({ label: col.label, action: () => handleHighlightScene(col.key) })),
+      },
+      {
+        label: "Drop Marker",
+        children: MARKER_COLORS.map((col) => ({ label: col.label, action: () => handleDropMarkerWithColor(col.key) })),
+      },
+      "separator",
+      {
+        label: "Format",
+        enabled: hasSel,
+        children: [
+          { label: "Bold", action: () => toggleInlineMarker("**") },
+          { label: "Italic", action: () => toggleInlineMarker("*") },
+          { label: "Underline", action: () => toggleInlineMarker("_") },
+        ],
+      },
+      {
+        label: "Transform Case",
+        enabled: hasSel,
+        children: [
+          { label: "UPPERCASE", action: () => handleTransformCase("upper") },
+          { label: "Title Case", action: () => handleTransformCase("title") },
+          { label: "lowercase", action: () => handleTransformCase("lower") },
+        ],
+      },
+      { label: "Look Up Word", enabled: hasSel, action: handleLookUpSelection },
+      "separator",
+      { label: "Create Task", enabled: hasSel, action: handleCreateTaskFromSelection },
+      { label: "Park Selection", enabled: hasSel, action: handleParkSelection },
+    ];
 
-      items.push(await MenuItem.new({ text: 'Cut', enabled: hasSel, action: () => handleEditorAction("cut") }));
-      items.push(await MenuItem.new({ text: 'Copy', enabled: hasSel, action: () => handleEditorAction("copy") }));
-      items.push(await MenuItem.new({ text: 'Paste', action: () => handleEditorAction("paste") }));
-
-      items.push(await PredefinedMenuItem.new({ item: 'Separator' }));
-
-      const highlightItems = [];
-      for (const col of HIGHLIGHT_COLORS) {
-        highlightItems.push(await MenuItem.new({ text: col.label, action: () => handleHighlightScene(col.key) }));
-      }
-      items.push(await Submenu.new({ text: "Highlight Scene", enabled: isSceneLine, items: highlightItems }));
-
-      const markerItems = [];
-      for (const col of MARKER_COLORS) {
-        markerItems.push(await MenuItem.new({ text: col.label, action: () => handleDropMarkerWithColor(col.key) }));
-      }
-      items.push(await Submenu.new({ text: "Drop Marker", items: markerItems }));
-
-      items.push(await PredefinedMenuItem.new({ item: 'Separator' }));
-
-      const formatItems = [];
-      formatItems.push(await MenuItem.new({ text: "Bold", action: () => toggleInlineMarker("**") }));
-      formatItems.push(await MenuItem.new({ text: "Italic", action: () => toggleInlineMarker("*") }));
-      formatItems.push(await MenuItem.new({ text: "Underline", action: () => toggleInlineMarker("_") }));
-      items.push(await Submenu.new({ text: "Format", enabled: hasSel, items: formatItems }));
-
-      const transformItems = [];
-      transformItems.push(await MenuItem.new({ text: "UPPERCASE", action: () => handleTransformCase("upper") }));
-      transformItems.push(await MenuItem.new({ text: "Title Case", action: () => handleTransformCase("title") }));
-      transformItems.push(await MenuItem.new({ text: "lowercase", action: () => handleTransformCase("lower") }));
-      items.push(await Submenu.new({ text: "Transform Case", enabled: hasSel, items: transformItems }));
-
-      items.push(await MenuItem.new({ text: "Look Up Word", enabled: hasSel, action: () => handleLookUpSelection() }));
-
-      items.push(await PredefinedMenuItem.new({ item: 'Separator' }));
-
-      items.push(await MenuItem.new({ text: "Create Task", enabled: hasSel, action: () => handleCreateTaskFromSelection() }));
-      items.push(await MenuItem.new({ text: "Park Selection", enabled: hasSel, action: () => handleParkSelection() }));
-
-      const menu = await Menu.new({ items });
-      await menu.popup(undefined, getCurrentWindow());
-      setTimeout(() => viewRef.current?.focus(), 0);
-    } catch (err) {
-      logger.error("editor", "Failed to open native context menu", err);
-    }
+    setContextMenu({ x: event.clientX, y: event.clientY, items });
   };
 
   const handleClose = () => {
@@ -214,6 +193,11 @@ export const FountainEditor = React.memo(() => {
     menuSelectionRef.current = null;
     // Restore editor focus after the menu is fully closed.
     setTimeout(() => viewRef.current?.focus(), 0);
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(null);
+    handleClose();
   };
 
 
@@ -925,6 +909,13 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
       onContextMenu={handleContextMenu}
     >
       <div ref={containerRef} style={{ flex: 1, minHeight: "100%", cursor: "text" }} onClick={() => viewRef.current?.focus()} />
+      <ContextMenu
+        open={contextMenu !== null}
+        x={contextMenu?.x ?? 0}
+        y={contextMenu?.y ?? 0}
+        items={contextMenu?.items ?? []}
+        onClose={closeContextMenu}
+      />
     </div>
   );
 });

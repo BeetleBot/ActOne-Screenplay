@@ -78,7 +78,7 @@ AppProviders
 | Component | File | Purpose |
 |-----------|------|---------|
 | `MainLayout` | `layout/MainLayout.tsx` | Grid layout combining HeaderBar, ActivityBar, Workspace, StatusBar |
-| `HeaderBar` | `layout/HeaderBar.tsx` | Multi-file tabs, window controls, context menu (close/close others/close all), update banner |
+| `HeaderBar` | `layout/HeaderBar.tsx` | Multi-file tabs, window controls, themed context menu (close/close others/close all), update banner |
 | `ActivityBar` | `layout/ActivityBar.tsx` | Command palette button, 8 sidebar icon tabs, quick settings menu with theme picker |
 | `StatusBar` | `layout/StatusBar.tsx` | Word/char/page count, sprint tracker, scene location, script switcher, save status, xray button, ambient indicator |
 | `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor, manages right pane (search/ambient) |
@@ -100,7 +100,8 @@ AppProviders
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `FountainEditor` | `FountainEditor.tsx` | Editor shell — context menus, drag-drop, right-click actions, tag/format/transform menus |
+| `FountainEditor` | `FountainEditor.tsx` | Editor shell — themed context menus, drag-drop, right-click actions, tag/format/transform menus |
+| `ContextMenu` | `ContextMenu.tsx` | Compact themed context-menu portal with hover/focus selection, submenus, viewport clamping, and keyboard navigation |
 | `OutlineView` | `OutlineView.tsx` | Scene/section outline tree with drag-reorder, colors, numbers |
 | `SearchPanel` | `SearchPanel.tsx` | Find/replace panel (Ctrl+F) |
 | `AmbientPanel` | `AmbientPanel.tsx` | Ambient sound selection panel |

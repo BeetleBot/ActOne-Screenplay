@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed / Improved
+- The editor, tab, and snapshot right-click menus now open synchronously as compact, themed app menus with native-style hover selection, keyboard navigation, submenus, and viewport clamping.
+
 ## [0.4.7] - 2026-08-05
 
 ### Added

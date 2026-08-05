@@ -34,7 +34,14 @@ Straight quotes (`"` and `'`) are automatically converted to curly typographic q
 
 Right-clicking opens a context menu with options:
 
-**Selection Stats** (when text is selected): word count and character count
+The menu is rendered inside the app so it follows the active ActOne theme while retaining compact native-style rows, keyboard navigation, hover selection, and submenu behavior.
+
+**Muse** (when text is selected):
+- **Look up** / **Synonyms**
+- **Rephrase** → configured rephrase presets
+- **Translate** → configured languages
+
+When no text is selected, **Muse** provides **Translate Whole Script**.
 
 **Clipboard Actions:**
 - **Cut** / **Copy** / **Paste** — uses Tauri clipboard plugin (`@tauri-apps/plugin-clipboard-manager`)

@@ -1,4 +1,3 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import React, { useState, useEffect, useRef } from "react";
 import { useFile, useUI } from "../../context";
 import { getTauriWindow } from "../../utils";
@@ -7,30 +6,20 @@ import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import { Menu, MenuItem } from "@tauri-apps/api/menu";
 import { CloseIcon, AddIcon } from "../Icons";
 import { logger } from "../../utils/logger";
+import { ContextMenu, type ContextMenuItem } from "../ContextMenu";
 
 export const HeaderBar = React.memo(() => {
   const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
   const { isZenMode } = useUI();
   const [isMaximized, setIsMaximized] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; fileId: string } | null>(null);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleContextMenu = async (e: React.MouseEvent, fileId: string) => {
+  const handleContextMenu = (e: React.MouseEvent, fileId: string) => {
     e.preventDefault();
-    try {
-      const menu = await Menu.new({
-        items: [
-          await MenuItem.new({ text: 'Close', action: () => closeFile(fileId) }),
-          await MenuItem.new({ text: 'Close Others', action: () => closeOthers(fileId) }),
-          await MenuItem.new({ text: 'Close All', action: () => closeAll() })
-        ]
-      });
-      await menu.popup(undefined, getCurrentWindow());
-    } catch (err) {
-      logger.error("header", "Failed to open native context menu", err);
-    }
+    setContextMenu({ x: e.clientX, y: e.clientY, fileId });
   };
 
   useEffect(() => {
@@ -88,7 +77,7 @@ export const HeaderBar = React.memo(() => {
       const isTab = target.closest(".header-tab");
       const isIconButton = target.closest("button") || target.tagName === "BUTTON";
       const isInput = target.closest("input") || target.tagName === "INPUT";
-      const isMenuItem = target.closest(".MuiMenuItem-root") || target.closest(".MuiMenu-root") || target.tagName === "LI";
+      const isMenuItem = target.closest(".MuiMenuItem-root") || target.closest(".MuiMenu-root") || target.closest(".context-menu") || target.closest(".MuiBackdrop-root") || target.tagName === "LI";
 
       if (!isTab && !isIconButton && !isInput && !isMenuItem) {
         const now = Date.now();
@@ -230,6 +219,17 @@ export const HeaderBar = React.memo(() => {
             </IconButton>
           </Tooltip>
         </Box>
+        <ContextMenu
+          open={contextMenu !== null}
+          x={contextMenu?.x ?? 0}
+          y={contextMenu?.y ?? 0}
+          items={contextMenu ? [
+            { label: "Close", action: () => closeFile(contextMenu.fileId) },
+            { label: "Close Others", action: () => closeOthers(contextMenu.fileId) },
+            { label: "Close All", action: closeAll },
+          ] satisfies ContextMenuItem[] : []}
+          onClose={() => setContextMenu(null)}
+        />
 
         <Box 
           sx={{ 

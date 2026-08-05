@@ -1,12 +1,11 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import React, { useState, useCallback } from "react";
 import { Box, Typography, IconButton, Button, TextField, List, ListItemButton, Tooltip } from "@mui/material";
-import { Menu, MenuItem, PredefinedMenuItem } from "@tauri-apps/api/menu";
 import type { Theme } from "@mui/material/styles";
 import { useSnapshots, type SnapshotInfo } from "../context/SnapshotContext";
 import { useCustomModal } from "../context/CustomModalContext";
 import { AddIcon, SettingsIcon, InfoOutlinedIcon } from "./Icons";
 import { useModalWindows } from "../hooks/useModalWindows";
+import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 
 function formatSnapshotDateTime(isoString: string): string {
   const date = new Date(isoString);
@@ -61,6 +60,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
   const [tag, setTag] = useState("");
 
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; info: SnapshotInfo } | null>(null);
 
   const handleCreate = useCallback(async () => {
     await createSnapshot(comment.trim() || undefined, "manual", tag.trim() || undefined);
@@ -239,20 +239,9 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                 <ListItemButton
                   key={info.id}
                   dense
-                  onContextMenu={async (e) => {
+                  onContextMenu={(e) => {
                     e.preventDefault();
-                    try {
-                      const menu = await Menu.new({
-                        items: [
-                          await MenuItem.new({ text: "Open as New File", action: () => handleOpenAsFile(info) }),
-                          await PredefinedMenuItem.new({ item: "Separator" }),
-                          await MenuItem.new({ text: "Delete", action: () => handleDelete(info) })
-                        ]
-                      });
-                      await menu.popup(undefined, getCurrentWindow());
-                    } catch (err) {
-                      console.error("Failed to open snapshot context menu", err);
-                    }
+                    setContextMenu({ x: e.clientX, y: e.clientY, info });
                   }}
                   sx={(theme) => {
                     const colors = getSnapshotColors(info.snapshot_type, theme);
@@ -346,21 +335,10 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                   </Box>
                   <IconButton
                     size="small"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      try {
-                        const menu = await Menu.new({
-                          items: [
-                            await MenuItem.new({ text: "Open as New File", action: () => handleOpenAsFile(info) }),
-                            await PredefinedMenuItem.new({ item: "Separator" }),
-                            await MenuItem.new({ text: "Delete", action: () => handleDelete(info) })
-                          ]
-                        });
-                        await menu.popup(undefined, getCurrentWindow());
-                      } catch (err) {
-                        console.error("Failed to open snapshot context menu", err);
-                      }
-                    }}
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       setContextMenu({ x: e.clientX, y: e.clientY, info });
+                     }}
                     sx={{ opacity: 0.5, "&:hover": { opacity: 1 }, flexShrink: 0, alignSelf: "center", ml: 0.5 }}
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
@@ -371,6 +349,17 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
             ))}
           </List>
         )}
+        <ContextMenu
+          open={contextMenu !== null}
+          x={contextMenu?.x ?? 0}
+          y={contextMenu?.y ?? 0}
+          items={contextMenu ? [
+            { label: "Open as New File", action: () => handleOpenAsFile(contextMenu.info) },
+            "separator",
+            { label: "Delete", action: () => handleDelete(contextMenu.info) },
+          ] satisfies ContextMenuItem[] : []}
+          onClose={() => setContextMenu(null)}
+        />
       </Box>
 
 
