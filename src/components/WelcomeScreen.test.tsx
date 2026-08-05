@@ -86,9 +86,9 @@ describe("WelcomeScreenWindow", () => {
     expect(screen.getAllByText("vtest-version [beta]").length).toBe(2);
   });
 
-  it("renders the Welcome To ActOne title", () => {
+  it("renders the Welcome To ActOne Screenplay title", () => {
     render(<WelcomeScreenWindow />);
-    expect(screen.getByText("Welcome To ActOne!")).toBeInTheDocument();
+    expect(screen.getByText("Welcome To ActOne Screenplay!")).toBeInTheDocument();
   });
 
   it("renders a quote on screen", () => {
