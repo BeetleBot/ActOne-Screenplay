@@ -920,9 +920,37 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           )}
         </Box>
 
-        <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, fontWeight: 500, letterSpacing: 0.2 }}>
-          &copy; 2026 ActOne
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 700, color: theme.palette.text.secondary }}>
+            © 2026
+          </Typography>
+          <Typography
+            variant="caption"
+            component="span"
+            onClick={(e) => {
+              e.stopPropagation();
+              try {
+                import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl("https://iyal.ink"));
+              } catch {
+                window.open("https://iyal.ink", "_blank");
+              }
+            }}
+            sx={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: theme.palette.primary.main,
+              cursor: "pointer",
+              "&:hover": {
+                textDecoration: "underline",
+              },
+            }}
+          >
+            iyal.ink
+          </Typography>
+          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 500, color: theme.palette.text.secondary }}>
+            — Tools for the story in progress.
+          </Typography>
+        </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", minWidth: 120 }}>
           <Tooltip title="Help & Documentation">
