@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { EditorState, Compartment, Transaction, RangeSetBuilder, StateField } from "@codemirror/state";
+import { EditorState, Transaction, RangeSetBuilder, StateField } from "@codemirror/state";
 import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { search, setSearchQuery, getSearchQuery } from "@codemirror/search";
@@ -25,8 +25,10 @@ import {
 import { emptyLineSelectionPlugin } from "./emptyLineSelection";
 import { rephraseHighlightField } from "./rephraseState";
 import { pendingScrollTargetY } from "./cursorScroll";
+import { typewriterCompartment, typewriterScrollPlugin } from "./typewriter";
 
 let scriptSwitchToken = 0;
+export const getScriptSwitchToken = () => scriptSwitchToken;
 
 function getScrollArea(view: EditorView): HTMLElement | null {
   return view.dom.closest(".editor-scroll-area") as HTMLElement | null;
@@ -235,30 +237,6 @@ function handleTab(view: EditorView): boolean {
   return true;
 }
 
-const typewriterCompartment = new Compartment();
-
-const typewriterScrollPlugin = ViewPlugin.fromClass(
-  class {
-    scheduled = false;
-
-    update(update: ViewUpdate) {
-      if (!(update.docChanged || update.selectionSet)) return;
-      if (!update.state.selection.main.empty) return;
-      if (this.scheduled) return;
-      this.scheduled = true;
-      const token = scriptSwitchToken;
-      const view = update.view;
-      requestAnimationFrame(() => {
-        this.scheduled = false;
-        if (scriptSwitchToken !== token) return;
-        if (!view.state.selection.main.empty) return;
-        view.dispatch({
-          effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: "center" })
-        });
-      });
-    }
-  }
-);
 
 const activeLineDeco = Decoration.line({ class: "cm-activeLine-always" });
 
