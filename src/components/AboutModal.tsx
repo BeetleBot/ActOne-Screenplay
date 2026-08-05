@@ -277,9 +277,48 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           </Box>
         </DialogContent>
 
-        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', textAlign: 'center', fontSize: 10.5, fontWeight: 500 }}>
-          © 2026 iyal.ink — Tools for the story in progress.
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 0.5 }}>
+          <Chip
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.68rem', color: 'text.secondary' }}>
+                  © 2026
+                </Typography>
+                <Typography
+                  variant="caption"
+                  component="span"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenUrl('https://iyal.ink');
+                  }}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.68rem',
+                    color: 'primary.main',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  iyal.ink
+                </Typography>
+                <Typography variant="caption" sx={{ fontWeight: 500, fontSize: '0.68rem', color: 'text.secondary' }}>
+                  — Tools for the story in progress.
+                </Typography>
+              </Box>
+            }
+            size="small"
+            sx={{
+              borderRadius: 0,
+              height: 26,
+              bgcolor: 'action.hover',
+              border: '1px solid',
+              borderColor: 'divider',
+              px: 0.5,
+            }}
+          />
+        </Box>
       </Box>
     </Dialog>
   );
