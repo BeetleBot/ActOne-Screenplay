@@ -109,7 +109,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const scrollPosRef = useRef(0);
   const {
     newFile,
     openFile,
@@ -152,35 +151,25 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   };
 
   const prevOpen = useRef(isOpen);
-  const scrollAreaRef = useRef<HTMLElement | null>(null);
-
-  if (isOpen && !prevOpen.current) {
-    scrollAreaRef.current = document.querySelector('.editor-scroll-area');
-    const el = scrollAreaRef.current;
-    if (el) {
-      scrollPosRef.current = el.scrollTop;
-    }
-  }
 
   useEffect(() => {
     if (isOpen) {
       setSearch("");
       setSelectedIndex(0);
-      const el = scrollAreaRef.current || document.querySelector('.editor-scroll-area');
-      if (el) {
-        el.scrollTop = scrollPosRef.current;
-      }
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (prevOpen.current && !isOpen) {
-      const el = scrollAreaRef.current || document.querySelector('.editor-scroll-area');
-      if (el) {
-        el.scrollTop = scrollPosRef.current;
+      if (editorView) {
+        setTimeout(() => {
+          // Only refocus editor if focus hasn't already been claimed by a newly opened window/modal/input
+          if (!document.activeElement || document.activeElement === document.body) {
+            editorView.contentDOM.focus({ preventScroll: true });
+          }
+        }, 50);
       }
-      setTimeout(() => editorView?.dom.focus({ preventScroll: true }), 0);
     }
     prevOpen.current = isOpen;
   }, [isOpen, editorView]);
@@ -333,11 +322,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   };
 
   useEffect(() => {
-    const selectedElement = containerRef.current?.querySelector(
+    const container = containerRef.current;
+    if (!container) return;
+    const selectedElement = container.querySelector(
       `[data-index="${selectedIndex}"]`
-    );
+    ) as HTMLElement | null;
     if (selectedElement) {
-      selectedElement.scrollIntoView({ block: "nearest" });
+      const elemTop = selectedElement.offsetTop;
+      const elemBottom = elemTop + selectedElement.offsetHeight;
+      if (elemTop < container.scrollTop) {
+        container.scrollTop = elemTop;
+      } else if (elemBottom > container.scrollTop + container.clientHeight) {
+        container.scrollTop = elemBottom - container.clientHeight;
+      }
     }
   }, [selectedIndex]);
 
@@ -375,7 +372,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     >
       <Box data-tour-palette sx={{ px: 2, py: 1 }}>
         <TextField
-          autoFocus
           inputRef={inputRef}
           placeholder="Type a command or search..."
           value={search}

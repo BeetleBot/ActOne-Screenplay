@@ -24,6 +24,13 @@ import {
 } from "./fountainSyntax";
 import { emptyLineSelectionPlugin } from "./emptyLineSelection";
 import { rephraseHighlightField } from "./rephraseState";
+import { pendingScrollTargetY } from "./cursorScroll";
+
+let scriptSwitchToken = 0;
+
+function getScrollArea(view: EditorView): HTMLElement | null {
+  return view.dom.closest(".editor-scroll-area") as HTMLElement | null;
+}
 
 const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
   if (localStorage.getItem("actone-smart-quotes-enabled") !== "true") return tr;
@@ -232,48 +239,23 @@ const typewriterCompartment = new Compartment();
 
 const typewriterScrollPlugin = ViewPlugin.fromClass(
   class {
-    lastBlockFrom: number = -1;
+    scheduled = false;
 
     update(update: ViewUpdate) {
-      if (update.docChanged && update.state.selection.main.empty) {
-        const head = update.state.selection.main.head;
-        update.view.requestMeasure({
-          read: (view) => {
-            const block = view.lineBlockAt(head);
-            if (block.from === this.lastBlockFrom) {
-              return null;
-            }
-            this.lastBlockFrom = block.from;
-
-            const coords = view.coordsAtPos(head);
-            const scrollContainer = view.dom.closest('.editor-scroll-area');
-            if (!coords || !scrollContainer) return null;
-
-            const containerRect = scrollContainer.getBoundingClientRect();
-            const scrollTop = scrollContainer.scrollTop;
-            const cursorY = (coords.top + coords.bottom) / 2;
-            const absoluteCursorY = cursorY - containerRect.top + scrollTop;
-            const targetScrollTop = absoluteCursorY - containerRect.height / 2;
-
-            if (Math.abs(targetScrollTop - scrollTop) <= 1.0) {
-              return null;
-            }
-
-            return {
-              scrollContainer,
-              targetScrollTop,
-            };
-          },
-          write(measureResult) {
-            if (measureResult) {
-              measureResult.scrollContainer.scrollTo({
-                top: measureResult.targetScrollTop,
-                behavior: 'smooth'
-              });
-            }
-          }
+      if (!(update.docChanged || update.selectionSet)) return;
+      if (!update.state.selection.main.empty) return;
+      if (this.scheduled) return;
+      this.scheduled = true;
+      const token = scriptSwitchToken;
+      const view = update.view;
+      requestAnimationFrame(() => {
+        this.scheduled = false;
+        if (scriptSwitchToken !== token) return;
+        if (!view.state.selection.main.empty) return;
+        view.dispatch({
+          effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: "center" })
         });
-      }
+      });
     }
   }
 );
@@ -407,6 +389,10 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
   const pendingScrollToRef = useRef<number | null>(null);
   const lastDispatchedTextRef = useRef("");
   const lastDispatchedParsedDocRef = useRef<unknown>(null);
+  const scrollPositionsRef = useRef<Record<string, number>>({});
+
+  const typewriterModeRef = useRef(typewriterMode);
+  useEffect(() => { typewriterModeRef.current = typewriterMode; }, [typewriterMode]);
 
   useEffect(() => {
     if (viewRef.current) {
@@ -416,17 +402,13 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         ),
       });
       if (typewriterMode) {
+        const token = scriptSwitchToken;
         setTimeout(() => {
+          if (scriptSwitchToken !== token) return;
           if (viewRef.current) {
-            const head = viewRef.current.state.selection.main.head;
-            const coords = viewRef.current.coordsAtPos(head);
-            const scrollContainer = viewRef.current.dom.closest('.editor-scroll-area');
-            if (coords && scrollContainer) {
-              const containerRect = scrollContainer.getBoundingClientRect();
-              const cursorY = (coords.top + coords.bottom) / 2;
-              const containerCenterY = containerRect.top + containerRect.height / 2;
-              scrollContainer.scrollTop += cursorY - containerCenterY;
-            }
+            viewRef.current.dispatch({
+              effects: EditorView.scrollIntoView(viewRef.current.state.selection.main.head, { y: "center" })
+            });
           }
         }, 50);
       }
@@ -580,7 +562,6 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     setEditorView(view);
 
     view.dispatch({
-      selection: { anchor: 0, head: 0 },
       effects: [
         updateHideSyntaxEffect.of(hideSyntaxEnabled),
         updateRightPaneOpenEffect.of(activeRightPane !== null),
@@ -594,15 +575,9 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
     if (typewriterMode) {
       setTimeout(() => {
         if (viewRef.current) {
-          const head = viewRef.current.state.selection.main.head;
-          const coords = viewRef.current.coordsAtPos(head);
-          const scrollContainer = viewRef.current.dom.closest('.editor-scroll-area');
-          if (coords && scrollContainer) {
-            const containerRect = scrollContainer.getBoundingClientRect();
-            const cursorY = (coords.top + coords.bottom) / 2;
-            const containerCenterY = containerRect.top + containerRect.height / 2;
-            scrollContainer.scrollTop += cursorY - containerCenterY;
-          }
+          viewRef.current.dispatch({
+            effects: EditorView.scrollIntoView(viewRef.current.state.selection.main.head, { y: "center" })
+          });
         }
       }, 100);
     }
@@ -625,14 +600,19 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       const isDifferentScript = lastScriptKeyRef.current !== currentScriptKey;
 
       if (isDifferentScript) {
-        // Save current state of the old script (selection, doc, history)
+        const scrollArea = getScrollArea(view);
+
         if (lastScriptKeyRef.current) {
           statesRef.current[lastScriptKeyRef.current] = view.state;
+          if (scrollArea) {
+            scrollPositionsRef.current[lastScriptKeyRef.current] = scrollArea.scrollTop;
+          }
         }
 
         lastScriptKeyRef.current = currentScriptKey;
+        scriptSwitchToken += 1;
+        const token = scriptSwitchToken;
 
-        // Load or create state for the new script
         if (statesRef.current[currentScriptKey]) {
           view.setState(statesRef.current[currentScriptKey]);
         } else {
@@ -643,15 +623,34 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           view.setState(newState);
         }
 
+        pendingScrollToRef.current = null;
+
         requestAnimationFrame(() => {
+          if (scriptSwitchToken !== token) return;
           view.focus();
         });
 
-        pendingScrollToRef.current = null;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (scriptSwitchToken !== token) return;
+            const area = getScrollArea(view);
+            if (area) {
+              const savedScrollTop = scrollPositionsRef.current[currentScriptKey];
+              if (savedScrollTop !== undefined) {
+                area.scrollTop = savedScrollTop;
+              }
+            }
+            view.dispatch({
+              effects: EditorView.scrollIntoView(view.state.selection.main.head, {
+                y: typewriterModeRef.current ? "center" : "nearest"
+              })
+            });
+          });
+        });
       } else {
         // Same script, check if text changed externally (e.g. disk reload / sync / AI translation)
         if (pendingRawTextRef.current === null && view.state.doc.toString() !== rawText) {
-          const scrollArea = view.dom.closest('.editor-scroll-area') as HTMLElement | null;
+          const scrollArea = getScrollArea(view);
           const savedScrollTop = scrollArea ? scrollArea.scrollTop : null;
 
           const currentSel = view.state.selection.main;
@@ -665,9 +664,12 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           });
 
           if (savedScrollTop !== null && scrollArea) {
+            const token = scriptSwitchToken;
             scrollArea.scrollTop = savedScrollTop;
             requestAnimationFrame(() => {
-              scrollArea.scrollTop = savedScrollTop;
+              if (scriptSwitchToken === token) {
+                scrollArea.scrollTop = savedScrollTop;
+              }
             });
           }
         }
@@ -712,15 +714,40 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         });
       }
 
-      // Only adjust cursor position if the editor is focused, user is actively typing, and text did NOT change externally
-      if (prevCursorY !== null && view.hasFocus && pendingScrollToRef.current === null && !isExternalTextChange) {
+      const scrollToPendingTarget = () => {
+        const target = pendingScrollToRef.current;
+        if (target === null) return;
+        pendingScrollToRef.current = null;
+        const token = scriptSwitchToken;
         requestAnimationFrame(() => {
+          if (scriptSwitchToken !== token) return;
+          try {
+            const coords = view.coordsAtPos(target);
+            const scrollArea = getScrollArea(view);
+            if (coords && scrollArea) {
+              const areaRect = scrollArea.getBoundingClientRect();
+              const targetY = pendingScrollTargetY(
+                scrollArea.scrollTop,
+                coords.top,
+                areaRect.top,
+                areaRect.height
+              );
+              scrollArea.scrollTo({ top: targetY, behavior: 'auto' });
+            }
+          } catch { void 0; }
+        });
+      };
+
+      if (prevCursorY !== null && view.hasFocus && pendingScrollToRef.current === null && !isExternalTextChange && !typewriterModeRef.current) {
+        const token = scriptSwitchToken;
+        requestAnimationFrame(() => {
+          if (scriptSwitchToken !== token) return;
           try {
             const coords = view.coordsAtPos(view.state.selection.main.head);
             if (coords) {
               const diff = coords.top - (prevCursorY as number);
               if (Math.abs(diff) > 0.5) {
-                const scrollArea = view.dom.closest('.editor-scroll-area') as HTMLElement | null;
+                const scrollArea = getScrollArea(view);
                 if (scrollArea) {
                   scrollArea.scrollTop += diff;
                 }
@@ -729,36 +756,10 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           } catch {
             void 0;
           }
-          const pendingTarget = pendingScrollToRef.current;
-          if (pendingTarget !== null) {
-            pendingScrollToRef.current = null;
-            try {
-              const coords = view.coordsAtPos(pendingTarget);
-              const scrollArea = view.dom.closest('.editor-scroll-area') as HTMLElement | null;
-              if (coords && scrollArea) {
-                const areaRect = scrollArea.getBoundingClientRect();
-                const targetY = scrollArea.scrollTop + coords.top - areaRect.top - areaRect.height * 0.3;
-                scrollArea.scrollTo({ top: targetY, behavior: 'smooth' });
-              }
-            } catch { void 0; }
-          }
+          scrollToPendingTarget();
         });
       } else {
-        const pendingTarget = pendingScrollToRef.current;
-        if (pendingTarget !== null) {
-          pendingScrollToRef.current = null;
-          requestAnimationFrame(() => {
-            try {
-              const coords = view.coordsAtPos(pendingTarget);
-              const scrollArea = view.dom.closest('.editor-scroll-area') as HTMLElement | null;
-              if (coords && scrollArea) {
-                const areaRect = scrollArea.getBoundingClientRect();
-                const targetY = scrollArea.scrollTop + coords.top - areaRect.top - areaRect.height * 0.3;
-                scrollArea.scrollTo({ top: targetY, behavior: 'smooth' });
-              }
-            } catch { void 0; }
-          });
-        }
+        scrollToPendingTarget();
       }
     }
   }, [parsedDoc]);

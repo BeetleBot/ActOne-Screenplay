@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 
 export interface ModalState {
   isPaletteOpen: boolean;
@@ -24,6 +24,26 @@ export function useModals() {
     () => isPaletteOpen || showExportModal || showStructureModal || showTitlePageModal,
     [isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal]
   );
+
+  const savedScrollTopRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const el = document.querySelector('.editor-scroll-area') as HTMLElement | null;
+    if (!el) return;
+
+    if (isModalActive) {
+      if (savedScrollTopRef.current === null) {
+        savedScrollTopRef.current = el.scrollTop;
+      }
+    } else if (savedScrollTopRef.current !== null) {
+      const targetScroll = savedScrollTopRef.current;
+      savedScrollTopRef.current = null;
+      el.scrollTop = targetScroll;
+      requestAnimationFrame(() => {
+        el.scrollTop = targetScroll;
+      });
+    }
+  }, [isModalActive]);
 
   const togglePalette = useCallback(() => setIsPaletteOpen(p => !p), []);
 

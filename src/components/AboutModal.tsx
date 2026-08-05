@@ -6,7 +6,7 @@ import {
   Typography,
   IconButton,
   Button,
-  useTheme,
+  useTheme as useMuiTheme,
   Chip,
   Tooltip,
 } from '@mui/material';
@@ -19,6 +19,9 @@ import {
   ColorLensIcon,
   InfoOutlinedIcon,
 } from './Icons';
+import { ThemeLogo } from './ThemeLogo';
+import { useTheme as useAppTheme } from '../context';
+import { resolveThemeConfig } from '../theme/themeUtils';
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -26,15 +29,19 @@ interface AboutModalProps {
 }
 
 export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
+  const muiTheme = useMuiTheme();
+  const isDark = muiTheme.palette.mode === 'dark';
+  const { theme: activeThemeId, customThemes } = useAppTheme();
   const [copied, setCopied] = useState(false);
+
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const currentThemeConfig = resolveThemeConfig(activeThemeId, customThemes, systemDark);
 
   const supportEmail = 'actonesupport@iyal.ink';
   const actoneUrl = 'https://actone.iyal.ink';
   const fountUrl = 'https://fount.iyal.ink';
   const version = 'v0.4.6';
-  const themeName = isDark ? 'Dark Studio' : 'Light Paper';
+  const displayThemeName = currentThemeConfig.name;
 
   const handleOpenUrl = (url: string) => {
     try {
@@ -60,11 +67,13 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         paper: {
           sx: {
             borderRadius: '16px',
-            bgcolor: isDark ? '#141416' : '#FFFFFF',
-            color: isDark ? '#F0F0F0' : '#1A1A1A',
+            bgcolor: 'background.paper',
+            color: 'text.primary',
             backgroundImage: 'none',
+            border: '1px solid',
+            borderColor: 'divider',
             boxShadow: isDark
-              ? '0 24px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08)'
+              ? '0 24px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08)'
               : '0 24px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08)',
             overflow: 'hidden',
           },
@@ -78,10 +87,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             position: 'absolute',
             right: 12,
             top: 12,
-            color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+            color: 'text.secondary',
             '&:hover': {
-              color: isDark ? '#FFFFFF' : '#000000',
-              bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+              color: 'text.primary',
+              bgcolor: 'action.hover',
             },
           }}
         >
@@ -95,33 +104,30 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             mx: 'auto',
             mb: 2,
             borderRadius: '18px',
-            bgcolor: isDark ? '#1E1E22' : '#F5F5F7',
+            bgcolor: 'action.hover',
+            border: '1px solid',
+            borderColor: 'divider',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)',
             p: 1.5,
           }}
         >
-          <img
-            src="/ActOne_apptile.png"
-            alt="ActOne Logo"
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = 'none';
-            }}
-          />
+          <Box sx={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'primary.main' }}>
+            <ThemeLogo variant="solid" />
+          </Box>
         </Box>
 
         <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 0.5 }}>
           ActOne
         </Typography>
 
-        <Typography variant="body2" sx={{ color: isDark ? '#999999' : '#666666', mb: 2 }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
           Native Fountain Screenplay Studio
         </Typography>
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 3, flexWrap: 'wrap' }}>
           <Chip
             icon={<InfoOutlinedIcon sx={{ fontSize: 14 }} />}
             label={version}
@@ -129,19 +135,19 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             sx={{
               fontWeight: 700,
               fontSize: '0.75rem',
-              bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-              color: isDark ? '#E0E0E0' : '#333333',
+              bgcolor: 'action.selected',
+              color: 'text.primary',
             }}
           />
           <Chip
             icon={<ColorLensIcon sx={{ fontSize: 14 }} />}
-            label={themeName}
+            label={displayThemeName}
             size="small"
             sx={{
               fontWeight: 600,
               fontSize: '0.75rem',
-              bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-              color: isDark ? '#E0E0E0' : '#333333',
+              bgcolor: 'action.selected',
+              color: 'text.primary',
             }}
           />
         </Box>
@@ -149,18 +155,19 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         <DialogContent sx={{ p: 0, mb: 3 }}>
           <Box
             sx={{
-              bgcolor: isDark ? '#1A1A1E' : '#F9F9FA',
+              bgcolor: 'action.hover',
               borderRadius: '12px',
               p: 2,
               display: 'flex',
               flexDirection: 'column',
               gap: 1.5,
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid rgba(0, 0, 0, 0.06)',
+              border: '1px solid',
+              borderColor: 'divider',
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                <OpenInNewIcon sx={{ fontSize: 18, color: isDark ? '#AAAAAA' : '#666666' }} />
+                <OpenInNewIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   ActOne Website
                 </Typography>
@@ -172,7 +179,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                   textTransform: 'none',
                   fontWeight: 700,
                   fontSize: '0.8rem',
-                  color: isDark ? '#66B2FF' : '#0066CC',
+                  color: 'primary.main',
                   p: '2px 8px',
                   minWidth: 'auto',
                 }}
@@ -183,7 +190,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                <OpenInNewIcon sx={{ fontSize: 18, color: isDark ? '#AAAAAA' : '#666666' }} />
+                <OpenInNewIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   Fount TUI Website
                 </Typography>
@@ -195,7 +202,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                   textTransform: 'none',
                   fontWeight: 700,
                   fontSize: '0.8rem',
-                  color: isDark ? '#66B2FF' : '#0066CC',
+                  color: 'primary.main',
                   p: '2px 8px',
                   minWidth: 'auto',
                 }}
@@ -206,7 +213,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                <SendIcon sx={{ fontSize: 18, color: isDark ? '#AAAAAA' : '#666666' }} />
+                <SendIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   Support Email
                 </Typography>
@@ -217,7 +224,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                   sx={{
                     fontFamily: 'monospace',
                     fontSize: '0.78rem',
-                    color: isDark ? '#CCCCCC' : '#444444',
+                    color: 'text.primary',
                   }}
                 >
                   {supportEmail}
@@ -225,9 +232,9 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 <Tooltip title={copied ? 'Copied!' : 'Copy Support Email'}>
                   <IconButton size="small" onClick={handleCopyEmail} sx={{ p: '2px' }}>
                     {copied ? (
-                      <CheckIcon sx={{ fontSize: 14, color: '#4CAF50' }} />
+                      <CheckIcon sx={{ fontSize: 14, color: 'success.main' }} />
                     ) : (
-                      <ContentCopyIcon sx={{ fontSize: 14, color: isDark ? '#888' : '#666' }} />
+                      <ContentCopyIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
                     )}
                   </IconButton>
                 </Tooltip>
@@ -236,10 +243,11 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           </Box>
         </DialogContent>
 
-        <Typography variant="caption" sx={{ color: isDark ? '#666666' : '#999999', display: 'block' }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
           © 2026 iyal.ink — Tools for the story in progress.
         </Typography>
       </Box>
     </Dialog>
   );
 };
+

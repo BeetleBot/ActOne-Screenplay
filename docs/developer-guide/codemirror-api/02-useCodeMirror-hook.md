@@ -60,3 +60,45 @@ The hook registers an `EditorView.updateListener` that fires:
 - `onTextChange` — on every document change (debounced in some cases)
 - `onSelectionChange` — when cursor position changes
 - `onSceneChange` — when cursor enters a different scene (detected via the fountain syntax state field)
+
+## Tab Switching & Viewport Stability
+
+ActOne reuses a **single `EditorView`** across all open file tabs. Per-file state is
+cached in the hook (`statesRef` + `scrollPositionsRef`, keyed by
+`${activeFileId}-${activeScriptIndex}`) and swapped with `view.setState(...)`.
+
+The visible scroll container is the external `.editor-scroll-area` element
+(CodeMirror's own `.cm-scroller` is `overflow: visible`), so the viewport is **not**
+part of `EditorState`. To keep the viewport stable and per-file:
+
+1. **On tab switch**, the outgoing file's `scrollTop` is saved and the incoming
+   file's `scrollTop` is restored, then a `EditorView.scrollIntoView(head, ...)`
+   effect is dispatched so the cursor is always in view (`y: "center"` in
+   typewriter mode, `y: "nearest"` otherwise). CodeMirror's `scrollRectIntoView`
+   walks up scrollable ancestors, so this scrolls the outer `.editor-scroll-area`.
+2. **Focus is restored via `view.focus()`**, which uses CodeMirror's internal
+   `focusPreventScroll` helper — it feature-detects `preventScroll` support
+   (including the Safari/WebKit regression where `preventScroll` is broken) and
+   falls back to a scroll capture/restore kludge, so the browser's native
+   focus-scroll can never fight the controlled restore on any engine.
+3. **A module-level `scriptSwitchToken`** is incremented on every script switch.
+   Every deferred scroll operation (rAF callbacks, `requestMeasure` writes,
+   debounced center/restore helpers) captures the token when scheduled and bails
+   out if the token changed, so a pending scroll from one tab can never move the
+   viewport of another tab.
+4. **Typewriter mode** centers the cursor by dispatching
+   `EditorView.scrollIntoView(head, { y: "center" })` from a `ViewPlugin` on every
+   document or selection change. Centering is instant (no smooth animation), so
+   an in-flight scroll cannot bleed across a tab switch.
+5. **Pending scroll targets** (e.g. outline click-to-scroll) are applied instantly
+   (`behavior: "auto"`) and token-guarded for the same reason.
+6. **While typing** in normal mode, the hook keeps the cursor from drifting
+   visually by compensating the viewport by the cursor's movement; this
+   compensation is disabled in typewriter mode (which centers instead) and is
+   token-guarded.
+
+The remaining pure scroll math lives in `src/editor/cursorScroll.ts`
+(`pendingScrollTargetY`) and is unit-tested in
+`src/editor/cursorScroll.test.ts`. All cursor-alignment (nearest/center) is done
+through CodeMirror's own `EditorView.scrollIntoView`, which normalizes zoom
+scale and works identically on WebView2 and webkitgtk.
