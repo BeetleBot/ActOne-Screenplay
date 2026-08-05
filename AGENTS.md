@@ -98,6 +98,7 @@ src-tauri/
 - **Imports**: use path aliases where configured, prefer named exports.
 - **Fonts**: declared in `fonts.css`. No system font fallback chains that differ per OS.
 - **Types**: prefer `interface` over `type` for object shapes. Use `type` for unions.
+- **Modular Design**: Always implement new features or utilities as standalone, decoupled modules in dedicated files (e.g. `src/utils/`, `src/hooks/`, or `src/components/`). Do not bloat existing core parsers or layouts with unrelated feature logic.
 
 ---
 

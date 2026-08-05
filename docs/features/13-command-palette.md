@@ -54,6 +54,7 @@
 - Show Parking
 
 ### Tools
+- Fix Formatting
 - Open Settings
 - Open Help Guide
 - Open Theme Manager

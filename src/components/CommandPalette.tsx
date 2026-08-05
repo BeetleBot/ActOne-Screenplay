@@ -4,6 +4,7 @@ import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
 import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, ColorLensIcon, BarChartIcon, CameraIcon } from "./Icons";
 import { logger } from "../utils/logger";
+import { fixFormatting, type FixFormattingReport } from "../utils/fixFormatting";
 
 
 
@@ -87,6 +88,7 @@ interface CommandPaletteProps {
   onOpenMuseSettings?: () => void;
   openTutorialsWindow?: () => void;
   onOpenAboutModal?: () => void;
+  onFixFormattingResult?: (report: FixFormattingReport) => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
@@ -102,6 +104,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   onToggleSnapshotsPanel,
   openTutorialsWindow,
   onOpenAboutModal,
+  onFixFormattingResult,
 }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -244,8 +247,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
     { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },
-
     // Format
+    { id: "format-fix-formatting", name: "Fix Formatting", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => {
+      if (editorView) {
+        const fullText = editorView.state.doc.toString();
+        const report = fixFormatting(fullText);
+        if (report.formattedText !== fullText) {
+          editorView.dispatch({
+            changes: { from: 0, to: fullText.length, insert: report.formattedText }
+          });
+        }
+        onFixFormattingResult?.(report);
+      }
+      onClose();
+    } },
     { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },
     { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenStructureModal(); onClose(); } },
     { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { if (window.confirm("Renumber all scenes?")) autoAddSceneNumbers(); onClose(); } },

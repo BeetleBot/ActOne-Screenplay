@@ -4,7 +4,9 @@ import { StructureImportModal } from './StructureImportModal';
 import { CommandPalette } from './CommandPalette';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { AboutModal } from './AboutModal';
+import { FixFormattingModal } from './FixFormattingModal';
 import { ErrorBoundary } from './ErrorBoundary';
+import type { FixFormattingReport } from '../utils/fixFormatting';
 
 export interface ModalManagerProps {
   isPaletteOpen: boolean;
@@ -51,6 +53,8 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   const showAbout = externalShowAbout !== undefined ? externalShowAbout : localShowAbout;
   const setShowAbout = externalSetShowAbout || setLocalShowAbout;
 
+  const [fixFormattingReport, setFixFormattingReport] = useState<FixFormattingReport | null>(null);
+
   return (
     <>
       <ErrorBoundary name="command-palette">
@@ -70,12 +74,22 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onToggleSnapshotsPanel={toggleSnapshotsPanel}
           onOpenMuseSettings={() => openSettingsWindow?.("muse")}
           onOpenAboutModal={() => setShowAbout(true)}
+          onFixFormattingResult={(report) => setFixFormattingReport(report)}
         />
       </ErrorBoundary>
       <ErrorBoundary name="export-modal">{showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="about-modal">{showAbout && <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="fix-formatting-modal">
+        {fixFormattingReport && (
+          <FixFormattingModal
+            isOpen={Boolean(fixFormattingReport)}
+            onClose={() => setFixFormattingReport(null)}
+            report={fixFormattingReport}
+          />
+        )}
+      </ErrorBoundary>
     </>
   );
 };

@@ -760,3 +760,5 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
 
   return resultLines.join("\n");
 }
+
+

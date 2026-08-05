@@ -91,7 +91,7 @@ When launched from the command line, ActOne accepts file paths as arguments. The
 | Bold (\`**\`) | <kbd>Ctrl+B</kbd> |
 | Italic (\`*\`) | <kbd>Ctrl+I</kbd> |
 | Underline (\`_\`) | <kbd>Ctrl+U</kbd> |
-| Clean screenplay spaces | <kbd>Shift+Alt+C</kbd> |
+| Fix Formatting | Command Palette (<kbd>Ctrl+K</kbd>) |
 | Cycle line prefixes | <kbd>Tab</kbd> |
 | Accept autocomplete ghost | <kbd>Tab</kbd> |
 | Force autocomplete dropdown | <kbd>ArrowDown</kbd> |
@@ -347,6 +347,23 @@ Press <kbd>Tab</kbd> to accept the ghost suggestion, or <kbd>ArrowDown</kbd> to 
     tags: ["focus", "line focus", "fade", "concentration"],
     relatedIds: ["hide-syntax", "typewriter-mode", "zen-mode"],
     content: `Toggle Focus Mode via Settings or Command Palette to fade out all lines except the one your cursor is on. The active line stays fully visible while every other line is dimmed. Helps you concentrate on one line at a time. Combine with Typewriter Mode and Hide Syntax for a truly distraction-free experience.`,
+  },
+  {
+    id: "fix-formatting",
+    title: "Fix Formatting",
+    category: "Writing Tools",
+    tags: ["fix formatting", "format", "clean spaces", "dialogue", "spacing"],
+    relatedIds: ["inline-formatting", "search-replace"],
+    content: `Run **Fix Formatting** via the Command Palette (<kbd>Ctrl+K</kbd>) to instantly clean and reformat your screenplay according to industry standard layout rules.
+
+**What Fix Formatting does:**
+- **Compact Dialogue**: Removes extraneous blank lines between Character, Parenthetical, and Dialogue blocks.
+- **Element Separation**: Ensures exactly 1 blank line between distinct elements (e.g. Scene Headings, Action, Dialogue) and collapses 2+ consecutive blank lines down to 1.
+- **Paragraph Preservation**: Retains multi-line action and lyric paragraphs without forcing them into a single line.
+- **Syntax Prefix & Note Trimming**: Trims whitespace after forced syntax symbols (\`.\`, \`#\`, \`=\`, \`@\`, \`!\`, \`~\`) and inside inline note brackets \`[[ ]]\`.
+- **Title Page Cleaning**: Normalizes extra empty lines in title page metadata header block.
+
+Upon execution, a summary modal opens displaying the total number of lines removed, dialogue spaces collapsed, syntax prefixes trimmed, and note spaces cleaned.`,
   },
   {
     id: "editor-zoom",

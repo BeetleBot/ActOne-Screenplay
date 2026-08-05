@@ -12,8 +12,8 @@ The Help Guide provides 51 searchable articles across 9 categories.
 2. **Writing** (5 articles)
    - Fountain syntax basics, formatting text, scene structure, characters & dual dialogue, transitions & shots
 
-3. **Editing Features** (7 articles)
-   - CodeMirror editor, autocomplete, empty-line selection, search & replace, drag-to-reorder, undo/redo, keyboard shortcuts
+3. **Editing & Writing Tools** (8 articles)
+   - CodeMirror editor, autocomplete, empty-line selection, search & replace, Fix Formatting, drag-to-reorder, undo/redo, keyboard shortcuts
 
 4. **Organization** (4 articles)
    - Outline view, scripts view, notepad, parking feature
