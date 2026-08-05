@@ -33,6 +33,7 @@
       "nsis"
     ],
     "windows": {
+      "publisherDisplayName": "iyal.ink",
       "nsis": {
         "installerIcon": "icons/icon.ico",
         "installMode": "currentUser",
