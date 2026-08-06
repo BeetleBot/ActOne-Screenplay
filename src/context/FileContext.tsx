@@ -3,7 +3,7 @@ import { parseScreenplay, FountainDocument } from "../parser";
 import { parseScreenplayAsync } from "../utils/asyncParser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
-import { unpackActoneBundle, packActoneBundle } from "../utils";
+import { unpackActoneBundle, packActoneBundle, packActoneBundleAsync } from "../utils";
 import { parseFdxToFountain } from "../utils/text";
 import type { ScriptInfo } from "../utils";
 import { logger } from "../utils/logger";
@@ -740,8 +740,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const saveActoneFile = async (path: string, scripts: ScriptInfo[], settings: Record<string, unknown>) => {
     const isActone = path.toLowerCase().endsWith(".actone");
     const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
-    const zipped = packActoneBundle(scripts, settings);
-    await invoke("save_file_binary", { path: normalizedPath, bytes: Array.from(zipped) });
+    const zipped = await packActoneBundleAsync(scripts, settings);
+    await invoke("save_file_binary", { path: normalizedPath, bytes: zipped });
   };
 
   const saveFile = async () => {
@@ -801,7 +801,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else {
         try {
-          const zipped = packActoneBundle(updatedScripts, currentActive.parsedDoc.settings);
+          const zipped = await packActoneBundleAsync(updatedScripts, currentActive.parsedDoc.settings);
           const blob = new Blob([zipped], { type: "application/zip" });
           const url = URL.createObjectURL(blob);
           const link = document.createElement("a");
@@ -948,7 +948,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               content: cleanFountainText,
               savedContent: cleanFountainText,
             }];
-            const zipped = packActoneBundle(finalScripts, currentActive.parsedDoc.settings);
+            const zipped = await packActoneBundleAsync(finalScripts, currentActive.parsedDoc.settings);
             const blob = new Blob([zipped], { type: "application/zip" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");

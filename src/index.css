@@ -175,7 +175,6 @@ body {
   line-height: 1.2 !important;
   outline: none !important;
   background: transparent !important;
-  caret-color: var(--editor-cursor) !important;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-kerning: none;
@@ -195,7 +194,6 @@ body {
   padding: 0 !important;
   max-width: 100%;
   user-select: text !important;
-  caret-color: var(--editor-cursor) !important;
 }
 
 .cm-line {

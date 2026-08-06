@@ -1,4 +1,4 @@
-import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
+import { zipSync, zip, unzipSync, strToU8, strFromU8 } from "fflate";
 import { migrateProductionTags } from "./perScriptSettings";
 import { logger } from "./logger";
 
@@ -178,4 +178,75 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
   result.set(ACTONE_MAGIC);
   result.set(zipped, MAGIC_LENGTH);
   return result;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<string, any>): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const {
+      genders, todos, parking, notepad, sprintHistory: sprintData, productionTags, promptChats, ...restSettings
+    } = settings || {};
+
+    const resolvePerScript = (key: string, scripts: ScriptInfo[]): unknown => {
+      const val = (settings || {})[key];
+      if (!val || scripts.length <= 1) return val;
+
+      const isKeyed = typeof val === "object" && !Array.isArray(val) &&
+        Object.keys(val).some(k => scripts.some(s => s.fileName === k));
+
+      const result: Record<string, unknown> = {};
+      for (const s of scripts) {
+        if (isKeyed) {
+          let fallback: unknown = undefined;
+          if (key === "todos" || key === "parking") fallback = [];
+          else if (key === "notepad") fallback = "";
+          else if (key === "genders") fallback = {};
+          result[s.fileName] = (val as Record<string, unknown>)[s.fileName] ?? fallback;
+        } else {
+          result[s.fileName] = val;
+        }
+      }
+      return result;
+    };
+
+    const manifest = scripts.map((s) => ({ name: s.name, file: s.fileName }));
+
+    const entries: Record<string, Uint8Array> = {
+      "fountain.json": strToU8(JSON.stringify(manifest, null, 2)),
+      "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
+      "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
+      "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
+      "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
+    };
+
+    if (scripts.length > 1) {
+      entries["characters.json"] = strToU8(JSON.stringify(resolvePerScript("genders", scripts), null, 2));
+      entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));
+      entries["parking.json"] = strToU8(JSON.stringify(resolvePerScript("parking", scripts), null, 2));
+      entries["notepad.json"] = strToU8(JSON.stringify(resolvePerScript("notepad", scripts), null, 2));
+    } else {
+      const genderVal = genders && typeof genders === 'object' && !Array.isArray(genders) && !Object.keys(genders).some(k => scripts.some(s => s.fileName === k))
+        ? { genders }
+        : genders;
+      entries["characters.json"] = strToU8(JSON.stringify(genderVal || {}, null, 2));
+      entries["todos.json"] = strToU8(JSON.stringify(todos || [], null, 2));
+      entries["parking.json"] = strToU8(JSON.stringify(parking || [], null, 2));
+      entries["notepad.json"] = strToU8(JSON.stringify(notepad || "", null, 2));
+    }
+
+    for (const script of scripts) {
+      entries[script.fileName] = strToU8(script.content);
+    }
+
+    zip(entries, { level: 6 }, (err, zipped) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const result = new Uint8Array(MAGIC_LENGTH + zipped.length);
+      result.set(ACTONE_MAGIC);
+      result.set(zipped, MAGIC_LENGTH);
+      resolve(result);
+    });
+  });
 }
