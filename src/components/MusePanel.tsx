@@ -5,7 +5,7 @@ import { useAIChat } from "../hooks/useAIChat";
 import { useFile } from "../context/FileContext";
 import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon } from "./Icons";
 import { AIChatMessage } from "./ai/AIChatMessage";
-import { AIChatComposer, type ComposerAction } from "./ai/AIChatComposer";
+import { AIChatComposer } from "./ai/AIChatComposer";
 import { STORAGE_KEYS } from "../constants";
 import type { ApiEntry } from "../constants";
 
@@ -45,11 +45,11 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
     return () => { cancelled = true; };
   }, [promptConfig.provider, promptConfig.model]);
 
-  const getDocContext = useCallback(() => {
-    return parsedDoc.screenplayText || null;
-  }, [parsedDoc.screenplayText]);
+  const getParsedDoc = useCallback(() => {
+    return parsedDoc || null;
+  }, [parsedDoc]);
 
-  const chat = useAIChat(getDocContext, filePath, activeFileId);
+  const chat = useAIChat(getParsedDoc, filePath, activeFileId);
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const pinnedRef = useRef(true);
@@ -65,23 +65,21 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
     if (el && pinnedRef.current) el.scrollTop = el.scrollHeight;
   }, [chat.turns]);
 
-  const handleSend = useCallback((text: string, action?: ComposerAction) => {
-    const m = text.match(/^@(write-scene|q|lookup|synonyms)\s+(.*)/);
-    const content = m ? m[2] : text;
-    chat.send(content, text, action ?? "chat");
+  const handleSend = useCallback((text: string) => {
+    chat.send(text, text);
   }, [chat]);
 
   useEffect(() => {
     const handleLookup = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
       if (text?.trim()) {
-        handleSend(`@lookup ${text.trim()}`, "lookup");
+        handleSend(`What is the definition of "${text.trim()}"?`);
       }
     };
     const handleSynonyms = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
       if (text?.trim()) {
-        handleSend(`@synonyms ${text.trim()}`, "synonyms");
+        handleSend(`What are some synonyms for "${text.trim()}"?`);
       }
     };
     window.addEventListener("prompt-lookup", handleLookup);

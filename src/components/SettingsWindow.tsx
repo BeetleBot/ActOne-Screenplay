@@ -159,10 +159,7 @@ export const SettingsWindow: React.FC = () => {
     notifyConfigChange();
   };
   const [ollamaUrl, setOllamaUrl] = useState(() => readLocal(STORAGE_KEYS.PROMPT_OLLAMA_URL, String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL])));
-  const [writeSceneInstructions, setWriteSceneInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS])));
-  const [qInstructions, setQInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS])));
-  const [synonymsInstructions, setSynonymsInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS])));
-  const [lookupInstructions, setLookupInstructions] = useState(() => readLocal(STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS, String(DEFAULTS[STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS])));
+
   const [customInstructionsOpen, setCustomInstructionsOpen] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -1049,70 +1046,7 @@ export const SettingsWindow: React.FC = () => {
                       sx={{ '& textarea': { fontSize: 12 } }}
                     />
                   </Box>
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                      @WRITE-SCENE INSTRUCTIONS
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      multiline
-                      minRows={2}
-                      maxRows={4}
-                      value={writeSceneInstructions}
-                      onChange={(e) => { const v = e.target.value; setWriteSceneInstructions(v); localStorage.setItem(STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS, v); }}
-                      placeholder="Extra instructions for the write-scene mini-agent..."
-                      sx={{ '& textarea': { fontSize: 12 } }}
-                    />
-                  </Box>
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                      @Q INSTRUCTIONS
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      multiline
-                      minRows={2}
-                      maxRows={4}
-                      value={qInstructions}
-                      onChange={(e) => { const v = e.target.value; setQInstructions(v); localStorage.setItem(STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS, v); }}
-                      placeholder="Extra instructions for the @q mini-agent..."
-                      sx={{ '& textarea': { fontSize: 12 } }}
-                    />
-                  </Box>
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                      @SYNONYMS INSTRUCTIONS
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      multiline
-                      minRows={2}
-                      maxRows={4}
-                      value={synonymsInstructions}
-                      onChange={(e) => { const v = e.target.value; setSynonymsInstructions(v); localStorage.setItem(STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS, v); }}
-                      placeholder="Extra instructions for the @synonyms mini-agent..."
-                      sx={{ '& textarea': { fontSize: 12 } }}
-                    />
-                  </Box>
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                      @LOOKUP INSTRUCTIONS
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      multiline
-                      minRows={2}
-                      maxRows={4}
-                      value={lookupInstructions}
-                      onChange={(e) => { const v = e.target.value; setLookupInstructions(v); localStorage.setItem(STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS, v); }}
-                      placeholder="Extra instructions for the @lookup mini-agent..."
-                      sx={{ '& textarea': { fontSize: 12 } }}
-                    />
-                  </Box>
+
                 </DialogContent>
               </Dialog>
 

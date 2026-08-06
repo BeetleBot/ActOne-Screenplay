@@ -34,10 +34,6 @@ export interface PromptConfig {
   apiKey: string;
   apiModel: string;
   ollamaUrl: string;
-  writeSceneInstructions: string;
-  qInstructions: string;
-  synonymsInstructions: string;
-  lookupInstructions: string;
 }
 
 let cachedConfig: PromptConfig | null = null;
@@ -76,10 +72,6 @@ function getConfig(): PromptConfig {
         apiKey: localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY]),
         apiModel: localStorage.getItem(STORAGE_KEYS.PROMPT_API_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_MODEL]),
         ollamaUrl: localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL]),
-        writeSceneInstructions: localStorage.getItem(STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS]),
-        qInstructions: localStorage.getItem(STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS]),
-        synonymsInstructions: localStorage.getItem(STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS]),
-        lookupInstructions: localStorage.getItem(STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS]),
       };
   } catch {
     newConfig = {
@@ -96,10 +88,6 @@ function getConfig(): PromptConfig {
       apiKey: "",
       apiModel: "",
       ollamaUrl: "http://localhost:11434",
-      writeSceneInstructions: "",
-      qInstructions: "",
-      synonymsInstructions: "",
-      lookupInstructions: "",
     };
   }
 
@@ -117,11 +105,7 @@ function getConfig(): PromptConfig {
     cachedConfig.apiEndpoint === newConfig.apiEndpoint &&
     cachedConfig.apiKey === newConfig.apiKey &&
     cachedConfig.apiModel === newConfig.apiModel &&
-    cachedConfig.ollamaUrl === newConfig.ollamaUrl &&
-    cachedConfig.writeSceneInstructions === newConfig.writeSceneInstructions &&
-    cachedConfig.qInstructions === newConfig.qInstructions &&
-    cachedConfig.synonymsInstructions === newConfig.synonymsInstructions &&
-    cachedConfig.lookupInstructions === newConfig.lookupInstructions
+    cachedConfig.ollamaUrl === newConfig.ollamaUrl
   ) {
     return cachedConfig;
   }
@@ -160,10 +144,6 @@ export function setPromptConfigField(key: keyof PromptConfig, value: string | nu
     apiKey: STORAGE_KEYS.PROMPT_API_KEY,
     apiModel: STORAGE_KEYS.PROMPT_API_MODEL,
     ollamaUrl: STORAGE_KEYS.PROMPT_OLLAMA_URL,
-    writeSceneInstructions: STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS,
-    qInstructions: STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS,
-    synonymsInstructions: STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS,
-    lookupInstructions: STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS,
   };
   try {
     const stored = key === "translateLanguages" || key === "rephrasePresets" ? JSON.stringify(value) : String(value);

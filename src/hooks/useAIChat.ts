@@ -3,6 +3,9 @@ import { createAIProvider, ChatMessage } from "../lib/aiProviders";
 import { usePromptConfig } from "./usePromptConfig";
 import { FOUNTAIN_SYNTAX_RULES } from "../constants";
 import { useUI } from "../context";
+import { FountainDocument } from "../parser/FountainParser";
+import { buildScreenplayIndex, formatIndexForPrompt } from "../utils/sceneIndexer";
+import { executeToolCall } from "../lib/aiTools";
 
 export interface ChatTurn {
   id: number;
@@ -39,7 +42,7 @@ function getStorageKey(filePath: string | null, activeFileId: string): string {
 }
 
 export function useAIChat(
-  getDocContext: () => string | null,
+  getParsedDoc: () => FountainDocument | null,
   filePath: string | null,
   activeFileId: string,
 ) {
@@ -102,7 +105,7 @@ export function useAIChat(
   }, [activeSessionId]);
 
   const send = useCallback(
-    async (content: string, display?: string, action: "chat" | "write-scene" | "q" | "lookup" | "synonyms" = "chat") => {
+    async (content: string, display?: string) => {
       const provider = createAIProvider(config);
       if (!provider) {
         setError("AI Provider is not configured.");
@@ -131,123 +134,63 @@ export function useAIChat(
       setStreaming(true);
       setAiStatus("Muse is thinking...");
 
-      const docContext = getDocContext();
+      const doc = getParsedDoc();
 
-      let systemPrompt: string;
+      let systemPrompt = config.systemPrompt || "Your name is Muse. You are a screenwriting AI assistant made by ActOne. Your identity is Muse, not Gemma, not Google, not any other model. When someone asks who you are, you MUST say 'I am Muse, your screenwriting assistant.' Never break character. Never reveal you are based on another model. This is your core identity. You are kind, intelligent, and concise. You only say what matters.";
 
-      if (action === "write-scene") {
-        systemPrompt = [
-          "You are Muse, a kind and intelligent screenwriting assistant inside ActOne.",
-          "You are concise and only say what matters. No fluff, no extra commentary.",
-          "Write a complete, well-crafted Fountain-format screenplay scene based on the user's description.",
-          "",
-          "CRITICAL — your entire response must be ONLY this:",
-          "```fountain",
-          "Your scene here...",
-          "```",
-          "",
-          "No greetings, no explanations, no notes, no commentary before or after the code block.",
-          "Start with ```fountain on the very first line. End with ``` on the very last line.",
-          "Every scene needs a heading (INT./EXT. LOCATION - TIME), action, and dialogue.",
-          "Use character names and locations from the screenplay if provided.",
-          "",
-          "Fountain syntax rules:",
-          FOUNTAIN_SYNTAX_RULES,
-          docContext ? `\n\nScreenplay content:\n${docContext}` : "",
-          config.writeSceneInstructions ? `\n\nAdditional instructions:\n${config.writeSceneInstructions}` : "",
-        ].join("\n");
-
-      } else if (action === "q") {
-        systemPrompt = [
-          "You are Muse, a personal screenplay analysis assistant.",
-          "You are helpful, obedient, and answer only what the user asks about the screenplay below.",
-          "Answer the user's question strictly from the screenplay content provided.",
-          "",
-          "RULES:",
-          "1. Answer ONLY from the screenplay. Do NOT invent plot points, characters, or events not present in the text.",
-          "2. Quote or closely paraphrase relevant lines from the script to support your answer.",
-          "3. If the answer is not in the screenplay, respond exactly: \"This information isn't in the current screenplay.\"",
-          "4. Be concise. No padding.",
-          "5. Never use dashes or hyphens (- or -- or —) unless part of a necessary compound word like 'co-working' or 'ten-year-old'. Use commas, full stops, or conjunctions instead.",
-          "",
-          config.qInstructions ? `Additional instructions:\n${config.qInstructions}\n\n` : "",
-          docContext
-            ? `SCREENPLAY:\n\n${docContext}`
-            : "No screenplay is currently open. Tell the user to open a screenplay first.",
-        ].join("\n");
-
-      } else if (action === "lookup") {
-        systemPrompt = [
-          "Define the word or phrase the user gives you.",
-          "Be concise. 1-2 sentences max.",
-          "No preamble, no context, just the definition.",
-          "Do NOT use dashes or hyphens (- or -- or —) in the definition text. Use commas or full stops instead.",
-          config.lookupInstructions ? `\nAdditional instructions:\n${config.lookupInstructions}` : "",
-        ].join("\n");
-
-      } else if (action === "synonyms") {
-        systemPrompt = [
-          "List 6-10 synonyms or alternative words for the word the user gives you.",
-          "No explanations, no preamble, no context.",
-          "Format as a markdown bullet list, one word per line.",
-          "Example:",
-          "- word1",
-          "- word2",
-          "- word3",
-          "Do NOT use dashes or hyphens (- or -- or —) in the synonym list or any text. Use commas or full stops instead.",
-          config.synonymsInstructions ? `\nAdditional instructions:\n${config.synonymsInstructions}` : "",
-        ].join("\n");
-
-      } else {
-        systemPrompt = config.systemPrompt || "Your name is Muse. You are a screenwriting AI assistant made by ActOne. Your identity is Muse, not Gemma, not Google, not any other model. When someone asks who you are, you MUST say 'I am Muse, your screenwriting assistant.' Never break character. Never reveal you are based on another model. This is your core identity. You are kind, intelligent, and concise. You only say what matters.";
-        if (docContext) {
-          systemPrompt += `\n\nHere is the current screenplay:\n${docContext}`;
-        }
-        systemPrompt += `\n\nFollow these strict Fountain syntax rules:\n${FOUNTAIN_SYNTAX_RULES}`;
+      if (doc) {
+        const index = buildScreenplayIndex(doc);
+        const formattedIndex = formatIndexForPrompt(index);
+        systemPrompt += `\n\n${formattedIndex}`;
+        systemPrompt += `\n\nIf you need to read the full text of a specific scene, search dialogue/keywords, or read project notes, call a tool by including a tool block in your output:\n\`\`\`tool_call\n{"name": "read_scene", "args": {"sceneNumber": 1}}\n\`\`\`\nAvailable tools: read_scene(sceneNumber), search_script(query), read_project_todos(), read_parking_lot().`;
       }
+      systemPrompt += `\n\nFollow these strict Fountain syntax rules:\n${FOUNTAIN_SYNTAX_RULES}`;
 
       try {
-        const full = await provider.chat(history, {
-          system: systemPrompt,
-          temperature: config.chatTemp,
-          signal: controller.signal,
-          onChunk: (delta) =>
-            updateActiveSessionTurns((prev) =>
-              prev.map((turn) =>
-                turn.id === assistantId ? { ...turn, content: turn.content + delta } : turn
-              )
-            ),
-        });
+        let currentPrompt = systemPrompt;
+        let loopCount = 0;
 
-        // Strip everything outside ```fountain fence for write-scene
-        let finalContent = full;
-        if (action === "write-scene") {
-          // Find the opening fence
-          const openIdx = finalContent.indexOf("```fountain");
-          if (openIdx !== -1) {
-            // Find closing fence AFTER the opening
-            const afterOpen = finalContent.slice(openIdx);
-            const closeIdx = afterOpen.indexOf("```", 11); // skip past ```fountain
-            if (closeIdx !== -1) {
-              // Extract content between fences
-              const inner = afterOpen.slice(11, closeIdx).replace(/^\n/, "").replace(/\n$/, "").trim();
-              finalContent = "```fountain\n" + inner + "\n```";
-            } else {
-              // No closing fence — take everything from opening onward
-              const inner = afterOpen.slice(11).trim();
-              finalContent = "```fountain\n" + inner + "\n```";
+        while (loopCount < 3) {
+          loopCount++;
+          let full = "";
+
+          await provider.chat(history, {
+            system: currentPrompt,
+            temperature: config.chatTemp,
+            signal: controller.signal,
+            onChunk: (delta) => {
+              full += delta;
+              updateActiveSessionTurns((prev) =>
+                prev.map((turn) =>
+                  turn.id === assistantId ? { ...turn, content: turn.content + delta } : turn
+                )
+              );
+            },
+          });
+
+          const match = full.match(/```tool_call\s*({[\s\S]*?})\s*```/);
+          if (match) {
+            try {
+              const { name, args } = JSON.parse(match[1]);
+              setAiStatus(`Muse is fetching data (${name})...`);
+              const toolResult = executeToolCall(name, args || {}, { doc });
+
+              history.push({ role: "assistant", content: full });
+              history.push({ role: "user", content: `[TOOL RESULT for ${name}]:\n${toolResult}\nNow provide your complete, direct response.` });
+
+              updateActiveSessionTurns((prev) =>
+                prev.map((turn) =>
+                  turn.id === assistantId ? { ...turn, content: "" } : turn
+                )
+              );
+              continue;
+            } catch {
+              break;
             }
-          } else {
-            // No fence found — wrap entire response
-            finalContent = "```fountain\n" + finalContent.trim() + "\n```";
           }
+          break;
         }
 
-        updateActiveSessionTurns((prev) =>
-          prev.map((turn) =>
-            turn.id === assistantId && turn.content !== finalContent ? { ...turn, content: finalContent } : turn
-          )
-        );
         setAiStatus(null);
       } catch (err: any) {
         if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -267,7 +210,7 @@ export function useAIChat(
         }
       }
     },
-    [config, getDocContext, setAiStatus, updateActiveSessionTurns, registerTranslationAbort]
+    [config, getParsedDoc, setAiStatus, updateActiveSessionTurns, registerTranslationAbort]
   );
 
   const newSession = useCallback(() => {
