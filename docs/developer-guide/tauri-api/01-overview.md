@@ -76,7 +76,7 @@ const modalWin = new WebviewWindow("settings", {
 
 ### Sub-window Lifecycle
 
-The app uses 5 sub-windows: `settings`, `help`, `tag-manager`, `theme-manager`, `xray`. They are created via `useModalWindows` hook as standalone Tauri `WebviewWindow` instances.
+The app uses 5 sub-windows: `settings`, `help`, `theme-manager`, `xray`, `tutorials`. They are created via `useModalWindows` hook as standalone Tauri `WebviewWindow` instances.
 
 **Close behavior:**
 - Closing the main editor window (X button / Alt+F4) closes all sub-windows first via `closeAllWindows()` before destroying the main window.

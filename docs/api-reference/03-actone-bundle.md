@@ -19,7 +19,7 @@ MyScreenplay.actone
 ├── sprint_data.json               # Sprint history
 ├── production_tags.json           # Production tags/categories
 ├── marker.json                    # Line markers
-└── muse.json                      # AI config / system prompt (v0.4.0+; legacy: prompt.json)
+├── muse.json                      # Muse prompt chat sessions (v0.4.0+; legacy: prompt.json)
 
 [4-byte magic header: "ACT1"]
 ```
@@ -64,6 +64,20 @@ Settings are keyed per script filename. When migrated from legacy format, settin
     { "name": "VIKRAM", "gender": "male" }
 ]
 ```
+
+### muse.json
+
+Muse chat sessions stored in the bundle:
+
+```json
+{
+    "conversations": [],
+    "activeConversationId": null
+}
+```
+
+- Legacy bundles may contain `prompt.json` instead; it is migrated on unpack.
+- Note: the current Muse implementation keeps live chat sessions in `localStorage` (`actone_ai_chat::<path>`) and does not yet write them back into `muse.json`; the file is part of the bundle format and migration path only.
 
 ## API
 

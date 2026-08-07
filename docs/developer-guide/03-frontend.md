@@ -9,10 +9,10 @@
 | _(none)_ | `<App />` |
 | `?modal=settings` | `<SettingsWindow />` |
 | `?modal=help` | `<HelpWindow />` |
-| `?modal=tag-manager` | `<TagManagerWindow />` |
 | `?modal=theme-manager` | `<ThemeManagerWindow />` |
 | `?modal=xray` | `<XrayWindow />` |
 | `?modal=tutorials` | `<TutorialsWindow />` |
+| `?modal=crash` | `<CrashScreen />` |
 
 Global error handlers (`window.onerror`, `unhandledrejection`) are wired at startup. All windows share the same `index.css`.
 
@@ -20,19 +20,19 @@ Global error handlers (`window.onerror`, `unhandledrejection`) are wired at star
 
 ```
 App
-  AppProviders (6 contexts nested)
-    ThemeProvider
-      SprintProvider
-        AppInner
-          ErrorBoundary
+  ErrorBoundary
+    AppProviders (7 nested providers)
+      ThemeProvider
+        SprintProvider
+          AppInner
             MainLayout
               HeaderBar (file tabs, window controls, update notification)
-              ActivityBar (8 sidebar icons, command palette, quick settings menu)
+              ActivityBar (sidebar tabs, command palette, quick settings menu)
               Workspace
-                SidebarViews (routes 8 sidebar panels)
+                SidebarViews (routes sidebar panels)
                 FountainEditor (CodeMirror 6 container)
-                SearchPanel / AmbientPanel (optional right panes)
-              StatusBar (word/char/page count, sprint, scene info, script switcher, xray, ambient)
+                SearchPanel / AmbientPanel / MusePanel (right panes)
+              StatusBar (file, save, document, sprint, AI, and scene information)
             ModalManager
               CommandPalette
               ExportModal
@@ -43,7 +43,7 @@ App
 
 ## State Management
 
-ActOne uses **React Context** for all state management. There are 6 context providers in `AppProviders` plus 2 more in the App root:
+ActOne uses **React Context** for application state. There are 7 providers in `AppProviders` plus `ThemeProvider` and `SprintProvider` around `AppInner`:
 
 ### AppProviders (nested in order)
 
@@ -54,6 +54,7 @@ ActOne uses **React Context** for all state management. There are 6 context prov
 | `FileProvider` | `FileContext.tsx` | Multi-tab file open/save/close, CRLF normalization, script management |
 | `SnapshotProvider` | `SnapshotContext.tsx` | Snapshot creation, listing, restoration |
 | `EditorProvider` | `EditorContext.tsx` | CodeMirror editor state (view, line tracking, scene reordering) |
+| `CursorProvider` | `CursorContext.tsx` | Active editor line and selected scene state |
 | `ParkingProvider` | `ParkingContext.tsx` | Parking feature — stashing snippets |
 
 ### Wrapped outside AppProviders (in App.tsx)
@@ -65,10 +66,11 @@ ActOne uses **React Context** for all state management. There are 6 context prov
 
 **Nesting order** (in `App.tsx`):
 ```
-AppProviders
-  └── ThemeProvider
-        └── SprintProvider
-              └── AppInner
+ErrorBoundary
+  └── AppProviders
+        └── ThemeProvider
+              └── SprintProvider
+                    └── AppInner
 ```
 
 ## Key Components
@@ -80,8 +82,8 @@ AppProviders
 | `MainLayout` | `layout/MainLayout.tsx` | Grid layout combining HeaderBar, ActivityBar, Workspace, StatusBar |
 | `HeaderBar` | `layout/HeaderBar.tsx` | Multi-file tabs, window controls, themed context menu (close/close others/close all), update banner |
 | `ActivityBar` | `layout/ActivityBar.tsx` | Command palette button, 8 sidebar icon tabs, quick settings menu with theme picker |
-| `StatusBar` | `layout/StatusBar.tsx` | Word/char/page count, sprint tracker, scene location, script switcher, save status, xray button, ambient indicator |
-| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor, manages right pane (search/ambient) |
+| `StatusBar` | `layout/StatusBar.tsx` | File and save status, word/character/page counts, sprint tracker, scene location, script switcher, AI status, X-Ray, and Muse indicator |
+| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor, manages search, ambient, and Muse right panes |
 
 ### Sidebar Panels (8 tabs)
 
@@ -121,11 +123,27 @@ AppProviders
 | Window | File | Purpose |
 |--------|------|---------|
 | `SettingsWindow` | `SettingsWindow.tsx` | All app settings |
-| `HelpWindow` | `HelpWindow.tsx` | 47 help articles in 8 categories |
+| `HelpWindow` | `HelpWindow.tsx` | 75 searchable help articles in 9 categories |
 | `XrayWindow` | `XrayWindow.tsx` | Screenplay analysis dashboard |
 | `TutorialsWindow` | `TutorialsWindow.tsx` | Interactive tutorial launcher |
-| `TagManagerWindow` | `TagManagerWindow.tsx` | Scene tag CRUD |
 | `ThemeManagerWindow` | `ThemeManagerWindow.tsx` | Custom theme editor |
+
+### Muse Panel
+
+`MusePanel.tsx` is the right-side chat interface. It connects `useAIChat()` to the active `FileContext`, `EditorContext`, and `CursorContext`.
+
+The panel provides:
+
+- New conversation, history, and clear controls.
+- Streaming chat with stop behavior.
+- Per-file session history stored in localStorage.
+- OpenAI-compatible and Ollama model selection.
+- Active scene context display.
+- Assistant Markdown and Fountain block rendering.
+- Tool-step rendering for screenplay reads, analysis, drafts, metadata, and X-Ray actions.
+- Pending scene replacement cards with an Apply action.
+
+The composer is normal text input. It does not provide `@write-scene`, `@q`, `@lookup`, or `@synonyms` autocomplete. See `docs/features/21-muse.md` for the provider, tool, persistence, and privacy contract.
 
 ## Audio System
 

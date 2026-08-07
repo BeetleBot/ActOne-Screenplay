@@ -11,7 +11,7 @@
 </FileProvider>
 
 // Hook
-const fileCtx = useFileContext();
+const fileCtx = useFile();
 ```
 
 ### State
@@ -96,7 +96,7 @@ interface RecentFile {
 **File:** `src/context/EditorContext.tsx`
 
 ```typescript
-const editorCtx = useEditorContext();
+const editorCtx = useEditor();
 ```
 
 ### State
@@ -125,12 +125,38 @@ autoAddSceneNumbers(): void;
 clearSceneNumbers(): void;
 ```
 
+## CursorContext
+
+**File:** `src/context/CursorContext.tsx`
+
+```typescript
+const cursorCtx = useCursor();
+```
+
+### State
+
+```typescript
+interface CursorContextValue {
+    activeLineId: string | null;
+    activeLineNumber: number;
+    selectedSceneId: string | null;
+}
+```
+
+### Actions
+
+```typescript
+setActiveLineId(id: string | null): void;
+setActiveLineNumber(num: number): void;
+setSelectedSceneId(id: string | null): void;
+```
+
 ## UIContext
 
 **File:** `src/context/UIContext.tsx`
 
 ```typescript
-const uiCtx = useUIContext();
+const uiCtx = useUI();
 ```
 
 ### State
@@ -199,7 +225,7 @@ cancelTranslation(): void;
 **File:** `src/context/ThemeContext.tsx`
 
 ```typescript
-const themeCtx = useThemeContext();
+const themeCtx = useTheme();
 ```
 
 ### State
@@ -227,7 +253,7 @@ deleteCustomTheme(id: string): void;
 **File:** `src/context/CustomModalContext.tsx`
 
 ```typescript
-const modalCtx = useCustomModalContext();
+const modalCtx = useCustomModal();
 ```
 
 ### Actions
@@ -251,7 +277,7 @@ interface AlertOptions { title: string; message: string; }
 **File:** `src/context/SnapshotContext.tsx`
 
 ```typescript
-const snapshotCtx = useSnapshotContext();
+const snapshotCtx = useSnapshots();
 ```
 
 ### State
@@ -277,7 +303,7 @@ refreshSnapshots(): Promise<void>;
 **File:** `src/context/SprintContext.tsx`
 
 ```typescript
-const sprintCtx = useSprintContext();
+const sprintCtx = useSprint();
 ```
 
 ### State
@@ -302,7 +328,7 @@ getHistory(): SprintSession[];
 **File:** `src/context/ParkingContext.tsx`
 
 ```typescript
-const parkingCtx = useParkingContext();
+const parkingCtx = useParking();
 ```
 
 ### State

@@ -4,7 +4,7 @@ ActOne uses **React Context** for all state management. Each domain has a dedica
 
 ## Context Tree
 
-The 6 core providers are nested inside `AppProviders`:
+The 7 core providers are nested inside `AppProviders`:
 
 ```
 UIProvider
@@ -12,16 +12,18 @@ UIProvider
         └── FileProvider
               └── SnapshotProvider
                     └── EditorProvider
-                          └── ParkingProvider
+                          └── CursorProvider
+                                └── ParkingProvider
 ```
 
 Two additional providers wrap `AppInner` in `App.tsx`:
 
 ```
-AppProviders
-  └── ThemeProvider
-        └── SprintProvider
-              └── AppInner
+ErrorBoundary
+  └── AppProviders
+        └── ThemeProvider
+              └── SprintProvider
+                    └── AppInner
 ```
 
 ## Context Details
@@ -42,7 +44,7 @@ Manages UI chrome state and editor preferences:
 | `autocompleteEnabled` | `boolean` | Ghost text suggestions |
 | `smartQuotesEnabled` | `boolean` | Auto curly quotes |
 | `matchParenthesesEnabled` | `boolean` | Auto-close brackets |
-| `activeRightPane` | `string \| null` | Right pane type ('search' \| 'ambient' \| null) |
+| `activeRightPane` | `string \| null` | Right pane type (`'search' \| 'ambient' \| 'prompt' \| null`) |
 | `rightPaneWidth` | `number` | Right pane width in px (240-700) |
 | `autoSaveEnabled` | `boolean` | Auto-save toggle |
 | `autoSaveInterval` | `number` | Auto-save interval in ms (default 300000) |
@@ -53,6 +55,8 @@ Manages UI chrome state and editor preferences:
 | `iconStyle` | `'fill' \| 'duotone' \| 'regular'` | Phosphor icon weight |
 | `activeAmbientTrack` | `string \| null` | Currently playing ambient track |
 | `ambientVolume` | `number` | Ambient volume (0-1) |
+| `aiStatus` | `string` | Muse/provider status indicator |
+| `translationState` | `'idle' \| 'running' \| 'paused' \| 'cancelled'` | Scene translation state |
 
 ### FileContext (`src/context/FileContext.tsx`)
 
@@ -126,6 +130,22 @@ Bridges CodeMirror state to React and provides text manipulation actions:
 | `setActiveLineId(id)` | Track active line |
 | `setActiveLineNumber(num)` | Track active line number |
 | `setSelectedSceneId(id)` | Track selected scene |
+
+### CursorContext (`src/context/CursorContext.tsx`)
+
+Provides live cursor and selection state read by the status bar and scene-aware features (X-Ray, Muse, launch bar):
+
+| State | Type | Description |
+|-------|------|-------------|
+| `activeLineId` | `string \| null` | Active line identifier |
+| `activeLineNumber` | `number` | Active line number (0-indexed, -1 if none) |
+| `selectedSceneId` | `string \| null` | Selected scene identifier |
+
+| Action | Description |
+|--------|-------------|
+| `setActiveLineId(id)` | Set the active line identifier |
+| `setActiveLineNumber(num)` | Set the active line number |
+| `setSelectedSceneId(id)` | Set the selected scene |
 
 ### ThemeContext (`src/context/ThemeContext.tsx`)
 

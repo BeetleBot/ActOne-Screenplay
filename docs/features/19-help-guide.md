@@ -1,37 +1,37 @@
 # Help Guide
 
-**Window:** `?modal=help` (~580 lines HelpWindow, ~1220-line help articles data)
+**Window:** `?modal=help` (`src/components/HelpWindow.tsx`)
 
-The Help Guide provides 51 searchable articles across 9 categories.
+The Help Guide provides 75 searchable articles across 9 categories. The article inventory is maintained in `src/data/helpArticles.tsx`.
 
 ## Categories
 
-1. **Getting Started** (4 articles)
-   - Installation, first launch, welcome screen, interface tour
+1. **Getting Started** (7 articles)
+   - Welcome Screen, Creating a New Screenplay, Opening Files, Recent Files, Command Palette, Interactive Tutorial, Keyboard Shortcuts Reference
 
-2. **Writing** (5 articles)
-   - Fountain syntax basics, formatting text, scene structure, characters & dual dialogue, transitions & shots
+2. **Fountain Syntax** (14 articles)
+   - Scene Headings, Character Names, Dialogue, Parentheticals, Action, Transitions, Centered Text & Lyrics, Shot Lines, Page Breaks, Dual Dialogue, Synopsis, Sections, Inline Text Formatting, Boneyard Comments
 
-3. **Editing & Writing Tools** (8 articles)
-   - CodeMirror editor, autocomplete, empty-line selection, search & replace, Fix Formatting, drag-to-reorder, undo/redo, keyboard shortcuts
+3. **Writing Tools** (14 articles)
+   - Tab-to-Cycle, Smart Newline, Autocomplete & Ghost Text, Smart Quotes, Auto-Match Parentheses, Typewriter Mode, Hide Fountain Markup, Focus Mode, Fix Formatting, Editor Zoom, Transform Case, Look Up Word, Search & Replace, Scene Numbers
 
-4. **Organization** (4 articles)
-   - Outline view, scripts view, notepad, parking feature
+4. **Workspace & Views** (18 articles)
+   - Activity Bar, Outline Navigator, Sidebar Panels, Document Notepad, Character Data, Script Statistics, X-Ray Analyzer, To-Do Tasks, Writing Sprint Timer, Snapshots, Text Parking, Markers List, Scripts Manager, Zen Mode, Editor Context Menu, Status Bar, File Tabs, Quick Settings
 
-5. **Project Management** (5 articles)
-   - Characters & genders, tags & categories, scene colors, todos & markers, sprint tracking
+5. **Production Features** (5 articles)
+   - Scene Highlighting, Color Markers & Notes, Storyline Tags, Structure Templates, Scene Drag-and-Drop Reordering
 
-6. **Export & Output** (4 articles)
-   - PDF export, FDX export, .actone archive, printing
+6. **Files & Projects** (3 articles)
+   - ActOne Bundle Format, Saving Files, Title Page Editor
 
-7. **Advanced** (6 articles)
-   - Command palette, zen mode, zoom & fullscreen, settings, structure templates, help & fountain guide
+7. **Export** (4 articles)
+   - Export Overview, PDF Export, Fountain Export, FDX Export
 
-8. **Cross-Platform & Technical** (2 articles)
-   - Running outside Tauri, Windows vs Linux behavior
+8. **Settings & Customization** (6 articles)
+   - Settings Overview, Theme Manager, Font & Paper, Interface Scale, Auto-Save, Editor Preferences
 
 9. **AI & Muse** (4 articles) *(new in v0.4.0)*
-   - Muse AI overview, configuring providers, @commands reference, chat usage guide
+   - Muse overview, provider configuration, chat usage, and screenplay tools/actions
 
 ## Features
 
@@ -49,6 +49,9 @@ interface HelpArticle {
     title: string;
     category: string;
     content: string;  // Markdown
-    keywords: string[];
+    tags: string[];   // Search tags
+    relatedIds: string[];  // Related article IDs
 }
 ```
+
+The current Muse article IDs are `muse-overview`, `muse-configure`, `muse-chat`, and `muse-tools`. There is no implemented `@command` mode; help content must not describe `@write-scene`, `@q`, `@lookup`, or `@synonyms` autocomplete as available features.

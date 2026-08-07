@@ -226,6 +226,6 @@ INT. CAR - NIGHT [[color: #FF5733]]
 
 ### Tags
 
-- Scene metadata tags attached via right-click context menu
-- Stored in `production_tags.json` in the `.actone` bundle
-- Filterable in outline view
+- Scene colors via `[[color: ...]]` and storyline membership via `[[storyline ...]]` on scene headings
+- Legacy production tag metadata remains parseable from `production_tags.json` in `.actone` bundles
+- The dedicated Tag Manager window was removed

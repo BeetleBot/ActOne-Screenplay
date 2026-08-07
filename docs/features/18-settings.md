@@ -1,28 +1,33 @@
 # Settings
 
-**Window:** `?modal=settings` (~574 lines)
+**Window:** `?modal=settings` (`src/components/SettingsWindow.tsx`)
+
+Settings is a standalone Tauri window with four tabs: General, Editor, Snapshots, and Muse. In browser development mode it renders through the same URL parameter but native window behavior is unavailable.
 
 ## General
 
 | Setting | Options | Description |
 |---------|---------|-------------|
-| Language | `en` (only) | Interface language |
-| Telemetry | Off (only) | ActOne collects no data |
+| Paper Size | `letter` / `a4` | Default paper size used by the editor and export pipeline |
+| Interface Scale | 75%-300% in steps of 5 | Scales the application interface |
 | Icon Style | `duotone` / `fill` / `regular` | Select interface icon style (Dual Tone, Solid, Stroke) |
+| Auto-save | On or off | Automatically saves files with an existing path |
+| Auto-save interval | 30 seconds, 1 minute, 2 minutes, or 5 minutes | Interval used when auto-save is enabled |
+| Reset Settings | Action | Removes application settings and restores defaults |
 
 ## Editor
 
 | Setting | Description |
 |---------|-------------|
 | Font Family | Courier Prime or Courier Prime Sans |
-| Enable Autocomplete | Toggle ghost text suggestions |
-| Enable Smart Quotes | Auto-convert to curly quotes |
-| Enable Auto-Match Brackets | Auto-close parentheses, brackets, quotes |
-| Typewriter Mode | Default state (on by default) |
-| Hide Fountain Markup | Show/hide formatting characters |
-| Enable Auto-Save | Toggle periodic auto-save (on by default, 5 min interval) |
-| Enable Line Focus | Dim un-focused lines |
-| Hide Tags | Hide production tag decorations |
+| Editor Zoom | 50%-400% in steps of 10 |
+| Typewriter Mode | Keep the active line centered |
+| Autocomplete | Toggle character, transition, and Fountain ghost-text suggestions |
+| Smart Quotes | Auto-convert straight quotes while typing |
+| Auto-match | Auto-close parentheses and related delimiters |
+| Hide Markup | Hide Fountain markup on inactive lines |
+| Focus Mode | Dim lines other than the active line |
+| Syntax Colors | Enable or disable Fountain color decorations |
 
 ## Audio
 
@@ -43,13 +48,7 @@
 
 | Setting | Description |
 |---------|-------------|
-| Default Paper Size | US Letter or A4 (default A4) |
-| Default Font | Courier Prime Sans (default) or Courier Prime |
-| Mirror Scene Numbers | Off / Left / Mirror |
-| Export Sections | Include section headers |
-| Export Synopses | Include synopsis lines |
-| Export Title Page | Include title page |
-| Export Scene Colors | Include scene color rendering |
+Export defaults are configured from the General tab's paper-size setting and the editor font setting. Export-specific controls are available in `ExportModal` when an export is started.
 
 ## Snapshots
 
@@ -73,11 +72,31 @@
 
 | Setting | Description |
 |---------|-------------|
-| Provider | `"none"`, `"openai-compatible"`, or `"ollama"` |
-| Configure Providers | Nested dialog to manage multiple OpenAI-compatible API entries (name, endpoint, API key, model per entry) |
-| Model | Active model (from selected API entry for OpenAI, or Ollama model list) |
-| Temperature (Chat) | Slider 0.0-1.0 (default 0.7) — controls response randomness |
-| Custom Instructions | Nested dialog to customize system prompts for @write-scene, @q, @lookup, @synonyms |
-| System Prompt | Text area for customizing the main Muse personality prompt |
+| Provider | `none`, `openai-compatible`, or `ollama` |
+| Configure Providers | Nested dialog for named OpenAI-compatible API entries or Ollama connection settings |
+| Model | Active OpenAI API entry or Ollama model |
+| Chat Temperature | Slider 0.0-1.0, default 0.7 |
+| Rephrase Temperature | Slider 0.0-1.0, default 0.1 |
+| Translate Temperature | Slider 0.0-1.0, default 0.1 |
+| Translate Languages | Languages shown in the editor Translate menu |
+| Custom Instructions | General Muse prompt, rephrase presets, and translation instructions |
+| Fountain Rules | Read-only display of rules added to writing prompts |
 
-See `features/21-muse.md` for complete Muse documentation.
+The current chat composer does not provide `@write-scene`, `@q`, `@lookup`, or `@synonyms` command autocomplete. Users enter normal-language requests in Muse chat.
+
+### OpenAI-compatible entries
+
+Each entry contains:
+
+- Name
+- Endpoint URL
+- API key
+- Model identifier
+
+The endpoint is sent as entered. ActOne does not append `/chat/completions` automatically.
+
+### Ollama connection
+
+The default URL is `http://localhost:11434`. The Settings window checks Ollama availability and loads model names from the server.
+
+See `features/21-muse.md` for provider behavior, chat sessions, tool execution, persistence, and privacy details.

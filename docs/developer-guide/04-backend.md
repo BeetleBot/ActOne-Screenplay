@@ -6,7 +6,7 @@
 
 ## Main Module (`lib.rs`)
 
-**`src-tauri/src/lib.rs`** (~776 lines) is the heart of the backend. It contains all Tauri IPC command handlers, state management, plugin registration, and application lifecycle logic.
+**`src-tauri/src/lib.rs`** (~907 lines) is the heart of the backend. It contains all Tauri IPC command handlers, state management, plugin registration, and application lifecycle logic.
 
 ### Managed State
 
@@ -34,8 +34,9 @@ Three pieces of state are managed via `tauri::State`:
 | `font_cache` | `font_cache.rs` | Font detection, script-based font recommendations |
 | `app_prefs` | `app_prefs.rs` | Generic key-value preferences |
 | `snapshots` | `snapshots.rs` | File snapshot/versioning system |
+| `ollama` | `ollama.rs` | Ollama health checks, model discovery, streaming chat, cancellation |
 
-## Tauri Commands (35+)
+## Tauri Commands (51)
 
 ### File I/O
 
@@ -51,6 +52,7 @@ Three pieces of state are managed via `tauri::State`:
 | `import_fountain_dialog` | File picker for `.fountain`/`.txt` only |
 | `pick_directory` | Directory picker |
 | `get_cli_args` | Returns CLI args matching `.actone`/`.fountain`/`.txt` |
+| `get_sample_bundle` | Returns a sample `.actone` bundle for templates/tutorials |
 
 ### PDF Export
 
@@ -91,6 +93,8 @@ Three pieces of state are managed via `tauri::State`:
 | `set_theme_state` | Updates theme, persists to file, emits `theme:state-changed` |
 | `get_app_prefs` | Returns all application preferences |
 | `set_app_prefs` | Merges & persists preferences |
+| `save_theme_dialog` | Save dialog for a custom theme file |
+| `import_theme_dialog` | File picker for importing a custom theme |
 
 ### Snapshots
 
@@ -99,7 +103,6 @@ Three pieces of state are managed via `tauri::State`:
 | `create_snapshot` | Creates a file snapshot (with retention pruning) |
 | `get_snapshots` | Lists snapshots for a file |
 | `delete_snapshot` | Deletes a snapshot |
-| `restore_snapshot` | Restores a file from snapshot |
 | `get_snapshot_folder_path` | Returns snapshot directory |
 | `open_folder` | Opens folder in system file manager |
 
@@ -109,6 +112,33 @@ Three pieces of state are managed via `tauri::State`:
 |---------|-------------|
 | `get_structures` | Lists all 8 story structure templates with beats |
 | `get_structure_template` | Returns raw Fountain content for a structure |
+
+### Ollama (Muse provider proxy)
+
+| Command | Description |
+|---------|-------------|
+| `ollama_check` | Tests Ollama connectivity and reports an error on failure |
+| `ollama_list_models` | Lists locally available Ollama models |
+| `ollama_chat` | Streams a chat completion from a selected Ollama model |
+| `cancel_ollama_chat` | Cancels an in-flight Ollama request |
+
+### System & Diagnostics
+
+| Command | Description |
+|---------|-------------|
+| `get_system_info` | OS, CPU, and memory information for crash reports |
+| `send_error_report` | POSTs a crash payload to an error webhook |
+| `flush_pending_panics` | Reads and clears the persisted panic log |
+| `reload_window` | Reloads a single webview by window label |
+| `restart_app` | Restarts the Tauri application |
+| `get_target_os` | Returns the build target OS string |
+
+### Store Updates
+
+| Command | Description |
+|---------|-------------|
+| `check_for_store_update` | Checks for a pending Microsoft Store update |
+| `install_store_update` | Installs the pending Store update |
 
 ### Licensing
 
@@ -124,6 +154,8 @@ The Rust backend uses Tauri's event system:
 - `app-prefs:changed` — emitted when preferences change
 - `file-opened` — emitted when a file is opened via CLI args or file association
 - `editor:ready` — emitted when the editor window is ready and has handled its action
+
+Ollama streaming emits `ollama-chat-chunk` events with `{session_id, delta}` payloads (see `src-tauri/src/ollama.rs`); the frontend `useAIChat` hook consumes them. Event payloads must be treated as untrusted input.
 
 ## Font Management
 

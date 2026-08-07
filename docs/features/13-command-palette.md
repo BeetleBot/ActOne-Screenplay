@@ -11,58 +11,50 @@
 
 ## Available Commands
 
+The palette groups commands by category (defined in `src/components/CommandPalette.tsx`).
+
 ### File
 - New Screenplay
-- Open Screenplay
-- Save
-- Save As
-- Close Tab
-- Export PDF
-- Export FDX
-- Export FadeIn
-- Export Fountain
-- Export CSV
+- Open Screenplay...
+- Save Screenplay
+- Save Screenplay As...
+- Close Active File
+- Export...
 
 ### Edit
 - Undo / Redo
 - Cut / Copy / Paste
-- Find / Replace
-- Select All
-- Toggle Bold / Italic / Underline
+- Find in Screenplay
 
 ### View
-- Toggle Sidebar
-- Toggle Zen Mode
-- Toggle Typewriter Mode
-- Switch to Editor View
-- Zoom In / Zoom Out / Reset Zoom
+- Enable / Disable Typewriter Mode
+- Enable / Disable Zen Mode
+- Enable / Disable Focus Mode
+- Zoom In / Zoom Out / Reset Editor Scale
+- Reset Interface Scale
+- Show / Hide Fountain Markup
+- Open X-Ray Analysis...
+- Show Snapshots
 
-### Navigation
-- Go to Scene...
-- Go to Line...
-- Go to Page...
-
-### Sidebar
-- Show Outline
-- Show Scripts
-- Show Characters
-- Show Statistics
-- Show Notepad
-- Show Markers
-- Show Tasks
-- Show Sprint
-- Show Parking
-
-### Tools
+### Format
 - Fix Formatting
-- Open Settings
-- Open Help Guide
-- Open Theme Manager
-- Open Tag Manager
-- Open X-Ray Analysis
-- Import Structure Template
-- Edit Title Page
-- Renumber Scenes
+- Edit Title Page...
+- Import Structure Template...
+- Renumber Scene Headings
+- Clear Scene Numbers
+
+### Settings
+- Open Settings...
+- Set Font: Courier Prime / Courier Prime Sans
+- Set Paper Size: US Letter / A4
+- Open Theme Manager...
+
+### Help
+- About ActOne
+- Help Guide
+- Interactive Tutorial...
+- Fountain Syntax Guide (fountain.io)
+- Report a Bug (Discord)
 
 ## Implementation
 

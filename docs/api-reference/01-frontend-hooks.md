@@ -80,13 +80,12 @@ interface ModalActions {
 
 **File:** `src/hooks/useModalWindows.ts`
 
-Hook for standalone Tauri sub-windows (Settings, Help, Tag Manager, Theme Manager, X-Ray, Tutorials). Manages the lifecycle of windows loaded via `?modal=` parameter — handles window close events, focus tracking, and deduplication.
+Hook for standalone Tauri sub-windows (Settings, Help, Theme Manager, X-Ray, and Tutorials). Manages the lifecycle of windows loaded via `?modal=` parameter — handles window close events, focus tracking, and deduplication.
 
 ```typescript
 function useModalWindows(): {
   openSettingsWindow: (tab?: string) => void;
-  openHelpWindow: () => void;
-  openTagManagerWindow: (maximize?: boolean) => void;
+  openHelpWindow: (articleId?: string) => void;
   openThemeManagerWindow: () => void;
   openXrayWindow: () => void;
   openTutorialsWindow: () => void;
@@ -96,7 +95,7 @@ function useModalWindows(): {
 
 ### `closeAllWindows`
 
-Closes all open modal sub-windows (settings, help, tag-manager, theme-manager, xray, tutorials) by looking them up via `WebviewWindow.getByLabel()`. Called automatically by `App.tsx` during window close (X button / Alt+F4) and when the last editor tab is closed (just before destroying the editor window and opening the welcome screen).
+Closes all open modal sub-windows (settings, help, theme-manager, xray, tutorials) by looking them up via `WebviewWindow.getByLabel()`. Called automatically by `App.tsx` during window close (X button / Alt+F4) and when the last editor tab is closed (just before destroying the editor window and opening the welcome screen).
 
 ### Sub-window Lifecycle
 
@@ -106,30 +105,72 @@ Closes all open modal sub-windows (settings, help, tag-manager, theme-manager, x
 
 ## AI Hooks (v0.4.0+)
 
-### `useAIChat(filePath, activeFileId)`
+### `useAIChat(getParsedDoc, filePath, activeFileId, ...)`
 
-Per-file AI chat sessions with streaming and @command support. Returns:
+Manages a file-scoped Muse chat session, provider streaming, screenplay context, and the current JSON/text tool loop. The current composer does not implement `@` command autocomplete or command mode.
+
+```typescript
+function useAIChat(
+  getParsedDoc: () => FountainDocument | null,
+  filePath: string | null,
+  activeFileId: string,
+  activeLineNumber?: number,
+  replaceSceneText?: (sceneNumber: number, newFountainText: string) => boolean,
+  updateSettings?: (updater: (previous: Record<string, unknown>) => Record<string, unknown>) => void,
+  openXrayWindow?: () => void,
+  scriptFileName?: string,
+): AIChatResult;
+```
+
+Returns:
 
 | Return | Type | Description |
 |--------|------|-------------|
 | `sessions` | `ChatSession[]` | All stored sessions for the current file |
-| `activeSessionId` | `string \| null` | Currently active session ID |
+| `activeSessionId` | `string` | Currently active session ID |
+| `activeSession` | `ChatSession \| undefined` | Active session object |
 | `turns` | `ChatTurn[]` | Messages in the active session |
 | `streaming` | `boolean` | True while a response is being generated |
 | `error` | `string \| null` | Last error message |
-| `send(text, action?)` | `(text: string, action?: string) => void` | Send a message (optionally with @command action) |
+| `send(text, display?)` | `(text: string, display?: string) => Promise<void>` | Send a message and stream the response |
 | `stop()` | `() => void` | Abort the current streaming response |
 | `newSession()` | `() => void` | Create a new empty session |
 | `selectSession(id)` | `(id: string) => void` | Switch to a different session |
+| `deleteSession(id)` | `(id: string) => void` | Delete a session |
 | `clear()` | `() => void` | Clear the active session |
+| `retry()` | `() => void` | Send the latest user turn again |
+
+`ChatTurn` may contain `thinking` and `toolCalls`. A tool step includes its name, arguments, status, result, and optional pending scene-apply data.
+
+The current tool loop can execute up to eight provider iterations. The advertised tools are declared in `src/lib/aiTools.ts` and include screenplay reads, scene drafting, scene tagging, project notes, character profiles, and X-Ray opening. `replace_scene` creates a pending review card; other mutating tools currently apply through the supplied callbacks.
 
 ### `usePromptConfig()`
 
-Reactive AI configuration reader using `useSyncExternalStore`. Returns a `PromptConfig` object with all AI settings (provider, model, apiEndpoint, apiKey, apiModel, systemPrompt, temperature settings, Ollama URL, and @command instructions). Written via `setPromptConfigField(key, value)` and `notifyConfigChange()`.
+Reactive AI configuration reader using `useSyncExternalStore`. Returns:
+
+```typescript
+interface PromptConfig {
+  provider: "none" | "ollama" | "openai-compatible";
+  model: string;
+  systemPrompt: string;
+  rephrasePresets: { name: string; prompt: string }[];
+  chatTemp: number;
+  rephraseTemp: number;
+  translateLanguages: string[];
+  translatePrompt: string;
+  translateTemp: number;
+  apiEndpoint: string;
+  apiKey: string;
+  apiModel: string;
+  ollamaUrl: string;
+}
+```
+
+Configuration is persisted in localStorage. Use `setPromptConfigField(key, value)` for supported fields and call `notifyConfigChange()` after direct storage updates. The hook does not currently expose or apply command-specific `@write-scene`, `@q`, `@lookup`, or `@synonyms` instructions.
 
 ### `notifyConfigChange()`
 
-Manually triggers all `usePromptConfig` subscribers to re-read from localStorage. Used by SettingsWindow when modifying API list entries via `selectApi`, `addApi`, `removeApi`.
+Manually triggers all `usePromptConfig` subscribers to re-read from localStorage. Settings uses it after API entry selection and API list changes. Direct updates to every provider field should also notify subscribers when the update is expected to be visible in another window.
 
 ### `createAIProvider(config)`
 
@@ -137,6 +178,8 @@ Factory that returns an `AIProvider` instance based on config:
 - `"openai-compatible"` → `OpenAICompatibleProvider(endpoint, apiKey, model)`
 - `"ollama"` → `OllamaProvider(ollamaUrl, model)`
 - `"none"` → `null`
+
+`OpenAICompatibleProvider.chat()` streams SSE data from the configured endpoint. `OllamaProvider.chat()` uses the Rust proxy and Tauri events in desktop mode and `/api/chat` in browser mode. Both accept an `AbortSignal`, temperature, and an `onChunk` callback.
 
 ### `fetchModels(provider)`
 

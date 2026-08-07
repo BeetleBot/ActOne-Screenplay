@@ -22,14 +22,14 @@ Architecture, setup, and implementation details for developers working on ActOne
 | [Frontend Architecture](developer-guide/03-frontend.md) | Component tree, state management, all UI components |
 | [Editor Integration](developer-guide/05-editor.md) | CodeMirror 6 setup, extensions, editor features |
 | [Fountain Parser](developer-guide/06-fountain-parser.md) | Both frontend (TypeScript) and backend (Rust) parsers |
-| [State Management](developer-guide/08-state-management.md) | All 6 React contexts, state, actions, persistence |
+| [State Management](developer-guide/08-state-management.md) | All 7 React contexts, state, actions, persistence |
 | [Theming System](developer-guide/11-theming.md) | 17 built-in themes, category+adaptive system, custom themes, color system |
 
 ### Backend
 
 | Document | Description |
 |----------|-------------|
-| [Rust Backend](developer-guide/04-backend.md) | Architecture, modules, all 35+ Tauri commands |
+| [Rust Backend](developer-guide/04-backend.md) | Architecture, modules, all 51 Tauri commands |
 | [PDF Export Engine](developer-guide/07-pdf-export.md) | Page layout, font system, pagination algorithm, watermarks |
 
 ### Tauri API Reference
@@ -78,7 +78,7 @@ Frontend API and data format documentation.
 | Document | Description |
 |----------|-------------|
 | [Frontend Hooks](api-reference/01-frontend-hooks.md) | useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows, useAIChat, usePromptConfig |
-| [Frontend Contexts](api-reference/02-frontend-contexts.md) | All 6 React context APIs with state and actions |
+| [Frontend Contexts](api-reference/02-frontend-contexts.md) | All 7 React context APIs with state and actions |
 | [.actone Bundle Format](api-reference/03-actone-bundle.md) | File structure, pack/unpack API, legacy compat |
 | [Fountain Syntax Reference](api-reference/04-fountain-syntax.md) | Complete Fountain markup reference with ActOne extensions |
 
@@ -92,7 +92,7 @@ End-user documentation for every feature in ActOne.
 |----------|-------------|
 | [Editor](features/01-editor.md) | Core editing features, syntax highlighting, smart typing |
 | [Autocomplete](features/02-autocomplete.md) | Ghost text suggestions for characters, transitions, etc. |
-| [Sidebar Panels](features/03-sidebar.md) | All 8 sidebar tabs: Outline, Scripts, Notepad, etc. |
+| [Sidebar Panels](features/03-sidebar.md) | 8 sidebar tabs: Outline, Scripts, Notepad, Markers, Tasks, Snapshots, Sprint, Parking |
 | [Planning Board](features/04-planning-board.md) | _(Coming Soon)_ Visual kanban scene organization |
 | [Export](features/05-export.md) | PDF, FDX, FadeIn, Fountain, CSV export |
 | [Multi-Script Bundles](features/06-scripts.md) | Managing multiple scripts in .actone bundles |
@@ -105,10 +105,9 @@ End-user documentation for every feature in ActOne.
 | [Command Palette](features/13-command-palette.md) | Fuzzy-search command launcher |
 | [Structure Templates](features/14-structure-templates.md) | 8 story structure templates |
 | [Title Page Editor](features/15-title-page.md) | Title page metadata editing |
-| [Tag Manager](features/16-tag-manager.md) | Production tags and categories |
 | [X-Ray Analysis](features/17-xray.md) | Screenplay analysis dashboard |
 | [Settings](features/18-settings.md) | All configuration options |
-| [Help Guide](features/19-help-guide.md) | Built-in 51-article help system |
+| [Help Guide](features/19-help-guide.md) | Built-in 75-article help system |
 | [Interactive Tutorials](features/20-onboarding-tutorials.md) | User onboarding and Fountain writing tours |
 | [Muse AI Assistant](features/21-muse.md) | AI screenwriting assistant (v0.4.0+) |
 
@@ -117,6 +116,6 @@ End-user documentation for every feature in ActOne.
 ## Quick Links
 
 - **Source:** `src/` — React/TypeScript frontend (85+ files)
-- **Backend:** `src-tauri/src/` — Rust backend (12 modules, 35+ source files)
+- **Backend:** `src-tauri/src/` — Rust backend (7 modules, 51 commands)
 - **Build scripts:** `Release/` — Linux and Windows packaging
 - **Config:** `package.json`, `vite.config.ts`, `tsconfig.json`, `tauri.conf.json`

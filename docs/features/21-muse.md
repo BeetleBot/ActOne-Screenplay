@@ -1,27 +1,35 @@
 # Muse AI Assistant
 
 **Added:** v0.4.0
+
 **Components:** `MusePanel.tsx`, `AIChatComposer.tsx`, `AIChatMessage.tsx`, `FountainBlock.tsx`
+
 **Hooks:** `useAIChat.ts`, `usePromptConfig.ts`
-**Files:** `src/components/MusePanel.tsx`, `src/hooks/useAIChat.ts`, `src/hooks/usePromptConfig.ts`, `src/lib/aiProviders.ts`, `src/components/ai/`
 
-Muse is ActOne's built-in AI screenwriting assistant — a chat-based interface that connects to OpenAI-compatible APIs or local Ollama models. It provides conversational help, scene generation, document Q&A, term lookup, and synonym suggestions.
+**Implementation:** `src/lib/aiProviders.ts`, `src/lib/aiTools.ts`
 
----
+Muse is ActOne's built-in AI screenwriting assistant. It connects to an OpenAI-compatible endpoint or an Ollama server and provides screenplay-aware chat, structured screenplay analysis, Fountain drafting, scene tagging, project-note updates, character-profile updates, and X-Ray navigation.
 
-## Architecture
+Muse is optional. ActOne does not provide a hosted AI service or a default model. The user supplies the provider, endpoint, credentials, and model.
 
-### Provider Layer (`src/lib/aiProviders.ts`)
+## Opening Muse
 
-Two provider implementations:
+Muse is opened from the main editor by:
 
-```
-AIProvider (interface)
-├── OpenAICompatibleProvider — generic OpenAI-compatible chat completion API
-└── OllamaProvider — local Ollama instance via /api/chat
-```
+- Pressing `Alt+M`.
+- Clicking the Muse indicator at the far right of the status bar.
+- Opening the right pane through the existing workspace controls.
 
-Both implement the `AIProvider` interface:
+The status-bar indicator behaves as follows:
+
+- Green means a provider other than `none` is configured. Clicking it toggles the Muse pane.
+- Red means the provider is `none`. Clicking it opens Settings on the Muse tab.
+
+The Command Palette currently provides general settings and editor commands. It does not provide dedicated `Open Muse Pane` or `Open Muse Settings` commands.
+
+## Provider Layer
+
+The provider interface is defined in `src/lib/aiProviders.ts`:
 
 ```typescript
 interface AIProvider {
@@ -29,229 +37,247 @@ interface AIProvider {
 }
 ```
 
-- Messages use `{ role: "system" | "user" | "assistant", content: string }` format.
-- Streaming is handled via SSE (OpenAI) or JSON-lines (Ollama) with `onChunk` callback.
-- The `system` prompt is passed via `options.system`, prepended as a `system`-role message.
-- Endpoint URLs are used as-is — no `/chat/completions` is appended automatically.
+### OpenAI-compatible provider
 
-### Config Layer (`src/hooks/usePromptConfig.ts`)
+`OpenAICompatibleProvider` sends a streamed request to the configured endpoint:
 
-`usePromptConfig()` is a `useSyncExternalStore`-based hook that reads all AI configuration from localStorage keys:
+- The endpoint is used as entered. ActOne does not append `/chat/completions`.
+- The configured API key is sent as a Bearer token when present.
+- Responses are read as Server-Sent Events.
+- Content deltas are forwarded to the chat UI through `onChunk`.
+- The request uses the configured model, temperature, and a 4096-token response limit.
 
-| Key | Storage Key | Description |
-|-----|------------|-------------|
-| provider | `actone-prompt-provider` | `"none"`, `"openai-compatible"`, or `"ollama"` |
-| model | `actone-prompt-model` | Ollama model name |
-| apiEndpoint | `actone-prompt-api-endpoint` | OpenAI-compatible endpoint URL |
-| apiKey | `actone-prompt-api-key` | API key for authentication |
-| apiModel | `actone-prompt-api-model` | Model name for OpenAI-compatible provider |
-| systemPrompt | `actone-prompt-system-prompt` | Custom system prompt (Muse personality) |
-| chatTemp | `actone-prompt-chat-temp` | Temperature for chat (default 0.7) |
-| rephrasePrompt | `actone-prompt-rephrase-prompt` | Prompt for rephrase action |
-| rephraseTemp | `actone-prompt-rephrase-temp` | Temperature for rephrase (default 0.1) |
-| ollamaUrl | `actone-prompt-ollama-url` | Ollama server URL (default http://localhost:11434) |
-| writeSceneInstructions | `actone-prompt-writescene-instructions` | Custom instructions for @write-scene |
-| qInstructions | `actone-prompt-q-instructions` | Custom instructions for @q |
-| synonymsInstructions | `actone-prompt-synonyms-instructions` | Custom instructions for @synonyms |
-| lookupInstructions | `actone-prompt-lookup-instructions` | Custom instructions for @lookup |
+The endpoint must be compatible with the request and streamed response shape expected by `OpenAICompatibleProvider`.
 
-Config changes are propagated via `notifyConfigChange()` which triggers all `useSyncExternalStore` listeners.
+### Ollama provider
 
-### Chat Layer (`src/hooks/useAIChat.ts`)
+In Tauri desktop mode, `OllamaProvider` routes chat through Rust commands in `src-tauri/src/ollama.rs`:
 
-`useAIChat(filePath, activeFileId)` manages per-file chat sessions:
+- `ollama_check` checks server availability.
+- `ollama_list_models` reads `/api/tags`.
+- `ollama_chat` streams `/api/chat` responses through Tauri events.
+- `cancel_ollama_chat` marks a session as cancelled.
 
-- **Sessions**: Each file can have multiple chat sessions. Sessions are stored in localStorage keyed by `actone_ai_chat::<normalized-path>`.
-- **Turns**: Each session has an array of `ChatTurn` objects (`{ id, role, content, display? }`).
-- **Streaming**: Responses stream via the provider's `onChunk` callback, updating the assistant turn content in real-time.
-- **System prompts**: Dynamically built based on the action type:
-  - General chat: Muse personality + screenplay context + Fountain syntax rules
-  - `@write-scene`: Muse personality + Fountain scene generation instructions
-  - `@q`: Muse personality + document context
-  - `@lookup`: Short definition focus
-  - `@synonyms`: Word list focus
-- **Post-processing**: For `@write-scene`, only content inside ` ```fountain ``` ` fences is kept.
+In browser development mode, the provider calls `${ollamaUrl}/api/chat` directly. Model discovery calls `${ollamaUrl}/api/tags`.
 
----
+The default Ollama URL is `http://localhost:11434`.
 
-## UI Components
+## Configuration
 
-### MusePanel (`src/components/MusePanel.tsx`)
+`usePromptConfig()` reads the active configuration from localStorage and updates through `notifyConfigChange()`.
 
-The right-side chat panel. Layout:
+| Setting | Storage key | Meaning |
+|---|---|---|
+| Provider | `actone-prompt-provider` | `none`, `ollama`, or `openai-compatible` |
+| Ollama model | `actone-prompt-model` | Selected Ollama model name |
+| Ollama URL | `actone-prompt-ollama-url` | Base URL for the Ollama server |
+| API endpoint | `actone-prompt-api-endpoint` | OpenAI-compatible endpoint, used as-is |
+| API key | `actone-prompt-api-key` | Bearer credential for the active API entry |
+| API model | `actone-prompt-api-model` | Model identifier for the active API entry |
+| API list | `actone-prompt-api-list` | JSON array of named API entries |
+| System prompt | `actone-prompt-system-prompt` | General Muse instructions and personality |
+| Chat temperature | `actone-prompt-chat-temp` | Chat response temperature, default `0.7` |
+| Rephrase temperature | `actone-prompt-rephrase-temp` | Selection rephrase temperature, default `0.1` |
+| Translation temperature | `actone-prompt-translate-temp` | Translation temperature, default `0.1` |
+| Rephrase presets | `actone-prompt-rephrase-presets` | Named selection-rephrase instructions |
+| Translation languages | `actone-prompt-translate-languages` | Languages shown in the editor menu |
+| Translation prompt | `actone-prompt-translate-prompt` | Whole-script and selection translation instructions |
 
-```
-┌──────────────────────────────┐
-│ Muse  [New] [History] [Clear] │ ← Header bar
-├──────────────────────────────┤
-│                              │
-│   Chat messages (scrollable) │
-│   - User bubbles (right)     │
-│   - Assistant messages (left)│
-│   - Fountain blocks          │
-│   - Error display + copy     │
-│                              │
-├──────────────────────────────┤
-│ Provider dropdown            │ ← Bottom controls
-│ Active Model dropdown        │
-│ ┌───────────────────┐ [Send]│
-│ │ Message Muse...    │       │ ← Composer
-│ └───────────────────┘       │
-└──────────────────────────────┘
-```
+The legacy storage keys `actone-prompt-writescene-instructions`, `actone-prompt-q-instructions`, `actone-prompt-synonyms-instructions`, and `actone-prompt-lookup-instructions` exist in `STORAGE_KEYS` and defaults but are not currently read by `usePromptConfig()` or applied by the chat composer.
 
-Key features:
-- **Chat history menu**: Clock icon opens a menu of past sessions per file. + icon creates a new session. Trash icon clears current session.
-- **Provider/Model selectors**: Side-by-side dropdowns at the bottom. Provider switches between OpenAI API and Ollama. Model shows all configured API entries (OpenAI) or fetched models (Ollama).
-- **Screenplay context**: The current document text is included in @q requests for document-aware answers.
+## Provider Settings
 
-### AIChatComposer (`src/components/ai/AIChatComposer.tsx`)
+The standalone Settings window has a Muse tab:
 
-The chat input component with @command support:
+- Select `None`, `Ollama`, or `OpenAI API`.
+- Use **Configure Providers** to manage named OpenAI-compatible entries.
+- An API entry contains a name, endpoint, API key, and model.
+- Selecting an API entry copies its endpoint, key, and model to the active flat configuration keys.
+- Ollama settings contain a base URL and a model selector populated from the server.
+- Chat, rephrase, and translation temperatures are configured separately.
+- **Custom Instructions** edits the general system prompt, rephrase presets, and translation prompt.
+- Fountain syntax rules are shown in Settings and are automatically added to relevant writing and editor prompts.
 
-- **@command autocomplete**: Type `@` to see a dropdown of available commands (write-scene, q, lookup, synonyms).
-- **Mode indicator**: Once a command is selected, `@command` appears as a colored tag prefixing the input. Click it to cancel the command.
-- **Keyboard shortcuts**: Enter to send, Shift+Enter for newline, Backspace on empty input to cancel command mode.
-- **Send/Stop button**: Shows stop icon during streaming, send icon otherwise. Disabled when provider is "none".
+Small local models may not reliably follow Fountain rules or structured tool-call instructions. Larger local models or capable remote models generally perform better for multi-scene analysis and tool execution.
 
-### AIChatMessage (`src/components/ai/AIChatMessage.tsx`)
+## Chat Sessions
 
-Renders individual chat turns:
-
-- **User messages**: Right-aligned, primary color background, markdown rendered.
-- **Assistant messages**: Full-width card with "MUSE" header, AutoAwesome icon, copy button (appears on hover), markdown body.
-- **Fountain blocks**: ` ```fountain ``` ` fences are rendered as `FountainBlock` components with Courier Prime font, copy and insert buttons.
-- **Typing indicator**: Bouncing dots animation during streaming response.
-- **Error display**: Red border box with copy button for error messages.
-
-### FountainBlock (`src/components/ai/FountainBlock.tsx`)
-
-Renders Fountain-formatted text within assistant messages:
-- Courier Prime monospace font
-- Copy button to copy the Fountain text
-- Insert button to place the text at cursor position in the editor
-
-### Muse status indicator (StatusBar)
-
-The Muse indicator is a solid square at the far right of the status bar (`src/components/layout/StatusBar.tsx`) that spans the full height of the bar and touches its top, bottom, and right edges:
-- **Green** when a provider is configured — click to toggle the Muse right pane
-- **Red** when provider is "none" — click to open Muse settings (`openSettingsWindow("muse")`)
-
-No pulse animation; a subtle press (scale) animation plays on click. The Muse icon was removed from the header bar; Muse is opened from the status indicator, the Command Palette ("Open Muse Pane" / "Open Muse Settings"), or the `Alt+M` shortcut (opens the Muse pane).
-
----
-
-## Multi-API Management
-
-File: `src/components/SettingsWindow.tsx`
-
-Users can manage multiple API entries for the OpenAI-compatible provider:
+`useAIChat()` manages sessions for the active file:
 
 ```typescript
-interface ApiEntry {
-  id: string;        // crypto.randomUUID()
-  name: string;      // User-friendly label (e.g. "API 1")
-  endpoint: string;  // Base URL
-  apiKey: string;    // Authentication key
-  model: string;     // Model identifier
+useAIChat(
+  getParsedDoc,
+  filePath,
+  activeFileId,
+  activeLineNumber,
+  replaceSceneText,
+  updateSettings,
+  openXrayWindow,
+  scriptFileName,
+)
+```
+
+Each session contains:
+
+```typescript
+interface ChatTurn {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  display?: string;
+  thinking?: string;
+  toolCalls?: ToolCallStep[];
+  timestamp?: number;
+  model?: string;
+  tokens?: number;
 }
 ```
 
-- Stored as JSON array in `actone-prompt-api-list` localStorage key.
-- **Add API**: Creates a new empty entry and auto-selects it.
-- **Edit**: Inline text fields for endpoint URL, API key, and model.
-- **Select**: Click any entry card to activate it — syncs its values to the flat `apiEndpoint`/`apiKey`/`apiModel` keys.
-- **Delete**: Removes entry; if it was the active one, selects the first remaining entry.
-- **Active indicator**: Selected entry shows a primary-colored dot and border.
-- Only entries with non-empty endpoint + key + model are functional; partial entries are stored but will not connect.
+The chat hook:
 
-### Settings Tab (Muse Tab, index 3)
+1. Loads sessions from a file-specific localStorage key.
+2. Adds the user turn and an empty assistant turn.
+3. Builds a system prompt from Muse instructions and the parsed screenplay.
+4. Streams a provider response into the assistant turn.
+5. Detects tool calls and may execute a tool loop for up to eight iterations.
+6. Adds tool results to the next model request.
+7. Displays tool steps and pending scene drafts in the assistant message.
 
-- Provider dropdown (none / OpenAI API / Ollama)
-- "Configure Providers" button opens a nested dialog for API entry management
-- Model selector (shows selected entry's model for OpenAI, or fetched models for Ollama)
-- Temperature slider (0.0–1.0)
-- "Custom Instructions" button opens a dialog to edit system prompts for each @command type
-- Default system prompt defines Muse personality
+Chat storage uses `actone_ai_chat::<normalized-file-path>`. Unsaved documents use the active file ID in the key. Sessions are local to the current frontend storage context.
 
----
+The `.actone` bundle format has a `muse.json` entry, but the current chat hook reads and writes localStorage rather than synchronizing its live sessions with bundle `promptChats`. Do not promise that chat history travels with a bundle until that synchronization is implemented.
 
-## @Commands
+## Screenplay Context
 
-| Command | Function | System Prompt Focus |
-|---------|----------|-------------------|
-| `@write-scene` | Generate a Fountain-formatted scene | Scene generation instructions |
-| `@q` | Ask about the screenplay document | Document context + Q&A |
-| `@lookup` | Define a term (1-2 sentences) | Brief definition |
-| `@synonyms` | List alternative words (6-10) | Word list format |
+When a parsed screenplay is available, Muse receives:
 
-### @write-scene Post-Processing
+- A structured screenplay index from `buildScreenplayIndex()`.
+- Scene IDs, headings, line ranges, and detected characters.
+- The scene around the current editor line when available.
+- Current todo and parking data.
+- Saved character profiles for the active script.
+- Fountain syntax rules for writing-oriented prompts.
+- The advertised tool declarations from `MUSE_TOOLS`.
 
-The response content is processed to extract only the ` ```fountain ``` ` fenced block:
-1. If a ` ```fountain ` opening fence is found: extract content between it and the closing ` ``` ` fence.
-2. If no closing fence: take everything from the opening fence onward.
-3. If no fence at all: wrap the entire response in ` ```fountain … ``` `.
+Context is built from the current parsed document, but the current implementation does not attach a document revision or content hash to a request. Async agent mutations must therefore be treated carefully and must not be described as stale-safe.
 
-This ensures clean insertion of scene text into the editor.
+## Composer Behavior
 
----
+`AIChatComposer` is a plain multiline textarea:
 
-## Persistence
+- `Enter` sends the message.
+- `Shift+Enter` inserts a newline.
+- `Escape` stops an active generation.
+- Up and Down navigate prompts entered during the current composer lifetime.
+- The send button becomes a stop button while streaming.
+- The composer is disabled when the provider is `none`.
 
-| Data | Location | Key |
-|------|----------|-----|
-| Chat sessions | localStorage | `actone_ai_chat::<normalized-path>` |
-| Provider config | localStorage | `actone-prompt-provider`, etc. |
-| API list | localStorage | `actone-prompt-api-list` |
-| API flat keys | localStorage | `actone-prompt-api-endpoint`, `-api-key`, `-api-model` |
-| AI model preferences | localStorage | `actone-prompt-model` (Ollama), `actone-prompt-api-model` (OpenAI) |
-| Muse.json in bundles | .actone archive | `muse.json` (legacy: `prompt.json`) |
+The composer does not implement `@` command autocomplete or command mode. Users should write requests in normal language.
 
-### Bundle Compatibility (`.actone`)
+## Tool Protocol
 
-The `.actone` bundle format uses `muse.json` as the key name. For backward compatibility:
-- **Pack**: Writes to `muse.json`
-- **Unpack**: Reads `muse.json` first; falls back to `prompt.json` for old bundles
+The current protocol is JSON/text based. The model is instructed to emit a `tool_call` fenced block, but the parser also accepts bare JSON, repaired JSON, and pseudo-call syntax for compatibility with weaker models.
 
----
+The parser functions are `parseToolCall()` and `parseAllToolCalls()` in `src/hooks/useAIChat.ts`. Tool declarations are stored in `MUSE_TOOLS` and execution is handled by `executeToolCall()` in `src/lib/aiTools.ts`.
 
-## System Prompts
+The model output, screenplay text, notes, and tool arguments are untrusted input. Tool names and arguments should be validated before execution. The current implementation does not provide a universal approval dialog for mutations.
 
-### Default Muse Personality
+### Advertised tools
 
-```text
-Your name is Muse. You are a screenwriting AI assistant made by ActOne.
-Your identity is Muse — not Gemma, not Google, not any other model.
-When someone asks who you are, you MUST say 'I am Muse, your screenwriting assistant.'
-Never break character. Never reveal you are based on another model.
-This is your core identity. You are kind, intelligent, and concise.
-You only say what matters.
-```
+| Tool | Behavior |
+|---|---|
+| `read_scene` | Reads a scene by its ordinal index |
+| `search_script` | Searches screenplay lines and returns matching scenes and lines |
+| `get_character_scenes` | Lists scenes and co-stars for a character |
+| `get_location_breakdown` | Lists scenes whose heading contains a location query |
+| `get_screenplay_stats` | Returns line, word, page, scene, action, dialogue, and speaking-role statistics |
+| `search_character_dialogue` | Searches dialogue for a named character |
+| `read_active_cursor_context` | Returns lines around the active editor line |
+| `read_title_page` | Returns parsed title-page lines |
+| `replace_scene` | Creates a pending Fountain replacement draft for review |
+| `add_project_todo` | Adds a todo through the current settings updater |
+| `add_parking_note` | Adds a parking note through the current settings updater |
+| `read_project_todos` | Reads todo data from current document settings |
+| `read_parking_lot` | Reads parking data from current document settings |
+| `tag_scene` | Adds color or storyline markers to a scene heading and applies the edit |
+| `update_character_profile` | Creates or updates X-Ray character profile data |
+| `read_character_profiles` | Reads saved character profiles for the active script |
+| `open_xray_window` | Opens the X-Ray window or dispatches its fallback event |
 
-This is enforced in both the default localStorage value (`defaults.ts`) and the inline fallback in `useAIChat.ts`.
+The implementation also contains a `read_script_bookmarks` handler, but it is not currently included in `MUSE_TOOLS` and should not be treated as an advertised model capability until registered.
 
-### Fountain Syntax Rules
+### Mutating tool behavior
 
-All general chat prompts include Fountain formatting rules (scene headings, action, character/dialogue, transitions, dual dialogue, etc.) to ensure the model generates valid Fountain syntax.
+- `replace_scene` returns a pending draft. The user can inspect the Fountain block and apply it from the review card.
+- `tag_scene` modifies the scene heading through `replaceSceneText()`.
+- `add_project_todo` and `add_parking_note` update settings immediately when an updater is available.
+- `update_character_profile` updates character profile and gender settings immediately when an updater is available.
+- `open_xray_window` changes application UI state by opening another window.
 
----
+Plain Fountain files do not persist ActOne metadata such as todos, parking items, and character profiles in the Fountain text. Extended metadata is intended for `.actone` bundles.
+
+## Message Rendering
+
+`AIChatMessage` renders:
+
+- User messages as right-aligned Markdown bubbles.
+- Assistant messages as Markdown with a Muse header.
+- `<think>` blocks as collapsible thinking content when returned by a model.
+- Tool calls as a collapsible step list.
+- Pending scene replacements as `FountainBlock` review cards.
+- Fenced `fountain` blocks as formatted Fountain blocks.
+- Copy controls for assistant content and errors.
+
+`FountainBlock` supports copying the Fountain text and inserting it at the editor cursor. Pending replacement blocks additionally support applying the proposed scene through the editor callback.
+
+## Editor AI Actions Outside Chat
+
+The editor context menu provides separate AI actions:
+
+- Look up selected text.
+- Request synonyms for selected text.
+- Rephrase selected text using a configured preset.
+- Translate selected text using a configured language.
+- Translate the whole script when no text is selected.
+
+These operations use the configured provider but are separate from the Muse chat tool loop.
+
+## Privacy and Persistence
+
+- Provider configuration, including API keys, is stored in localStorage by the current implementation.
+- Chat prompts may include screenplay text, index data, notes, parking data, and character profiles.
+- OpenAI-compatible requests are sent to the configured endpoint.
+- Ollama requests are sent to the configured Ollama server.
+- Users should not assume screenplay content remains local when a remote provider is selected.
+- `muse.json` is read and written by the `.actone` pack/unpack utilities, but live chat sessions are currently localStorage-backed.
+
+See `PRIVACY.md` for the application's current data-transmission policy and `docs/api-reference/01-frontend-hooks.md` for the exported hook and provider APIs.
+
+## Planned Agentic Work
+
+The following are planned, not implemented:
+
+- Universal approval and diff previews for every mutation.
+- Strict runtime schemas for tool arguments.
+- Revision-safe editor transactions.
+- Stable scene anchors and stale-request rejection.
+- Evidence-based continuity analysis and production breakdown workflows.
+
+The planning review is in `todo/MuseAgenticSkillsReview.md`. The older XML action plan in `todo/ActOneAgenticAI.md` is not the current implementation contract.
 
 ## Related Files
 
 | File | Purpose |
-|------|---------|
-| `src/components/MusePanel.tsx` | Main chat panel UI |
-| `src/components/ai/AIChatComposer.tsx` | Chat input with @command autocomplete |
-| `src/components/ai/AIChatMessage.tsx` | Message bubble rendering |
-| `src/components/ai/FountainBlock.tsx` | Fountain code block display |
-| `src/hooks/useAIChat.ts` | Core chat logic (sessions, streaming, history) |
-| `src/hooks/usePromptConfig.ts` | AI config management hook |
-| `src/lib/aiProviders.ts` | Provider implementations (OpenAI, Ollama) |
-| `src/constants.ts` | `ApiEntry` interface, `STORAGE_KEYS` for AI |
-| `src/constants/defaults.ts` | Default config values |
-| `src/components/Icons.tsx` | RobotIcon component |
-| `src/components/layout/StatusBar.tsx` | Muse status indicator (green/red square at far right) |
-| `src/components/SettingsWindow.tsx` | Multi-API management UI |
-| `src/components/CommandPalette.tsx` | "Open Muse Pane" / "Open Muse Settings" commands |
-| `src/utils/actone.ts` | Bundle pack/unpack (muse.json) |
-| `walkthrough.md` | End-user feature walkthrough (deprecated — see docs/) |
+|---|---|
+| `src/components/MusePanel.tsx` | Main chat panel and model selector |
+| `src/components/ai/AIChatComposer.tsx` | Plain chat input and streaming controls |
+| `src/components/ai/AIChatMessage.tsx` | Message, thinking, tool-step, and draft rendering |
+| `src/components/ai/FountainBlock.tsx` | Fountain copy, insert, and apply controls |
+| `src/hooks/useAIChat.ts` | Sessions, prompt construction, streaming, and tool loops |
+| `src/hooks/usePromptConfig.ts` | Reactive provider configuration and model lookup |
+| `src/lib/aiProviders.ts` | OpenAI-compatible and Ollama provider implementations |
+| `src/lib/aiTools.ts` | Tool declarations and execution handlers |
+| `src/utils/sceneIndexer.ts` | Structured screenplay index used by Muse |
+| `src/components/layout/StatusBar.tsx` | Muse status indicator |
+| `src/components/SettingsWindow.tsx` | Provider, model, temperature, and prompt settings |
+| `src/utils/actone.ts` | Bundle metadata and `muse.json` compatibility |

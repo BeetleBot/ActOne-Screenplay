@@ -46,7 +46,6 @@ Shows all margin markers placed in the document:
 To-do list integrated with the screenplay:
 
 - Create tasks from editor lines (right-click → "Create Task")
-- Alternatively, right-click → "Tag" → Quick Tag (Ctrl+right-click)
 - Check/uncheck completion
 - Delete tasks
 - Tasks saved as `todos` array in the document settings

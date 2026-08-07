@@ -1044,11 +1044,11 @@ ActOne features a strict **flat geometric aesthetic**:
     title: "Muse AI Assistant Overview",
     category: "AI & Muse",
     tags: ["muse", "ai", "assistant", "overview", "help"],
-    relatedIds: ["muse-configure", "muse-commands", "muse-chat"],
-    content: `**Muse** is ActOne's AI screenwriting assistant — kind, intelligent, and concise. It helps you write scenes, research terms, look up definitions, and brainstorm ideas without leaving your editor.
+    relatedIds: ["muse-configure", "muse-tools", "muse-chat"],
+    content: `**Muse** is ActOne's AI screenwriting assistant — kind, intelligent, and concise. It helps you discuss your screenplay, analyze scenes and characters, draft Fountain text, and apply selected screenplay actions without leaving your editor.
 
 **How to open Muse:**
-- Press \`Alt+M\` (or \`Ctrl+K\` → "Open Muse Pane").
+- Press \`Alt+M\`.
 - Click the Muse square at the far right of the Status Bar.
 - The Muse panel opens on the right side of the window.
 
@@ -1057,11 +1057,16 @@ ActOne features a strict **flat geometric aesthetic**:
 - **Red**: No AI provider configured — click to open Muse Settings.
 
 **Key features:**
-- **Chat**: Ask questions about screenwriting, get feedback on your script, or brainstorm ideas.
+- **Screenplay-aware chat**: Ask questions about the active screenplay, scenes, characters, locations, and title page.
+- **Analysis tools**: Ask Muse to search the screenplay, inspect scenes, calculate statistics, or find character dialogue.
+- **Fountain drafting**: Ask for Fountain-formatted writing and use the Insert controls on returned Fountain blocks.
+- **Reviewable scene drafts**: Scene replacement requests appear as a pending review card before they are applied.
 
 - **Per-file history**: Each screenplay has its own separate chat history, stored in localStorage.
 - **Streaming responses**: Muse streams its replies in real-time as they generate.
-- **Copy & Insert**: Copy any response or insert Fountain-formatted text directly at your cursor position.`,
+- **Copy & Insert**: Copy any response or insert Fountain-formatted text directly at your cursor position.
+
+Muse does not currently provide @command autocomplete. Write requests in normal language.`,
   },
   {
     id: "muse-configure",
@@ -1069,13 +1074,13 @@ ActOne features a strict **flat geometric aesthetic**:
     category: "AI & Muse",
     tags: ["muse", "ai", "configure", "setup", "provider", "api", "openai", "ollama"],
     relatedIds: ["muse-overview", "settings-overview"],
-    content: `Before using Muse, you need to configure an AI provider. Go to **Settings** (\`Ctrl+,\`) → **Muse** tab or open the Command Palette (\`Ctrl+K\`) → "Open Settings" → select the Muse tab.
+    content: `Before using Muse, you need to configure an AI provider. Go to **Settings** (\`Ctrl+,\`) → **Muse** tab or open the Command Palette (\`Ctrl+K\`) → **Open Settings** → select the Muse tab.
 
 **Supported Providers:**
 
-**1. OpenAI API** — Use any OpenAI-compatible API endpoint.
-  - **Provider dropdown**: Select "OpenAI API".
-  - **Active Model**: Choose from your configured API entries in the dropdown.
+**1. OpenAI-compatible API** — Use any compatible chat-completion endpoint.
+  - **Provider**: Select "OpenAI API".
+  - **Active Model**: Choose from your configured API entries in the Muse panel or Settings.
   - **Configure Providers**: Click "Configure Providers" to manage multiple API connections.
     - Click **"Add API"** to create a new entry.
     - Fill in: **Name**, **Endpoint URL**, **API Key**, and **Model**.
@@ -1092,8 +1097,10 @@ ActOne features a strict **flat geometric aesthetic**:
 - The default system prompt defines Muse's personality: kind, intelligent, concise, and screenwriting-focused.
 - You can customize the system prompt via **Settings → Muse → System Prompt**.
 **Temperature:**
-- Controls randomness (0.0 = deterministic, 1.0 = creative).
-- Default chat temperature: 0.7; rephrase temperature: 0.1.`,
+- Controls randomness (0.0 = more precise, 1.0 = more creative).
+- Chat default: 0.7. Rephrase default: 0.1. Translation default: 0.1.
+
+**Provider data:** When OpenAI-compatible is selected, prompts and screenplay context are sent to the configured endpoint. When Ollama is selected, they are sent to the configured Ollama server. API keys are currently stored in localStorage.`,
   },
 
   {
@@ -1118,6 +1125,7 @@ ActOne features a strict **flat geometric aesthetic**:
 **Working with responses:**
 - **Copy** — Hover over a Muse response and click the copy button in the top-right corner to copy the full response text.
 - **Insert** — Fountain blocks (\`\`\`fountain\`\`\`) have an Insert button that places the scene text directly at your cursor in the editor.
+- **Apply draft** — A scene replacement draft has an Apply control after you review the Fountain text.
 - **Error copy** — If an error occurs, the error message has a copy button for easy debugging.
 
 **Provider & Model selector:**
@@ -1127,7 +1135,58 @@ ActOne features a strict **flat geometric aesthetic**:
 
 **Tips:**
 - Muse's context includes your current screenplay for document-aware answers.
-- Muse remembers the conversation within a session, so you can ask follow-up questions.`,
+- Muse remembers the conversation within a session, so you can ask follow-up questions.
+- Press **Escape** or click the stop button to cancel a response.
+- Small local models may struggle with multi-scene analysis and structured actions; larger models generally follow instructions more reliably.`,
+  },
+  {
+    id: "muse-tools",
+    title: "Muse Tools and Screenplay Actions",
+    category: "AI & Muse",
+    tags: ["muse", "ai", "tools", "analysis", "scene", "x-ray", "fountain"],
+    relatedIds: ["muse-overview", "muse-chat", "xray-analysis", "notes-markers"],
+    content: `Muse can use structured tools when a request requires screenplay information or an ActOne action. You do not need to type a special command. Ask in normal language, for example:
+
+- "Read scene 3 and summarize the conflict."
+- "Find every scene where MAYA appears."
+- "Search for references to the red suitcase."
+- "Draft a replacement for the current scene in Fountain."
+- "Add a purple tag to scene 5."
+- "Create a profile for the protagonist and show it in X-Ray."
+
+**Read and analysis tools include:**
+
+- Read a scene by its scene index.
+- Search screenplay lines.
+- Find a character's scenes and co-stars.
+- Find scenes by location.
+- Calculate screenplay statistics.
+- Search a character's dialogue.
+- Read the lines around the active cursor.
+- Read title-page metadata.
+- Read saved todos, parking notes, and character profiles.
+
+**Action tools include:**
+
+- Draft a scene replacement for review.
+- Add a project todo.
+- Add a parking note.
+- Add a color or storyline tag to a scene heading.
+- Create or update an X-Ray character profile.
+- Open the X-Ray window.
+
+**Review behavior:**
+
+- Scene replacement is shown as a pending Fountain draft. Review it before applying it to the editor.
+- Other current settings and editor actions may be applied immediately when Muse calls them. Check the affected file and save a snapshot before large operations.
+- Scene references currently use the screenplay's ordinal scene index. If the screenplay uses printed Fountain scene numbers such as \`#42#\`, state the heading as well to avoid ambiguity.
+
+**Important limitations:**
+
+- Muse's current tool protocol is model-generated JSON/text, so tool calls may fail with smaller models.
+- The current implementation does not provide a universal approval dialog for every mutation.
+- Todos, parking notes, and character profiles are ActOne metadata. Save the screenplay as an ActOne Bundle (\`.actone\`) when you need those settings to persist with the project.
+- Treat generated facts and profile details as suggestions. Verify them against the screenplay before relying on them.`,
   },
 ];
 
