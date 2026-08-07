@@ -27,7 +27,7 @@ function formatRelativeDate(timestamp: number): string {
 }
 
 export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
-  const { parsedDoc, filePath, activeFileId, updateSettings } = useFile();
+  const { parsedDoc, filePath, activeFileId, updateSettings, scriptFileName } = useFile();
   const { replaceSceneText, scrollToLine, editorView } = useEditor();
   const { activeLineNumber } = useCursor();
   const promptConfig = usePromptConfig();
@@ -65,7 +65,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
     }
   }, []);
 
-  const chat = useAIChat(getParsedDoc, filePath, activeFileId, activeLineNumber, replaceSceneText, updateSettings, handleOpenXray);
+  const chat = useAIChat(getParsedDoc, filePath, activeFileId, activeLineNumber, replaceSceneText, updateSettings, handleOpenXray, scriptFileName);
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const pinnedRef = useRef(true);

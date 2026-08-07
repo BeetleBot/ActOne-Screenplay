@@ -549,36 +549,57 @@ export function executeToolCall(
   }
 
   if (name === "update_character_profile") {
-    const characterName = String(args.characterName ?? "").trim().toUpperCase();
-    if (!characterName) return "Error: characterName is required.";
+    const rawItems = Array.isArray(args.profiles)
+      ? args.profiles
+      : Array.isArray(args.characters)
+      ? args.characters
+      : [args];
 
-    const profileUpdates: Record<string, any> = {};
-    if (args.description !== undefined) profileUpdates.description = String(args.description);
-    if (args.role !== undefined) profileUpdates.role = String(args.role);
-    if (args.gender !== undefined) profileUpdates.gender = String(args.gender);
-    if (args.age !== undefined) profileUpdates.age = String(args.age);
-    if (args.backstory !== undefined) profileUpdates.backstory = String(args.backstory);
-    if (args.arc !== undefined) profileUpdates.arc = String(args.arc);
-    if (args.color !== undefined) profileUpdates.color = String(args.color);
-    if (Array.isArray(args.relationships)) profileUpdates.relationships = args.relationships;
+    const validProfiles: Array<{ name: string; updates: Record<string, any> }> = [];
+
+    for (const item of rawItems) {
+      if (!item || typeof item !== "object") continue;
+      const cName = String(item.characterName ?? item.name ?? item.character ?? "").trim().toUpperCase();
+      if (!cName) continue;
+      const updates: Record<string, any> = {};
+      if (item.description !== undefined) updates.description = String(item.description);
+      if (item.role !== undefined) updates.role = String(item.role);
+      if (item.gender !== undefined) updates.gender = String(item.gender);
+      if (item.age !== undefined) updates.age = String(item.age);
+      if (item.backstory !== undefined) updates.backstory = String(item.backstory);
+      if (item.arc !== undefined) updates.arc = String(item.arc);
+      if (item.color !== undefined) updates.color = String(item.color);
+      if (Array.isArray(item.relationships)) updates.relationships = item.relationships;
+      validProfiles.push({ name: cName, updates });
+    }
+
+    if (validProfiles.length === 0) {
+      return "Error: characterName or profiles array is required.";
+    }
 
     if (context.updateSettings) {
       const sf = context.scriptFileName || "";
       context.updateSettings((prev: any) => {
         const safe = prev && typeof prev === "object" ? prev : {};
-        const prevProfiles = getPerScriptSettingObject<Record<string, any>>("characterProfiles", safe, sf, {});
-        const currentProfile = prevProfiles[characterName] || {};
-        const updatedProfiles = {
-          ...prevProfiles,
-          [characterName]: {
-            ...currentProfile,
-            ...profileUpdates,
-          },
-        };
-        const prevGenders = getPerScriptSettingObject("genders", safe, sf, {});
-        const updatedGenders = profileUpdates.gender
-          ? { ...prevGenders, [characterName]: profileUpdates.gender }
-          : prevGenders;
+        let updatedProfiles = getPerScriptSettingObject<Record<string, any>>("characterProfiles", safe, sf, {});
+        let updatedGenders = getPerScriptSettingObject<Record<string, string>>("genders", safe, sf, {});
+
+        for (const { name: cName, updates } of validProfiles) {
+          const currentProfile = updatedProfiles[cName] || {};
+          updatedProfiles = {
+            ...updatedProfiles,
+            [cName]: {
+              ...currentProfile,
+              ...updates,
+            },
+          };
+          if (updates.gender) {
+            updatedGenders = {
+              ...updatedGenders,
+              [cName]: updates.gender,
+            };
+          }
+        }
 
         const updatedSettings = {
           ...safe,
@@ -598,7 +619,8 @@ export function executeToolCall(
 
         return updatedSettings;
       });
-      return `Updated character profile for ${characterName} in X-Ray Analysis settings.`;
+      const namesStr = validProfiles.map(p => p.name).join(", ");
+      return `Updated character profile(s) for ${namesStr} in X-Ray Analysis settings.`;
     }
     return "Error: Cannot update settings in this context.";
   }

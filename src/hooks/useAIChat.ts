@@ -218,6 +218,36 @@ export function parseToolCall(text: string): { name: string; args: Record<string
   return null;
 }
 
+export function parseAllToolCalls(text: string): { name: string; args: Record<string, any> }[] {
+  if (!text) return [];
+
+  const results: { name: string; args: Record<string, any> }[] = [];
+
+  const codeBlockRegex = /```(?:tool_call|json)?\s*([\s\S]*?)```/gi;
+  let match;
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    const block = match[1].trim();
+    const jsonStr = extractOuterJSON(block);
+    if (jsonStr) {
+      const parsed = repairJSON(jsonStr);
+      if (parsed?.name) {
+        results.push({ name: parsed.name, args: parsed.args || parsed.arguments || {} });
+      } else if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (item?.name) {
+            results.push({ name: item.name, args: item.args || item.arguments || {} });
+          }
+        }
+      }
+    }
+  }
+
+  if (results.length > 0) return results;
+
+  const single = parseToolCall(text);
+  return single ? [single] : [];
+}
+
 const TOOL_INSTRUCTIONS = `
 CRITICAL RULES FOR TOOL CALLS:
 1. When you need to use a tool, output ONLY a JSON code block with NO other text before or after:
@@ -230,27 +260,26 @@ CRITICAL RULES FOR TOOL CALLS:
 }
 \`\`\`
 2. Use the EXACT parameter names from the tool definitions (e.g. "sceneNumber", "color", "storyline", "newFountainText", "taskText").
-3. In "newFountainText", use \\n for newlines inside the string. Do NOT use literal line breaks inside JSON string values.
+3. In "newFountainText", use \n for newlines inside the string. Do NOT use literal line breaks inside JSON string values.
 4. When asked to tag scenes with colors or storylines (e.g. "add purple tag to scenes in edmund's planet" or "assign storylines to all scenes"):
    - Use the tag_scene tool to tag individual scenes with "color" (e.g. "purple", "red", "orange") or "storyline" (e.g. "EDMUND'S PLANET", "EARTH SUB-PLOT").
    - You can call tag_scene multiple times for multiple scenes.
 5. When asked to expand/rewrite/replace a scene, ALWAYS use the replace_scene tool. First use read_scene if needed, then replace_scene with the new content.
 8. When asked to create, generate, or update character profiles for X-Ray Analysis:
-   - You MUST output tool_call blocks using "update_character_profile" for each character!
+   - You MUST output tool_call blocks using "update_character_profile" for every character in the script!
+   - You can pass a "profiles" array with multiple character objects to update ALL characters in a single tool call!
    - Output the tool_call block immediately — do NOT just write conversational text claiming you added them!
 
-EXAMPLE of update_character_profile:
+EXAMPLE of batch update_character_profile:
 \`\`\`tool_call
 {
   "name": "update_character_profile",
   "args": {
-    "characterName": "VASANTH",
-    "role": "Supporting",
-    "gender": "male",
-    "age": "30s",
-    "description": "Traditional, strict husband.",
-    "backstory": "Grew up in Chennai.",
-    "arc": "Learns to accept Jeevitha."
+    "profiles": [
+      { "characterName": "VASANTH", "role": "Protagonist", "gender": "male", "age": "28", "description": "Strict husband.", "backstory": "...", "arc": "..." },
+      { "characterName": "JEEVITHA", "role": "Protagonist", "gender": "female", "age": "26", "description": "Mysterious bride.", "backstory": "...", "arc": "..." },
+      { "characterName": "VASANTH MOM", "role": "Supporting", "gender": "female", "age": "50s", "description": "Opinionated mother.", "backstory": "...", "arc": "..." }
+    ]
   }
 }
 \`\`\`
@@ -263,7 +292,8 @@ export function useAIChat(
   activeLineNumber?: number,
   replaceSceneText?: (sceneNumber: number, newFountainText: string) => boolean,
   updateSettings?: (updater: (prev: any) => any) => void,
-  openXrayWindow?: () => void
+  openXrayWindow?: () => void,
+  scriptFileName?: string
 ) {
   const config = usePromptConfig();
   const { registerTranslationAbort } = useUI();
@@ -438,58 +468,69 @@ export function useAIChat(
               : cleanContent;
           }
 
-          const toolCall = parseToolCall(full);
-          if (toolCall) {
-            const { name, args } = toolCall;
-            const stepId = `tool-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+          const toolCalls = parseAllToolCalls(full);
+          if (toolCalls.length > 0) {
+            const executedResults: string[] = [];
+            const executedNames: string[] = [];
 
-            updateActiveSessionTurns((prev) =>
-              prev.map((turn) =>
-                turn.id === assistantId
-                  ? {
-                      ...turn,
-                      content: accumulatedContent,
-                      toolCalls: [...(turn.toolCalls || []), { id: stepId, name, args: args || {}, status: "running" }],
-                    }
-                  : turn
-              )
-            );
+            for (const toolCall of toolCalls) {
+              const { name, args } = toolCall;
+              const stepId = `tool-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+              executedNames.push(name);
 
-            const toolResult = executeToolCall(name, args || {}, {
-              doc,
-              activeLineNumber,
-              replaceSceneText,
-              updateSettings,
-              openXrayWindow,
-              scriptFileName: filePath || "",
-            });
+              updateActiveSessionTurns((prev) =>
+                prev.map((turn) =>
+                  turn.id === assistantId
+                    ? {
+                        ...turn,
+                        content: accumulatedContent,
+                        toolCalls: [...(turn.toolCalls || []), { id: stepId, name, args: args || {}, status: "running" }],
+                      }
+                    : turn
+                )
+              );
 
-            let pendingApply: { sceneNumber: number; fountainText: string } | undefined;
-            let displayResult = toolResult;
+              const toolResult = executeToolCall(name, args || {}, {
+                doc,
+                activeLineNumber,
+                replaceSceneText,
+                updateSettings,
+                openXrayWindow,
+                scriptFileName: scriptFileName || (filePath ? filePath.split(/[\/\\]/).pop() : "") || "",
+              });
 
-            if (toolResult.startsWith("__PENDING_APPLY__:")) {
-              const parts = toolResult.split(":");
-              const sceneNumber = Number(parts[1]);
-              const fountainText = decodeURIComponent(escape(atob(parts.slice(2).join(":"))));
-              pendingApply = { sceneNumber, fountainText };
-              displayResult = `Drafted replacement for Scene ${sceneNumber}. User review pending.`;
+              let pendingApply: { sceneNumber: number; fountainText: string } | undefined;
+              let displayResult = toolResult;
+
+              if (toolResult.startsWith("__PENDING_APPLY__:")) {
+                const parts = toolResult.split(":");
+                const sceneNumber = Number(parts[1]);
+                const fountainText = decodeURIComponent(escape(atob(parts.slice(2).join(":"))));
+                pendingApply = { sceneNumber, fountainText };
+                displayResult = `Drafted replacement for Scene ${sceneNumber}. User review pending.`;
+              }
+
+              updateActiveSessionTurns((prev) =>
+                prev.map((turn) =>
+                  turn.id === assistantId
+                    ? {
+                        ...turn,
+                        toolCalls: (turn.toolCalls || []).map((step) =>
+                          step.id === stepId ? { ...step, result: displayResult, status: "done" as const, pendingApply } : step
+                        ),
+                      }
+                    : turn
+                )
+              );
+
+              executedResults.push(`[${name}]: ${toolResult}`);
             }
 
-            updateActiveSessionTurns((prev) =>
-              prev.map((turn) =>
-                turn.id === assistantId
-                  ? {
-                      ...turn,
-                      toolCalls: (turn.toolCalls || []).map((step) =>
-                        step.id === stepId ? { ...step, result: displayResult, status: "done" as const, pendingApply } : step
-                      ),
-                    }
-                  : turn
-              )
-            );
-
             history.push({ role: "assistant", content: full });
-            history.push({ role: "user", content: `[TOOL RESULT for ${name}]:\n${toolResult}\n\nNow provide your final response to the user. Do NOT call another tool unless absolutely necessary.` });
+            history.push({
+              role: "user",
+              content: `[TOOL RESULTS for ${executedNames.join(", ")}]:\n${executedResults.join("\n\n")}\n\nContinue with your response. If there are other characters in the script that still need character profiles created or updated in X-Ray Analysis, call update_character_profile for them NOW until all characters are completed.`,
+            });
 
             continue;
           }

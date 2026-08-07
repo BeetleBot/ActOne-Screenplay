@@ -1005,7 +1005,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
       {selectedChar && (
         <CharacterEditModal
           charName={selectedChar}
-          profile={characterProfiles[selectedChar] || {}}
+          profile={characterProfiles[selectedChar] || characterProfiles[selectedChar.toUpperCase()] || characterProfiles[selectedChar.toLowerCase()] || {}}
           onClose={() => setSelectedChar(null)}
           onSave={(p) => {
             handleSaveProfile(selectedChar, p);
@@ -1037,6 +1037,17 @@ function CharacterEditModal({ charName, profile, onClose, onSave }: CharacterEdi
   const [relationships, setRelationships] = useState<Array<{ target: string; type: string }>>(
     profile.relationships || []
   );
+
+  useEffect(() => {
+    setDescription(profile.description || "");
+    setRole(profile.role || "");
+    setGender(profile.gender || "unknown");
+    setAge(profile.age || "");
+    setBackstory(profile.backstory || "");
+    setArc(profile.arc || "");
+    setColor(profile.color || "");
+    setRelationships(profile.relationships || []);
+  }, [profile]);
 
   const [newRelTarget, setNewRelTarget] = useState("");
   const [newRelType, setNewRelType] = useState("");
