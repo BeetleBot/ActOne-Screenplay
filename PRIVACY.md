@@ -51,7 +51,6 @@ The only dependencies that interact with external resources are:
 When the application crashes, ActOne automatically sends a report to the configured private crash-report channel (a Discord webhook). Reports include an error code, timestamp, app version, error type, component, operating system and version, architecture, processor, CPU count, memory totals, WebView details, locale, network state, and a limited stack trace.
 
 - Reports are sent automatically; there is no "send report" confirmation dialog.
-- Development builds never send reports to Discord.
 - The webhook URL is distributed inside the application and can be extracted from an installed copy.
 - No screenplay content is included in crash reports.
 
