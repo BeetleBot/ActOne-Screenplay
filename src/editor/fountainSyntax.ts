@@ -574,7 +574,7 @@ export const fountainHighlightPlugin = ViewPlugin.fromClass(
         changed ||
         update.docChanged ||
         update.viewportChanged ||
-        update.selectionSet
+        (update.selectionSet && this.hideSyntaxEnabled)
       ) {
         const types = update.state.field(lineTypesField);
         this.decorations = computeFountainDecorations(

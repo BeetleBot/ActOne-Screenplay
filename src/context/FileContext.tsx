@@ -1317,6 +1317,15 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const { autoSaveEnabled, autoSaveInterval } = useUI();
+  const lastTypingTimeRef = useRef(0);
+
+  useEffect(() => {
+    const handleTypingActivity = () => {
+      lastTypingTimeRef.current = Date.now();
+    };
+    window.addEventListener("keydown", handleTypingActivity, { passive: true });
+    return () => window.removeEventListener("keydown", handleTypingActivity);
+  }, []);
 
   useEffect(() => {
     if (!autoSaveEnabled) return;
@@ -1325,9 +1334,21 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const currentId = activeFileIdRef.current;
       const file = currentFiles.find(f => f.id === currentId);
       if (file && file.isDirty && file.filePath) {
-        saveFileRef.current();
+        const idleDuration = Date.now() - lastTypingTimeRef.current;
+        // Only trigger auto-save if user has been idle (not typing) for at least 1500ms
+        if (idleDuration >= 1500) {
+          if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+            (window as any).requestIdleCallback(() => {
+              saveFileRef.current();
+            });
+          } else {
+            setTimeout(() => {
+              saveFileRef.current();
+            }, 0);
+          }
+        }
       }
-    }, autoSaveInterval);
+    }, Math.min(autoSaveInterval, 3000));
     return () => clearInterval(timer);
   }, [autoSaveEnabled, autoSaveInterval]);
 

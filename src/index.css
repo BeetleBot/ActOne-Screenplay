@@ -206,8 +206,8 @@ body {
 .cm-cursor,
 .cm-cursor-primary,
 .cm-dropCursor {
-  border-left: 2px solid var(--editor-cursor) !important;
-  border-left-color: var(--editor-cursor) !important;
+  border-left: 2px solid var(--text-color, var(--editor-cursor, currentColor)) !important;
+  border-left-color: var(--text-color, var(--editor-cursor, currentColor)) !important;
 }
 
 .cm-editor ::selection {

@@ -86,6 +86,7 @@ const editorTheme = EditorView.theme({
   },
   ".cm-cursor, .cm-dropCursor": {
     borderLeftColor: "var(--text-color, currentColor) !important",
+    borderLeftWidth: "2px !important",
   },
   "&.cm-focused": {
     outline: "none",
@@ -271,14 +272,20 @@ const activeLineDeco = Decoration.line({ class: "cm-activeLine-always" });
 const activeLineAlwaysPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    lastLineNumber: number;
 
     constructor(view: EditorView) {
+      this.lastLineNumber = view.state.doc.lineAt(view.state.selection.main.head).number;
       this.decorations = this.getDecos(view);
     }
 
     update(update: ViewUpdate) {
       if (update.selectionSet || update.docChanged) {
-        this.decorations = this.getDecos(update.view);
+        const newLineNum = update.state.doc.lineAt(update.state.selection.main.head).number;
+        if (newLineNum !== this.lastLineNumber || update.docChanged) {
+          this.lastLineNumber = newLineNum;
+          this.decorations = this.getDecos(update.view);
+        }
       }
     }
 
