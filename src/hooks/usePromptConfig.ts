@@ -193,3 +193,21 @@ export async function checkProviderAvailability(): Promise<boolean> {
     return false;
   }
 }
+
+export function getActiveModelName(config: PromptConfig): string {
+  if (config.provider === "none") return "Disabled";
+  if (config.provider === "openai-compatible") {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          const entry = list.find((a: any) => a.model === config.apiModel);
+          if (entry?.name) return entry.name;
+        }
+      }
+    } catch { void 0; }
+    return config.apiModel || "OpenAI API";
+  }
+  return config.model || "Ollama";
+}

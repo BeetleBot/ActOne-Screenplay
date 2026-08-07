@@ -13,6 +13,7 @@ export interface EditorContextProps {
   scrollToLine: (lineIndex: number, noFocus?: boolean) => void;
   autoAddSceneNumbers: () => void;
   clearSceneNumbers: () => void;
+  replaceSceneText: (sceneNumber: number, newFountainText: string) => boolean;
 }
 
 const EditorContext = createContext<EditorContextProps | undefined>(undefined);
@@ -42,6 +43,50 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!noFocus) editorView.focus();
     } catch (e) {
       logger.warn("editor", `scrollToLine(${lineIndex}) failed`, e);
+    }
+  };
+
+  const replaceSceneText = (sceneNumber: number, newFountainText: string): boolean => {
+    try {
+      const lines = parsedDoc.lines || [];
+      // Build scene list
+      let sceneCount = 0;
+      let startLine = -1;
+      let endLine = lines.length;
+
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].type === LineType.heading) {
+          sceneCount++;
+          if (sceneCount === sceneNumber) {
+            startLine = i + 1;
+          } else if (sceneCount === sceneNumber + 1) {
+            endLine = i;
+            break;
+          }
+        }
+      }
+
+      if (startLine === -1) return false;
+
+      if (editorView) {
+        const doc = editorView.state.doc;
+        const startPos = doc.line(startLine).from;
+        const endPos = doc.line(endLine).to;
+        editorView.dispatch({
+          changes: { from: startPos, to: endPos, insert: newFountainText },
+        });
+        return true;
+      }
+
+      // Fallback
+      const before = lines.slice(0, startLine - 1).map(l => l.text);
+      const after = lines.slice(endLine).map(l => l.text);
+      const serialized = [...before, newFountainText, ...after].join("\n");
+      setRawText(serialized);
+      return true;
+    } catch (e) {
+      logger.warn("editor", `replaceSceneText(${sceneNumber}) failed`, e);
+      return false;
     }
   };
 
@@ -137,6 +182,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         scrollToLine,
         autoAddSceneNumbers,
         clearSceneNumbers,
+        replaceSceneText,
       }}
     >
       {children}

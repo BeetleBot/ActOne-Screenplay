@@ -214,6 +214,11 @@ body {
   background: rgba(var(--accent-rgb), 0.3) !important;
 }
 
+.cm-contextmenu-selection {
+  background: var(--selection-bg, rgba(46, 170, 220, 0.35)) !important;
+  color: var(--selection-text, inherit) !important;
+}
+
 .cm-selected-empty-line::before {
   content: '\00a0';
   background: rgba(var(--accent-rgb), 0.3);

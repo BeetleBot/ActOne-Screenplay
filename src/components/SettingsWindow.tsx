@@ -814,6 +814,23 @@ export const SettingsWindow: React.FC = () => {
                     </Button>
                   </Box>
                 )}
+                <Box
+                  sx={{
+                    mt: 1.25,
+                    p: 1.25,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'action.hover',
+                    fontSize: '0.72rem',
+                    color: 'text.secondary',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem', color: 'text.primary', display: 'block', mb: 0.25 }}>
+                    Model Capacity Guidance
+                  </Typography>
+                  Smaller local models (e.g. 2B–7B parameters) have limited instruction capacity and may struggle with multi-scene screenplay analysis or automated tool execution. For best results with complex script tasks, use larger models (14B+) or cloud providers (DeepSeek, OpenAI API).
+                </Box>
               </Box>
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, display: 'block', mb: 1.5 }}>

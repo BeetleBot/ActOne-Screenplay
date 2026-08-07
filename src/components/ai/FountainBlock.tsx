@@ -1,14 +1,22 @@
 import { useCallback, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
-import { ContentCopyIcon, CheckIcon, ArrowDownwardIcon } from "../Icons";
+import { ContentCopyIcon, CheckIcon, PlayArrowIcon } from "../Icons";
 
 interface FountainBlockProps {
   fountainText: string;
+  sceneNumber?: number;
   onInsertAtCursor?: (text: string) => void;
+  onApplyToEditor?: (sceneNumber: number, fountainText: string) => void;
 }
 
-export function FountainBlock({ fountainText, onInsertAtCursor }: FountainBlockProps) {
+export function FountainBlock({
+  fountainText,
+  sceneNumber,
+  onInsertAtCursor,
+  onApplyToEditor,
+}: FountainBlockProps) {
   const [copied, setCopied] = useState(false);
+  const [applied, setApplied] = useState(false);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(fountainText).then(() => {
@@ -17,19 +25,25 @@ export function FountainBlock({ fountainText, onInsertAtCursor }: FountainBlockP
     }).catch(() => undefined);
   }, [fountainText]);
 
-  const handleInsert = useCallback(() => {
-    onInsertAtCursor?.(fountainText);
-  }, [fountainText, onInsertAtCursor]);
+  const handleApply = useCallback(() => {
+    if (sceneNumber && onApplyToEditor) {
+      onApplyToEditor(sceneNumber, fountainText);
+    } else {
+      onInsertAtCursor?.(fountainText);
+    }
+    setApplied(true);
+    setTimeout(() => setApplied(false), 2500);
+  }, [sceneNumber, fountainText, onApplyToEditor, onInsertAtCursor]);
 
   return (
     <Box
       sx={{
         border: "1px solid",
         borderColor: "divider",
+        borderRadius: 1,
         bgcolor: "background.default",
-        boxShadow: (t) => `0 0 12px 0 ${t.palette.primary.main}18`,
-        px: 1.75,
-        py: 1.5,
+        overflow: "hidden",
+        my: 1,
       }}
     >
       <Box
@@ -37,7 +51,11 @@ export function FountainBlock({ fountainText, onInsertAtCursor }: FountainBlockP
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          mb: 1,
+          px: 1.5,
+          py: 0.5,
+          bgcolor: "action.hover",
+          borderBottom: "1px solid",
+          borderColor: "divider",
         }}
       >
         <Typography
@@ -49,9 +67,9 @@ export function FountainBlock({ fountainText, onInsertAtCursor }: FountainBlockP
             letterSpacing: "0.06em",
           }}
         >
-          FOUNTAIN
+          {sceneNumber ? `FOUNTAIN · Scene ${sceneNumber}` : "FOUNTAIN"}
         </Typography>
-        <Box sx={{ display: "flex", gap: 0.25 }}>
+        <Box sx={{ display: "flex", gap: 0.5 }}>
           <Button
             size="small"
             startIcon={copied ? <CheckIcon sx={{ fontSize: 12 }} /> : <ContentCopyIcon sx={{ fontSize: 12 }} />}
@@ -70,19 +88,21 @@ export function FountainBlock({ fountainText, onInsertAtCursor }: FountainBlockP
           </Button>
           <Button
             size="small"
-            startIcon={<ArrowDownwardIcon sx={{ fontSize: 12 }} />}
-            onClick={handleInsert}
+            startIcon={applied ? <CheckIcon sx={{ fontSize: 12 }} /> : <PlayArrowIcon sx={{ fontSize: 12 }} />}
+            onClick={handleApply}
+            disabled={applied}
             sx={{
               minWidth: 0,
               py: 0.15,
               px: 0.75,
               fontSize: "0.6rem",
-              color: "text.secondary",
+              color: applied ? "success.main" : "primary.main",
+              fontWeight: 600,
               textTransform: "none",
-              "&:hover": { bgcolor: "action.selected", color: "text.primary" },
+              "&:hover": { bgcolor: "action.selected" },
             }}
           >
-            Insert
+            {applied ? "Applied ✓" : "Apply to Editor"}
           </Button>
         </Box>
       </Box>
@@ -97,6 +117,8 @@ export function FountainBlock({ fountainText, onInsertAtCursor }: FountainBlockP
           overflow: "auto",
           color: "text.primary",
           maxHeight: 360,
+          px: 1.5,
+          py: 1.25,
         }}
       >
         {fountainText}

@@ -3,7 +3,7 @@ import { parseScreenplay } from "../parser/FountainParser";
 import { buildScreenplayIndex, formatIndexForPrompt } from "./sceneIndexer";
 import { executeToolCall } from "../lib/aiTools";
 
-describe("sceneIndexer", () => {
+describe("sceneIndexer & aiTools", () => {
   const sampleFountain = `INT. COFFEE SHOP - DAY
 
 JOHN
@@ -57,5 +57,52 @@ Look at the stars.`;
 
     expect(result).toContain("Look at the stars.");
     expect(result).toContain("Scene 2");
+  });
+
+  it("should execute get_character_scenes correctly", () => {
+    const doc = parseScreenplay(sampleFountain);
+    const result = executeToolCall("get_character_scenes", { characterName: "JOHN" }, { doc });
+
+    expect(result).toContain("Character Breakdown for JOHN");
+    expect(result).toContain("Scene 1");
+  });
+
+  it("should execute get_screenplay_stats correctly", () => {
+    const doc = parseScreenplay(sampleFountain);
+    const result = executeToolCall("get_screenplay_stats", {}, { doc });
+
+    expect(result).toContain("SCREENPLAY STATISTICS");
+    expect(result).toContain("Total Scenes: 2");
+    expect(result).toContain("SARAH");
+  });
+
+  it("should execute read_active_cursor_context correctly", () => {
+    const doc = parseScreenplay(sampleFountain);
+    const result = executeToolCall("read_active_cursor_context", {}, { doc, activeLineNumber: 4 });
+
+    expect(result).toContain("ACTIVE CURSOR CONTEXT");
+    expect(result).toContain(">>> Line 4:");
+  });
+
+  it("should execute replace_scene correctly returning pending approval payload", () => {
+    const doc = parseScreenplay(sampleFountain);
+
+    const result = executeToolCall("replace_scene", { sceneNumber: 1, newFountainText: "INT. COFFEE SHOP - DAY\nJOHN\nHey!" }, { doc });
+
+    expect(result).toContain("__PENDING_APPLY__:1:");
+  });
+
+  it("should execute add_project_todo correctly", () => {
+    const doc = parseScreenplay(sampleFountain);
+    let updatedSettings: any = null;
+    const mockUpdate = (fn: any) => {
+      updatedSettings = fn({});
+    };
+
+    const result = executeToolCall("add_project_todo", { taskText: "Fix Scene 2 ending" }, { doc, updateSettings: mockUpdate });
+
+    expect(result).toContain("Added To-Do: \"Fix Scene 2 ending\"");
+    expect(updatedSettings.todos.length).toBe(1);
+    expect(updatedSettings.todos[0].text).toBe("Fix Scene 2 ending");
   });
 });

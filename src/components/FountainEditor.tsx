@@ -8,9 +8,10 @@ import { logger } from "../utils/logger";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { FOUNTAIN_SYNTAX_RULES } from "../constants";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
+import { setContextMenuHighlightEffect } from "../editor/contextMenuState";
 import { toggleInlineMarker as toggleInlineMarkerShared } from "../editor/formatUtils";
 import { ContextMenu, type ContextMenuItem, type ContextMenuItemDef } from "./ContextMenu";
-
+import { createAIProvider } from "../lib/aiProviders";
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -36,8 +37,6 @@ const MARKER_COLORS = [
   { key: "yellow", label: "Yellow", color: "var(--scene-color-yellow)" },
   { key: "none", label: "Default (Orange)", color: "var(--cat-other)" }
 ];
-
-import { createAIProvider } from "../lib/aiProviders";
 
 export const FountainEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,11 +90,26 @@ export const FountainEditor = React.memo(() => {
     const v = viewRef.current;
     if (!v) { menuSelectionRef.current = null; return; }
     const sel = v.state.selection.main;
-    menuSelectionRef.current = {
-      from: sel.from,
-      to: sel.to,
-      text: sel.from !== sel.to ? v.state.sliceDoc(sel.from, sel.to) : "",
-    };
+
+    // Convert mouse coordinates to doc position
+    const pos = v.posAtCoords({ x: event.clientX, y: event.clientY });
+    
+    // If clicking outside an existing selection, select word under cursor so user can act on it
+    if (sel.from !== sel.to && pos !== null && pos >= sel.from && pos <= sel.to) {
+      // Right clicking inside active selection — preserve exact selection!
+      menuSelectionRef.current = {
+        from: sel.from,
+        to: sel.to,
+        text: v.state.sliceDoc(sel.from, sel.to),
+      };
+    } else {
+      // Right clicking outside existing selection: if clicking on a word, set selection to that range or line pos
+      menuSelectionRef.current = {
+        from: sel.from,
+        to: sel.to,
+        text: sel.from !== sel.to ? v.state.sliceDoc(sel.from, sel.to) : "",
+      };
+    }
   };
 
   const handleContextMenu = (event: React.MouseEvent) => {
@@ -104,10 +118,21 @@ export const FountainEditor = React.memo(() => {
     const v = viewRef.current;
     if (v) {
       const sel = v.state.selection.main;
+      const pos = v.posAtCoords({ x: event.clientX, y: event.clientY });
+
+      // If user right-clicked outside active selection, move cursor or select word at pos
+      if (pos !== null && !(sel.from !== sel.to && pos >= sel.from && pos <= sel.to)) {
+        // Move selection to clicked position if no text was selected beforehand
+        if (sel.from === sel.to) {
+          v.dispatch({ selection: { anchor: pos } });
+        }
+      }
+
+      const activeSel = v.state.selection.main;
       menuSelectionRef.current = {
-        from: sel.from,
-        to: sel.to,
-        text: sel.from !== sel.to ? v.state.sliceDoc(sel.from, sel.to) : "",
+        from: activeSel.from,
+        to: activeSel.to,
+        text: activeSel.from !== activeSel.to ? v.state.sliceDoc(activeSel.from, activeSel.to) : "",
       };
     }
 
@@ -185,14 +210,37 @@ export const FountainEditor = React.memo(() => {
       { label: "Park Selection", enabled: hasSel, action: handleParkSelection },
     ];
 
+    if (v && menuSelectionRef.current && menuSelectionRef.current.from !== menuSelectionRef.current.to) {
+      v.dispatch({
+        effects: setContextMenuHighlightEffect.of({
+          from: menuSelectionRef.current.from,
+          to: menuSelectionRef.current.to,
+        }),
+      });
+    }
+
     setContextMenu({ x: event.clientX, y: event.clientY, items });
   };
 
   const handleClose = () => {
     setTranslatingLang(null);
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: setContextMenuHighlightEffect.of(null),
+      });
+    }
+    const savedSel = menuSelectionRef.current;
     menuSelectionRef.current = null;
-    // Restore editor focus after the menu is fully closed.
-    setTimeout(() => viewRef.current?.focus(), 0);
+    // Restore editor focus and selection after menu closes
+    setTimeout(() => {
+      if (viewRef.current && savedSel && savedSel.from !== savedSel.to) {
+        viewRef.current.dispatch({
+          selection: { anchor: savedSel.from, head: savedSel.to },
+          scrollIntoView: false,
+        });
+      }
+      viewRef.current?.focus();
+    }, 0);
   };
 
   const closeContextMenu = () => {

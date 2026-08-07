@@ -3,7 +3,7 @@ import { parseScreenplay, FountainDocument } from "../parser";
 import { parseScreenplayAsync } from "../utils/asyncParser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
-import { unpackActoneBundle, packActoneBundle, packActoneBundleAsync } from "../utils";
+import { unpackActoneBundle, packActoneBundleAsync } from "../utils";
 import { parseFdxToFountain } from "../utils/text";
 import type { ScriptInfo } from "../utils";
 import { logger } from "../utils/logger";

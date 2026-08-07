@@ -93,6 +93,7 @@ export class OpenAICompatibleProvider implements AIProvider {
         messages: payload,
         stream: true,
         temperature: options.temperature,
+        max_tokens: 4096,
       }),
       signal: options.signal,
     });
@@ -103,16 +104,28 @@ export class OpenAICompatibleProvider implements AIProvider {
     }
 
     let text = "";
-    await streamLines(response, (line) => {
-      const event = sseData(line) as {
-        choices?: Array<{ delta?: { content?: string } }>;
-      } | null;
-      const delta = event?.choices?.[0]?.delta?.content;
-      if (typeof delta === "string" && delta) {
-        text += delta;
-        options.onChunk?.(delta);
+    try {
+      await streamLines(response, (line) => {
+        const event = sseData(line) as {
+          choices?: Array<{ delta?: { content?: string } }>;
+          error?: { message?: string };
+        } | null;
+        if (event?.error?.message) {
+          throw new Error(event.error.message);
+        }
+        const delta = event?.choices?.[0]?.delta?.content;
+        if (typeof delta === "string" && delta) {
+          text += delta;
+          options.onChunk?.(delta);
+        }
+      });
+    } catch (e: any) {
+      if (text.length > 0) {
+        // If we already received partial response before stream cut off, return what we have
+        return text;
       }
-    });
+      throw new Error(e?.message || "Failed to decode response stream from AI provider.");
+    }
     return text;
   }
 }

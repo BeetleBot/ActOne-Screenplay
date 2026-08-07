@@ -414,6 +414,14 @@ function AppInner() {
   }, [parsedDoc, scriptFileName]);
 
 
+  useEffect(() => {
+    const handleOpenXray = () => {
+      modalWindows.openXrayWindow();
+    };
+    window.addEventListener("actone:open-xray", handleOpenXray);
+    return () => window.removeEventListener("actone:open-xray", handleOpenXray);
+  }, [modalWindows]);
+
   // Editor window: handle the action param on mount (once only)
   const initialActionHandled = useRef(false);
   useEffect(() => {

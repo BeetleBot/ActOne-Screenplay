@@ -21,11 +21,22 @@ export function AIChatComposer({
 }: AIChatComposerProps) {
   const [body, setBody] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef<number>(-1);
+  const draftRef = useRef<string>("");
 
   const submit = useCallback(() => {
     const raw = body.trim();
     if (!raw) return;
     if (streaming || disabled) return;
+    
+    // Push prompt into history stack if unique or non-duplicate of latest
+    if (historyRef.current[historyRef.current.length - 1] !== raw) {
+      historyRef.current.push(raw);
+    }
+    historyIndexRef.current = -1;
+    draftRef.current = "";
+
     onSend(raw);
     setBody("");
     const el = textareaRef.current;
@@ -37,6 +48,9 @@ export function AIChatComposer({
 
   const handleChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
     setBody(e.target.value);
+    if (historyIndexRef.current === -1) {
+      draftRef.current = e.target.value;
+    }
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
@@ -45,18 +59,77 @@ export function AIChatComposer({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (streaming && e.key === "Escape") {
-        e.preventDefault();
-        onStop();
-        return;
+      // Escape key cancels active generation
+      if (e.key === "Escape") {
+        if (streaming) {
+          e.preventDefault();
+          onStop();
+          return;
+        }
       }
 
+      // Enter key submits prompt
       if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
         e.preventDefault();
         submit();
+        return;
+      }
+
+      // ArrowUp history navigation
+      if (e.key === "ArrowUp" && historyRef.current.length > 0) {
+        const el = textareaRef.current;
+        if (!el) return;
+        const isAtStart = el.selectionStart === 0 && el.selectionEnd === 0;
+        const isSingleLine = !el.value.includes("\n");
+
+        if (isAtStart || isSingleLine) {
+          e.preventDefault();
+          if (historyIndexRef.current === -1) {
+            draftRef.current = body;
+            historyIndexRef.current = historyRef.current.length - 1;
+          } else if (historyIndexRef.current > 0) {
+            historyIndexRef.current -= 1;
+          }
+          const prevPrompt = historyRef.current[historyIndexRef.current] ?? "";
+          setBody(prevPrompt);
+          requestAnimationFrame(() => {
+            if (textareaRef.current) {
+              textareaRef.current.style.height = "auto";
+              textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
+            }
+          });
+        }
+        return;
+      }
+
+      // ArrowDown history navigation
+      if (e.key === "ArrowDown" && historyIndexRef.current !== -1) {
+        const el = textareaRef.current;
+        if (!el) return;
+        const isAtEnd = el.selectionStart === el.value.length && el.selectionEnd === el.value.length;
+        const isSingleLine = !el.value.includes("\n");
+
+        if (isAtEnd || isSingleLine) {
+          e.preventDefault();
+          if (historyIndexRef.current < historyRef.current.length - 1) {
+            historyIndexRef.current += 1;
+            const nextPrompt = historyRef.current[historyIndexRef.current];
+            setBody(nextPrompt);
+          } else {
+            historyIndexRef.current = -1;
+            setBody(draftRef.current);
+          }
+          requestAnimationFrame(() => {
+            if (textareaRef.current) {
+              textareaRef.current.style.height = "auto";
+              textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
+            }
+          });
+        }
+        return;
       }
     },
-    [submit, streaming, onStop],
+    [submit, streaming, onStop, body],
   );
 
   return (

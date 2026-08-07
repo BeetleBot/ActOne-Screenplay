@@ -24,6 +24,7 @@ import {
 } from "./fountainSyntax";
 import { emptyLineSelectionPlugin } from "./emptyLineSelection";
 import { rephraseHighlightField } from "./rephraseState";
+import { contextMenuHighlightField } from "./contextMenuState";
 import { pendingScrollTargetY } from "./cursorScroll";
 import { typewriterCompartment, typewriterScrollPlugin } from "./typewriter";
 
@@ -74,15 +75,24 @@ const editorTheme = EditorView.theme({
   "&": {
     height: "auto",
     minHeight: "100%",
+    caretColor: "var(--text-color, currentColor)",
   },
   ".cm-scroller": {
     overflow: "visible",
   },
   ".cm-content": {
     padding: "0",
+    caretColor: "var(--text-color, currentColor)",
+  },
+  ".cm-cursor, .cm-dropCursor": {
+    borderLeftColor: "var(--text-color, currentColor) !important",
   },
   "&.cm-focused": {
     outline: "none",
+  },
+  "& .cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection": {
+    backgroundColor: "var(--selection-bg, rgba(46, 170, 220, 0.3)) !important",
+    color: "var(--selection-text, inherit)",
   },
   ".cm-placeholder": {
     color: "var(--placeholder-color, rgba(128, 128, 128, 0.3))",
@@ -110,6 +120,24 @@ const editorTheme = EditorView.theme({
     "50%": { opacity: 0.4, backgroundColor: "rgba(100, 149, 237, 0.45)" },
     "100%": { opacity: 1, backgroundColor: "rgba(100, 149, 237, 0.2)" }
   }
+});
+
+/**
+ * Prevents CodeMirror's default mousedown listener from collapsing active text selections on right-click.
+ */
+const rightClickSelectionPreservePlugin = EditorView.domEventHandlers({
+  mousedown(event, view) {
+    if (event.button !== 2) return false;
+    const sel = view.state.selection.main;
+    if (sel.empty) return false;
+
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+    if (pos !== null && pos >= sel.from && pos <= sel.to) {
+      // Right clicked inside existing selection — prevent CodeMirror from collapsing selection!
+      return true;
+    }
+    return false;
+  },
 });
 
 const fountainEnterHandler = (view: EditorView): boolean => {
@@ -481,6 +509,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         ...historyKeymap
       ]),
       emptyLineSelectionPlugin,
+      rightClickSelectionPreservePlugin,
       editorTheme,
       placeholder("Start writing here"),
       lineTypesField,
@@ -491,6 +520,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       search(),
       searchHighlightField,
       rephraseHighlightField,
+      contextMenuHighlightField,
 
       typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
       EditorView.updateListener.of((update) => {

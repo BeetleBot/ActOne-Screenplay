@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useAIChat } from "./useAIChat";
+import { useAIChat, parseToolCall, extractThinkingAndClean } from "./useAIChat";
 
 // Mock dependencies
 vi.mock("./usePromptConfig", () => ({
@@ -10,6 +10,7 @@ vi.mock("./usePromptConfig", () => ({
     systemPrompt: "Custom Muse System Prompt",
     chatTemp: 0.7,
   }),
+  getActiveModelName: () => "gemma:2b",
 }));
 
 vi.mock("../context", () => ({
@@ -36,7 +37,7 @@ describe("useAIChat (Muse Agent Hook)", () => {
 
   it("initializes with default session and empty turns", () => {
     const { result } = renderHook(() =>
-      useAIChat(() => "INT. COFFEE SHOP - DAY", null, "file-1")
+      useAIChat(() => null, null, "file-1")
     );
 
     expect(result.current.sessions).toHaveLength(1);
@@ -94,16 +95,73 @@ describe("useAIChat (Muse Agent Hook)", () => {
 
   it("sends message and appends turns", async () => {
     const { result } = renderHook(() =>
-      useAIChat(() => "INT. OFFICE - DAY", null, "file-1")
+      useAIChat(() => null, null, "file-1")
     );
 
     await act(async () => {
-      await result.current.send("Hello Muse!", "Hello Muse!", "chat");
+      await result.current.send("Hello Muse!", "Hello Muse!");
     });
 
     expect(result.current.turns).toHaveLength(2);
     expect(result.current.turns[0].role).toBe("user");
     expect(result.current.turns[1].role).toBe("assistant");
     expect(result.current.turns[1].content).toBe("Hello from Muse!");
+  });
+
+  describe("parseToolCall", () => {
+    it("parses standard ```tool_call markdown blocks", () => {
+      const input = "```tool_call\n{\"name\": \"replace_scene\", \"args\": {\"sceneNumber\": 59, \"newFountainText\": \"INT. RING\"}}\n```";
+      const res = parseToolCall(input);
+      expect(res).toEqual({
+        name: "replace_scene",
+        args: { sceneNumber: 59, newFountainText: "INT. RING" },
+      });
+    });
+
+    it("parses loose pseudo-code tool_call replace_scene{scene_id:59, new_text: \"INT. RING\"}", () => {
+      const input = 'tool_call replace_scene{scene_id:59, new_text:"INT. RING"}';
+      const res = parseToolCall(input);
+      expect(res).toEqual({
+        name: "replace_scene",
+        args: { scene_id: 59, new_text: "INT. RING" },
+      });
+    });
+
+    it("parses bare JSON objects containing name and args", () => {
+      const input = '{"name": "search_script", "args": {"query": "stars"}}';
+      const res = parseToolCall(input);
+      expect(res).toEqual({
+        name: "search_script",
+        args: { query: "stars" },
+      });
+    });
+  });
+
+  describe("extractThinkingAndClean", () => {
+    it("strips completed <think> tags and returns clean content", () => {
+      const input = "<think>Analyzing screenplay</think>Here is the answer.";
+      const res = extractThinkingAndClean(input);
+      expect(res.thinking).toBe("Analyzing screenplay");
+      expect(res.cleanContent).toBe("Here is the answer.");
+    });
+
+    it("strips in-progress/unclosed <think> tags during streaming", () => {
+      const input = "<think>Analyzing screenplay in progress...";
+      const res = extractThinkingAndClean(input);
+      expect(res.thinking).toBe("Analyzing screenplay in progress...");
+      expect(res.cleanContent).toBe("");
+    });
+
+    it("strips completed ```tool_call blocks", () => {
+      const input = "I will search.\n```tool_call\n{\"name\": \"search_script\"}\n```\nDone.";
+      const res = extractThinkingAndClean(input);
+      expect(res.cleanContent).toBe("I will search.\n\nDone.");
+    });
+
+    it("strips in-progress/unclosed ```tool_call blocks during streaming", () => {
+      const input = "Let me check.\n```tool_call\n{\"name\": \"search_script\", \"args\": {";
+      const res = extractThinkingAndClean(input);
+      expect(res.cleanContent).toBe("Let me check.");
+    });
   });
 });

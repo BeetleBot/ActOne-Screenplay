@@ -14,9 +14,9 @@ import {
   MenuItem,
   Paper,
   Select,
-  Tab,
-  Tabs,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   Tooltip,
 } from "@mui/material";
@@ -286,64 +286,25 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
       )}
 
       {/* Header Tabs */}
-      <Box
-        data-tauri-drag-region
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          px: 2,
-          height: 40,
-          borderBottom: 1,
-          borderColor: "divider",
-          flexShrink: 0,
-          userSelect: "none",
-        }}
-      >
+      <Box sx={{ px: 2, py: 1 }}>
         {data && (
-          <Tabs
+          <ToggleButtonGroup
             value={tabIndex}
-            onChange={(_, v) => setTabIndex(v)}
-            sx={{
-              minHeight: 28,
-              height: 28,
-              bgcolor: "action.hover",
-              borderRadius: "4px",
-              p: "2px",
-              "& .MuiTabs-indicator": {
-                bgcolor: "background.paper",
-                borderRadius: "3px",
-                height: "calc(100% - 4px)",
-                top: 2,
-                bottom: 2,
-                boxShadow: "0px 1px 3px rgba(0,0,0,0.08)",
-                transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-              },
-              "& .MuiTab-root": {
-                minHeight: 24,
-                height: 24,
-                py: 0,
-                px: 1.5,
-                fontSize: 11,
-                textTransform: "none",
-                fontWeight: 600,
-                color: "text.secondary",
-                borderRadius: "3px",
-                transition: "color 0.2s ease",
-                zIndex: 1,
-                gap: 0.75,
-                "&.Mui-selected": {
-                  color: "text.primary",
-                },
-                "& .MuiSvgIcon-root": {
-                  fontSize: 13,
-                }
-              },
-            }}
+            exclusive
+            onChange={(_, val) => val !== null && setTabIndex(val as number)}
+            fullWidth
+            size="small"
           >
-            <Tab label="Overview & Stats" icon={<BarChartIcon />} iconPosition="start" />
-            <Tab label="Pacing & Timeline" icon={<TimerIcon />} iconPosition="start" />
-            <Tab label="Characters" icon={<PersonIcon />} iconPosition="start" />
-          </Tabs>
+            <ToggleButton value={0} sx={{ fontSize: 12, py: 0.3, display: "flex", gap: 0.75, alignItems: "center" }}>
+              <BarChartIcon sx={{ fontSize: 13 }} /> Overview & Stats
+            </ToggleButton>
+            <ToggleButton value={1} sx={{ fontSize: 12, py: 0.3, display: "flex", gap: 0.75, alignItems: "center" }}>
+              <TimerIcon sx={{ fontSize: 13 }} /> Pacing & Timeline
+            </ToggleButton>
+            <ToggleButton value={2} sx={{ fontSize: 12, py: 0.3, display: "flex", gap: 0.75, alignItems: "center" }}>
+              <PersonIcon sx={{ fontSize: 13 }} /> Characters
+            </ToggleButton>
+          </ToggleButtonGroup>
         )}
       </Box>
 
