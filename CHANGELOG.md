@@ -1,9 +1,23 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.9] - 2026-08-08
+
+### Added
+- 🤖 **Agentic AI Tools & Batch Tool Calls** – Enabled dynamic tool execution within Muse AI (`src/lib/aiTools.ts`), supporting batch tool calls, direct script reading/editing, line insertions, deletions, replacements, scene metadata extraction, and automatic character profile syncing with the X-Ray window.
+- 💬 **Direct AI Chat & Composer** – Replaced legacy prompt listeners with direct AI chat session management in `MusePanel.tsx` and `useAIChat.ts`, featuring streaming responses, custom prompt configurations, rich markdown rendering, and interactive Fountain script diff cards (`FountainBlock.tsx`).
+- ⚡ **Scene Indexing Engine** – Integrated a high-performance AST scene indexer (`src/utils/sceneIndexer.ts`) with character, location, dialogue, and line range extraction for instant script navigation and precise AI tool targeting.
+- 🎯 **Global Cursor Context** – Added `CursorContext` to track active cursor positions, line numbers, and script selections globally across the editor and AI features.
+- 🎨 **App Native Context Menus** – Replaced heavy Material-UI context menus with zero-dependency native-style custom app context menus (`ContextMenu.tsx`) across the editor, tab bar, and snapshot panel with full keyboard accessibility, submenus, and viewport auto-clamping.
 
 ### Changed / Improved
-- The editor, tab, and snapshot right-click menus now open synchronously as compact, themed app menus with native-style hover selection, keyboard navigation, submenus, and viewport clamping.
+- 💾 **Smart Idle Auto-Save** – Enhanced auto-save logic in `FileContext.tsx` to monitor user keypress activity and defer background file saves until the user has been idle for at least 1500ms using `requestIdleCallback`, eliminating micro-stutters while typing.
+- 🚀 **Active Line Render Optimization** – Refactored CodeMirror's `activeLineAlwaysPlugin` to update line decorations only when the cursor line number changes or document updates, reducing redundant re-renders on selection events.
+- 📜 **Typewriter Pointer Selection** – Extracted typewriter scroll logic into `src/editor/typewriter.ts` and disabled viewport centering on pointer selection events to prevent erratic scrolling during mouse drag selection.
+- 📦 **Asynchronous Bundle Packing** – Converted `.actone` file bundle compression (`src/utils/actone.ts`) to execute asynchronously off the main UI thread using `fflate`.
+- 👁️ **Enhanced Editor Caret Visibility** – Increased cursor width to 2px with high-contrast dynamic theme color matching (`var(--text-color, var(--editor-cursor))`) for improved visibility across light and dark themes.
+
+### Fixed
+- 🏷️ **Publisher Display Name Fixes** – Updated MSIX installer manifests (`AppxManifest.xml`, `bundle.config.json`, `Cargo.toml`, `tauri.conf.json`) to use `iyal.ink` as the publisher display name and removed deprecated configuration properties.
 
 ## [0.4.7] - 2026-08-05
 
