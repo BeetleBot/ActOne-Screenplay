@@ -7,8 +7,8 @@ export interface CustomTheme {
   colors: ThemeColors;
 }
 
-const DEFAULT_LIGHT = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
-const DEFAULT_DARK = { editor: "#111416", text: "#e2e2e6", accent: "#a0caff", sidebar: "#1a1c1e", button: "#a0caff" };
+const DEFAULT_LIGHT = { editor: "#EEEEEE", text: "#101010", accent: "#555555", sidebar: "#EEEEEE", button: "#555555" };
+const DEFAULT_DARK = { editor: "#101010", text: "#CCCCCC", accent: "#555555", sidebar: "#101010", button: "#555555" };
 
 function completeCustomColors(colors: Partial<ThemeColors>, isDark: boolean): ThemeColors {
   const def = isDark ? DEFAULT_DARK : DEFAULT_LIGHT;

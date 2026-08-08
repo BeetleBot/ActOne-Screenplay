@@ -43,11 +43,11 @@ export const ADAPTIVE_THEME_META: Record<string, {
 }> = {
   adaptive: {
     label: "Adaptive",
-    splitLightBg: "#f5f5f5",
-    splitLightDot: "#0061a4",
-    splitDarkBg: "#1a1c1e",
-    splitDarkDot: "#a0caff",
-    swatchColors: ["#ffffff", "#1a1c1e", "#0061a4", "#a0caff"],
+    splitLightBg: "#EEEEEE",
+    splitLightDot: "#555555",
+    splitDarkBg: "#101010",
+    splitDarkDot: "#555555",
+    swatchColors: ["#EEEEEE", "#101010", "#555555", "#555555"],
   },
   "catppuccin-adaptive": {
     label: "Catppuccin Adaptive",
@@ -106,11 +106,11 @@ export const themes: ThemeConfig[] = [
     isDark: false,
     category: "classic",
     colors: deriveAllColors({
-      editor: "#ffffff",
-      text: "#1a1c1e",
-      accent: "#0061a4",
-      sidebar: "#f5f5f5",
-      button: "#0061a4",
+      editor: "#EEEEEE",
+      text: "#101010",
+      accent: "#555555",
+      sidebar: "#EEEEEE",
+      button: "#555555",
     }, false),
   },
   {
@@ -120,11 +120,11 @@ export const themes: ThemeConfig[] = [
     isDark: true,
     category: "classic",
     colors: deriveAllColors({
-      editor: "#111416",
-      text: "#e2e2e6",
-      accent: "#a0caff",
-      sidebar: "#1a1c1e",
-      button: "#a0caff",
+      editor: "#101010",
+      text: "#CCCCCC",
+      accent: "#555555",
+      sidebar: "#101010",
+      button: "#555555",
     }, true),
   },
   {
