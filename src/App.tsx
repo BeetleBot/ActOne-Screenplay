@@ -319,7 +319,7 @@ function AppInner() {
             fountainColorsEnabled: readBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED),
             iconStyle: readLS(STORAGE_KEYS.ICON_STYLE) ?? DEFAULTS[STORAGE_KEYS.ICON_STYLE] as string,
             activeFilePath: activeFileIdRef.current || "",
-          });
+          }).catch(() => { });
         });
 
         const u2 = await listen<{ key: string; value: string | boolean | number }>("modal:settings:update", (event) => {
@@ -334,7 +334,7 @@ function AppInner() {
             parsedDoc: parsedDocRef.current,
             scriptFileName: scriptFileNameRef.current,
             settings: parsedDocRef.current?.settings || {},
-          });
+          }).catch(() => { });
         });
 
         const u8 = await listen<{ characterName: string; profile: { gender?: string; [key: string]: unknown } }>("modal:xray:save-profile", (event) => {
@@ -363,7 +363,7 @@ function AppInner() {
               parsedDoc: parsedDocRef.current ? { ...parsedDocRef.current, settings: updatedSettings } : null,
               scriptFileName: sf,
               settings: updatedSettings,
-            });
+            }).catch(() => { });
 
             return updatedSettings;
           });
@@ -506,7 +506,7 @@ function AppInner() {
     setTimeout(async () => {
       try {
         const { emit } = await import("@tauri-apps/api/event");
-        emit("editor:ready", { action });
+        emit("editor:ready", { action }).catch(() => { });
       } catch { void 0; }
     }, 100);
   }, []);

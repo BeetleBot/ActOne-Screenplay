@@ -24,6 +24,7 @@ The crash window is a small standalone `WebviewWindow("crash-report")` opened at
 - Reports are queued locally when Discord or the network is unavailable and retried automatically.
 - Diagnostics are merged at send time, so a report captured before system info resolves still includes full OS/CPU/RAM details.
 - Rust panic details are written to the application data directory and flushed at startup with `severity: "app"`.
+- Expected Tauri window-teardown errors, including invalid resource IDs from a closing WebView, are retained for diagnostics but do not open a crash window.
 
 There is no previous-session detection and no "send report" button: a crashed session already sent its report live, and clean-exit detection was unreliable.
 

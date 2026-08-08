@@ -18,6 +18,7 @@
 
 ### Fixed
 - 🏷️ **Publisher Display Name Fixes** – Updated MSIX installer manifests (`AppxManifest.xml`, `bundle.config.json`, `Cargo.toml`, `tauri.conf.json`) to use `iyal.ink` as the publisher display name and removed deprecated configuration properties.
+- 🪟 **Tauri Window Teardown Crash** – Prevented invalid resource ID rejections during window dragging and teardown from surfacing as false crash windows, while retaining them for diagnostics.
 
 ## [0.4.7] - 2026-08-05
 

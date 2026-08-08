@@ -290,7 +290,7 @@ export const SettingsWindow: React.FC = () => {
     const setup = async () => {
       try {
         const { listen, emit } = await import("@tauri-apps/api/event");
-        emit("modal:settings:ready");
+        emit("modal:settings:ready").catch(() => { });
         const unlisten = await listen<SettingsInitData>("modal:settings:init", (event) => {
           if (initialLoadDone.current) return;
           initialLoadDone.current = true;

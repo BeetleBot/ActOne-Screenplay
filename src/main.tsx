@@ -8,7 +8,7 @@ import { XrayWindow } from "./components/XrayWindow";
 import { TutorialsWindow } from "./components/TutorialsWindow";
 import "./index.css";
 import { logger } from "./utils/logger";
-import { captureError, flushErrorReports, setSystemDiagnostics, wasJustCaughtByBoundary } from "./utils/errorReport";
+import { captureError, flushErrorReports, setSystemDiagnostics, wasJustCaughtByBoundary, isTransientTauriTeardownError } from "./utils/errorReport";
 import { showCrashScreen, readCrashWindowReport, CrashScreen } from "./components/CrashScreen";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider, UIProvider } from "./context";
@@ -17,13 +17,13 @@ import { ThemeProvider, UIProvider } from "./context";
 
 window.onerror = (message, source, _line, _col, error) => {
   const report = captureError({ type: "uncaught", error: error ?? message, filename: source || undefined, message: error ? undefined : String(message), severity: "window" });
-  if (!wasJustCaughtByBoundary()) showCrashScreen(report);
+  if (!wasJustCaughtByBoundary() && !isTransientTauriTeardownError(report.message)) showCrashScreen(report);
   return true;
 };
 
 window.addEventListener("unhandledrejection", (event) => {
   const report = captureError({ type: "unhandled-rejection", error: event.reason, severity: "window" });
-  if (!wasJustCaughtByBoundary()) showCrashScreen(report);
+  if (!wasJustCaughtByBoundary() && !isTransientTauriTeardownError(report.message)) showCrashScreen(report);
 });
 
 void (async () => {

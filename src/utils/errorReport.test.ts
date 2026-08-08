@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError, flushErrorReports, buildDiscordPayload, markBoundaryCaught, wasJustCaughtByBoundary, resetErrorReportSessionForTests, setSystemDiagnostics, type ErrorReport } from "./errorReport";
+import { captureError, flushErrorReports, buildDiscordPayload, markBoundaryCaught, wasJustCaughtByBoundary, resetErrorReportSessionForTests, setSystemDiagnostics, isTransientTauriTeardownError, type ErrorReport } from "./errorReport";
 import { ERROR_REPORT_MAX_QUEUE, ERROR_REPORT_QUEUE_KEY } from "../constants/reporting";
 
 vi.mock("../constants/reporting", () => ({
@@ -117,5 +117,28 @@ describe("boundary suppression", () => {
   it("reports a boundary catch within the window", () => {
     markBoundaryCaught();
     expect(wasJustCaughtByBoundary()).toBe(true);
+  });
+});
+
+describe("isTransientTauriTeardownError", () => {
+  it("classifies resource id errors as transient", () => {
+    expect(isTransientTauriTeardownError("The resource id 4083235040 is invalid.")).toBe(true);
+    expect(isTransientTauriTeardownError("The resource ID 123 is invalid")).toBe(true);
+  });
+
+  it("classifies missing and dropped resource errors as transient", () => {
+    expect(isTransientTauriTeardownError("Resource not found")).toBe(true);
+    expect(isTransientTauriTeardownError("The resource is dropped")).toBe(true);
+  });
+
+  it("classifies in-progress drag operations as transient", () => {
+    expect(isTransientTauriTeardownError("The operation is already in progress")).toBe(true);
+  });
+
+  it("does not classify real application errors as transient", () => {
+    expect(isTransientTauriTeardownError("Cannot read properties of undefined (reading 'map')")).toBe(false);
+    expect(isTransientTauriTeardownError("invalid resource name: 'foo'")).toBe(false);
+    expect(isTransientTauriTeardownError("Something resourceful went wrong")).toBe(false);
+    expect(isTransientTauriTeardownError("")).toBe(false);
   });
 });

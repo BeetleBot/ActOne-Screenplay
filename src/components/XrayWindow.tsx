@@ -1206,7 +1206,7 @@ export const XrayWindow: React.FC = () => {
             setTimedOut(false);
           }
         });
-        emit("modal:xray:ready");
+        emit("modal:xray:ready").catch(() => { });
         return unlisten;
       } catch {
         // not in Tauri

@@ -101,7 +101,11 @@ export const WindowResizeHandles: React.FC<WindowResizeHandlesProps> = ({ showDr
     if (e.button === 0) {
       e.preventDefault();
       const win = await ensureTauri();
-      if (win) win.startDragging();
+      if (win) {
+        win.startDragging().catch((err: unknown) => {
+          logger.warn("window", "Failed to start native window dragging:", err);
+        });
+      }
     }
   }, []);
 

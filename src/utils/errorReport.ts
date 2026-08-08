@@ -43,6 +43,18 @@ interface DiscordEmbedField {
   inline?: boolean;
 }
 
+const TRANSIENT_TAURI_ERROR_PATTERNS: RegExp[] = [
+  /resource id \d+ is invalid/i,
+  /resource.*\bnot found/i,
+  /resource.*\b(dropped|destroyed|closed|invalid)\b/i,
+  /operation is already in progress/i,
+  /app quit requested/i,
+];
+
+export function isTransientTauriTeardownError(message: string): boolean {
+  return TRANSIENT_TAURI_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+}
+
 let systemInfo: Partial<SystemDiagnostics> = {};
 let lastBoundaryCaughtAt = 0;
 
