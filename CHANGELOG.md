@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.10] - 2026-08-09
+
+### Fixed
+- 🖱️ **Linux Caret & Selection Fix** – Fixed duplicate caret and selection rendering bugs on Linux by replacing CodeMirror's `drawSelection` with a custom cursor layer.
+
+### Changed / Improved
+- 🎨 **Catppuccin Mocha Theme** – Made the theme more consistent using proper Mocha palette colors (Mantle sidebar, darker Crust editor).
+
 ## [0.4.9] - 2026-08-08
 
 ### Added

@@ -148,7 +148,7 @@ export const themes: ThemeConfig[] = [
     isDark: true,
     category: "catppuccin",
     colors: deriveAllColors({
-      editor: "#1e1e2e",
+      editor: "#11111b",
       text: "#cdd6f4",
       accent: "#cba6f7",
       sidebar: "#181825",
