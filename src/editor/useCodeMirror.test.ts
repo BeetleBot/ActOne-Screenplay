@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { EditorState } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+import { EditorSelection, EditorState } from "@codemirror/state";
+import { EditorView, layer, RectangleMarker, type ViewUpdate } from "@codemirror/view";
 
 describe("parsedDoc effect early-return guard", () => {
   it("skips dispatch when screenplayText matches last dispatched text (simulating guard)", () => {
@@ -109,6 +109,163 @@ describe("parsedDoc effect early-return guard", () => {
     expect(dispatchSpy).not.toHaveBeenCalled();
 
     view.destroy();
+  });
+});
+
+describe("custom cursor layer", () => {
+  // Mirrors the cursor-only layer used in src/editor/useCodeMirror.ts. The config object is
+  // kept separate from layer() so its markers function can be tested directly, without
+  // relying on the LayerView measuring cycle.
+
+  // jsdom does not implement Range.getClientRects / getBoundingClientRect, which CodeMirror
+  // needs to measure marker positions at runtime. Stub them with 8px-per-character metrics so
+  // RectangleMarker.forRange produces deterministic coordinates in tests.
+  let rangeMetricsStubbed = false;
+  function stubRangeMetrics() {
+    if (rangeMetricsStubbed) return;
+    rangeMetricsStubbed = true;
+    const metrics = (offset: number) => ({
+      left: offset * 8,
+      right: offset * 8 + 8,
+      top: 0,
+      bottom: 16,
+      width: 8,
+      height: 16,
+    });
+    Object.defineProperty(Range.prototype, "getClientRects", {
+      configurable: true,
+      value(this: Range) {
+        return [metrics(this.startOffset)];
+      },
+    });
+    Object.defineProperty(Range.prototype, "getBoundingClientRect", {
+      configurable: true,
+      value(this: Range) {
+        return metrics(this.startOffset);
+      },
+    });
+  }
+
+  const cursorLayerConfig = {
+    above: true,
+    markers(view: EditorView): RectangleMarker[] {
+      const cursors: RectangleMarker[] = [];
+      for (const r of view.state.selection.ranges) {
+        const prim = r === view.state.selection.main;
+        if (r.empty) {
+          const className = prim ? "cm-cursor cm-cursor-primary" : "cm-cursor cm-cursor-secondary";
+          for (const piece of RectangleMarker.forRange(view, className, r)) {
+            cursors.push(piece);
+          }
+        }
+      }
+      return cursors;
+    },
+    update(update: ViewUpdate, dom: HTMLElement): boolean {
+      if (update.transactions.some((tr) => tr.selection)) {
+        dom.style.animationName = dom.style.animationName === "cm-blink" ? "cm-blink2" : "cm-blink";
+      }
+      return update.docChanged || update.selectionSet;
+    },
+    mount(dom: HTMLElement): void {
+      dom.style.animationDuration = "1200ms";
+    },
+    class: "cm-cursorLayer",
+  };
+  const cursorLayer = layer(cursorLayerConfig);
+
+  it("emits a primary cm-cursor RectangleMarker for an empty selection", () => {
+    stubRangeMetrics();
+    const state = EditorState.create({
+      doc: "Hello world",
+      extensions: [cursorLayer, EditorView.editable.of(true)],
+    });
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    const view = new EditorView({ state, parent });
+
+    const markers = cursorLayerConfig.markers(view);
+    expect(markers.length).toBe(1);
+    expect(markers[0] instanceof RectangleMarker).toBe(true);
+    expect((markers[0] as RectangleMarker).className).toBe("cm-cursor cm-cursor-primary");
+
+    view.destroy();
+    parent.remove();
+  });
+
+  it("emits a fresh RectangleMarker at the new position when the selection changes", () => {
+    stubRangeMetrics();
+    const state = EditorState.create({
+      doc: "Hello world",
+      extensions: [cursorLayer, EditorView.editable.of(true)],
+    });
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    const view = new EditorView({ state, parent });
+
+    view.dispatch({ selection: { anchor: 2 } });
+    const at2 = cursorLayerConfig.markers(view);
+    expect(at2.length).toBe(1);
+    const at2Left = (at2[0] as RectangleMarker).left;
+
+    view.dispatch({ selection: { anchor: 9 } });
+    const at9 = cursorLayerConfig.markers(view);
+    expect(at9.length).toBe(1);
+    const at9Left = (at9[0] as RectangleMarker).left;
+
+    // The stub measures 8px per character, so the cursor at anchor 9 must be further right
+    // than the cursor at anchor 2.
+    expect(at9Left).toBeGreaterThan(at2Left);
+
+    view.destroy();
+    parent.remove();
+  });
+
+  it("emits no cursor markers when the selection is non-empty (range selections are not cursors)", () => {
+    const state = EditorState.create({
+      doc: "Hello world",
+      extensions: [cursorLayer, EditorView.editable.of(true)],
+    });
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    const view = new EditorView({ state, parent });
+
+    view.dispatch({ selection: { anchor: 1, head: 5 } });
+    const markers = cursorLayerConfig.markers(view);
+    expect(markers.length).toBe(0);
+
+    view.destroy();
+    parent.remove();
+  });
+
+  it("emits primary and secondary cm-cursors for multiple empty selection ranges", () => {
+    stubRangeMetrics();
+    const state = EditorState.create({
+      doc: "Hello world",
+      extensions: [
+        cursorLayer,
+        EditorView.editable.of(true),
+        EditorState.allowMultipleSelections.of(true),
+      ],
+    });
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    const view = new EditorView({ state, parent });
+
+    view.dispatch({
+      selection: EditorSelection.create([
+        EditorSelection.range(2, 2),
+        EditorSelection.range(9, 9),
+      ]),
+    });
+
+    const markers = cursorLayerConfig.markers(view);
+    expect(markers.length).toBe(2);
+    expect(markers.some((m) => (m as RectangleMarker).className === "cm-cursor cm-cursor-primary")).toBe(true);
+    expect(markers.some((m) => (m as RectangleMarker).className === "cm-cursor cm-cursor-secondary")).toBe(true);
+
+    view.destroy();
+    parent.remove();
   });
 });
 

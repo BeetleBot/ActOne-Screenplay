@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { EditorState, Transaction, RangeSetBuilder, StateField } from "@codemirror/state";
-import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, Decoration, DecorationSet } from "@codemirror/view";
+import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, layer, RectangleMarker, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { search, setSearchQuery, getSearchQuery } from "@codemirror/search";
 import { autocompletion } from "@codemirror/autocomplete";
@@ -71,18 +71,59 @@ const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
   return tr;
 });
 
+/**
+ * Custom cursor layer that renders `.cm-cursor` elements above the editor content.
+ *
+ * This replaces CodeMirror's `drawSelection()` extension with a cursor-only equivalent so
+ * the native contenteditable caret is hidden (and replaced with our drawn `.cm-cursor`).
+ *
+ * Why: WebKitGTK (Linux) leaves stale ghost paint of the native caret at the previous
+ * cursor position during rapid keyboard navigation, producing a visible duplicate caret.
+ * A drawn cursor is recreated on every selection transaction, so no ghost can occur.
+ *
+ * Selection rendering is intentionally untouched: native `::selection` continues to handle
+ * text-selection highlights, so visual behavior is identical to the pre-`drawSelection`
+ * editor.
+ */
+const cursorLayer = layer({
+  above: true,
+  markers(view) {
+    const cursors: RectangleMarker[] = [];
+    for (const r of view.state.selection.ranges) {
+      const prim = r === view.state.selection.main;
+      if (r.empty) {
+        const className = prim ? "cm-cursor cm-cursor-primary" : "cm-cursor cm-cursor-secondary";
+        for (const piece of RectangleMarker.forRange(view, className, r)) {
+          cursors.push(piece);
+        }
+      }
+    }
+    return cursors;
+  },
+  update(update, dom) {
+    if (update.transactions.some((tr) => tr.selection)) {
+      dom.style.animationName = dom.style.animationName === "cm-blink" ? "cm-blink2" : "cm-blink";
+    }
+    return update.docChanged || update.selectionSet;
+  },
+  mount(dom) {
+    dom.style.animationDuration = "1200ms";
+  },
+  class: "cm-cursorLayer",
+});
+
 const editorTheme = EditorView.theme({
   "&": {
     height: "auto",
     minHeight: "100%",
-    caretColor: "var(--text-color, currentColor)",
+    caretColor: "transparent",
   },
   ".cm-scroller": {
     overflow: "visible",
   },
   ".cm-content": {
     padding: "0",
-    caretColor: "var(--text-color, currentColor)",
+    caretColor: "transparent",
   },
   ".cm-cursor, .cm-dropCursor": {
     borderLeftColor: "var(--text-color, currentColor) !important",
@@ -505,6 +546,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
 
     const extensions = [
       history(),
+      cursorLayer,
       ghostSuggestionField,
       ghostSuggestionKeymap(),
       activeLineAlwaysPlugin,

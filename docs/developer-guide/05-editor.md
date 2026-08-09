@@ -11,6 +11,7 @@ FountainEditor.tsx (React shell)
         ├── fountainSyntax.ts (StateField → line type classification + decorations)
         ├── inlineAutocomplete.ts (ghost text suggestions)
         ├── emptyLineSelection.ts (ViewPlugin for blank line selection)
+        ├── cursorLayer (custom layer → drawn blinking caret)
         └── built-in extensions (history, keymaps, search, close brackets)
 ```
 
@@ -63,6 +64,16 @@ Uses a custom `ViewPlugin` with a ghost text widget displayed inline.
 ## Empty Line Selection (`emptyLineSelection.ts`)
 
 Located at `src/editor/emptyLineSelection.ts` (~40 lines). A `ViewPlugin` that renders a single-character-width selection marker on empty lines within the current selection range, matching Windows native selection behavior on both platforms.
+
+## Custom Cursor Layer (`useCodeMirror.ts`)
+
+Defined at the top of `src/editor/useCodeMirror.ts` (~45 lines). A cursor-only CodeMirror layer that replaces the built-in `drawSelection()` extension:
+
+- `layer({ above: true, class: "cm-cursorLayer" })` draws `.cm-cursor` rectangles (`cm-cursor-primary` for the main range, `cm-cursor-secondary` for additional empty ranges) via `RectangleMarker.forRange`.
+- The native caret is hidden with `caretColor: transparent` on both `&` and `.cm-content`, so the only caret visible is the drawn one, which is recreated on every selection transaction and blinks on a 1200ms cycle.
+- Selection rendering is intentionally untouched: native `::selection` continues to provide text-highlight rendering, so the editor never shows CodeMirror's `.cm-selectionBackground` decorations.
+
+Why: WebKitGTK (Linux) leaves stale native caret paint at the previous cursor position during rapid keyboard navigation, producing a visible duplicate caret. A drawn layer eliminates the ghost on Linux while behaving identically to the native caret on Windows WebView2. `drawSelection()` is not used because its `nativeSelectionHidden` theme would replace native `::selection` highlighting with opaque CodeMirror selection blocks.
 
 ## Key Features
 
