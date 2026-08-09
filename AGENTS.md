@@ -122,6 +122,7 @@ src-tauri/
 - Keep icons in `src/components/Icons.tsx` and follow the existing icon factory.
 - Keep CSS in `src/index.css`, `src/fonts.css`, or the existing AI stylesheet. Use MUI `sx` for component-local styling.
 - Use bundled fonts declared in `fonts.css`; do not add OS-dependent font fallback chains.
+- **UI Design Guidelines**: Do NOT use left-side vertical colored accent lines/bars on scene items in the Outline View (or any list). The user explicitly dislikes this design language.
 - Add comments only when naming and structure cannot make non-obvious logic clear.
 - Use `useRef` for values that must survive native event sequences or asynchronous callbacks.
 - Do not add `useMemo` or `useCallback` by default. Follow the patterns already used by the surrounding feature.

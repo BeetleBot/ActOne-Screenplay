@@ -152,12 +152,12 @@ fn script_family_for_text(text: &str) -> Option<&'static str> {
         let val = c as u32;
         match val {
             0x0B80..=0x0BFF => return Some("Mukta Malar"),
-            0x0C00..=0x0C7F => return Some("Noto Sans Telugu"),
-            0x0980..=0x09FF => return Some("Noto Sans Bengali"),
-            0x0A80..=0x0AFF => return Some("Mukta Vaani"),
-            0x0C80..=0x0CFF => return Some("Noto Sans Kannada"),
-            0x0D00..=0x0D7F => return Some("Noto Sans Malayalam"),
-            0x0A00..=0x0A7F => return Some("Mukta Mahee"),
+            0x0C00..=0x0C7F => return Some("Hind Guntur"),
+            0x0980..=0x09FF => return Some("Hind Siliguri"),
+            0x0A80..=0x0AFF => return Some("Hind Vadodara"),
+            0x0C80..=0x0CFF => return Some("Baloo Tamma 2"),
+            0x0D00..=0x0D7F => return Some("Baloo Chettan 2"),
+            0x0A00..=0x0A7F => return Some("Baloo Paaji 2"),
             0x0B00..=0x0B7F => return Some("Baloo Bhaina 2"),
             0x0900..=0x097F => return Some("Mukta"),
             _ => {}

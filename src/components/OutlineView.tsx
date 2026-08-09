@@ -459,25 +459,25 @@ export const OutlineView = React.memo(() => {
   const fontSizes = useMemo(() => {
     return {
       small: {
-        section: "0.75rem",
-        scene: "0.725rem",
-        synopsis: "0.675rem",
-        number: "8px",
-        chip: "7px",
+        section: "0.68rem",
+        scene: "0.65rem",
+        synopsis: "0.7rem",
+        number: "0.65rem",
+        chip: "6.5px",
       },
       normal: {
-        section: "0.825rem",
-        scene: "0.8rem",
+        section: "0.74rem",
+        scene: "0.72rem",
         synopsis: "0.75rem",
-        number: "8.5px",
-        chip: "7.5px",
+        number: "0.7rem",
+        chip: "7px",
       },
       large: {
-        section: "0.9rem",
-        scene: "0.875rem",
+        section: "0.8rem",
+        scene: "0.78rem",
         synopsis: "0.825rem",
-        number: "9px",
-        chip: "8px",
+        number: "0.75rem",
+        chip: "7.5px",
       },
     }[outlineFontSize];
   }, [outlineFontSize]);
@@ -488,9 +488,22 @@ export const OutlineView = React.memo(() => {
     if (synopses.length === 1) {
       const syn = synopses[0];
       return (
-        <Box sx={{ mt: 0.5, pl: 0.5 }}>
+        <Box
+          sx={{
+            mt: 0.5,
+            mb: 0.3,
+            px: 1,
+            py: 0.4,
+            borderRadius: "2px",
+            bgcolor: "color-mix(in srgb, var(--text-main) 4%, transparent)",
+            transition: "all var(--duration-fast) ease",
+            "&:hover": {
+              bgcolor: "color-mix(in srgb, var(--button-color) 8%, transparent)",
+            },
+          }}
+        >
           <Typography
-            variant="caption"
+            variant="body2"
             color="text.secondary"
             onClick={(e) => {
               e.stopPropagation();
@@ -498,7 +511,16 @@ export const OutlineView = React.memo(() => {
               const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
               if (container) container.focus();
             }}
-            sx={{ display: "block", cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "var(--button-color)" } }}
+            sx={{
+              display: "block",
+              cursor: "pointer",
+              fontStyle: "italic",
+              fontSize: fontSizes.synopsis,
+              fontFamily: "var(--font-ui)",
+              lineHeight: 1.4,
+              letterSpacing: "0.01em",
+              "&:hover": { color: "text.primary" },
+            }}
           >
             {syn.line.text.replace(/^=[ ]*/, "").trim()}
           </Typography>
@@ -507,11 +529,27 @@ export const OutlineView = React.memo(() => {
     }
 
     return (
-      <Box sx={{ mt: 0.5, pl: 0.5, display: "flex", flexDirection: "column", gap: 0.2 }}>
+      <Box
+        sx={{
+          mt: 0.5,
+          mb: 0.3,
+          px: 1,
+          py: 0.4,
+          borderRadius: "2px",
+          bgcolor: "color-mix(in srgb, var(--text-main) 4%, transparent)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 0.3,
+          transition: "all var(--duration-fast) ease",
+          "&:hover": {
+            bgcolor: "color-mix(in srgb, var(--button-color) 8%, transparent)",
+          },
+        }}
+      >
         {synopses.map((syn) => (
           <Typography
             key={syn.line.id}
-            variant="caption"
+            variant="body2"
             color="text.secondary"
             onClick={(e) => {
               e.stopPropagation();
@@ -519,7 +557,18 @@ export const OutlineView = React.memo(() => {
               const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
               if (container) container.focus();
             }}
-            sx={{ cursor: "pointer", fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em", "&:hover": { color: "var(--button-color)" }, display: "flex", alignItems: "center", gap: 0.5 }}
+            sx={{
+              cursor: "pointer",
+              fontStyle: "italic",
+              fontSize: fontSizes.synopsis,
+              fontFamily: "var(--font-ui)",
+              lineHeight: 1.4,
+              letterSpacing: "0.01em",
+              "&:hover": { color: "text.primary" },
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 0.5,
+            }}
           >
             • {syn.line.text.replace(/^=[ ]*/, "").trim()}
           </Typography>
@@ -537,12 +586,15 @@ export const OutlineView = React.memo(() => {
     const isCollapsed = collapsedSections[line.id];
     const isDragging = draggedItemIdx === item.index;
     const isDragOver = dragOverItemIdx === item.index;
-
     const isActive = line.id === selectable[activeSelectableIdx]?.item.line.id;
     const sceneColor = getSceneColor(line);
     const sceneIndex = isScene ? scenesItems.findIndex((s) => s.line.id === line.id) : -1;
+    const depth = node.depth || 0;
 
     if (isSection) {
+      const sDepth = line.sectionDepth || 1;
+      const isLevel1 = sDepth === 1;
+
       return (
         <Box key={line.id} sx={{ display: "flex", flexDirection: "column" }}>
           <ListItemButton
@@ -552,11 +604,18 @@ export const OutlineView = React.memo(() => {
             onDoubleClick={(e) => toggleSection(line.id, e)}
             selected={isActive}
             sx={{
-              pl: 0,
-              py: 0.25,
+              pl: `${Math.min(depth * 8, 16)}px`,
+              py: isLevel1 ? 0.4 : 0.25,
+              mt: isLevel1 ? 1.2 : 0.4,
+              mb: 0.2,
               borderRadius: 0,
-              mb: 0.1,
+              borderTop: isLevel1 ? "1px solid" : "none",
+              borderColor: "color-mix(in srgb, var(--button-color) 25%, transparent)",
+              bgcolor: "transparent",
               transition: "background-color var(--duration-fast) ease",
+              "&:hover": {
+                bgcolor: "action.hover",
+              },
             }}
           >
             <IconButton
@@ -564,17 +623,27 @@ export const OutlineView = React.memo(() => {
               onClick={(e) => toggleSection(line.id, e)}
               sx={{
                 p: 0.1,
-                mr: 0.4,
+                mr: 0.3,
                 transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
                 transition: "transform var(--duration-normal) ease",
               }}
             >
-              <KeyboardArrowDownIcon  />
+              <KeyboardArrowDownIcon sx={{ fontSize: 13 }} />
             </IconButton>
             <ListItemText
               slotProps={{ secondary: { component: 'span' as const } }}
               primary={
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--button-color)", fontSize: fontSizes.section, fontFamily: "var(--font-ui)", letterSpacing: "0.02em" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: isLevel1 ? 700 : 600,
+                    color: isLevel1 ? "var(--button-color)" : "text.primary",
+                    fontSize: fontSizes.section,
+                    fontFamily: "var(--font-ui)",
+                    letterSpacing: isLevel1 ? "0.04em" : "0.01em",
+                    textTransform: isLevel1 ? "uppercase" : "none",
+                  }}
+                >
                   {line.text.replace(/^[.#= ]+/, "").trim()}
                 </Typography>
               }
@@ -585,8 +654,6 @@ export const OutlineView = React.memo(() => {
             <Box sx={{
               display: "flex",
               flexDirection: "column",
-              borderLeft: "1px solid",
-              borderColor: "color-mix(in srgb, var(--text-main) 12%, transparent)",
               ml: 1.1,
               pl: 0,
             }}>
@@ -606,7 +673,7 @@ export const OutlineView = React.memo(() => {
           ref={isActive ? activeItemRef : null}
           selected={isActive}
           onClick={(e) => { handleItemClick(item, true, e); }}
-          sx={{ pl: 1.5, py: 0.25, borderRadius: 0, mb: 0.1 }}
+          sx={{ pl: `${12 + Math.min(depth * 8, 16)}px`, py: 0.15, borderRadius: 0, mb: 0.1 }}
         >
           <Box component="span" sx={{ mr: 0.8, fontSize: 10, color: "text.secondary" }}>•</Box>
           <ListItemText
@@ -621,158 +688,192 @@ export const OutlineView = React.memo(() => {
     }
 
     const showDragOver = isDragOver && !isDragging;
+    const sceneIndent = Math.min(depth * 8, 16);
+    const hasSubCardContent = (showStorylines && line.storylines && line.storylines.length > 0) || (showSynopses && synopses.length > 0);
+
     return (
-      <ListItemButton
-        key={line.id}
-        data-scene-id={line.id}
-        data-scene-index={isScene ? sceneIndex : undefined}
-        ref={isActive ? activeItemRef : null}
-        selected={isActive}
-        onClick={(e) => handleItemClick(item, true, e)}
-        sx={{
-          pl: 0.5,
-          py: 0.25,
-          borderRadius: 0,
-          mb: 0.1,
-          opacity: isDragging ? 0.4 : 1,
-          bgcolor: showDragOver
-            ? "action.hover"
-            : sceneColor
-              ? (sceneColor.startsWith("var")
-                  ? `color-mix(in srgb, ${sceneColor} 8%, transparent)`
-                  : `${sceneColor}12`)
-              : "transparent",
-          transition: "background-color var(--duration-fast) ease",
-          position: "relative",
-          "&:hover": {
-            bgcolor: sceneColor
-              ? (sceneColor.startsWith("var")
-                  ? `color-mix(in srgb, ${sceneColor} 15%, transparent)`
-                  : `${sceneColor}22`)
-              : "action.hover",
-          },
-          "&.Mui-selected": {
-            bgcolor: sceneColor
-              ? (sceneColor.startsWith("var")
-                  ? `color-mix(in srgb, ${sceneColor} 20%, transparent)`
-                  : `${sceneColor}30`)
-              : "action.selected",
+      <Box key={line.id} sx={{ display: "flex", flexDirection: "column" }}>
+        <ListItemButton
+          data-scene-id={line.id}
+          data-scene-index={isScene ? sceneIndex : undefined}
+          ref={isActive ? activeItemRef : null}
+          selected={isActive}
+          onClick={(e) => handleItemClick(item, true, e)}
+          sx={{
+            ml: `${sceneIndent}px`,
+            py: 0.4,
+            px: 0.8,
+            borderRadius: 0,
+            mb: hasSubCardContent ? 0 : 0.4,
+            opacity: isDragging ? 0.4 : 1,
+            border: "1px solid",
+            borderColor: isActive
+              ? "var(--button-color, primary.main)"
+              : "color-mix(in srgb, var(--text-main) 10%, transparent)",
+            bgcolor: showDragOver
+              ? "action.hover"
+              : isActive
+                ? (sceneColor
+                    ? (sceneColor.startsWith("var")
+                        ? `color-mix(in srgb, ${sceneColor} 22%, transparent)`
+                        : `${sceneColor}30`)
+                    : "action.selected")
+                : (sceneColor
+                    ? (sceneColor.startsWith("var")
+                        ? `color-mix(in srgb, ${sceneColor} 12%, transparent)`
+                        : `${sceneColor}1A`)
+                    : "background.paper"),
+            boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.06)" : "0 1px 2px rgba(0,0,0,0.02)",
+            transition: "all var(--duration-fast) ease",
+            position: "relative",
             "&:hover": {
+              borderColor: "color-mix(in srgb, var(--button-color) 40%, transparent)",
               bgcolor: sceneColor
                 ? (sceneColor.startsWith("var")
-                    ? `color-mix(in srgb, ${sceneColor} 25%, transparent)`
-                    : `${sceneColor}38`)
+                    ? `color-mix(in srgb, ${sceneColor} 20%, transparent)`
+                    : `${sceneColor}28`)
                 : "action.hover",
-            }
-          },
-          "&::after": showDragOver ? {
-            content: '""',
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: "2px",
-            bgcolor: "primary.main",
-          } : undefined,
-        }}
-      >
-        {isScene && (
-          <Box
-            onMouseDown={(e) => handleHandleMouseDown(e, sceneIndex)}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              cursor: "grab",
-              color: "text.disabled",
-              mr: 0.3,
-              flexShrink: 0,
-              "&:hover": { color: "text.secondary" },
-              "&:active": { cursor: "grabbing" },
-            }}
-          >
-            <DragHandleIcon sx={{ fontSize: 14 }} />
-          </Box>
-        )}
-        {!isScene && <Box sx={{ width: 20, flexShrink: 0 }} />}
-        <ListItemText
-          slotProps={{ secondary: { component: 'span' as const } }}
-          primary={
-            <Box sx={{ display: "flex", gap: 0.8, alignItems: "center" }}>
-              <Box
-                sx={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  bgcolor: sceneColor || "transparent",
-                  flexShrink: 0,
-                }}
-              />
-              {line.sceneNumber && (
+            },
+            "&.Mui-selected": {
+              bgcolor: sceneColor
+                ? (sceneColor.startsWith("var")
+                    ? `color-mix(in srgb, ${sceneColor} 24%, transparent)`
+                    : `${sceneColor}35`)
+                : "action.selected",
+              "&:hover": {
+                bgcolor: sceneColor
+                  ? (sceneColor.startsWith("var")
+                      ? `color-mix(in srgb, ${sceneColor} 28%, transparent)`
+                      : `${sceneColor}40`)
+                  : "action.selected",
+              }
+            },
+            "&::after": showDragOver ? {
+              content: '""',
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: "2px",
+              bgcolor: "primary.main",
+            } : undefined,
+          }}
+        >
+          {isScene && (
+            <Box
+              onMouseDown={(e) => handleHandleMouseDown(e, sceneIndex)}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "grab",
+                color: "text.disabled",
+                mr: 0.4,
+                flexShrink: 0,
+                "&:hover": { color: "text.secondary" },
+                "&:active": { cursor: "grabbing" },
+              }}
+            >
+              <DragHandleIcon sx={{ fontSize: 13 }} />
+            </Box>
+          )}
+          {!isScene && <Box sx={{ width: 18, flexShrink: 0 }} />}
+          <ListItemText
+            primary={
+              <Box sx={{ display: "flex", gap: 0.6, alignItems: "center", width: "100%" }}>
+                {line.sceneNumber && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      bgcolor: "color-mix(in srgb, var(--text-main) 10%, transparent)",
+                      border: "1px solid",
+                      borderColor: "color-mix(in srgb, var(--text-main) 20%, transparent)",
+                      color: "text.primary",
+                      px: 0.6,
+                      py: 0.15,
+                      borderRadius: "3px",
+                      fontSize: fontSizes.number,
+                      fontWeight: 700,
+                      letterSpacing: "0.02em",
+                      lineHeight: 1,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: 20,
+                    }}
+                  >
+                    {line.sceneNumber}
+                  </Typography>
+                )}
                 <Typography
-                  variant="caption"
+                  variant="body2"
                   sx={{
-                    bgcolor: "action.selected",
-                    px: 0.4,
-                    borderRadius: 0,
-                    fontSize: fontSizes.number,
                     fontWeight: 700,
-                    color: "text.secondary",
+                    color: "text.primary",
+                    fontSize: fontSizes.scene,
+                    fontFamily: "var(--font-ui)",
+                    letterSpacing: "0.01em",
+                    textTransform: "uppercase",
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  {line.sceneNumber}
+                  {getSceneTitle(line)}
                 </Typography>
-              )}
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? "primary.main" : "text.primary",
-                  fontSize: fontSizes.scene,
-                  fontFamily: "var(--font-ui)",
-                  letterSpacing: "0.01em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {getSceneTitle(line)}
-              </Typography>
-            </Box>
-          }
-          secondary={
-            (showStorylines || showSynopses) && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.4 }}>
-                {showStorylines && line.storylines && line.storylines.length > 0 && (
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6, mt: 0.6, mb: 0.4, pl: 0.5 }}>
-                    {line.storylines.map((sl) => (
-                      <Box
-                        key={sl}
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          px: 0.8,
-                          py: 0.3,
-                          borderRadius: 0,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          bgcolor: "action.hover",
-                          color: "text.primary",
-                          fontSize: "10.5px",
-                          fontWeight: 700,
-                          letterSpacing: "0.04em",
-                          textTransform: "uppercase",
-                          fontFamily: "var(--font-ui)",
-                        }}
-                      >
-                        {sl}
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-                {showSynopses && renderOutlineSynopses(synopses)}
               </Box>
-            )
-          }
-        />
-      </ListItemButton>
+            }
+          />
+        </ListItemButton>
+
+        {/* Separate Attached Sub-Card for Storylines & Synopsis */}
+        {hasSubCardContent && (
+          <Box
+            sx={{
+              ml: `${sceneIndent}px`,
+              mb: 0.4,
+              p: "6px 8px",
+              border: "1px solid",
+              borderColor: "color-mix(in srgb, var(--text-main) 10%, transparent)",
+              borderTop: "none",
+              bgcolor: "color-mix(in srgb, var(--text-main) 3%, transparent)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 0.4,
+            }}
+          >
+            {showStorylines && line.storylines && line.storylines.length > 0 && (
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6 }}>
+                {line.storylines.map((sl) => (
+                  <Box
+                    key={sl}
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      px: 0.6,
+                      py: 0.2,
+                      borderRadius: 0,
+                      border: "1px solid",
+                      borderColor: "color-mix(in srgb, var(--text-main) 10%, transparent)",
+                      bgcolor: "action.hover",
+                      color: "text.secondary",
+                      fontSize: "9px",
+                      fontWeight: 600,
+                      letterSpacing: "0.03em",
+                      textTransform: "uppercase",
+                      fontFamily: "var(--font-ui)",
+                    }}
+                  >
+                    {sl}
+                  </Box>
+                ))}
+              </Box>
+            )}
+            {showSynopses && renderOutlineSynopses(synopses)}
+          </Box>
+        )}
+      </Box>
     );
   };
 
@@ -800,15 +901,19 @@ export const OutlineView = React.memo(() => {
   }, []);
 
   const flatNodes = useMemo(() => flattenSelectable(tree), [tree]);
+
+  // For screenplays with up to 500 outline items (99.9% of screenplays), render DOM nodes directly
+  // to give 100% accurate heights for sections, synopses, and storylines, eliminating scroll jumping & rubber-banding.
+  const useVirtualization = flatNodes.length > 500;
   const defaultItemHeight = outlineFontSize === "small" ? 28 : outlineFontSize === "large" ? 38 : 32;
-  const overscan = 6;
+  const overscan = 20;
 
-  const startIndex = Math.max(0, Math.floor(scrollTop / defaultItemHeight) - overscan);
-  const endIndex = Math.min(flatNodes.length, Math.ceil((scrollTop + containerHeight) / defaultItemHeight) + overscan);
+  const startIndex = useVirtualization ? Math.max(0, Math.floor(scrollTop / defaultItemHeight) - overscan) : 0;
+  const endIndex = useVirtualization ? Math.min(flatNodes.length, Math.ceil((scrollTop + containerHeight) / defaultItemHeight) + overscan) : flatNodes.length;
 
-  const visibleNodes = flatNodes.slice(startIndex, endIndex);
-  const paddingTop = startIndex * defaultItemHeight;
-  const paddingBottom = Math.max(0, (flatNodes.length - endIndex) * defaultItemHeight);
+  const visibleNodes = useVirtualization ? flatNodes.slice(startIndex, endIndex) : flatNodes;
+  const paddingTop = useVirtualization ? startIndex * defaultItemHeight : 0;
+  const paddingBottom = useVirtualization ? Math.max(0, (flatNodes.length - endIndex) * defaultItemHeight) : 0;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -894,8 +999,8 @@ export const OutlineView = React.memo(() => {
         </Menu>
       </Box>
 
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 1.5, gap: 1, overflow: "hidden" }}>
-        <Box sx={{ display: "flex", gap: 0, alignItems: "stretch" }}>
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <Box sx={{ p: 1.5, pb: 1, display: "flex", gap: 0, alignItems: "stretch" }}>
           <TextField
             placeholder="Search outline..."
             value={searchQuery}
@@ -1051,6 +1156,21 @@ export const OutlineView = React.memo(() => {
           overflowY: "auto",
           outline: "none",
           fontSize: fontSizeMap[outlineFontSize],
+          fontFamily: "var(--font-ui)",
+          "&::-webkit-scrollbar": {
+            width: 8,
+          },
+          "&::-webkit-scrollbar-track": {
+            bgcolor: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            bgcolor: "var(--button-color, rgba(0, 0, 0, 0.35))",
+            borderRadius: 0,
+            border: "none",
+            "&:hover": {
+              bgcolor: "primary.main",
+            },
+          },
         }}
       >
         {flatNodes.length === 0 ? (
@@ -1058,7 +1178,7 @@ export const OutlineView = React.memo(() => {
             No outline elements match your criteria.
           </Typography>
         ) : (
-          <List disablePadding sx={{ display: "flex", flexDirection: "column", pt: `${paddingTop}px`, pb: `${paddingBottom}px` }}>
+          <List disablePadding sx={{ display: "flex", flexDirection: "column", pl: 1.2, pr: 1.2, pt: `${paddingTop}px`, pb: `${paddingBottom}px` }}>
             {visibleNodes.map((node) => renderTreeNode(node, false))}
           </List>
         )}

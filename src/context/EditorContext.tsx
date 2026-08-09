@@ -90,13 +90,28 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const updateDocumentText = (newFullText: string) => {
+    if (editorView) {
+      editorView.dispatch({
+        changes: { from: 0, to: editorView.state.doc.length, insert: newFullText },
+      });
+    }
+    setRawText(newFullText);
+  };
+
   const updateLineText = (lineIndex: number, newText: string) => {
     if (lineIndex < 0 || lineIndex >= parsedDoc.lines.length) return;
-    const updatedLines = parsedDoc.lines.map((line, i) =>
-      i === lineIndex ? { ...line, text: newText } : line
-    );
-    const serialized = updatedLines.map(l => l.text).join("\n");
-    setRawText(serialized);
+    if (editorView) {
+      const line = editorView.state.doc.line(lineIndex + 1);
+      editorView.dispatch({
+        changes: { from: line.from, to: line.to, insert: newText },
+      });
+    } else {
+      const updatedLines = parsedDoc.lines.map((line, i) =>
+        i === lineIndex ? { ...line, text: newText } : line
+      );
+      setRawText(updatedLines.map(l => l.text).join("\n"));
+    }
   };
 
   const reorderScenes = (startIndex: number, endIndex: number) => {
@@ -137,38 +152,32 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     const serialized = newLines.map(l => l.text).join("\n");
-    setRawText(serialized);
+    updateDocumentText(serialized);
   };
 
   const autoAddSceneNumbers = () => {
     let sceneIndex = 1;
-    const updatedLines = parsedDoc.lines.map((line) => {
+    const updatedLineTexts = parsedDoc.lines.map((line) => {
       if (line.type === LineType.heading) {
-        const cleanedText = line.text.replace(/\s*#([^#\s]+)#\s*/g, " ").trim();
-        return {
-          ...line,
-          text: `${cleanedText} #${sceneIndex++}#`
-        };
+        const cleanedText = line.text.replace(/\s*#[^#]+#\s*/g, "").trim();
+        return `${cleanedText} #${sceneIndex++}#`;
       }
-      return line;
+      return line.text;
     });
-    const serialized = updatedLines.map(l => l.text).join("\n");
-    setRawText(serialized);
+    const serialized = updatedLineTexts.join("\n");
+    updateDocumentText(serialized);
   };
 
   const clearSceneNumbers = () => {
-    const updatedLines = parsedDoc.lines.map((line) => {
+    const updatedLineTexts = parsedDoc.lines.map((line) => {
       if (line.type === LineType.heading) {
-        const cleanedText = line.text.replace(/\s*#([^#\s]+)#\s*/g, " ").trim();
-        return {
-          ...line,
-          text: cleanedText
-        };
+        const cleanedText = line.text.replace(/\s*#[^#]+#\s*/g, "").trim();
+        return cleanedText;
       }
-      return line;
+      return line.text;
     });
-    const serialized = updatedLines.map(l => l.text).join("\n");
-    setRawText(serialized);
+    const serialized = updatedLineTexts.join("\n");
+    updateDocumentText(serialized);
   };
 
   return (

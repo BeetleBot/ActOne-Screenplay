@@ -508,9 +508,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearTimeout(handler);
   }, [rawText, paperSize, activeFileId, isTauri]);
 
+  const isActonePath = (p: string) => {
+    const lower = p.toLowerCase();
+    return lower.endsWith(".actone") || lower.endsWith(".zip") || lower.endsWith(".actone.zip");
+  };
+
   const openFilePath = async (path: string) => {
-    const isActone = path.toLowerCase().endsWith(".actone");
-    const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
+    const isActone = isActonePath(path);
+    const normalizedPath = isActone && path.toLowerCase().endsWith(".actone") ? path.replace(/\.actone$/i, ".actone") : path;
     const existing = files.find(f => f.filePath?.toLowerCase() === normalizedPath.toLowerCase());
     if (existing) {
       selectFile(existing.id);
@@ -519,15 +524,33 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     let settings = {};
     let scripts: ScriptInfo[] = [];
-    const bundleName = path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
+    const bundleName = path.split(/[/\\]/).pop()?.replace(/\.(actone|zip|actone\.zip)$/i, "") || "Untitled";
 
     try {
       if (isTauri) {
         if (isActone) {
-          const bytes = await invoke<number[]>("read_file_binary", { path });
-          const bundle = unpackActoneBundle(new Uint8Array(bytes), bundleName);
-          scripts = bundle.scripts;
-          settings = bundle.settings;
+          try {
+            const bytes = await invoke<number[]>("read_file_binary", { path });
+            const bundle = unpackActoneBundle(new Uint8Array(bytes), bundleName);
+            if (bundle && bundle.scripts && bundle.scripts.length > 0) {
+              scripts = bundle.scripts;
+              settings = bundle.settings;
+            } else {
+              throw new Error("No screenplay content found in archive");
+            }
+          } catch (err) {
+            if (path.toLowerCase().endsWith(".zip")) {
+              const content = await invoke<string>("read_file_content", { path });
+              scripts = [{
+                name: bundleName,
+                fileName: `${bundleName}.fountain`,
+                content,
+                savedContent: content,
+              }];
+            } else {
+              throw err;
+            }
+          }
         } else {
           const content = await invoke<string>("read_file_content", { path });
           scripts = [{
@@ -616,16 +639,17 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       res = await new Promise<{ path: string; content: string; settings?: Record<string, unknown> } | null>((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".actone";
+        input.accept = ".actone,.zip";
         input.onchange = async () => {
           const file = input.files?.[0];
           if (!file) {
             resolve(null);
             return;
           }
-          if (file.name.toLowerCase().endsWith(".actone")) {
+          if (isActonePath(file.name)) {
             const arrayBuffer = await file.arrayBuffer();
-            const bundle = unpackActoneBundle(new Uint8Array(arrayBuffer), file.name.replace(/\.actone$/i, ""));
+            const bundleName = file.name.replace(/\.(actone|zip|actone\.zip)$/i, "");
+            const bundle = unpackActoneBundle(new Uint8Array(arrayBuffer), bundleName);
             const scripts = bundle.scripts;
             resolve({ path: file.name, content: scripts[0]?.content || "", settings: bundle.settings });
           } else {
@@ -638,8 +662,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (res) {
-      const isActone = res.path.toLowerCase().endsWith(".actone");
-      const normalizedPath = isActone ? res.path.replace(/\.actone$/i, ".actone") : res.path;
+      const isActone = isActonePath(res.path);
+      const normalizedPath = isActone && res.path.toLowerCase().endsWith(".actone") ? res.path.replace(/\.actone$/i, ".actone") : res.path;
       if (isTauri) addToRecent(normalizedPath);
       const existing = files.find(f => f.filePath?.toLowerCase() === normalizedPath.toLowerCase());
       if (existing) {
@@ -654,7 +678,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let scripts: ScriptInfo[] = [];
       let settings = res.settings || {};
       let content = res.content;
-      const bundleName = res.path.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
+      const bundleName = res.path.split(/[/\\]/).pop()?.replace(/\.(actone|zip|actone\.zip)$/i, "") || "Untitled";
 
       if (isActone) {
         if (isTauri) {

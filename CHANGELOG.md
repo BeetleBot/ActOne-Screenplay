@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.11] - 2026-08-10
+
+### Fixed
+- 🔢 **Scene Renumbering & Clearing Fix** – Fixed "Renumber Scene Headings" and "Clear Scene Numbers" in the Command Palette by dispatching document changes directly to CodeMirror's `editorView`, resolving an issue where updates were blocked or lost.
+- 🎨 **Classic Dark Theme Selection Contrast** – Fixed low contrast bug on selected active items in Classic Dark theme where dark grey text rendered on dark grey backgrounds by forcing high-contrast text rendering.
+
+### Added / Improved
+- 🇮🇳 **Enhanced Indic Script Language Support** – Integrated font fallback chain (`--font-editor-indic`) featuring bundled fonts for Malayalam (*Baloo Chettan 2*, *Mukta Malar*), Hindi/Marathi (*Mukta*), Telugu (*Hind Guntur*), Bengali (*Hind Siliguri*), Gujarati (*Hind Vadodara*), Kannada (*Baloo Tamma 2*), Punjabi (*Baloo Paaji 2*), and Odia (*Baloo Bhaina 2*).
+- 🔤 **Global UI Font Engine** – Migrated the application design system to **Inter** across all UI elements, navigation panels, and popovers (`src/index.css`, `src/theme/muiTheme.ts`).
+- 🎨 **Outline View Overhaul** – Redesigned scene cards with soft, translucent background color fills (`color-mix`), bold 700 scene titles, readable `0.7rem` scene number badges, and separate attached sub-cards for Storylines and Synopses.
+- ✍️ **Enhanced Synopsis Styling** – Improved synopsis font size (`0.75rem` / 12px) with comfortable line-height (`1.4`) and dedicated sub-card presentation.
+- 🖱️ **Theme-Adaptable Mouse Cursor** – Integrated Bootstrap text selection mouse cursor with dynamic light/dark mode color adaptation (pitch black in light mode, pure white in dark mode).
+
 ## [0.4.10] - 2026-08-09
 
 ### Fixed

@@ -341,7 +341,7 @@ export const themes: ThemeConfig[] = [
 
 const shared: ThemeOptions = {
   typography: {
-    fontFamily: '"Noto Sans", sans-serif',
+    fontFamily: 'var(--font-ui, "Inter", sans-serif)',
     button: { textTransform: 'none', fontWeight: 500 },
   },
   shape: { borderRadius: 0 },
@@ -361,6 +361,8 @@ function hexToRgbStr(hex: string): string {
 
 function getEditorVars(t: ThemeConfig, appScale: number, fountainColorsEnabled: boolean = true) {
   const c = t.colors;
+  const cursorColor = t.isDark ? "%23FFFFFF" : "%23000000";
+  const mouseCursorSvg = `url('data:image/svg+xml;utf8,<svg width="22" height="22" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill="${cursorColor}" d="M5 2a.5.5 0 0 1 .5-.5c.862 0 1.573.287 2.06.566.174.099.321.198.44.286.119-.088.266-.187.44-.286A4.165 4.165 0 0 1 10.5 1.5a.5.5 0 0 1 0 1c-.638 0-1.177.213-1.564.434a3.49 3.49 0 0 0-.436.294V7.5H9a.5.5 0 0 1 0 1h-.5v4.272c.1.08.248.187.436.294.387.221.926.434 1.564.434a.5.5 0 0 1 0 1 4.165 4.165 0 0 1-2.06-.566A4.561 4.561 0 0 1 8 13.65a4.561 4.561 0 0 1-.44.285 4.165 4.165 0 0 1-2.06.566.5.5 0 0 1 0-1c.638 0 1.177-.213 1.564-.434.188-.107.335-.214.436-.294V8.5H7a.5.5 0 0 1 0-1h.5V3.228a3.49 3.49 0 0 0-.436-.294A3.166 3.166 0 0 0 5.5 2.5.5.5 0 0 1 5 2zm3.352 1.355zm-.704 9.29z"/></svg>') 11 11, text`;
   return {
     '--app-scale': `${appScale}%`,
     '--bg-app': c.editor,
@@ -389,6 +391,7 @@ function getEditorVars(t: ThemeConfig, appScale: number, fountainColorsEnabled: 
     '--text-editor-meta': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 45%, ${c.text})` : c.textSecondary,
     '--text-editor-section': fountainColorsEnabled ? c.accent : c.text,
     '--editor-cursor': c.text,
+    '--editor-mouse-cursor': mouseCursorSvg,
 
     '--scene-color-blue': '#2196f3',
     '--scene-color-brown': '#795548',

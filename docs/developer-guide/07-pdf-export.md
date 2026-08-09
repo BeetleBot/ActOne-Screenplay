@@ -75,20 +75,13 @@ Three tiers of fonts:
 | Courier Prime | Regular, Bold, Italic, BoldItalic | Screenplay standard |
 | Courier Prime Sans | Regular, Bold, Italic, BoldItalic | Screenplay standard (sans) |
 | Mukta Malar (×2) | Regular, Bold | Tamil |
-| Noto Sans Tamil (×2) | Regular, Bold | Tamil |
-| Mukta (×2) | Regular, Bold | Hindi/Devanagari |
-| Noto Sans Telugu (×2) | Regular, Bold | Telugu |
+| Mukta (×2) | Regular, Bold | Hindi / Devanagari |
 | Hind Guntur (×2) | Regular, Bold | Telugu |
-| Noto Sans Malayalam (×2) | Regular, Bold | Malayalam |
 | Baloo Chettan 2 (×2) | Regular, Bold | Malayalam |
-| Noto Sans Kannada (×2) | Regular, Bold | Kannada |
 | Baloo Tamma 2 (×2) | Regular, Bold | Kannada |
-| Noto Sans Bengali (×2) | Regular, Bold | Bengali |
 | Hind Siliguri (×2) | Regular, Bold | Bengali |
-| Mukta Vaani (×2) | Regular, Bold | Gujarati |
 | Hind Vadodara (×2) | Regular, Bold | Gujarati |
-| Mukta Mahee (×2) | Regular, Bold | Gurmukhi |
-| Baloo Paaji 2 (×2) | Regular, Bold | Gurmukhi |
+| Baloo Paaji 2 (×2) | Regular, Bold | Gurmukhi / Punjabi |
 | Baloo Bhaina 2 (×2) | Regular, Bold | Oriya |
 | Noto Sans Symbols 2 | Regular | Fallback symbols |
 

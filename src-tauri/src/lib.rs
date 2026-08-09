@@ -90,7 +90,7 @@ mod ollama;
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
     let file = rfd::FileDialog::new()
-        .add_filter("ActOne Projects", &["actone"])
+        .add_filter("ActOne Projects", &["actone", "zip"])
         .pick_file()?;
 
     let path_str = file.to_string_lossy().to_string();

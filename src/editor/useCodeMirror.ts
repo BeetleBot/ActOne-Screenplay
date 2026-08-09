@@ -126,8 +126,8 @@ const editorTheme = EditorView.theme({
     caretColor: "transparent",
   },
   ".cm-cursor, .cm-dropCursor": {
-    borderLeftColor: "var(--text-color, currentColor) !important",
-    borderLeftWidth: "2px !important",
+    borderLeftColor: "var(--text-main, #000000) !important",
+    borderLeftWidth: "2.5px !important",
   },
   "&.cm-focused": {
     outline: "none",

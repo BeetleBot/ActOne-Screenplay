@@ -33,14 +33,14 @@ pub fn detect_scripts(text: &str) -> Vec<String> {
 
 fn bundled_fonts_for_script(script: &str) -> Vec<String> {
     match script {
-        "tamil" => vec!["Mukta Malar", "Noto Sans Tamil"],
-        "devanagari" => vec!["Mukta", "Noto Sans Devanagari"],
-        "telugu" => vec!["Noto Sans Telugu", "Hind Guntur"],
-        "kannada" => vec!["Noto Sans Kannada", "Baloo Tamma 2"],
-        "malayalam" => vec!["Noto Sans Malayalam", "Baloo Chettan 2"],
-        "bengali" => vec!["Noto Sans Bengali", "Hind Siliguri"],
-        "gujarati" => vec!["Mukta Vaani", "Hind Vadodara"],
-        "gurmukhi" => vec!["Mukta Mahee", "Baloo Paaji 2"],
+        "tamil" => vec!["Mukta Malar"],
+        "devanagari" => vec!["Mukta"],
+        "telugu" => vec!["Hind Guntur"],
+        "kannada" => vec!["Baloo Tamma 2"],
+        "malayalam" => vec!["Baloo Chettan 2"],
+        "bengali" => vec!["Hind Siliguri"],
+        "gujarati" => vec!["Hind Vadodara"],
+        "gurmukhi" => vec!["Baloo Paaji 2"],
         "oriya" => vec!["Baloo Bhaina 2"],
         _ => vec![],
     }.into_iter().map(String::from).collect()
