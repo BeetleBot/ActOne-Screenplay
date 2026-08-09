@@ -140,7 +140,7 @@ export const HeaderBar = React.memo(() => {
                   display: 'flex', alignItems: 'center', gap: 0.8,
                    px: 1.5, height: 40, borderRadius: 0,
                   cursor: 'pointer', flexShrink: 0, userSelect: 'none',
-                  fontSize: 11.5, whiteSpace: 'nowrap',
+                  fontSize: "0.8rem", fontFamily: 'var(--font-ui, "Inter", sans-serif)', whiteSpace: 'nowrap',
                   bgcolor: (theme) => isActive ? theme.palette.background.paper : 'transparent',
                   color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
                   borderRight: 1,
@@ -163,7 +163,7 @@ export const HeaderBar = React.memo(() => {
                   },
                 }}
               >
-                <span className="tab-name" style={{ fontWeight: isActive ? 600 : 400 }}>{display}</span>
+                <span className="tab-name" style={{ fontFamily: 'var(--font-ui, "Inter", sans-serif)', fontWeight: isActive ? 700 : 500, letterSpacing: "0.01em" }}>{display}</span>
                 {file.isDirty && (
                   <Box 
                     sx={{ 

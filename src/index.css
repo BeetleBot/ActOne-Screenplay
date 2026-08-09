@@ -53,6 +53,28 @@
   --cat-sceneType: #B0BEC5;
 }
 
+html,
+body,
+#root,
+button,
+input,
+select,
+textarea,
+.MuiTypography-root,
+.MuiButtonBase-root,
+.MuiTab-root,
+.MuiInputBase-root,
+.MuiPopover-root,
+.MuiDialog-root,
+.MuiTooltip-popper,
+.MuiMenuItem-root,
+.MuiMenu-paper,
+.context-menu,
+.header-tab,
+.tab-name {
+  font-family: var(--font-ui, "Inter", sans-serif) !important;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
