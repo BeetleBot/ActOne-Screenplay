@@ -344,6 +344,15 @@ const shared: ThemeOptions = {
     fontFamily: 'var(--font-ui, "Inter", sans-serif)',
     button: { textTransform: 'none', fontWeight: 500 },
   },
+  components: {
+    MuiTooltip: {
+      defaultProps: {
+        enterDelay: 1000,
+        enterNextDelay: 1000,
+        arrow: true,
+      },
+    },
+  },
   shape: { borderRadius: 0 },
   transitions: {
     duration: { shortest: 120, shorter: 200, short: 300 },
