@@ -6,6 +6,7 @@ import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { CloseIcon, AddIcon } from "../Icons";
 import { logger } from "../../utils/logger";
 import { ContextMenu, type ContextMenuItem } from "../ContextMenu";
@@ -115,92 +116,109 @@ export const HeaderBar = React.memo(() => {
             const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled";
             const isActive = file.id === activeFileId;
             return (
-              <Box
+              <Tooltip
                 key={file.id}
-                className={`header-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
-                onClick={() => selectFile(file.id)}
-                onContextMenu={(e) => handleContextMenu(e, file.id)}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  if (e.button === 1) { e.preventDefault(); closeFile(file.id); }
-                }}
-                onMouseUp={(e) => {
-                  if (e.button === 1) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }
-                }}
-                onAuxClick={(e) => {
-                  if (e.button === 1) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }
-                }}
-                sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.8,
-                  px: 1.5, height: 40, width: 175, minWidth: 175, maxWidth: 175, borderRadius: 0,
-                  cursor: 'pointer', flexShrink: 0, userSelect: 'none',
-                  fontSize: "0.8rem", fontFamily: 'var(--font-ui, "Inter", sans-serif)', whiteSpace: 'nowrap',
-                  bgcolor: (theme) => isActive ? theme.palette.background.paper : 'transparent',
-                  color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
-                  borderRight: 1,
-                  borderColor: 'divider',
-                  '&:hover': {
-                    bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.text.primary, 0.04),
-                    color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary
-                  },
-                  transition: 'all var(--duration-fast) ease',
-                  position: 'relative',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: isActive ? 2 : 0,
-                    bgcolor: 'primary.main',
-                    transition: 'height var(--duration-fast) ease',
-                  },
-                }}
+                title={
+                  <Box sx={{ p: 0.2 }}>
+                    <Typography variant="caption" sx={{ display: "block", fontWeight: 700, fontSize: 11.5, color: "inherit" }}>
+                      {display}
+                    </Typography>
+                    {file.filePath && (
+                      <Typography variant="caption" sx={{ display: "block", opacity: 0.8, fontSize: 10, wordBreak: "break-all", mt: 0.2 }}>
+                        {file.filePath}
+                      </Typography>
+                    )}
+                  </Box>
+                }
+                arrow
+                placement="bottom"
               >
-                <span className="tab-name" style={{ fontFamily: 'var(--font-ui, "Inter", sans-serif)', fontWeight: isActive ? 700 : 500, letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{display}</span>
-                {file.isDirty && (
-                  <Box 
-                    sx={{ 
-                      width: 5, height: 5, borderRadius: '50%', 
-                      bgcolor: (theme) => isActive ? theme.palette.primary.main : theme.palette.text.secondary, 
-                      flexShrink: 0,
-                      boxShadow: (theme) => isActive ? `0 0 4px ${alpha(theme.palette.primary.main, 0.4)}` : 'none'
-                    }} 
-                  />
-                )}
-                <IconButton
-                  size="small"
-                  className="tab-close"
+                <Box
+                  className={`header-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
+                  onClick={() => selectFile(file.id)}
+                  onContextMenu={(e) => handleContextMenu(e, file.id)}
                   onMouseDown={(e) => {
                     e.stopPropagation();
-                    e.preventDefault();
-                    closeFile(file.id);
+                    if (e.button === 1) { e.preventDefault(); closeFile(file.id); }
                   }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
+                  onMouseUp={(e) => {
+                    if (e.button === 1) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
                   }}
-                  sx={{ 
-                    p: '1px', 
-                    opacity: 0.6, 
-                    color: 'inherit',
-                    '&:hover': { 
-                      opacity: 1,
-                      bgcolor: 'action.hover',
-                      color: 'error.main'
-                    }, 
-                    ml: 0.5 
+                  onAuxClick={(e) => {
+                    if (e.button === 1) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 0.8,
+                    px: 1.5, height: 40, width: 175, minWidth: 175, maxWidth: 175, borderRadius: 0,
+                    cursor: 'pointer', flexShrink: 0, userSelect: 'none',
+                    fontSize: "0.8rem", fontFamily: 'var(--font-ui, "Inter", sans-serif)', whiteSpace: 'nowrap',
+                    bgcolor: (theme) => isActive ? theme.palette.background.paper : 'transparent',
+                    color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
+                    borderRight: 1,
+                    borderColor: 'divider',
+                    '&:hover': {
+                      bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.text.primary, 0.04),
+                      color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary
+                    },
+                    transition: 'all var(--duration-fast) ease',
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: isActive ? 2 : 0,
+                      bgcolor: 'primary.main',
+                      transition: 'height var(--duration-fast) ease',
+                    },
                   }}
                 >
-                  <CloseIcon sx={{ fontSize: 14 }} />
-                </IconButton>
-              </Box>
+                  <span className="tab-name" style={{ fontFamily: 'var(--font-ui, "Inter", sans-serif)', fontWeight: isActive ? 700 : 500, letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{display}</span>
+                  {file.isDirty && (
+                    <Box 
+                      sx={{ 
+                        width: 5, height: 5, borderRadius: '50%', 
+                        bgcolor: (theme) => isActive ? theme.palette.primary.main : theme.palette.text.secondary, 
+                        flexShrink: 0,
+                        boxShadow: (theme) => isActive ? `0 0 4px ${alpha(theme.palette.primary.main, 0.4)}` : 'none'
+                      }} 
+                    />
+                  )}
+                  <IconButton
+                    size="small"
+                    className="tab-close"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      closeFile(file.id);
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    sx={{ 
+                      p: '1px', 
+                      opacity: 0.6, 
+                      color: 'inherit',
+                      '&:hover': { 
+                        opacity: 1,
+                        bgcolor: 'action.hover',
+                        color: 'error.main'
+                      }, 
+                      ml: 0.5 
+                    }}
+                  >
+                    <CloseIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Box>
+              </Tooltip>
             );
           })}
           <Tooltip title="New File">
