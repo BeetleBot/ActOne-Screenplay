@@ -8,7 +8,9 @@
 
 ### Added / Improved
 - 🇮🇳 **Enhanced Indic Script Language Support** – Integrated font fallback chain (`--font-editor-indic`) featuring bundled fonts for Malayalam (*Baloo Chettan 2*, *Mukta Malar*), Hindi/Marathi (*Mukta*), Telugu (*Hind Guntur*), Bengali (*Hind Siliguri*), Gujarati (*Hind Vadodara*), Kannada (*Baloo Tamma 2*), Punjabi (*Baloo Paaji 2*), and Odia (*Baloo Bhaina 2*).
-- 🔤 **Global UI Font Engine** – Migrated the application design system to **Inter** across all UI elements, navigation panels, and popovers (`src/index.css`, `src/theme/muiTheme.ts`).
+- 🔤 **Global UI Font Engine** – Migrated the application design system to **Inter** across all UI elements, navigation panels, header tabs, and popovers (`src/index.css`, `src/theme/muiTheme.ts`).
+- 🏷️ **Uniform Fixed-Size Script Tabs** – Standardized open file tabs in the header bar to a clean 175px fixed width with text-overflow ellipsis for long titles (`HeaderBar.tsx`).
+- 💡 **Rich Script Tooltips & 1-Second Hover Delay** – Added rich script title and file path tooltips to tabs and configured a global 1-second (1000ms) hover delay across all tooltips, including Activity Bar buttons (`muiTheme.ts`).
 - 🎨 **Outline View Overhaul** – Redesigned scene cards with soft, translucent background color fills (`color-mix`), bold 700 scene titles, readable `0.7rem` scene number badges, and separate attached sub-cards for Storylines and Synopses.
 - ✍️ **Enhanced Synopsis Styling** – Improved synopsis font size (`0.75rem` / 12px) with comfortable line-height (`1.4`) and dedicated sub-card presentation.
 - 🖱️ **Theme-Adaptable Mouse Cursor** – Integrated Bootstrap text selection mouse cursor with dynamic light/dark mode color adaptation (pitch black in light mode, pure white in dark mode).
