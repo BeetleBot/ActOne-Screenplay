@@ -1,6 +1,6 @@
 app-id: ink.iyal.actone
 runtime: org.gnome.Platform
-runtime-version: '47'
+runtime-version: '48'
 sdk: org.gnome.Sdk
 command: actone
 
@@ -17,11 +17,21 @@ finish-args:
   - --talk-name=org.freedesktop.portal.FileChooser
 
 modules:
+  - name: bzip2
+    buildsystem: simple
+    build-commands:
+      - make -f Makefile-libbz2_so
+      - install -Dm755 libbz2.so.1.0.8 /app/lib/libbz2.so.1.0.8
+      - ln -sf libbz2.so.1.0.8 /app/lib/libbz2.so.1.0
+      - ln -sf libbz2.so.1.0.8 /app/lib/libbz2.so.1
+    sources:
+      - type: archive
+        url: https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
+        sha256: ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269
+
   - name: actone
     buildsystem: simple
     build-commands:
-      - install -d /app/lib
-      - ln -sf /usr/lib/x86_64-linux-gnu/libbz2.so.1 /app/lib/libbz2.so.1.0
       - install -Dm755 actone /app/bin/actone
       - install -Dm644 ink.iyal.actone.desktop /app/share/applications/ink.iyal.actone.desktop
       - install -Dm644 ink.iyal.actone.metainfo.xml /app/share/metainfo/ink.iyal.actone.metainfo.xml
@@ -36,3 +46,4 @@ modules:
       - type: file
         path: ../src-tauri/icons/128x128.png
         dest-filename: icon.png
+
