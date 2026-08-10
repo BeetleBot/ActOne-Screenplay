@@ -3,7 +3,7 @@ name = "actone"
 version = "0.4.12"
 description = "A Tauri App"
 authors = ["iyal.ink"]
-license = "Proprietary"
+license = "SEE LICENSE IN LICENSE"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

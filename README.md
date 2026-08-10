@@ -19,10 +19,10 @@
   </p>
 
   <p align="center">
-    The distraction free, open source Fountain screenplay editor for Windows and Linux.<br>
+    The distraction-free Fountain screenplay editor for Windows and Linux.<br>
     The perfect alternative to Final Draft, Highland, and Beat.
     <br><br>
-    <i>GPLv3 • Built by <a href="https://iyal.ink">iyal.ink</a></i>
+    <i>Built by <a href="https://iyal.ink">iyal.ink</a></i>
   </p>
 
 </div>
@@ -31,7 +31,7 @@
 
 ### Write Your Masterpiece. Own Your Tools.
 
-ActOne Screenplay is the ultimate **free and open source screenwriting software** built natively for PC and Linux users. If you've ever wished for the elegance of **Highland** or the simplicity of **Beat** but on a Windows or Linux machine, ActOne is your answer. 
+ActOne Screenplay is the ultimate **screenwriting software** built natively for PC and Linux users. If you've ever wished for the elegance of **Highland** or the simplicity of **Beat** but on a Windows or Linux machine, ActOne is your answer. 
 
 Designed for both professional screenwriters and indie filmmakers, ActOne provides a **distraction free** writing environment that uses plain-text [Fountain syntax](https://fountain.io/). Say goodbye to expensive subscriptions, locked-down proprietary file formats, and bloated interfaces. Whether you are drafting a pilot, a feature film, or a short, ActOne is the premier **Windows screenplay** and **Linux writer** app that gets out of your way and lets you focus on the story.
 
@@ -166,12 +166,10 @@ Pull requests are always welcome! Whether you're a rust developer, a typescript 
 
 ## 📄 License
 
-ActOne Screenplay is open source screenwriting software released under the **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
+ActOne Screenplay is released under the terms in the **[LICENSE](LICENSE)** file.
 
 ```
-Copyright (C) 2026 Iyal Inc.
-ActOne Screenplay is free software: you can redistribute it and/or modify it under the terms of
-the GNU General Public License as published by the Free Software Foundation.
+Copyright (C) 2026 Iyal Inc. All Rights Reserved.
 ```
 
 <div align="center">
