@@ -1,0 +1,227 @@
+name: Release & Build All Artifacts
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.4.12)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. BUILD LINUX TARBALL (.tar.gz)
+  # ------------------------------------------------------------------
+  build-linux-tarball:
+    name: Build Linux Tarball (.tar.gz)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            pkg-config
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        run: npm run tauri build
+
+      - name: Package Linux tarball
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          
+          TARBALL_DIR="target/tarball"
+          mkdir -p "$TARBALL_DIR/usr/share/actone/icon_app"
+          mkdir -p "$TARBALL_DIR/usr/share/actone/icon_mime"
+          mkdir -p "$TARBALL_DIR/usr/share/applications"
+          mkdir -p "$TARBALL_DIR/usr/share/mime/packages"
+
+          cp src-tauri/target/release/actone "$TARBALL_DIR/usr/share/actone/"
+          cp assets/linux/actone.desktop "$TARBALL_DIR/usr/share/applications/"
+          cp assets/linux/actone.xml "$TARBALL_DIR/usr/share/mime/packages/"
+
+          for size in 16 32 64 128 256 512; do
+              icon="src-tauri/icons/${size}x${size}.png"
+              if [ -f "$icon" ]; then
+                  cp "$icon" "$TARBALL_DIR/usr/share/actone/icon_app/actone_icon_${size}x${size}.png"
+              fi
+          done
+
+          for size in 64 256; do
+              for mime in text-vnd.fountain application-vnd.actone.bundle application-vnd.actone.theme; do
+                  icon="src-tauri/icons/${mime}_${size}x${size}.png"
+                  if [ -f "$icon" ]; then
+                      cp "$icon" "$TARBALL_DIR/usr/share/actone/icon_mime/"
+                  fi
+              done
+          done
+
+          cp assets/linux/install.sh "$TARBALL_DIR/"
+          cp assets/linux/uninstall.sh "$TARBALL_DIR/"
+          cp assets/linux/readme.txt "$TARBALL_DIR/"
+          chmod +x "$TARBALL_DIR/install.sh" "$TARBALL_DIR/uninstall.sh"
+
+          mkdir -p Release/artifacts
+          TARBALL_FILE="ActOne-Linux-x64-${VERSION}.tar.gz"
+          cd "$TARBALL_DIR"
+          tar -czf "../../Release/artifacts/${TARBALL_FILE}" .
+
+      - name: Upload Linux Tarball Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: actone-linux-tarball
+          path: Release/artifacts/*.tar.gz
+
+  # ------------------------------------------------------------------
+  # 2. BUILD FLATPAK BUNDLE (.flatpak)
+  # ------------------------------------------------------------------
+  build-flatpak:
+    name: Build Flatpak Bundle (.flatpak)
+    runs-on: ubuntu-22.04
+    needs: build-linux-tarball
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Linux Tarball Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: actone-linux-tarball
+          path: Release/artifacts
+
+      - name: Install Flatpak & Flatpak Builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.gnome.Platform//47 org.gnome.Sdk//47
+
+      - name: Prepare Flatpak Build Directory & Manifest
+        run: |
+          mkdir -p flatpak-build
+          cp flatpak/ink.iyal.actone.desktop flatpak-build/
+          cp flatpak/ink.iyal.actone.metainfo.xml flatpak-build/
+          
+          # Extract compiled actone binary from tarball
+          tar -xzf Release/artifacts/*.tar.gz -C flatpak-build/
+
+      - name: Build Flatpak Bundle
+        run: |
+          cd flatpak
+          flatpak-builder --force-clean --repo=repo build-dir ink.iyal.actone.yml
+          flatpak build-bundle repo ActOne-x86_64.flatpak ink.iyal.actone
+
+      - name: Upload Flatpak Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: actone-flatpak-bundle
+          path: flatpak/ActOne-x86_64.flatpak
+
+  # ------------------------------------------------------------------
+  # 3. BUILD WINDOWS MSIX & PORTABLE (.msix / .exe)
+  # ------------------------------------------------------------------
+  build-windows:
+    name: Build Windows MSIX & Portable (.msix / .exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Windows Packages via PowerShell script
+        shell: powershell
+        run: |
+          $VERSION = "${{ github.event.inputs.version }}"
+          if (-not $VERSION) {
+            $pkg = Get-Content package.json | ConvertFrom-Json
+            $VERSION = $pkg.version
+          }
+          .\Release\windows\build-msix.ps1 -SkipSigning -Version $VERSION
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: actone-windows-packages
+          path: Release/artifacts/*
+
+  # ------------------------------------------------------------------
+  # 4. PUBLISH GITHUB RELEASE
+  # ------------------------------------------------------------------
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-22.04
+    needs: [build-linux-tarball, build-flatpak, build-windows]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Consolidate Artifacts
+        run: |
+          mkdir -p final-artifacts
+          find release-artifacts -type f -exec cp {} final-artifacts/ \;
+          ls -la final-artifacts/
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          TAG_NAME="v${VERSION}"
+          
+          gh release create "$TAG_NAME" \
+            --title "ActOne v${VERSION}" \
+            --notes "ActOne v${VERSION} Release. Contains Linux tarball installer, Flatpak bundle, Windows MSIX, and Windows Portable Executable." \
+            final-artifacts/* || gh release upload "$TAG_NAME" final-artifacts/* --clobber
