@@ -9,7 +9,7 @@
       <img src="https://img.shields.io/badge/Official%20Website-iyal.ink%2Factone-10B981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website" />
     </a>
     &nbsp;
-    <a href="https://github.com/iyal-ink/ActOne-Screenplay/releases">
+    <a href="https://github.com/BeetleBot/ActOne-Screenplay/releases">
       <img src="https://img.shields.io/badge/Download%20Linux-v0.4.12-10B981?style=for-the-badge&logo=linux&logoColor=white" alt="Download Linux" />
     </a>
     &nbsp;
@@ -117,7 +117,7 @@
 ## ⚡ Quick Start & Installation
 
 ### 🐧 Linux (Arch / Ubuntu / Fedora / Debian)
-Download the latest Linux installer archive from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or **[Releases](https://github.com/iyal-ink/ActOne-Screenplay/releases)**:
+Download the latest Linux installer archive from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or **[Releases](https://github.com/BeetleBot/ActOne-Screenplay/releases)**:
 
 ```bash
 tar -xzf ActOne-Linux-x64-0.4.12.tar.gz
@@ -145,7 +145,7 @@ Get ActOne directly from the Microsoft Store:
 ### Build Steps
 ```bash
 # 1. Clone the repository
-git clone https://github.com/iyal-ink/ActOne-Screenplay.git
+git clone https://github.com/BeetleBot/ActOne-Screenplay.git
 cd ActOne-Screenplay
 
 # 2. Install frontend dependencies
