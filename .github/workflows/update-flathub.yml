@@ -1,0 +1,47 @@
+name: Update Flathub Manifest
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version (e.g. 0.4.13)'
+        required: true
+        type: string
+
+jobs:
+  update-flathub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Flathub Manifest Repo
+        uses: actions/checkout@v4
+        with:
+          repository: 'flathub/ink.iyal.actone'
+          token: ${{ secrets.FLATHUB_PAT }}
+
+      - name: Download release tarball and compute SHA256
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          URL="https://downloads.iyal.ink/ActOne-Linux-x64-${VERSION}.tar.gz"
+          
+          echo "Downloading $URL..."
+          curl -sL "$URL" -o actone.tar.gz
+          
+          SHA256=$(sha256sum actone.tar.gz | awk '{print $1}')
+          DATE=$(date +%Y-%m-%d)
+          
+          echo "SHA256: $SHA256"
+          
+          # Update YML manifest
+          sed -i "s|url: https://downloads.iyal.ink/ActOne-Linux-x64-.*|url: $URL|g" ink.iyal.actone.yml
+          sed -i "s|sha256: .*|sha256: $SHA256|g" ink.iyal.actone.yml
+          
+          # Update Metainfo XML release tag
+          sed -i "s|<release version=\".*\" date=\".*\"|<release version=\"$VERSION\" date=\"$DATE\"|g" ink.iyal.actone.metainfo.xml
+
+      - name: Commit and Push to Flathub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ink.iyal.actone.yml ink.iyal.actone.metainfo.xml
+          git commit -m "Update to v${{ github.event.inputs.version }}"
+          git push origin main
