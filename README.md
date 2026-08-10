@@ -9,16 +9,12 @@
       <img src="https://img.shields.io/badge/Website-iyal.ink%2Factone-10B981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website" />
     </a>
     &nbsp;
-    <a href="https://iyal.ink/actone/#docs" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/Documentation-Read%20Docs-8B5CF6?style=for-the-badge&logo=readme&logoColor=white" alt="Documentation" />
+    <a href="https://iyal.ink/actone/docs/" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/Docs-Documentation-8B5CF6?style=for-the-badge&logo=readthedocs&logoColor=white" alt="Documentation" />
     </a>
     &nbsp;
-    <a href="https://github.com/BeetleBot/ActOne-Screenplay/releases" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/Download-Linux-10B981?style=for-the-badge&logo=linux&logoColor=white" alt="Download Linux" />
-    </a>
-    &nbsp;
-    <a href="https://apps.microsoft.com/detail/9PJMKR0937KK" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/Microsoft%20Store-Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Microsoft Store" />
+    <a href="https://iyal.ink/actone/downloads/" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/Download-App-10B981?style=for-the-badge" alt="Download ActOne" />
     </a>
   </p>
 
