@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.12] - 2026-08-10
+
+### Fixed
+- 🪟 **Windows App Shutdown Crash Fix** – Fixed an intermittent Windows application crash (`tao` event loop runner panic: `cannot move state from Destroyed`) when closing the app by intercepting exit signals cleanly.
+
+### Added / Improved
+- 🛑 **Graceful App Shutdown Sequence** – Implemented a clean process teardown sequence that automatically aborts active background streaming/AI requests (`ollama::cancel_all_sessions`), flushes pending panic/error logs to disk, and safely releases OS system resources before process exit.
+
 ## [0.4.11] - 2026-08-10
 
 ### Fixed
