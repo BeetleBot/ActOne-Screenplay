@@ -7,8 +7,10 @@
   <summary>Modern screenplay and script writing application</summary>
   <description>
     <p>
-      ActOne is a powerful screenplay and script editor supporting Fountain markup,
-      custom themes, index cards, script outline navigation, and PDF export.
+      ActOne Screenplay is the native plain-text Fountain screenplay editor for Windows and Linux. Featuring live syntax formatting, outline tree navigation, X-Ray analytics, automatic revision snapshots, and local Muse AI assistant.
+    </p>
+    <p>
+      ActOne supports standard Fountain markup, index cards, customizable visual themes, ambient focus soundscapes, and production-ready PDF &amp; FDX exports.
     </p>
   </description>
   <launchable type="desktop-id">ink.iyal.actone.desktop</launchable>
