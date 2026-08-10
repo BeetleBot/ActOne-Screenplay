@@ -90,6 +90,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           VERSION="${{ github.event.inputs.version }}"
           if [ -z "$VERSION" ]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
