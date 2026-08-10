@@ -1,0 +1,64 @@
+name: Test Option 1 (Disable AppStream Check)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.4.12)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-flatpak-opt1:
+    name: Test Option 1 - Disable AppStream Check
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            pkg-config \
+            flatpak flatpak-builder
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Tauri binary
+        run: npm run tauri build
+
+      - name: Setup Flatpak Runtime & Build Bundle
+        run: |
+          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.gnome.Platform//50 org.gnome.Sdk//50
+          
+          cd flatpak
+          flatpak-builder --force-clean --disable-appstream-check --repo=repo build-dir ink.iyal.actone.yml
+          flatpak build-bundle repo ActOne-x86_64-opt1-disable-check.flatpak ink.iyal.actone
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ActOne-x86_64-opt1-disable-check.flatpak
+          path: flatpak/ActOne-x86_64-opt1-disable-check.flatpak
