@@ -1,11 +1,10 @@
 app-id: ink.iyal.actone
 runtime: org.gnome.Platform
-runtime-version: '50'
+runtime-version: '48'
 sdk: org.gnome.Sdk
 command: actone
 
 finish-args:
-  - --socket=x11
   - --socket=wayland
   - --socket=fallback-x11
   - --socket=pulseaudio

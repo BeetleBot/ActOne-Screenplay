@@ -15,8 +15,8 @@ permissions:
   contents: write
 
 jobs:
-  build-flatpak:
-    name: Build Flatpak Bundle (.flatpak)
+  build-binary:
+    name: Build Tauri Binary
     runs-on: ubuntu-22.04
 
     steps:
@@ -42,9 +42,7 @@ jobs:
             librsvg2-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
-            pkg-config \
-            flatpak flatpak-builder appstream
-
+            pkg-config
 
       - name: Install npm dependencies
         run: npm ci
@@ -52,16 +50,43 @@ jobs:
       - name: Build Tauri binary
         run: npm run tauri build
 
-      - name: Setup Flatpak Runtime & Build Bundle
-        run: |
-          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          sudo flatpak install -y flathub org.gnome.Platform//50 org.gnome.Sdk//50
-          
-          cd flatpak
-          flatpak-builder --force-clean --repo=repo build-dir ink.iyal.actone.yml
-          flatpak build-bundle repo ActOne-x86_64.flatpak ink.iyal.actone
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: actone-binary
+          path: src-tauri/target/release/actone
+          retention-days: 1
 
-      - name: Upload Flatpak Artifact to GitHub Release
+  package-flatpak:
+    name: Package Flatpak Bundle (.flatpak)
+    needs: build-binary
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
+      options: --privileged
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Tauri binary
+        uses: actions/download-artifact@v4
+        with:
+          name: actone-binary
+          path: src-tauri/target/release/
+
+      - name: Make binary executable
+        run: chmod +x src-tauri/target/release/actone
+
+      - name: Build Flatpak bundle
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: ActOne-x86_64.flatpak
+          manifest-path: flatpak/ink.iyal.actone.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          upload-artifact: false
+
+      - name: Upload Flatpak to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -70,7 +95,8 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/v}"
           fi
           TAG_NAME="v${VERSION}"
-          
-          gh release create "$TAG_NAME" flatpak/ActOne-x86_64.flatpak \
+
+          gh release create "$TAG_NAME" ActOne-x86_64.flatpak \
             --title "ActOne v${VERSION}" \
-            --notes "ActOne v${VERSION} Release assets." || gh release upload "$TAG_NAME" flatpak/ActOne-x86_64.flatpak --clobber
+            --notes "ActOne v${VERSION} Release assets." || \
+          gh release upload "$TAG_NAME" ActOne-x86_64.flatpak --clobber
