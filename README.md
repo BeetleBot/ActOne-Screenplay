@@ -140,9 +140,18 @@ Get ActOne directly from the Microsoft Store:
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18+)
 - [Rust](https://www.rust-lang.org/) & Cargo (for Tauri backend)
-- Linux build dependencies (`libgtk-3-dev`, `webkit2gtk-4.1-dev`, `libssl-dev`)
+
+#### Linux System Dependencies
+| Dependency Group | Libraries / Packages | Ubuntu/Debian | Fedora | Arch Linux |
+| :--- | :--- | :--- | :--- | :--- |
+| **GUI & Display** | GTK 3, WebKit2GTK 4.1 | `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libjavascriptcoregtk-4.1-dev` | `gtk3-devel`, `webkit2gtk4.1-devel` | `gtk3`, `webkit2gtk-4.1` |
+| **System Tray** | Ayatana AppIndicator | `libayatana-appindicator3-dev` | `libappindicator-gtk3-devel` | `libayatana-appindicator` |
+| **Graphics & Icons** | Cairo, Pango, RSVG | `librsvg2-dev` | `librsvg2-devel` | `librsvg` |
+| **Network & Crypto** | LibSoup 3, OpenSSL, Bzip2 | `libsoup-3.0-dev`, `libssl-dev`, `libbz2-dev` | `libsoup3-devel`, `openssl-devel`, `bzip2-devel` | `libsoup3`, `openssl`, `bzip2` |
+| **Audio & Media** | GStreamer / Pulseaudio | `libgstreamer1.0-dev`, `libpulse-dev` | `gstreamer1-devel`, `pulseaudio-libs-devel` | `gstreamer`, `pulseaudio` |
 
 ### Build Steps
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/BeetleBot/ActOne-Screenplay.git

@@ -3,8 +3,12 @@
 ## Prerequisites
 
 - **Node.js** >= 18
-- **Rust** >= 1.80 (edition 2024)
-- **System dependencies** for Tauri v2 (see [Tauri docs](https://v2.tauri.app/start/prerequisites/))
+- **Rust** >= 1.80
+- **Linux System Dependencies**:
+  - **Ubuntu/Debian**: `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `libsoup-3.0-dev`, `libjavascriptcoregtk-4.1-dev`, `libssl-dev`, `libbz2-dev`
+  - **Fedora**: `gtk3-devel`, `webkit2gtk4.1-devel`, `libappindicator-gtk3-devel`, `librsvg2-devel`, `libsoup3-devel`, `openssl-devel`, `bzip2-devel`
+  - **Arch Linux**: `gtk3`, `webkit2gtk-4.1`, `libayatana-appindicator`, `librsvg`, `libsoup3`, `openssl`, `bzip2`
+
 
 ## Setup
 
