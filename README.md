@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://iyal.ink/assets/actone-icon.png" alt="ActOne Logo" width="140">
+  <img src="https://iyal.ink/assets/ActOne_apptile.png" alt="ActOne Logo" width="140">
 
   # ActOne Screenplay Studio
 
@@ -9,7 +9,7 @@
       <img src="https://img.shields.io/badge/Official%20Website-iyal.ink%2Factone-10B981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website" />
     </a>
     &nbsp;
-    <a href="https://github.com/iyal-ink/ActOneCode/releases">
+    <a href="https://github.com/iyal-ink/ActOne-Screenplay/releases">
       <img src="https://img.shields.io/badge/Download%20Linux-v0.4.12-10B981?style=for-the-badge&logo=linux&logoColor=white" alt="Download Linux" />
     </a>
     &nbsp;
@@ -23,9 +23,9 @@
   </p>
 
   <p align="center">
-    <b>A modern, feature-rich desktop screenplay studio with index cards, custom themes, ambient focus audio, and Fountain markup support.</b>
+    <b>The native Fountain screenplay editor for Windows and Linux.</b>
     <br>
-    <i>Built with React, CodeMirror & Tauri • Licensed under GPLv3 • Engineered by <a href="https://iyal.ink">iyal.ink</a></i>
+    <i>Built with React, CodeMirror 6 & Tauri • Licensed under GPLv3 • Engineered by <a href="https://iyal.ink">iyal.ink</a></i>
   </p>
 
 </div>
@@ -34,17 +34,90 @@
 
 ## 🌟 Overview
 
-**ActOne** is a desktop screenplay editor supporting Fountain markup, index cards, scene outline navigation, custom visual themes, and ambient audio playback.
+**ActOne Screenplay** is the native plain-text Fountain screenplay editor for Windows and Linux. Featuring live syntax formatting, outline tree navigation, X-Ray analytics, automatic revision snapshots, and local Muse AI assistant—all without leaving your desktop.
 
 > ⌨️ **Prefer a Terminal Interface?**  
 > Check out **[FountTUI](https://fount.iyal.ink)**—our distraction-free terminal Fountain screenplay editor built in Rust & Ratatui!
 
 ---
 
+## ✨ Features at a Glance
+
+### 01. Native Fountain Screenplay Editing
+- **Live Syntax Formatting:** Built-in CodeMirror 6 engine with real-time Fountain syntax coloring and clean manuscript rendering.
+- **Smart Formatting Tools:** Automatic line-spacing, Tab-to-cycle Fountain prefixes (`@`, `.`, `>`), and auto-closing parentheticals.
+- **Character Autocomplete:** Real-time ghost text suggestions for character names, locations, and parentheticals.
+
+<p align="center">
+  <img src="https://iyal.ink/assets/website%20images/A1-Editor.png" width="850" alt="Native Fountain Screenplay Editor">
+</p>
+
+---
+
+### 02. Outline Tree Navigator
+- **Hierarchical View:** Collapsible tree structure mapping sections (`#`), scene headings, and synopses (`=`) instantly.
+- **Scene Highlights & Storylines:** Visual color markers and plot arc badges attached to scene headers in outline.
+
+<p align="center">
+  <img src="https://iyal.ink/assets/website%20images/A1-Navigator.png" width="850" alt="Outline Tree Navigator">
+</p>
+
+---
+
+### 03. Multi-Script Projects (`.actone`)
+- **Drafts & Assets Workspace:** Package multiple plain `.fountain` screenplay files, local Notepad sheets, checklists, and session progress data into a single, organized project folder.
+- **Open ZIP Standards:** ActOne Screenplay bundles save as standard ZIP archives to guarantee complete user data ownership.
+
+<p align="center">
+  <img src="https://iyal.ink/assets/website%20images/A1-Multi-Scripts.png" width="850" alt="Multi-Script Projects Workspace">
+</p>
+
+---
+
+### 04. Automatic Version Snapshots
+- **Interval Backups:** Auto-interval, manual, and save-triggered local snapshots keep track of every paragraph revision history.
+- **One-Click Restores:** Compare differences and rollback to past snapshots instantly without relying on cloud servers.
+
+<p align="center">
+  <img src="https://iyal.ink/assets/website%20images/A1snapshot.png" width="850" alt="Automatic Version Snapshots">
+</p>
+
+---
+
+### 05. X-Ray Screenplay Analytics
+- **Visual Pacing & Ratios:** Charts displaying Dialogue-to-Action ratios, day/night scene distributions, and pacing charts.
+- **Character Co-Occurrence:** Interactive connection graphs mapping scene occurrences between screenplay characters.
+
+<p align="center">
+  <img src="https://iyal.ink/assets/website%20images/A1-Xray.png" width="850" alt="X-Ray Screenplay Analytics">
+</p>
+
+---
+
+### 06. Muse AI Writing Assistant
+- **Local & Cloud Models:** Connect via local Ollama instances for 100% private models or secure cloud API keys.
+- **Command Integrations:** Use `@write-scene`, `@lookup`, and `@synonyms` directly in context-aware screenplay chat threads.
+
+<p align="center">
+  <img src="https://iyal.ink/assets/website%20images/A1-Muse.png" width="850" alt="Muse AI Writing Assistant">
+</p>
+
+---
+
+### 07. High-Performance Rust PDF & FDX Export
+- **Rust Rendering Engine:** Pixel-perfect formatting with cosmic-text rendering, customizable scene numbers, and orphan protection.
+- **Final Draft Compatibility:** Exports screenplays directly to Final Draft (`.fdx`) format, preserving section and color highlights.
+
+<p align="center">
+  <img src="https://iyal.ink/assets/website%20images/A1-Export.png" width="850" alt="Export PDF and FDX Dialog">
+</p>
+
+---
+
 ## ⚡ Quick Start & Installation
 
 ### 🐧 Linux (Arch / Ubuntu / Fedora / Debian)
-Download the latest Linux archive from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or **[Releases](https://github.com/iyal-ink/ActOne-Screenplay/releases)**:
+Download the latest Linux installer archive from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or **[Releases](https://github.com/iyal-ink/ActOne-Screenplay/releases)**:
 
 ```bash
 tar -xzf ActOne-Linux-x64-0.4.12.tar.gz
@@ -60,24 +133,6 @@ Get ActOne directly from the Microsoft Store:
   <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft Store"/>
 </a>
 
-### ❄️ Flatpak / Flathub (Linux)
-*Coming soon to Flathub!*
-
----
-
-## ✨ Key Features
-
-| Feature | Description |
-| :--- | :--- |
-| 🎬 **Live Fountain Formatting** | Auto-detects and formats Scene Headings, Action, Characters, Dialogue, Parentheticals, and Transitions automatically as you type. |
-| 🃏 **Index Cards** | Grid view to organize acts, scenes, color-coded plot beats, and sequence outlines visually. |
-
-| 🌲 **Script Outline Tree** | Jump instantly between acts, scenes, and character entrances with side-panel outline navigation. |
-| 🎨 **Theme Designer** | Create, customize, and export your own editor themes or pick from curated dark, light, and typewriter palettes. |
-| 🎧 **Ambient Focus Audio** | Built-in soundscapes (Rain, Coffee Shop, White Noise, Ambient Synth) designed for deep focus writing sessions. |
-| 📄 **PDF & Fountain Export** | Export production-ready scripts formatted strictly to industry specs (100% exact margins, Courier Prime typography). |
-| 🔒 **Local & Private** | Your screenplays stay local on your hard drive in open plain text. No mandatory cloud accounts or subscriptions. |
-
 ---
 
 ## 🚀 Building from Source
@@ -85,13 +140,13 @@ Get ActOne directly from the Microsoft Store:
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18+)
 - [Rust](https://www.rust-lang.org/) & Cargo (for Tauri backend)
-- Linux build dependencies (`libgtk-3-dev`, `webkit2gtk`, `libssl-dev`)
+- Linux build dependencies (`libgtk-3-dev`, `webkit2gtk-4.1-dev`, `libssl-dev`)
 
 ### Build Steps
 ```bash
 # 1. Clone the repository
-git clone https://github.com/iyal-ink/ActOneCode.git
-cd ActOneCode
+git clone https://github.com/iyal-ink/ActOne-Screenplay.git
+cd ActOne-Screenplay
 
 # 2. Install frontend dependencies
 npm install
@@ -107,11 +162,11 @@ npm run tauri build
 
 ## 📄 Licensing
 
-ActOne is open-source software licensed under the **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
+ActOne Screenplay is open-source software licensed under the **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
 
 ```
 Copyright (C) 2026 Iyal Inc.
-ActOne is free software: you can redistribute it and/or modify it under the terms of
+ActOne Screenplay is free software: you can redistribute it and/or modify it under the terms of
 the GNU General Public License as published by the Free Software Foundation.
 ```
 
@@ -126,6 +181,6 @@ the GNU General Public License as published by the Free Software Foundation.
 
   <br><br>
 
-  🌐 <b><a href="https://iyal.ink">iyal.ink</a></b> &nbsp;•&nbsp; 🎬 <b><a href="https://iyal.ink/actone/">ActOne Studio</a></b> &nbsp;•&nbsp; ⌨️ <b><a href="https://iyal.ink/fount/">FountTUI</a></b>
+  🌐 <b><a href="https://iyal.ink">iyal.ink</a></b> &nbsp;•&nbsp; 🎬 <b><a href="https://iyal.ink/actone/">ActOne Studio</a></b> &nbsp;•&nbsp; ⌨️ <b><a href="https://iyal.ink/fount/">FountTUI</a></b> &nbsp;•&nbsp; 💬 <b><a href="https://discord.gg/XTPjm93eNx">Discord Community</a></b>
 
 </div>
