@@ -51,6 +51,12 @@
   --cat-location: #26A69A;
   --cat-storyline: #7E57C2;
   --cat-sceneType: #B0BEC5;
+html,
+body,
+#root {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 html,

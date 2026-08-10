@@ -5,6 +5,7 @@ sdk: org.gnome.Sdk
 command: actone
 
 finish-args:
+  - --socket=x11
   - --socket=wayland
   - --socket=fallback-x11
   - --socket=pulseaudio
@@ -12,6 +13,11 @@ finish-args:
   - --share=ipc
   - --device=dri
   - --filesystem=host
+  - --filesystem=/usr/share/fonts:ro
+  - --filesystem=~/.local/share/fonts:ro
+  - --filesystem=~/.fonts:ro
+  - --filesystem=xdg-config/fontconfig:ro
+  - --filesystem=xdg-config/gtk-3.0:ro
   - --talk-name=org.freedesktop.portal.Desktop
   - --talk-name=org.freedesktop.portal.FileChooser
 
