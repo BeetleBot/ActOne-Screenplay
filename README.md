@@ -34,7 +34,7 @@
 
 ## 🌟 Overview
 
-**ActOne** is a full-featured desktop screenplay editor and storyboarding studio designed for screenwriters, playwrights, and indie filmmakers. Built around the open [Fountain plain-text standard](https://fountain.io), ActOne combines real-time screenplay formatting, outline navigation, index card storyboarding, custom visual themes, and ambient focus audio into an intuitive desktop application.
+**ActOne** is a desktop screenplay editor supporting Fountain markup, index card storyboarding, scene outline navigation, custom visual themes, and ambient audio playback.
 
 > ⌨️ **Prefer a Terminal Interface?**  
 > Check out **[FountTUI](https://fount.iyal.ink)**—our distraction-free terminal Fountain screenplay editor built in Rust & Ratatui!
