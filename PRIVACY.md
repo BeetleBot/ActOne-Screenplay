@@ -60,6 +60,6 @@ If this policy changes, the "Last updated" date at the top will be revised.
 
 ## Contact
 
-For questions about this privacy policy, open an issue at:
+For questions about this privacy policy, contact our team at:
 
-https://github.com/beetlebot/ActOne/issues
+Email us : actonesupport@iyal.ink

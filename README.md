@@ -109,7 +109,7 @@ Production-ready exports in seconds. Our custom Rust rendering engine delivers p
 ## 💾 Installation
 
 ### Linux
-Download the installer from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or our **[Releases](https://github.com/BeetleBot/ActOne-Screenplay/releases)**:
+Download the installer from our **[Downloads Page](https://iyal.ink/actone/downloads/)**:
 
 ```bash
 tar -xzf ActOne-Linux-x64-0.4.12.tar.gz
@@ -120,47 +120,6 @@ actone
 
 ### Windows
 Install directly from the **[Microsoft Store](https://apps.microsoft.com/detail/9PJMKR0937KK)**.
-
----
-
-## 🛠️ Building from Source
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+)
-- [Rust](https://www.rust-lang.org/) & Cargo
-
-#### Linux Packages Required
-| Distro | Required Packages |
-| :--- | :--- |
-| **Ubuntu / Debian** | `libgtk-3-dev` `libwebkit2gtk-4.1-dev` `libayatana-appindicator3-dev` `librsvg2-dev` `libsoup-3.0-dev` `libssl-dev` `libbz2-dev` |
-| **Fedora** | `gtk3-devel` `webkit2gtk4.1-devel` `libappindicator-gtk3-devel` `librsvg2-devel` `libsoup3-devel` `openssl-devel` `bzip2-devel` |
-| **Arch Linux** | `gtk3` `webkit2gtk-4.1` `libayatana-appindicator` `librsvg` `libsoup3` `openssl` `bzip2` |
-
-### Steps
-```bash
-# Clone repository
-git clone https://github.com/BeetleBot/ActOne-Screenplay.git
-cd ActOne-Screenplay
-
-# Install dependencies & run dev server
-npm install
-npm run tauri dev
-
-# Build production app
-npm run tauri build
-```
-
----
-
-## 🤝 Contributing
-
-Pull requests are always welcome! Whether you're a rust developer, a typescript wizard, or just someone who loves screenwriting software, here are a few areas we are actively looking for help with:
-
-- 🌐 **Non-English Language Support**: Font rendering, localized keyboard shortcuts, complex script rendering (Tamil, Hindi, CJK, etc.), and multi-language PDF export.
-- 🍎 **macOS Build Target**: Help setup and test native `.dmg` / `.app` builds via Tauri for Mac users.
-- 🤖 **Agentic Muse AI**: Adding autonomous script editing, story research, automated scene breakdowns, and multi-agent writer workflows.
-- 📄 **File Converters**: Import and export filters for `.fdx`, `.highland`, `.scriv`, and Fountain archives.
-- 🐛 **Bug Fixes & UI Tweaks**: Performance fixes, visual theme polish, and small usability improvements for the ultimate distraction free writing experience.
 
 ---
 

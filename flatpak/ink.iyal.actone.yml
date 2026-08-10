@@ -24,7 +24,7 @@ modules:
       - install -Dm644 usr/share/actone/icon_app/actone_icon_128x128.png /app/share/icons/hicolor/128x128/apps/ink.iyal.actone.png
     sources:
       - type: archive
-        url: https://github.com/BeetleBot/ActOne-Screenplay/releases/download/v0.4.12/ActOne-Linux-x64-0.4.12.tar.gz
+        url: https://downloads.iyal.ink/ActOne-Linux-x64-0.4.12.tar.gz
         sha256: 92e5d6dd1b50e922ae616d64437a8f0373ff11e8cb6b229c9f83398494a58423
       - type: file
         path: ink.iyal.actone.desktop
