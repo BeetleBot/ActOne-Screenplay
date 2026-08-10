@@ -1,0 +1,61 @@
+name: Build Windows MSIX & Portable
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.4.12)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows MSIX & Portable (.msix / .exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Windows Packages via PowerShell script
+        shell: powershell
+        run: |
+          $VERSION = "${{ github.event.inputs.version }}"
+          if (-not $VERSION) {
+            $pkg = Get-Content package.json | ConvertFrom-Json
+            $VERSION = $pkg.version
+          }
+          .\Release\windows\build-msix.ps1 -SkipSigning -Version $VERSION
+
+      - name: Upload Windows Artifacts to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $VERSION = "${{ github.event.inputs.version }}"
+          if (-not $VERSION) {
+            $VERSION = (Get-Content package.json | ConvertFrom-Json).version
+          }
+          $TAG_NAME = "v$VERSION"
+          
+          gh release create $TAG_NAME (Get-Item Release\artifacts\*) --title "ActOne v$VERSION" --notes "ActOne v$VERSION Release assets."
+          if ($LASTEXITCODE -ne 0) {
+            gh release upload $TAG_NAME (Get-Item Release\artifacts\*) --clobber
+          }
