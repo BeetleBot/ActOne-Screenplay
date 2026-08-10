@@ -821,24 +821,40 @@ pub fn run() {
     builder
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app_handle, _event| {
-            #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
-            if let tauri::RunEvent::Opened { urls } = event {
-                let paths: Vec<String> = urls.iter()
-                    .map(|u| {
-                        let s = u.as_str();
-                        s.strip_prefix("file://").unwrap_or(s).to_string()
-                    })
-                    .collect();
-                let filtered: Vec<String> = paths.into_iter()
-                    .filter(|p| {
-                        let lp = p.to_ascii_lowercase();
-                        lp.ends_with(".actone") || lp.ends_with(".fountain") || lp.ends_with(".txt")
-                    })
-                    .collect();
-                if !filtered.is_empty() {
-                    let _ = app_handle.emit("file-opened", filtered);
+        .run(|_app_handle, event| {
+            match event {
+                tauri::RunEvent::ExitRequested { .. } => {
+                    // Cancel all active background AI/streaming processes
+                    ollama::cancel_all_sessions();
+
+                    // Flush any pending crash/panic logs
+                    let _ = flush_pending_panics();
+
+                    #[cfg(target_os = "windows")]
+                    {
+                        // Cleanly terminate process to prevent tao event-loop runner panic after Destroyed state
+                        std::process::exit(0);
+                    }
                 }
+                #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
+                tauri::RunEvent::Opened { urls } => {
+                    let paths: Vec<String> = urls.iter()
+                        .map(|u| {
+                            let s = u.as_str();
+                            s.strip_prefix("file://").unwrap_or(s).to_string()
+                        })
+                        .collect();
+                    let filtered: Vec<String> = paths.into_iter()
+                        .filter(|p| {
+                            let lp = p.to_ascii_lowercase();
+                            lp.ends_with(".actone") || lp.ends_with(".fountain") || lp.ends_with(".txt")
+                        })
+                        .collect();
+                    if !filtered.is_empty() {
+                        let _ = _app_handle.emit("file-opened", filtered);
+                    }
+                }
+                _ => {}
             }
         });
 }

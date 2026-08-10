@@ -55,6 +55,13 @@ pub fn cancel_ollama_chat(session_id: String) {
     }
 }
 
+pub fn cancel_all_sessions() {
+    if let Ok(mut cancelled) = CANCELLED_SESSIONS.lock() {
+        // Mark cancellation flag globally for any active streams
+        cancelled.insert("*".to_string());
+    }
+}
+
 /// Health-check: GET {url}/ — returns true if Ollama is reachable.
 #[tauri::command]
 pub async fn ollama_check(url: String) -> bool {
@@ -142,7 +149,7 @@ pub async fn ollama_chat(
 
     while let Some(chunk) = stream.next().await {
         if let Ok(cancelled) = CANCELLED_SESSIONS.lock() {
-            if cancelled.contains(&session_id) {
+            if cancelled.contains(&session_id) || cancelled.contains("*") {
                 return Err("Aborted".to_string());
             }
         }
