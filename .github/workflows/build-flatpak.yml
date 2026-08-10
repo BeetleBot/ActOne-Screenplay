@@ -68,6 +68,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+
+      - name: Configure Git Safe Directory
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory /__w/ActOne-Screenplay/ActOne-Screenplay
 
       - name: Download Tauri binary
         uses: actions/download-artifact@v4
