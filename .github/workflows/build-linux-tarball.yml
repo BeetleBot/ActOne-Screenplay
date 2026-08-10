@@ -108,7 +108,8 @@ jobs:
             --notes "ActOne v${VERSION} Release assets." || gh release upload "$TAG_NAME" Release/artifacts/*.tar.gz --clobber
 
       - name: Trigger Flathub Repository Update
-        if: secrets.FLATHUB_PAT != ''
+        if: "${{ secrets.FLATHUB_PAT != '' }}"
+
         run: |
           VERSION="${{ github.event.inputs.version }}"
           if [ -z "$VERSION" ]; then
