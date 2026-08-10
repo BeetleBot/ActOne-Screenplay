@@ -23,7 +23,7 @@
   </p>
 
   <p align="center">
-    <b>A modern, feature-rich desktop screenplay studio with interactive storyboards, custom themes, ambient focus audio, and Fountain markup support.</b>
+    <b>A modern, feature-rich desktop screenplay studio with index cards, custom themes, ambient focus audio, and Fountain markup support.</b>
     <br>
     <i>Built with React, CodeMirror & Tauri • Licensed under GPLv3 • Engineered by <a href="https://iyal.ink">iyal.ink</a></i>
   </p>
@@ -34,7 +34,7 @@
 
 ## 🌟 Overview
 
-**ActOne** is a desktop screenplay editor supporting Fountain markup, index card storyboarding, scene outline navigation, custom visual themes, and ambient audio playback.
+**ActOne** is a desktop screenplay editor supporting Fountain markup, index cards, scene outline navigation, custom visual themes, and ambient audio playback.
 
 > ⌨️ **Prefer a Terminal Interface?**  
 > Check out **[FountTUI](https://fount.iyal.ink)**—our distraction-free terminal Fountain screenplay editor built in Rust & Ratatui!
@@ -44,7 +44,7 @@
 ## ⚡ Quick Start & Installation
 
 ### 🐧 Linux (Arch / Ubuntu / Fedora / Debian)
-Download the latest Linux archive from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or **[Releases](https://github.com/iyal-ink/ActOneCode/releases)**:
+Download the latest Linux archive from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or **[Releases](https://github.com/iyal-ink/ActOne-Screenplay/releases)**:
 
 ```bash
 tar -xzf ActOne-Linux-x64-0.4.12.tar.gz
@@ -70,7 +70,8 @@ Get ActOne directly from the Microsoft Store:
 | Feature | Description |
 | :--- | :--- |
 | 🎬 **Live Fountain Formatting** | Auto-detects and formats Scene Headings, Action, Characters, Dialogue, Parentheticals, and Transitions automatically as you type. |
-| 🃏 **Index Cards & Storyboarding** | Drag-and-drop story grid to organize acts, scenes, color-coded plot beats, and sequence outlines visually. |
+| 🃏 **Index Cards** | Grid view to organize acts, scenes, color-coded plot beats, and sequence outlines visually. |
+
 | 🌲 **Script Outline Tree** | Jump instantly between acts, scenes, and character entrances with side-panel outline navigation. |
 | 🎨 **Theme Designer** | Create, customize, and export your own editor themes or pick from curated dark, light, and typewriter palettes. |
 | 🎧 **Ambient Focus Audio** | Built-in soundscapes (Rain, Coffee Shop, White Noise, Ambient Synth) designed for deep focus writing sessions. |
