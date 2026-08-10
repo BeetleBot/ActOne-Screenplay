@@ -54,7 +54,7 @@ jobs:
       - name: Setup Flatpak Runtime & Build Bundle
         run: |
           sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          sudo flatpak install -y flathub org.gnome.Platform//47 org.gnome.Sdk//47
+          sudo flatpak install -y flathub org.gnome.Platform//48 org.gnome.Sdk//48
           
           cd flatpak
           flatpak-builder --force-clean --repo=repo build-dir ink.iyal.actone.yml
