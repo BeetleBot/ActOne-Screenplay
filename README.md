@@ -169,6 +169,20 @@ npm run tauri build
 
 ---
 
+## 🤝 Contributing & Community Focus Areas
+
+We welcome contributions from screenwriters, developers, and open-source enthusiasts worldwide! Key focus areas where community Pull Requests are especially encouraged include:
+
+- 🌐 **Multilingual Screenwriting & PDF Export**: Enhancing full support for non-English screenwriting (Indic scripts like Tamil & Hindi, CJK, European languages)—including typography, complex font rendering, localized UI translations, and multi-language PDF/FDX exports.
+- 🍎 **macOS Native Packaging**: Helping set up, test, and maintain native macOS app targets (`.dmg` / `.app`) via Tauri.
+- 🤖 **Agentic Muse AI Engine**: Evolving **Muse AI** into an autonomous storytelling partner—enabling multi-step script edits, automated scene breakdowns, character arc analysis, and agentic workflows via local Ollama or cloud models.
+- 📄 **Export Format Converters**: Expanding import/export compatibility for Final Draft (`.fdx`), Highland (`.highland`), Scrivener (`.scriv`), and Fountain bundles.
+
+Feel free to open an issue or submit a Pull Request targeting `main`!
+
+
+---
+
 ## 📄 Licensing
 
 ActOne Screenplay is open-source software licensed under the **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
