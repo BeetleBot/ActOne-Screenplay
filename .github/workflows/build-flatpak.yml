@@ -97,16 +97,21 @@ jobs:
       - name: Upload Flatpak to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          git config --global --add safe.directory '*'
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           VERSION="${{ github.event.inputs.version }}"
           if [ -z "$VERSION" ]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           fi
           TAG_NAME="v${VERSION}"
 
-          gh release create "$TAG_NAME" ActOne-x86_64.flatpak \
-            --title "ActOne v${VERSION}" \
-            --notes "ActOne v${VERSION} Release assets." || \
-          gh release upload "$TAG_NAME" ActOne-x86_64.flatpak --clobber
+          if gh release view "$TAG_NAME" --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" ActOne-x86_64.flatpak \
+              --repo "$GH_REPO" \
+              --clobber
+          else
+            gh release create "$TAG_NAME" ActOne-x86_64.flatpak \
+              --repo "$GH_REPO" \
+              --title "ActOne v${VERSION}" \
+              --notes "ActOne v${VERSION} Release assets."
+          fi
