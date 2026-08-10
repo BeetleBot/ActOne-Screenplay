@@ -43,7 +43,8 @@ jobs:
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
             pkg-config \
-            flatpak flatpak-builder
+            flatpak flatpak-builder appstream
+
 
       - name: Install npm dependencies
         run: npm ci
@@ -54,7 +55,7 @@ jobs:
       - name: Setup Flatpak Runtime & Build Bundle
         run: |
           sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          sudo flatpak install -y flathub org.gnome.Platform//48 org.gnome.Sdk//48
+          sudo flatpak install -y flathub org.gnome.Platform//50 org.gnome.Sdk//50
           
           cd flatpak
           flatpak-builder --force-clean --repo=repo build-dir ink.iyal.actone.yml
