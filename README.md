@@ -19,8 +19,9 @@
   </p>
 
   <p align="center">
-    Free & Open Source Fountain Screenplay Editor for Windows and Linux.
-    <br>
+    The distraction free, open source Fountain screenplay editor for Windows and Linux.<br>
+    The perfect alternative to Final Draft, Highland, and Beat.
+    <br><br>
     <i>GPLv3 • Built by <a href="https://iyal.ink">iyal.ink</a></i>
   </p>
 
@@ -28,38 +29,40 @@
 
 ---
 
-### What is ActOne?
+### Write Your Masterpiece. Own Your Tools.
 
-Mac writers have **Beat** and **Highland**. Windows and Linux writers needed a clean, native Fountain screenplay editor that just works without subscriptions, locked formats, or bloated interfaces.
+ActOne Screenplay is the ultimate **free and open source screenwriting software** built natively for PC and Linux users. If you've ever wished for the elegance of **Highland** or the simplicity of **Beat** but on a Windows or Linux machine, ActOne is your answer. 
 
-**ActOne Screenplay** is a free, open source **Final Draft** and **Trelby** alternative for PC and Linux. Write in plain text using [Fountain](https://fountain.io/), organize your story with an outline tree, analyze your pacing with X-Ray analytics, and export production ready PDFs or `.fdx` files.
+Designed for both professional screenwriters and indie filmmakers, ActOne provides a **distraction free** writing environment that uses plain-text [Fountain syntax](https://fountain.io/). Say goodbye to expensive subscriptions, locked-down proprietary file formats, and bloated interfaces. Whether you are drafting a pilot, a feature film, or a short, ActOne is the premier **Windows screenplay** and **Linux writer** app that gets out of your way and lets you focus on the story.
 
-> ⌨️ **Prefer the terminal?** Check out **[FountTUI](https://fount.iyal.ink)**, our terminal Fountain screenplay editor built in Rust.
+**Why choose ActOne for screenwriting?** It offers an unparalleled mix of live Fountain formatting, structural organization tools, and **Final Draft (`.fdx`)** compatibility without the hefty price tag.
+
+> ⌨️ **Prefer the terminal?** Check out **[FountTUI](https://fount.iyal.ink)**, our terminal-based Fountain screenplay editor built in Rust.
 
 ---
 
-## 🎬 Features
+## 🎬 Core Screenwriting Features
 
-### 01. Native Fountain Editing
-Live syntax highlighting powered by CodeMirror 6. Automatic character autocomplete, Tab cycling for Fountain prefixes (`@`, `.`, `>`), and auto closing parentheticals.
+### 01. Distraction Free, Native Fountain Editing
+Enjoy live syntax highlighting powered by CodeMirror 6. Our editor handles standard screenwriting formatting effortlessly. Features include automatic character autocomplete, Tab-to-cycle Fountain prefixes (`@`, `.`, `>`), and auto-closing parentheticals. Write at the speed of thought.
 
 <p align="center">
-  <img src="https://iyal.ink/assets/website%20images/A1-Editor.png" width="850" alt="Fountain Screenplay Editor">
+  <img src="https://iyal.ink/assets/website%20images/A1-Editor.png" width="850" alt="Fountain Screenplay Editor for Windows and Linux">
 </p>
 
 ---
 
 ### 02. Outline Tree Navigator
-Instantly navigate your script through a collapsible outline tree mapping sections (`#`), scene headers, and synopses (`=`). Visual plot arc markers let you track storylines at a glance.
+Mapping out your screenplay's structure is effortless. Instantly navigate your script through a collapsible outline tree that maps sections (`#`), scene headers, and synopses (`=`). Visual plot arc markers let you track storylines and beats at a glance.
 
 <p align="center">
-  <img src="https://iyal.ink/assets/website%20images/A1-Navigator.png" width="850" alt="Outline Tree Navigator">
+  <img src="https://iyal.ink/assets/website%20images/A1-Navigator.png" width="850" alt="Outline Tree Navigator for Screenwriting">
 </p>
 
 ---
 
-### 03. Multi Script Projects (`.actone`)
-Package multiple `.fountain` screenplay files, scratchpad notes, character lists, and progress data into a single `.actone` project folder. Files are saved as standard ZIP archives so your data is never locked in.
+### 03. Multi-Script Projects (`.actone`)
+Package multiple `.fountain` screenplay files, scratchpad notes, character lists, and progress data into a single `.actone` project file. The `.actone` format is actually just a glorified ZIP file! If you ever need raw access to your work outside of ActOne, simply open the `.actone` file using an archiver like **[7-Zip](https://www.7-zip.org/)** (highly recommended) to extract your raw `.fountain` text files and other data. Your screenwriting data is never locked in a proprietary format.
 
 <p align="center">
   <img src="https://iyal.ink/assets/website%20images/A1-Multi-Scripts.png" width="850" alt="Multi Script Projects Workspace">
@@ -67,17 +70,17 @@ Package multiple `.fountain` screenplay files, scratchpad notes, character lists
 
 ---
 
-### 04. Local Version Snapshots
-Automatic, interval, and save triggered local snapshots keep track of every revision. Compare diffs and restore previous drafts with a single click with no cloud required.
+### 04. Local Version Snapshots & Backups
+Never lose a great scene again. Automatic, interval, and save-triggered local snapshots keep track of every revision. Compare diffs and restore previous screenplay drafts with a single click—100% offline, with no cloud required.
 
 <p align="center">
-  <img src="https://iyal.ink/assets/website%20images/A1snapshot.png" width="850" alt="Automatic Version Snapshots">
+  <img src="https://iyal.ink/assets/website%20images/A1snapshot.png" width="850" alt="Automatic Version Snapshots for Screenplays">
 </p>
 
 ---
 
 ### 05. X-Ray Screenplay Analytics
-Track dialogue to action ratios, day vs. night scene distributions, story pacing, and character co-occurrence connection graphs.
+Understand your script's DNA. Track dialogue-to-action ratios, day vs. night scene distributions, story pacing, and character co-occurrence connection graphs. Perfect for rewriting and polishing your final draft.
 
 <p align="center">
   <img src="https://iyal.ink/assets/website%20images/A1-Xray.png" width="850" alt="X-Ray Screenplay Analytics">
@@ -86,19 +89,19 @@ Track dialogue to action ratios, day vs. night scene distributions, story pacing
 ---
 
 ### 06. Muse AI Writing Assistant
-Optional AI assistant that connects to your local Ollama instance for 100% offline privacy, or external API keys. Use `@write-scene`, `@lookup`, and `@synonyms` in contextual chat threads.
+Bust through writer's block with our optional AI assistant. Muse connects to your local Ollama instance for 100% offline privacy, or external API keys. Use `@write-scene`, `@lookup`, and `@synonyms` in contextual chat threads to brainstorm beats and dialogue.
 
 <p align="center">
-  <img src="https://iyal.ink/assets/website%20images/A1-Muse.png" width="850" alt="Muse AI Assistant">
+  <img src="https://iyal.ink/assets/website%20images/A1-Muse.png" width="850" alt="Muse AI Assistant for Screenwriting">
 </p>
 
 ---
 
-### 07. High Performance PDF & FDX Export
-Custom Rust rendering engine for pixel perfect PDF exports with customizable scene numbers and orphan protection. Exports directly to Final Draft (`.fdx`) while preserving section markers and color highlights.
+### 07. High-Performance PDF & Final Draft (.FDX) Export
+Production-ready exports in seconds. Our custom Rust rendering engine delivers pixel-perfect PDF exports with customizable scene numbers and orphan protection. Need to collaborate? Export your screenplay directly to **Final Draft (`.fdx`)** while preserving section markers and color highlights.
 
 <p align="center">
-  <img src="https://iyal.ink/assets/website%20images/A1-Export.png" width="850" alt="Export PDF and FDX Dialog">
+  <img src="https://iyal.ink/assets/website%20images/A1-Export.png" width="850" alt="Export PDF and Final Draft FDX Dialog">
 </p>
 
 ---
@@ -106,7 +109,7 @@ Custom Rust rendering engine for pixel perfect PDF exports with customizable sce
 ## 💾 Installation
 
 ### Linux
-Download the installer from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or **[Releases](https://github.com/BeetleBot/ActOne-Screenplay/releases)**:
+Download the installer from our **[Downloads Page](https://iyal.ink/actone/downloads/)** or our **[Releases](https://github.com/BeetleBot/ActOne-Screenplay/releases)**:
 
 ```bash
 tar -xzf ActOne-Linux-x64-0.4.12.tar.gz
@@ -151,19 +154,19 @@ npm run tauri build
 
 ## 🤝 Contributing
 
-Pull requests are always welcome! Here are a few areas we are actively looking for help with:
+Pull requests are always welcome! Whether you're a rust developer, a typescript wizard, or just someone who loves screenwriting software, here are a few areas we are actively looking for help with:
 
-- 🌐 **Non English Language Support**: Font rendering, localized keyboard shortcuts, complex script rendering (Tamil, Hindi, CJK, etc.), and multi language PDF export.
-- 🍎 **macOS Build Target**: Help setup and test native `.dmg` / `.app` builds via Tauri.
-- 🤖 **Agentic Muse AI**: Adding autonomous script editing, story research, automated scene breakdowns, and multi agent writer workflows.
+- 🌐 **Non-English Language Support**: Font rendering, localized keyboard shortcuts, complex script rendering (Tamil, Hindi, CJK, etc.), and multi-language PDF export.
+- 🍎 **macOS Build Target**: Help setup and test native `.dmg` / `.app` builds via Tauri for Mac users.
+- 🤖 **Agentic Muse AI**: Adding autonomous script editing, story research, automated scene breakdowns, and multi-agent writer workflows.
 - 📄 **File Converters**: Import and export filters for `.fdx`, `.highland`, `.scriv`, and Fountain archives.
-- 🐛 **Bug Fixes & UI Tweaks**: Performance fixes, visual theme polish, and small usability improvements.
+- 🐛 **Bug Fixes & UI Tweaks**: Performance fixes, visual theme polish, and small usability improvements for the ultimate distraction free writing experience.
 
 ---
 
 ## 📄 License
 
-ActOne Screenplay is open source software under the **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
+ActOne Screenplay is open source screenwriting software released under the **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
 
 ```
 Copyright (C) 2026 Iyal Inc.
