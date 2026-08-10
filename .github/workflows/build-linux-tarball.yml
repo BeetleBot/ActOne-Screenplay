@@ -106,3 +106,31 @@ jobs:
           gh release create "$TAG_NAME" Release/artifacts/*.tar.gz \
             --title "ActOne v${VERSION}" \
             --notes "ActOne v${VERSION} Release assets." || gh release upload "$TAG_NAME" Release/artifacts/*.tar.gz --clobber
+
+      - name: Trigger Flathub Repository Update
+        if: secrets.FLATHUB_PAT != ''
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          
+          URL="https://github.com/iyal-ink/ActOne-Screenplay/releases/download/v${VERSION}/ActOne-Linux-x64-${VERSION}.tar.gz"
+          SHA256=$(sha256sum Release/artifacts/*.tar.gz | awk '{print $1}')
+          DATE=$(date +%Y-%m-%d)
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git clone https://x-access-token:${{ secrets.FLATHUB_PAT }}@github.com/flathub/ink.iyal.actone.git flathub-repo || git clone https://x-access-token:${{ secrets.FLATHUB_PAT }}@github.com/BeetleBot/ink.iyal.actone.git flathub-repo
+          cd flathub-repo
+
+          sed -i "s|url: .*|url: $URL|g" ink.iyal.actone.yml
+          sed -i "s|sha256: .*|sha256: $SHA256|g" ink.iyal.actone.yml
+          sed -i "s|<release version=\".*\" date=\".*\"|<release version=\"$VERSION\" date=\"$DATE\"|g" ink.iyal.actone.metainfo.xml
+
+          git add ink.iyal.actone.yml ink.iyal.actone.metainfo.xml
+          git commit -m "Update to v${VERSION}"
+          git push origin main || git push origin master
+
+
