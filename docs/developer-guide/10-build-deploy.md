@@ -74,6 +74,9 @@ Configured in `tauri.conf.json`:
 | `.fountain` | Fountain Screenplay |
 | `.txt` | Plain text |
 
-## CI/CD
+## CI/CD & Workflows
 
-No CI/CD configuration is present in the repository. Builds are manual.
+Automated builds and Flatpak packaging are configured in `.github/workflows/build-flatpak.yml`:
+
+- **Job 1 (`build-binary`)**: Runs on `ubuntu-22.04` bare runner, installs GTK/WebKit build dependencies, builds the release Tauri binary via `npm run tauri build`, and uploads the binary as an artifact.
+- **Job 2 (`package-flatpak`)**: Runs inside the official `ghcr.io/flathub-infra/flatpak-github-actions:gnome-48` container with `--privileged`. Downloads the binary artifact, packages the Flatpak bundle (`ActOne-x86_64.flatpak`) using `flatpak/flatpak-github-actions/flatpak-builder@v6`, and uploads it to GitHub Releases.

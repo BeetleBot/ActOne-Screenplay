@@ -96,6 +96,7 @@ When a character name ends with `^`, the line and its associated dialogue block 
 
 ### Scene Navigation
 
+- **Keyboard shortcuts**: `Alt+↑` / `Alt+PageUp` jumps to the previous scene heading; `Alt+↓` / `Alt+PageDown` jumps to the next scene heading
 - **Outline view** in sidebar: click any scene to jump to it
-- **Status bar**: shows current scene location; click to jump
+- **Status bar**: shows current scene location
 - **Drag-to-reorder** scenes in the outline view

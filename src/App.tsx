@@ -180,13 +180,13 @@ function AppInner() {
 
   const {
     isModalActive, isPaletteOpen, showExportModal, showStructureModal,
-    showTitlePageModal,
+    showTitlePageModal, showShortcutsModal,
     setIsPaletteOpen, setShowExportModal, setShowStructureModal,
-    setShowTitlePageModal,
+    setShowTitlePageModal, setShowShortcutsModal,
     togglePalette
   } = useModals();
 
-  const { editorView, updateSettings } = useEditor();
+  const { editorView, updateSettings, scrollToScene } = useEditor();
   const {
     zoomLevel,
     setZoomLevel,
@@ -225,8 +225,11 @@ function AppInner() {
     resetInterfaceScale: useCallback(() => setAppScale(100), [setAppScale]),
     openSettings: useCallback(() => { modalWindows.openSettingsWindow(); }, [modalWindows]),
     openHelp: useCallback(() => { modalWindows.openHelpWindow(); }, [modalWindows]),
+    openShortcuts: useCallback(() => setShowShortcutsModal(true), [setShowShortcutsModal]),
     toggleSearch: useCallback(() => setActiveRightPane(activeRightPane === "search" ? null : "search"), [activeRightPane, setActiveRightPane]),
     openMusePane: useCallback(() => setActiveRightPane("prompt"), [setActiveRightPane]),
+    prevScene: useCallback(() => scrollToScene("prev"), [scrollToScene]),
+    nextScene: useCallback(() => scrollToScene("next"), [scrollToScene]),
     toggleSnapshotsPanel: useCallback(() => {
       if (isSidebarOpen && activeTab === "snapshots") {
         setIsSidebarOpen(false);
@@ -736,6 +739,8 @@ function AppInner() {
         setShowStructureModal={setShowStructureModal}
         showTitlePageModal={showTitlePageModal}
         setShowTitlePageModal={setShowTitlePageModal}
+        showShortcutsModal={showShortcutsModal}
+        setShowShortcutsModal={setShowShortcutsModal}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         toggleSnapshotsPanel={() => {

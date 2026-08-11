@@ -11,6 +11,7 @@ export interface EditorContextProps {
   reorderScenes: (startIndex: number, endIndex: number) => void;
   setEditorView: (view: EditorView | null) => void;
   scrollToLine: (lineIndex: number, noFocus?: boolean) => void;
+  scrollToScene: (direction: "next" | "prev") => void;
   autoAddSceneNumbers: () => void;
   clearSceneNumbers: () => void;
   replaceSceneText: (sceneNumber: number, newFountainText: string) => boolean;
@@ -43,6 +44,40 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!noFocus) editorView.focus();
     } catch (e) {
       logger.warn("editor", `scrollToLine(${lineIndex}) failed`, e);
+    }
+  };
+
+  const scrollToScene = (direction: "next" | "prev") => {
+    if (!editorView) return;
+    try {
+      const currentPos = editorView.state.selection.main.head;
+      const currentLineObj = editorView.state.doc.lineAt(currentPos);
+      const currentLineNum = currentLineObj.number; // 1-indexed
+      const docLines = parsedDoc.lines || [];
+
+      // Find scene headings line indices (0-indexed)
+      const sceneHeadings: number[] = [];
+      for (let i = 0; i < docLines.length; i++) {
+        if (docLines[i].type === LineType.heading) {
+          sceneHeadings.push(i + 1); // convert to 1-indexed line number
+        }
+      }
+
+      if (sceneHeadings.length === 0) return;
+
+      let targetLine: number | null = null;
+      if (direction === "next") {
+        targetLine = sceneHeadings.find(l => l > currentLineNum) ?? null;
+      } else {
+        const prevHeadings = sceneHeadings.filter(l => l < currentLineNum);
+        targetLine = prevHeadings.length > 0 ? prevHeadings[prevHeadings.length - 1] : null;
+      }
+
+      if (targetLine !== null) {
+        scrollToLine(targetLine - 1);
+      }
+    } catch (e) {
+      logger.warn("editor", `scrollToScene(${direction}) failed`, e);
     }
   };
 
@@ -189,6 +224,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         reorderScenes,
         setEditorView,
         scrollToLine,
+        scrollToScene,
         autoAddSceneNumbers,
         clearSceneNumbers,
         replaceSceneText,

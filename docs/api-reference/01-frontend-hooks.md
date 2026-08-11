@@ -26,15 +26,18 @@ interface ShortcutActions {
   resetInterfaceScale?: () => void;
   openSettings?: () => void;
   openHelp?: () => void;
+  openShortcuts?: () => void;
   toggleSearch: () => void;
   toggleSnapshotsPanel?: () => void;
+  prevScene?: () => void;
+  nextScene?: () => void;
   isDisabled?: boolean;
 }
 
 function useKeyboardShortcuts(actions: ShortcutActions): void;
 ```
 
-All shortcuts are listed in the keyboard shortcuts feature doc.
+All shortcuts are listed in the keyboard shortcuts feature doc and generated dynamically from `src/constants/shortcuts.ts`.
 
 ## `useNativeAppBehavior`
 
@@ -53,7 +56,7 @@ function useNativeAppBehavior(
 
 **File:** `src/hooks/useModals.ts`
 
-Manages in-app React modals (Command Palette, Export modal, Structure Templates, Title Page Editor). These are rendered as MUI Dialog overlays within the same window, not as separate Tauri windows.
+Manages in-app React modals (Command Palette, Export modal, Structure Templates, Title Page Editor, Shortcuts Modal). These are rendered as MUI Dialog overlays within the same window, not as separate Tauri windows.
 
 ```typescript
 function useModals(): ModalState & ModalActions & {
@@ -66,6 +69,7 @@ interface ModalState {
   showExportModal: boolean;
   showStructureModal: boolean;
   showTitlePageModal: boolean;
+  showShortcutsModal: boolean;
 }
 
 interface ModalActions {
@@ -73,6 +77,7 @@ interface ModalActions {
   setShowExportModal: (v: boolean) => void;
   setShowStructureModal: (v: boolean) => void;
   setShowTitlePageModal: (v: boolean) => void;
+  setShowShortcutsModal: (v: boolean) => void;
 }
 ```
 

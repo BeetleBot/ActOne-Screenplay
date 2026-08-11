@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.13] - 2026-08-11
+
+### Added
+- ⌨️ **Dynamic Keyboard Shortcuts Modal (`F1`)** – Pressing `F1` now opens a modern, searchable Keyboard Shortcuts Modal categorized by File, Navigation, Formatting, and Interface with a quick link to Help Articles (`ShortcutsModal.tsx`).
+- ⏭️ **Previous & Next Scene Navigation** – Added `Alt+↑` / `Alt+PageUp` (Previous Scene) and `Alt+↓` / `Alt+PageDown` (Next Scene) shortcuts for rapid keyboard navigation between scene headings (`EditorContext.tsx`).
+- 🔄 **Centralized Dynamic Shortcuts Registry** – Created `src/constants/shortcuts.ts` as a single source of truth for all keyboard shortcuts, dynamically populating both the Shortcuts Modal and Help Reference documentation.
+
+### Fixed
+- 🐛 **Linux CodeMirror `p.top` Layout Crash** – Refactored scroll position measurements in `useCodeMirror.ts` to use CodeMirror's native `view.requestMeasure()` API instead of raw `requestAnimationFrame` calls, eliminating `TypeError: undefined is not an object (evaluating 'p.top')` crashes on WebKit / Linux.
+- 📦 **GitHub Actions Flatpak Workflow** – Fixed CI/CD Flatpak build failures by implementing a 2-job pipeline (`build-binary` on bare runner + `package-flatpak` inside `ghcr.io/flathub-infra/flatpak-github-actions:gnome-48` container with `--privileged` and `safe.directory` setup).
+
 ## [0.4.12] - 2026-08-10
 
 ### Fixed

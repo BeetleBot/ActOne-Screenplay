@@ -1,3 +1,5 @@
+import { generateShortcutsHelpMarkdown } from "../constants/shortcuts";
+
 export interface HelpArticle {
   id: string;
   title: string;
@@ -63,53 +65,7 @@ When launched from the command line, ActOne accepts file paths as arguments. The
     category: "Getting Started",
     tags: ["shortcuts", "keys", "hotkeys", "keyboard"],
     relatedIds: ["command-palette"],
-    content: `ActOne is designed for keyboard-driven writing. Below is the complete list of shortcuts.
-
-**File Operations**
-
-| Action | Shortcut |
-|--------|----------|
-| New screenplay tab | <kbd>Ctrl+N</kbd> |
-| Open file | <kbd>Ctrl+O</kbd> |
-| Save | <kbd>Ctrl+S</kbd> |
-| Save as | <kbd>Ctrl+Shift+S</kbd> |
-| Close active tab | <kbd>Alt+Q</kbd> |
-| Export dialog | <kbd>Ctrl+P</kbd> |
-| Next tab | <kbd>Ctrl+Tab</kbd> / <kbd>Ctrl+PageDown</kbd> |
-| Previous tab | <kbd>Ctrl+Shift+Tab</kbd> / <kbd>Ctrl+PageUp</kbd> |
-
-**Editing & Formatting**
-
-| Action | Shortcut |
-|--------|----------|
-| Undo | <kbd>Ctrl+Z</kbd> |
-| Redo | <kbd>Ctrl+Y</kbd> |
-| Cut | <kbd>Ctrl+X</kbd> |
-| Copy | <kbd>Ctrl+C</kbd> |
-| Paste | <kbd>Ctrl+V</kbd> |
-| Select all | <kbd>Ctrl+A</kbd> |
-| Bold (\`**\`) | <kbd>Ctrl+B</kbd> |
-| Italic (\`*\`) | <kbd>Ctrl+I</kbd> |
-| Underline (\`_\`) | <kbd>Ctrl+U</kbd> |
-| Fix Formatting | Command Palette (<kbd>Ctrl+K</kbd>) |
-| Cycle line prefixes | <kbd>Tab</kbd> |
-| Accept autocomplete ghost | <kbd>Tab</kbd> |
-| Force autocomplete dropdown | <kbd>ArrowDown</kbd> |
-
-**View & Navigation**
-
-| Action | Shortcut |
-|--------|----------|
-| Toggle Find & Replace | <kbd>Ctrl+F</kbd> |
-| Toggle sidebar | <kbd>Ctrl+\\\\</kbd> |
-| Command palette | <kbd>Ctrl+K</kbd> |
-| Settings | <kbd>Ctrl+,</kbd> |
-| Toggle Zen Mode | <kbd>Ctrl+Alt+Enter</kbd> |
-| Focus editor | <kbd>Escape</kbd> |
-| Open help guide | <kbd>F1</kbd> |
-| Zoom in | <kbd>Ctrl+=</kbd> |
-| Zoom out | <kbd>Ctrl+-</kbd> |
-| Reset zoom | <kbd>Ctrl+0</kbd> |`,
+    content: generateShortcutsHelpMarkdown(),
   },
   {
     id: "command-palette",

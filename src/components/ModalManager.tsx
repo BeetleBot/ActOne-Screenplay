@@ -4,6 +4,7 @@ import { StructureImportModal } from './StructureImportModal';
 import { CommandPalette } from './CommandPalette';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { AboutModal } from './AboutModal';
+import { ShortcutsModal } from './ShortcutsModal';
 import { FixFormattingModal } from './FixFormattingModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import type { FixFormattingReport } from '../utils/fixFormatting';
@@ -27,6 +28,8 @@ export interface ModalManagerProps {
   openTutorialsWindow?: () => void;
   showAboutModal?: boolean;
   setShowAboutModal?: (open: boolean) => void;
+  showShortcutsModal?: boolean;
+  setShowShortcutsModal?: (open: boolean) => void;
 }
 
 export const ModalManager: React.FC<ModalManagerProps> = ({
@@ -48,6 +51,8 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   openTutorialsWindow,
   showAboutModal: externalShowAbout,
   setShowAboutModal: externalSetShowAbout,
+  showShortcutsModal = false,
+  setShowShortcutsModal,
 }) => {
   const [localShowAbout, setLocalShowAbout] = useState(false);
   const showAbout = externalShowAbout !== undefined ? externalShowAbout : localShowAbout;
@@ -81,6 +86,15 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="about-modal">{showAbout && <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="shortcuts-modal">
+        {showShortcutsModal && setShowShortcutsModal && (
+          <ShortcutsModal
+            isOpen={showShortcutsModal}
+            onClose={() => setShowShortcutsModal(false)}
+            openHelpWindow={openHelpWindow}
+          />
+        )}
+      </ErrorBoundary>
       <ErrorBoundary name="fix-formatting-modal">
         {fixFormattingReport && (
           <FixFormattingModal

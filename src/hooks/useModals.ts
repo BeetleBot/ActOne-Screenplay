@@ -5,6 +5,7 @@ export interface ModalState {
   showExportModal: boolean;
   showStructureModal: boolean;
   showTitlePageModal: boolean;
+  showShortcutsModal: boolean;
 }
 
 export interface ModalActions {
@@ -12,6 +13,7 @@ export interface ModalActions {
   setShowExportModal: (v: boolean) => void;
   setShowStructureModal: (v: boolean) => void;
   setShowTitlePageModal: (v: boolean) => void;
+  setShowShortcutsModal: (v: boolean) => void;
 }
 
 export function useModals() {
@@ -19,10 +21,11 @@ export function useModals() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [showTitlePageModal, setShowTitlePageModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const isModalActive = useMemo(
-    () => isPaletteOpen || showExportModal || showStructureModal || showTitlePageModal,
-    [isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal]
+    () => isPaletteOpen || showExportModal || showStructureModal || showTitlePageModal || showShortcutsModal,
+    [isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal]
   );
 
   const savedScrollTopRef = useRef<number | null>(null);
@@ -48,11 +51,11 @@ export function useModals() {
   const togglePalette = useCallback(() => setIsPaletteOpen(p => !p), []);
 
   const state: ModalState = useMemo(() => ({
-    isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal
-  }), [isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal]);
+    isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal
+  }), [isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal]);
 
   const actions: ModalActions = {
-    setIsPaletteOpen, setShowExportModal, setShowStructureModal, setShowTitlePageModal
+    setIsPaletteOpen, setShowExportModal, setShowStructureModal, setShowTitlePageModal, setShowShortcutsModal
   };
 
   return { ...state, ...actions, isModalActive, togglePalette };

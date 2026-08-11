@@ -182,4 +182,21 @@ describe("useKeyboardShortcuts", () => {
     expect(actions.exportPDF).toHaveBeenCalled();
   });
 
+  it("calls prevScene on Alt+ArrowUp and Alt+PageUp", () => {
+    const actions = { ...createActions(), prevScene: vi.fn(), nextScene: vi.fn() };
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("ArrowUp", { alt: true });
+    expect(actions.prevScene).toHaveBeenCalledTimes(1);
+    fireKey("PageUp", { alt: true });
+    expect(actions.prevScene).toHaveBeenCalledTimes(2);
+  });
+
+  it("calls nextScene on Alt+ArrowDown and Alt+PageDown", () => {
+    const actions = { ...createActions(), prevScene: vi.fn(), nextScene: vi.fn() };
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("ArrowDown", { alt: true });
+    expect(actions.nextScene).toHaveBeenCalledTimes(1);
+    fireKey("PageDown", { alt: true });
+    expect(actions.nextScene).toHaveBeenCalledTimes(2);
+  });
 });

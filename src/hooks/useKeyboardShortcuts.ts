@@ -22,7 +22,10 @@ interface ShortcutActions {
   toggleSearch: () => void;
   openMusePane?: () => void;
   openHelp?: () => void;
+  openShortcuts?: () => void;
   toggleSnapshotsPanel?: () => void;
+  prevScene?: () => void;
+  nextScene?: () => void;
   isDisabled?: boolean;
 }
 import { toggleInlineMarker } from "../editor/formatUtils";
@@ -36,6 +39,19 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
+
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === "ArrowUp" || e.key === "PageUp") {
+          e.preventDefault();
+          actionsRef.current.prevScene?.();
+          return;
+        }
+        if (e.key === "ArrowDown" || e.key === "PageDown") {
+          e.preventDefault();
+          actionsRef.current.nextScene?.();
+          return;
+        }
+      }
       if (e.altKey && e.key.toLowerCase() === "q") {
         e.preventDefault();
         actionsRef.current.closeFile();
@@ -56,7 +72,11 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
 
       if (e.key === "F1") {
         e.preventDefault();
-        actionsRef.current.openHelp?.();
+        if (actionsRef.current.openShortcuts) {
+          actionsRef.current.openShortcuts();
+        } else {
+          actionsRef.current.openHelp?.();
+        }
         return;
       }
 

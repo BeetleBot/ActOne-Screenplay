@@ -121,6 +121,7 @@ updateLineText(lineIndex: number, newText: string): void;
 updateSettings(updater: SettingsUpdater): void;
 reorderScenes(startIndex: number, endIndex: number): void;
 scrollToLine(lineIndex: number, noFocus?: boolean): void;
+scrollToScene(direction: "next" | "prev"): void;
 autoAddSceneNumbers(): void;
 clearSceneNumbers(): void;
 ```

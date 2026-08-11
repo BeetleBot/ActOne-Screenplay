@@ -29,6 +29,7 @@ export { HelpWindow } from './HelpWindow';
 export { ThemeManagerWindow } from './ThemeManagerWindow';
 export { XrayWindow } from './XrayWindow';
 export { TutorialsWindow } from './TutorialsWindow';
+export { ShortcutsModal } from './ShortcutsModal';
 
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,
