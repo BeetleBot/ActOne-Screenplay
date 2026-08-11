@@ -80,20 +80,26 @@ install_deps_ubuntu() {
     sudo apt-get install -y -qq \
         libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
         librsvg2-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev \
-        pkg-config
+        libssl-dev libfontconfig1-dev \
+        pkg-config || \
+    sudo apt-get install -y -qq \
+        libwebkit2gtk-4.0-dev libgtk-3-dev libappindicator3-dev \
+        librsvg2-dev libsoup2.4-dev libssl-dev libfontconfig1-dev pkg-config
 }
 
 install_deps_fedora() {
     sudo dnf install -y \
+        webkit2gtk4.1-devel gtk3-devel libayatana-appindicator-devel \
+        librsvg2-devel libsoup3-devel openssl-devel fontconfig-devel pkg-config || \
+    sudo dnf install -y \
         webkit2gtk4.1-devel gtk3-devel libappindicator-gtk3-devel \
-        librsvg2-devel libsoup3-devel \
-        pkg-config
+        librsvg2-devel libsoup3-devel openssl-devel fontconfig-devel pkg-config
 }
 
 install_deps_arch() {
-    sudo pacman -S --noconfirm \
+    sudo pacman -S --needed --noconfirm \
         webkit2gtk-4.1 gtk3 libayatana-appindicator \
-        librsvg libsoup3 pkg-config
+        librsvg libsoup3 openssl fontconfig pkg-config base-devel
 }
 
 # --- Install system dependencies ---

@@ -36,6 +36,8 @@ check_lib "libgtk-3.so" || MISSING_DEPS=1
 check_lib "libsoup-3.0.so" || check_lib "libsoup-2.4.so" || MISSING_DEPS=1
 check_lib "libayatana-appindicator3.so" || check_lib "libappindicator3.so" || MISSING_DEPS=1
 check_lib "librsvg-2.so" || MISSING_DEPS=1
+check_lib "libssl.so" || check_lib "libcrypto.so" || MISSING_DEPS=1
+check_lib "libfontconfig.so" || MISSING_DEPS=1
 
 if [ "$MISSING_DEPS" -eq 1 ]; then
     echo "Missing required runtime dependencies. Detecting package manager to install them..."
@@ -43,21 +45,23 @@ if [ "$MISSING_DEPS" -eq 1 ]; then
     if command -v apt-get >/dev/null 2>&1; then
         echo "--> Detected APT (Ubuntu/Debian/Linux Mint/Pop!_OS)"
         apt-get update -qq || true
-        apt-get install -y libwebkit2gtk-4.1-0 libgtk-3-0 libsoup-3.0-0 libayatana-appindicator3-1 librsvg2-2 || \
-        apt-get install -y libwebkit2gtk-4.0-3 libgtk-3-0 libsoup2.4-1 libappindicator3-1 librsvg2-2
+        apt-get install -y libwebkit2gtk-4.1-0 libgtk-3-0 libsoup-3.0-0 libayatana-appindicator3-1 librsvg2-2 libssl3 libfontconfig1 xdg-utils || \
+        apt-get install -y libwebkit2gtk-4.0-3 libgtk-3-0 libsoup2.4-1 libappindicator3-1 librsvg2-2 libssl1.1 libfontconfig1 xdg-utils
     elif command -v dnf >/dev/null 2>&1; then
         echo "--> Detected DNF (Fedora/RHEL/CentOS)"
-        dnf install -y webkit2gtk4.1 gtk3 libsoup3 libappindicator-gtk3 librsvg2 || \
-        dnf install -y webkit2gtk3.0 gtk3 libsoup libappindicator-gtk3 librsvg2
+        dnf install -y webkit2gtk4.1 gtk3 libsoup3 libayatana-appindicator librsvg2 openssl-libs fontconfig xdg-utils || \
+        dnf install -y webkit2gtk4.1 gtk3 libsoup3 libappindicator-gtk3 librsvg2 openssl-libs fontconfig xdg-utils || \
+        dnf install -y webkit2gtk3.0 gtk3 libsoup libappindicator-gtk3 librsvg2 openssl-libs fontconfig xdg-utils
     elif command -v pacman >/dev/null 2>&1; then
         echo "--> Detected Pacman (Arch Linux/Manjaro)"
-        pacman -S --needed --noconfirm webkit2gtk-4.1 gtk3 libsoup3 libayatana-appindicator librsvg
+        pacman -S --needed --noconfirm webkit2gtk-4.1 gtk3 libsoup3 libayatana-appindicator librsvg openssl fontconfig xdg-utils
     elif command -v zypper >/dev/null 2>&1; then
         echo "--> Detected Zypper (openSUSE)"
-        zypper install -y libwebkit2gtk-4_1-0 libgtk-3-0 libsoup-3_0-0 libayatana-appindicator3-1 librsvg-2-2
+        zypper install -y libwebkit2gtk-4_1-0 libgtk-3-0 libsoup-3_0-0 libayatana-appindicator3-1 librsvg-2-2 libopenssl3 fontconfig xdg-utils || \
+        zypper install -y libwebkit2gtk-4_0-3 libgtk-3-0 libsoup-2_4-1 libappindicator3-1 librsvg-2-2 libopenssl1_1 fontconfig xdg-utils
     else
         echo "WARNING: Could not automatically install dependencies. Unrecognized package manager."
-        echo "Please ensure GTK3, WebKitGTK 4.1 (or 4.0), libsoup, appindicator, and librsvg are installed."
+        echo "Please ensure GTK3, WebKitGTK 4.1 (or 4.0), libsoup, appindicator, librsvg, OpenSSL, fontconfig, and xdg-utils are installed."
     fi
 else
     echo "All core runtime dependencies are already present."
