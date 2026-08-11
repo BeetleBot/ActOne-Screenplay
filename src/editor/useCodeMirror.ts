@@ -776,45 +776,51 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
         if (target === null) return;
         pendingScrollToRef.current = null;
         const token = scriptSwitchToken;
-        requestAnimationFrame(() => {
-          if (scriptSwitchToken !== token) return;
-          try {
-            const coords = view.coordsAtPos(target);
-            const scrollArea = getScrollArea(view);
-            if (coords && scrollArea) {
-              const areaRect = scrollArea.getBoundingClientRect();
-              const targetY = pendingScrollTargetY(
-                scrollArea.scrollTop,
-                coords.top,
-                areaRect.top,
-                areaRect.height
-              );
-              scrollArea.scrollTo({ top: targetY, behavior: 'auto' });
-            }
-          } catch { void 0; }
+
+        view.requestMeasure({
+          read(v) {
+            if (scriptSwitchToken !== token) return null;
+            const targetPos = Math.min(target, v.state.doc.length);
+            const coords = v.coordsAtPos(targetPos);
+            const scrollArea = getScrollArea(v);
+            if (!coords || !scrollArea) return null;
+            const areaRect = scrollArea.getBoundingClientRect();
+            const targetY = pendingScrollTargetY(
+              scrollArea.scrollTop,
+              coords.top,
+              areaRect.top,
+              areaRect.height
+            );
+            return { scrollArea, targetY };
+          },
+          write(measureResult) {
+            if (!measureResult) return;
+            measureResult.scrollArea.scrollTo({ top: measureResult.targetY, behavior: 'auto' });
+          }
         });
       };
 
       if (prevCursorY !== null && view.hasFocus && pendingScrollToRef.current === null && !isExternalTextChange && !typewriterModeRef.current) {
         const token = scriptSwitchToken;
-        requestAnimationFrame(() => {
-          if (scriptSwitchToken !== token) return;
-          try {
-            const coords = view.coordsAtPos(view.state.selection.main.head);
-            if (coords) {
-              const diff = coords.top - (prevCursorY as number);
-              if (Math.abs(diff) > 0.5) {
-                const scrollArea = getScrollArea(view);
-                if (scrollArea) {
-                  scrollArea.scrollTop += diff;
-                }
-              }
-            }
-          } catch {
-            void 0;
+        const savedPrevCursorY = prevCursorY;
+
+        view.requestMeasure({
+          read(v) {
+            if (scriptSwitchToken !== token) return null;
+            const currentHead = v.state.selection.main.head;
+            const coords = v.coordsAtPos(currentHead);
+            if (!coords) return null;
+            const diff = coords.top - savedPrevCursorY;
+            if (Math.abs(diff) <= 0.5) return null;
+            const scrollArea = getScrollArea(v);
+            return scrollArea ? { scrollArea, diff } : null;
+          },
+          write(measureResult) {
+            if (!measureResult) return;
+            measureResult.scrollArea.scrollTop += measureResult.diff;
           }
-          scrollToPendingTarget();
         });
+        scrollToPendingTarget();
       } else {
         scrollToPendingTarget();
       }
