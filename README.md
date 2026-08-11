@@ -13,14 +13,18 @@
       <img src="https://img.shields.io/badge/Docs-Documentation-8B5CF6?style=for-the-badge&logo=readthedocs&logoColor=white" alt="Documentation" />
     </a>
     &nbsp;
-    <a href="https://iyal.ink/actone/downloads/" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/Download-App-10B981?style=for-the-badge" alt="Download ActOne" />
+    <a href="https://flathub.org/apps/ink.iyal.actone" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/Flathub-Flatpak-4A90E2?style=for-the-badge&logo=flathub&logoColor=white" alt="Flathub" />
+    </a>
+    &nbsp;
+    <a href="https://apps.microsoft.com/detail/9PJMKR0937KK" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/Microsoft%20Store-Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Microsoft Store" />
     </a>
   </p>
 
   <p align="center">
     The distraction-free Fountain screenplay editor for Windows and Linux.<br>
-    The perfect alternative to Final Draft, Highland, and Beat.
+    The native alternative to Final Draft, Highland, and Beat.
     <br><br>
     <i>Built by <a href="https://iyal.ink">iyal.ink</a></i>
   </p>
@@ -33,9 +37,9 @@
 
 ActOne Screenplay is the ultimate **screenwriting software** built natively for PC and Linux users. If you've ever wished for the elegance of **Highland** or the simplicity of **Beat** but on a Windows or Linux machine, ActOne is your answer. 
 
-Designed for both professional screenwriters and indie filmmakers, ActOne provides a **distraction free** writing environment that uses plain-text [Fountain syntax](https://fountain.io/). Say goodbye to expensive subscriptions, locked-down proprietary file formats, and bloated interfaces. Whether you are drafting a pilot, a feature film, or a short, ActOne is the premier **Windows screenplay** and **Linux writer** app that gets out of your way and lets you focus on the story.
+Designed for both professional screenwriters and indie filmmakers, ActOne provides a **distraction-free** writing environment that uses plain-text [Fountain syntax](https://fountain.io/). Say goodbye to expensive subscriptions, locked-down proprietary file formats, and bloated interfaces. Whether you are drafting a pilot, a feature film, or a short, ActOne is the premier **Windows screenplay** and **Linux writer** app that gets out of your way and lets you focus on the story.
 
-**Why choose ActOne for screenwriting?** It offers an unparalleled mix of live Fountain formatting, structural organization tools, and **Final Draft (`.fdx`)** compatibility without the hefty price tag.
+**Why choose ActOne for screenwriting?** It offers an unparalleled mix of live Fountain formatting, structural organization tools, X-Ray analytics, and **Final Draft (`.fdx`)** compatibility without the heavy subscription fees.
 
 > ⌨️ **Prefer the terminal?** Check out **[FountTUI](https://fount.iyal.ink)**, our terminal-based Fountain screenplay editor built in Rust.
 
@@ -43,8 +47,8 @@ Designed for both professional screenwriters and indie filmmakers, ActOne provid
 
 ## 🎬 Core Screenwriting Features
 
-### 01. Distraction Free, Native Fountain Editing
-Enjoy live syntax highlighting powered by CodeMirror 6. Our editor handles standard screenwriting formatting effortlessly. Features include automatic character autocomplete, Tab-to-cycle Fountain prefixes (`@`, `.`, `>`), and auto-closing parentheticals. Write at the speed of thought.
+### 01. Distraction-Free, Native Fountain Editing
+Enjoy live syntax highlighting powered by CodeMirror 6. Our editor handles standard screenwriting formatting effortlessly. Features include automatic character autocomplete, Tab-to-cycle Fountain prefixes (`@`, `.`, `>`), auto-closing parentheticals, and custom theme presets. Write at the speed of thought.
 
 <p align="center">
   <img src="https://iyal.ink/assets/website%20images/A1-Editor.png" width="850" alt="Fountain Screenplay Editor for Windows and Linux">
@@ -53,7 +57,7 @@ Enjoy live syntax highlighting powered by CodeMirror 6. Our editor handles stand
 ---
 
 ### 02. Outline Tree Navigator
-Mapping out your screenplay's structure is effortless. Instantly navigate your script through a collapsible outline tree that maps sections (`#`), scene headers, and synopses (`=`). Visual plot arc markers let you track storylines and beats at a glance.
+Mapping out your screenplay's structure is effortless. Instantly navigate your script through a collapsible outline tree that maps sections (`#`), scene headers, and synopses (`=`). Visual plot arc markers let you track storylines, beats, and scene color tags at a glance.
 
 <p align="center">
   <img src="https://iyal.ink/assets/website%20images/A1-Navigator.png" width="850" alt="Outline Tree Navigator for Screenwriting">
@@ -62,7 +66,7 @@ Mapping out your screenplay's structure is effortless. Instantly navigate your s
 ---
 
 ### 03. Multi-Script Projects (`.actone`)
-Package multiple `.fountain` screenplay files, scratchpad notes, character lists, and progress data into a single `.actone` project file. The `.actone` format is actually just a glorified ZIP file! If you ever need raw access to your work outside of ActOne, simply open the `.actone` file using an archiver like **[7-Zip](https://www.7-zip.org/)** (highly recommended) to extract your raw `.fountain` text files and other data. Your screenwriting data is never locked in a proprietary format.
+Package multiple `.fountain` screenplay files, scratchpad notes, character lists, and progress data into a single `.actone` project file. The `.actone` format is a standard ZIP archive! If you ever need raw access to your work outside of ActOne, simply open the `.actone` file using an archiver like **[7-Zip](https://www.7-zip.org/)** to extract your raw `.fountain` text files. Your work is never trapped in a proprietary format.
 
 <p align="center">
   <img src="https://iyal.ink/assets/website%20images/A1-Multi-Scripts.png" width="850" alt="Multi Script Projects Workspace">
@@ -89,7 +93,7 @@ Understand your script's DNA. Track dialogue-to-action ratios, day vs. night sce
 ---
 
 ### 06. Muse AI Writing Assistant
-Bust through writer's block with our optional AI assistant. Muse connects to your local Ollama instance for 100% offline privacy, or external API keys. Use `@write-scene`, `@lookup`, and `@synonyms` in contextual chat threads to brainstorm beats and dialogue.
+Bust through writer's block with our optional AI assistant. Muse connects to your local Ollama instance for 100% offline privacy, or external cloud API keys. Use `@write-scene`, `@lookup`, and `@synonyms` in contextual chat threads to brainstorm beats and dialogue.
 
 <p align="center">
   <img src="https://iyal.ink/assets/website%20images/A1-Muse.png" width="850" alt="Muse AI Assistant for Screenwriting">
@@ -106,32 +110,50 @@ Production-ready exports in seconds. Our custom Rust rendering engine delivers p
 
 ---
 
-## 💾 Installation
+## 📥 Download & Installation
 
-### Linux
-Download the installer from our **[Downloads Page](https://iyal.ink/actone/downloads/)**:
+### 🪟 Windows
+Install directly from the **[Microsoft Store](https://apps.microsoft.com/detail/9PJMKR0937KK)**.
+
+### 🐧 Linux (Flatpak)
+ActOne Screenplay is distributed for Linux via **Flatpak**:
+
+* **Flathub**: Get it on [Flathub](https://flathub.org/apps/ink.iyal.actone).
+* **Standalone Bundle**: Download the latest `.flatpak` bundle from [downloads.iyal.ink](https://downloads.iyal.ink/ActOne_v0.4.13_x86_64.flatpak).
 
 ```bash
-tar -xzf ActOne-Linux-x64-0.4.12.tar.gz
-cd ActOne-Linux-x64-0.4.12
-sudo ./install.sh
-actone
+# Installation via terminal
+flatpak install --user ActOne_v0.4.13_x86_64.flatpak
 ```
-
-### Windows
-Install directly from the **[Microsoft Store](https://apps.microsoft.com/detail/9PJMKR0937KK)**.
+*Or simply double-click the `.flatpak` file to install via your system's default Software app (GNOME Software, KDE Discover, etc.).*
 
 ---
 
-## 📄 License
+## 💡 Quick Fountain Primer
 
-ActOne Screenplay is released under the terms in the **[LICENSE](LICENSE)** file.
+Fountain allows you to write formatted screenplays using standard plain text:
 
+```fountain
+.INT. COFFEE SHOP - DAY
+
+A cozy corner table. Rain streaks the window outside.
+
+SARAH
+(typing frantically)
+No subscription fees. No proprietary formats. Just pure story.
+
+MARCUS
+(nods)
+Native on PC and Linux. Finally.
 ```
-Copyright (C) 2026 Iyal Inc. All Rights Reserved.
-```
+
+---
+
+## 📄 License & Attribution
+
+ActOne Screenplay is developed and maintained by **[iyal.ink](https://iyal.ink)**.
 
 <div align="center">
   <br>
-  <b>Engineered by <a href="https://iyal.ink">iyal.ink</a></b>
+  <b>Engineered with ❤️ by <a href="https://iyal.ink">iyal.ink</a></b>
 </div>

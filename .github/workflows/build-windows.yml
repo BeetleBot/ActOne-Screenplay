@@ -1,14 +1,11 @@
 name: Build Windows MSIX & Portable
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:
         description: 'Release version (e.g. 0.4.12)'
-        required: true
+        required: false
         type: string
 
 permissions:

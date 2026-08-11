@@ -103,14 +103,22 @@ jobs:
           if [ -z "$VERSION" ]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           fi
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF" ]; then
+            VERSION=$(node -p "require('./package.json').version")
+          fi
           TAG_NAME="v${VERSION}"
+          FLATPAK_FILE="ActOne-x86_64-${VERSION}.flatpak"
+
+          if [ -f "ActOne-x86_64.flatpak" ]; then
+            mv ActOne-x86_64.flatpak "$FLATPAK_FILE"
+          fi
 
           if gh release view "$TAG_NAME" --repo "$GH_REPO" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" ActOne-x86_64.flatpak \
+            gh release upload "$TAG_NAME" "$FLATPAK_FILE" \
               --repo "$GH_REPO" \
               --clobber
           else
-            gh release create "$TAG_NAME" ActOne-x86_64.flatpak \
+            gh release create "$TAG_NAME" "$FLATPAK_FILE" \
               --repo "$GH_REPO" \
               --title "ActOne v${VERSION}" \
               --notes "ActOne v${VERSION} Release assets."
