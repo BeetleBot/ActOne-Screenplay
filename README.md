@@ -13,12 +13,8 @@
       <img src="https://img.shields.io/badge/Docs-Documentation-8B5CF6?style=for-the-badge&logo=readthedocs&logoColor=white" alt="Documentation" />
     </a>
     &nbsp;
-    <a href="https://flathub.org/apps/ink.iyal.actone" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/Flathub-Flatpak-4A90E2?style=for-the-badge&logo=flathub&logoColor=white" alt="Flathub" />
-    </a>
-    &nbsp;
-    <a href="https://apps.microsoft.com/detail/9PJMKR0937KK" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/Microsoft%20Store-Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Microsoft Store" />
+    <a href="https://iyal.ink/actone/downloads/" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/Download-ActOne-10B981?style=for-the-badge" alt="Download ActOne" />
     </a>
   </p>
 
@@ -110,22 +106,18 @@ Production-ready exports in seconds. Our custom Rust rendering engine delivers p
 
 ---
 
-## 📥 Download & Installation
+## 📥 Download
 
-### 🪟 Windows
-Install directly from the **[Microsoft Store](https://apps.microsoft.com/detail/9PJMKR0937KK)**.
+Get the official installers and package releases for Windows and Linux directly from our downloads page:
 
-### 🐧 Linux (Flatpak)
-ActOne Screenplay is distributed for Linux via **Flatpak**:
-
-* **Flathub**: Get it on [Flathub](https://flathub.org/apps/ink.iyal.actone).
-* **Standalone Bundle**: Download the latest `.flatpak` bundle from [downloads.iyal.ink](https://downloads.iyal.ink/ActOne_v0.4.13_x86_64.flatpak).
-
-```bash
-# Installation via terminal
-flatpak install --user ActOne_v0.4.13_x86_64.flatpak
-```
-*Or simply double-click the `.flatpak` file to install via your system's default Software app (GNOME Software, KDE Discover, etc.).*
+<div align="center">
+  <br>
+  <a href="https://iyal.ink/actone/downloads/" style="text-decoration:none;">
+    <img src="https://img.shields.io/badge/Download-ActOne%20Screenplay-10B981?style=for-the-badge&logoColor=white" alt="Download ActOne Screenplay" height="42" />
+  </a>
+  <br><br>
+  <b><a href="https://iyal.ink/actone/downloads/">https://iyal.ink/actone/downloads/</a></b>
+</div>
 
 ---
 
