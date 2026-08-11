@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotInfo {
@@ -83,27 +82,11 @@ fn sanitize_folder_name(file_path: &str) -> String {
 }
 
 fn snapshot_root<A: tauri::Runtime>(
-    app: &tauri::AppHandle<A>,
+    _app: &tauri::AppHandle<A>,
     file_path: &str,
-    state: &crate::app_prefs::AppPrefsState,
+    _state: &crate::app_prefs::AppPrefsState,
 ) -> PathBuf {
-    let prefs = state.0.lock().unwrap_or_else(|e| e.into_inner());
-    let location = prefs.get("actone-snapshot-location").map(|s| s.as_str()).unwrap_or("project");
-    let custom_path = prefs.get("actone-snapshot-custom-path").cloned().unwrap_or_default();
-
-    match location {
-        "project" => {
-            Path::new(file_path).parent().unwrap_or(Path::new(".")).join(".snapshots")
-        }
-        "custom" if !custom_path.is_empty() => {
-            PathBuf::from(&custom_path)
-        }
-        _ => {
-            app.path().app_data_dir()
-                .unwrap_or_else(|_| PathBuf::from("."))
-                .join("snapshots")
-        }
-    }
+    Path::new(file_path).parent().unwrap_or(Path::new(".")).join(".snapshots")
 }
 
 fn snapshot_dir<A: tauri::Runtime>(
@@ -300,7 +283,7 @@ pub fn get_snapshot_folder_path(
     state: tauri::State<'_, crate::app_prefs::AppPrefsState>,
     file_path: String,
 ) -> Result<String, String> {
-    let dir = snapshot_dir(&app, &file_path, &state);
+    let dir = snapshot_root(&app, &file_path, &state);
     Ok(dir.to_string_lossy().to_string())
 }
 

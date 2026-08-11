@@ -439,6 +439,7 @@ export function paginateScreenplay(lines: ParsedLine[], paperSize: 'letter' | 'a
 
   const startContentIndex = hasTitlePage ? titlePageEndIndex + 1 : 0;
   let currentLinesOnPage = 0;
+  let pageStartLineIndex = startContentIndex;
 
   let lastWasEmpty = false;
   const heights = lines.map(line => {
@@ -477,6 +478,7 @@ export function paginateScreenplay(lines: ParsedLine[], paperSize: 'letter' | 'a
     if (line.type === LineType.pageBreak) {
       pageBreaks.push(i + 2);
       currentLinesOnPage = 0;
+      pageStartLineIndex = i + 1;
       continue;
     }
 
@@ -525,12 +527,13 @@ export function paginateScreenplay(lines: ParsedLine[], paperSize: 'letter' | 'a
         }
       }
 
-      if (breakIndex <= startContentIndex) {
+      if (breakIndex <= pageStartLineIndex) {
         breakIndex = i;
       }
 
       pageBreaks.push(breakIndex + 1);
       currentLinesOnPage = 0;
+      pageStartLineIndex = breakIndex;
       i = breakIndex - 1;
     } else {
       currentLinesOnPage += h;

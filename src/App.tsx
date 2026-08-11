@@ -516,11 +516,13 @@ function AppInner() {
 
   // Listen for OS file open events (from Rust backend)
   useEffect(() => {
+    let active = true;
     let unlisten: (() => void) | undefined;
     const setup = async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        unlisten = await listen<string[]>("file-opened", (event) => {
+        const fn = await listen<string[]>("file-opened", (event) => {
+          if (!active) return;
           const paths = event.payload;
           if (!paths || paths.length === 0) return;
           // In editor window, open files directly
@@ -528,10 +530,20 @@ function AppInner() {
             openFilePath(p);
           }
         });
+        if (!active) {
+          try { fn(); } catch {}
+        } else {
+          unlisten = fn;
+        }
       } catch (e) { logger.error("app", "Failed to listen for file-opened events", e); }
     };
     if (files.length > 0) setup();
-    return () => { if (unlisten) unlisten(); };
+    return () => {
+      active = false;
+      if (unlisten) {
+        try { unlisten(); } catch (e) { /* Safe discard */ }
+      }
+    };
   }, [openFilePath, files.length]);
 
   const filesRef = useRef(files);
@@ -612,22 +624,34 @@ function AppInner() {
       }
     };
 
+    let active = true;
     const setupCloseListener = async () => {
       try {
         const { getCurrentWindow } = await import("@tauri-apps/api/window");
         const win = getCurrentWindow();
-        unlisten = await win.onCloseRequested((event) => {
+        const fn = await win.onCloseRequested((event) => {
+          if (!active) return;
           if (isExitingRef.current) return;
           // Always prevent default close synchronously to prevent the window event loop from crashing
           event.preventDefault();
           handleCloseRequest();
         });
+        if (!active) {
+          try { fn(); } catch {}
+        } else {
+          unlisten = fn;
+        }
       } catch (e) {
         logger.error("app", "Failed to setup close handler:", e);
       }
     };
     setupCloseListener();
-    return () => { if (unlisten) unlisten(); };
+    return () => {
+      active = false;
+      if (unlisten) {
+        try { unlisten(); } catch (e) { /* Safe discard */ }
+      }
+    };
   }, []);
 
   // Editor window: detect transition from >0 files to 0 files → reopen welcome

@@ -676,28 +676,9 @@ export const SettingsWindow: React.FC = () => {
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                       SAVE LOCATION
                     </Typography>
-                    <Select
-                      fullWidth
-                      size="small"
-                      value={snapshotLocation}
-                      onChange={(e) => { const v = e.target.value as "project" | "app_data" | "custom"; setSnapshotLocation(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOT_LOCATION, v); emitUpdate(STORAGE_KEYS.SNAPSHOT_LOCATION, v); }}
-                    >
-                      <MenuItem value="project">Project folder (.snapshots/)</MenuItem>
-                      <MenuItem value="app_data">App data folder</MenuItem>
-                      <MenuItem value="custom">Custom folder...</MenuItem>
-                    </Select>
-                    {snapshotLocation === "custom" && (
-                      <Box sx={{ display: 'flex', gap: 0.75, mt: 0.75 }}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          value={snapshotCustomPath}
-                          onChange={(e) => { const v = e.target.value; setSnapshotCustomPath(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, v); emitUpdate(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, v); }}
-                          placeholder="/path/to/snapshots"
-                          sx={{ '& input': { fontSize: 12, py: 0.6 } }}
-                        />
-                      </Box>
-                    )}
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11, fontStyle: 'italic', mb: 1 }}>
+                      Snapshots are stored in the project's `.snapshots/` folder.
+                    </Typography>
                     <Button
                       variant="outlined"
                       size="small"
@@ -709,7 +690,7 @@ export const SettingsWindow: React.FC = () => {
                           logger.error("settingsWindow", "Failed to open snapshots folder", e);
                         }
                       }}
-                      sx={{ mt: 1.5, fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
+                      sx={{ mt: 0.5, fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
                     >
                       Open Snapshots Folder
                     </Button>
