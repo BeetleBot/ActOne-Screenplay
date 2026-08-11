@@ -4,7 +4,7 @@ import { StructureImportModal } from './StructureImportModal';
 import { CommandPalette } from './CommandPalette';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { AboutModal } from './AboutModal';
-import { ShortcutsModal } from './ShortcutsModal';
+import { QuickGuideModal } from './QuickGuideModal';
 import { FixFormattingModal } from './FixFormattingModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import type { FixFormattingReport } from '../utils/fixFormatting';
@@ -86,9 +86,9 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="about-modal">{showAbout && <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />}</ErrorBoundary>
-      <ErrorBoundary name="shortcuts-modal">
+      <ErrorBoundary name="quickguide-modal">
         {showShortcutsModal && setShowShortcutsModal && (
-          <ShortcutsModal
+          <QuickGuideModal
             isOpen={showShortcutsModal}
             onClose={() => setShowShortcutsModal(false)}
             openHelpWindow={openHelpWindow}

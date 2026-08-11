@@ -30,6 +30,10 @@ Straight quotes (`"` and `'`) are automatically converted to curly typographic q
 | `Ctrl+I` | `*italic*` |
 | `Ctrl+U` | `_underline_` |
 
+### Indic Script & Complex Typography Support
+
+Integrated font fallback chain (`--font-editor-indic`) featuring bundled fonts for Malayalam (*Baloo Chettan 2*, *Mukta Malar*), Hindi/Marathi (*Mukta*), Telugu (*Hind Guntur*), Bengali (*Hind Siliguri*), Gujarati (*Hind Vadodara*), Kannada (*Baloo Tamma 2*), Punjabi (*Baloo Paaji 2*), and Odia (*Baloo Bhaina 2*). Includes descender underline spacing (`text-underline-offset: 3px`).
+
 ### Right-Click Context Menu
 
 Right-clicking opens a context menu with options:

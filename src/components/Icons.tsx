@@ -10,7 +10,7 @@ import {
   GitMerge, DotsThreeVertical, FilePlus, ArrowSquareOut, User, Play, MusicNote,
   Circle, ArrowCounterClockwise, FloppyDisk, Gear, Stop, TextT, Timer, Faders,
   Sidebar, MagnifyingGlassPlus, MagnifyingGlassMinus, Camera, CheckSquareOffset,
-  Garage, Command, DotsThree, DotsSix, Books, Pencil, DiscordLogo,
+  Garage, Command, DotsThree, DotsSix, Books, Pencil, DiscordLogo, KeyReturn,
   SquaresFour, FolderStar, TreeStructure, Rows, ListMagnifyingGlass, GoogleLogo, FolderSimplePlus,
   Minus, ChatDots, PaperPlaneRight
 } from '@phosphor-icons/react';
@@ -108,6 +108,7 @@ export const BeenhereIcon = createPhosphorIcon(CheckSquareOffset);
 export const GarageIcon = createPhosphorIcon(Garage);
 export const ViewAgendaIcon = createPhosphorIcon(Rows);
 export const ActionKeyIcon = createPhosphorIcon(Command);
+export const KeyboardShortcutsIcon = createPhosphorIcon(KeyReturn);
 export const MoreHorizIcon = createPhosphorIcon(DotsThree);
 export const DragHandleIcon = createPhosphorIcon(DotsSix);
 export const LibraryBooksIcon = createPhosphorIcon(Books);

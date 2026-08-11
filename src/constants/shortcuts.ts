@@ -8,28 +8,102 @@ export interface ShortcutItem {
 
 export interface SyntaxItem {
   name: string;
-  syntax: string;
-  example: string;
+  autoSyntax?: string;
+  forcedSyntax?: string;
+  autoExample?: string;
+  forcedExample?: string;
   description: string;
 }
 
 export const SYNTAX_REGISTRY: SyntaxItem[] = [
-  { name: "Scene Heading", syntax: "INT. / EXT. / .FORCED", example: "INT. COFFEE SHOP - DAY", description: "Starts a new scene. Can be forced with a leading dot." },
-  { name: "Character Name", syntax: "ALL CAPS or @Character", example: "JOHN\nHello, world.", description: "Character line preceding dialogue. Can be forced with @." },
-  { name: "Parenthetical", syntax: "(parenthetical)", example: "(whispering)", description: "Directions inside dialogue enclosed in parentheses." },
-  { name: "Transition", syntax: "CUT TO: or > Transition", example: "CUT TO:", description: "Ending transitions. Right-aligned or forced with >." },
-  { name: "Centered Text", syntax: "> text <", example: "> THE END <", description: "Text placed between inward arrows is rendered centered." },
-  { name: "Dual Dialogue", syntax: "CHARACTER ^", example: "JACK ^", description: "Character name ending with ^ formats as side-by-side speech." },
-  { name: "Section Heading", syntax: "# Act I, ## Scene 1", example: "# ACT I - THE BEGINNING", description: "Structural organization levels (#, ##, ###, ####)." },
-  { name: "Synopsis", syntax: "= Synopsis text", example: "= John meets Sarah for coffee.", description: "Scene overview/beats that appear in Outline View." },
-  { name: "Inline Note", syntax: "[[ Note text ]]", example: "[[ Fix pacing in this paragraph ]]", description: "Private writer notes hidden during screenplay export." },
-  { name: "Boneyard Comments", syntax: "/* Comment */", example: "/* Omitted scene 14 */", description: "Multi-line comments ignored during export." },
-  { name: "Scene Numbers", syntax: "#scene-num#", example: "INT. CAFE - DAY #12A#", description: "Scene numbers placed at the end of scene headings." },
-  { name: "Inline Markers", syntax: "~color:Description~", example: "~blue:Check continuity~", description: "Colored marker tags for inline script revision flags." },
-  { name: "Storyline Tags", syntax: "tag:StorylineName", example: "tag:SubplotA", description: "Storyline tracking tags for scene organization." },
-  { name: "Bold Text", syntax: "**bold**", example: "**emphasized**", description: "Bold formatting syntax." },
-  { name: "Italic Text", syntax: "*italic*", example: "*whispered*", description: "Italic formatting syntax." },
-  { name: "Underline Text", syntax: "_underline_", example: "_important_", description: "Underline formatting syntax." },
+  {
+    name: "Scene Heading (Slugline)",
+    autoSyntax: "INT. / EXT. / INT/EXT. / I/E.",
+    forcedSyntax: ".",
+    autoExample: "INT. COFFEE SHOP - DAY",
+    forcedExample: ".ON THE HIGHWAY",
+    description: "Auto-detected when starting with INT., EXT., INT/EXT., or I/E.. Force any line as a scene heading by starting with a leading dot (.) followed by text."
+  },
+  {
+    name: "Character Name",
+    autoSyntax: "ALL CAPS",
+    forcedSyntax: "@",
+    autoExample: "JOHN\nHello, world.",
+    forcedExample: "@McDONALD\nWhere is the briefcase?",
+    description: "Auto-detected when an ALL-CAPS line follows a blank line. Force character names containing lowercase letters (e.g. McDONALD or van HELSING) using a leading @"
+  },
+  {
+    name: "Transition",
+    autoSyntax: "ALL CAPS ending in TO:",
+    forcedSyntax: ">",
+    autoExample: "CUT TO:",
+    forcedExample: "> FADE OUT.",
+    description: "Auto-detected when an ALL-CAPS line ends in TO: after a blank line. Force any transition line using a leading greater-than symbol (>)."
+  },
+  {
+    name: "Action Paragraph",
+    autoSyntax: "Standard Text",
+    forcedSyntax: "!",
+    autoExample: "John paces back and forth, tapping his fingers.",
+    forcedExample: "!INT. STAGE - NIGHT\n(This action paragraph starts with INT. text)",
+    description: "Default fallback for text lines. Force an action line that would otherwise trigger automatic slugline or character parsing by prefixing with an exclamation mark (!)."
+  },
+  {
+    name: "Shot Line",
+    autoSyntax: "ALL CAPS",
+    forcedSyntax: "!!",
+    autoExample: "CLOSE UP ON THE MAP",
+    forcedExample: "!!CAMERA PANNING LEFT",
+    description: "Auto-detected for recognized camera shot terms. Force any line as a shot description using a double exclamation prefix (!!)."
+  },
+  {
+    name: "Lyrics",
+    forcedSyntax: "~",
+    forcedExample: "~ Oh, beautiful morning light...",
+    description: "Song lyrics inside screenplay scenes are created using a leading tilde (~)."
+  },
+  {
+    name: "Centered Text",
+    forcedSyntax: "> text <",
+    forcedExample: "> THE END <",
+    description: "Center any line on the page by placing inward facing angle brackets (> and <) around the line."
+  },
+  {
+    name: "Dual Dialogue",
+    forcedSyntax: "CHARACTER ^",
+    forcedExample: "JOHN\nI'm ready.\nMARY ^\nMe too.",
+    description: "Indicate simultaneous side-by-side speech by placing a caret (^) at the end of the second character name."
+  },
+  {
+    name: "Section Headings",
+    forcedSyntax: "# / ## / ###",
+    forcedExample: "# ACT I - THE BEGINNING\n## SEQUENCE 1",
+    description: "Outline section hierarchy from # (Act level) down to ###### (Sub-sequence level)."
+  },
+  {
+    name: "Synopsis",
+    forcedSyntax: "=",
+    forcedExample: "= John and Mary discover the hidden map.",
+    description: "Scene overview beats rendered beneath scene cards in the Outline View. Hidden in clean PDF export."
+  },
+  {
+    name: "Inline Markers & Notes",
+    forcedSyntax: "[[marker color: Description]]",
+    forcedExample: "John walks [[marker red: this is how marker works]]",
+    description: "Margin revision markers and inline notes embedded inside double brackets [[marker color: text]]. Colors include red, blue, green, orange, yellow, pink, purple, cyan, etc."
+  },
+  {
+    name: "Storyline Tags",
+    forcedSyntax: "[[storyline storyline1, storyline2, storyline3]]",
+    forcedExample: "INT. COFFEE SHOP - DAY [[storyline SubplotA, RomanceArc]]",
+    description: "Subplot tracking tags embedded in scene headings inside double brackets [[storyline storyline1, storyline2]]. Displayed as sub-cards in the Outline View."
+  },
+  {
+    name: "Scene Color Highlighting",
+    forcedSyntax: "[[color]]",
+    forcedExample: "INT. WAREHOUSE - NIGHT [[color red]]\nEXT. PARK - DAY [[color blue]]",
+    description: "Scene background highlight colors assigned in scene headings using double brackets [[color red]]."
+  },
 ];
 
 export const SHORTCUTS_REGISTRY: ShortcutItem[] = [

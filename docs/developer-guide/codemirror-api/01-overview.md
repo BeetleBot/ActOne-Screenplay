@@ -15,7 +15,7 @@ const staticExtensions = [
     history(),                        // Undo/redo
     keymap.of([...defaultKeymap]),    // Default keybindings
     highlightSpecialChars(),
-    drawSelection(),
+    cursorLayer,                      // Custom drawn blinking caret (replaces drawSelection for WebKitGTK support)
     highlightActiveLine(),
     // ... more static extensions
 ];

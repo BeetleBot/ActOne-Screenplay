@@ -19,7 +19,7 @@ Settings is a standalone Tauri window with four tabs: General, Editor, Snapshots
 
 | Setting | Description |
 |---------|-------------|
-| Font Family | Courier Prime or Courier Prime Sans |
+| Font Family | Courier Prime or Courier Prime Sans (with bundled Indic script font fallback) |
 | Editor Zoom | 50%-400% in steps of 10 |
 | Typewriter Mode | Keep the active line centered |
 | Autocomplete | Toggle character, transition, and Fountain ghost-text suggestions |

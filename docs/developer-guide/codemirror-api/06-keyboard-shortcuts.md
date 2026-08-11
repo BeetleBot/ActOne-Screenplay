@@ -16,32 +16,28 @@ ActOne registers custom CodeMirror keymaps in addition to the default editor key
 
 **File:** `src/hooks/useKeyboardShortcuts.ts` (~214 lines)
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+N` | New screenplay |
-| `Ctrl+O` | Open screenplay |
-| `Ctrl+S` | Save |
-| `Ctrl+Shift+S` | Save As |
-| `Ctrl+W` / `Alt+Q` | Close current tab |
-| `Ctrl+P` | Export / Print |
-| `Ctrl+,` | Settings |
-| `Ctrl+F` | Find (opens search pane) |
-| `Ctrl+K` | Command Palette |
-| `Ctrl+\` | Toggle sidebar |
-| `Ctrl+Alt+Enter` | Toggle Zen Mode |
-| `Ctrl+=` | Zoom in |
-| `Ctrl+-` | Zoom out |
-| `Ctrl+0` | Reset zoom |
-| `Ctrl+B` | Bold (`**`) |
-| `Ctrl+I` | Italic (`*`) |
-| `Ctrl+U` | Underline (`_`) |
-| `Ctrl+Shift+F` | (reserved for Find & Replace) |
-| `Alt+S` | Toggle Snapshots panel |
-| `Alt+Shift+?` | Help / `F1` |
-| `Alt+=` | Interface scale in |
-| `Alt+-` | Interface scale out |
-| `Alt+0` | Reset interface scale |
-| `Escape` | Focus editor |
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| `Ctrl+N` | New screenplay | Create new tab |
+| `Ctrl+O` | Open screenplay | Open file dialog |
+| `Ctrl+S` | Save | Save active file |
+| `Ctrl+Shift+S` | Save As | Save as new file/bundle |
+| `Alt+Q` | Close tab | Close active editor tab |
+| `Ctrl+Tab` | Next tab | Switch to next tab |
+| `Ctrl+Shift+Tab` | Previous tab | Switch to previous tab |
+| `Alt+↑` / `Alt+PageUp` | Previous scene | Jump to previous scene heading |
+| `Alt+↓` / `Alt+PageDown` | Next scene | Jump to next scene heading |
+| `F1` | Shortcuts & Syntax Modal | Open Shortcuts & Syntax overlay |
+| `Ctrl+K` | Command Palette | Open fuzzy command palette |
+| `Ctrl+F` | Find & Replace | Toggle search panel |
+| `Ctrl+\` | Toggle sidebar | Show/hide sidebar activity bar |
+| `Ctrl+Alt+Enter` | Toggle Zen Mode | Fullscreen distraction-free editing |
+| `Alt+M` | Open Muse AI | Open/toggle Muse AI assistant pane |
+| `Alt+S` | Snapshots | Toggle Snapshots sidebar panel |
+| `Ctrl+,` | Settings | Open Settings window |
+| `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Zoom in/out/reset | Adjust editor font scale |
+| `Ctrl+Alt+=` / `Ctrl+Alt+-` / `Ctrl+Alt+0` | Scale UI in/out/reset | Adjust overall interface scale |
+| `Ctrl+B` / `Ctrl+I` / `Ctrl+U` | Formatting | Bold, italic, underline selection |
 
 ### Disabled State Behavior
 
