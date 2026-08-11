@@ -6,6 +6,32 @@ export interface ShortcutItem {
   helpDoc?: string;
 }
 
+export interface SyntaxItem {
+  name: string;
+  syntax: string;
+  example: string;
+  description: string;
+}
+
+export const SYNTAX_REGISTRY: SyntaxItem[] = [
+  { name: "Scene Heading", syntax: "INT. / EXT. / .FORCED", example: "INT. COFFEE SHOP - DAY", description: "Starts a new scene. Can be forced with a leading dot." },
+  { name: "Character Name", syntax: "ALL CAPS or @Character", example: "JOHN\nHello, world.", description: "Character line preceding dialogue. Can be forced with @." },
+  { name: "Parenthetical", syntax: "(parenthetical)", example: "(whispering)", description: "Directions inside dialogue enclosed in parentheses." },
+  { name: "Transition", syntax: "CUT TO: or > Transition", example: "CUT TO:", description: "Ending transitions. Right-aligned or forced with >." },
+  { name: "Centered Text", syntax: "> text <", example: "> THE END <", description: "Text placed between inward arrows is rendered centered." },
+  { name: "Dual Dialogue", syntax: "CHARACTER ^", example: "JACK ^", description: "Character name ending with ^ formats as side-by-side speech." },
+  { name: "Section Heading", syntax: "# Act I, ## Scene 1", example: "# ACT I - THE BEGINNING", description: "Structural organization levels (#, ##, ###, ####)." },
+  { name: "Synopsis", syntax: "= Synopsis text", example: "= John meets Sarah for coffee.", description: "Scene overview/beats that appear in Outline View." },
+  { name: "Inline Note", syntax: "[[ Note text ]]", example: "[[ Fix pacing in this paragraph ]]", description: "Private writer notes hidden during screenplay export." },
+  { name: "Boneyard Comments", syntax: "/* Comment */", example: "/* Omitted scene 14 */", description: "Multi-line comments ignored during export." },
+  { name: "Scene Numbers", syntax: "#scene-num#", example: "INT. CAFE - DAY #12A#", description: "Scene numbers placed at the end of scene headings." },
+  { name: "Inline Markers", syntax: "~color:Description~", example: "~blue:Check continuity~", description: "Colored marker tags for inline script revision flags." },
+  { name: "Storyline Tags", syntax: "tag:StorylineName", example: "tag:SubplotA", description: "Storyline tracking tags for scene organization." },
+  { name: "Bold Text", syntax: "**bold**", example: "**emphasized**", description: "Bold formatting syntax." },
+  { name: "Italic Text", syntax: "*italic*", example: "*whispered*", description: "Italic formatting syntax." },
+  { name: "Underline Text", syntax: "_underline_", example: "_important_", description: "Underline formatting syntax." },
+];
+
 export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   // ===== File & Document =====
   { id: "new-file", label: "New Screenplay", category: "File & Document", keys: ["Ctrl", "N"] },
