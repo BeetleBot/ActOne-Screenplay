@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.14] - 2026-08-11
+
+### Fixed
+- ⏭️ **Scene Navigation Keybinding Fix** – Intercepted `Alt-ArrowUp` and `Alt-ArrowDown` in CodeMirror's internal keymap to prevent default line dragging, restoring smooth `Alt+↑` / `Alt+↓` scene navigation (`useCodeMirror.ts`).
+- 📦 **Flatpak Host Fonts Permission** – Added `--filesystem=host-fonts` to Flatpak finish-args (`flatpak/ink.iyal.actone.yml`), allowing access to host system fonts without sandboxing path reservation warnings.
+
 ## [0.4.13] - 2026-08-11
 
 ### Added
