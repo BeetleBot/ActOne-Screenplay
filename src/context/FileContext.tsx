@@ -765,7 +765,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isActone = path.toLowerCase().endsWith(".actone");
     const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
     const zipped = await packActoneBundleAsync(scripts, settings);
-    await invoke("save_file_binary", { path: normalizedPath, bytes: zipped });
+    await invoke("save_file_binary", { path: normalizedPath, bytes: Array.from(zipped) });
   };
 
   const saveFile = async () => {

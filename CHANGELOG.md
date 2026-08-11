@@ -2,14 +2,15 @@
 
 ## [0.4.15] - 2026-08-11
 
-### Added / Improved
-- 🗄️ **Project-Centric Snapshots** – Modified snapshots system to save screenplay backups exclusively inside the `.snapshots/` folder in your project's active directory. Removed the redundant Save Location selections (App Data/Custom path) from the Settings window to keep configurations unified and clear.
-- 📂 **Snapshots Root Folder Navigation** – Updated the "Open Snapshots Folder" action to open the root `.snapshots/` folder, allowing quick visibility of all screenplay snapshot sub-folders in one location.
-
 ### Fixed
-- 🔄 **Infinite Page Breaks Save Loop** – Resolved a critical event loop deadlock in `paginateScreenplay` where backtracking for orphaned headings or character names at page breaks created an infinite pagination loop. The parser now checks against `pageStartLineIndex` to guarantee forward page layout progress.
-- 🔌 **Safeguarded Tauri IPC Events** – Handled race conditions and caught potential `TypeError: Cannot read properties of undefined (reading 'handlerId')` errors inside React unlisten handlers during HMR/hot-reloads by wrapping event cleanups in `try/catch` blocks.
-- 📦 **Removed Flatpak Integration** – Cleaned up the repository by deleting `flatpak/` configs, `build-flatpak.yml` and `update-flathub.yml` workflows, flatpak version sync code, and related developer guides.
+- 💾 **Large Screenplays & `.actone` Bundle Save Fix** – Resolved a critical saving freeze on large screenplays (80–100+ pages) by restoring synchronous direct zipping (`zipSync`) and converting byte buffers to flat numeric arrays before Tauri IPC transfer. This prevents Web Worker security blocks and JSON object map inflation from hanging the save process.
+- 🔄 **Infinite Page Breaks Loop Fix** – Eliminated a main-thread deadlock in `paginateScreenplay` where backtracking for consecutive scene headings or character names at page breaks created an infinite pagination loop.
+- 🔌 **Safeguarded Tauri IPC Event Cleanup** – Wrapped event unlisten handlers in `App.tsx` with safety `try/catch` guards to prevent `TypeError: Cannot read properties of undefined (reading 'handlerId')` crashes during hot-reloads and unmounts.
+
+### Added / Improved
+- 🗄️ **Project-Centric Snapshots** – Standardized screenplay snapshot backups to save exclusively inside the `.snapshots/` folder within your active project directory. Removed redundant save location dropdowns from Settings.
+- 📂 **Snapshots Folder Shortcut** – Updated the "Open Snapshots Folder" action to open the root `.snapshots/` directory, allowing instant visibility of all historical script backups.
+- 📦 **Streamlined Repository** – Cleaned up the repository by removing legacy Flatpak configuration files, workflows (`build-flatpak.yml`, `update-flathub.yml`), version syncing tasks, and developer guide references.
 
 ## [0.4.14] - 2026-08-11
 

@@ -1,4 +1,4 @@
-import { zipSync, zip, unzipSync, strToU8, strFromU8 } from "fflate";
+import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { migrateProductionTags } from "./perScriptSettings";
 import { logger } from "./logger";
 
@@ -182,7 +182,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<string, any>): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const {
       genders, todos, parking, notepad, sprintHistory: sprintData, productionTags, promptChats, ...restSettings
     } = settings || {};
@@ -238,15 +238,10 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       entries[script.fileName] = strToU8(script.content);
     }
 
-    zip(entries, { level: 6 }, (err, zipped) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      const result = new Uint8Array(MAGIC_LENGTH + zipped.length);
-      result.set(ACTONE_MAGIC);
-      result.set(zipped, MAGIC_LENGTH);
-      resolve(result);
-    });
+    const zipped = zipSync(entries);
+    const result = new Uint8Array(MAGIC_LENGTH + zipped.length);
+    result.set(ACTONE_MAGIC);
+    result.set(zipped, MAGIC_LENGTH);
+    resolve(result);
   });
 }
