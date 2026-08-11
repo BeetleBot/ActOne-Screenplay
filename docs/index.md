@@ -93,7 +93,6 @@ End-user documentation for every feature in ActOne.
 | [Editor](features/01-editor.md) | Core editing features, syntax highlighting, smart typing |
 | [Autocomplete](features/02-autocomplete.md) | Ghost text suggestions for characters, transitions, etc. |
 | [Sidebar Panels](features/03-sidebar.md) | 8 sidebar tabs: Outline, Scripts, Notepad, Markers, Tasks, Snapshots, Sprint, Parking |
-| [Planning Board](features/04-planning-board.md) | _(Coming Soon)_ Visual kanban scene organization |
 | [Export](features/05-export.md) | PDF, FDX, FadeIn, Fountain, CSV export |
 | [Multi-Script Bundles](features/06-scripts.md) | Managing multiple scripts in .actone bundles |
 | [Parking](features/07-parking.md) | Temporary text storage |
