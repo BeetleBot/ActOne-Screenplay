@@ -111,9 +111,9 @@ if ! command -v rustc &>/dev/null; then
     source "$HOME/.cargo/env"
 fi
 
-# --- Install Node.js if missing ---
-if ! command -v node &>/dev/null; then
-    echo "==> Installing Node.js"
+# --- Install Node.js & npm if missing ---
+if ! command -v node &>/dev/null || ! command -v npm &>/dev/null; then
+    echo "==> Installing Node.js & npm"
     case "$DISTRO" in
         ubuntu)
             curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
@@ -129,11 +129,20 @@ if ! command -v node &>/dev/null; then
     esac
 fi
 
+# --- Check for npm dependencies ---
+echo "==> Checking npm dependencies"
+cd "$PROJECT_ROOT"
+if [ ! -d "node_modules" ]; then
+    echo "==> node_modules missing. Installing npm packages..."
+    npm install
+else
+    echo "==> node_modules present. Ensuring dependencies are up-to-date..."
+    npm ci || npm install
+fi
+
 # --- Build frontend + Rust backend ---
 echo "==> Building Tauri app"
 cd "$PROJECT_ROOT"
-npm ci
-
 npm run tauri build
 
 

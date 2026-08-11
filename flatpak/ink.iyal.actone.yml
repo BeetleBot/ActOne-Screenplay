@@ -11,6 +11,7 @@ finish-args:
   - --share=ipc
   - --share=network
   - --device=dri
+  - --filesystem=host-fonts
   - --talk-name=org.freedesktop.portal.FileChooser
   - --talk-name=org.freedesktop.portal.Desktop
 

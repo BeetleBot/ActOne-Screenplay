@@ -50,20 +50,18 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const scrollToScene = (direction: "next" | "prev") => {
     if (!editorView) return;
     try {
-      const currentPos = editorView.state.selection.main.head;
-      const currentLineObj = editorView.state.doc.lineAt(currentPos);
-      const currentLineNum = currentLineObj.number; // 1-indexed
       const docLines = parsedDoc.lines || [];
-
-      // Find scene headings line indices (0-indexed)
       const sceneHeadings: number[] = [];
       for (let i = 0; i < docLines.length; i++) {
         if (docLines[i].type === LineType.heading) {
-          sceneHeadings.push(i + 1); // convert to 1-indexed line number
+          sceneHeadings.push(i + 1); // 1-indexed line number
         }
       }
 
       if (sceneHeadings.length === 0) return;
+
+      const currentPos = editorView.state.selection.main.head;
+      const currentLineNum = editorView.state.doc.lineAt(currentPos).number;
 
       let targetLine: number | null = null;
       if (direction === "next") {

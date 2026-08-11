@@ -554,6 +554,8 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       autocompletion({ override: [fountainCompletionSource], activateOnTyping: false }),
       keymap.of([
         { key: "Mod-Shift-z", run: redo, preventDefault: true },
+        { key: "Alt-ArrowUp", run: () => true },
+        { key: "Alt-ArrowDown", run: () => true },
         ...defaultKeymap,
         ...historyKeymap
       ]),
