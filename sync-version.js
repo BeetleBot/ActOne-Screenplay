@@ -30,14 +30,6 @@ function syncVersion() {
     }
   }
 
-  const metainfoPath = path.join(rootDir, 'flatpak', 'ink.iyal.actone.metainfo.xml');
-  if (fs.existsSync(metainfoPath)) {
-    let metainfo = fs.readFileSync(metainfoPath, 'utf8');
-    const today = new Date().toISOString().split('T')[0];
-    metainfo = metainfo.replace(/<release version="[^"]*" date="[^"]*"/, `<release version="${version}" date="${today}"`);
-    fs.writeFileSync(metainfoPath, metainfo, 'utf8');
-    console.log(`Updated flatpak/ink.iyal.actone.metainfo.xml to ${version} (${today})`);
-  }
 
 }
 

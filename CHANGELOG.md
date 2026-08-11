@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.15] - 2026-08-11
+
+### Added / Improved
+- 🗄️ **Project-Centric Snapshots** – Modified snapshots system to save screenplay backups exclusively inside the `.snapshots/` folder in your project's active directory. Removed the redundant Save Location selections (App Data/Custom path) from the Settings window to keep configurations unified and clear.
+- 📂 **Snapshots Root Folder Navigation** – Updated the "Open Snapshots Folder" action to open the root `.snapshots/` folder, allowing quick visibility of all screenplay snapshot sub-folders in one location.
+
+### Fixed
+- 🔄 **Infinite Page Breaks Save Loop** – Resolved a critical event loop deadlock in `paginateScreenplay` where backtracking for orphaned headings or character names at page breaks created an infinite pagination loop. The parser now checks against `pageStartLineIndex` to guarantee forward page layout progress.
+- 🔌 **Safeguarded Tauri IPC Events** – Handled race conditions and caught potential `TypeError: Cannot read properties of undefined (reading 'handlerId')` errors inside React unlisten handlers during HMR/hot-reloads by wrapping event cleanups in `try/catch` blocks.
+- 📦 **Removed Flatpak Integration** – Cleaned up the repository by deleting `flatpak/` configs, `build-flatpak.yml` and `update-flathub.yml` workflows, flatpak version sync code, and related developer guides.
+
 ## [0.4.14] - 2026-08-11
 
 ### Fixed
