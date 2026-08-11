@@ -24,7 +24,7 @@
     <mediatype>text/x-fountain</mediatype>
   </provides>
   <releases>
-    <release version="0.4.12" date="2026-08-11" />
+    <release version="0.4.13" date="2026-08-11" />
   </releases>
   <content_rating type="oars-1.1" />
 </component>

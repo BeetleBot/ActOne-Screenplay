@@ -1,6 +1,6 @@
 [package]
 name = "actone"
-version = "0.4.12"
+version = "0.4.13"
 description = "A Tauri App"
 authors = ["iyal.ink"]
 license = "SEE LICENSE IN LICENSE"
