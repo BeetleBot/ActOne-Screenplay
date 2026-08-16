@@ -1,9 +1,9 @@
 [package]
 name = "actone"
 version = "0.4.16"
-description = "A Tauri App"
+description = "An open-source Fountain screenplay editor for Windows and Linux"
 authors = ["iyal.ink"]
-license = "MIT"
+license = "GPL-3.0-only"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -51,5 +51,4 @@ opt-level = 3
 codegen-units = 1
 lto = "fat"
 strip = "symbols"
-
 

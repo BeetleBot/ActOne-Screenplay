@@ -1,6 +1,6 @@
 # ActOne Screenplay
 
-ActOne is a native screenplay editor for Windows and Linux. It uses Fountain text, provides a focused writing environment, and stores projects in portable `.actone` bundles.
+ActOne is an open-source Fountain screenplay editor for Windows and Linux, created by a filmmaker for writers. It provides a focused writing environment, uses plain-text Fountain files, and stores projects in portable `.actone` bundles.
 
 ## Features
 
@@ -112,6 +112,6 @@ Before opening an issue or pull request:
 
 ## License
 
-ActOne Screenplay is licensed under the [MIT License](LICENSE).
+ActOne Screenplay is free and open-source software licensed under the [GNU General Public License v3.0](LICENSE).
 
 Project website: <https://iyal.ink/actone/>
