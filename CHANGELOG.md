@@ -16,6 +16,7 @@
 - 💾 **Instant `.actone` Project Conversion** – Imported scripts are instantly structured into native ActOne projects and trigger an immediate save prompt to preserve work directly as `.actone` bundles.
 - ⌨️ **Command Palette Actions** – Added "Import Screenplay...", "Enable Spellcheck" / "Disable Spellcheck", and "Open Spellcheck Settings..." commands.
 - 📄 **Stable & Accurate Editor Pagination** – Harmonized editor status bar pagination with native Rust PDF export metrics; eliminated rapid page number jumping during typing by preserving authoritative Rust page breaks in desktop mode and correctly distinguishing title page headers from content pages.
+- 🪟 **Window Size & Position Retention** – The main editor window now remembers its size, position, and maximized state across sessions on Windows, Linux, and macOS, restoring it instantly on launch without any resize flash.
 
 ## [0.4.15] - 2026-08-11
 
