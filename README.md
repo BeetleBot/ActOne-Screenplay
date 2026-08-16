@@ -19,6 +19,15 @@ ActOne is a native screenplay editor for Windows and Linux. It uses Fountain tex
 - Custom themes and interface scaling
 - Optional Muse AI support for Ollama and OpenAI-compatible providers
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Fountain Screenplay Editor](https://iyal.ink/assets/website%20images/A1-Editor.png)<br>**Editor** – live Fountain formatting, autocomplete, and scene navigation | ![Outline Navigator](https://iyal.ink/assets/website%20images/A1-Navigator.png)<br>**Outline navigator** – sections, synopses, scene colors, and storylines |
+| ![Multi Script Projects](https://iyal.ink/assets/website%20images/A1-Multi-Scripts.png)<br>**Multi-script projects** – `.actone` bundles with notes, character lists, and progress | ![Snapshots](https://iyal.ink/assets/website%20images/A1snapshot.png)<br>**Snapshots** – automatic version history with diffs and restore |
+| ![X-Ray Analytics](https://iyal.ink/assets/website%20images/A1-Xray.png)<br>**X-Ray** – screenplay analysis and statistics | ![Muse AI Assistant](https://iyal.ink/assets/website%20images/A1-Muse.png)<br>**Muse** – optional AI writing assistant (Ollama or OpenAI-compatible) |
+| ![Export Dialog](https://iyal.ink/assets/website%20images/A1-Export.png)<br>**Export** – PDF, Final Draft (FDX), Fade In, Fountain, and CSV | |
+
 ## Download
 
 Download the latest Windows and Linux builds from:
@@ -94,8 +103,15 @@ Before opening an issue or pull request:
 3. Include the operating system, app version, reproduction steps, and relevant logs.
 4. Run the frontend and Rust test commands listed above.
 
+## AI Development Clarification
+
+- **Was this app "Vibe Coded"?** No.
+- **Was this app completely developed by AI?** No, but AI assistance was used to create it.
+- **So what is it?** ActOne is developed by a full-time writer with working knowledge of Rust and TypeScript. As a writer, he cannot dedicate all his time to the app itself, so AI handled some of the mundane and fine-tuning tasks. The architecture of the app's backend is completely designed by him, and the core engine is written completely by him, with inspiration drawn from other projects and open-source work.
+- **What did AI handle?** The documentation, some UI elements, comments across all the files, the changelog files, and some complicated pieces of code that he couldn't handle himself.
+
 ## License
 
-ActOne Screenplay is copyright Iyal Inc. All rights reserved. See [LICENSE](LICENSE) for the current commercial license terms.
+ActOne Screenplay is licensed under the [MIT License](LICENSE).
 
 Project website: <https://iyal.ink/actone/>
