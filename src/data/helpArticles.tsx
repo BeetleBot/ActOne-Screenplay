@@ -49,7 +49,9 @@ The Welcome screen also shows a rotating random writing quote from famous screen
     relatedIds: ["welcome-screen", "new-screenplay", "file-tabs", "recent-files"],
     content: `Press <kbd>Ctrl+O</kbd> or use the Command Palette (<kbd>Ctrl+K</kbd>) → "Open Screenplay…" to open .fountain, .txt, or .actone files via the native file dialog.
 
-When launched from the command line, ActOne accepts file paths as arguments. The app also listens for OS-level file-open events (e.g., double-clicking a .fountain or .actone file).`,
+  When launched from the command line, ActOne accepts file paths as arguments. The app also listens for OS-level file-open events (e.g., double-clicking a .fountain or .actone file).
+
+Importing other screenplay formats is separate from opening an existing project. Use **Import Screenplay...** for <code>.fdx</code>, <code>.fadein</code>, <code>.fountain</code>, <code>.txt</code>, or <code>.spmd</code> files. ActOne converts the selected file to Fountain and creates a new <code>.actone</code> project.`,
   },
   {
     id: "recent-files",
@@ -75,19 +77,36 @@ When launched from the command line, ActOne accepts file paths as arguments. The
     relatedIds: ["keyboard-shortcuts"],
     content: `Press <kbd>Ctrl+K</kbd> to open the Command Palette. Type to filter commands across six categories:
 
-**File:** New Screenplay, Open Screenplay, Save, Save As, Close Active File, Export.
+**File:** New Screenplay, Open Screenplay, Import Screenplay, Save, Save As, Close Active File, Export.
 
-**Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, Replace.
+**Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, and Enable/Disable Spellcheck.
 
 **View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Reset Interface Scale, Show/Hide Fountain Markup, Open X-Ray Analysis, Show Snapshots.
 
 **Format:** Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers.
 
-**Settings:** Open Settings, Set Font (Courier Prime / Courier Prime Sans), Set Paper Size (Letter / A4), Theme Manager.
+**Settings:** Open Settings, Open Spellcheck Settings, Set Font (Courier Prime / Courier Prime Sans), Set Paper Size (Letter / A4), Theme Manager.
 
 **Help:** Help Guide, Interactive Tutorial, Fountain Syntax Guide, Report a Bug.
 
 Each command shows its keyboard shortcut when available. Navigate with arrow keys and press Enter to execute. Press Escape to close. Available even when modals are open.`,
+  },
+  {
+    id: "script-import",
+    title: "Importing Screenplays",
+    category: "Getting Started",
+    tags: ["import", "fdx", "fadein", "fountain", "spmd", "convert"],
+    relatedIds: ["open-file", "new-screenplay", "actone-bundle"],
+    content: `Use **Import Screenplay...** from the Welcome screen, editor, or Command Palette (<kbd>Ctrl+K</kbd>) to convert an existing screenplay into an ActOne project.
+
+Supported formats are:
+- Final Draft XML (<code>.fdx</code>)
+- Fade In project files (<code>.fadein</code>)
+- Fountain (<code>.fountain</code>)
+- Plain text (<code>.txt</code>)
+- Screenplay text (<code>.spmd</code>)
+
+ActOne converts the source to Fountain, creates a new project, and opens the save workflow so you can preserve the imported work as a <code>.actone</code> bundle.`,
   },
   {
     id: "interactive-tutorial",
@@ -888,16 +907,59 @@ Paper Size (Letter or A4) is inherited from Settings. PDF includes page numberin
   },
   // ===== SETTINGS & CUSTOMIZATION =====
   {
+    id: "spellcheck",
+    title: "Spellcheck",
+    category: "Settings & Customization",
+    tags: ["spellcheck", "dictionary", "language", "typo", "words"],
+    relatedIds: ["settings-overview", "editor-context-menu", "status-bar"],
+    content: `ActOne includes an optional native Rust spellcheck engine. It is disabled by default so you can enable it when you want spelling assistance without changing screenplay-specific capitalization.
+
+**Enable it:** Use Settings → Spellcheck, the Command Palette (<kbd>Ctrl+K</kbd>), or the language indicator in the Status Bar.
+
+**Languages:** English is bundled with the application. Other available dictionaries can be downloaded from Settings → Spellcheck and are cached for offline use.
+
+**Corrections:** Right-click a flagged word to choose a suggestion, **Add to Dictionary**, or **Ignore**. Added words persist across sessions; ignored words apply only to the current session.
+
+Screenplay terms, scene headings, character names, transitions, and other Fountain elements are excluded from normal spelling checks.`,
+  },
+  {
+    id: "window-state",
+    title: "Window Size and Position",
+    category: "Workspace & Views",
+    tags: ["window", "size", "position", "maximize", "desktop"],
+    relatedIds: ["welcome-screen", "settings-overview"],
+    content: `The desktop application remembers the main editor window's size, position, and maximized state. The previous geometry is restored when ActOne starts. This is managed by the native desktop shell and does not require a project file or account.`,
+  },
+  {
+    id: "quick-guide",
+    title: "Quick Guide (F1)",
+    category: "Getting Started",
+    tags: ["quick guide", "f1", "shortcuts", "syntax"],
+    relatedIds: ["keyboard-shortcuts", "command-palette"],
+    content: `Press <kbd>F1</kbd> to open the Quick Guide. The guide has two tabs:
+
+- **Shortcuts:** The current keyboard shortcut registry, including file actions, navigation, editor commands, and zoom controls.
+- **Syntax Reference:** The current Fountain syntax registry, including scene headings, characters, transitions, actions, shots, lyrics, centered text, dual dialogue, sections, synopses, markers, storylines, and scene colors.
+
+The Quick Guide is generated from the same registries used by the application, so its shortcut and syntax entries stay aligned with the editor.`,
+  },
+  {
     id: "settings-overview",
     title: "Settings Overview",
     category: "Settings & Customization",
     tags: ["settings", "ctrl+,", "configuration"],
     relatedIds: ["theme-manager", "auto-save", "font-paper", "interface-scale", "editor-settings"],
-    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings dialog. Two tabs:
+    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings window. It has five tabs:
 
-**General:** Visual Theme, Paper Size (Letter / A4), Interface Scale (75%–300%), Auto-Save toggle and interval.
+**General:** Paper Size (Letter / A4), Interface Scale (75%–300%), Icon Style, Auto-Save toggle and interval, and Reset Settings.
 
-**Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Hide Fountain Markup, Focus Mode.
+**Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Hide Fountain Markup, Focus Mode, and Syntax Colors.
+
+**Spellcheck:** Enable spellcheck, choose an installed language, download dictionaries, manage installed languages, and clear the custom dictionary.
+
+**Snapshots:** Enable snapshots, review the project-local storage location, configure automatic and save-triggered snapshots, and set retention.
+
+**Muse:** Configure the AI provider, model, temperatures, translation languages, and custom instructions.
 
 Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full modal.`,
   },

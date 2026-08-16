@@ -2,7 +2,7 @@
 
 **Window:** `?modal=settings` (`src/components/SettingsWindow.tsx`)
 
-Settings is a standalone Tauri window with four tabs: General, Editor, Snapshots, and Muse. In browser development mode it renders through the same URL parameter but native window behavior is unavailable.
+Settings is a standalone Tauri window with five tabs: General, Editor, Spellcheck, Snapshots, and Muse. In browser development mode it renders through the same URL parameter but native window behavior is unavailable.
 
 ## General
 
@@ -29,27 +29,6 @@ Settings is a standalone Tauri window with four tabs: General, Editor, Snapshots
 | Focus Mode | Dim lines other than the active line |
 | Syntax Colors | Enable or disable Fountain color decorations |
 
-## Audio
-
-| Setting | Description |
-|---------|-------------|
-| Ambient Sounds | Toggle ambient typing sounds (bundled MP3 asset engine) |
-
-## Appearance
-
-| Setting | Description |
-|---------|-------------|
-| Theme | Select from 17 built-in + custom themes |
-| App Scale | UI size percentage (50–300%, step 5, default 100) |
-| Theme Manager | Open custom theme editor |
-| Interface Scale | Separate from zoom — controls overall UI chrome size |
-
-## Export
-
-| Setting | Description |
-|---------|-------------|
-Export defaults are configured from the General tab's paper-size setting and the editor font setting. Export-specific controls are available in `ExportModal` when an export is started.
-
 ## Snapshots
 
 | Setting | Description |
@@ -57,16 +36,18 @@ Export defaults are configured from the General tab's paper-size setting and the
 | Enable Snapshots | Toggle auto-snapshot feature |
 | Enable Auto Snapshots | Periodic auto-snapshots (default every 5 min) |
 | Snapshot on Save | Create snapshot on every manual save (default on) |
-| Snapshot Location | Project folder / App data / Custom |
-| Custom Path | Directory for custom snapshot storage |
+| Snapshot Location | The active project's `.snapshots/` folder |
 | Max Retention | Number of auto/on_save snapshots to keep (default 10) |
 
-## Microsoft Store
+## Spellcheck
 
 | Setting | Description |
 |---------|-------------|
-| License Status | Shows active/inactive |
-| (Windows only) | |
+| Enable Spellcheck | Enables native Rust spellchecking; disabled by default |
+| Active Language | Selects an installed dictionary |
+| Download Language | Downloads an additional dictionary for offline use |
+| Installed Languages | Lists bundled and downloaded dictionaries |
+| Custom Dictionary | Shows and clears words added by the user |
 
 ## Muse
 

@@ -1,9 +1,9 @@
 [package]
 name = "actone"
-version = "0.4.15"
+version = "0.4.16"
 description = "A Tauri App"
 authors = ["iyal.ink"]
-license = "SEE LICENSE IN LICENSE"
+license = "MIT"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

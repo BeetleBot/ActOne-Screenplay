@@ -4,21 +4,31 @@ ActOne is a cross-platform desktop screenplay editor built with **Tauri v2**, **
 
 ## High-Level Architecture
 
-```text
-Tauri desktop shell
-  React frontend in one main WebView
-    MUI interface
-    CodeMirror 6 editor
-    React Context state domains
-    Fountain parser and parser worker
-    Muse providers and tool loop
-  Tauri IPC and events
-    Rust file, export, snapshot, preference, font, update, and Ollama commands
-  Rust backend
-    PDF/FDX/FadeIn exporters
-    Fountain parser for export
-    font cache, app preferences, snapshots, structures, Ollama proxy
+```mermaid
+flowchart TD
+    User[User] --> Shell[Tauri v2 desktop shell]
+    Shell --> Windows[WebView windows]
+    Windows --> Main[React editor window]
+    Windows --> Standalone[Settings, Help, X-Ray, Tutorials, Theme Manager, Crash]
+    Main --> Layout[MainLayout]
+    Layout --> Editor[FountainEditor + CodeMirror 6]
+    Layout --> Panels[Sidebar, Search, Ambient, Muse, Status Bar]
+    Main --> Contexts[React Context state domains]
+    Main --> Parser[Frontend Fountain parser]
+    Parser --> Worker[Parser worker / async parser]
+    Main --> Index[Scene indexer]
+    Main --> AI[Muse providers and JSON tool loop]
+    Main --> IPC[Tauri commands and events]
+    Standalone --> IPC
+    IPC --> Rust[Rust backend]
+    Rust --> Files[File and .actone bundle I/O]
+    Rust --> Export[PDF, FDX, Fade In, Fountain, CSV export]
+    Rust --> Spell[Native spellcheck and dictionaries]
+    Rust --> Project[Snapshots, preferences, fonts, structures]
+    Rust --> Ollama[Optional Ollama proxy]
 ```
+
+The main editor and standalone windows are React applications loaded by Tauri WebViews. They share persisted preferences and coordinate through validated Tauri events. The browser build can exercise most frontend behavior, but native dialogs, filesystem access, spellcheck dictionaries, window state, and the Ollama proxy require Tauri.
 
 The frontend can run in a browser during development and tests. Native dialogs, filesystem operations, standalone windows, and the desktop Ollama proxy require Tauri.
 
@@ -53,7 +63,6 @@ ActOneCode/
 │   ├── src/snapshots.rs         Snapshot storage and retention
 │   └── src/structures.rs        Story structure templates
 ├── docs/                        Feature, developer, and API documentation
-├── todo/                        Planned work and design reviews
 ├── Release/                     Linux and Windows packaging scripts
 ├── package.json                 Frontend scripts and dependencies
 ├── vite.config.ts               Vite configuration
@@ -67,7 +76,7 @@ ActOneCode/
 | Query | Component | Purpose |
 |---|---|---|
 | none | `App` | Main editor window |
-| `?modal=settings` | `SettingsWindow` | General, editor, snapshot, and Muse settings |
+| `?modal=settings` | `SettingsWindow` | General, editor, spellcheck, snapshot, and Muse settings |
 | `?modal=help` | `HelpWindow` | Searchable in-app help guide |
 | `?modal=theme-manager` | `ThemeManagerWindow` | Custom theme editor |
 | `?modal=xray` | `XrayWindow` | Screenplay analysis and character profiles |
@@ -157,7 +166,7 @@ Muse has four layers:
 3. `useAIChat.ts` manages file-scoped sessions, prompt context, streaming, and the tool loop.
 4. `aiTools.ts` declares and executes screenplay read, analysis, drafting, metadata, and X-Ray tools.
 
-The current tool protocol is JSON/text based. It is not the XML system described by the older `todo/ActOneAgenticAI.md` plan. `replace_scene` creates a pending review card; other current mutating tools may apply immediately through settings or editor callbacks.
+The current tool protocol is JSON/text based. `replace_scene` creates a pending review card; other current mutating tools may apply immediately through settings or editor callbacks.
 
 Muse context can include the screenplay index, active scene lines, todos, parking notes, and character profiles. Provider selection determines whether that content leaves the device. See `docs/features/21-muse.md` and `PRIVACY.md`.
 
@@ -176,6 +185,20 @@ The Rust backend exposes commands for:
 - Ollama health checks, model discovery, streaming, and cancellation
 
 Commands are registered in `src-tauri/src/lib.rs`. Capabilities are declared in `src-tauri/capabilities/default.json`. Browser-mode code must guard Tauri-only APIs.
+
+## Native Features
+
+### Script Import
+
+The frontend uses `import_script_dialog` for imports from the Welcome screen, editor, and Command Palette. Supported formats are `.fdx`, `.fadein`, `.fountain`, `.txt`, and `.spmd`. Imported content is normalized into Fountain text, converted into an ActOne project, and saved through the normal project workflow.
+
+### Spellcheck
+
+Spellcheck is implemented in Rust in `src-tauri/src/spellcheck.rs`. English is embedded in the binary; additional dictionaries are downloaded on demand and cached locally. The frontend communicates through `spellcheck_*` commands and provides status-bar language switching, suggestions, custom dictionary words, session ignores, and Settings management.
+
+### Window State
+
+The Tauri `window-state` plugin persists the main window's size, position, and maximized state. Restoration is configured during application startup so the desktop window returns to its previous geometry without requiring frontend layout state.
 
 ## Multi-Window Communication
 

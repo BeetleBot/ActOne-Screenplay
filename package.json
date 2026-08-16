@@ -1,7 +1,7 @@
 {
   "name": "actone",
   "private": true,
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "version": "0.4.16",
   "type": "module",
   "scripts": {

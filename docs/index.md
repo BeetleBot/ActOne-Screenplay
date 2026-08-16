@@ -19,7 +19,7 @@ Architecture, setup, and implementation details for developers working on ActOne
 
 | Document | Description |
 |----------|-------------|
-| [Frontend Architecture](developer-guide/03-frontend.md) | Component tree, state management, all UI components |
+| [Frontend Architecture](developer-guide/03-frontend.md) | Component tree, state management, import, spellcheck, and UI components |
 | [Editor Integration](developer-guide/05-editor.md) | CodeMirror 6 setup, extensions, editor features |
 | [Fountain Parser](developer-guide/06-fountain-parser.md) | Both frontend (TypeScript) and backend (Rust) parsers |
 | [State Management](developer-guide/08-state-management.md) | All 7 React contexts, state, actions, persistence |
@@ -29,7 +29,7 @@ Architecture, setup, and implementation details for developers working on ActOne
 
 | Document | Description |
 |----------|-------------|
-| [Rust Backend](developer-guide/04-backend.md) | Architecture, modules, all 51 Tauri commands |
+| [Rust Backend](developer-guide/04-backend.md) | Architecture, modules, current Tauri commands, spellcheck, and window state |
 | [PDF Export Engine](developer-guide/07-pdf-export.md) | Page layout, font system, pagination algorithm, watermarks |
 
 ### Tauri API Reference
@@ -44,6 +44,7 @@ Architecture, setup, and implementation details for developers working on ActOne
 | [Snapshot Commands](developer-guide/tauri-api/06-snapshot-commands.md) | File versioning system |
 | [Structure Commands](developer-guide/tauri-api/07-structure-commands.md) | Story structure templates |
 | [Licensing Commands](developer-guide/tauri-api/08-licensing-commands.md) | Microsoft Store license verification |
+| [Spellcheck Commands](developer-guide/tauri-api/09-spellcheck-commands.md) | Native spellcheck, dictionaries, and custom words |
 
 ### CodeMirror API Reference
 
@@ -105,8 +106,8 @@ End-user documentation for every feature in ActOne.
 | [Structure Templates](features/14-structure-templates.md) | 8 story structure templates |
 | [Title Page Editor](features/15-title-page.md) | Title page metadata editing |
 | [X-Ray Analysis](features/17-xray.md) | Screenplay analysis dashboard |
-| [Settings](features/18-settings.md) | All configuration options |
-| [Help Guide](features/19-help-guide.md) | Built-in 75-article help system |
+| [Settings](features/18-settings.md) | All configuration options, including spellcheck |
+| [Help Guide](features/19-help-guide.md) | Built-in searchable help system |
 | [Interactive Tutorials](features/20-onboarding-tutorials.md) | User onboarding and Fountain writing tours |
 | [Muse AI Assistant](features/21-muse.md) | AI screenwriting assistant (v0.4.0+) |
 

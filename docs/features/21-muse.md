@@ -263,7 +263,7 @@ The following are planned, not implemented:
 - Stable scene anchors and stale-request rejection.
 - Evidence-based continuity analysis and production breakdown workflows.
 
-The planning review is in `todo/MuseAgenticSkillsReview.md`. The older XML action plan in `todo/ActOneAgenticAI.md` is not the current implementation contract.
+The current implementation contract is documented in this feature guide, the frontend AI API reference, and `PRIVACY.md`. Muse requests and tool results must be treated as untrusted model input.
 
 ## Related Files
 

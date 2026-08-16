@@ -19,3 +19,8 @@ target/msix/
 Test-Files/.snapshots/
 .snapshots/
 **/.snapshots/
+
+# Local agent and planning files
+.agents/
+.opencode/
+todo/

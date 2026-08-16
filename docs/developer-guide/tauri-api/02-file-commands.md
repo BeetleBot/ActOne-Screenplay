@@ -10,21 +10,25 @@ invoke<OpenFileResult | null>("open_file_dialog");
 
 **Returns:** `{ path: string, content: string } | null`
 
-**Filters:** `.actone` (ActOne Screenplay Bundle), `.fountain` (Fountain Screenplay), `.txt` (Plain Text)
+**Filters:** `.actone` and `.zip` (ActOne project bundles)
 
-**Implementation:** Uses `rfd::FileDialog::new().add_filter(...).pick_file()`, reads file content via `std::fs::read_to_string()`.
+**Implementation:** Uses `rfd::FileDialog::new().add_filter(...).pick_file()` and returns the selected path with an empty content field. The frontend reads the project bundle separately.
 
 ---
 
-## `import_fountain_dialog`
+## `import_script_dialog`
 
-File picker for `.fountain`/`.txt` only (excludes `.actone` bundles).
+Opens the import picker for screenplay files and excludes `.actone` bundles. The frontend converts the selected file to Fountain before creating an ActOne project.
 
 ```typescript
-invoke<ImportResult | null>("import_fountain_dialog");
+invoke<ImportResult | null>("import_script_dialog", { format: null });
 ```
 
-**Returns:** `{ path: string, content: string } | null`
+**Returns:** `{ path: string, name: string, extension: string } | null`
+
+**Supported formats:** `.fdx`, `.fadein`, `.fountain`, `.txt`, and `.spmd`. Fade In files are read as binary data because they are packaged project files.
+
+`import_fountain_dialog` remains registered as a compatibility alias for Fountain/text-only callers.
 
 ---
 

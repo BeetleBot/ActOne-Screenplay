@@ -32,7 +32,7 @@ App
                 SidebarViews (routes sidebar panels)
                 FountainEditor (CodeMirror 6 container)
                 SearchPanel / AmbientPanel / MusePanel (right panes)
-              StatusBar (file, save, document, sprint, AI, and scene information)
+               StatusBar (file, save, document, sprint, spellcheck, AI, and scene information)
             ModalManager
               CommandPalette
               ExportModal
@@ -49,7 +49,7 @@ ActOne uses **React Context** for application state. There are 7 providers in `A
 
 | Context | File | Purpose |
 |---------|------|---------|
-| `UIProvider` | `UIContext.tsx` | View mode, zoom level, zen mode, font/paper/editor prefs, ambient audio, icon style |
+| `UIProvider` | `UIContext.tsx` | View mode, zoom level, zen mode, font/paper/editor preferences, spellcheck state, ambient audio, icon style |
 | `CustomModalProvider` | `CustomModalContext.tsx` | `confirm()`-style modal dialogs |
 | `FileProvider` | `FileContext.tsx` | Multi-tab file open/save/close, CRLF normalization, script management |
 | `SnapshotProvider` | `SnapshotContext.tsx` | Snapshot creation, listing, restoration |
@@ -123,7 +123,7 @@ ErrorBoundary
 | Window | File | Purpose |
 |--------|------|---------|
 | `SettingsWindow` | `SettingsWindow.tsx` | All app settings |
-| `HelpWindow` | `HelpWindow.tsx` | 75 searchable help articles in 9 categories |
+| `HelpWindow` | `HelpWindow.tsx` | Searchable help articles grouped into 9 categories |
 | `XrayWindow` | `XrayWindow.tsx` | Screenplay analysis dashboard |
 | `TutorialsWindow` | `TutorialsWindow.tsx` | Interactive tutorial launcher |
 | `ThemeManagerWindow` | `ThemeManagerWindow.tsx` | Custom theme editor |
@@ -150,6 +150,27 @@ The composer is normal text input. It does not provide `@write-scene`, `@q`, `@l
 ActOne uses an asset-based audio engine for ambient sounds:
 - **MP3 Assets**: Replaced the legacy procedural generation engine (Tone.js) with high-quality bundled MP3 assets for better performance and reliability.
 - **Offline Capable**: All sound assets are bundled natively within the app (`~10MB`), ensuring full offline functionality without external network requests.
+
+## Spellcheck Integration
+
+Spellcheck is disabled by default and can be enabled from Settings, the Command Palette, the status bar language menu, or an editor context menu. `FountainEditor` sends text ranges to the Rust spellcheck engine and renders persistent squiggly decorations for misspelled words. Suggestions, `Add to Dictionary`, and session-only `Ignore` actions are provided from the context menu.
+
+The Settings window loads installed and available dictionaries through Tauri. English is bundled; other supported languages are downloaded and cached by the Rust backend. The active language and custom dictionary are persisted between sessions.
+
+## Import Pipeline
+
+The Welcome screen, editor, and Command Palette share the same import path:
+
+1. `import_script_dialog` opens a native picker, or the browser fallback creates a file input.
+2. `.fadein` files are read as binary data; the other supported formats are read as text.
+3. `parseScriptFileToFountain()` converts the source to Fountain.
+4. `FileContext.importAsActoneProject()` creates a native `.actone` project and triggers the save workflow.
+
+Supported extensions are `.fdx`, `.fadein`, `.fountain`, `.txt`, and `.spmd`.
+
+## Window State
+
+Desktop window size, position, and maximized state are persisted by the Tauri `window-state` plugin. This is backend-managed state, separate from React UI preferences and editor layout state.
 
 ## Find & Replace Optimization
 

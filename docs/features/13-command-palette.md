@@ -16,6 +16,7 @@ The palette groups commands by category (defined in `src/components/CommandPalet
 ### File
 - New Screenplay
 - Open Screenplay...
+- Import Screenplay...
 - Save Screenplay
 - Save Screenplay As...
 - Close Active File
@@ -25,6 +26,7 @@ The palette groups commands by category (defined in `src/components/CommandPalet
 - Undo / Redo
 - Cut / Copy / Paste
 - Find in Screenplay
+- Enable / Disable Spellcheck
 
 ### View
 - Enable / Disable Typewriter Mode
@@ -45,6 +47,7 @@ The palette groups commands by category (defined in `src/components/CommandPalet
 
 ### Settings
 - Open Settings...
+- Open Spellcheck Settings...
 - Set Font: Courier Prime / Courier Prime Sans
 - Set Paper Size: US Letter / A4
 - Open Theme Manager...

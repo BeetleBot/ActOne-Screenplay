@@ -36,20 +36,21 @@ Three pieces of state are managed via `tauri::State`:
 | `snapshots` | `snapshots.rs` | File snapshot/versioning system |
 | `ollama` | `ollama.rs` | Ollama health checks, model discovery, streaming chat, cancellation |
 
-## Tauri Commands (51)
+## Tauri Commands
 
 ### File I/O
 
 | Command | Description |
 |---------|-------------|
-| `open_file_dialog` | Native file picker for `.actone`/`.fountain`/`.txt`; returns `{path, content}` (empty content for .actone) |
+| `open_file_dialog` | Native picker for `.actone`/`.zip` project files; returns the selected path |
 | `save_file_dialog` | Save dialog for `.actone`/`.fountain`; writes content |
 | `save_file_content` | Writes string content atomically to a given path |
 | `read_file_content` | Reads a file as UTF-8 string |
 | `read_file_binary` | Reads a file as bytes |
 | `save_file_binary` | Writes bytes atomically to a file |
 | `file_exists` | Checks if a file exists |
-| `import_fountain_dialog` | File picker for `.fountain`/`.txt` only |
+| `import_script_dialog` | File picker for `.fdx`/`.fadein`/`.fountain`/`.txt`/`.spmd` imports |
+| `import_fountain_dialog` | Legacy-compatible alias for Fountain/text import |
 | `pick_directory` | Directory picker |
 | `get_cli_args` | Returns CLI args matching `.actone`/`.fountain`/`.txt` |
 | `get_sample_bundle` | Returns a sample `.actone` bundle for templates/tutorials |
@@ -122,6 +123,24 @@ Three pieces of state are managed via `tauri::State`:
 | `ollama_chat` | Streams a chat completion from a selected Ollama model |
 | `cancel_ollama_chat` | Cancels an in-flight Ollama request |
 
+### Spellcheck
+
+| Command | Description |
+|---------|-------------|
+| `spellcheck_init` | Initializes the native spellcheck engine and language |
+| `spellcheck_set_language` | Switches the active dictionary |
+| `spellcheck_check_text` | Checks text ranges and returns misspelled words |
+| `spellcheck_suggest` | Returns spelling suggestions for a word |
+| `spellcheck_add_word` | Adds a word to the persisted custom dictionary |
+| `spellcheck_remove_word` | Removes a custom dictionary word |
+| `spellcheck_ignore_word` | Ignores a word for the current session |
+| `spellcheck_get_custom_words` | Lists custom dictionary words |
+| `spellcheck_clear_custom_words` | Clears the custom dictionary |
+| `spellcheck_download_dict` | Downloads and caches a language dictionary |
+| `spellcheck_delete_dict` | Deletes a downloaded dictionary |
+| `spellcheck_get_installed` | Lists installed dictionaries |
+| `spellcheck_get_available` | Lists dictionaries available for download |
+
 ### System & Diagnostics
 
 | Command | Description |
@@ -168,8 +187,12 @@ The `font_cache` module:
 ## Snapshot System
 
 The `snapshots` module provides file versioning:
-- Three location modes: `project` (`.snapshots/` next to file), `custom`, `appdata`
+- Snapshots are stored in the active project's `.snapshots/` directory
 - Three types: `auto`, `manual`, `on_save`
 - Configurable retention (default 10 for auto/on_save)
 - Index stored in `index.json` within the snapshot directory
 - Implements custom date formatting (no `chrono` dependency)
+
+## Window State
+
+The `tauri-plugin-window-state` plugin persists the main window's size, position, and maximized state. The application saves state during shutdown and restores it during startup. This behavior is native desktop state and is not managed by React or localStorage.

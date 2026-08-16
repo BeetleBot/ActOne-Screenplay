@@ -16,10 +16,7 @@ Snapshots are copies of your file at specific points in time, stored in a snapsh
 
 ### Storage Locations
 
-Configured in Settings → Snapshots:
-- **Project** (`project`): `.snapshots/` folder next to your screenplay file
-- **App Data** (`appdata`): `{app_data_dir}/snapshots/`
-- **Custom** (`custom`): User-specified directory
+Snapshots are stored in the active project's `.snapshots/` folder next to the project file. The folder contains the snapshot index and the saved revisions.
 
 ## Snapshot Panel
 
