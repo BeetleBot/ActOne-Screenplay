@@ -12,6 +12,8 @@ import { setContextMenuHighlightEffect } from "../editor/contextMenuState";
 import { toggleInlineMarker as toggleInlineMarkerShared } from "../editor/formatUtils";
 import { ContextMenu, type ContextMenuItem, type ContextMenuItemDef } from "./ContextMenu";
 import { createAIProvider } from "../lib/aiProviders";
+import { getWordAtPosition } from "../utils/wordUtils";
+import { spellDecoField } from "../editor/spellcheck";
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -40,7 +42,7 @@ const MARKER_COLORS = [
 
 export const FountainEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { fontFamily, setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, registerTranslationAbort } = useUI();
+  const { fontFamily, setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, registerTranslationAbort, spellcheckEnabled } = useUI();
   const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>(translationState);
   translationStateRef.current = translationState;
   const { parsedDoc, activeScriptIndex, activeScriptName, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
@@ -112,13 +114,16 @@ export const FountainEditor = React.memo(() => {
     }
   };
 
-  const handleContextMenu = (event: React.MouseEvent) => {
+  const handleContextMenu = async (event: React.MouseEvent) => {
     event.preventDefault();
+
+    const clientX = event.clientX;
+    const clientY = event.clientY;
 
     const v = viewRef.current;
     if (v) {
       const sel = v.state.selection.main;
-      const pos = v.posAtCoords({ x: event.clientX, y: event.clientY });
+      const pos = v.posAtCoords({ x: clientX, y: clientY });
 
       // If user right-clicked outside active selection, move cursor or select word at pos
       if (pos !== null && !(sel.from !== sel.to && pos >= sel.from && pos <= sel.to)) {
@@ -138,6 +143,80 @@ export const FountainEditor = React.memo(() => {
 
     const hasSel = menuSelectionRef.current !== null && menuSelectionRef.current.from !== menuSelectionRef.current.to;
     const isSceneLine = currentSceneLine !== null;
+
+    let spellItems: ContextMenuItem[] = [];
+
+    if (spellcheckEnabled && v) {
+      const docText = v.state.doc.toString();
+      const pos = v.posAtCoords({ x: clientX, y: clientY }) ?? v.state.selection.main.head;
+      const wordInfo = getWordAtPosition(docText, pos);
+
+      if (wordInfo) {
+        let isMisspelled = false;
+        const decos = v.state.field(spellDecoField, false);
+        if (decos) {
+          decos.between(wordInfo.from, wordInfo.to, (from, to) => {
+            if (from <= wordInfo.from && to >= wordInfo.to) {
+              isMisspelled = true;
+            }
+          });
+        }
+
+        if (isMisspelled) {
+          const word = wordInfo.word;
+          const wordFrom = wordInfo.from;
+          const wordTo = wordInfo.to;
+          let suggestions: string[] = [];
+
+          try {
+            if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+              const { invoke } = await import("@tauri-apps/api/core");
+              suggestions = await invoke<string[]>("spellcheck_suggest", { word });
+            }
+          } catch {
+            void 0;
+          }
+
+          const handleReplace = (replacement: string) => {
+            const cv = viewRef.current;
+            if (!cv) return;
+            cv.dispatch({
+              changes: { from: wordFrom, to: wordTo, insert: replacement },
+              selection: { anchor: wordFrom + replacement.length },
+            });
+            cv.focus();
+          };
+
+          const handleAddWord = async () => {
+            if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+              const { invoke } = await import("@tauri-apps/api/core");
+              await invoke("spellcheck_add_word", { word });
+              window.dispatchEvent(new CustomEvent("dictionary-changed"));
+            }
+          };
+
+          const handleIgnoreWord = async () => {
+            if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+              const { invoke } = await import("@tauri-apps/api/core");
+              await invoke("spellcheck_ignore_word", { word });
+              window.dispatchEvent(new CustomEvent("dictionary-changed"));
+            }
+          };
+
+          const suggItems: ContextMenuItemDef[] =
+            suggestions.length > 0
+              ? suggestions.map((s) => ({ label: s, action: () => handleReplace(s) }))
+              : [{ label: "No spelling suggestions", enabled: false }];
+
+          spellItems = [
+            ...suggItems,
+            { label: `Add "${word}" to Dictionary`, action: handleAddWord },
+            { label: `Ignore "${word}"`, action: handleIgnoreWord },
+            "separator",
+          ];
+        }
+      }
+    }
 
     const museItems: ContextMenuItemDef[] = hasSel
       ? [
@@ -170,6 +249,7 @@ export const FountainEditor = React.memo(() => {
         }];
 
     const items: ContextMenuItem[] = [
+      ...spellItems,
       { label: "Muse", children: museItems },
       "separator",
       { label: "Cut", enabled: hasSel, action: () => handleEditorAction("cut") },

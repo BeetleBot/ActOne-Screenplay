@@ -2,9 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFile, useEditor, useUI } from "../context";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
-import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, ColorLensIcon, BarChartIcon, CameraIcon } from "./Icons";
+import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon } from "./Icons";
+import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
+import { parseScriptFileToFountain } from "../utils/text";
 import { fixFormatting, type FixFormattingReport } from "../utils/fixFormatting";
+import { useModalWindows } from "../hooks/useModalWindows";
 
 
 
@@ -119,6 +122,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     saveFileAs,
     closeFile,
     activeFileId,
+    importAsActoneProject,
   } = useFile();
 
   const {
@@ -142,7 +146,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     setHideSyntaxEnabled,
     lineFocusEnabled,
     setLineFocusEnabled,
+    spellcheckEnabled,
+    setSpellcheckEnabled,
   } = useUI();
+
+  const { openSettingsWindow } = useModalWindows();
 
   const openUrl = (url: string) => {
     try {
@@ -150,6 +158,48 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     } catch (e) {
       logger.warn("palette", "Failed to open URL via Tauri opener, falling back to window.open", e);
       window.open(url, "_blank");
+    }
+  };
+
+  const handleImport = async () => {
+    onClose();
+    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+      try {
+        const result = await invoke<{ path: string; name: string; extension: string } | null>("import_script_dialog");
+        if (result && result.path) {
+          let fountainText = "";
+          if (result.path.toLowerCase().endsWith(".fadein")) {
+            const bytes = await invoke<number[]>("read_file_binary", { path: result.path });
+            fountainText = parseScriptFileToFountain(result.path, new Uint8Array(bytes));
+          } else {
+            const raw = await invoke<string>("read_file_content", { path: result.path });
+            fountainText = parseScriptFileToFountain(result.path, raw);
+          }
+          const scriptName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "") || "Untitled";
+          await importAsActoneProject(fountainText, scriptName, true);
+        }
+      } catch (e) {
+        logger.error("palette", "Import script dialog failed", e);
+      }
+    } else {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".fdx,.fadein,.fountain,.txt,.spmd";
+      input.onchange = async () => {
+        const f = input.files?.[0];
+        if (!f) return;
+        const name = f.name.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "");
+        let fountainText = "";
+        if (f.name.toLowerCase().endsWith(".fadein")) {
+          const buf = await f.arrayBuffer();
+          fountainText = parseScriptFileToFountain(f.name, new Uint8Array(buf));
+        } else {
+          const text = await f.text();
+          fountainText = parseScriptFileToFountain(f.name, text);
+        }
+        await importAsActoneProject(fountainText, name, true);
+      };
+      input.click();
     }
   };
 
@@ -223,6 +273,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     // File
     { id: "file-new", name: "New Screenplay", category: "File", icon: <NoteAddIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+N", action: () => { newFile(); onClose(); } },
     { id: "file-open", name: "Open Screenplay...", category: "File", icon: <FolderOpenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+O", action: () => { openFile(); onClose(); } },
+    { id: "file-import", name: "Import Screenplay...", category: "File", icon: <DescriptionIcon sx={{ fontSize: 16 }} />, action: handleImport },
     { id: "file-save", name: "Save Screenplay", category: "File", icon: <SaveIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+S", action: () => { saveFile(); onClose(); } },
     { id: "file-save-as", name: "Save Screenplay As...", category: "File", icon: <FileDownloadIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+S", action: () => { saveFileAs(); onClose(); } },
     { id: "file-close", name: "Close Active File", category: "File", icon: <DeleteIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+Q", action: () => { closeFile(activeFileId); onClose(); } },
@@ -235,6 +286,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "edit-copy", name: "Copy Selected", category: "Edit", icon: <ContentCopyIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+C", action: () => handleEditorAction("copy") },
     { id: "edit-paste", name: "Paste Clipboard", category: "Edit", icon: <AssignmentIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
     { id: "edit-find", name: "Find in Screenplay", category: "Edit", icon: <SearchIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+F", action: () => handleEditorAction("find") },
+    { id: "edit-spellcheck", name: spellcheckEnabled ? "Disable Spellcheck" : "Enable Spellcheck", category: "Edit", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setSpellcheckEnabled(!spellcheckEnabled); onClose(); } },
 
     // View
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
@@ -268,6 +320,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
 
     // Settings
     { id: "settings-modal", name: "Open Settings...", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+,", action: () => { onOpenSettingsModal(); onClose(); } },
+    { id: "settings-spellcheck", name: "Open Spellcheck Settings...", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { openSettingsWindow("spellcheck"); onClose(); } },
     { id: "settings-font-prime", name: "Set Font: Courier Prime", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setFontFamily("courier-prime"); onClose(); } },
     { id: "settings-font-sans", name: "Set Font: Courier Prime Sans", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setFontFamily("courier-prime-sans"); onClose(); } },
     { id: "settings-paper-letter", name: "Set Paper Size: US Letter", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setPaperSize("letter"); onClose(); } },

@@ -14,10 +14,12 @@ dependencies = [
  "image",
  "krilla",
  "pollster 0.4.0",
+ "regex",
  "reqwest 0.12.28",
  "rfd",
  "serde",
  "serde_json",
+ "spellbook",
  "sysinfo",
  "tauri",
  "tauri-build",
@@ -25,6 +27,7 @@ dependencies = [
  "tauri-plugin-http",
  "tauri-plugin-opener",
  "tauri-plugin-prevent-default",
+ "tauri-plugin-window-state",
  "unicode-properties",
  "windows 0.62.2",
  "zip",
@@ -4635,6 +4638,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "spellbook"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d204abcbdf8e88729306a8d0ca01a79d8a49969fe1f84696909d6dbc4321c1a"
+dependencies = [
+ "foldhash 0.2.0",
+ "hashbrown 0.17.1",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5126,6 +5139,21 @@ dependencies = [
  "thiserror 2.0.18",
  "webview2-com",
  "windows 0.61.3",
+]
+
+[[package]]
+name = "tauri-plugin-window-state"
+version = "2.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73736611e14142408d15353e21e3cca2f12a3cfb523ad0ce85999b6d2ef1a704"
+dependencies = [
+ "bitflags 2.13.1",
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

@@ -38,6 +38,9 @@ tauri-plugin-http = "2"
 reqwest = { version = "0.12", features = ["json", "stream"] }
 sysinfo = "0.35"
 futures-util = "0.3"
+spellbook = "0.4"
+regex = "1"
+tauri-plugin-window-state = "2.4.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.62", features = ["Services_Store", "Foundation"] }

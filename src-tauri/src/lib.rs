@@ -9,6 +9,7 @@ use tauri::Emitter;
 use tauri::Manager;
 #[cfg(target_os = "windows")]
 use tauri_plugin_prevent_default::PlatformOptions;
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ThemeState {
@@ -86,6 +87,7 @@ mod font_cache;
 mod app_prefs;
 mod snapshots;
 mod ollama;
+mod spellcheck;
 
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
@@ -102,12 +104,47 @@ fn open_file_dialog() -> Option<serde_json::Value> {
 
 #[tauri::command]
 fn import_fountain_dialog() -> Option<serde_json::Value> {
-    let file = rfd::FileDialog::new()
-        .add_filter("Script Files", &["fountain", "txt", "fdx", "fadein"])
-        .pick_file()?;
+    import_script_dialog(None)
+}
+
+#[tauri::command]
+fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
+    let mut dialog = rfd::FileDialog::new();
+    match format.as_deref() {
+        Some("fdx") => {
+            dialog = dialog.add_filter("Final Draft (.fdx)", &["fdx"]);
+        }
+        Some("fadein") => {
+            dialog = dialog.add_filter("Fade In (.fadein)", &["fadein"]);
+        }
+        Some("fountain") => {
+            dialog = dialog.add_filter("Fountain (.fountain, .txt)", &["fountain", "txt", "spmd"]);
+        }
+        _ => {
+            dialog = dialog
+                .add_filter("All Supported Scripts", &["fdx", "fadein", "fountain", "txt", "spmd"])
+                .add_filter("Final Draft (.fdx)", &["fdx"])
+                .add_filter("Fade In (.fadein)", &["fadein"])
+                .add_filter("Fountain (.fountain, .txt)", &["fountain", "txt", "spmd"]);
+        }
+    }
+    let file = dialog.pick_file()?;
     let path_str = file.to_string_lossy().to_string();
-    let content = fs::read_to_string(&file).ok()?;
-    Some(serde_json::json!({ "path": path_str, "content": content }))
+    let name = file
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("Untitled")
+        .to_string();
+    let ext = file
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    Some(serde_json::json!({
+        "path": path_str,
+        "name": name,
+        "extension": ext
+    }))
 }
 
 fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(path: P, data: C) -> Result<(), String> {
@@ -137,11 +174,24 @@ fn save_file_content(path: String, content: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn save_file_dialog(content: String) -> Option<String> {
-    let file = rfd::FileDialog::new()
+fn save_file_dialog(content: String, default_name: Option<String>) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new()
         .add_filter("ActOne Bundle", &["actone"])
-        .add_filter("Fountain Screenplays", &["fountain"])
-        .save_file()?;
+        .add_filter("Fountain Screenplays", &["fountain"]);
+
+    if let Some(ref name) = default_name {
+        let clean = name.trim();
+        if !clean.is_empty() {
+            let suggested = if clean.to_ascii_lowercase().ends_with(".actone") || clean.to_ascii_lowercase().ends_with(".fountain") {
+                clean.to_string()
+            } else {
+                format!("{}.actone", clean)
+            };
+            dialog = dialog.set_file_name(&suggested);
+        }
+    }
+
+    let file = dialog.save_file()?;
         
     let mut file_path = file;
     if let Some(ext) = file_path.extension() {
@@ -685,6 +735,19 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_http::init())
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_denylist(&[
+                    "welcome",
+                    "settings",
+                    "help",
+                    "theme-manager",
+                    "xray",
+                    "tutorials",
+                    "crash-report",
+                ])
+                .build(),
+        )
         .plugin({
             let prevent = tauri_plugin_prevent_default::Builder::new();
             #[cfg(target_os = "windows")]
@@ -761,6 +824,7 @@ pub fn run() {
                 let _ = app_prefs::apply_app_icon(handle, use_dark);
             }
             app.manage(app_prefs::AppPrefsState(Mutex::new(prefs)));
+            app.manage(Mutex::new(spellcheck::SpellcheckState::new()));
 
             Ok(())
         })
@@ -789,8 +853,9 @@ pub fn run() {
             get_cli_args,
             generate_fdx_string,
             generate_fadein_bytes,
-             import_fountain_dialog,
-             check_microsoft_store_license,
+            import_fountain_dialog,
+            import_script_dialog,
+            check_microsoft_store_license,
              get_system_info,
              send_error_report,
              flush_pending_panics,
@@ -816,14 +881,31 @@ pub fn run() {
             ollama::ollama_list_models,
             ollama::ollama_chat,
             ollama::cancel_ollama_chat,
+            spellcheck::spellcheck_init,
+            spellcheck::spellcheck_set_language,
+            spellcheck::spellcheck_check_text,
+            spellcheck::spellcheck_suggest,
+            spellcheck::spellcheck_add_word,
+            spellcheck::spellcheck_remove_word,
+            spellcheck::spellcheck_ignore_word,
+            spellcheck::spellcheck_get_custom_words,
+            spellcheck::spellcheck_clear_custom_words,
+            spellcheck::spellcheck_download_dict,
+            spellcheck::spellcheck_delete_dict,
+            spellcheck::spellcheck_get_installed,
+            spellcheck::spellcheck_get_available,
         ]);
 
     builder
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app_handle, event| {
+        .run(|app_handle, event| {
             match event {
                 tauri::RunEvent::ExitRequested { .. } => {
+                    // Persist window state before exit (plugin's RunEvent::Exit save
+                    // never fires on Windows due to the explicit process::exit below)
+                    let _ = app_handle.save_window_state(StateFlags::all());
+
                     // Cancel all active background AI/streaming processes
                     ollama::cancel_all_sessions();
 

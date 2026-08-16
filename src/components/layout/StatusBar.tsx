@@ -13,14 +13,33 @@ import { useModalWindows } from "../../hooks/useModalWindows";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus } = useFile();
-  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, cancelTranslation, activeRightPane, setActiveRightPane } = useUI();
+  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, cancelTranslation, activeRightPane, setActiveRightPane, spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage } = useUI();
   const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
   const { provider } = usePromptConfig();
   const { openSettingsWindow } = useModalWindows();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [spellMenuAnchorEl, setSpellMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [installedLangs, setInstalledLangs] = useState<{ code: string; name: string; native_name: string }[]>([]);
   const [tick, setTick] = useState(0);
+
+  const loadInstalledLangs = async () => {
+    try {
+      if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const langs = await invoke<{ code: string; name: string; native_name: string }[]>("spellcheck_get_installed");
+        setInstalledLangs(langs);
+      }
+    } catch { void 0; }
+  };
+
+  useEffect(() => {
+    loadInstalledLangs();
+    const handler = () => { loadInstalledLangs(); };
+    window.addEventListener("dictionary-changed", handler);
+    return () => window.removeEventListener("dictionary-changed", handler);
+  }, []);
 
   const museConfigured = provider !== "none";
 
@@ -65,15 +84,30 @@ export const StatusBar = React.memo(() => {
     const docLinesCount = text ? text.split("\n").length : 1;
     const currentLineNumber = Math.max(1, activeLineNumber + 1);
 
-    const pages = parsedDoc?.pageBreaks && parsedDoc.pageBreaks.length > 0
-      ? parsedDoc.pageBreaks.length + 1
-      : Math.max(1, Math.ceil(docLinesCount / 54));
+    const hasTitlePage = parsedDoc?.lines?.some(
+      l => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown
+    ) || false;
 
-    const calculatedCurrentPage = parsedDoc?.pageBreaks && parsedDoc.pageBreaks.length > 0
-      ? parsedDoc.pageBreaks.filter(b => b <= currentLineNumber).length + 1
-      : Math.max(1, Math.ceil(currentLineNumber / 54));
+    const breaks = parsedDoc?.pageBreaks || [];
+    const hasBreaks = breaks.length > 0;
 
-    const currentPage = Math.min(calculatedCurrentPage, pages);
+    let pages = 1;
+    let currentPage = 1;
+
+    if (hasBreaks) {
+      if (hasTitlePage) {
+        pages = Math.max(1, breaks.length);
+        const contentBreaks = breaks.filter(b => b <= currentLineNumber);
+        currentPage = Math.min(pages, Math.max(1, contentBreaks.length));
+      } else {
+        pages = breaks.length + 1;
+        const passedBreaks = breaks.filter(b => b <= currentLineNumber);
+        currentPage = Math.min(pages, passedBreaks.length + 1);
+      }
+    } else {
+      pages = Math.max(1, Math.ceil(docLinesCount / 54));
+      currentPage = Math.min(pages, Math.max(1, Math.ceil(currentLineNumber / 54)));
+    }
 
     const sceneCount = parsedDoc?.lines ? parsedDoc.lines.filter(l => l.type === LineType.heading).length : 0;
 
@@ -459,6 +493,94 @@ export const StatusBar = React.memo(() => {
                   Selection: <strong style={{ color: "var(--text-main)" }}>{selectionStats.words.toLocaleString()} words ({selectionStats.chars.toLocaleString()} chars)</strong>
                 </Typography>
               )}
+              <Typography
+                id="status-spellcheck"
+                variant="caption"
+                onClick={(e) => setSpellMenuAnchorEl(e.currentTarget)}
+                sx={{
+                  fontSize: 11,
+                  color: spellcheckEnabled ? "text.secondary" : "text.disabled",
+                  opacity: spellcheckEnabled ? 1 : 0.45,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.4,
+                  whiteSpace: "nowrap",
+                  transition: "opacity 0.15s ease, color 0.15s ease",
+                  "&:hover": { color: "primary.main", opacity: 1 },
+                }}
+                title={spellcheckEnabled ? `Spellcheck: ${installedLangs.find(l => l.code === spellcheckLanguage)?.name || spellcheckLanguage.toUpperCase()} (On)` : `Spellcheck: ${installedLangs.find(l => l.code === spellcheckLanguage)?.name || spellcheckLanguage.toUpperCase()} (Off)`}
+              >
+                <strong style={{ color: spellcheckEnabled ? "var(--text-main)" : "inherit" }}>
+                  {installedLangs.find(l => l.code === spellcheckLanguage)?.name || spellcheckLanguage.toUpperCase()}
+                </strong>
+                <span style={{ fontSize: 7, opacity: 0.7 }}>▲</span>
+              </Typography>
+              <Menu
+                anchorEl={spellMenuAnchorEl}
+                open={Boolean(spellMenuAnchorEl)}
+                onClose={() => setSpellMenuAnchorEl(null)}
+                anchorOrigin={{ vertical: "top", horizontal: "left" }}
+                transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+                slotProps={{ paper: { sx: { minWidth: 180, boxShadow: 3 } } }}
+              >
+                <MenuItem
+                  dense
+                  onClick={() => {
+                    setSpellcheckEnabled(!spellcheckEnabled);
+                    setSpellMenuAnchorEl(null);
+                  }}
+                >
+                  <ListItemText
+                    primary={spellcheckEnabled ? "Disable Spellcheck" : "Enable Spellcheck"}
+                    slotProps={{ primary: { sx: { fontSize: 12, fontWeight: 600 } } }}
+                  />
+                </MenuItem>
+                <Box sx={{ borderBottom: 1, borderColor: "divider", my: 0.5 }} />
+                {(installedLangs.length > 0 ? installedLangs : [{ code: "en", name: "English (US)", native_name: "English (US)" }]).map((lang) => (
+                  <MenuItem
+                    key={lang.code}
+                    dense
+                    selected={lang.code === spellcheckLanguage}
+                    onClick={async () => {
+                      setSpellcheckLanguage(lang.code);
+                      try {
+                        if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+                          const { invoke } = await import("@tauri-apps/api/core");
+                          await invoke("spellcheck_set_language", { lang: lang.code });
+                          window.dispatchEvent(new CustomEvent("dictionary-changed"));
+                        }
+                      } catch { void 0; }
+                      setSpellMenuAnchorEl(null);
+                    }}
+                  >
+                    <ListItemText
+                      primary={`${lang.name} ${lang.code === spellcheckLanguage ? "✓" : ""}`}
+                      slotProps={{
+                        primary: {
+                          sx: {
+                            fontSize: 12,
+                            fontWeight: lang.code === spellcheckLanguage ? 700 : 400,
+                          },
+                        },
+                      }}
+                    />
+                  </MenuItem>
+                ))}
+                <Box sx={{ borderBottom: 1, borderColor: "divider", my: 0.5 }} />
+                <MenuItem
+                  dense
+                  onClick={() => {
+                    setSpellMenuAnchorEl(null);
+                    openSettingsWindow("spellcheck");
+                  }}
+                >
+                  <ListItemText
+                    primary="Spellcheck Settings…"
+                    slotProps={{ primary: { sx: { fontSize: 12 } } }}
+                  />
+                </MenuItem>
+              </Menu>
               <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
                 Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
               </Typography>

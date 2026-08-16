@@ -18,7 +18,7 @@ const modalParam = params.get("modal");
 const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "theme-manager" || modalParam === "xray" || modalParam === "tutorials";
 
 function AppInner() {
-  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName } = useFile();
+  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName, importAsActoneProject } = useFile();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTutorialsModal, setShowTutorialsModal] = useState(false);
   const { confirm } = useCustomModal();
@@ -161,6 +161,7 @@ function AppInner() {
             width: 1000,
             height: 700,
             decorations: false,
+            visible: false,
           });
           await Promise.race([
             new Promise<void>((resolve) => webview.once("tauri://created", () => resolve())),
@@ -280,6 +281,14 @@ function AppInner() {
 
   useEffect(() => {
     clearResetSettings();
+    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+      import("@tauri-apps/api/core").then(({ invoke }) => {
+        const lang = localStorage.getItem(STORAGE_KEYS.SPELLCHECK_LANGUAGE) || "en";
+        invoke("spellcheck_init", { lang }).catch((e) => {
+          logger.warn("app", "Failed to initialize spellcheck:", e);
+        });
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -309,6 +318,8 @@ function AppInner() {
             autocompleteEnabled: readBool(STORAGE_KEYS.AUTOCOMPLETE_ENABLED),
             smartQuotesEnabled: readBool(STORAGE_KEYS.SMART_QUOTES_ENABLED),
             matchParenthesesEnabled: readBool(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED),
+            spellcheckEnabled: readBool(STORAGE_KEYS.SPELLCHECK_ENABLED),
+            spellcheckLanguage: readLS(STORAGE_KEYS.SPELLCHECK_LANGUAGE) ?? DEFAULTS[STORAGE_KEYS.SPELLCHECK_LANGUAGE] as string,
             autoSaveEnabled: readBool(STORAGE_KEYS.AUTO_SAVE_ENABLED),
             autoSaveInterval: parseInt(readLS(STORAGE_KEYS.AUTO_SAVE_INTERVAL) ?? String(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]), 10),
             hideSyntaxEnabled: readBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED),
@@ -441,9 +452,11 @@ function AppInner() {
       if (path) openFilePath(path);
     } else if (action === "import") {
       const content = localStorage.getItem("pending-import-content") || "";
+      const name = localStorage.getItem("pending-import-name") || "Untitled";
       localStorage.removeItem("pending-import-content");
+      localStorage.removeItem("pending-import-name");
       localStorage.removeItem("pending-action");
-      newFile(content);
+      importAsActoneProject(content, name, true);
     } else if (action === "template") {
       newFile();
       setShowStructureModal(true);

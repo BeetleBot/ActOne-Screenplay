@@ -27,6 +27,7 @@ import { rephraseHighlightField } from "./rephraseState";
 import { contextMenuHighlightField } from "./contextMenuState";
 import { pendingScrollTargetY } from "./cursorScroll";
 import { typewriterCompartment, typewriterScrollPlugin } from "./typewriter";
+import { spellcheckCompartment, spellcheckExtension, triggerSpellRecheck } from "./spellcheck";
 
 let scriptSwitchToken = 0;
 export const getScriptSwitchToken = () => scriptSwitchToken;
@@ -393,7 +394,7 @@ const searchHighlightField = StateField.define<DecorationSet>({
 export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, parsedDoc, updateSettings, activeScriptIndex, activeFileId, scriptFileName } = useFile();
-  const { typewriterMode, hideSyntaxEnabled, lineFocusEnabled, activeRightPane, isZenMode } = useUI();
+  const { typewriterMode, hideSyntaxEnabled, lineFocusEnabled, activeRightPane, isZenMode, spellcheckEnabled } = useUI();
   const { setEditorView } = useEditor();
   const { setActiveLineId, setActiveLineNumber, setSelectedSceneId } = useCursor();
   const lastScriptKeyRef = useRef("");
@@ -506,6 +507,26 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
   }, [lineFocusEnabled]);
 
   useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: spellcheckCompartment.reconfigure(
+          spellcheckEnabled ? spellcheckExtension : []
+        ),
+      });
+    }
+  }, [spellcheckEnabled]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (viewRef.current) {
+        triggerSpellRecheck(viewRef.current);
+      }
+    };
+    window.addEventListener("dictionary-changed", handler);
+    return () => window.removeEventListener("dictionary-changed", handler);
+  }, []);
+
+  useEffect(() => {
     if (!containerRef.current) return;
 
     const fountainKeymap = keymap.of([
@@ -572,6 +593,7 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
       searchHighlightField,
       rephraseHighlightField,
       contextMenuHighlightField,
+      spellcheckCompartment.of(spellcheckEnabled ? spellcheckExtension : []),
 
       typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
       EditorView.updateListener.of((update) => {

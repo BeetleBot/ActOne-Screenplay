@@ -113,6 +113,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
           width: 1000,
           height: 700,
           decorations: false,
+          visible: false,
         });
 
         await Promise.race([

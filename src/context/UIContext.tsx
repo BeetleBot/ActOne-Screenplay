@@ -33,6 +33,10 @@ export interface UIContextProps {
   setSmartQuotesEnabled: (enabled: boolean) => void;
   matchParenthesesEnabled: boolean;
   setMatchParenthesesEnabled: (enabled: boolean) => void;
+  spellcheckEnabled: boolean;
+  setSpellcheckEnabled: (enabled: boolean) => void;
+  spellcheckLanguage: string;
+  setSpellcheckLanguage: (lang: string) => void;
 
   activeRightPane: string | null;
   setActiveRightPane: (pane: string | null) => void;
@@ -98,6 +102,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         case STORAGE_KEYS.MATCH_PARENTHESES_ENABLED:
           setMatchParenthesesEnabledState(strVal !== "false");
           break;
+        case STORAGE_KEYS.SPELLCHECK_ENABLED:
+          setSpellcheckEnabledState(strVal === "true");
+          break;
+        case STORAGE_KEYS.SPELLCHECK_LANGUAGE:
+          setSpellcheckLanguageState(strVal || "en");
+          break;
         case STORAGE_KEYS.AUTO_SAVE_ENABLED:
           setAutoSaveEnabledState(strVal !== "false");
           break;
@@ -158,6 +168,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [matchParenthesesEnabled, setMatchParenthesesEnabledState] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED);
     return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]);
+  });
+  const [spellcheckEnabled, setSpellcheckEnabledState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.SPELLCHECK_ENABLED);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.SPELLCHECK_ENABLED]);
+  });
+  const [spellcheckLanguage, setSpellcheckLanguageState] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEYS.SPELLCHECK_LANGUAGE) ?? String(DEFAULTS[STORAGE_KEYS.SPELLCHECK_LANGUAGE]);
   });
   const [aiStatus, setAiStatus] = useState<string | null>(null);
   const [translationState, setTranslationState] = useState<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
@@ -353,6 +370,18 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, String(enabled));
   };
 
+  const setSpellcheckEnabled = (enabled: boolean) => {
+    setSpellcheckEnabledState(enabled);
+    localStorage.setItem(STORAGE_KEYS.SPELLCHECK_ENABLED, String(enabled));
+    broadcastSetting(STORAGE_KEYS.SPELLCHECK_ENABLED, String(enabled));
+  };
+
+  const setSpellcheckLanguage = (lang: string) => {
+    setSpellcheckLanguageState(lang);
+    localStorage.setItem(STORAGE_KEYS.SPELLCHECK_LANGUAGE, lang);
+    broadcastSetting(STORAGE_KEYS.SPELLCHECK_LANGUAGE, lang);
+  };
+
   const setAutoSaveEnabled = (enabled: boolean) => {
     setAutoSaveEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.AUTO_SAVE_ENABLED, String(enabled));
@@ -418,6 +447,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setSmartQuotesEnabled,
         matchParenthesesEnabled,
         setMatchParenthesesEnabled,
+        spellcheckEnabled,
+        setSpellcheckEnabled,
+        spellcheckLanguage,
+        setSpellcheckLanguage,
 
         activeRightPane,
         setActiveRightPane: setActiveRightPaneState,

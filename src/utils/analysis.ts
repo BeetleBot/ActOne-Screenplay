@@ -141,7 +141,10 @@ export function computeStats(
   profiles?: Record<string, { gender?: string; role?: string; color?: string; [key: string]: unknown }>
 ): ScriptStats {
   const totalLines = doc.lines.length;
-  const pages = doc.pageBreaks ? doc.pageBreaks.length + 1 : 1;
+  const hasTitlePage = doc.lines.some(l => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown);
+  const pages = doc.pageBreaks && doc.pageBreaks.length > 0
+    ? (hasTitlePage ? Math.max(1, doc.pageBreaks.length) : doc.pageBreaks.length + 1)
+    : 1;
 
   let totalWords = 0;
   let dialogueWords = 0;

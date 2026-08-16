@@ -7,6 +7,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useModalWindows, useStoreUpdateCheck } from "../hooks";
 import { Box, Typography, useTheme, alpha, Menu, MenuItem, IconButton, Tooltip } from "@mui/material";
 import { logger } from "../utils/logger";
+import { parseScriptFileToFountain } from "../utils/text";
 import { ThemeLogo } from "./ThemeLogo";
 import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIcon, DiscordIcon, PlayArrowIcon, MenuBookIcon, DescriptionIcon, ColorLensIcon, DownloadIcon } from "./Icons";
 import { getRandomQuote, type Quote } from "../data/quotes";
@@ -50,7 +51,7 @@ function getDirectory(path: string): string {
 }
 
 export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standalone = false, onOpenTutorials }) => {
-  const { newFile, openFile, recentFiles, openFilePath, removeFromRecent } = useFile();
+  const { newFile, openFile, recentFiles, openFilePath, removeFromRecent, importAsActoneProject } = useFile();
   const { openHelpWindow, openTutorialsWindow } = useModalWindows();
   const appVersion = __APP_VERSION__;
   const appChannel = __APP_CHANNEL__;
@@ -155,6 +156,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         width: 1000,
         height: 700,
         decorations: false,
+        visible: false,
       });
       await Promise.race([
         new Promise<void>((resolve) => webview.once("tauri://created", () => resolve())),
@@ -217,6 +219,62 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
       } catch (e) { logger.error("welcome", "handleOpen failed", e); }
     }
     await openFile();
+  };
+
+  const handleImport = async (format?: string) => {
+    if (standalone) {
+      try {
+        const result = await invoke<{ path: string; name: string; extension: string } | null>("import_script_dialog", { format: format || null });
+        if (result && result.path) {
+          let fountainText = "";
+          if (result.path.toLowerCase().endsWith(".fadein")) {
+            const bytes = await invoke<number[]>("read_file_binary", { path: result.path });
+            fountainText = parseScriptFileToFountain(result.path, new Uint8Array(bytes));
+          } else {
+            const raw = await invoke<string>("read_file_content", { path: result.path });
+            fountainText = parseScriptFileToFountain(result.path, raw);
+          }
+          const scriptName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "") || "Untitled";
+
+          localStorage.setItem("pending-import-name", scriptName);
+          localStorage.setItem("pending-import-content", fountainText);
+          localStorage.setItem("pending-action", "import");
+          const created = await createEditorWindow("import");
+          if (created) {
+            const { listen } = await import("@tauri-apps/api/event");
+            const unlisten = await listen("editor:ready", () => {
+              unlisten();
+              closeWelcome();
+            });
+            setTimeout(() => { unlisten(); }, 10000);
+            return;
+          }
+        }
+      } catch (e) {
+        logger.error("welcome", "handleImport failed", e);
+      }
+      return;
+    }
+
+    // In-browser / non-standalone fallback
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".fdx,.fadein,.fountain,.txt,.spmd";
+    input.onchange = async () => {
+      const f = input.files?.[0];
+      if (!f) return;
+      const name = f.name.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "");
+      let fountainText = "";
+      if (f.name.toLowerCase().endsWith(".fadein")) {
+        const buf = await f.arrayBuffer();
+        fountainText = parseScriptFileToFountain(f.name, new Uint8Array(buf));
+      } else {
+        const text = await f.text();
+        fountainText = parseScriptFileToFountain(f.name, text);
+      }
+      await importAsActoneProject(fountainText, name, true);
+    };
+    input.click();
   };
 
 
@@ -628,6 +686,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
 
         <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Box
+            className="clickable"
+            onClick={() => handleImport()}
             sx={{
               width: "100%",
               height: "100%",
@@ -636,15 +696,18 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               alignItems: "center",
               justifyContent: "center",
               textAlign: "center",
-              cursor: "not-allowed",
-              opacity: 0.5,
+              cursor: "pointer",
               p: 1,
               boxSizing: "border-box",
+              transition: "all 0.15s ease",
+              "&:hover": {
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+              },
             }}
           >
-            <DescriptionIcon sx={{ fontSize: 32, color: theme.palette.text.disabled, mb: 0.75 }} />
-            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.disabled }}>Import Script</Typography>
-            <Typography sx={{ fontSize: 10, color: theme.palette.text.disabled }}>FDX, FadeIn, Fountain (Coming soon)</Typography>
+            <DescriptionIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
+            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Import Script</Typography>
+            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>FDX, FadeIn, Fountain</Typography>
           </Box>
         </Box>
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.16] - 2026-08-16
+
+### Added / Improved
+- ✍️ **Native Rust Spellcheck Engine** – Integrated a high-performance, pure-Rust spellchecking engine using `spellbook` (from the Helix editor team), delivering instantaneous, memory-safe spellchecking without any C++ runtime dependencies.
+- 📦 **Embedded Offline English Dictionary** – Bundled American English dictionary files (`.aff` + `.dic`) directly into the application binary via `include_str!`, ensuring out-of-the-box offline spellchecking with zero downloads.
+- 🌐 **Multi-Language Dictionary Downloads** – Built-in dictionary manager supporting on-demand downloads for international languages (Spanish, French, German, Italian, Portuguese, Russian, and more) directly from CDN with disk caching.
+- 🎬 **Screenplay Element Awareness** – Screenplay-specific syntax and terms (`INT`, `EXT`, `POV`, `VO`, `FOUNTAIN`, `SLUGLINE`, uppercase acronyms $\le 5$ chars), as well as Scene Heading lines, Character lines, Dual Character lines, and Transition lines, are intelligently excluded from spellchecking.
+- 〰️ **Persistent High-DPI Squiggly Underlines** – Replaced coarse native wavy underlines with crisp, symmetrical repeating SVG wave decorations that hug the character baseline and stay persistent across clicks, cursor movements, and scrolling.
+- 🖱️ **Context Menu Corrections & Dictionary** – Right-clicking any flagged typo displays instant spelling replacement suggestions, **"Add '[word]' to Dictionary"** (persisted across sessions), and **"Ignore '[word]'"** (for the current session).
+- ⚙️ **Dedicated Spellcheck Settings Tab** – Introduced a new **Spellcheck** tab in Settings with a master toggle (off by default), active language selector, installed dictionary management, downloadable languages catalog, and custom dictionary word list management.
+- 📊 **Status Bar Language Indicator & Quick Menu** – Added an active language indicator to the status bar (rendered normally when enabled, faded when disabled) with a popup menu to toggle spellcheck on/off, switch languages, or open settings.
+- 📥 **Script Importers (Final Draft, Fade In & Fountain)** – Added direct script import from the Welcome Screen and editor supporting **Final Draft (`.fdx`)**, **Fade In (`.fadein`)**, and **Fountain (`.fountain`, `.txt`)** formats.
+- 🎯 **Forced Fountain Element Formatting** – Parsed scripts automatically receive forced Fountain syntax (Scene Headings with `.`, Characters with `@`, Actions with `!`, Transitions with `>`, and Shots with `!!`), guaranteeing 100% accurate screenplay element classification.
+- 💾 **Instant `.actone` Project Conversion** – Imported scripts are instantly structured into native ActOne projects and trigger an immediate save prompt to preserve work directly as `.actone` bundles.
+- ⌨️ **Command Palette Actions** – Added "Import Screenplay...", "Enable Spellcheck" / "Disable Spellcheck", and "Open Spellcheck Settings..." commands.
+- 📄 **Stable & Accurate Editor Pagination** – Harmonized editor status bar pagination with native Rust PDF export metrics; eliminated rapid page number jumping during typing by preserving authoritative Rust page breaks in desktop mode and correctly distinguishing title page headers from content pages.
+
 ## [0.4.15] - 2026-08-11
 
 ### Fixed

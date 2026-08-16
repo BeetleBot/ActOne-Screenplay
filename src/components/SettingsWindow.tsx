@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -55,6 +55,15 @@ export const SettingsWindow: React.FC = () => {
   const [autocompleteEnabled, setAutocompleteEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTOCOMPLETE_ENABLED])));
   const [smartQuotesEnabled, setSmartQuotesEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SMART_QUOTES_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SMART_QUOTES_ENABLED])));
   const [matchParenthesesEnabled, setMatchParenthesesEnabled] = useState(() => readLocalBool(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED])));
+  const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SPELLCHECK_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SPELLCHECK_ENABLED])));
+  const [spellcheckLanguage, setSpellcheckLanguage] = useState(() => readLocal(STORAGE_KEYS.SPELLCHECK_LANGUAGE, String(DEFAULTS[STORAGE_KEYS.SPELLCHECK_LANGUAGE])));
+  const [installedLanguages, setInstalledLanguages] = useState<{ code: string; name: string; native_name: string; bundled: boolean; installed: boolean; size_approx: string }[]>([]);
+  const [availableLanguages, setAvailableLanguages] = useState<{ code: string; name: string; native_name: string; bundled: boolean; installed: boolean; size_approx: string }[]>([]);
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [downloadSearch, setDownloadSearch] = useState("");
+  const [downloadingCode, setDownloadingCode] = useState<string | null>(null);
+  const [customWordsCount, setCustomWordsCount] = useState<number>(0);
+  const [clearWordsDialogOpen, setClearWordsDialogOpen] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTO_SAVE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED])));
   const [autoSaveInterval, setAutoSaveInterval] = useState(() => readLocalNum(STORAGE_KEYS.AUTO_SAVE_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL])));
   const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED])));
@@ -190,16 +199,92 @@ export const SettingsWindow: React.FC = () => {
     try {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab");
-      if (tabParam === "snapshots") return 2;
-      if (tabParam === "muse" || tabParam === "prompt") return 3;
+      if (tabParam === "spellcheck") return 2;
+      if (tabParam === "snapshots") return 3;
+      if (tabParam === "muse" || tabParam === "prompt") return 4;
     } catch { void 0; }
     return 0;
   });
 
+interface LanguageInfoItem {
+  code: string;
+  name: string;
+  native_name: string;
+  bundled: boolean;
+  installed: boolean;
+  size_approx: string;
+}
+
+  const loadSpellcheckData = useCallback(async () => {
+    try {
+      if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+        const [installed, available, customWords] = await Promise.all([
+          invoke<LanguageInfoItem[]>("spellcheck_get_installed"),
+          invoke<LanguageInfoItem[]>("spellcheck_get_available"),
+          invoke<string[]>("spellcheck_get_custom_words"),
+        ]);
+        setInstalledLanguages(installed);
+        setAvailableLanguages(available);
+        setCustomWordsCount(customWords.length);
+      }
+    } catch { void 0; }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 2) {
+      loadSpellcheckData();
+    }
+  }, [activeTab, loadSpellcheckData]);
+
+  const handleDownloadLanguage = async (code: string) => {
+    setDownloadingCode(code);
+    try {
+      if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+        await invoke("spellcheck_download_dict", { lang: code });
+        await loadSpellcheckData();
+      }
+    } catch (err) {
+      logger.error("settingsWindow", "Failed to download dictionary", err);
+    } finally {
+      setDownloadingCode(null);
+    }
+  };
+
+  const handleDeleteLanguage = async (code: string) => {
+    try {
+      if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+        await invoke("spellcheck_delete_dict", { lang: code });
+        if (spellcheckLanguage === code) {
+          setSpellcheckLanguage("en");
+          localStorage.setItem(STORAGE_KEYS.SPELLCHECK_LANGUAGE, "en");
+          emitUpdate(STORAGE_KEYS.SPELLCHECK_LANGUAGE, "en");
+          await invoke("spellcheck_set_language", { lang: "en" });
+          window.dispatchEvent(new CustomEvent("dictionary-changed"));
+        }
+        await loadSpellcheckData();
+      }
+    } catch (err) {
+      logger.error("settingsWindow", "Failed to delete dictionary", err);
+    }
+  };
+
+  const handleClearCustomWords = async () => {
+    try {
+      if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+        await invoke("spellcheck_clear_custom_words");
+        setCustomWordsCount(0);
+        setClearWordsDialogOpen(false);
+        window.dispatchEvent(new CustomEvent("dictionary-changed"));
+      }
+    } catch (err) {
+      logger.error("settingsWindow", "Failed to clear custom words", err);
+    }
+  };
+
   const [providerStatus, setProviderStatus] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (activeTab !== 3) return;
+    if (activeTab !== 4) return;
     let isActive = true;
     const check = async () => {
       const status = await checkProviderAvailability();
@@ -230,7 +315,34 @@ export const SettingsWindow: React.FC = () => {
     setAutocompleteEnabled(Boolean(DEFAULTS[STORAGE_KEYS.AUTOCOMPLETE_ENABLED]));
     setSmartQuotesEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SMART_QUOTES_ENABLED]));
     setMatchParenthesesEnabled(Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]));
+    setSpellcheckEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SPELLCHECK_ENABLED]));
+    setSpellcheckLanguage(String(DEFAULTS[STORAGE_KEYS.SPELLCHECK_LANGUAGE]));
     setAutoSaveEnabled(Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED]));
+    setAutoSaveInterval(Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
+    setHideSyntaxEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
+    setLineFocusEnabled(Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
+    setSnapshotsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]));
+    setSnapshotLocation(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION]) as "project" | "app_data" | "custom");
+    setSnapshotCustomPath(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH]));
+    setSnapshotAutoEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_ENABLED]));
+    setSnapshotAutoIntervalMinutes(Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_AUTO_INTERVAL]));
+    setSnapshotOnSave(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_ON_SAVE]));
+    setSnapshotMaxRetention(Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION]));
+    setFountainColorsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]));
+    setIconStyle(String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]));
+
+    emitUpdate(STORAGE_KEYS.THEME_ID, String(DEFAULTS[STORAGE_KEYS.THEME_ID]));
+    emitUpdate(STORAGE_KEYS.FONT_FAMILY, String(DEFAULTS[STORAGE_KEYS.FONT_FAMILY]));
+    emitUpdate(STORAGE_KEYS.PAPER_SIZE, String(DEFAULTS[STORAGE_KEYS.PAPER_SIZE]));
+    emitUpdate(STORAGE_KEYS.TYPEWRITER_MODE, Boolean(DEFAULTS[STORAGE_KEYS.TYPEWRITER_MODE]));
+    emitUpdate(STORAGE_KEYS.ZOOM_LEVEL, Number(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL]));
+    emitUpdate(STORAGE_KEYS.APP_SCALE, Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]));
+    emitUpdate(STORAGE_KEYS.AUTOCOMPLETE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTOCOMPLETE_ENABLED]));
+    emitUpdate(STORAGE_KEYS.SMART_QUOTES_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SMART_QUOTES_ENABLED]));
+    emitUpdate(STORAGE_KEYS.MATCH_PARENTHESES_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED]));
+    emitUpdate(STORAGE_KEYS.SPELLCHECK_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SPELLCHECK_ENABLED]));
+    emitUpdate(STORAGE_KEYS.SPELLCHECK_LANGUAGE, String(DEFAULTS[STORAGE_KEYS.SPELLCHECK_LANGUAGE]));
+    emitUpdate(STORAGE_KEYS.AUTO_SAVE_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_ENABLED]));
     setAutoSaveInterval(Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
     setHideSyntaxEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
     setLineFocusEnabled(Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
@@ -304,6 +416,8 @@ export const SettingsWindow: React.FC = () => {
           setAutocompleteEnabled(d.autocompleteEnabled);
           setSmartQuotesEnabled(d.smartQuotesEnabled);
           setMatchParenthesesEnabled(d.matchParenthesesEnabled);
+          if (d.spellcheckEnabled !== undefined) setSpellcheckEnabled(d.spellcheckEnabled);
+          if (d.spellcheckLanguage !== undefined) setSpellcheckLanguage(d.spellcheckLanguage);
           setAutoSaveEnabled(d.autoSaveEnabled);
           setAutoSaveInterval(d.autoSaveInterval);
           setHideSyntaxEnabled(d.hideSyntaxEnabled);
@@ -381,6 +495,12 @@ export const SettingsWindow: React.FC = () => {
     }
     if (prefs[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED] !== undefined && prefs[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED] !== String(matchParenthesesEnabled)) {
       setMatchParenthesesEnabled(prefs[STORAGE_KEYS.MATCH_PARENTHESES_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.SPELLCHECK_ENABLED] !== undefined && prefs[STORAGE_KEYS.SPELLCHECK_ENABLED] !== String(spellcheckEnabled)) {
+      setSpellcheckEnabled(prefs[STORAGE_KEYS.SPELLCHECK_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.SPELLCHECK_LANGUAGE] !== undefined && prefs[STORAGE_KEYS.SPELLCHECK_LANGUAGE] !== spellcheckLanguage) {
+      setSpellcheckLanguage(prefs[STORAGE_KEYS.SPELLCHECK_LANGUAGE]);
     }
     if (prefs[STORAGE_KEYS.AUTO_SAVE_ENABLED] !== undefined && prefs[STORAGE_KEYS.AUTO_SAVE_ENABLED] !== String(autoSaveEnabled)) {
       setAutoSaveEnabled(prefs[STORAGE_KEYS.AUTO_SAVE_ENABLED] === "true");
@@ -460,8 +580,9 @@ export const SettingsWindow: React.FC = () => {
           >
             <ToggleButton value={0} sx={{ fontSize: 12, py: 0.3 }}>General</ToggleButton>
             <ToggleButton value={1} sx={{ fontSize: 12, py: 0.3 }}>Editor</ToggleButton>
-            <ToggleButton value={2} sx={{ fontSize: 12, py: 0.3 }}>Snapshots</ToggleButton>
-            <ToggleButton value={3} sx={{ fontSize: 12, py: 0.3 }}>Muse</ToggleButton>
+            <ToggleButton value={2} sx={{ fontSize: 12, py: 0.3 }}>Spellcheck</ToggleButton>
+            <ToggleButton value={3} sx={{ fontSize: 12, py: 0.3 }}>Snapshots</ToggleButton>
+            <ToggleButton value={4} sx={{ fontSize: 12, py: 0.3 }}>Muse</ToggleButton>
           </ToggleButtonGroup>
         </Box>
         <Box sx={{ flex: 1, overflow: "auto", px: 2, py: 1.5 }}>
@@ -664,6 +785,133 @@ export const SettingsWindow: React.FC = () => {
                   GENERAL
                 </Typography>
                 <FormControlLabel
+                  control={
+                    <Switch
+                      size="small"
+                      checked={spellcheckEnabled}
+                      onChange={(e) => {
+                        const v = e.target.checked;
+                        setSpellcheckEnabled(v);
+                        localStorage.setItem(STORAGE_KEYS.SPELLCHECK_ENABLED, String(v));
+                        emitUpdate(STORAGE_KEYS.SPELLCHECK_ENABLED, v);
+                      }}
+                    />
+                  }
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Enable Spellcheck</Typography>}
+                  sx={{ mx: 0, mb: 1, display: 'block' }}
+                />
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="caption" sx={{ fontSize: 11, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                    Active Language
+                  </Typography>
+                  <Select
+                    fullWidth
+                    size="small"
+                    value={spellcheckLanguage}
+                    onChange={async (e) => {
+                      const v = e.target.value as string;
+                      setSpellcheckLanguage(v);
+                      localStorage.setItem(STORAGE_KEYS.SPELLCHECK_LANGUAGE, v);
+                      emitUpdate(STORAGE_KEYS.SPELLCHECK_LANGUAGE, v);
+                      try {
+                        if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+                          await invoke("spellcheck_set_language", { lang: v });
+                          window.dispatchEvent(new CustomEvent("dictionary-changed"));
+                        }
+                      } catch { void 0; }
+                    }}
+                  >
+                    {(installedLanguages.length > 0 ? installedLanguages : [{ code: "en", name: "English (US)", native_name: "English (US)" }]).map((lang) => (
+                      <MenuItem key={lang.code} value={lang.code}>
+                        {lang.name} {lang.native_name !== lang.name ? `(${lang.native_name})` : ""}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+              </Box>
+
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5 }}>
+                    INSTALLED LANGUAGES
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setDownloadDialogOpen(true)}
+                    sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0, py: 0.3 }}
+                  >
+                    + Download Language
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                  {installedLanguages.map((lang) => (
+                    <Box
+                      key={lang.code}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: lang.code === spellcheckLanguage ? 'action.selected' : 'background.paper',
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>
+                          {lang.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 10 }}>
+                          {lang.native_name} • {lang.bundled ? "Bundled" : "Downloaded"}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {lang.bundled ? (
+                          <Chip label="Bundled" size="small" sx={{ fontSize: 10, height: 20 }} />
+                        ) : (
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteLanguage(lang.code)}
+                            sx={{ color: 'error.main', p: 0.5 }}
+                            title="Delete dictionary"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  CUSTOM DICTIONARY
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: 12, mb: 1.5 }}>
+                  {customWordsCount} custom word{customWordsCount === 1 ? "" : "s"} added to personal dictionary.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  disabled={customWordsCount === 0}
+                  onClick={() => setClearWordsDialogOpen(true)}
+                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
+                >
+                  Clear Custom Dictionary
+                </Button>
+              </Box>
+            </Box>
+          )}
+          {activeTab === 3 && (
+            <Box>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  GENERAL
+                </Typography>
+                <FormControlLabel
                   control={<Switch size="small" checked={snapshotsEnabled} onChange={(e) => { const v = e.target.checked; setSnapshotsEnabled(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOTS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.SNAPSHOTS_ENABLED, v); }} />}
                   label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Enable Snapshots</Typography>}
                   sx={{ mx: 0 }}
@@ -750,7 +998,7 @@ export const SettingsWindow: React.FC = () => {
               )}
             </Box>
           )}
-          {activeTab === 3 && (
+          {activeTab === 4 && (
             <Box>
 
               {promptProvider !== "none" && providerStatus !== null && !providerStatus && promptProvider !== "openai-compatible" ? (
@@ -1263,6 +1511,117 @@ export const SettingsWindow: React.FC = () => {
           )}
         </Box>
       </Box>
+      {/* Download Language Dialog */}
+      <Dialog
+        open={downloadDialogOpen}
+        onClose={() => setDownloadDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
+      >
+        <DialogTitle sx={{ m: 0, p: 0 }}>
+          <TitleBar
+            title="Download Dictionaries"
+            isModal
+            onClose={() => setDownloadDialogOpen(false)}
+          />
+        </DialogTitle>
+        <DialogContent dividers sx={{ px: 2, py: 1.5 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search languages..."
+            value={downloadSearch}
+            onChange={(e) => setDownloadSearch(e.target.value)}
+            sx={{ mb: 1.5, '& input': { fontSize: 12 } }}
+          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, maxHeight: 360, overflowY: 'auto' }}>
+            {availableLanguages
+              .filter((lang) => {
+                if (!downloadSearch.trim()) return true;
+                const q = downloadSearch.toLowerCase();
+                return (
+                  lang.name.toLowerCase().includes(q) ||
+                  lang.native_name.toLowerCase().includes(q) ||
+                  lang.code.toLowerCase().includes(q)
+                );
+              })
+              .map((lang) => {
+                const isInstalled = installedLanguages.some((i) => i.code === lang.code);
+                const isDownloading = downloadingCode === lang.code;
+
+                return (
+                  <Box
+                    key={lang.code}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      p: 1,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>
+                        {lang.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 10 }}>
+                        {lang.native_name} • {lang.size_approx}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      {isInstalled ? (
+                        <Chip label="Installed" size="small" color="success" sx={{ fontSize: 10, height: 22 }} />
+                      ) : (
+                        <Button
+                          size="small"
+                          variant="contained"
+                          disabled={isDownloading}
+                          onClick={() => handleDownloadLanguage(lang.code)}
+                          sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0, py: 0.3 }}
+                        >
+                          {isDownloading ? <CircularProgress size={14} sx={{ color: 'inherit' }} /> : "Download"}
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                );
+              })}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1 }}>
+          <Button onClick={() => setDownloadDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+            Done
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Clear Custom Dictionary Dialog */}
+      <Dialog
+        open={clearWordsDialogOpen}
+        onClose={() => setClearWordsDialogOpen(false)}
+        maxWidth="xs"
+        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
+      >
+        <DialogTitle sx={{ fontSize: 14, fontWeight: 600 }}>
+          Clear Custom Dictionary
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ fontSize: 12 }}>
+            Are you sure you want to remove all {customWordsCount} custom word(s) from your personal dictionary? This cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button onClick={() => setClearWordsDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+            Cancel
+          </Button>
+          <Button onClick={handleClearCustomWords} variant="contained" color="error" size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+            Clear All
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="xs">
         <DialogTitle sx={{ fontSize: 14, fontWeight: 600 }}>
           Reset Settings
@@ -1295,6 +1654,8 @@ interface SettingsInitData {
   autocompleteEnabled: boolean;
   smartQuotesEnabled: boolean;
   matchParenthesesEnabled: boolean;
+  spellcheckEnabled?: boolean;
+  spellcheckLanguage?: string;
   autoSaveEnabled: boolean;
   autoSaveInterval: number;
   hideSyntaxEnabled: boolean;
