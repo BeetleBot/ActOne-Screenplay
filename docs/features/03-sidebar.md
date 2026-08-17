@@ -19,12 +19,13 @@ Shows a tree view of the screenplay structure:
 
 ## Scripts (Tab 2)
 
-Only visible when a multi-script `.actone` bundle is open. Lists all scripts in the bundle:
+Lists all scripts in the current `.actone` project:
 
 - Click to switch active script
 - `[+]` button to add a new script (prompts for name)
 - `⋮` menu per script: Rename, Delete
 - **Export All** button to export each script individually
+- When a project has no scripts (Landing Pad state), the Scripts pane is automatically opened and active, while other feature tabs are greyed out until a script is created.
 
 ## Notepad (Tab 3)
 

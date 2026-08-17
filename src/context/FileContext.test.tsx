@@ -118,7 +118,7 @@ describe("FileContext", () => {
     const { result } = renderHook(() => useFile(), { wrapper });
 
     await act(async () => {
-      result.current.newFile();
+      result.current.newFile("INT. ROOM - DAY");
     });
 
     await act(async () => {
@@ -134,7 +134,7 @@ describe("FileContext", () => {
     const { result } = renderHook(() => useFile(), { wrapper });
 
     await act(async () => {
-      result.current.newFile();
+      result.current.newFile("INT. ROOM - DAY");
     });
 
     await act(async () => {
@@ -158,7 +158,7 @@ describe("FileContext", () => {
     const { result } = renderHook(() => useFile(), { wrapper });
 
     await act(async () => {
-      result.current.newFile();
+      result.current.newFile("INT. ROOM - DAY");
     });
 
     await act(async () => {

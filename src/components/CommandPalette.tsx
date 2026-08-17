@@ -254,12 +254,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
 
   const commands: CommandItem[] = [
     // File
-    { id: "file-new", name: "New Screenplay", category: "File", icon: <NoteAddIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+N", action: () => { newFile(); onClose(); } },
-    { id: "file-open", name: "Open Screenplay...", category: "File", icon: <FolderOpenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+O", action: () => { openFile(); onClose(); } },
+    { id: "file-new", name: "New Project", category: "File", icon: <NoteAddIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+N", action: () => { newFile(); onClose(); } },
+    { id: "file-open", name: "Open Project...", category: "File", icon: <FolderOpenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+O", action: () => { openFile(); onClose(); } },
     { id: "file-import", name: "Import Screenplay...", category: "File", icon: <DescriptionIcon sx={{ fontSize: 16 }} />, action: handleImport },
-    { id: "file-save", name: "Save Screenplay", category: "File", icon: <SaveIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+S", action: () => { saveFile(); onClose(); } },
-    { id: "file-save-as", name: "Save Screenplay As...", category: "File", icon: <FileDownloadIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+S", action: () => { saveFileAs(); onClose(); } },
-    { id: "file-close", name: "Close Active File", category: "File", icon: <DeleteIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+Q", action: () => { closeFile(activeFileId); onClose(); } },
+    { id: "file-save", name: "Save Project", category: "File", icon: <SaveIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+S", action: () => { saveFile(); onClose(); } },
+    { id: "file-save-as", name: "Save Project As...", category: "File", icon: <FileDownloadIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+S", action: () => { saveFileAs(); onClose(); } },
+    { id: "file-close", name: "Close Active Project", category: "File", icon: <DeleteIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+Q", action: () => { closeFile(activeFileId); onClose(); } },
     { id: "file-export", name: "Export...", category: "File", icon: <FileDownloadIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+P", action: () => { onExportPDF(); onClose(); } },
 
     // Edit

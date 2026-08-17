@@ -195,7 +195,7 @@ fn save_file_content(path: String, content: String) -> Result<(), String> {
 #[tauri::command]
 fn save_file_dialog(content: String, default_name: Option<String>) -> Option<String> {
     let mut dialog = rfd::FileDialog::new()
-        .add_filter("ActOne Bundle", &["actone"])
+        .add_filter("ActOne Project", &["actone"])
         .add_filter("Fountain Screenplays", &["fountain"]);
 
     if let Some(ref name) = default_name {

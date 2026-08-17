@@ -18,8 +18,8 @@ ActOne registers custom CodeMirror keymaps in addition to the default editor key
 
 | Shortcut | Action | Description |
 |----------|--------|-------------|
-| `Ctrl+N` | New screenplay | Create new tab |
-| `Ctrl+O` | Open screenplay | Open file dialog |
+| `Ctrl+N` | New project | Create new project tab |
+| `Ctrl+O` | Open project | Open file dialog |
 | `Ctrl+S` | Save | Save active file |
 | `Ctrl+Shift+S` | Save As | Save as new file/bundle |
 | `Alt+Q` | Close tab | Close active editor tab |

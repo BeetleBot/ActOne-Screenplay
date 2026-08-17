@@ -174,33 +174,63 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 </Typography>
               </Box>
 
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<AddIcon sx={{ fontSize: 16 }} />}
-                onClick={() => addScript()}
-                sx={{
-                  borderRadius: 0,
-                  textTransform: 'none',
-                  fontSize: '0.825rem',
-                  fontWeight: 500,
-                  px: 2.5,
-                  py: 0.75,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                  bgcolor: 'background.paper',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all var(--duration-fast) var(--easing-standard)',
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                    borderColor: 'text.secondary',
-                  },
-                }}
-              >
-                Create a new script
-              </Button>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+                  onClick={() => addScript()}
+                  sx={{
+                    borderRadius: '6px',
+                    textTransform: 'none',
+                    fontSize: '0.825rem',
+                    fontWeight: 500,
+                    pl: 1.75,
+                    pr: 1.25,
+                    py: 0.6,
+                    borderColor: 'divider',
+                    color: 'text.primary',
+                    bgcolor: 'background.paper',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    transition: 'all var(--duration-fast) var(--easing-standard)',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      borderColor: 'text.secondary',
+                      '& .fountain-tag': {
+                        borderColor: 'text.secondary',
+                        bgcolor: 'action.selected',
+                      },
+                    },
+                  }}
+                >
+                  <span>Create a new script</span>
+                  <Box
+                    component="span"
+                    className="fountain-tag"
+                    sx={{
+                      ml: 0.75,
+                      px: 0.75,
+                      py: 0.15,
+                      borderRadius: '4px',
+                      fontSize: '0.7rem',
+                      fontFamily: '"Courier Prime", monospace',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      bgcolor: 'action.hover',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      lineHeight: 1.4,
+                      letterSpacing: '0.02em',
+                      transition: 'all var(--duration-fast) var(--easing-standard)',
+                    }}
+                  >
+                    .fountain
+                  </Box>
+                </Button>
+              </Box>
             </Box>
           </Box>
         ) : (

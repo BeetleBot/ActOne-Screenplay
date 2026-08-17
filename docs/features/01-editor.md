@@ -104,3 +104,10 @@ When a character name ends with `^`, the line and its associated dialogue block 
 - **Outline view** in sidebar: click any scene to jump to it
 - **Status bar**: shows current scene location
 - **Drag-to-reorder** scenes in the outline view
+
+### Landing Pad (Empty Project State)
+
+When a project has no scripts open, the Fountain editor is replaced by the **Landing Pad** view:
+- Displays a clean prompt: *"Act One, Scene One. / Every screenplay starts here. Create your first script to begin writing."*
+- Features a **"Create a new script"** button that prompts for the script title and instantly opens the editor.
+- The sidebar feature tabs and Muse AI assistant are disabled until a script is created.

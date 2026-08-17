@@ -16,14 +16,14 @@ export const articles: HelpArticle[] = [
     title: "Welcome Screen",
     category: "Getting Started",
     tags: ["welcome", "launch", "start"],
-    relatedIds: ["new-screenplay", "open-file", "recent-files"],
+    relatedIds: ["new-project", "open-file", "recent-files"],
     content: `When you launch ActOne with no files open, the Welcome screen appears. From here you can:
 
-- **New Project** — Create a blank untitled screenplay. In standalone mode this opens a new editor window.
-- **Open Project** — Browse for a \`.fountain\`, \`.txt\`, or \`.actone\` file via the native file dialog.
+- **New Project** — Create a new project. In standalone mode this opens a new editor window.
+- **Open Project** — Browse for an existing \`.actone\` project file (or legacy \`.fountain\` / \`.txt\` file) via the native file dialog.
 - **Templates** — Import a screenplay structure template (Three-Act, Save the Cat, Hero's Journey, etc.).
 - **Help Guide** — Opens the Help Wiki window with searchable documentation.
-- **Recent Projects** — Quick-open recently used files (up to 6 displayed). Click the X to remove from the list. Stored in localStorage (up to 10 entries).
+- **Recent Projects** — Quick-open recently used projects (up to 6 displayed). Click the X to remove from the list. Stored in localStorage (up to 10 entries).
 
 **Footer actions:**
 - **Help** — Opens the Help Wiki window with searchable documentation.
@@ -34,24 +34,37 @@ export const articles: HelpArticle[] = [
 The Welcome screen also shows a rotating random writing quote from famous screenwriters.`,
   },
   {
-    id: "new-screenplay",
-    title: "Creating a New Screenplay",
+    id: "new-project",
+    title: "Creating a New Project",
     category: "Getting Started",
-    tags: ["new", "create", "untitled"],
-    relatedIds: ["welcome-screen", "open-file", "file-tabs"],
-    content: `Press <kbd>Ctrl+N</kbd> or open the Command Palette (<kbd>Ctrl+K</kbd>) and choose "New Screenplay" to create a new untitled tab. You can have multiple tabs open simultaneously. Each new file is created as a single-script .actone bundle.`,
+    tags: ["new", "create", "project", "untitled"],
+    relatedIds: ["welcome-screen", "landing-pad", "open-file", "file-tabs"],
+    content: `Press <kbd>Ctrl+N</kbd> or open the Command Palette (<kbd>Ctrl+K</kbd>) and choose "New Project" to create a new untitled project tab. Each project is saved as an \`.actone\` project file, which can contain multiple screenplay drafts and revisions in the Scripts pane. When a new project is created with no scripts, the Landing Pad allows you to create your first script with a single click.`,
+  },
+  {
+    id: "landing-pad",
+    title: "Project Landing Pad",
+    category: "Getting Started",
+    tags: ["landing pad", "new script", "empty project", "create"],
+    relatedIds: ["new-project", "scripts-manager", "welcome-screen"],
+    content: `When you create a new project with no scripts, or delete all existing scripts from a project, ActOne displays the **Landing Pad**:
+
+- **Create a New Script**: Click the central "Create a new script" button to name and initialize your first screenplay in the project.
+- **Sidebar Integration**: The sidebar automatically switches to the **Scripts** pane so you can manage, add, or import scripts.
+- **Feature Buttons**: Sidebar tools (Outline, Notepad, Tasks, Markers, etc.) are temporarily disabled until a script exists to edit.
+- **Status Bar & Muse**: Word/page statistics display *"No active script"*, and the Muse AI assistant button is muted until a script is open.`,
   },
   {
     id: "open-file",
-    title: "Opening Files",
+    title: "Opening Projects",
     category: "Getting Started",
-    tags: ["open", "file", "fountain", "actone", "txt"],
-    relatedIds: ["welcome-screen", "new-screenplay", "file-tabs", "recent-files"],
-    content: `Press <kbd>Ctrl+O</kbd> or use the Command Palette (<kbd>Ctrl+K</kbd>) → "Open Screenplay…" to open .fountain, .txt, or .actone files via the native file dialog.
+    tags: ["open", "project", "file", "fountain", "actone", "txt"],
+    relatedIds: ["welcome-screen", "new-project", "file-tabs", "recent-files"],
+    content: `Press <kbd>Ctrl+O</kbd> or use the Command Palette (<kbd>Ctrl+K</kbd>) → "Open Project…" to open an \`.actone\` project (or \`.fountain\` / \`.txt\` file) via the native file dialog.
 
-  When launched from the command line, ActOne accepts file paths as arguments. The app also listens for OS-level file-open events (e.g., double-clicking a .fountain or .actone file).
+  When launched from the command line, ActOne accepts file paths as arguments. The app also listens for OS-level file-open events (e.g., double-clicking a .actone or .fountain file).
 
-Importing other screenplay formats is separate from opening an existing project. Use **Import Screenplay...** for <code>.fdx</code>, <code>.fadein</code>, <code>.fountain</code>, <code>.txt</code>, or <code>.spmd</code> files. ActOne converts the selected file to Fountain and creates a new <code>.actone</code> project.`,
+Importing other screenplay formats is separate from opening an existing project. Use **Import Screenplay...** for <code>.fdx</code>, <code>.fadein</code>, <code>.fountain</code>, <code>.txt</code>, or <code>.spmd</code> files. ActOne converts the selected screenplay file into an ActOne <code>.actone</code> project.`,
   },
   {
     id: "recent-files",
@@ -77,7 +90,7 @@ Importing other screenplay formats is separate from opening an existing project.
     relatedIds: ["keyboard-shortcuts"],
     content: `Press <kbd>Ctrl+K</kbd> to open the Command Palette. Type to filter commands across six categories:
 
-**File:** New Screenplay, Open Screenplay, Import Screenplay, Save, Save As, Close Active File, Export.
+**File:** New Project, Open Project, Import Screenplay, Save Project, Save Project As, Close Active Project, Export.
 
 **Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, and Enable/Disable Spellcheck.
 
@@ -96,7 +109,7 @@ Each command shows its keyboard shortcut when available. Navigate with arrow key
     title: "Importing Screenplays",
     category: "Getting Started",
     tags: ["import", "fdx", "fadein", "fountain", "spmd", "convert"],
-    relatedIds: ["open-file", "new-screenplay", "actone-bundle"],
+    relatedIds: ["open-file", "new-project", "actone-bundle"],
     content: `Use **Import Screenplay...** from the Welcome screen, editor, or Command Palette (<kbd>Ctrl+K</kbd>) to convert an existing screenplay into an ActOne project.
 
 Supported formats are:
@@ -644,17 +657,17 @@ Persists in .actone bundle settings.`,
   },
   {
     id: "scripts-manager",
-    title: "Scripts Manager (Multi-Script Bundles)",
+    title: "Scripts Manager (Multi-Script Projects)",
     category: "Workspace & Views",
-    tags: ["scripts", "multi-script", "bundle", "manage"],
+    tags: ["scripts", "multi-script", "project", "bundle", "manage"],
     relatedIds: ["actone-bundle", "sidebar-panels"],
-    content: `The Scripts sidebar lets you manage multiple Fountain scripts inside a single .actone bundle (hidden for plain .fountain files):
+    content: `The Scripts sidebar lets you manage multiple Fountain scripts/screenplays inside a single .actone project:
 
-- **Add**: "+" button creates a new "Untitled" script. **Import**: download icon opens native file dialog for .fountain/.txt files.
+- **Add**: "+" button creates a new script. **Import**: download icon opens native file dialog for .fountain/.txt files.
 - **Rename**: Double-click a script name for inline edit; press <kbd>Enter</kbd> to save, <kbd>Escape</kbd> to cancel.
 - **Duplicate**: Three-dot menu → Duplicate creates a copy with a unique name and auto-selects the name for renaming.
 - **Reorder**: Drag-and-drop scripts within the list, or use the three-dot menu → Move Up / Move Down.
-- **Delete**: Three-dot menu → Delete (with confirmation). Last script cannot be deleted.
+- **Delete**: Three-dot menu → Delete (with confirmation). If all scripts in a project are deleted, the project gracefully enters the Landing Pad state.
 - Click a script name to load it into the editor. The Status Bar shows the active script name — click it to quickly switch.`,
   },
   {
@@ -708,7 +721,7 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
     title: "File Tabs",
     category: "Workspace & Views",
     tags: ["tabs", "files", "multi-tab", "close"],
-    relatedIds: ["open-file", "new-screenplay", "scripts-manager"],
+    relatedIds: ["open-file", "new-project", "scripts-manager"],
     content: `Open multiple scripts simultaneously in tabs in the header bar. Features:
 
 - **Dirty indicator**: a circular dot appears when unsaved changes exist (primary colored for active tab, text-secondary for inactive).
@@ -831,15 +844,15 @@ The import modal shows a detailed preview of each beat. Choose insertion mode: *
   },
   {
     id: "save",
-    title: "Saving Files",
+    title: "Saving Projects",
     category: "Files & Projects",
-    tags: ["save", "save as", "ctrl+s", "autosave"],
+    tags: ["save", "save as", "ctrl+s", "autosave", "project"],
     relatedIds: ["actone-bundle", "file-tabs", "auto-save"],
-    content: `<kbd>Ctrl+S</kbd> saves the active file. For .actone bundles, this packs all scripts and settings into a ZIP archive. For plain .fountain files, it writes the Fountain text directly.
+    content: `<kbd>Ctrl+S</kbd> saves the active project. For .actone projects, this packs all scripts, notes, todos, and settings into the archive. For plain .fountain files, it writes the Fountain text directly.
 
-<kbd>Ctrl+Shift+S</kbd> opens the native Save As dialog. You can save as .actone (recommended for full features) or .fountain.
+<kbd>Ctrl+Shift+S</kbd> opens the native Save Project As dialog. You can save as .actone (recommended for full features) or .fountain.
 
-When the Tauri window close is requested, ActOne checks all open files for unsaved changes and prompts you to save, discard, or cancel.`,
+When the Tauri window close is requested, ActOne checks all open projects for unsaved changes and prompts you to save, discard, or cancel.`,
   },
   {
     id: "title-page-editor",

@@ -108,8 +108,8 @@ export const SYNTAX_REGISTRY: SyntaxItem[] = [
 
 export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   // ===== File & Document =====
-  { id: "new-file", label: "New Screenplay", category: "File & Document", keys: ["Ctrl", "N"] },
-  { id: "open-file", label: "Open File", category: "File & Document", keys: ["Ctrl", "O"] },
+  { id: "new-file", label: "New Project", category: "File & Document", keys: ["Ctrl", "N"] },
+  { id: "open-file", label: "Open Project", category: "File & Document", keys: ["Ctrl", "O"] },
   { id: "save-file", label: "Save", category: "File & Document", keys: ["Ctrl", "S"] },
   { id: "save-as", label: "Save As", category: "File & Document", keys: ["Ctrl", "Shift", "S"] },
   { id: "close-tab", label: "Close Tab", category: "File & Document", keys: ["Alt", "Q"] },

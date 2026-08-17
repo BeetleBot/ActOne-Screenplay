@@ -80,7 +80,7 @@ Manages multi-tab file operations and document state:
 
 | Action | Description |
 |--------|-------------|
-| `newFile(initialContent?)` | Create new screenplay |
+| `newFile(initialContent?)` | Create new project |
 | `openFile()` | Open file via dialog |
 | `saveFile()` | Save current file |
 | `saveFileAs()` | Save with new name |
