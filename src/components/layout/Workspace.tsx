@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useUI, useEditor } from "../../context";
+import { useUI, useEditor, useFile } from "../../context";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import { SidebarViews } from "../SidebarViews";
@@ -8,6 +8,9 @@ import { RightPane } from "../RightPane";
 import { FountainEditor } from "../FountainEditor";
 import { AmbientPanel } from "../AmbientPanel";
 import { MusePanel } from "../MusePanel";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import { AddIcon } from "../Icons";
 
 
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -23,6 +26,10 @@ export const Workspace = React.memo<WorkspaceProps>(({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane } = useUI();
   const { editorView } = useEditor();
+  const { activeFileId, files, addScript } = useFile();
+
+  const activeFile = files.find(f => f.id === activeFileId);
+  const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -117,28 +124,109 @@ export const Workspace = React.memo<WorkspaceProps>(({
       )}
 
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <Box 
-          id="editor-workspace" 
-          className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} 
-          sx={{ flex: 1, overflow: 'auto' }}
-          onMouseDown={(e) => {
-            const target = e.target as HTMLElement;
-            if (target.id === "editor-workspace" || target.classList.contains("editor-paper")) {
-              e.preventDefault();
-              editorView?.focus();
-            }
-          }}
-        >
+        {hasNoScripts ? (
           <Box
-            className={`editor-paper paper-${paperSize}`}
             sx={{
-              zoom: zoomLevel / 100,
-              transition: 'zoom var(--duration-slow) var(--easing-standard)',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              userSelect: 'none',
+              p: 3,
             }}
           >
-            <ErrorBoundary name="editor"><FountainEditor /></ErrorBoundary>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                maxWidth: 420,
+                width: '100%',
+                textAlign: 'center',
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75, width: '100%' }}>
+                <Typography
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    letterSpacing: '0.01em',
+                    color: 'text.primary',
+                    textAlign: 'center',
+                  }}
+                >
+                  Act One, Scene One.
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.825rem',
+                    lineHeight: 1.45,
+                    textAlign: 'center',
+                    maxWidth: 340,
+                  }}
+                >
+                  Every screenplay starts here. Create your first script to begin writing.
+                </Typography>
+              </Box>
+
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+                onClick={() => addScript()}
+                sx={{
+                  borderRadius: 0,
+                  textTransform: 'none',
+                  fontSize: '0.825rem',
+                  fontWeight: 500,
+                  px: 2.5,
+                  py: 0.75,
+                  borderColor: 'divider',
+                  color: 'text.primary',
+                  bgcolor: 'background.paper',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all var(--duration-fast) var(--easing-standard)',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                    borderColor: 'text.secondary',
+                  },
+                }}
+              >
+                Create a new script
+              </Button>
+            </Box>
           </Box>
-        </Box>
+        ) : (
+          <Box 
+            id="editor-workspace" 
+            className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} 
+            sx={{ flex: 1, overflow: 'auto' }}
+            onMouseDown={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.id === "editor-workspace" || target.classList.contains("editor-paper")) {
+                e.preventDefault();
+                editorView?.focus();
+              }
+            }}
+          >
+            <Box
+              className={`editor-paper paper-${paperSize}`}
+              sx={{
+                zoom: zoomLevel / 100,
+                transition: 'zoom var(--duration-slow) var(--easing-standard)',
+              }}
+            >
+              <ErrorBoundary name="editor"><FountainEditor /></ErrorBoundary>
+            </Box>
+          </Box>
+        )}
       </Box>
 
       {activeRightPane === "search" && (

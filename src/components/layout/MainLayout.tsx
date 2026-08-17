@@ -1,6 +1,6 @@
 import React from "react";
 import Box from "@mui/material/Box";
-import { useUI } from "../../context";
+import { useUI, useFile } from "../../context";
 import { HeaderBar } from "./HeaderBar";
 import { ActivityBar } from "./ActivityBar";
 import { Workspace } from "./Workspace";
@@ -20,6 +20,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onOpenThemeManagerModal,
 }) => {
   const { activeTab, setActiveTab } = useUI();
+  const { files, activeFileId } = useFile();
+
+  const activeFile = files.find(f => f.id === activeFileId);
+  const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
+
+  React.useEffect(() => {
+    if (hasNoScripts) {
+      setActiveTab("scripts");
+      setIsSidebarOpen(true);
+    }
+  }, [hasNoScripts, setActiveTab, setIsSidebarOpen]);
 
   return (
     <Box sx={{ display: 'flex', height: '100%', width: '100%', flex: 1, overflow: 'hidden' }}>

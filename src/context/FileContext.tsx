@@ -211,12 +211,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const newFile = (initialContent: string = "") => {
     const newId = generateUUID();
     const scriptName = "Untitled";
-    const scripts: ScriptInfo[] = [{
+    const scripts: ScriptInfo[] = initialContent ? [{
       name: scriptName,
       fileName: `${scriptName}.fountain`,
       content: initialContent,
       savedContent: initialContent,
-    }];
+    }] : [];
     const newFileObj: ScreenplayFile = {
       id: newId,
       filePath: null,
@@ -226,7 +226,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isDirty: initialContent !== "",
       savedText: "",
       scripts,
-      activeScriptIndex: 0,
+      activeScriptIndex: initialContent ? 0 : undefined,
     };
     setFiles(prev => [...prev, newFileObj]);
     setActiveFileIdState(newId);
@@ -1253,14 +1253,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return false;
 
-    if (file.scripts.length <= 1) {
-      await confirm({
-        title: "Cannot Delete",
-        message: "A bundle must have at least one script.",
-        buttons: [{ value: "ok", label: "OK", variant: "contained" }]
-      });
-      return false;
-    }
 
     const result = await confirm({
       title: "Delete Script",
@@ -1273,6 +1265,28 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (result !== "delete") return false;
 
     const updatedScripts = file.scripts.filter((_, i) => i !== index);
+
+    if (updatedScripts.length === 0) {
+      const emptyDoc = parseScreenplay("", paperSize);
+      if (file.parsedDoc.settings) {
+        emptyDoc.settings = file.parsedDoc.settings;
+      }
+      setFiles(prev => prev.map(f => f.id === activeFileId ? {
+        ...f,
+        scripts: [],
+        activeScriptIndex: undefined,
+        rawText: "",
+        savedText: "",
+        isDirty: true,
+        parsedDoc: emptyDoc,
+      } : f));
+      setScriptsState([]);
+      setActiveScriptIndexState(0);
+      setRawTextState("");
+      setParsedDoc(emptyDoc);
+      return true;
+    }
+
     const currentIndex = file.activeScriptIndex ?? 0;
     let newActiveIndex = currentIndex;
     if (currentIndex >= updatedScripts.length) {

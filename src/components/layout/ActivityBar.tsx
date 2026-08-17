@@ -41,8 +41,10 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     fountainColorsEnabled, setFountainColorsEnabled,
   } = useUI();
   const { theme, setTheme, customThemes } = useTheme();
-  const { filePath } = useFile();
+  const { filePath, files, activeFileId } = useFile();
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
+  const activeFile = files.find(f => f.id === activeFileId);
+  const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const toggleSection = useCallback((key: string) => {
@@ -156,28 +158,31 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         </Box>
         {tabs.map((tab) => {
           const isActive = isSidebarOpen && activeTab === tab.id;
+          const disabled = hasNoScripts;
           return (
             <Tooltip key={tab.id} title={tab.title} placement="right">
               <Box
                 id={"activity-tab-" + tab.id}
-                onClick={() => handleClick(tab.id)}
+                onClick={() => !disabled && handleClick(tab.id)}
                 sx={{
                   width: 47,
                   height: 40,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: 'pointer',
+                  cursor: disabled ? 'default' : 'pointer',
                   color: isActive ? 'primary.contrastText' : 'text.secondary',
                   bgcolor: isActive ? 'primary.main' : 'transparent',
                   position: 'relative',
                   flexShrink: 0,
                   borderBottom: 1,
                   borderColor: 'divider',
+                  opacity: disabled ? 0.4 : 1,
+                  pointerEvents: disabled ? 'none' : 'auto',
                   transition: 'background-color var(--duration-slow) var(--easing-standard), color var(--duration-slow) var(--easing-standard)',
                   '&:hover': {
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
+                    bgcolor: disabled ? 'transparent' : 'primary.main',
+                    color: disabled ? 'text.secondary' : 'primary.contrastText',
                   },
                   '@keyframes activityIconBounce': {
                     '0%': { transform: 'scale(1)' },
