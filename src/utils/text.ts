@@ -88,7 +88,9 @@ export function parseFdxToFountain(xmlText: string): string {
       }
     }
 
-    paragraphs.forEach((p) => {
+    const paraArray = Array.from(paragraphs);
+    for (let i = 0; i < paraArray.length; i++) {
+      const p = paraArray[i];
       const pType = (p.getAttribute("Type") || "").toLowerCase();
       const sceneProps = p.querySelector("SceneProperties");
       const sceneNum = sceneProps?.getAttribute("Number") || p.getAttribute("Number");
@@ -98,14 +100,19 @@ export function parseFdxToFountain(xmlText: string): string {
 
       if (!text) {
         lines.push("");
-        return;
+        continue;
       }
 
       if (alignment === "center" || pType === "centered") {
         lines.push(`> ${text} <`);
         lines.push("");
-        return;
+        continue;
       }
+
+      const nextType = i + 1 < paraArray.length
+        ? (paraArray[i + 1].getAttribute("Type") || "").toLowerCase()
+        : "";
+      const dialogueBlockTypes = ["parenthetical", "dialogue"];
 
       switch (pType) {
         case "scene heading": {
@@ -131,7 +138,9 @@ export function parseFdxToFountain(xmlText: string): string {
         }
         case "dialogue": {
           lines.push(text);
-          lines.push("");
+          if (!dialogueBlockTypes.includes(nextType)) {
+            lines.push("");
+          }
           break;
         }
         case "transition": {
@@ -157,7 +166,7 @@ export function parseFdxToFountain(xmlText: string): string {
           break;
         }
       }
-    });
+    }
 
     return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
   } catch {

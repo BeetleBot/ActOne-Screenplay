@@ -130,4 +130,46 @@ describe("Fade In Parser", () => {
     const fountainResult = parseScriptFileToFountain("script.fountain", fountainPlain);
     expect(fountainResult).toBe(fountainPlain);
   });
+  it("keeps dialogue block contiguous when parenthetical follows dialogue (Fade In)", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<fadein>
+  <paras>
+    <para><style basestyle="Character"/><text>BUZZ</text></para>
+    <para><style basestyle="Parenthetical"/><text>whispering</text></para>
+    <para><style basestyle="Dialogue"/><text>We have a situation.</text></para>
+    <para><style basestyle="Parenthetical"/><text>brief pause</text></para>
+    <para><style basestyle="Dialogue"/><text>Code Gold.</text></para>
+  </paras>
+</fadein>`;
+
+    const fountain = parseFadeInXmlToFountain(xml);
+    const lineArr = fountain.split("\n");
+    const firstDialogueIdx = lineArr.indexOf("We have a situation.");
+    const secondParenIdx = lineArr.indexOf("(brief pause)");
+    expect(secondParenIdx).toBe(firstDialogueIdx + 1);
+  });
+
+  it("keeps dialogue block contiguous when parenthetical follows dialogue (FDX)", () => {
+    const fdx = `<?xml version="1.0" encoding="UTF-8"?>
+<FinalDraft DocumentType="Script" Template="No" Version="1">
+  <Content>
+    <Paragraph Type="Character"><Text>BUZZ</Text></Paragraph>
+    <Paragraph Type="Parenthetical"><Text>(whispering)</Text></Paragraph>
+    <Paragraph Type="Dialogue"><Text>We have a situation.</Text></Paragraph>
+    <Paragraph Type="Parenthetical"><Text>(brief pause)</Text></Paragraph>
+    <Paragraph Type="Dialogue"><Text>Code Gold.</Text></Paragraph>
+    <Paragraph Type="Action"><Text>He stands up.</Text></Paragraph>
+  </Content>
+</FinalDraft>`;
+
+    const fountain = parseFdxToFountain(fdx);
+    const lineArr = fountain.split("\n");
+    const firstDialogueIdx = lineArr.indexOf("We have a situation.");
+    const secondParenIdx = lineArr.indexOf("(whispering)");
+    const thirdParenIdx = lineArr.indexOf("(brief pause)");
+    expect(thirdParenIdx).toBe(firstDialogueIdx + 1);
+    expect(secondParenIdx).toBe(lineArr.indexOf("@BUZZ") + 1);
+    const lastDialogueIdx = lineArr.indexOf("Code Gold.");
+    expect(lineArr[lastDialogueIdx + 1]).toBe("");
+  });
 });

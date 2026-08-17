@@ -54,7 +54,9 @@ export function parseFadeInXmlToFountain(xmlText: string): string {
 
     const lines: string[] = [];
 
-    paras.forEach((para) => {
+    const paraArray = Array.from(paras);
+    for (let i = 0; i < paraArray.length; i++) {
+      const para = paraArray[i];
       const styleEl = para.querySelector("style");
       const baseStyle = styleEl?.getAttribute("basestyle") || styleEl?.getAttribute("name") || "";
       const align = styleEl?.getAttribute("align") || "";
@@ -64,7 +66,7 @@ export function parseFadeInXmlToFountain(xmlText: string): string {
       const text = extractFormattedText(para);
       if (!text) {
         lines.push("");
-        return;
+        continue;
       }
 
       const styleLower = baseStyle.toLowerCase();
@@ -72,8 +74,12 @@ export function parseFadeInXmlToFountain(xmlText: string): string {
       if (align === "center" || styleLower === "centered" || styleLower === "centered text") {
         lines.push(`> ${text} <`);
         lines.push("");
-        return;
+        continue;
       }
+
+      const nextStyleEl = i + 1 < paraArray.length ? paraArray[i + 1].querySelector("style") : null;
+      const nextStyle = (nextStyleEl?.getAttribute("basestyle") || nextStyleEl?.getAttribute("name") || "").toLowerCase();
+      const dialogueBlockTypes = ["parenthetical", "dialogue"];
 
       switch (styleLower) {
         case "scene heading": {
@@ -106,7 +112,9 @@ export function parseFadeInXmlToFountain(xmlText: string): string {
 
         case "dialogue": {
           lines.push(text);
-          lines.push("");
+          if (!dialogueBlockTypes.includes(nextStyle)) {
+            lines.push("");
+          }
           break;
         }
 
@@ -140,7 +148,7 @@ export function parseFadeInXmlToFountain(xmlText: string): string {
           break;
         }
       }
-    });
+    }
 
     return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
   } catch (err) {
