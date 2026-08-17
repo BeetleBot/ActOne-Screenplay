@@ -27,8 +27,6 @@ import {
   useTheme,
 } from "@mui/material";
 
-const RECENT_COMMANDS_KEY = "recentCommands";
-
 const fuzzyScore = (query: string, target: string): number => {
   const q = query.toLowerCase();
   const t = target.toLowerCase();
@@ -49,21 +47,6 @@ const fuzzyScore = (query: string, target: string): number => {
   }
   if (qIdx < q.length) return 0;
   return score;
-};
-
-const getRecentCommands = (): string[] => {
-  try {
-    const stored = localStorage.getItem(RECENT_COMMANDS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
-};
-
-const addRecentCommand = (cmdId: string) => {
-  try {
-    const recent = getRecentCommands().filter(id => id !== cmdId);
-    recent.unshift(cmdId);
-    localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(recent.slice(0, 10)));
-  } catch { void 0; }
 };
 
 interface CommandItem {
@@ -335,22 +318,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://discord.gg/zpFPpdAxnW"); onClose(); } },
   ];
 
-  const recentIds = getRecentCommands();
-
-  const filteredCommands = commands
-    .map((cmd) => ({
-      cmd,
-      score: fuzzyScore(search, cmd.name) + fuzzyScore(search, cmd.category),
-      recentIndex: recentIds.indexOf(cmd.id),
-    }))
-    .filter(({ score }) => search === "" || score > 0)
-    .sort((a, b) => {
-      if (a.recentIndex !== -1 && b.recentIndex !== -1) return a.recentIndex - b.recentIndex;
-      if (a.recentIndex !== -1) return -1;
-      if (b.recentIndex !== -1) return 1;
-      return b.score - a.score;
-    })
-    .map(({ cmd }) => cmd);
+  const filteredCommands = search.trim() === ""
+    ? commands
+    : commands
+        .map((cmd) => ({
+          cmd,
+          score: fuzzyScore(search, cmd.name) + fuzzyScore(search, cmd.category),
+        }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(({ cmd }) => cmd);
 
   const groupedCommands: { [category: string]: CommandItem[] } = {};
   filteredCommands.forEach((cmd) => {
@@ -380,7 +357,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (flatGroupedList[selectedIndex]) {
-        addRecentCommand(flatGroupedList[selectedIndex].id);
         flatGroupedList[selectedIndex].action();
       }
     } else if (e.key === "Escape") {
@@ -484,7 +460,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
           <List disablePadding>
             {Object.keys(groupedCommands).map((cat) => (
               <Box key={cat}>
-                <ListSubheader sx={{ bgcolor: "transparent", color: theme.palette.text.secondary, fontSize: 10, fontWeight: 700, textTransform: "uppercase", py: 0.5, lineHeight: "24px" }}>
+                <ListSubheader
+                  sx={{
+                    bgcolor: theme.palette.background.paper,
+                    color: theme.palette.text.secondary,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    py: 0.5,
+                    px: 2,
+                    lineHeight: "26px",
+                    zIndex: 2,
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                  }}
+                >
                   {cat}
                 </ListSubheader>
                 {groupedCommands[cat].map((cmd) => {
