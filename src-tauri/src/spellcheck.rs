@@ -20,6 +20,10 @@ fn normalize_apostrophes(s: &str) -> String {
     s.replace('\u{2019}', "'")
 }
 
+fn utf16_offset(text: &str, byte_offset: usize) -> usize {
+    text[..byte_offset].encode_utf16().count()
+}
+
 static SCREENPLAY_TERMS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     let mut s = HashSet::new();
     let terms = [
@@ -488,8 +492,8 @@ pub fn spellcheck_check_text(
                 let match_end = match_start + clean.len();
 
                 misspelled.push(MisspelledWord {
-                    from: range.offset + match_start,
-                    to: range.offset + match_end,
+                    from: range.offset + utf16_offset(&range.text, match_start),
+                    to: range.offset + utf16_offset(&range.text, match_end),
                     word: clean.to_string(),
                 });
             }
@@ -803,6 +807,16 @@ mod tests {
         let mut suggestions = Vec::new();
         dict.suggest("helo", &mut suggestions);
         assert!(!suggestions.is_empty());
+    }
+
+    #[test]
+    fn test_utf16_offsets_for_non_ascii_text() {
+        let text = "தமிழ் typo";
+        let start = text.find("typo").unwrap();
+        let end = start + "typo".len();
+
+        assert_eq!(utf16_offset(text, start), 6);
+        assert_eq!(utf16_offset(text, end), 10);
     }
 
     #[test]
