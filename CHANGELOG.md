@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.17] - 2026-08-17
+
+### Added / Improved
+- 🔤 **Curly Apostrophe & Typographic Contraction Support** – Enhanced spellchecking and word tokenization to natively recognize right single quotation marks / curly apostrophes (`\u2019`), preventing false-positive spelling errors on contractions like `couldn’t` or `don’t`.
+- 🎭 **Character Name Exclusions in Spellchecking** – Integrated dynamic screenplay character name awareness into the spellchecking engine so character names from the script are automatically excluded from being flagged as spelling errors.
+- ⚡ **Optimized Background Spellcheck Scheduling** – Streamlined spellcheck scheduling by caching full document checks on startup/forced events and utilizing debounced viewport checks during edits to minimize background re-processing.
+- 🎨 **Enhanced Catppuccin & Custom Theme Mappings** – Expanded theme system with dynamic Catppuccin palette color mapping overrides across light and dark modes, standardizing surface, accent, and typography colors.
+- 💬 **Native Tauri Dialogs** – Migrated browser confirm and alert dialogs (such as project structure and screenplay element imports) to native Tauri dialogs for a cohesive desktop experience.
+- 🔍 **Command Palette Streamlining** – Refactored the Command Palette to remove redundant recent command tracking and polished category subheader typography and spacing.
+
+### Fixed
+- 📜 **Dialogue & Parenthetical Contiguity** – Refactored Fade In and screenplay dialogue parsers to maintain contiguity between dialogue and parenthetical lines, preventing improper breaks during script import.
+
 ## [0.4.16] - 2026-08-16
 
 ### Added / Improved
