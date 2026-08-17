@@ -11,8 +11,16 @@ const EN_AFF: &str = include_str!("../dictionaries/en/index.aff");
 const EN_DIC: &str = include_str!("../dictionaries/en/index.dic");
 
 static WORD_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"[\p{L}']+").unwrap()
+    Regex::new(r"[\p{L}'\u{2019}]+").unwrap()
 });
+
+fn is_apostrophe(c: char) -> bool {
+    c == '\'' || c == '\u{2019}'
+}
+
+fn normalize_apostrophes(s: &str) -> String {
+    s.replace('\u{2019}', "'")
+}
 
 static SCREENPLAY_TERMS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     let mut s = HashSet::new();
@@ -192,18 +200,23 @@ impl SpellcheckState {
         Err(format!("Dictionary for language '{lang_clean}' not found on disk"))
     }
 
+    #[allow(dead_code)]
     pub fn is_word_valid(&self, word: &str) -> bool {
-        let clean = word.trim_matches(|c: char| !c.is_alphabetic() && c != '\'');
+        self.is_word_valid_with_names(word, None)
+    }
+
+    pub fn is_word_valid_with_names(&self, word: &str, char_names: Option<&HashSet<String>>) -> bool {
+        let clean = word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c));
         if clean.len() <= 1 {
             return true;
         }
 
-        // Ignore ALL-CAPS abbreviations <= 5 chars (INT, EXT, POV, VO, etc.)
         if clean.len() <= 5 && clean.chars().all(|c| c.is_uppercase()) {
             return true;
         }
 
-        let lower = clean.to_lowercase();
+        let normalized = normalize_apostrophes(clean);
+        let lower = normalized.to_lowercase();
 
         if self.custom_words.contains(&lower)
             || self.ignored_words.contains(&lower)
@@ -212,8 +225,14 @@ impl SpellcheckState {
             return true;
         }
 
+        if let Some(names) = char_names {
+            if names.contains(&lower) {
+                return true;
+            }
+        }
+
         if let Some(dict) = &self.dictionary {
-            dict.check(clean) || dict.check(&lower)
+            dict.check(&normalized) || dict.check(&lower)
         } else {
             true
         }
@@ -273,20 +292,24 @@ pub fn spellcheck_set_language(
 pub fn spellcheck_check_text(
     state: tauri::State<'_, Mutex<SpellcheckState>>,
     ranges: Vec<TextRange>,
+    character_names: Option<Vec<String>>,
 ) -> Vec<MisspelledWord> {
     let s = state.lock().unwrap_or_else(|e| e.into_inner());
+    let names_set: Option<HashSet<String>> = character_names.map(|names| {
+        names.iter().flat_map(|n| n.split_whitespace()).map(|w| w.to_lowercase()).collect()
+    });
     let mut misspelled = Vec::new();
 
     for range in ranges {
         for m in WORD_REGEX.find_iter(&range.text) {
             let raw_word = m.as_str();
-            let clean = raw_word.trim_matches('\'');
+            let clean = raw_word.trim_matches(is_apostrophe);
             if clean.is_empty() || clean.len() <= 1 {
                 continue;
             }
 
-            if !s.is_word_valid(clean) {
-                let leading_trimmed = raw_word.len() - raw_word.trim_start_matches('\'').len();
+            if !s.is_word_valid_with_names(clean, names_set.as_ref()) {
+                let leading_trimmed = raw_word.len() - raw_word.trim_start_matches(is_apostrophe).len();
                 let match_start = m.start() + leading_trimmed;
                 let match_end = match_start + clean.len();
 
@@ -308,16 +331,17 @@ pub fn spellcheck_suggest(
     word: String,
 ) -> Vec<String> {
     let s = state.lock().unwrap_or_else(|e| e.into_inner());
-    let clean = word.trim_matches(|c: char| !c.is_alphabetic() && c != '\'');
+    let clean = word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c));
     if clean.is_empty() {
         return Vec::new();
     }
 
+    let normalized = normalize_apostrophes(clean);
     let mut suggestions = Vec::new();
     if let Some(dict) = &s.dictionary {
-        dict.suggest(clean, &mut suggestions);
+        dict.suggest(&normalized, &mut suggestions);
         if suggestions.is_empty() {
-            let lower = clean.to_lowercase();
+            let lower = normalized.to_lowercase();
             dict.suggest(&lower, &mut suggestions);
         }
     }
@@ -342,7 +366,9 @@ pub fn spellcheck_add_word(
     word: String,
 ) -> Result<(), String> {
     let mut s = state.lock().unwrap_or_else(|e| e.into_inner());
-    let clean = word.trim_matches(|c: char| !c.is_alphabetic() && c != '\'').to_lowercase();
+    let clean = normalize_apostrophes(
+        word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)),
+    ).to_lowercase();
     if !clean.is_empty() {
         s.custom_words.insert(clean);
         s.save_custom_words();
@@ -356,7 +382,9 @@ pub fn spellcheck_remove_word(
     word: String,
 ) -> Result<(), String> {
     let mut s = state.lock().unwrap_or_else(|e| e.into_inner());
-    let clean = word.trim_matches(|c: char| !c.is_alphabetic() && c != '\'').to_lowercase();
+    let clean = normalize_apostrophes(
+        word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)),
+    ).to_lowercase();
     if !clean.is_empty() {
         s.custom_words.remove(&clean);
         s.save_custom_words();
@@ -370,7 +398,9 @@ pub fn spellcheck_ignore_word(
     word: String,
 ) {
     let mut s = state.lock().unwrap_or_else(|e| e.into_inner());
-    let clean = word.trim_matches(|c: char| !c.is_alphabetic() && c != '\'').to_lowercase();
+    let clean = normalize_apostrophes(
+        word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)),
+    ).to_lowercase();
     if !clean.is_empty() {
         s.ignored_words.insert(clean);
     }
@@ -562,6 +592,36 @@ mod tests {
     }
 
     #[test]
+    fn test_curly_apostrophe_words() {
+        let state = SpellcheckState::new();
+        assert!(state.is_word_valid("don't"));
+        assert!(state.is_word_valid("don\u{2019}t"));
+        assert!(state.is_word_valid("couldn\u{2019}t"));
+        assert!(state.is_word_valid("it\u{2019}s"));
+        assert!(state.is_word_valid("I\u{2019}m"));
+    }
+
+    #[test]
+    fn test_curly_apostrophe_regex() {
+        let text = "don\u{2019}t couldn\u{2019}t";
+        let matches: Vec<&str> = WORD_REGEX.find_iter(text).map(|m| m.as_str()).collect();
+        assert_eq!(matches, vec!["don\u{2019}t", "couldn\u{2019}t"]);
+    }
+
+    #[test]
+    fn test_character_names_skip() {
+        let state = SpellcheckState::new();
+        let mut names = HashSet::new();
+        names.insert("wilfredx".to_string());
+        names.insert("wingsby".to_string());
+        assert!(!state.is_word_valid("Wilfredx"));
+        assert!(!state.is_word_valid("Wingsby"));
+        assert!(state.is_word_valid_with_names("Wilfredx", Some(&names)));
+        assert!(state.is_word_valid_with_names("Wingsby", Some(&names)));
+        assert!(!state.is_word_valid_with_names("Xyzabc", Some(&names)));
+    }
+
+    #[test]
     fn test_word_check_and_suggestions() {
         let state = SpellcheckState::new();
         let dict = state.dictionary.as_ref().unwrap();
@@ -582,13 +642,13 @@ mod tests {
         for range in ranges {
             for m in WORD_REGEX.find_iter(&range.text) {
                 let raw_word = m.as_str();
-                let clean = raw_word.trim_matches('\'');
+                let clean = raw_word.trim_matches(is_apostrophe);
                 if clean.is_empty() || clean.len() <= 1 {
                     continue;
                 }
 
                 if !state.is_word_valid(clean) {
-                    let leading_trimmed = raw_word.len() - raw_word.trim_start_matches('\'').len();
+                    let leading_trimmed = raw_word.len() - raw_word.trim_start_matches(is_apostrophe).len();
                     let match_start = m.start() + leading_trimmed;
                     let match_end = match_start + clean.len();
 

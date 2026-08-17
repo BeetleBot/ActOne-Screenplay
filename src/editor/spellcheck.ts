@@ -7,6 +7,7 @@ import {
   LINE_DUAL_CHARACTER,
   LINE_TRANSITION,
 } from "./fountainSyntax";
+import { cachedCharactersField } from "./inlineAutocomplete";
 
 export const setSpellDecosEffect = StateEffect.define<DecorationSet>();
 export const forceSpellRecheckEffect = StateEffect.define<null>();
@@ -43,9 +44,10 @@ interface MisspelledWord {
 class SpellcheckPluginView {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private currentRunId = 0;
+  private hasPerformedInitialCheck = false;
 
   constructor(view: EditorView) {
-    this.scheduleCheck(view);
+    this.scheduleCheck(view, 0, true);
   }
 
   update(update: ViewUpdate) {
@@ -53,8 +55,12 @@ class SpellcheckPluginView {
       tr.effects.some((e) => e.is(forceSpellRecheckEffect))
     );
 
-    if (update.docChanged || update.viewportChanged || hasForceEffect) {
-      this.scheduleCheck(update.view);
+    if (hasForceEffect) {
+      this.scheduleCheck(update.view, 0, true);
+    } else if (update.docChanged) {
+      this.scheduleCheck(update.view, 400, false);
+    } else if (update.viewportChanged && !this.hasPerformedInitialCheck) {
+      this.scheduleCheck(update.view, 0, true);
     }
   }
 
@@ -65,16 +71,17 @@ class SpellcheckPluginView {
     }
   }
 
-  scheduleCheck(view: EditorView) {
+  scheduleCheck(view: EditorView, delay: number, isFull: boolean) {
     if (this.timer) {
       clearTimeout(this.timer);
     }
     this.timer = setTimeout(() => {
-      this.runCheck(view);
-    }, 200);
+      this.timer = null;
+      this.runCheck(view, isFull);
+    }, delay);
   }
 
-  async runCheck(view: EditorView) {
+  async runCheck(view: EditorView, isFull: boolean) {
     if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) {
       return;
     }
@@ -84,14 +91,9 @@ class SpellcheckPluginView {
     const lineTypes = view.state.field(lineTypesField, false);
     const doc = view.state.doc;
 
-    for (const { from, to } of view.visibleRanges) {
-      if (from >= to) continue;
-      const startLine = doc.lineAt(from).number;
-      const endLine = doc.lineAt(to).number;
-
-      for (let l = startLine; l <= endLine; l++) {
+    if (isFull || !this.hasPerformedInitialCheck) {
+      for (let l = 1; l <= doc.lines; l++) {
         const type = lineTypes ? lineTypes[l - 1] : undefined;
-        // Skip Scene Headings, Characters, Dual Characters, and Transitions
         if (
           type === LINE_HEADING ||
           type === LINE_CHARACTER ||
@@ -102,22 +104,62 @@ class SpellcheckPluginView {
         }
 
         const line = doc.line(l);
-        const lineFrom = Math.max(line.from, from);
-        const lineTo = Math.min(line.to, to);
-        if (lineFrom < lineTo) {
+        if (line.from < line.to) {
           ranges.push({
-            text: view.state.sliceDoc(lineFrom, lineTo),
-            offset: lineFrom,
+            text: line.text,
+            offset: line.from,
           });
+        }
+      }
+    } else {
+      for (const { from, to } of view.visibleRanges) {
+        if (from >= to) continue;
+        const startLine = doc.lineAt(from).number;
+        const endLine = doc.lineAt(to).number;
+
+        for (let l = startLine; l <= endLine; l++) {
+          const type = lineTypes ? lineTypes[l - 1] : undefined;
+          if (
+            type === LINE_HEADING ||
+            type === LINE_CHARACTER ||
+            type === LINE_DUAL_CHARACTER ||
+            type === LINE_TRANSITION
+          ) {
+            continue;
+          }
+
+          const line = doc.line(l);
+          const lineFrom = Math.max(line.from, from);
+          const lineTo = Math.min(line.to, to);
+          if (lineFrom < lineTo) {
+            ranges.push({
+              text: view.state.sliceDoc(lineFrom, lineTo),
+              offset: lineFrom,
+            });
+          }
         }
       }
     }
 
-    if (ranges.length === 0) return;
+    if (ranges.length === 0) {
+      if (isFull) {
+        view.dispatch({
+          effects: setSpellDecosEffect.of(Decoration.none),
+        });
+        this.hasPerformedInitialCheck = true;
+      }
+      return;
+    }
+
+    const cachedChars = view.state.field(cachedCharactersField, false);
+    const characterNames = cachedChars && cachedChars.size > 0 ? Array.from(cachedChars) : undefined;
 
     try {
       const { invoke } = await import("@tauri-apps/api/core");
-      const misspelled = await invoke<MisspelledWord[]>("spellcheck_check_text", { ranges });
+      const misspelled = await invoke<MisspelledWord[]>("spellcheck_check_text", {
+        ranges,
+        characterNames,
+      });
 
       if (this.currentRunId !== runId) return;
 
@@ -137,6 +179,7 @@ class SpellcheckPluginView {
       view.dispatch({
         effects: setSpellDecosEffect.of(builder.finish()),
       });
+      this.hasPerformedInitialCheck = true;
     } catch (err) {
       console.warn("[Spellcheck] check_text error:", err);
     }

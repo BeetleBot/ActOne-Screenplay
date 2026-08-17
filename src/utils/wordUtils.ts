@@ -14,7 +14,7 @@ export function getWordAtPosition(text: string, pos: number): WordAtPosition | n
   const lineText = text.slice(lineStart, lineEnd);
   const offsetInLine = pos - lineStart;
 
-  const wordRegex = /[\p{L}\p{N}']+/gu;
+  const wordRegex = /[\p{L}\p{N}'\u2019]+/gu;
   let match: RegExpExecArray | null;
 
   while ((match = wordRegex.exec(lineText)) !== null) {
@@ -22,7 +22,7 @@ export function getWordAtPosition(text: string, pos: number): WordAtPosition | n
     const end = start + match[0].length;
     if (offsetInLine >= start && offsetInLine <= end) {
       const raw = match[0];
-      const clean = raw.replace(/^'+|'+$/g, "");
+      const clean = raw.replace(/^['\u2019]+|['\u2019]+$/g, "");
       if (!clean) return null;
       const leadingTrim = raw.indexOf(clean);
       return {
