@@ -704,6 +704,20 @@ export function useCodeMirror(containerRef: React.RefObject<HTMLDivElement | nul
           view.setState(newState);
         }
 
+        view.dispatch({
+          effects: [
+            spellcheckCompartment.reconfigure(
+              spellcheckEnabled ? spellcheckExtension : []
+            ),
+            typewriterCompartment.reconfigure(
+              typewriterModeRef.current ? typewriterScrollPlugin : []
+            ),
+            updateHideSyntaxEffect.of(hideSyntaxEnabled),
+            updateRightPaneOpenEffect.of(activeRightPane !== null),
+            updateScriptFileNameEffect.of(scriptFileNameRef.current),
+          ],
+        });
+
         pendingScrollToRef.current = null;
 
         requestAnimationFrame(() => {
