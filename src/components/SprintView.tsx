@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { useSprint, useFile, useEditor, type SprintSession } from "../context";
 import { countWords } from "../utils";
+import { confirmDialog } from "../utils/dialog";
 import { 
   PlayArrowIcon, 
   StopIcon, 
@@ -61,8 +62,9 @@ export const SprintView = React.memo(() => {
     }
   }, [activeFileId, parsedDoc.settings?.sprintHistory, addHistoryItem, syncedFiles]);
 
-  const handleDeleteHistoryItem = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this sprint?")) {
+  const handleDeleteHistoryItem = async (id: string) => {
+    const isConfirmed = await confirmDialog("Are you sure you want to delete this sprint?", { kind: "warning" });
+    if (isConfirmed) {
       deleteHistoryItem(id);
       if (filePath?.toLowerCase().endsWith(".actone")) {
         updateSettings((prev) => {
@@ -76,8 +78,9 @@ export const SprintView = React.memo(() => {
     }
   };
 
-  const handleClearHistory = () => {
-    if (window.confirm("Are you sure you want to clear all global sprint history and history stored in this file?")) {
+  const handleClearHistory = async () => {
+    const isConfirmed = await confirmDialog("Are you sure you want to clear all global sprint history and history stored in this file?", { kind: "warning" });
+    if (isConfirmed) {
       clearHistory();
       if (filePath?.toLowerCase().endsWith(".actone")) {
         updateSettings((prev) => ({

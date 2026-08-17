@@ -10,6 +10,7 @@ import { resolveThemeConfig } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
 import { AddIcon, DeleteIcon, CheckIcon, FormatListBulletedIcon, LibraryBooksIcon, AssignmentIcon, TimerIcon, SettingsIcon, DownloadIcon, UploadIcon, ColorLensIcon } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
+import { confirmDialog } from "../utils/dialog";
 
 const CORE_DEFAULTS = { editor: "#ffffff", text: "#1a1c1e", accent: "#0061a4", sidebar: "#f5f5f5", button: "#0061a4" };
 const EMPTY_COLORS = deriveAllColors(CORE_DEFAULTS, false);
@@ -388,8 +389,9 @@ export const ThemeManagerWindow: React.FC = () => {
     resetForm();
   };
 
-  const handleDelete = (id: string) => {
-    if (!window.confirm("Delete this custom theme? This cannot be undone.")) return;
+  const handleDelete = async (id: string) => {
+    const isConfirmed = await confirmDialog("Delete this custom theme? This cannot be undone.", { kind: "warning" });
+    if (!isConfirmed) return;
     const updated = customThemes.filter(t => t.id !== id);
     setCustomThemes(updated);
     engineSetTheme({ customThemes: JSON.stringify(updated) });

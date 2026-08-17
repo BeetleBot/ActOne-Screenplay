@@ -1,10 +1,10 @@
+use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::sync::OnceLock;
-use std::io::Write;
-use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Emitter;
 use tauri::Manager;
 #[cfg(target_os = "windows")]
@@ -31,7 +31,8 @@ impl Default for ThemeState {
 struct ThemeConfig(Mutex<ThemeState>);
 
 fn theme_file_path(app: &tauri::AppHandle) -> PathBuf {
-    app.path().app_data_dir()
+    app.path()
+        .app_data_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join("actone-theme.json")
 }
@@ -50,9 +51,15 @@ fn set_theme_state(
     custom_themes: Option<String>,
 ) -> Result<(), String> {
     let mut current = state.0.lock().map_err(|e| e.to_string())?;
-    if let Some(id) = theme_id { current.theme_id = id; }
-    if let Some(scale) = app_scale { current.app_scale = scale; }
-    if let Some(themes) = custom_themes { current.custom_themes = themes; }
+    if let Some(id) = theme_id {
+        current.theme_id = id;
+    }
+    if let Some(scale) = app_scale {
+        current.app_scale = scale;
+    }
+    if let Some(themes) = custom_themes {
+        current.custom_themes = themes;
+    }
     let saved = current.clone();
     drop(current);
 
@@ -63,7 +70,8 @@ fn set_theme_state(
     let json = serde_json::to_string(&saved).map_err(|e| e.to_string())?;
     std::fs::write(&file_path, json).map_err(|e| e.to_string())?;
 
-    app.emit("theme:state-changed", saved).map_err(|e| e.to_string())?;
+    app.emit("theme:state-changed", saved)
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -73,21 +81,26 @@ static PANIC_LOG_PATH: OnceLock<PathBuf> = OnceLock::new();
 fn install_panic_hook(path: PathBuf) {
     let _ = PANIC_LOG_PATH.set(path);
     std::panic::set_hook(Box::new(|panic| {
-        let path = PANIC_LOG_PATH.get().cloned().unwrap_or_else(|| PathBuf::from("actone-panics.log"));
-        if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+        let path = PANIC_LOG_PATH
+            .get()
+            .cloned()
+            .unwrap_or_else(|| PathBuf::from("actone-panics.log"));
+        if let Some(parent) = path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
         if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(path) {
             let _ = writeln!(file, "{panic}\n");
         }
     }));
 }
 
-pub mod pdf;
-mod structures;
-mod font_cache;
 mod app_prefs;
-mod snapshots;
+mod font_cache;
 mod ollama;
+pub mod pdf;
+mod snapshots;
 mod spellcheck;
+mod structures;
 
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
@@ -122,7 +135,10 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
         }
         _ => {
             dialog = dialog
-                .add_filter("All Supported Scripts", &["fdx", "fadein", "fountain", "txt", "spmd"])
+                .add_filter(
+                    "All Supported Scripts",
+                    &["fdx", "fadein", "fountain", "txt", "spmd"],
+                )
                 .add_filter("Final Draft (.fdx)", &["fdx"])
                 .add_filter("Fade In (.fadein)", &["fadein"])
                 .add_filter("Fountain (.fountain, .txt)", &["fountain", "txt", "spmd"]);
@@ -147,7 +163,10 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
     }))
 }
 
-fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(path: P, data: C) -> Result<(), String> {
+fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(
+    path: P,
+    data: C,
+) -> Result<(), String> {
     let path = path.as_ref();
     let parent = path.parent().unwrap_or_else(|| std::path::Path::new(""));
     let temp_name = format!(
@@ -157,14 +176,14 @@ fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(path: P, dat
             .unwrap_or("temp_save")
     );
     let temp_path = parent.join(temp_name);
-    
+
     fs::write(&temp_path, data).map_err(|e| e.to_string())?;
-    
+
     if let Err(e) = fs::rename(&temp_path, path) {
         let _ = fs::remove_file(&temp_path);
         return Err(e.to_string());
     }
-    
+
     Ok(())
 }
 
@@ -182,7 +201,9 @@ fn save_file_dialog(content: String, default_name: Option<String>) -> Option<Str
     if let Some(ref name) = default_name {
         let clean = name.trim();
         if !clean.is_empty() {
-            let suggested = if clean.to_ascii_lowercase().ends_with(".actone") || clean.to_ascii_lowercase().ends_with(".fountain") {
+            let suggested = if clean.to_ascii_lowercase().ends_with(".actone")
+                || clean.to_ascii_lowercase().ends_with(".fountain")
+            {
                 clean.to_string()
             } else {
                 format!("{}.actone", clean)
@@ -192,7 +213,7 @@ fn save_file_dialog(content: String, default_name: Option<String>) -> Option<Str
     }
 
     let file = dialog.save_file()?;
-        
+
     let mut file_path = file;
     if let Some(ext) = file_path.extension() {
         if ext.to_string_lossy().to_ascii_lowercase() == "actone" {
@@ -266,7 +287,7 @@ fn save_pdf_dialog(bytes: Vec<u8>) -> Option<String> {
     let file = rfd::FileDialog::new()
         .add_filter("PDF Document", &["pdf"])
         .save_file()?;
-        
+
     if fs::write(&file, bytes).is_ok() {
         return Some(file.to_string_lossy().to_string());
     }
@@ -307,7 +328,7 @@ fn export_pdf(
         dialog = dialog.set_directory(dir);
     }
     let file = dialog.add_filter("PDF Document", &["pdf"]).save_file()?;
-        
+
     let paper = if paper_size == "letter" {
         pdf::LETTER
     } else {
@@ -450,7 +471,10 @@ fn get_fonts_for_script(
     state: tauri::State<'_, Mutex<font_cache::FontCache>>,
     script: String,
 ) -> Vec<String> {
-    state.lock().map(|mut cache| cache.fonts_for_script(&script)).unwrap_or_default()
+    state
+        .lock()
+        .map(|mut cache| cache.fonts_for_script(&script))
+        .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -538,7 +562,9 @@ fn export_fountain(content: String, default_directory: Option<String>) -> Option
     if let Some(dir) = &default_directory {
         dialog = dialog.set_directory(dir);
     }
-    let file = dialog.add_filter("Fountain Screenplay", &["fountain"]).save_file()?;
+    let file = dialog
+        .add_filter("Fountain Screenplay", &["fountain"])
+        .save_file()?;
 
     if fs::write(&file, &content).is_ok() {
         return Some(file.to_string_lossy().to_string());
@@ -569,7 +595,9 @@ fn export_fdx(fountain_text: String, default_directory: Option<String>) -> Optio
     if let Some(dir) = &default_directory {
         dialog = dialog.set_directory(dir);
     }
-    let file = dialog.add_filter("Final Draft File", &["fdx"]).save_file()?;
+    let file = dialog
+        .add_filter("Final Draft File", &["fdx"])
+        .save_file()?;
 
     let screenplay = pdf::parse(&fountain_text);
     let fdx_content = pdf::export_to_fdx(&screenplay);
@@ -647,7 +675,8 @@ async fn check_microsoft_store_license() -> Result<bool, String> {
     {
         use windows::Services::Store::StoreContext;
         let context = StoreContext::GetDefault().map_err(|e| e.to_string())?;
-        let app_license = context.GetAppLicenseAsync()
+        let app_license = context
+            .GetAppLicenseAsync()
             .map_err(|e| e.to_string())?
             .await
             .map_err(|e| e.to_string())?;
@@ -732,6 +761,7 @@ async fn install_store_update() -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_http::init())
@@ -920,16 +950,20 @@ pub fn run() {
                 }
                 #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
                 tauri::RunEvent::Opened { urls } => {
-                    let paths: Vec<String> = urls.iter()
+                    let paths: Vec<String> = urls
+                        .iter()
                         .map(|u| {
                             let s = u.as_str();
                             s.strip_prefix("file://").unwrap_or(s).to_string()
                         })
                         .collect();
-                    let filtered: Vec<String> = paths.into_iter()
+                    let filtered: Vec<String> = paths
+                        .into_iter()
                         .filter(|p| {
                             let lp = p.to_ascii_lowercase();
-                            lp.ends_with(".actone") || lp.ends_with(".fountain") || lp.ends_with(".txt")
+                            lp.ends_with(".actone")
+                                || lp.ends_with(".fountain")
+                                || lp.ends_with(".txt")
                         })
                         .collect();
                     if !filtered.is_empty() {
@@ -960,7 +994,11 @@ fn get_system_info() -> SystemInfo {
         os: std::env::consts::OS.to_string(),
         os_version: sysinfo::System::long_os_version().unwrap_or_else(|| "unknown".to_string()),
         architecture: std::env::consts::ARCH.to_string(),
-        cpu_model: system.cpus().first().map(|cpu| cpu.brand().to_string()).unwrap_or_else(|| "unknown".to_string()),
+        cpu_model: system
+            .cpus()
+            .first()
+            .map(|cpu| cpu.brand().to_string())
+            .unwrap_or_else(|| "unknown".to_string()),
         cpu_count: system.cpus().len(),
         total_memory_mb: system.total_memory() / 1024 / 1024,
         available_memory_mb: system.available_memory() / 1024 / 1024,
@@ -983,8 +1021,13 @@ async fn send_error_report(webhook_url: String, payload: String) -> Result<(), S
 
 #[tauri::command]
 fn flush_pending_panics() -> Result<String, String> {
-    let path = PANIC_LOG_PATH.get().cloned().unwrap_or_else(|| PathBuf::from("actone-panics.log"));
-    if !path.exists() { return Ok(String::new()); }
+    let path = PANIC_LOG_PATH
+        .get()
+        .cloned()
+        .unwrap_or_else(|| PathBuf::from("actone-panics.log"));
+    if !path.exists() {
+        return Ok(String::new());
+    }
     let content = fs::read_to_string(&path).map_err(|error| error.to_string())?;
     let _ = fs::remove_file(path);
     Ok(content)
@@ -992,11 +1035,17 @@ fn flush_pending_panics() -> Result<String, String> {
 
 #[tauri::command]
 fn reload_window(app: tauri::AppHandle, label: String) -> Result<(), String> {
-    let target = if label.is_empty() { "main".to_string() } else { label };
+    let target = if label.is_empty() {
+        "main".to_string()
+    } else {
+        label
+    };
     let webview = app
         .get_webview_window(&target)
         .ok_or_else(|| format!("window '{target}' not found"))?;
-    webview.eval("window.location.reload()").map_err(|error| error.to_string())
+    webview
+        .eval("window.location.reload()")
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

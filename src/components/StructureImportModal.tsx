@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon, LibraryBooksIcon } from "./Icons";
 import { TitleBar } from "./TitleBar";
 import { logger } from "../utils/logger";
+import { confirmDialog } from "../utils/dialog";
 
 import {
   Dialog,
@@ -101,9 +102,10 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
     onClose();
   };
 
-  const handleOverwrite = () => {
+  const handleOverwrite = async () => {
     if (!selectedStructure) return;
-    if (window.confirm("Are you sure you want to overwrite your entire screenplay with this structure outline? This cannot be undone.")) {
+    const isConfirmed = await confirmDialog("Are you sure you want to overwrite your entire screenplay with this structure outline? This cannot be undone.", { kind: "warning" });
+    if (isConfirmed) {
       setRawText(buildFountainText(selectedStructure, true));
       onClose();
     }
