@@ -19,11 +19,10 @@ impl<'a> Parser<'a> {
                 }
 
                 let transition_ending = trimmed.ends_with("TO:") || trimmed.ends_with("TO.");
-                let common_transitions =
-                    trimmed == "FADE IN:"
-                        || trimmed == "FADE OUT:"
-                        || trimmed == "FADE UP:"
-                        || trimmed == "FADE TO BLACK.";
+                let common_transitions = trimmed == "FADE IN:"
+                    || trimmed == "FADE OUT:"
+                    || trimmed == "FADE UP:"
+                    || trimmed == "FADE TO BLACK.";
                 let has_lower = trimmed.chars().any(char::is_lowercase);
                 let transition_elem = (transition_ending || common_transitions) && !has_lower;
 

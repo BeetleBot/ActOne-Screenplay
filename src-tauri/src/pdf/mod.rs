@@ -50,15 +50,51 @@ pub struct ElementFormats {
 impl Default for ElementFormats {
     fn default() -> Self {
         Self {
-            scene_heading: ElementFormat { bold: true, italic: false, underline: false },
-            action: ElementFormat { bold: false, italic: false, underline: false },
-            character: ElementFormat { bold: false, italic: false, underline: false },
-            parenthetical: ElementFormat { bold: false, italic: false, underline: false },
-            dialogue: ElementFormat { bold: false, italic: false, underline: false },
-            lyrics: ElementFormat { bold: false, italic: false, underline: false },
-            transition: ElementFormat { bold: false, italic: false, underline: false },
-            shot: ElementFormat { bold: true, italic: false, underline: false },
-            centered_text: ElementFormat { bold: false, italic: false, underline: false },
+            scene_heading: ElementFormat {
+                bold: true,
+                italic: false,
+                underline: false,
+            },
+            action: ElementFormat {
+                bold: false,
+                italic: false,
+                underline: false,
+            },
+            character: ElementFormat {
+                bold: false,
+                italic: false,
+                underline: false,
+            },
+            parenthetical: ElementFormat {
+                bold: false,
+                italic: false,
+                underline: false,
+            },
+            dialogue: ElementFormat {
+                bold: false,
+                italic: false,
+                underline: false,
+            },
+            lyrics: ElementFormat {
+                bold: false,
+                italic: false,
+                underline: false,
+            },
+            transition: ElementFormat {
+                bold: false,
+                italic: false,
+                underline: false,
+            },
+            shot: ElementFormat {
+                bold: true,
+                italic: false,
+                underline: false,
+            },
+            centered_text: ElementFormat {
+                bold: false,
+                italic: false,
+                underline: false,
+            },
         }
     }
 }

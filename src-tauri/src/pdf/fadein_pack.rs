@@ -1,6 +1,6 @@
 use std::io::{Cursor, Write};
-use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
+use zip::write::SimpleFileOptions;
 
 pub fn pack(xml: &str) -> Result<Vec<u8>, String> {
     let mut buffer = Cursor::new(Vec::new());
@@ -9,8 +9,7 @@ pub fn pack(xml: &str) -> Result<Vec<u8>, String> {
         let options = SimpleFileOptions::default();
         zip.start_file("document.xml", options)
             .map_err(|e| e.to_string())?;
-        zip.write_all(xml.as_bytes())
-            .map_err(|e| e.to_string())?;
+        zip.write_all(xml.as_bytes()).map_err(|e| e.to_string())?;
         zip.finish().map_err(|e| e.to_string())?;
     }
     Ok(buffer.into_inner())

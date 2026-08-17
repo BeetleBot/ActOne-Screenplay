@@ -1,11 +1,12 @@
-use serde::{Deserialize, Serialize};
-use tauri::Emitter;
 use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::sync::LazyLock;
 use std::sync::Mutex;
-use std::collections::HashSet;
+use tauri::Emitter;
 
-static CANCELLED_SESSIONS: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
+static CANCELLED_SESSIONS: LazyLock<Mutex<HashSet<String>>> =
+    LazyLock::new(|| Mutex::new(HashSet::new()));
 
 // ── Response types for parsing Ollama JSON ──────────────────────────────────
 

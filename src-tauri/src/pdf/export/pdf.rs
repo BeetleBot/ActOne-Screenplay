@@ -1,5 +1,5 @@
-use std::io::Write;
 use std::collections::HashMap;
+use std::io::Write;
 
 use cosmic_text::FontSystem;
 use image::ImageEncoder;
@@ -14,13 +14,18 @@ use krilla::{
 };
 
 use crate::pdf::{
-    Exporter, Screenplay, MirrorOption, ElementFormat, ElementFormats,
+    ElementFormat, ElementFormats, Exporter, MirrorOption, Screenplay,
     rich_string::RichString,
     screenplay::{Element, Span},
 };
 
-use super::layout::{PaperSize, CourierFonts, IndicFonts, SymbolFonts, AllFonts, LayoutInfo, Margin, get_margins, LINE_HEIGHT};
-use super::elements::{Alignment, DrawContext, write_dialogue, write_element, measure_element_height};
+use super::elements::{
+    Alignment, DrawContext, measure_element_height, write_dialogue, write_element,
+};
+use super::layout::{
+    AllFonts, CourierFonts, IndicFonts, LINE_HEIGHT, LayoutInfo, Margin, PaperSize, SymbolFonts,
+    get_margins,
+};
 use super::title_page::write_titlepage;
 
 const FONTS: [&[u8]; 8] = [
@@ -36,39 +41,39 @@ const FONTS: [&[u8]; 8] = [
 
 const NOTO_FONTS: [&[u8]; 33] = [
     // 0-15: Existing fonts (kept for backward compatibility)
-    include_bytes!("fonts/MuktaMalar-Regular.ttf"),     // 0 - Tamil
-    include_bytes!("fonts/MuktaMalar-Bold.ttf"),        // 1
-    include_bytes!("fonts/Mukta-Regular.ttf"),          // 2 - Hindi
-    include_bytes!("fonts/Mukta-Bold.ttf"),             // 3
+    include_bytes!("fonts/MuktaMalar-Regular.ttf"), // 0 - Tamil
+    include_bytes!("fonts/MuktaMalar-Bold.ttf"),    // 1
+    include_bytes!("fonts/Mukta-Regular.ttf"),      // 2 - Hindi
+    include_bytes!("fonts/Mukta-Bold.ttf"),         // 3
     include_bytes!("fonts/NotoSansTelugu-Regular.ttf"), // 4 - Telugu
-    include_bytes!("fonts/NotoSansTelugu-Bold.ttf"),    // 5
+    include_bytes!("fonts/NotoSansTelugu-Bold.ttf"), // 5
     include_bytes!("fonts/NotoSansMalayalam-Regular.ttf"), // 6 - Malayalam
     include_bytes!("fonts/NotoSansMalayalam-Bold.ttf"), // 7
     include_bytes!("fonts/NotoSansKannada-Regular.ttf"), // 8 - Kannada
-    include_bytes!("fonts/NotoSansKannada-Bold.ttf"),   // 9
+    include_bytes!("fonts/NotoSansKannada-Bold.ttf"), // 9
     include_bytes!("fonts/NotoSansBengali-Regular.ttf"), // 10 - Bengali
-    include_bytes!("fonts/NotoSansBengali-Bold.ttf"),   // 11
-    include_bytes!("fonts/MuktaVaani-Regular.ttf"),     // 12 - Gujarati
-    include_bytes!("fonts/MuktaVaani-Bold.ttf"),        // 13
-    include_bytes!("fonts/MuktaMahee-Regular.ttf"),     // 14 - Punjabi
-    include_bytes!("fonts/MuktaMahee-Bold.ttf"),        // 15
+    include_bytes!("fonts/NotoSansBengali-Bold.ttf"), // 11
+    include_bytes!("fonts/MuktaVaani-Regular.ttf"), // 12 - Gujarati
+    include_bytes!("fonts/MuktaVaani-Bold.ttf"),    // 13
+    include_bytes!("fonts/MuktaMahee-Regular.ttf"), // 14 - Punjabi
+    include_bytes!("fonts/MuktaMahee-Bold.ttf"),    // 15
     // 16-31: Indian language fonts
-    include_bytes!("fonts/HindGuntur-Regular.ttf"),     // 16 - Telugu
-    include_bytes!("fonts/HindGuntur-Bold.ttf"),        // 17
-    include_bytes!("fonts/HindSiliguri-Regular.ttf"),   // 18 - Bengali
-    include_bytes!("fonts/HindSiliguri-Bold.ttf"),      // 19
-    include_bytes!("fonts/HindVadodara-Regular.ttf"),   // 20 - Gujarati
-    include_bytes!("fonts/HindVadodara-Bold.ttf"),      // 21
-    include_bytes!("fonts/BalooTamma2-Regular.ttf"),    // 22 - Kannada
-    include_bytes!("fonts/BalooTamma2-Bold.ttf"),       // 23
-    include_bytes!("fonts/BalooChettan2-Regular.ttf"),  // 24 - Malayalam
-    include_bytes!("fonts/BalooChettan2-Bold.ttf"),     // 25
-    include_bytes!("fonts/BalooPaaji2-Regular.ttf"),    // 26 - Punjabi
-    include_bytes!("fonts/BalooPaaji2-Bold.ttf"),       // 27
-    include_bytes!("fonts/BalooBhaina2-Regular.ttf"),   // 28 - Oriya
-    include_bytes!("fonts/BalooBhaina2-Bold.ttf"),      // 29
-    include_bytes!("fonts/NotoSansTamil-Regular.ttf"),  // 30 - Tamil alt (user preference)
-    include_bytes!("fonts/NotoSansTamil-Bold.ttf"),     // 31
+    include_bytes!("fonts/HindGuntur-Regular.ttf"), // 16 - Telugu
+    include_bytes!("fonts/HindGuntur-Bold.ttf"),    // 17
+    include_bytes!("fonts/HindSiliguri-Regular.ttf"), // 18 - Bengali
+    include_bytes!("fonts/HindSiliguri-Bold.ttf"),  // 19
+    include_bytes!("fonts/HindVadodara-Regular.ttf"), // 20 - Gujarati
+    include_bytes!("fonts/HindVadodara-Bold.ttf"),  // 21
+    include_bytes!("fonts/BalooTamma2-Regular.ttf"), // 22 - Kannada
+    include_bytes!("fonts/BalooTamma2-Bold.ttf"),   // 23
+    include_bytes!("fonts/BalooChettan2-Regular.ttf"), // 24 - Malayalam
+    include_bytes!("fonts/BalooChettan2-Bold.ttf"), // 25
+    include_bytes!("fonts/BalooPaaji2-Regular.ttf"), // 26 - Punjabi
+    include_bytes!("fonts/BalooPaaji2-Bold.ttf"),   // 27
+    include_bytes!("fonts/BalooBhaina2-Regular.ttf"), // 28 - Oriya
+    include_bytes!("fonts/BalooBhaina2-Bold.ttf"),  // 29
+    include_bytes!("fonts/NotoSansTamil-Regular.ttf"), // 30 - Tamil alt (user preference)
+    include_bytes!("fonts/NotoSansTamil-Bold.ttf"), // 31
     include_bytes!("fonts/NotoSansSymbols2-Regular.ttf"), // 32 - Symbol fallback
 ];
 
@@ -249,7 +254,11 @@ impl Exporter for PdfExporter {
         let indic = load_indic_fonts()?;
         let symbols = load_symbol_fonts()?;
 
-        let all_fonts = AllFonts { courier, indic, symbols };
+        let all_fonts = AllFonts {
+            courier,
+            indic,
+            symbols,
+        };
 
         let layout_info = LayoutInfo {
             size: &self.paper_size,
@@ -260,14 +269,13 @@ impl Exporter for PdfExporter {
             script_fonts: &self.script_fonts,
         };
 
-        self.generate_pdf(&mut document, &layout_info, screenplay, &mut font_system).map(|_| ())?;
+        self.generate_pdf(&mut document, &layout_info, screenplay, &mut font_system)
+            .map(|_| ())?;
 
-        let pdf = document
-            .finish()
-            .map_err(|e| {
-                eprintln!("document.finish() failed with error: {:?}", e);
-                std::io::Error::other("failed to create pdf")
-            })?;
+        let pdf = document.finish().map_err(|e| {
+            eprintln!("document.finish() failed with error: {:?}", e);
+            std::io::Error::other("failed to create pdf")
+        })?;
         writer.write_all(&pdf)
     }
 }
@@ -315,9 +323,15 @@ fn color_name_to_rgb(name: &str) -> Option<(u8, u8, u8)> {
 impl PdfExporter {
     fn apply_format(&self, rs: &mut RichString, format: &ElementFormat) {
         for element in &mut rs.elements {
-            if format.bold { element.set_bold(); }
-            if format.italic { element.set_italic(); }
-            if format.underline { element.set_underline(); }
+            if format.bold {
+                element.set_bold();
+            }
+            if format.italic {
+                element.set_italic();
+            }
+            if format.underline {
+                element.set_underline();
+            }
         }
     }
 
@@ -356,10 +370,9 @@ impl PdfExporter {
             write_titlepage(t, layout_info, document, font_system, &mut font_cache)?;
         }
 
-        if has_title_page
-            && let Some(Span { start_line, .. }) = element_iter.peek() {
-                page_breaks.push(*start_line);
-            }
+        if has_title_page && let Some(Span { start_line, .. }) = element_iter.peek() {
+            page_breaks.push(*start_line);
+        }
 
         let mut content_page_idx = 0;
 
@@ -373,18 +386,30 @@ impl PdfExporter {
                     let img = image::load_from_memory(&bytes).ok()?.grayscale();
                     let mut png_buf = Vec::new();
                     let encoder = image::codecs::png::PngEncoder::new(&mut png_buf);
-                    encoder.write_image(img.as_bytes(), img.width(), img.height(), img.color().into()).ok()?;
+                    encoder
+                        .write_image(
+                            img.as_bytes(),
+                            img.width(),
+                            img.height(),
+                            img.color().into(),
+                        )
+                        .ok()?;
                     Image::from_png(png_buf.into(), false).ok()
                 })()
             } else {
-                std::fs::read(&self.watermark_center_image_path).ok().and_then(|bytes| {
-                    let is_png = self.watermark_center_image_path.to_lowercase().ends_with(".png");
-                    if is_png {
-                        Image::from_png(bytes.into(), false).ok()
-                    } else {
-                        Image::from_jpeg(bytes.into(), false).ok()
-                    }
-                })
+                std::fs::read(&self.watermark_center_image_path)
+                    .ok()
+                    .and_then(|bytes| {
+                        let is_png = self
+                            .watermark_center_image_path
+                            .to_lowercase()
+                            .ends_with(".png");
+                        if is_png {
+                            Image::from_png(bytes.into(), false).ok()
+                        } else {
+                            Image::from_jpeg(bytes.into(), false).ok()
+                        }
+                    })
             }
         } else {
             None
@@ -399,19 +424,20 @@ impl PdfExporter {
             let mut y_pos = top;
 
             if content_page_idx > 0
-                && let Some(Span { start_line, .. }) = element_iter.peek() {
-                    let mut break_line = *start_line;
-                    if let Some(res_idx) = residual_element_idx {
-                        break_line = start_line + res_idx;
-                    } else if let Some((el_idx, res_idx)) = residual_dialogue_idx {
-                        break_line = start_line + 1 + el_idx + res_idx;
-                    } else if let Some((el_idx, res_idx)) = residual_dual_dialogue_idx.0 {
-                        break_line = start_line + 1 + el_idx + res_idx;
-                    } else if let Some((el_idx, res_idx)) = residual_dual_dialogue_idx.1 {
-                        break_line = start_line + 1 + el_idx + res_idx;
-                    }
-                    page_breaks.push(break_line);
+                && let Some(Span { start_line, .. }) = element_iter.peek()
+            {
+                let mut break_line = *start_line;
+                if let Some(res_idx) = residual_element_idx {
+                    break_line = start_line + res_idx;
+                } else if let Some((el_idx, res_idx)) = residual_dialogue_idx {
+                    break_line = start_line + 1 + el_idx + res_idx;
+                } else if let Some((el_idx, res_idx)) = residual_dual_dialogue_idx.0 {
+                    break_line = start_line + 1 + el_idx + res_idx;
+                } else if let Some((el_idx, res_idx)) = residual_dual_dialogue_idx.1 {
+                    break_line = start_line + 1 + el_idx + res_idx;
                 }
+                page_breaks.push(break_line);
+            }
             content_page_idx += 1;
 
             if (has_title_page && page_idx > 1) || (!has_title_page && page_idx > 0) {
@@ -445,7 +471,13 @@ impl PdfExporter {
                 )?;
             }
 
-            draw_watermarks(&mut surface, font_system, layout_info, self, center_image.as_ref());
+            draw_watermarks(
+                &mut surface,
+                font_system,
+                layout_info,
+                self,
+                center_image.as_ref(),
+            );
 
             while let Some(Span {
                 start_line: _,
@@ -516,7 +548,11 @@ impl PdfExporter {
                 };
 
                 match &element {
-                    Element::Heading { slug, number, color } => {
+                    Element::Heading {
+                        slug,
+                        number,
+                        color,
+                    } => {
                         if self.scene_page_breaks && *ctx.y_position > top {
                             break;
                         }
@@ -572,9 +608,7 @@ impl PdfExporter {
                             let rich_number: RichString = number.as_ref().unwrap().into();
                             let left_number_margin = Margin {
                                 left: 54.0,
-                                right: layout_info.size.x
-                                    - layout_info.margins.heading.left
-                                    + 18.0,
+                                right: layout_info.size.x - layout_info.margins.heading.left + 18.0,
                             };
                             let right_number_margin = Margin {
                                 left: layout_info.size.x
@@ -659,7 +693,10 @@ impl PdfExporter {
                     }
                     Element::Dialogue(dialogue) => {
                         let mut dialogue_styled = dialogue.clone();
-                        self.apply_format(&mut dialogue_styled.character, &self.element_formats.character);
+                        self.apply_format(
+                            &mut dialogue_styled.character,
+                            &self.element_formats.character,
+                        );
                         if let Some(ext) = &mut dialogue_styled.extension {
                             self.apply_format(ext, &self.element_formats.character);
                         }
@@ -688,7 +725,10 @@ impl PdfExporter {
                         let mut premature_exit = false;
 
                         let mut d0_styled = dialogue0.clone();
-                        self.apply_format(&mut d0_styled.character, &self.element_formats.character);
+                        self.apply_format(
+                            &mut d0_styled.character,
+                            &self.element_formats.character,
+                        );
                         if let Some(ext) = &mut d0_styled.extension {
                             self.apply_format(ext, &self.element_formats.character);
                         }
@@ -704,7 +744,10 @@ impl PdfExporter {
                         }
 
                         let mut d1_styled = dialogue1.clone();
-                        self.apply_format(&mut d1_styled.character, &self.element_formats.character);
+                        self.apply_format(
+                            &mut d1_styled.character,
+                            &self.element_formats.character,
+                        );
                         if let Some(ext) = &mut d1_styled.extension {
                             self.apply_format(ext, &self.element_formats.character);
                         }
@@ -995,7 +1038,11 @@ impl PdfExporter {
         let courier = load_courier_fonts()?;
         let indic = load_indic_fonts()?;
         let symbols = load_symbol_fonts()?;
-        let all_fonts = AllFonts { courier, indic, symbols };
+        let all_fonts = AllFonts {
+            courier,
+            indic,
+            symbols,
+        };
 
         let layout_info = LayoutInfo {
             size: &self.paper_size,
@@ -1041,7 +1088,9 @@ fn draw_watermarks<'a>(
 
     // 1. Header Watermark
     if exporter.watermark_header_enabled && !exporter.watermark_header_text.is_empty() {
-        if let Some(opacity_norm) = krilla::num::NormalizedF32::new(exporter.watermark_header_opacity) {
+        if let Some(opacity_norm) =
+            krilla::num::NormalizedF32::new(exporter.watermark_header_opacity)
+        {
             surface.push_opacity(opacity_norm);
             let font = layout_info.fonts.courier.regular.clone();
             let width = measure_text_width(font_system, &exporter.watermark_header_text, font_size);
@@ -1060,7 +1109,9 @@ fn draw_watermarks<'a>(
 
     // 2. Footer Watermark
     if exporter.watermark_footer_enabled && !exporter.watermark_footer_text.is_empty() {
-        if let Some(opacity_norm) = krilla::num::NormalizedF32::new(exporter.watermark_footer_opacity) {
+        if let Some(opacity_norm) =
+            krilla::num::NormalizedF32::new(exporter.watermark_footer_opacity)
+        {
             surface.push_opacity(opacity_norm);
             let font = layout_info.fonts.courier.regular.clone();
             let width = measure_text_width(font_system, &exporter.watermark_footer_text, font_size);
@@ -1102,18 +1153,24 @@ fn draw_watermarks<'a>(
                         surface.pop();
                     }
                 }
-            } else if exporter.watermark_center_type == "text" && !exporter.watermark_center_text.is_empty() {
+            } else if exporter.watermark_center_type == "text"
+                && !exporter.watermark_center_text.is_empty()
+            {
                 // Draw Text Center Watermark
                 let font = layout_info.fonts.courier.bold.clone();
                 let center_font_size = 48.0;
-                let width = measure_text_width(font_system, &exporter.watermark_center_text, center_font_size);
-                
+                let width = measure_text_width(
+                    font_system,
+                    &exporter.watermark_center_text,
+                    center_font_size,
+                );
+
                 let x = (page_width - width) / 2.0;
                 let y = page_height / 2.0;
 
                 let cx = page_width / 2.0;
                 let cy = page_height / 2.0;
-                
+
                 let transform = krilla::geom::Transform::from_rotate_at(-45.0, cx, cy);
 
                 surface.push_transform(&transform);
@@ -1259,7 +1316,7 @@ Action line 50.
 This is action.
 "#;
         let screenplay = crate::pdf::parse(fountain_text);
-        
+
         // Assert parser extracted the color
         match &screenplay.elements[0].inner {
             crate::pdf::screenplay::Element::Heading { color, slug, .. } => {
@@ -1340,4 +1397,3 @@ This is action.
         }
     }
 }
-

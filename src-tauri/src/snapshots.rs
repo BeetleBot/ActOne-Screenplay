@@ -1,8 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotInfo {
@@ -25,7 +25,9 @@ struct IndexFile {
 }
 
 fn format_timestamp() -> (String, String) {
-    let duration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+    let duration = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
     let secs = duration.as_secs();
     let millis = duration.subsec_millis();
 
@@ -40,7 +42,9 @@ fn format_timestamp() -> (String, String) {
     let mut remaining = days as i64;
     loop {
         let days_in_year = if is_leap(y) { 366 } else { 365 };
-        if remaining < days_in_year { break; }
+        if remaining < days_in_year {
+            break;
+        }
         remaining -= days_in_year;
         y += 1;
     }
@@ -51,17 +55,23 @@ fn format_timestamp() -> (String, String) {
     };
     let mut m = 1usize;
     for &md in month_days.iter() {
-        if remaining < md as i64 { break; }
+        if remaining < md as i64 {
+            break;
+        }
         remaining -= md as i64;
         m += 1;
     }
     let d = remaining + 1;
 
-    let id = format!("{:04}{:02}{:02}_{:02}{:02}{:02}",
-        y, m, d, hours, minutes, seconds);
+    let id = format!(
+        "{:04}{:02}{:02}_{:02}{:02}{:02}",
+        y, m, d, hours, minutes, seconds
+    );
 
-    let iso = format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}Z",
-        y, m, d, hours, minutes, seconds, millis);
+    let iso = format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}Z",
+        y, m, d, hours, minutes, seconds, millis
+    );
 
     (id, iso)
 }
@@ -73,7 +83,10 @@ fn is_leap(year: i64) -> bool {
 fn sanitize_folder_name(file_path: &str) -> String {
     let path = Path::new(file_path);
     let stem = path.file_stem().unwrap_or_default().to_string_lossy();
-    let ext = path.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
+    let ext = path
+        .extension()
+        .map(|e| e.to_string_lossy().to_string())
+        .unwrap_or_default();
     if ext.is_empty() {
         stem.to_string()
     } else {
@@ -86,7 +99,10 @@ fn snapshot_root<A: tauri::Runtime>(
     file_path: &str,
     _state: &crate::app_prefs::AppPrefsState,
 ) -> PathBuf {
-    Path::new(file_path).parent().unwrap_or(Path::new(".")).join(".snapshots")
+    Path::new(file_path)
+        .parent()
+        .unwrap_or(Path::new("."))
+        .join(".snapshots")
 }
 
 fn snapshot_dir<A: tauri::Runtime>(
@@ -126,8 +142,14 @@ fn save_index(dir: &Path, index: &IndexFile) -> Result<(), String> {
 }
 
 fn app_prefs_enabled(state: &crate::app_prefs::AppPrefsState) -> bool {
-    state.0.lock()
-        .map(|p| p.get("actone-snapshots-enabled").map(|s| s == "true").unwrap_or(false))
+    state
+        .0
+        .lock()
+        .map(|p| {
+            p.get("actone-snapshots-enabled")
+                .map(|s| s == "true")
+                .unwrap_or(false)
+        })
         .unwrap_or(false)
 }
 
@@ -152,7 +174,8 @@ pub fn create_snapshot(
     let dir = snapshot_dir(&app, &file_path, &state);
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
-    let ext = source.extension()
+    let ext = source
+        .extension()
         .map(|e| e.to_string_lossy().to_string())
         .unwrap_or_else(|| "actone".to_string());
     let (id, iso) = format_timestamp();
@@ -165,10 +188,8 @@ pub fn create_snapshot(
 
     let mut index = load_index(&dir);
     // Use dunce for cross-platform path canonicalization
-    let canonical_source = dunce::canonicalize(source)
-        .unwrap_or_else(|_| source.to_path_buf());
-    let canonical_dest = dunce::canonicalize(&dest)
-        .unwrap_or_else(|_| dest.clone());
+    let canonical_source = dunce::canonicalize(source).unwrap_or_else(|_| source.to_path_buf());
+    let canonical_dest = dunce::canonicalize(&dest).unwrap_or_else(|_| dest.clone());
     index.file_path = canonical_source.to_string_lossy().to_string();
 
     let s_type = snapshot_type.unwrap_or_else(|| {
@@ -193,14 +214,21 @@ pub fn create_snapshot(
     index.snapshots.push(info.clone());
 
     // Pruning logic for auto and on-save snapshots
-    let max_retention = state.0.lock()
-        .map(|p| p.get("actone-snapshot-max-retention")
-            .and_then(|s| s.parse::<usize>().ok())
-            .unwrap_or(20))
+    let max_retention = state
+        .0
+        .lock()
+        .map(|p| {
+            p.get("actone-snapshot-max-retention")
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(20)
+        })
         .unwrap_or(20);
 
     if max_retention > 0 {
-        let mut auto_indices: Vec<usize> = index.snapshots.iter().enumerate()
+        let mut auto_indices: Vec<usize> = index
+            .snapshots
+            .iter()
+            .enumerate()
             .filter(|(_, s)| s.snapshot_type == "auto" || s.snapshot_type == "on_save")
             .map(|(i, _)| i)
             .collect();
@@ -219,8 +247,12 @@ pub fn create_snapshot(
             }
 
             // Remove from index
-            let to_remove_set: std::collections::HashSet<usize> = to_remove.iter().cloned().collect();
-            index.snapshots = index.snapshots.into_iter().enumerate()
+            let to_remove_set: std::collections::HashSet<usize> =
+                to_remove.iter().cloned().collect();
+            index.snapshots = index
+                .snapshots
+                .into_iter()
+                .enumerate()
                 .filter(|(i, _)| !to_remove_set.contains(i))
                 .map(|(_, s)| s)
                 .collect();
@@ -265,7 +297,10 @@ pub fn delete_snapshot(
     let dir = snapshot_dir(&app, &file_path, &state);
     let mut index = load_index(&dir);
 
-    let pos = index.snapshots.iter().position(|s| s.id == snapshot_id)
+    let pos = index
+        .snapshots
+        .iter()
+        .position(|s| s.id == snapshot_id)
         .ok_or_else(|| "Snapshot not found".to_string())?;
 
     let snapshot = &index.snapshots[pos];

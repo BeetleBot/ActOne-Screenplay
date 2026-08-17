@@ -41,11 +41,18 @@ pub fn get_structure_template(name: String) -> String {
         "The Hero’s Journey" => include_str!("../assets/structures/the_hero’s_journey.fountain"),
         "The Story Circle" => include_str!("../assets/structures/the_story_circle.fountain"),
         "Freytag's Pyramid" => include_str!("../assets/structures/freytags_pyramid.fountain"),
-        "John Truby's 7 Key Steps" => include_str!("../assets/structures/john_trubys_7_key_steps.fountain"),
-        "Michael Hauge's 6 Stage Journey" => include_str!("../assets/structures/michael_hauges_6_stage_journey.fountain"),
-        "The Sequence Approach" => include_str!("../assets/structures/the_sequence_approach.fountain"),
-        _ => ""
-    }.to_string()
+        "John Truby's 7 Key Steps" => {
+            include_str!("../assets/structures/john_trubys_7_key_steps.fountain")
+        }
+        "Michael Hauge's 6 Stage Journey" => {
+            include_str!("../assets/structures/michael_hauges_6_stage_journey.fountain")
+        }
+        "The Sequence Approach" => {
+            include_str!("../assets/structures/the_sequence_approach.fountain")
+        }
+        _ => "",
+    }
+    .to_string()
 }
 
 fn parse_structures(content: &str) -> Vec<Structure> {

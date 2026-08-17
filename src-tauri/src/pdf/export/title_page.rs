@@ -1,11 +1,11 @@
-use std::collections::HashMap;
 use cosmic_text::FontSystem;
 use krilla::{Document, page::PageSettings};
+use std::collections::HashMap;
 
 use crate::pdf::{rich_string::RichString, screenplay::TitlePage};
 
-use super::layout::{LayoutInfo, Margin, LINE_HEIGHT};
-use super::elements::{Alignment, DrawContext, write_element, measure_element_height};
+use super::elements::{Alignment, DrawContext, measure_element_height, write_element};
+use super::layout::{LINE_HEIGHT, LayoutInfo, Margin};
 
 pub const TITLE_TOP_MARGIN: f32 = 72.0;
 pub const TITLE_BOTTOM_MARGIN: f32 = 72.0;
@@ -51,7 +51,14 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, &styled, &title_margin, Alignment::Centered, false, &mut temp_res)?;
+            write_element(
+                &mut ctx,
+                &styled,
+                &title_margin,
+                Alignment::Centered,
+                false,
+                &mut temp_res,
+            )?;
         }
     }
 
@@ -68,7 +75,14 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &title_margin, Alignment::Centered, false, &mut temp_res)?;
+            write_element(
+                &mut ctx,
+                s,
+                &title_margin,
+                Alignment::Centered,
+                false,
+                &mut temp_res,
+            )?;
         }
     }
 
@@ -83,7 +97,14 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &title_margin, Alignment::Centered, false, &mut temp_res)?;
+            write_element(
+                &mut ctx,
+                s,
+                &title_margin,
+                Alignment::Centered,
+                false,
+                &mut temp_res,
+            )?;
         }
     }
 
@@ -99,7 +120,14 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &title_margin, Alignment::Centered, false, &mut temp_res)?;
+            write_element(
+                &mut ctx,
+                s,
+                &title_margin,
+                Alignment::Centered,
+                false,
+                &mut temp_res,
+            )?;
         }
     }
 
@@ -175,7 +203,14 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &left_margin, Alignment::LeftToRight, false, &mut temp_res)?;
+            write_element(
+                &mut ctx,
+                s,
+                &left_margin,
+                Alignment::LeftToRight,
+                false,
+                &mut temp_res,
+            )?;
         }
     }
 
@@ -190,13 +225,26 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, s, &right_margin, Alignment::RightToLeft, false, &mut temp_res)?;
+            write_element(
+                &mut ctx,
+                s,
+                &right_margin,
+                Alignment::RightToLeft,
+                false,
+                &mut temp_res,
+            )?;
         }
     }
 
     for (key, vals) in &titlepage.extras {
         y_pos += LINE_HEIGHT;
-        let header_text = format!("{}: {}", key, vals.first().map(|v| v.to_plain_string()).unwrap_or_default());
+        let header_text = format!(
+            "{}: {}",
+            key,
+            vals.first()
+                .map(|v| v.to_plain_string())
+                .unwrap_or_default()
+        );
         let header_rs = RichString::from(header_text);
         let mut ctx = DrawContext {
             layout_info,
@@ -207,7 +255,14 @@ pub fn write_titlepage(
             font_system,
             font_cache,
         };
-        write_element(&mut ctx, &header_rs, &title_margin, Alignment::Centered, false, &mut temp_res)?;
+        write_element(
+            &mut ctx,
+            &header_rs,
+            &title_margin,
+            Alignment::Centered,
+            false,
+            &mut temp_res,
+        )?;
         for v in vals.iter().skip(1) {
             let mut ctx = DrawContext {
                 layout_info,
@@ -218,7 +273,14 @@ pub fn write_titlepage(
                 font_system,
                 font_cache,
             };
-            write_element(&mut ctx, v, &title_margin, Alignment::Centered, false, &mut temp_res)?;
+            write_element(
+                &mut ctx,
+                v,
+                &title_margin,
+                Alignment::Centered,
+                false,
+                &mut temp_res,
+            )?;
         }
     }
 

@@ -17,7 +17,8 @@ impl<'a> Parser<'a> {
                     inner = inner.strip_prefix('#').unwrap().trim_start();
                 }
                 let rs = RichString::from(inner);
-                this.elements.push(Span::new(Element::Section { text: rs, depth }, line_idx));
+                this.elements
+                    .push(Span::new(Element::Section { text: rs, depth }, line_idx));
                 this.state = State::InBlock;
             },
         )

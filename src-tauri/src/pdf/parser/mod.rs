@@ -519,13 +519,19 @@ INT. HOUSE
 
 House is empty.",
             [
-                Element::Section { text: "Act 1".into(), depth: 1 },
+                Element::Section {
+                    text: "Act 1".into(),
+                    depth: 1
+                },
                 Element::Heading {
                     slug: "INT. HOUSE".into(),
                     number: None,
                     color: None,
                 },
-                Element::Section { text: "Montage".into(), depth: 2 },
+                Element::Section {
+                    text: "Montage".into(),
+                    depth: 2
+                },
                 Element::Action("House is empty.".into())
             ]
         );

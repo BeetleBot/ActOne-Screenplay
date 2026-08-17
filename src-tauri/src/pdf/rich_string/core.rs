@@ -118,7 +118,11 @@ impl RichString {
         RichIterator {
             rich_string: self,
             element_idx: 0,
-            chars_iterator: if self.elements.is_empty() { "".chars() } else { self.elements[0].text.chars() },
+            chars_iterator: if self.elements.is_empty() {
+                "".chars()
+            } else {
+                self.elements[0].text.chars()
+            },
         }
     }
 
@@ -127,12 +131,13 @@ impl RichString {
     pub fn append(&mut self, mut other: Self) {
         if let Some(e) = other.elements.first()
             && let Some(l) = self.elements.last_mut()
-            && e.attributes == l.attributes {
-                l.text.push_str(&e.text);
-                other.elements.drain(..1);
-                self.elements.append(&mut other.elements);
-                return;
-            }
+            && e.attributes == l.attributes
+        {
+            l.text.push_str(&e.text);
+            other.elements.drain(..1);
+            self.elements.append(&mut other.elements);
+            return;
+        }
         self.elements.append(&mut other.elements);
     }
 

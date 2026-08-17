@@ -144,10 +144,7 @@ fn dialogue_to_fadein(dialogue: &Dialogue, dual: bool) -> String {
 }
 
 fn build_info() -> String {
-    format!(
-        "  <info uuid=\"{}\" pagecount=\"1\"/>\n",
-        generate_uuid()
-    )
+    format!("  <info uuid=\"{}\" pagecount=\"1\"/>\n", generate_uuid())
 }
 
 fn build_settings() -> String {
@@ -181,7 +178,8 @@ fn build_spelling() -> String {
     r##"  <spelling language="en_US">
     <user_dictionary/>
     <ignored/>
-  </spelling>"##.to_string()
+  </spelling>"##
+        .to_string()
 }
 
 fn build_lists(screenplay: &Screenplay) -> String {
@@ -292,7 +290,11 @@ fn extract_location(heading: &str) -> Option<String> {
         let loc = loc
             .trim_start_matches(|c: char| c.is_uppercase() || c == '.' || c == ' ')
             .trim();
-        return if loc.is_empty() { Some(heading.to_string()) } else { Some(loc.to_string()) };
+        return if loc.is_empty() {
+            Some(heading.to_string())
+        } else {
+            Some(loc.to_string())
+        };
     }
     Some(heading.to_string())
 }

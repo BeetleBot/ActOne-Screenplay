@@ -43,14 +43,18 @@ fn bundled_fonts_for_script(script: &str) -> Vec<String> {
         "gurmukhi" => vec!["Baloo Paaji 2"],
         "oriya" => vec!["Baloo Bhaina 2"],
         _ => vec![],
-    }.into_iter().map(String::from).collect()
+    }
+    .into_iter()
+    .map(String::from)
+    .collect()
 }
 
 impl FontCache {
     pub fn new() -> Self {
         let mut db = cosmic_text::fontdb::Database::new();
         db.load_system_fonts();
-        let mut all: Vec<String> = db.faces()
+        let mut all: Vec<String> = db
+            .faces()
             .filter_map(|face| face.families.first().map(|(name, _)| name.clone()))
             .collect();
         all.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
@@ -68,7 +72,9 @@ impl FontCache {
         }
 
         let result = if script == "english" {
-            let mut courier_fonts: Vec<String> = self.all_system_fonts.iter()
+            let mut courier_fonts: Vec<String> = self
+                .all_system_fonts
+                .iter()
                 .filter(|f| f.to_lowercase().starts_with("courier"))
                 .cloned()
                 .collect();
@@ -90,4 +96,3 @@ impl FontCache {
         result
     }
 }
-

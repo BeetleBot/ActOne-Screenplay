@@ -8,9 +8,22 @@ fn is_valid_color_name(s: &str) -> bool {
     let s = s.trim().to_lowercase();
     matches!(
         s.as_str(),
-        "red" | "blue" | "green" | "pink" | "magenta" | "gray" | "purple"
-            | "cyan" | "teal" | "yellow" | "orange" | "brown"
-    ) || (s.starts_with('#') && s.len() >= 4 && s.len() <= 7 && s[1..].chars().all(|c| c.is_ascii_hexdigit()))
+        "red"
+            | "blue"
+            | "green"
+            | "pink"
+            | "magenta"
+            | "gray"
+            | "purple"
+            | "cyan"
+            | "teal"
+            | "yellow"
+            | "orange"
+            | "brown"
+    ) || (s.starts_with('#')
+        && s.len() >= 4
+        && s.len() <= 7
+        && s[1..].chars().all(|c| c.is_ascii_hexdigit()))
 }
 
 impl<'a> Parser<'a> {

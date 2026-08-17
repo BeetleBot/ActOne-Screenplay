@@ -109,8 +109,12 @@ impl<'a> Preprocessor<'a> {
                         "]]" => {
                             if let Some(mut n) = self.note_state.take() {
                                 let note_content = &self.current_line.1;
-                                let inner_tag = note_content.strip_prefix("[[").unwrap_or(note_content).trim();
-                                let color_name = inner_tag.strip_prefix("color ").unwrap_or(inner_tag);
+                                let inner_tag = note_content
+                                    .strip_prefix("[[")
+                                    .unwrap_or(note_content)
+                                    .trim();
+                                let color_name =
+                                    inner_tag.strip_prefix("color ").unwrap_or(inner_tag);
                                 if is_valid_color_name(color_name) {
                                     n.pre_line.1.push_str(note_content);
                                     n.pre_line.1.push_str("]]");
@@ -183,7 +187,20 @@ fn is_valid_color_name(s: &str) -> bool {
     let s = s.trim().to_lowercase();
     matches!(
         s.as_str(),
-        "red" | "blue" | "green" | "pink" | "magenta" | "gray" | "purple"
-            | "cyan" | "teal" | "yellow" | "orange" | "brown"
-    ) || (s.starts_with('#') && s.len() >= 4 && s.len() <= 7 && s[1..].chars().all(|c| c.is_ascii_hexdigit()))
+        "red"
+            | "blue"
+            | "green"
+            | "pink"
+            | "magenta"
+            | "gray"
+            | "purple"
+            | "cyan"
+            | "teal"
+            | "yellow"
+            | "orange"
+            | "brown"
+    ) || (s.starts_with('#')
+        && s.len() >= 4
+        && s.len() <= 7
+        && s[1..].chars().all(|c| c.is_ascii_hexdigit()))
 }

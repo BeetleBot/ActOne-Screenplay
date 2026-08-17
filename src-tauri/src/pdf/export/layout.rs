@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use krilla::text::Font;
+use std::collections::HashMap;
 
 pub const FONT_SIZE: f32 = 12.0;
 pub const LINE_HEIGHT: f32 = 12.0;
@@ -9,14 +9,8 @@ pub struct PaperSize {
     pub y: f32,
 }
 
-pub const A4: PaperSize = PaperSize {
-    x: 595.0,
-    y: 842.0,
-};
-pub const LETTER: PaperSize = PaperSize {
-    x: 612.0,
-    y: 792.0,
-};
+pub const A4: PaperSize = PaperSize { x: 595.0, y: 842.0 };
+pub const LETTER: PaperSize = PaperSize { x: 612.0, y: 792.0 };
 
 impl Default for PaperSize {
     fn default() -> Self {

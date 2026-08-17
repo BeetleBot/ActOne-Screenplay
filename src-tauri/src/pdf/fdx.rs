@@ -25,11 +25,18 @@ fn element_type_to_fdx(el: &Element) -> Option<String> {
     match el {
         Element::Heading { .. } => Some("Scene Heading".into()),
         Element::Action(_) => Some("Action".into()),
-        Element::Dialogue(d) => Some(match d.extension.as_ref() {
-            Some(ext) if ext.to_plain_string().eq_ignore_ascii_case("V.O.") || ext.to_plain_string().eq_ignore_ascii_case("V.O") => "Character",
-            _ => "Character",
-        }
-        .into()),
+        Element::Dialogue(d) => Some(
+            match d.extension.as_ref() {
+                Some(ext)
+                    if ext.to_plain_string().eq_ignore_ascii_case("V.O.")
+                        || ext.to_plain_string().eq_ignore_ascii_case("V.O") =>
+                {
+                    "Character"
+                }
+                _ => "Character",
+            }
+            .into(),
+        ),
         Element::DualDialogue(_, _) => None,
         Element::Lyrics(_) => Some("Lyrics".into()),
         Element::Transition(_) => Some("Transition".into()),
@@ -72,7 +79,10 @@ fn rich_to_fdx_text(rs: &RichString) -> String {
 fn dialogue_to_fdx(dialogue: &Dialogue, prefix: &str) -> String {
     let mut out = String::new();
     let char_name = escape_xml(&dialogue.character.to_plain_string());
-    let extension = dialogue.extension.as_ref().map(|e| escape_xml(&e.to_plain_string()));
+    let extension = dialogue
+        .extension
+        .as_ref()
+        .map(|e| escape_xml(&e.to_plain_string()));
     let char_line = match extension {
         Some(ext) => format!("{} ({})", char_name, ext),
         None => char_name.clone(),
@@ -106,7 +116,11 @@ fn dialogue_to_fdx(dialogue: &Dialogue, prefix: &str) -> String {
 
 fn element_to_fdx(el: &Element, _line_idx: usize) -> String {
     match el {
-        Element::Heading { slug, number, color } => {
+        Element::Heading {
+            slug,
+            number,
+            color,
+        } => {
             let mut attrs = vec![format!("Type=\"{}\"", element_type_to_fdx(el).unwrap())];
             if let Some(num) = number {
                 attrs.push(format!("Number=\"{}\"", escape_xml(num)));
@@ -261,7 +275,11 @@ fn build_title_page(titlepage: &crate::pdf::screenplay::TitlePage) -> String {
     }
     for (key, vals) in &titlepage.extras {
         if let Some(v) = vals.first() {
-            lines.push(left_title_line(&format!("{}: {}", key, v.to_plain_string())));
+            lines.push(left_title_line(&format!(
+                "{}: {}",
+                key,
+                v.to_plain_string()
+            )));
         }
     }
 

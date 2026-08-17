@@ -10,9 +10,7 @@ use tauri::{AppHandle, Manager};
 const EN_AFF: &str = include_str!("../dictionaries/en/index.aff");
 const EN_DIC: &str = include_str!("../dictionaries/en/index.dic");
 
-static WORD_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"[\p{L}'\u{2019}]+").unwrap()
-});
+static WORD_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\p{L}'\u{2019}]+").unwrap());
 
 fn is_apostrophe(c: char) -> bool {
     c == '\'' || c == '\u{2019}'
@@ -161,7 +159,11 @@ impl SpellcheckState {
         if let Some(path) = &self.custom_words_path {
             let mut words: Vec<&String> = self.custom_words.iter().collect();
             words.sort();
-            let content = words.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n");
+            let content = words
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join("\n");
             let _ = fs::write(path, content);
         }
     }
@@ -188,16 +190,18 @@ impl SpellcheckState {
                 let dic_str = fs::read_to_string(&dic_path)
                     .map_err(|e| format!("Failed to read {}: {e}", dic_path.display()))?;
 
-                self.dictionary = Some(
-                    Dictionary::new(&aff_str, &dic_str)
-                        .map_err(|e| format!("Failed to parse dictionary for {lang_clean}: {e}"))?,
-                );
+                self.dictionary =
+                    Some(Dictionary::new(&aff_str, &dic_str).map_err(|e| {
+                        format!("Failed to parse dictionary for {lang_clean}: {e}")
+                    })?);
                 self.active_language = lang_clean;
                 return Ok(());
             }
         }
 
-        Err(format!("Dictionary for language '{lang_clean}' not found on disk"))
+        Err(format!(
+            "Dictionary for language '{lang_clean}' not found on disk"
+        ))
     }
 
     #[allow(dead_code)]
@@ -205,7 +209,11 @@ impl SpellcheckState {
         self.is_word_valid_with_names(word, None)
     }
 
-    pub fn is_word_valid_with_names(&self, word: &str, char_names: Option<&HashSet<String>>) -> bool {
+    pub fn is_word_valid_with_names(
+        &self,
+        word: &str,
+        char_names: Option<&HashSet<String>>,
+    ) -> bool {
         let clean = word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c));
         if clean.len() <= 1 {
             return true;
@@ -241,29 +249,190 @@ impl SpellcheckState {
 
 pub fn get_known_languages() -> Vec<LanguageInfo> {
     vec![
-        LanguageInfo { code: "en".into(), name: "English (US)".into(), native_name: "English (US)".into(), bundled: true, installed: true, size_approx: "0.6 MB".into() },
-        LanguageInfo { code: "en-gb".into(), name: "English (UK)".into(), native_name: "English (UK)".into(), bundled: false, installed: false, size_approx: "0.6 MB".into() },
-        LanguageInfo { code: "es".into(), name: "Spanish".into(), native_name: "Español".into(), bundled: false, installed: false, size_approx: "0.7 MB".into() },
-        LanguageInfo { code: "fr".into(), name: "French".into(), native_name: "Français".into(), bundled: false, installed: false, size_approx: "1.2 MB".into() },
-        LanguageInfo { code: "de".into(), name: "German".into(), native_name: "Deutsch".into(), bundled: false, installed: false, size_approx: "3.2 MB".into() },
-        LanguageInfo { code: "it".into(), name: "Italian".into(), native_name: "Italiano".into(), bundled: false, installed: false, size_approx: "0.7 MB".into() },
-        LanguageInfo { code: "pt".into(), name: "Portuguese".into(), native_name: "Português".into(), bundled: false, installed: false, size_approx: "1.0 MB".into() },
-        LanguageInfo { code: "pt-br".into(), name: "Portuguese (Brazil)".into(), native_name: "Português do Brasil".into(), bundled: false, installed: false, size_approx: "1.1 MB".into() },
-        LanguageInfo { code: "nl".into(), name: "Dutch".into(), native_name: "Nederlands".into(), bundled: false, installed: false, size_approx: "1.8 MB".into() },
-        LanguageInfo { code: "ru".into(), name: "Russian".into(), native_name: "Русский".into(), bundled: false, installed: false, size_approx: "1.5 MB".into() },
-        LanguageInfo { code: "sv".into(), name: "Swedish".into(), native_name: "Svenska".into(), bundled: false, installed: false, size_approx: "1.2 MB".into() },
-        LanguageInfo { code: "da".into(), name: "Danish".into(), native_name: "Dansk".into(), bundled: false, installed: false, size_approx: "0.9 MB".into() },
-        LanguageInfo { code: "nb".into(), name: "Norwegian (Bokmål)".into(), native_name: "Norsk bokmål".into(), bundled: false, installed: false, size_approx: "1.4 MB".into() },
-        LanguageInfo { code: "pl".into(), name: "Polish".into(), native_name: "Polski".into(), bundled: false, installed: false, size_approx: "2.8 MB".into() },
-        LanguageInfo { code: "cs".into(), name: "Czech".into(), native_name: "Čeština".into(), bundled: false, installed: false, size_approx: "1.6 MB".into() },
-        LanguageInfo { code: "uk".into(), name: "Ukrainian".into(), native_name: "Українська".into(), bundled: false, installed: false, size_approx: "1.7 MB".into() },
-        LanguageInfo { code: "el".into(), name: "Greek".into(), native_name: "Ελληνικά".into(), bundled: false, installed: false, size_approx: "1.9 MB".into() },
-        LanguageInfo { code: "tr".into(), name: "Turkish".into(), native_name: "Türkçe".into(), bundled: false, installed: false, size_approx: "1.5 MB".into() },
-        LanguageInfo { code: "hu".into(), name: "Hungarian".into(), native_name: "Magyar".into(), bundled: false, installed: false, size_approx: "3.5 MB".into() },
-        LanguageInfo { code: "ro".into(), name: "Romanian".into(), native_name: "Română".into(), bundled: false, installed: false, size_approx: "1.2 MB".into() },
-        LanguageInfo { code: "ca".into(), name: "Catalan".into(), native_name: "Català".into(), bundled: false, installed: false, size_approx: "0.8 MB".into() },
-        LanguageInfo { code: "id".into(), name: "Indonesian".into(), native_name: "Bahasa Indonesia".into(), bundled: false, installed: false, size_approx: "0.6 MB".into() },
-        LanguageInfo { code: "vi".into(), name: "Vietnamese".into(), native_name: "Tiếng Việt".into(), bundled: false, installed: false, size_approx: "0.4 MB".into() },
+        LanguageInfo {
+            code: "en".into(),
+            name: "English (US)".into(),
+            native_name: "English (US)".into(),
+            bundled: true,
+            installed: true,
+            size_approx: "0.6 MB".into(),
+        },
+        LanguageInfo {
+            code: "en-gb".into(),
+            name: "English (UK)".into(),
+            native_name: "English (UK)".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "0.6 MB".into(),
+        },
+        LanguageInfo {
+            code: "es".into(),
+            name: "Spanish".into(),
+            native_name: "Español".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "0.7 MB".into(),
+        },
+        LanguageInfo {
+            code: "fr".into(),
+            name: "French".into(),
+            native_name: "Français".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.2 MB".into(),
+        },
+        LanguageInfo {
+            code: "de".into(),
+            name: "German".into(),
+            native_name: "Deutsch".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "3.2 MB".into(),
+        },
+        LanguageInfo {
+            code: "it".into(),
+            name: "Italian".into(),
+            native_name: "Italiano".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "0.7 MB".into(),
+        },
+        LanguageInfo {
+            code: "pt".into(),
+            name: "Portuguese".into(),
+            native_name: "Português".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.0 MB".into(),
+        },
+        LanguageInfo {
+            code: "pt-br".into(),
+            name: "Portuguese (Brazil)".into(),
+            native_name: "Português do Brasil".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.1 MB".into(),
+        },
+        LanguageInfo {
+            code: "nl".into(),
+            name: "Dutch".into(),
+            native_name: "Nederlands".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.8 MB".into(),
+        },
+        LanguageInfo {
+            code: "ru".into(),
+            name: "Russian".into(),
+            native_name: "Русский".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.5 MB".into(),
+        },
+        LanguageInfo {
+            code: "sv".into(),
+            name: "Swedish".into(),
+            native_name: "Svenska".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.2 MB".into(),
+        },
+        LanguageInfo {
+            code: "da".into(),
+            name: "Danish".into(),
+            native_name: "Dansk".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "0.9 MB".into(),
+        },
+        LanguageInfo {
+            code: "nb".into(),
+            name: "Norwegian (Bokmål)".into(),
+            native_name: "Norsk bokmål".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.4 MB".into(),
+        },
+        LanguageInfo {
+            code: "pl".into(),
+            name: "Polish".into(),
+            native_name: "Polski".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "2.8 MB".into(),
+        },
+        LanguageInfo {
+            code: "cs".into(),
+            name: "Czech".into(),
+            native_name: "Čeština".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.6 MB".into(),
+        },
+        LanguageInfo {
+            code: "uk".into(),
+            name: "Ukrainian".into(),
+            native_name: "Українська".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.7 MB".into(),
+        },
+        LanguageInfo {
+            code: "el".into(),
+            name: "Greek".into(),
+            native_name: "Ελληνικά".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.9 MB".into(),
+        },
+        LanguageInfo {
+            code: "tr".into(),
+            name: "Turkish".into(),
+            native_name: "Türkçe".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.5 MB".into(),
+        },
+        LanguageInfo {
+            code: "hu".into(),
+            name: "Hungarian".into(),
+            native_name: "Magyar".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "3.5 MB".into(),
+        },
+        LanguageInfo {
+            code: "ro".into(),
+            name: "Romanian".into(),
+            native_name: "Română".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "1.2 MB".into(),
+        },
+        LanguageInfo {
+            code: "ca".into(),
+            name: "Catalan".into(),
+            native_name: "Català".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "0.8 MB".into(),
+        },
+        LanguageInfo {
+            code: "id".into(),
+            name: "Indonesian".into(),
+            native_name: "Bahasa Indonesia".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "0.6 MB".into(),
+        },
+        LanguageInfo {
+            code: "vi".into(),
+            name: "Vietnamese".into(),
+            native_name: "Tiếng Việt".into(),
+            bundled: false,
+            installed: false,
+            size_approx: "0.4 MB".into(),
+        },
     ]
 }
 
@@ -296,7 +465,11 @@ pub fn spellcheck_check_text(
 ) -> Vec<MisspelledWord> {
     let s = state.lock().unwrap_or_else(|e| e.into_inner());
     let names_set: Option<HashSet<String>> = character_names.map(|names| {
-        names.iter().flat_map(|n| n.split_whitespace()).map(|w| w.to_lowercase()).collect()
+        names
+            .iter()
+            .flat_map(|n| n.split_whitespace())
+            .map(|w| w.to_lowercase())
+            .collect()
     });
     let mut misspelled = Vec::new();
 
@@ -309,7 +482,8 @@ pub fn spellcheck_check_text(
             }
 
             if !s.is_word_valid_with_names(clean, names_set.as_ref()) {
-                let leading_trimmed = raw_word.len() - raw_word.trim_start_matches(is_apostrophe).len();
+                let leading_trimmed =
+                    raw_word.len() - raw_word.trim_start_matches(is_apostrophe).len();
                 let match_start = m.start() + leading_trimmed;
                 let match_end = match_start + clean.len();
 
@@ -366,9 +540,9 @@ pub fn spellcheck_add_word(
     word: String,
 ) -> Result<(), String> {
     let mut s = state.lock().unwrap_or_else(|e| e.into_inner());
-    let clean = normalize_apostrophes(
-        word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)),
-    ).to_lowercase();
+    let clean =
+        normalize_apostrophes(word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)))
+            .to_lowercase();
     if !clean.is_empty() {
         s.custom_words.insert(clean);
         s.save_custom_words();
@@ -382,9 +556,9 @@ pub fn spellcheck_remove_word(
     word: String,
 ) -> Result<(), String> {
     let mut s = state.lock().unwrap_or_else(|e| e.into_inner());
-    let clean = normalize_apostrophes(
-        word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)),
-    ).to_lowercase();
+    let clean =
+        normalize_apostrophes(word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)))
+            .to_lowercase();
     if !clean.is_empty() {
         s.custom_words.remove(&clean);
         s.save_custom_words();
@@ -393,23 +567,18 @@ pub fn spellcheck_remove_word(
 }
 
 #[tauri::command]
-pub fn spellcheck_ignore_word(
-    state: tauri::State<'_, Mutex<SpellcheckState>>,
-    word: String,
-) {
+pub fn spellcheck_ignore_word(state: tauri::State<'_, Mutex<SpellcheckState>>, word: String) {
     let mut s = state.lock().unwrap_or_else(|e| e.into_inner());
-    let clean = normalize_apostrophes(
-        word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)),
-    ).to_lowercase();
+    let clean =
+        normalize_apostrophes(word.trim_matches(|c: char| !c.is_alphabetic() && !is_apostrophe(c)))
+            .to_lowercase();
     if !clean.is_empty() {
         s.ignored_words.insert(clean);
     }
 }
 
 #[tauri::command]
-pub fn spellcheck_get_custom_words(
-    state: tauri::State<'_, Mutex<SpellcheckState>>,
-) -> Vec<String> {
+pub fn spellcheck_get_custom_words(state: tauri::State<'_, Mutex<SpellcheckState>>) -> Vec<String> {
     let s = state.lock().unwrap_or_else(|e| e.into_inner());
     let mut list: Vec<String> = s.custom_words.iter().cloned().collect();
     list.sort();
@@ -439,7 +608,9 @@ pub async fn spellcheck_download_dict(
 
     let dicts_dir = {
         let s = state.lock().unwrap_or_else(|e| e.into_inner());
-        s.dictionaries_dir.clone().ok_or("Dictionaries directory not initialized")?
+        s.dictionaries_dir
+            .clone()
+            .ok_or("Dictionaries directory not initialized")?
     };
 
     let target_dir = dicts_dir.join(&lang_clean);
@@ -455,11 +626,15 @@ pub async fn spellcheck_download_dict(
     let npm_pkg = format!("dictionary-{}", lang_clean);
     let aff_urls = [
         format!("https://cdn.jsdelivr.net/npm/{npm_pkg}/index.aff"),
-        format!("https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/{lang_clean}/index.aff"),
+        format!(
+            "https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/{lang_clean}/index.aff"
+        ),
     ];
     let dic_urls = [
         format!("https://cdn.jsdelivr.net/npm/{npm_pkg}/index.dic"),
-        format!("https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/{lang_clean}/index.dic"),
+        format!(
+            "https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/{lang_clean}/index.dic"
+        ),
     ];
 
     let aff_content = fetch_first_success(&client, &aff_urls).await?;
@@ -486,13 +661,11 @@ async fn fetch_first_success(client: &reqwest::Client, urls: &[String]) -> Resul
     let mut last_err = String::new();
     for url in urls {
         match client.get(url).send().await {
-            Ok(resp) if resp.status().is_success() => {
-                match resp.text().await {
-                    Ok(text) if !text.trim().is_empty() => return Ok(text),
-                    Ok(_) => last_err = format!("Empty response from {url}"),
-                    Err(e) => last_err = format!("Failed to read body from {url}: {e}"),
-                }
-            }
+            Ok(resp) if resp.status().is_success() => match resp.text().await {
+                Ok(text) if !text.trim().is_empty() => return Ok(text),
+                Ok(_) => last_err = format!("Empty response from {url}"),
+                Err(e) => last_err = format!("Failed to read body from {url}: {e}"),
+            },
             Ok(resp) => {
                 last_err = format!("HTTP {} from {url}", resp.status());
             }
@@ -516,7 +689,9 @@ pub fn spellcheck_delete_dict(
 
     let dicts_dir = {
         let s = state.lock().unwrap_or_else(|e| e.into_inner());
-        s.dictionaries_dir.clone().ok_or("Dictionaries directory not initialized")?
+        s.dictionaries_dir
+            .clone()
+            .ok_or("Dictionaries directory not initialized")?
     };
 
     let target_dir = dicts_dir.join(&lang_clean);
@@ -634,10 +809,16 @@ mod tests {
     fn test_check_text_offsets() {
         let state = SpellcheckState::new();
         let ranges = vec![
-            TextRange { text: "tain".into(), offset: 74 },
-            TextRange { text: "- Wilfred Wingsby, asleep at his desk.".into(), offset: 80 },
+            TextRange {
+                text: "tain".into(),
+                offset: 74,
+            },
+            TextRange {
+                text: "- Wilfred Wingsby, asleep at his desk.".into(),
+                offset: 80,
+            },
         ];
-        
+
         let mut misspelled = Vec::new();
         for range in ranges {
             for m in WORD_REGEX.find_iter(&range.text) {
@@ -648,7 +829,8 @@ mod tests {
                 }
 
                 if !state.is_word_valid(clean) {
-                    let leading_trimmed = raw_word.len() - raw_word.trim_start_matches(is_apostrophe).len();
+                    let leading_trimmed =
+                        raw_word.len() - raw_word.trim_start_matches(is_apostrophe).len();
                     let match_start = m.start() + leading_trimmed;
                     let match_end = match_start + clean.len();
 

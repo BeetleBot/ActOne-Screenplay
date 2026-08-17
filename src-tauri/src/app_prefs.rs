@@ -10,7 +10,8 @@ pub struct AppPrefsState(pub Mutex<HashMap<String, String>>);
 static HELD_ICONS: OnceLock<Mutex<Vec<tauri::image::Image>>> = OnceLock::new();
 
 fn prefs_file_path(app: &tauri::AppHandle) -> PathBuf {
-    app.path().app_data_dir()
+    app.path()
+        .app_data_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join("actone-prefs.json")
 }
@@ -26,7 +27,7 @@ pub fn apply_app_icon(app: &tauri::AppHandle, use_dark: bool) -> Result<(), Stri
     let img = image::load_from_memory(bytes)
         .map_err(|e| format!("Failed to parse image bytes: {}", e))?
         .to_rgba8();
-    
+
     let (width, height) = img.dimensions();
     let raw_rgba = img.into_raw();
 
@@ -77,7 +78,8 @@ pub fn set_app_prefs(
     let json = serde_json::to_string(&merged).map_err(|e| e.to_string())?;
     fs::write(&file_path, json).map_err(|e| e.to_string())?;
 
-    app.emit("app-prefs:changed", merged).map_err(|e| e.to_string())?;
+    app.emit("app-prefs:changed", merged)
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
