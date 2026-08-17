@@ -1,4 +1,5 @@
-export { useCodeMirror } from './useCodeMirror';
+export { useCoreCodeMirror } from './useCoreCodeMirror';
+export { useScriptCodeMirror } from './useScriptCodeMirror';
 export {
   fountainHighlightField, updateParsedDocEffect, updatePageBreakDisplayEffect,
   classifyLines, needsBlankAfterEnter, isDialogueType, isDualType,

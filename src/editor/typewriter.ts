@@ -1,6 +1,6 @@
 import { Compartment } from "@codemirror/state";
 import { ViewPlugin, ViewUpdate, EditorView } from "@codemirror/view";
-import { getScriptSwitchToken } from "./useCodeMirror";
+import { getScriptSwitchToken } from "./useCoreCodeMirror";
 
 export const typewriterCompartment = new Compartment();
 

@@ -1,19 +1,15 @@
 import React, { useRef, useState, useMemo } from "react";
-import { useFile, useUI, useEditor, useParking, useCustomModal } from "../context";
+import { useFile, useUI, useCustomModal } from "../context";
 import { LineType } from "../parser";
 import { usePromptConfig } from "../hooks/usePromptConfig";
 import { getLanguageDetails } from "../constants/languages";
-import { useCodeMirror } from "../editor";
+import { useScriptCodeMirror } from "../editor";
 import { logger } from "../utils/logger";
-import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { FOUNTAIN_SYNTAX_RULES } from "../constants";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
-import { setContextMenuHighlightEffect } from "../editor/contextMenuState";
-import { toggleInlineMarker as toggleInlineMarkerShared } from "../editor/formatUtils";
-import { ContextMenu, type ContextMenuItem, type ContextMenuItemDef } from "./ContextMenu";
 import { createAIProvider } from "../lib/aiProviders";
-import { getWordAtPosition } from "../utils/wordUtils";
-import { spellDecoField } from "../editor/spellcheck";
+import { CoreEditor, type MenuSelectionSnap } from "./editor/CoreEditor";
+import { type ContextMenuItem, type ContextMenuItemDef } from "./ContextMenu";
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -40,40 +36,133 @@ const MARKER_COLORS = [
   { key: "none", label: "Default (Orange)", color: "var(--cat-other)" }
 ];
 
+interface LineAnalysis {
+  original: string;
+  indent: string;
+  prefix: string;
+  suffix: string;
+  cleanText: string;
+  isTranslatable: boolean;
+}
+
+function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis {
+  let clean = line;
+  const indentMatch = clean.match(/^\s+/);
+  let indent = "";
+  if (indentMatch) {
+    indent = indentMatch[0];
+    clean = clean.slice(indent.length);
+  }
+
+  const trimmed = clean.trim();
+  if (!trimmed) {
+    return { original: line, indent, prefix: "", suffix: "", cleanText: "", isTranslatable: false };
+  }
+
+  const type = parsedLine?.type;
+
+  if (type === LineType.character || type === LineType.dualDialogueCharacter) {
+    let charName = trimmed;
+    if (!charName.startsWith("@")) {
+      charName = "@" + charName;
+    }
+    return { original: indent + charName, indent, prefix: "", suffix: "", cleanText: charName, isTranslatable: false };
+  }
+
+  if (type === LineType.heading) {
+    let headingText = trimmed;
+    if (!headingText.startsWith(".")) {
+      headingText = "." + headingText;
+    }
+    return { original: indent + headingText, indent, prefix: "", suffix: "", cleanText: headingText, isTranslatable: false };
+  }
+
+  if (type === LineType.transitionLine) {
+    let transText = trimmed;
+    if (!transText.startsWith(">")) {
+      transText = "> " + transText;
+    }
+    return { original: indent + transText, indent, prefix: "", suffix: "", cleanText: transText, isTranslatable: false };
+  }
+
+  const isOtherNonTranslatable = (
+    type === LineType.empty ||
+    type === LineType.section ||
+    type === LineType.pageBreak ||
+    type === LineType.more ||
+    type === LineType.dualDialogueMore ||
+    (type !== undefined && type >= LineType.titlePageTitle && type <= LineType.titlePageUnknown)
+  );
+
+  if (isOtherNonTranslatable) {
+    return { original: line, indent, prefix: "", suffix: "", cleanText: trimmed, isTranslatable: false };
+  }
+
+  let prefix = "";
+  let suffix = "";
+
+  if (type === LineType.action) {
+    prefix = "!";
+    if (clean.startsWith("!")) clean = clean.slice(1);
+  } else if (type === LineType.synopse) {
+    prefix = "=";
+    if (clean.startsWith("=")) clean = clean.slice(1);
+  } else if (type === LineType.shot) {
+    prefix = "!!";
+    if (clean.startsWith("!!")) clean = clean.slice(2);
+  } else if (type === LineType.centered) {
+    prefix = ">";
+    suffix = "<";
+    if (clean.startsWith(">")) clean = clean.slice(1);
+    if (clean.endsWith("<")) clean = clean.slice(0, -1);
+  } else if (type === LineType.parenthetical || type === LineType.dualDialogueParenthetical) {
+    prefix = "(";
+    suffix = ")";
+    if (clean.startsWith("(")) clean = clean.slice(1);
+    if (clean.endsWith(")")) clean = clean.slice(0, -1);
+  } else {
+    if (clean.startsWith("- ")) {
+      prefix = "- ";
+      clean = clean.slice(2);
+    } else if (clean.startsWith("-")) {
+      prefix = "-";
+      clean = clean.slice(1);
+    } else if (clean.startsWith("[[") && clean.endsWith("]]")) {
+      prefix = "[[";
+      suffix = "]]";
+      clean = clean.slice(2, -2);
+    }
+  }
+
+  return {
+    original: line,
+    indent,
+    prefix,
+    suffix,
+    cleanText: clean.trim(),
+    isTranslatable: true,
+  };
+}
+
 export const ScriptEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { fontFamily, setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, registerTranslationAbort, spellcheckEnabled } = useUI();
+  const { setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, registerTranslationAbort } = useUI();
   const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>(translationState);
   translationStateRef.current = translationState;
   const { parsedDoc, activeScriptIndex, activeScriptName, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
-  const { updateSettings } = useEditor();
-  const parking = useParking();
   const { prompt: showPrompt } = useCustomModal();
   
-  const viewRef = useCodeMirror(containerRef);
+  const viewRef = useScriptCodeMirror(containerRef);
 
   const [translatingLang, setTranslatingLang] = useState<string | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
-
   const promptConfig = usePromptConfig();
 
-  // Snapshot of selection captured at mousedown time (button=2 / right-click),
-  // BEFORE CodeMirror's own mousedown handler collapses the selection.
-  // Always set — includes cursor position even when there is no text selection.
-  const menuSelectionRef = useRef<{ from: number; to: number; text: string } | null>(null);
-
-  const view = viewRef.current;
-  const selection = view ? view.state.selection.main : null;
-  const hasSelection = selection ? selection.from !== selection.to : false;
-  const selectedText = (view && selection && hasSelection) ? view.state.sliceDoc(selection.from, selection.to) : "";
-
-  // These are derived from the snapshotted selection so they remain stable while the menu is open.
-
-
   const currentSceneLine = useMemo(() => {
-    if (!view || !selection || !parsedDoc?.lines) return null;
+    const v = viewRef.current;
+    if (!v || !parsedDoc?.lines) return null;
+    const selection = v.state.selection.main;
     try {
-      const lineObj = view.state.doc.lineAt(selection.from);
+      const lineObj = v.state.doc.lineAt(selection.from);
       const lineIndex = lineObj.number - 1;
       for (let i = lineIndex; i >= 0; i--) {
         const line = parsedDoc.lines[i];
@@ -83,408 +172,21 @@ export const ScriptEditor = React.memo(() => {
       }
     } catch (e) { logger.warn("editor", "Failed to find current scene line", e); }
     return null;
-  }, [parsedDoc?.lines, view, selection]);
+  }, [parsedDoc?.lines, viewRef.current?.state.selection.main]);
 
-  // Capture selection on right-click mousedown — this fires BEFORE CodeMirror's mousedown
-  // handler, so the selection is still intact at this point.
-  const handleMouseDown = (event: React.MouseEvent) => {
-    if (event.button !== 2) return; // only care about right-click
+  const performInlineRephrase = async (text: string, userPrompt: string, snap: MenuSelectionSnap | null) => {
     const v = viewRef.current;
-    if (!v) { menuSelectionRef.current = null; return; }
-    const sel = v.state.selection.main;
-
-    // Convert mouse coordinates to doc position
-    const pos = v.posAtCoords({ x: event.clientX, y: event.clientY });
-    
-    // If clicking outside an existing selection, select word under cursor so user can act on it
-    if (sel.from !== sel.to && pos !== null && pos >= sel.from && pos <= sel.to) {
-      // Right clicking inside active selection — preserve exact selection!
-      menuSelectionRef.current = {
-        from: sel.from,
-        to: sel.to,
-        text: v.state.sliceDoc(sel.from, sel.to),
-      };
-    } else {
-      // Right clicking outside existing selection: if clicking on a word, set selection to that range or line pos
-      menuSelectionRef.current = {
-        from: sel.from,
-        to: sel.to,
-        text: sel.from !== sel.to ? v.state.sliceDoc(sel.from, sel.to) : "",
-      };
-    }
-  };
-
-  const handleContextMenu = async (event: React.MouseEvent) => {
-    event.preventDefault();
-
-    const clientX = event.clientX;
-    const clientY = event.clientY;
-
-    const v = viewRef.current;
-    if (v) {
-      const sel = v.state.selection.main;
-      const pos = v.posAtCoords({ x: clientX, y: clientY });
-
-      // If user right-clicked outside active selection, move cursor or select word at pos
-      if (pos !== null && !(sel.from !== sel.to && pos >= sel.from && pos <= sel.to)) {
-        // Move selection to clicked position if no text was selected beforehand
-        if (sel.from === sel.to) {
-          v.dispatch({ selection: { anchor: pos } });
-        }
-      }
-
-      const activeSel = v.state.selection.main;
-      menuSelectionRef.current = {
-        from: activeSel.from,
-        to: activeSel.to,
-        text: activeSel.from !== activeSel.to ? v.state.sliceDoc(activeSel.from, activeSel.to) : "",
-      };
-    }
-
-    const hasSel = menuSelectionRef.current !== null && menuSelectionRef.current.from !== menuSelectionRef.current.to;
-    const isSceneLine = currentSceneLine !== null;
-
-    let spellItems: ContextMenuItem[] = [];
-
-    if (spellcheckEnabled && v) {
-      const docText = v.state.doc.toString();
-      const pos = v.posAtCoords({ x: clientX, y: clientY }) ?? v.state.selection.main.head;
-      const wordInfo = getWordAtPosition(docText, pos);
-
-      if (wordInfo) {
-        let isMisspelled = false;
-        const decos = v.state.field(spellDecoField, false);
-        if (decos) {
-          decos.between(wordInfo.from, wordInfo.to, (from, to) => {
-            if (from <= wordInfo.from && to >= wordInfo.to) {
-              isMisspelled = true;
-            }
-          });
-        }
-
-        if (isMisspelled) {
-          const word = wordInfo.word;
-          const wordFrom = wordInfo.from;
-          const wordTo = wordInfo.to;
-          let suggestions: string[] = [];
-
-          try {
-            if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-              const { invoke } = await import("@tauri-apps/api/core");
-              suggestions = await invoke<string[]>("spellcheck_suggest", { word });
-            }
-          } catch {
-            void 0;
-          }
-
-          const handleReplace = (replacement: string) => {
-            const cv = viewRef.current;
-            if (!cv) return;
-            cv.dispatch({
-              changes: { from: wordFrom, to: wordTo, insert: replacement },
-              selection: { anchor: wordFrom + replacement.length },
-            });
-            cv.focus();
-          };
-
-          const handleAddWord = async () => {
-            if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-              const { invoke } = await import("@tauri-apps/api/core");
-              await invoke("spellcheck_add_word", { word });
-              window.dispatchEvent(new CustomEvent("dictionary-changed"));
-            }
-          };
-
-          const handleIgnoreWord = async () => {
-            if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-              const { invoke } = await import("@tauri-apps/api/core");
-              await invoke("spellcheck_ignore_word", { word });
-              window.dispatchEvent(new CustomEvent("dictionary-changed"));
-            }
-          };
-
-          const suggItems: ContextMenuItemDef[] =
-            suggestions.length > 0
-              ? suggestions.map((s) => ({ label: s, action: () => handleReplace(s) }))
-              : [{ label: "No spelling suggestions", enabled: false }];
-
-          spellItems = [
-            ...suggItems,
-            { label: `Add "${word}" to Dictionary`, action: handleAddWord },
-            { label: `Ignore "${word}"`, action: handleIgnoreWord },
-            "separator",
-          ];
-        }
-      }
-    }
-
-    const museItems: ContextMenuItemDef[] = hasSel
-      ? [
-          { label: "Look up", action: () => handlePromptAction("lookup") },
-          { label: "Synonyms", action: () => handlePromptAction("synonyms") },
-          {
-            label: "Rephrase",
-            children: promptConfig.rephrasePresets.map((preset) => ({
-              label: preset.name || "Untitled",
-              enabled: !!preset.prompt.trim(),
-              action: () => handleRephraseClick(preset.prompt),
-            })),
-          },
-          {
-            label: "Translate",
-            children: promptConfig.translateLanguages.map((lang) => ({
-              label: lang,
-              enabled: translatingLang !== lang,
-              action: () => handleTranslateClick(lang),
-            })),
-          },
-        ]
-      : [{
-          label: "Translate Whole Script",
-          children: promptConfig.translateLanguages.map((lang) => ({
-            label: lang,
-            enabled: translatingLang !== lang,
-            action: () => handleTranslateWholeDocument(lang),
-          })),
-        }];
-
-    const items: ContextMenuItem[] = [
-      ...spellItems,
-      { label: "Muse", children: museItems },
-      "separator",
-      { label: "Cut", enabled: hasSel, action: () => handleEditorAction("cut") },
-      { label: "Copy", enabled: hasSel, action: () => handleEditorAction("copy") },
-      { label: "Paste", action: () => handleEditorAction("paste") },
-      "separator",
-      {
-        label: "Highlight Scene",
-        enabled: isSceneLine,
-        children: HIGHLIGHT_COLORS.map((col) => ({ label: col.label, action: () => handleHighlightScene(col.key) })),
-      },
-      {
-        label: "Drop Marker",
-        children: MARKER_COLORS.map((col) => ({ label: col.label, action: () => handleDropMarkerWithColor(col.key) })),
-      },
-      "separator",
-      {
-        label: "Format",
-        enabled: hasSel,
-        children: [
-          { label: "Bold", action: () => toggleInlineMarker("**") },
-          { label: "Italic", action: () => toggleInlineMarker("*") },
-          { label: "Underline", action: () => toggleInlineMarker("_") },
-        ],
-      },
-      {
-        label: "Transform Case",
-        enabled: hasSel,
-        children: [
-          { label: "UPPERCASE", action: () => handleTransformCase("upper") },
-          { label: "Title Case", action: () => handleTransformCase("title") },
-          { label: "lowercase", action: () => handleTransformCase("lower") },
-        ],
-      },
-      { label: "Look Up Word", enabled: hasSel, action: handleLookUpSelection },
-      "separator",
-      { label: "Create Task", enabled: hasSel, action: handleCreateTaskFromSelection },
-      { label: "Park Selection", enabled: hasSel, action: handleParkSelection },
-    ];
-
-    if (v && menuSelectionRef.current && menuSelectionRef.current.from !== menuSelectionRef.current.to) {
-      v.dispatch({
-        effects: setContextMenuHighlightEffect.of({
-          from: menuSelectionRef.current.from,
-          to: menuSelectionRef.current.to,
-        }),
-      });
-    }
-
-    setContextMenu({ x: event.clientX, y: event.clientY, items });
-  };
-
-  const handleClose = () => {
-    setTranslatingLang(null);
-    if (viewRef.current) {
-      viewRef.current.dispatch({
-        effects: setContextMenuHighlightEffect.of(null),
-      });
-    }
-    const savedSel = menuSelectionRef.current;
-    menuSelectionRef.current = null;
-    // Restore editor focus and selection after menu closes
-    setTimeout(() => {
-      if (viewRef.current && savedSel && savedSel.from !== savedSel.to) {
-        viewRef.current.dispatch({
-          selection: { anchor: savedSel.from, head: savedSel.to },
-          scrollIntoView: false,
-        });
-      }
-      viewRef.current?.focus();
-    }, 0);
-  };
-
-  const closeContextMenu = () => {
-    setContextMenu(null);
-    handleClose();
-  };
-
-
-
-  const toggleInlineMarker = (marker: string) => {
-    if (!view) return;
-    const snap = menuSelectionRef.current;
-    toggleInlineMarkerShared(view, marker, snap || undefined);
-    handleClose();
-  };
-
-  const handleParkSelection = () => {
-    const snap = menuSelectionRef.current;
-    if (!view || !snap) return;
-    const { from, to, text } = snap;
-    if (!text.trim()) return;
-
-    parking.addItem(text);
-    view.dispatch({
-      changes: { from, to, insert: "" },
-    });
-    handleClose();
-    view.focus();
-  };
-
-  const handleHighlightScene = (colorName: string) => {
-    if (!view || !currentSceneLine) return;
-    const { index } = currentSceneLine;
-    const lineObj = view.state.doc.line(index + 1);
-    const originalText = lineObj.text;
-    const supportedColors = ["blue", "brown", "cyan", "green", "magenta", "orange", "pink", "purple", "red", "yellow"];
-    let newText = originalText.replace(/\s*\[\[color\s+[#\w]+\]\]/gi, "");
-    const colorRegex = new RegExp(`\\s*\\[\\[(${supportedColors.join("|")}|#[0-9a-fA-F]{6})\\]\\]`, "gi");
-    newText = newText.replace(colorRegex, "");
-    if (colorName !== "none") {
-      newText = `${newText.trimEnd()} [[${colorName}]]`;
-    }
-    view.dispatch({
-      changes: { from: lineObj.from, to: lineObj.to, insert: newText }
-    });
-    handleClose();
-  };
-
-  const handleDropMarkerWithColor = async (colorName: string) => {
-    const snap = menuSelectionRef.current;
-    if (!view) return;
-    const from = snap?.from ?? view.state.selection.main.from;
-    const to = snap?.to ?? view.state.selection.main.to;
-    const defaultDesc = snap?.text ?? "";
-    handleClose();
-    const desc = await showPrompt({
-      title: "Drop Marker",
-      message: `Enter ${colorName} marker description:`,
-      defaultValue: defaultDesc
-    });
-    if (desc !== null) {
-      const markerText = colorName === "none" ? `[[marker: ${desc.trim()}]]` : `[[marker ${colorName}: ${desc.trim()}]]`;
-      view.dispatch({
-        changes: { from, to, insert: markerText },
-        selection: { anchor: from + markerText.length }
-      });
-    }
-  };
-
-  const handleTransformCase = (mode: "upper" | "title" | "lower") => {
-    const snap = menuSelectionRef.current;
-    if (!view || !snap) return;
-    const { from, to } = snap;
-    let newText = snap.text;
-    if (mode === "upper") {
-      newText = snap.text.toUpperCase();
-    } else if (mode === "lower") {
-      newText = snap.text.toLowerCase();
-    } else if (mode === "title") {
-      newText = snap.text.replace(/\b\w+/g, (s) => s.charAt(0).toUpperCase() + s.substring(1).toLowerCase());
-    }
-    view.dispatch({
-      changes: { from, to, insert: newText },
-      selection: { anchor: from, head: from + newText.length }
-    });
-    handleClose();
-  };
-
-  const handleCreateTaskFromSelection = () => {
-    const text = (menuSelectionRef.current?.text ?? "").trim();
-    if (!text) return;
-    updateSettings((prev) => {
-      const todos = prev.todos || [];
-      const newTodo = {
-        id: Date.now().toString(),
-        text,
-        completed: false,
-        createdAt: Date.now(),
-      };
-      return {
-        ...prev,
-        todos: [...todos, newTodo],
-      };
-    });
-    handleClose();
-  };
-
-  const handleLookUpSelection = () => {
-    handleClose();
-    const text = menuSelectionRef.current?.text ?? "";
-    if (!text) return;
-    const query = encodeURIComponent(text.trim());
-    const url = `https://www.google.com/search?q=${query}`;
-    import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url)).catch(() => window.open(url, "_blank"));
-  };
-
-  const handleEditorAction = async (cmd: string) => {
-    if (!view) return;
-    const snap = menuSelectionRef.current;
-    if (cmd === "paste") {
-      try {
-        const text = await readText();
-        const sel = view.state.selection.main;
-        view.dispatch({
-          changes: { from: sel.from, to: sel.to, insert: text },
-          selection: { anchor: sel.from + text.length }
-        });
-      } catch (e) {
-        logger.error("editor", "clipboard read failed", e);
-      }
-    } else if (snap && snap.from !== snap.to && (cmd === "cut" || cmd === "copy")) {
-      try {
-        await writeText(snap.text);
-        if (cmd === "cut") {
-          view.dispatch({
-            changes: { from: snap.from, to: snap.to, insert: "" },
-            selection: { anchor: snap.from },
-          });
-        }
-      } catch (e) {
-        logger.error("editor", "clipboard write failed", e);
-      }
-    }
-    view.focus();
-    handleClose();
-  };
-
-  const performInlineRephrase = async (text: string, userPrompt: string) => {
-    if (!view) return;
-    const snap = menuSelectionRef.current || view.state.selection.main;
-    if (!snap) return;
-
-    const from = snap.from;
-    const to = snap.to;
+    if (!v) return;
+    const from = snap ? snap.from : v.state.selection.main.from;
+    const to = snap ? snap.to : v.state.selection.main.to;
     const originalText = text;
 
-    // Parse each line to extract prefixes/suffixes/indentation
     const lines = originalText.split(/\r?\n/);
     const lineData = lines.map(line => {
       let prefix = "";
       let suffix = "";
       let clean = line;
 
-      // Preserve leading whitespace
       const indentMatch = clean.match(/^\s+/);
       let indent = "";
       if (indentMatch) {
@@ -492,7 +194,6 @@ export const ScriptEditor = React.memo(() => {
         clean = clean.slice(indent.length);
       }
 
-      // Check and extract Fountain formatting prefixes
       if (clean.startsWith("!!")) {
         prefix = "!!";
         clean = clean.slice(2);
@@ -503,7 +204,6 @@ export const ScriptEditor = React.memo(() => {
         prefix = ".";
         clean = clean.slice(1);
       } else if (clean.startsWith("-")) {
-        // Strip "- " or "-"
         if (clean.startsWith("- ")) {
           prefix = "- ";
           clean = clean.slice(2);
@@ -538,11 +238,9 @@ export const ScriptEditor = React.memo(() => {
     const cleanBody = lineData.map(ld => ld.clean).join("\n");
     const isSingleLine = lines.length === 1;
 
-    // Check if the selected text contains non-Latin scripts (e.g. Tamil, Hindi, Cyrillic)
     const containsNonLatin = /[^\u0000-\u007F\u0080-\u00FF\u0100-\u017F\u0180-\u024F\u2000-\u206F]/.test(cleanBody);
 
-    // Extract surrounding context (up to 5 lines above and below)
-    const doc = view.state.doc;
+    const doc = v.state.doc;
     const lineStart = doc.lineAt(from);
     const lineEnd = doc.lineAt(to);
     const startLineNum = Math.max(1, lineStart.number - 5);
@@ -551,8 +249,6 @@ export const ScriptEditor = React.memo(() => {
     const contextAbove = doc.sliceString(doc.line(startLineNum).from, lineStart.from);
     const contextBelow = doc.sliceString(lineEnd.to, doc.line(endLineNum).to);
 
-    // If the selection is in a different language/script (non-Latin), DO NOT send English surrounding context,
-    // as it triggers smaller local LLMs to translate the selection into English.
     const promptContext = containsNonLatin
       ? `>>> TEXT TO REPHRASE:\n${cleanBody}\n<<<`
       : [
@@ -561,12 +257,11 @@ export const ScriptEditor = React.memo(() => {
           contextBelow ? `\n--- SCRIPT CONTEXT BELOW ---\n${contextBelow}` : ""
         ].join("").trim();
 
-    view.dispatch({
+    v.dispatch({
       effects: setRephraseRangeEffect.of({ from, to })
     });
 
     try {
-
       const systemPrompt = [
         userPrompt,
         "",
@@ -598,13 +293,11 @@ export const ScriptEditor = React.memo(() => {
       );
       if (!rephrased) rephrased = cleanBody;
 
-      // Fail-safe: if original text was non-Latin and response is strictly Latin, the LLM translated it. Reject translation and keep original!
       const responseContainsNonLatin = /[^\u0000-\u007F\u0080-\u00FF\u0100-\u017F\u0180-\u024F\u2000-\u206F]/.test(rephrased);
       if (containsNonLatin && !responseContainsNonLatin) {
         rephrased = cleanBody;
       }
 
-      // Reconstruct final output by re-applying indentation, prefixes, and suffixes line-by-line
       const resLines = rephrased.split(/\r?\n/);
       const finalLines = lineData.map((ld, i) => {
         const rephrasedLine = resLines[i] !== undefined ? resLines[i].trim() : ld.clean;
@@ -612,22 +305,23 @@ export const ScriptEditor = React.memo(() => {
       });
       const finalRephrased = finalLines.join("\n").replace(/—/g, "--");
 
-      view.dispatch({
+      v.dispatch({
         changes: { from, to, insert: finalRephrased },
         effects: setRephraseRangeEffect.of(null),
         selection: { anchor: from + finalRephrased.length }
       });
     } catch (err) {
-      view.dispatch({
+      v.dispatch({
         effects: setRephraseRangeEffect.of(null)
       });
       logger.error("editor", "Inline rephrase failed", err);
     }
   };
 
-  const handlePromptAction = async (action: "lookup" | "synonyms" | "rephrase") => {
-    const text = menuSelectionRef.current?.text ?? selectedText;
-    handleClose();
+  const handlePromptAction = async (action: "lookup" | "synonyms", snap: MenuSelectionSnap | null, closeMenu: () => void) => {
+    const v = viewRef.current;
+    const text = (snap && snap.from !== snap.to) ? snap.text : (v ? v.state.sliceDoc(v.state.selection.main.from, v.state.selection.main.to) : "");
+    closeMenu();
     if (!text || !text.trim()) return;
 
     if (action === "lookup") {
@@ -647,19 +341,21 @@ export const ScriptEditor = React.memo(() => {
     }
   };
 
-  const handleRephraseClick = async (userPrompt: string) => {
-    const text = menuSelectionRef.current?.text ?? selectedText;
-    handleClose();
+  const handleRephraseClick = async (userPrompt: string, snap: MenuSelectionSnap | null, closeMenu: () => void) => {
+    const v = viewRef.current;
+    const text = (snap && snap.from !== snap.to) ? snap.text : (v ? v.state.sliceDoc(v.state.selection.main.from, v.state.selection.main.to) : "");
+    closeMenu();
     if (!text || !text.trim()) return;
 
-    await performInlineRephrase(text, userPrompt);
+    await performInlineRephrase(text, userPrompt, snap);
   };
 
-  const handleTranslateClick = async (lang: string) => {
+  const handleTranslateClick = async (lang: string, snap: MenuSelectionSnap | null, closeMenu: () => void) => {
     setTranslatingLang(lang);
     setAiStatus(`Translating to ${lang}...`);
-    const text = menuSelectionRef.current?.text ?? selectedText;
-    handleClose();
+    const v = viewRef.current;
+    const text = (snap && snap.from !== snap.to) ? snap.text : (v ? v.state.sliceDoc(v.state.selection.main.from, v.state.selection.main.to) : "");
+    closeMenu();
     if (!text || !text.trim()) {
       setAiStatus(null);
       setTranslatingLang(null);
@@ -667,14 +363,11 @@ export const ScriptEditor = React.memo(() => {
     }
 
     try {
-      if (!view) return;
-      const snap = menuSelectionRef.current || view.state.selection.main;
-      if (!snap) return;
+      if (!v) return;
+      const from = snap ? snap.from : v.state.selection.main.from;
+      const to = snap ? snap.to : v.state.selection.main.to;
 
-      const from = snap.from;
-      const to = snap.to;
-
-      view.dispatch({
+      v.dispatch({
         effects: setRephraseRangeEffect.of({ from, to })
       });
 
@@ -704,7 +397,6 @@ export const ScriptEditor = React.memo(() => {
 
       const cleanBody = lineData.map(ld => ld.clean).join("\n");
       const isSingleLine = lineData.length === 1;
-
 
       const ld = getLanguageDetails(lang);
       const langInfo = `"${lang}" (language code: ${ld.code}, native name: ${ld.native})`;
@@ -755,7 +447,7 @@ export const ScriptEditor = React.memo(() => {
       });
       const finalText = finalLines.join("\n");
 
-      view.dispatch({
+      v.dispatch({
         changes: { from, to, insert: finalText },
         effects: setRephraseRangeEffect.of(null),
         selection: { anchor: from + finalText.length }
@@ -766,129 +458,15 @@ export const ScriptEditor = React.memo(() => {
       logger.error("editor", "Inline translate failed", err);
       setAiStatus(`AI Error: ${msg.slice(0, 50)}`);
       setTimeout(() => setAiStatus(null), 7000);
-      view?.dispatch({ effects: setRephraseRangeEffect.of(null) });
+      v?.dispatch({ effects: setRephraseRangeEffect.of(null) });
     } finally {
       setTranslatingLang(null);
     }
-    view?.focus();
+    v?.focus();
   };
 
-interface LineAnalysis {
-  original: string;
-  indent: string;
-  prefix: string;
-  suffix: string;
-  cleanText: string;
-  isTranslatable: boolean;
-}
-
-function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis {
-  let clean = line;
-  const indentMatch = clean.match(/^\s+/);
-  let indent = "";
-  if (indentMatch) {
-    indent = indentMatch[0];
-    clean = clean.slice(indent.length);
-  }
-
-  const trimmed = clean.trim();
-  if (!trimmed) {
-    return { original: line, indent, prefix: "", suffix: "", cleanText: "", isTranslatable: false };
-  }
-
-  const type = parsedLine?.type;
-
-  // 1. Force explicit Fountain syntax for structural non-translatable lines (Character, Scene Heading, Transition):
-  if (type === LineType.character || type === LineType.dualDialogueCharacter) {
-    // Force '@' prefix so non-Latin character names (Tamil, Hindi, etc. without uppercase) NEVER crash into Action!
-    let charName = trimmed;
-    if (!charName.startsWith("@")) {
-      charName = "@" + charName;
-    }
-    return { original: indent + charName, indent, prefix: "", suffix: "", cleanText: charName, isTranslatable: false };
-  }
-
-  if (type === LineType.heading) {
-    // Force '.' prefix so scene headings always remain explicit
-    let headingText = trimmed;
-    if (!headingText.startsWith(".")) {
-      headingText = "." + headingText;
-    }
-    return { original: indent + headingText, indent, prefix: "", suffix: "", cleanText: headingText, isTranslatable: false };
-  }
-
-  if (type === LineType.transitionLine) {
-    // Force '>' prefix for transitions
-    let transText = trimmed;
-    if (!transText.startsWith(">")) {
-      transText = "> " + transText;
-    }
-    return { original: indent + transText, indent, prefix: "", suffix: "", cleanText: transText, isTranslatable: false };
-  }
-
-  const isOtherNonTranslatable = (
-    type === LineType.empty ||
-    type === LineType.section ||
-    type === LineType.pageBreak ||
-    type === LineType.more ||
-    type === LineType.dualDialogueMore ||
-    (type !== undefined && type >= LineType.titlePageTitle && type <= LineType.titlePageUnknown)
-  );
-
-  if (isOtherNonTranslatable) {
-    return { original: line, indent, prefix: "", suffix: "", cleanText: trimmed, isTranslatable: false };
-  }
-
-  // 2. Force explicit Fountain syntax for translatable lines (Synopsis, Shots, Centered, Parentheticals):
-  let prefix = "";
-  let suffix = "";
-
-  if (type === LineType.action) {
-    prefix = "!";
-    if (clean.startsWith("!")) clean = clean.slice(1);
-  } else if (type === LineType.synopse) {
-    prefix = "=";
-    if (clean.startsWith("=")) clean = clean.slice(1);
-  } else if (type === LineType.shot) {
-    prefix = "!!";
-    if (clean.startsWith("!!")) clean = clean.slice(2);
-  } else if (type === LineType.centered) {
-    prefix = ">";
-    suffix = "<";
-    if (clean.startsWith(">")) clean = clean.slice(1);
-    if (clean.endsWith("<")) clean = clean.slice(0, -1);
-  } else if (type === LineType.parenthetical || type === LineType.dualDialogueParenthetical) {
-    prefix = "(";
-    suffix = ")";
-    if (clean.startsWith("(")) clean = clean.slice(1);
-    if (clean.endsWith(")")) clean = clean.slice(0, -1);
-  } else {
-    // Bullet points, comments, or general action/dialogue syntax
-    if (clean.startsWith("- ")) {
-      prefix = "- ";
-      clean = clean.slice(2);
-    } else if (clean.startsWith("-")) {
-      prefix = "-";
-      clean = clean.slice(1);
-    } else if (clean.startsWith("[[") && clean.endsWith("]]")) {
-      prefix = "[[";
-      suffix = "]]";
-      clean = clean.slice(2, -2);
-    }
-  }
-
-  return {
-    original: line,
-    indent,
-    prefix,
-    suffix,
-    cleanText: clean.trim(),
-    isTranslatable: true,
-  };
-}
-
-  const handleTranslateWholeDocument = async (lang: string) => {
-    handleClose();
+  const handleTranslateWholeDocument = async (lang: string, closeMenu: () => void) => {
+    closeMenu();
     if (!parsedDoc) return;
     
     setAiStatus(`Preparing translation to ${lang}...`);
@@ -897,7 +475,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
     const lines = rawText.split(/\r?\n/);
     const parsedLines = parsedDoc.lines || [];
     
-    // Analyze all lines using AST API LineTypes
     const analyzedLines = lines.map((line, i) => {
       return analyzeFountainLineWithAST(line, parsedLines[i]);
     });
@@ -922,7 +499,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
       
       const targetScriptIndex = activeScriptIndex + 1;
 
-      // Build initial document with non-translatable lines in place
       const currentDocLines = analyzedLines.map(item => {
         if (!item.isTranslatable) return item.original;
         return item.indent + item.prefix + item.cleanText + item.suffix;
@@ -930,7 +506,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
       
       updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
 
-      // Collect all indices of translatable lines
       const translatableIndices: number[] = [];
       analyzedLines.forEach((item, idx) => {
         if (item.isTranslatable && item.cleanText.trim()) {
@@ -938,7 +513,7 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
         }
       });
 
-      const BATCH_SIZE = 20; // translate 20 lines per API call
+      const BATCH_SIZE = 20;
       const totalBatches = Math.ceil(translatableIndices.length / BATCH_SIZE) || 1;
 
       const ld = getLanguageDetails(lang);
@@ -960,13 +535,11 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
       for (let b = 0; b < totalBatches; b++) {
         setTranslationState("running");
 
-        // Pause loop
         while ((translationStateRef.current as string) === "paused") {
           setAiStatus(`Translation Paused (Part ${b + 1}/${totalBatches})`);
           await new Promise((resolve) => setTimeout(resolve, 300));
         }
 
-        // Cancel check
         if ((translationStateRef.current as string) === "cancelled") {
           setAiStatus("Translation Cancelled.");
           setTimeout(() => setAiStatus(null), 3000);
@@ -998,7 +571,6 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
           break;
         }
 
-        // Sync batch update to target document/script
         const resLines = translatedBatchText.split(/\r?\n/);
         batchIndices.forEach((lineIdx, i) => {
           const item = analyzedLines[lineIdx];
@@ -1029,21 +601,99 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
     }
   };
 
+  const handleHighlightScene = (colorName: string, closeMenu: () => void) => {
+    const v = viewRef.current;
+    if (!v || !currentSceneLine) return;
+    const { index } = currentSceneLine;
+    const lineObj = v.state.doc.line(index + 1);
+    const originalText = lineObj.text;
+    const supportedColors = ["blue", "brown", "cyan", "green", "magenta", "orange", "pink", "purple", "red", "yellow"];
+    let newText = originalText.replace(/\s*\[\[color\s+[#\w]+\]\]/gi, "");
+    const colorRegex = new RegExp(`\\s*\\[\\[(${supportedColors.join("|")}|#[0-9a-fA-F]{6})\\]\\]`, "gi");
+    newText = newText.replace(colorRegex, "");
+    if (colorName !== "none") {
+      newText = `${newText.trimEnd()} [[${colorName}]]`;
+    }
+    v.dispatch({
+      changes: { from: lineObj.from, to: lineObj.to, insert: newText }
+    });
+    closeMenu();
+  };
+
+  const handleDropMarkerWithColor = async (colorName: string, snap: MenuSelectionSnap | null, closeMenu: () => void) => {
+    const v = viewRef.current;
+    if (!v) return;
+    const from = snap ? snap.from : v.state.selection.main.from;
+    const to = snap ? snap.to : v.state.selection.main.to;
+    const defaultDesc = snap ? snap.text : "";
+    closeMenu();
+    const desc = await showPrompt({
+      title: "Drop Marker",
+      message: `Enter ${colorName} marker description:`,
+      defaultValue: defaultDesc
+    });
+    if (desc !== null) {
+      const markerText = colorName === "none" ? `[[marker: ${desc.trim()}]]` : `[[marker ${colorName}: ${desc.trim()}]]`;
+      v.dispatch({
+        changes: { from, to, insert: markerText },
+        selection: { anchor: from + markerText.length }
+      });
+    }
+  };
+
+  const extraContextMenuItems = (snap: MenuSelectionSnap | null, hasSel: boolean, closeMenu: () => void): ContextMenuItem[] => {
+    const isSceneLine = currentSceneLine !== null;
+
+    const museItems: ContextMenuItemDef[] = hasSel
+      ? [
+          { label: "Look up", action: () => handlePromptAction("lookup", snap, closeMenu) },
+          { label: "Synonyms", action: () => handlePromptAction("synonyms", snap, closeMenu) },
+          {
+            label: "Rephrase",
+            children: promptConfig.rephrasePresets.map((preset) => ({
+              label: preset.name || "Untitled",
+              enabled: !!preset.prompt.trim(),
+              action: () => handleRephraseClick(preset.prompt, snap, closeMenu),
+            })),
+          },
+          {
+            label: "Translate",
+            children: promptConfig.translateLanguages.map((lang) => ({
+              label: lang,
+              enabled: translatingLang !== lang,
+              action: () => handleTranslateClick(lang, snap, closeMenu),
+            })),
+          },
+        ]
+      : [{
+          label: "Translate Whole Script",
+          children: promptConfig.translateLanguages.map((lang) => ({
+            label: lang,
+            enabled: translatingLang !== lang,
+            action: () => handleTranslateWholeDocument(lang, closeMenu),
+          })),
+        }];
+
+    return [
+      { label: "Muse", children: museItems },
+      "separator",
+      {
+        label: "Highlight Scene",
+        enabled: isSceneLine,
+        children: HIGHLIGHT_COLORS.map((col) => ({ label: col.label, action: () => handleHighlightScene(col.key, closeMenu) })),
+      },
+      {
+        label: "Drop Marker",
+        children: MARKER_COLORS.map((col) => ({ label: col.label, action: () => handleDropMarkerWithColor(col.key, snap, closeMenu) })),
+      },
+    ];
+  };
+
   return (
-    <div 
-      className={`editor-font-wrapper ${fontFamily}`} 
-      style={{ display: "flex", flex: 1, minHeight: "100%", flexDirection: "column" }}
-      onMouseDown={handleMouseDown}
-      onContextMenu={handleContextMenu}
-    >
-      <div ref={containerRef} style={{ flex: 1, minHeight: "100%", cursor: "text" }} onClick={() => viewRef.current?.focus()} />
-      <ContextMenu
-        open={contextMenu !== null}
-        x={contextMenu?.x ?? 0}
-        y={contextMenu?.y ?? 0}
-        items={contextMenu?.items ?? []}
-        onClose={closeContextMenu}
-      />
-    </div>
+    <CoreEditor
+      containerRef={containerRef}
+      viewRef={viewRef}
+      extraContextMenuItems={extraContextMenuItems}
+    />
   );
 });
