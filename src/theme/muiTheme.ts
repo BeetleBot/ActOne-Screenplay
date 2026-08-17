@@ -51,7 +51,7 @@ export const ADAPTIVE_THEME_META: Record<string, {
   },
   "catppuccin-adaptive": {
     label: "Catppuccin Adaptive",
-    splitLightBg: "#ccd0da",
+    splitLightBg: "#e6e9ef",
     splitLightDot: "#8839ef",
     splitDarkBg: "#181825",
     splitDarkDot: "#cba6f7",
@@ -80,21 +80,21 @@ export function deriveAllColors(colors: {
   accent: string;
   sidebar: string;
   button: string;
-}, isDark: boolean): ThemeColors {
+}, isDark: boolean, overrides?: Partial<Pick<ThemeColors, 'border' | 'textSecondary' | 'dropdown' | 'dropdownText' | 'selectionBg' | 'selectionText'>>): ThemeColors {
   return {
     editor: colors.editor,
     text: colors.text,
     accent: colors.accent,
     sidebar: colors.sidebar,
     button: colors.button,
-    selectionText: colors.text,
-    selectionBg: isDark
+    selectionText: overrides?.selectionText ?? colors.text,
+    selectionBg: overrides?.selectionBg ?? (isDark
       ? `rgba(${hexToRgbStr(colors.accent)}, 0.25)`
-      : `rgba(${hexToRgbStr(colors.accent)}, 0.20)`,
-    dropdown: colors.sidebar,
-    dropdownText: colors.text,
-    border: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
-    textSecondary: isDark ? 'rgba(255,255,255,0.54)' : 'rgba(0,0,0,0.54)',
+      : `rgba(${hexToRgbStr(colors.accent)}, 0.20)`),
+    dropdown: overrides?.dropdown ?? colors.sidebar,
+    dropdownText: overrides?.dropdownText ?? colors.text,
+    border: overrides?.border ?? (isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)'),
+    textSecondary: overrides?.textSecondary ?? (isDark ? 'rgba(255,255,255,0.54)' : 'rgba(0,0,0,0.54)'),
   };
 }
 
@@ -137,9 +137,12 @@ export const themes: ThemeConfig[] = [
       editor: "#eff1f5",
       text: "#4c4f69",
       accent: "#8839ef",
-      sidebar: "#ccd0da",
+      sidebar: "#e6e9ef",
       button: "#8839ef",
-    }, false),
+    }, false, {
+      border: "#bcc0cc",
+      textSecondary: "#6c6f85",
+    }),
   },
   {
     id: "catppuccin-mocha",
@@ -370,6 +373,8 @@ function hexToRgbStr(hex: string): string {
 
 function getEditorVars(t: ThemeConfig, appScale: number, fountainColorsEnabled: boolean = true) {
   const c = t.colors;
+  const isCatppuccinLatte = t.id === 'catppuccin-latte';
+  const isCatppuccinMocha = t.id === 'catppuccin-mocha';
   const cursorColor = t.isDark ? "%23FFFFFF" : "%23000000";
   const mouseCursorSvg = `url('data:image/svg+xml;utf8,<svg width="22" height="22" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill="${cursorColor}" d="M5 2a.5.5 0 0 1 .5-.5c.862 0 1.573.287 2.06.566.174.099.321.198.44.286.119-.088.266-.187.44-.286A4.165 4.165 0 0 1 10.5 1.5a.5.5 0 0 1 0 1c-.638 0-1.177.213-1.564.434a3.49 3.49 0 0 0-.436.294V7.5H9a.5.5 0 0 1 0 1h-.5v4.272c.1.08.248.187.436.294.387.221.926.434 1.564.434a.5.5 0 0 1 0 1 4.165 4.165 0 0 1-2.06-.566A4.561 4.561 0 0 1 8 13.65a4.561 4.561 0 0 1-.44.285 4.165 4.165 0 0 1-2.06.566.5.5 0 0 1 0-1c.638 0 1.177-.213 1.564-.434.188-.107.335-.214.436-.294V8.5H7a.5.5 0 0 1 0-1h.5V3.228a3.49 3.49 0 0 0-.436-.294A3.166 3.166 0 0 0 5.5 2.5.5.5 0 0 1 5 2zm3.352 1.355zm-.704 9.29z"/></svg>') 11 11, text`;
   return {
@@ -402,37 +407,37 @@ function getEditorVars(t: ThemeConfig, appScale: number, fountainColorsEnabled: 
     '--editor-cursor': c.text,
     '--editor-mouse-cursor': mouseCursorSvg,
 
-    '--scene-color-blue': '#2196f3',
-    '--scene-color-brown': '#795548',
-    '--scene-color-cyan': '#00bcd4',
-    '--scene-color-green': '#4caf50',
-    '--scene-color-magenta': '#e91e63',
-    '--scene-color-orange': '#ff9800',
-    '--scene-color-pink': '#e91e63',
-    '--scene-color-purple': '#9c27b0',
-    '--scene-color-red': '#f44336',
-    '--scene-color-yellow': '#ffeb3b',
+    '--scene-color-blue': isCatppuccinLatte ? '#1e66f5' : isCatppuccinMocha ? '#89b4fa' : '#2196f3',
+    '--scene-color-brown': isCatppuccinLatte ? '#dd7878' : isCatppuccinMocha ? '#f2cdcd' : '#795548',
+    '--scene-color-cyan': isCatppuccinLatte ? '#04a5e5' : isCatppuccinMocha ? '#89dceb' : '#00bcd4',
+    '--scene-color-green': isCatppuccinLatte ? '#40a02b' : isCatppuccinMocha ? '#a6e3a1' : '#4caf50',
+    '--scene-color-magenta': isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#e91e63',
+    '--scene-color-orange': isCatppuccinLatte ? '#fe640b' : isCatppuccinMocha ? '#fab387' : '#ff9800',
+    '--scene-color-pink': isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#e91e63',
+    '--scene-color-purple': isCatppuccinLatte ? '#8839ef' : isCatppuccinMocha ? '#cba6f7' : '#9c27b0',
+    '--scene-color-red': isCatppuccinLatte ? '#d20f39' : isCatppuccinMocha ? '#f38ba8' : '#f44336',
+    '--scene-color-yellow': isCatppuccinLatte ? '#df8e1d' : isCatppuccinMocha ? '#f9e2af' : '#ffeb3b',
 
-    '--cat-cast': '#00bcd4',
-    '--cat-prop': '#ff9800',
-    '--cat-vfx': '#9c27b0',
-    '--cat-sfx': '#795548',
-    '--cat-camera': '#00ffcc',
-    '--cat-animal': '#ffeb3b',
-    '--cat-extras': '#e91e63',
-    '--cat-vehicle': '#008080',
-    '--cat-costume': '#ffc0cb',
-    '--cat-makeup': '#4caf50',
-    '--cat-music': '#808000',
-    '--cat-sound': '#ff6666',
-    '--cat-stunt': '#2196f3',
-    '--cat-setDesign': '#daa520',
-    '--cat-other': '#9e9e9e',
+    '--cat-cast': isCatppuccinLatte ? '#04a5e5' : isCatppuccinMocha ? '#89dceb' : '#00bcd4',
+    '--cat-prop': isCatppuccinLatte ? '#fe640b' : isCatppuccinMocha ? '#fab387' : '#ff9800',
+    '--cat-vfx': isCatppuccinLatte ? '#8839ef' : isCatppuccinMocha ? '#cba6f7' : '#9c27b0',
+    '--cat-sfx': isCatppuccinLatte ? '#dd7878' : isCatppuccinMocha ? '#f2cdcd' : '#795548',
+    '--cat-camera': isCatppuccinLatte ? '#179299' : isCatppuccinMocha ? '#94e2d5' : '#00ffcc',
+    '--cat-animal': isCatppuccinLatte ? '#df8e1d' : isCatppuccinMocha ? '#f9e2af' : '#ffeb3b',
+    '--cat-extras': isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#e91e63',
+    '--cat-vehicle': isCatppuccinLatte ? '#209fb5' : isCatppuccinMocha ? '#74c7ec' : '#008080',
+    '--cat-costume': isCatppuccinLatte ? '#7287fd' : isCatppuccinMocha ? '#b4befe' : '#ffc0cb',
+    '--cat-makeup': isCatppuccinLatte ? '#40a02b' : isCatppuccinMocha ? '#a6e3a1' : '#4caf50',
+    '--cat-music': isCatppuccinLatte ? '#df8e1d' : isCatppuccinMocha ? '#f9e2af' : '#808000',
+    '--cat-sound': isCatppuccinLatte ? '#d20f39' : isCatppuccinMocha ? '#f38ba8' : '#ff6666',
+    '--cat-stunt': isCatppuccinLatte ? '#1e66f5' : isCatppuccinMocha ? '#89b4fa' : '#2196f3',
+    '--cat-setDesign': isCatppuccinLatte ? '#fe640b' : isCatppuccinMocha ? '#fab387' : '#daa520',
+    '--cat-other': isCatppuccinLatte ? '#9ca0b0' : isCatppuccinMocha ? '#9399b2' : '#9e9e9e',
 
-    '--gender-male': '#0081ef',
-    '--gender-female': '#fa6fc1',
-    '--gender-nonbinary': '#b520da',
-    '--gender-unknown': '#969696',
+    '--gender-male': isCatppuccinLatte ? '#1e66f5' : isCatppuccinMocha ? '#89b4fa' : '#0081ef',
+    '--gender-female': isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#fa6fc1',
+    '--gender-nonbinary': isCatppuccinLatte ? '#8839ef' : isCatppuccinMocha ? '#cba6f7' : '#b520da',
+    '--gender-unknown': isCatppuccinLatte ? '#9ca0b0' : isCatppuccinMocha ? '#9399b2' : '#969696',
   };
 }
 
