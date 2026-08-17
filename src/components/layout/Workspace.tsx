@@ -5,7 +5,7 @@ import Paper from "@mui/material/Paper";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
-import { FountainEditor } from "../FountainEditor";
+import { ScriptEditor } from "../ScriptEditor";
 import { AmbientPanel } from "../AmbientPanel";
 import { MusePanel } from "../MusePanel";
 import Button from "@mui/material/Button";
@@ -253,7 +253,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 transition: 'zoom var(--duration-slow) var(--easing-standard)',
               }}
             >
-              <ErrorBoundary name="editor"><FountainEditor /></ErrorBoundary>
+              <ErrorBoundary name="editor"><ScriptEditor /></ErrorBoundary>
             </Box>
           </Box>
         )}

@@ -2,6 +2,7 @@ import React from "react";
 import { UIProvider } from "./UIContext";
 import { FileProvider } from "./FileContext";
 import { EditorProvider } from "./EditorContext";
+import { ScriptEditorProvider } from "./ScriptEditorContext";
 import { CursorProvider } from "./CursorContext";
 import { ParkingProvider } from "./ParkingContext";
 import { CustomModalProvider } from "./CustomModalContext";
@@ -14,11 +15,13 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children
         <FileProvider>
           <SnapshotProvider>
             <EditorProvider>
-              <CursorProvider>
-                <ParkingProvider>
-                  {children}
-                </ParkingProvider>
-              </CursorProvider>
+              <ScriptEditorProvider>
+                <CursorProvider>
+                  <ParkingProvider>
+                    {children}
+                  </ParkingProvider>
+                </CursorProvider>
+              </ScriptEditorProvider>
             </EditorProvider>
           </SnapshotProvider>
         </FileProvider>

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, UIEvent, useMemo } from "reac
 import { Box, Typography, IconButton, Menu, MenuItem, ListItemText, Divider, Tooltip } from "@mui/material";
 import { usePromptConfig, setPromptConfigField, fetchModels } from "../hooks/usePromptConfig";
 import { useAIChat } from "../hooks/useAIChat";
-import { useFile, useEditor, useCursor } from "../context";
+import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
 import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon, RestartAltIcon } from "./Icons";
 import { AIChatMessage } from "./ai/AIChatMessage";
 import { AIChatComposer } from "./ai/AIChatComposer";
@@ -28,7 +28,8 @@ function formatRelativeDate(timestamp: number): string {
 
 export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
   const { parsedDoc, filePath, activeFileId, updateSettings, scriptFileName } = useFile();
-  const { replaceSceneText, scrollToLine, editorView } = useEditor();
+  const { scrollToLine, editorView } = useEditor();
+  const { replaceSceneText } = useScriptEditor();
   const { activeLineNumber } = useCursor();
   const promptConfig = usePromptConfig();
 

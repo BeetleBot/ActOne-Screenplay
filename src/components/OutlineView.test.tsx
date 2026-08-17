@@ -16,6 +16,8 @@ vi.mock("../context", () => ({
   }),
   useEditor: () => ({
     scrollToLine: mockScrollToLine,
+  }),
+  useScriptEditor: () => ({
     reorderScenes: mockReorderScenes,
   }),
   useCursor: () => ({

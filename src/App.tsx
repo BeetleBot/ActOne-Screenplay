@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@mui/material";
-import { AppProviders, useFile, useUI, useEditor, ThemeProvider, SprintProvider, useCustomModal } from "./context";
+import { AppProviders, useFile, useUI, useEditor, useScriptEditor, ThemeProvider, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
 import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialsWindow } from "./components";
 import { logger } from "./utils/logger";
@@ -187,7 +187,8 @@ function AppInner() {
     togglePalette
   } = useModals();
 
-  const { editorView, updateSettings, scrollToScene } = useEditor();
+  const { editorView, updateSettings } = useEditor();
+  const { scrollToScene } = useScriptEditor();
   const {
     zoomLevel,
     setZoomLevel,

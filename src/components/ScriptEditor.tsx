@@ -40,7 +40,7 @@ const MARKER_COLORS = [
   { key: "none", label: "Default (Orange)", color: "var(--cat-other)" }
 ];
 
-export const FountainEditor = React.memo(() => {
+export const ScriptEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { fontFamily, setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, registerTranslationAbort, spellcheckEnabled } = useUI();
   const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>(translationState);

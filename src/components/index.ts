@@ -4,7 +4,7 @@ export { AboutModal } from './AboutModal';
 export { ErrorBoundary } from './ErrorBoundary';
 export { CrashScreen } from './CrashScreen';
 export { ExportModal } from './ExportModal';
-export { FountainEditor } from './FountainEditor';
+export { ScriptEditor } from './ScriptEditor';
 export { MarkerView } from './MarkerView';
 export { ModalManager } from './ModalManager';
 export type { ModalManagerProps } from './ModalManager';

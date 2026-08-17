@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useFile, useEditor, useCursor } from "../context";
+import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
 import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon, InfoOutlinedIcon } from "./Icons";
@@ -108,7 +108,8 @@ export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
 
 export const OutlineView = React.memo(() => {
   const { parsedDoc } = useFile();
-  const { scrollToLine, reorderScenes } = useEditor();
+  const { scrollToLine } = useEditor();
+  const { reorderScenes } = useScriptEditor();
   const { activeLineNumber, setSelectedSceneId } = useCursor();
 
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});

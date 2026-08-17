@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useFile, useEditor, useUI } from "../context";
+import { useFile, useEditor, useScriptEditor, useUI } from "../context";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
 import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon } from "./Icons";
@@ -108,11 +108,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     importAsActoneProject,
   } = useFile();
 
-  const {
-    autoAddSceneNumbers,
-    clearSceneNumbers,
-    editorView,
-  } = useEditor();
+  const { editorView } = useEditor();
+  const { autoAddSceneNumbers, clearSceneNumbers } = useScriptEditor();
 
   const {
     typewriterMode,
