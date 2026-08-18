@@ -498,9 +498,37 @@ Panels that require the .actone bundle are hidden for plain \`.fountain\` files.
     id: "notepad",
     title: "Document Notepad",
     category: "Workspace & Views",
-    tags: ["notepad", "notes", "brainstorm", "outline"],
-    relatedIds: ["sidebar-panels", "actone-bundle"],
-    content: `A freeform text area in the sidebar (Activity Bar → note-with-plus icon) for jotting down outline notes, beat sheets, character ideas, or draft goals. Content persists inside .actone bundles. The Notepad tab is hidden (not shown with a banner) for plain \`.fountain\` files — save as a bundle via <kbd>Ctrl+Shift+S</kbd> to unlock it.`,
+    tags: ["notepad", "notes", "brainstorm", "outline", "markdown", "prose"],
+    relatedIds: ["prose-markdown-editor", "sidebar-panels", "actone-bundle"],
+    content: `A rich Markdown & Prose text area in the sidebar (Activity Bar → note-with-plus icon) for jotting down outline notes, beat sheets, character ideas, or draft goals. Features real-time Markdown inline preview, stepped blockquote indicator bars, and smart list indentation. Content persists inside \`.actone\` bundles. The Notepad tab is hidden for plain \`.fountain\` files — save as a bundle via <kbd>Ctrl+Shift+S</kbd> to unlock it.`,
+  },
+  {
+    id: "prose-markdown-editor",
+    title: "Prose & Markdown Editing",
+    category: "Workspace & Views",
+    tags: ["prose", "markdown", "lists", "blockquotes", "formatting", "indentation", "notes"],
+    relatedIds: ["notepad", "inline-formatting"],
+    content: `ActOne's Prose & Markdown editor provides an intuitive, formatted Markdown editing experience with live inline decorations:
+
+### Always-Visible Syntax Highlighting
+Markdown syntax characters remain clearly visible and styled with subtle contrasting colors:
+- **Headers**: \`# Header 1\`, \`## Header 2\`, \`### Header 3\`
+- **Emphasis**: \`**bold**\`, \`*italic*\`, \`~~strikethrough~~\`
+- **Code**: \`\`inline code\`\`
+- **Links**: \`[Link Text](https://example.com)\`
+
+### Stepped Blockquote Left Rail
+- Typing \`>\`, \`>>\`, or \`>>>\` generates a solid stepped colored indicator bar on the left.
+- Each nesting level precisely matches the width of the \`>\` syntax markers (\`1ch\` per depth level), with the \`>\` markers embedded cleanly inside the rail.
+- **Smart Nesting**: Typing \`>\` on an empty blockquote line automatically collapses spaces and groups the arrows together (\`>> \`, \`>>> \`).
+- **Enter Continuation**: Pressing <kbd>Enter</kbd> maintains the current blockquote depth. Pressing <kbd>Enter</kbd> on an empty blockquote line (or double-Enter) clears the prefix and exits to a fresh line.
+
+### Lists & Smart Indentation
+- **Unordered Lists**: Type \`- \`, \`* \`, or \`+ \` to start a bulleted list.
+- **Ordered Lists**: Type \`1. \` to start a numbered list.
+- **Tab to Sub-Item**: Pressing <kbd>Tab</kbd> indents the list item by 2 spaces and starts a sub-item (automatically resetting numbered sub-items to start at \`1.\`).
+- **Shift-Tab / Enter to Parent Item**: Pressing <kbd>Shift-Tab</kbd> or pressing <kbd>Enter</kbd> on an empty sub-item un-indents back to the parent level and restores sequential numbering (e.g. continuing from \`2. Second item\` to \`3. Third item\`).
+- **Blockquote Nesting via Tab**: Pressing <kbd>Tab</kbd> inside a blockquote increases depth (\`>\` → \`>>\`), while <kbd>Shift-Tab</kbd> decreases depth.`,
   },
   {
     id: "xray-character-data",

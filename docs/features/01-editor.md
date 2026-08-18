@@ -111,3 +111,15 @@ When a project has no scripts open, the Fountain editor is replaced by the **Lan
 - Displays a clean prompt: *"Act One, Scene One. / Every screenplay starts here. Create your first script to begin writing."*
 - Features a **"Create a new script"** button that prompts for the script title and instantly opens the editor.
 - The sidebar feature tabs and Muse AI assistant are disabled until a script is created.
+
+### Prose & Markdown Editor (Notepad & Scratchpad)
+
+ActOne includes a rich Markdown & Prose editor with real-time inline decorations and smart typing mechanics:
+
+- **Visible Syntax Highlighting**: Formatting symbols (`#`, `**`, `*`, `~~`, `` ` ``, `[ ]()`) stay visible with syntax color styling.
+- **Stepped Blockquote Rails**: Leading `>` characters render a solid, stepped colored indicator bar sized at `1ch` per depth level, with the `>` markers embedded inside the rail.
+- **Smart Nesting**: Typing `>` on an empty blockquote line automatically collapses trailing whitespace to keep quote markers grouped (`>> `, `>>> `).
+- **Tab / Shift-Tab Indentation**:
+  - **Blockquotes**: Pressing `Tab` increases nesting depth (`>` → `>>`); `Shift-Tab` decreases depth.
+  - **Lists**: Pressing `Tab` indents list items by 2 spaces and starts sub-items (resetting ordered sub-items to start at `1.`).
+  - **Sequential Re-numbering**: Pressing `Shift-Tab` or `Enter` on an empty sub-item un-indents back to the parent level and restores continuous numbering (e.g. continuing from `2. Second item` to `3. Third item`).

@@ -118,3 +118,12 @@ Fixed a selection bug where holding Shift and clicking down selected text all th
 ### 3. Click Coordinate & Jumping Calibrations
 Fixed an alignment bug where clicking on Line 3 mapped the cursor to Line 2 (and clicking on Line 2 fell on Line 1). This occurred due to padding and line-height offsets in the CSS layer. By matching the logical line height precisely with the DOM element heights inside `index.css` and aligning margins inside the editor's scroll-wrapper, click mappings now align perfectly on target lines.
 
+## Prose & Markdown Editor (`inline-preview.ts`)
+
+Located at `src/editor/markdown/inline-preview.ts` (~1050 lines) with accompanying styles in `src/prose-editor.css`. Provides a rich live-preview Markdown editing experience:
+
+- **Visible Syntax Highlighting**: Unlike pure previewers that hide markdown tokens, all syntax markers (`#`, `**`, `*`, `~~`, `` ` ``, `[ ]()`, `>`) remain visible and are decorated with subtle syntax classes (`.cm-prose-*-mark`).
+- **Stepped Blockquote Rails**: Traverses blockquote AST nodes and applies depth classes (`.cm-prose-blockquote-depth-0` through `depth-7`). The solid left rail width scales with character depth (`1ch`, `2ch`, etc.), embedding the `>` tokens directly inside the bar.
+- **Smart Blockquote Continuation**: `handleBlockquoteEnter` preserves nesting levels and exits to a clean line on double-Enter. `blockquoteInputHandler` collapses intermediate spaces when typing `>` on an empty quote prefix.
+- **List & Quote Indentation**: `handleMarkdownTab` and `handleMarkdownShiftTab` handle `Tab` / `Shift-Tab` key events to nest/un-nest blockquotes and list items, with `getNextOrderedListNumber` dynamically resolving sequential parent numbers.
+
