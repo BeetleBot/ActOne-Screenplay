@@ -61,17 +61,32 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     else { setActiveTab(tab); setIsSidebarOpen(true); }
   };
 
+  const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
+  const isProse = activeScript?.type === "markdown" ||
+    activeScript?.fileName?.endsWith(".md") ||
+    activeScript?.fileName?.endsWith(".markdown") ||
+    activeFile?.filePath?.endsWith(".md") ||
+    activeFile?.filePath?.endsWith(".markdown");
+
   const allTabs = [
-    { id: "outline", icon: <ViewAgendaIcon sx={{ fontSize: 20 }} />, title: "Outline" },
-    { id: "scripts", icon: <FolderSimplePlusIcon sx={{ fontSize: 20 }} />, title: "Scripts" },
+    { id: "outline", icon: <ViewAgendaIcon sx={{ fontSize: 20 }} />, title: "Outline", scriptOnly: true },
+    { id: "scripts", icon: <FolderSimplePlusIcon sx={{ fontSize: 20 }} />, title: "Project" },
     { id: "notepad", icon: <AddNotesIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
-    { id: "markers", icon: <BeenhereIcon sx={{ fontSize: 20 }} />, title: "Markers" },
+    { id: "markers", icon: <BeenhereIcon sx={{ fontSize: 20 }} />, title: "Markers", scriptOnly: true },
     { id: "todo", icon: <AssignmentAddIcon sx={{ fontSize: 20 }} />, title: "Tasks" },
     { id: "snapshots", icon: <CameraIcon sx={{ fontSize: 20 }} />, title: "Snapshots" },
-    { id: "sprint", icon: <TimerIcon sx={{ fontSize: 20 }} />, title: "Sprint" },
-    { id: "parking", icon: <GarageIcon sx={{ fontSize: 20 }} />, title: "Parking" },
+    { id: "sprint", icon: <TimerIcon sx={{ fontSize: 20 }} />, title: "Sprint", scriptOnly: true },
+    { id: "parking", icon: <GarageIcon sx={{ fontSize: 20 }} />, title: "Parking", scriptOnly: true },
   ];
-  const tabs = supportsExtended ? allTabs : allTabs.filter(t => t.id === "outline");
+
+  const availableTabs = allTabs.filter(t => !isProse || !t.scriptOnly);
+  const tabs = supportsExtended ? availableTabs : availableTabs.filter(t => t.id === "outline" || t.id === "scripts");
+
+  React.useEffect(() => {
+    if (isProse && (activeTab === "outline" || activeTab === "markers" || activeTab === "sprint" || activeTab === "parking")) {
+      setActiveTab("scripts");
+    }
+  }, [isProse, activeTab, setActiveTab]);
 
   return (
     <Box
@@ -291,30 +306,34 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
               <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Typewriter Mode</Typography>} />
             </MenuItem>
 
-            <MenuItem onClick={() => setHideSyntaxEnabled(!hideSyntaxEnabled)} dense sx={{ py: 0.25, px: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 28 }}>
-                <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {hideSyntaxEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
-                </Box>
-              </ListItemIcon>
-              <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Hide Fountain Markup</Typography>} />
-            </MenuItem>
+            {!isProse && (
+              <>
+                <MenuItem onClick={() => setHideSyntaxEnabled(!hideSyntaxEnabled)} dense sx={{ py: 0.25, px: 1.5 }}>
+                  <ListItemIcon sx={{ minWidth: 28 }}>
+                    <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {hideSyntaxEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
+                    </Box>
+                  </ListItemIcon>
+                  <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Hide Fountain Markup</Typography>} />
+                </MenuItem>
 
-            <MenuItem onClick={() => setFountainColorsEnabled(!fountainColorsEnabled)} dense sx={{ py: 0.25, px: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 28 }}>
-                <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {fountainColorsEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
-                </Box>
-              </ListItemIcon>
-              <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Syntax Colors</Typography>} />
-            </MenuItem>
+                <MenuItem onClick={() => setFountainColorsEnabled(!fountainColorsEnabled)} dense sx={{ py: 0.25, px: 1.5 }}>
+                  <ListItemIcon sx={{ minWidth: 28 }}>
+                    <Box sx={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {fountainColorsEnabled ? <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} /> : null}
+                    </Box>
+                  </ListItemIcon>
+                  <ListItemText primary={<Typography variant="body2" sx={{ fontSize: '0.8rem' }}>Syntax Colors</Typography>} />
+                </MenuItem>
+              </>
+            )}
           </>
         )}
 
         {collapsedSections.has('editor') && (
           <Box sx={{ px: 2, py: 0.6 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-              {[typewriterMode && 'Typewriter', hideSyntaxEnabled && 'Markup hidden', fountainColorsEnabled && 'Colors'].filter(Boolean).join(' • ') || 'All off'}
+              {[typewriterMode && 'Typewriter', !isProse && hideSyntaxEnabled && 'Markup hidden', !isProse && fountainColorsEnabled && 'Colors'].filter(Boolean).join(' • ') || 'All off'}
             </Typography>
           </Box>
         )}

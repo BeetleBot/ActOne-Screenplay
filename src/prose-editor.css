@@ -1,0 +1,757 @@
+/*
+ * @prose/editor — inline live-preview styles.
+ *
+ * Every rule below sets font-size / weight / decoration purely by CSS
+ * class, and does NOT depend on cursor state. Line heights therefore
+ * stay constant whether the line is "active" (syntax tokens visible)
+ * or "inactive" (tokens hidden by the inline-preview extension's
+ * replace-decorations) — that's what eliminates the layout-shift
+ * problem from widget-replacement approaches.
+ *
+ * Vertical-rhythm rules use `padding` on .cm-line, not `margin`. CM6
+ * measures each line's bounding-box height for virtualization;
+ * padding is inside the box (measured), margin is outside (not
+ * measured), so only padding yields the reader's spacing without
+ * confusing CM6.
+ *
+ * Theming contract: every color / font / size token below reads from
+ * a `--prose-editor-*` custom property with an inline fallback. The
+ * defaults target a dark background; override the prefixed vars on
+ * any ancestor of the editor to theme it for your app.
+ */
+
+/* Root container — fills its parent so the CM6 scroller can take over
+ * scrolling behavior. Previously relied on Tailwind `h-full w-full`
+ * applied in the React layer, which only worked for consumers who had
+ * Tailwind configured. Baking the sizing into the package means
+ * dropping the editor into any height-bounded parent just works. */
+.prose-cm-editor {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+/* Content container — constrain to a comfortable reading width. This
+ * is where the prose feel mostly comes from: line length in the
+ * 60–75ch range is what lets the eye sweep naturally. The full editor
+ * frame can still be wide (for search UI, sidebars, etc.) — only the
+ * text column is narrowed. */
+.prose-cm-editor .cm-content {
+  max-width: var(--prose-editor-measure, 70ch);
+  margin-inline: auto;
+  padding-inline: 0.5rem;
+  font-family: var(--prose-editor-font, var(--font-editor, monospace));
+  font-size: var(--prose-editor-body-size, 1.0625rem);
+  line-height: var(--prose-editor-body-leading, 1.7);
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+  text-wrap: pretty;
+}
+
+/* Heading lines. Padding-top (not margin-top) creates the rhythm so
+ * CM6's line-height measurement stays correct.
+ *
+ * These values are intentionally small (≤ 0.2em). Prior values
+ * (0.4em–0.7em) produced a tall visual strip above the heading's
+ * text that belongs to the heading's hit-box but looks identical to
+ * the empty separator line above it. Users would click the visual
+ * "blank space above the heading" and land on the heading by
+ * surprise. The empty markdown line before a heading (which almost
+ * every real doc has) supplies the rest of the rhythm naturally. */
+.cm-line.cm-prose-h1 {
+  font-size: 1.35em;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  padding-top: 0.15em;
+  padding-bottom: 0.1em;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+}
+
+.cm-line.cm-prose-h2 {
+  font-size: 1.2em;
+  font-weight: 700;
+  line-height: 1.35;
+  padding-top: 0.15em;
+  padding-bottom: 0.1em;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+}
+
+.cm-line.cm-prose-h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  line-height: 1.4;
+  padding-top: 0.12em;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+}
+
+.cm-line.cm-prose-h4 {
+  font-size: 1em;
+  font-weight: 600;
+  padding-top: 0.1em;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+}
+
+.cm-line.cm-prose-h5 {
+  font-size: 0.95em;
+  font-weight: 600;
+  padding-top: 0.08em;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+}
+
+.cm-line.cm-prose-h6 {
+  font-size: 0.9em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding-top: 0.08em;
+  color: var(--prose-editor-fg-muted, var(--text-muted, #666666));
+}
+
+/* Blockquote lines — each line in the quote gets a left rail. Putting
+ * the rail on every line means the visual continues for multi-line
+ * quotes even though each line is an independent DOM element. */
+.cm-line.cm-prose-blockquote {
+  padding-left: 0.65rem;
+  margin-left: -0.5rem;
+  border-left: 2.5px solid var(--prose-editor-accent-soft, var(--accent-color, #1976d2));
+  color: var(--prose-editor-fg-muted, var(--text-muted, #666666));
+}
+
+.cm-line.cm-prose-blockquote-depth-1 {
+  margin-left: 0.5rem;
+  padding-left: 0.65rem;
+  border-left: 2.5px solid var(--prose-editor-accent-soft, var(--accent-color, #1976d2));
+}
+
+.cm-line.cm-prose-blockquote-depth-2 {
+  margin-left: 1.5rem;
+  padding-left: 0.65rem;
+  border-left: 2.5px solid var(--prose-editor-accent-soft, var(--accent-color, #1976d2));
+}
+
+.cm-line.cm-prose-blockquote-depth-3 {
+  margin-left: 2.5rem;
+  padding-left: 0.65rem;
+  border-left: 2.5px solid var(--prose-editor-accent-soft, var(--accent-color, #1976d2));
+}
+
+/* Fenced-code lines — subtle backdrop plus a left rail so the block
+ * reads as a contained unit. The rail is an *inset box-shadow*, not a
+ * border, so it adds no width and never perturbs the line-box geometry
+ * CM6 measures for virtualization (a real border would shift the
+ * padding math between active/inactive states). */
+.cm-line.cm-prose-fenced-code {
+  font-family: var(--prose-editor-font-mono, var(--font-editor, monospace));
+  font-size: 0.92em;
+  background: var(--prose-editor-code-bg, color-mix(in srgb, var(--text-main, #1a1a1a) 6%, transparent));
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+/* Inline content marks — applied on the text inside **…**, *…*, `…`,
+ * ~~…~~, [text](url). Styling only; no height changes. */
+.cm-prose-strong {
+  font-weight: 700;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+}
+
+.cm-prose-em {
+  font-style: italic;
+}
+
+.cm-prose-inline-code {
+  font-family: var(--prose-editor-font-mono, var(--font-editor, monospace));
+  font-size: 0.88em;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+  background: var(--prose-editor-code-bg, color-mix(in srgb, var(--text-main, #1a1a1a) 6%, transparent));
+  border-radius: 0.35rem;
+  padding: 0.08em 0.35em;
+  word-break: break-word;
+}
+
+.cm-prose-strike {
+  text-decoration: line-through;
+  color: var(--prose-editor-fg-muted, var(--text-muted, #666666));
+}
+
+/* Delimiter characters for emphasis marks we supplemented manually
+ * (see `supplementMidTypingEmphasis` in inline-preview.ts). Each
+ * class mirrors what an `EmphasisMark` token would pick up through
+ * syntax highlighting when lezer does parse the pattern: faint
+ * color from `processingInstruction`, plus the parent scope's
+ * weight / style / decoration so the delimiter glyph keeps the
+ * same metrics whether lezer recognized the emphasis or not.
+ * Without the matching weight / style, `**` would visibly change
+ * width as the user types through a trailing space. */
+.cm-prose-mark-lead,
+.cm-prose-mark-trail {
+  color: var(--prose-editor-fg-faint, var(--text-muted, #666666));
+  font-weight: 400;
+  user-select: none;
+}
+
+.cm-prose-bullet {
+  color: var(--prose-editor-fg-faint, var(--text-muted, #666666));
+  font-weight: 600;
+  user-select: none;
+}
+
+.cm-prose-ol-num {
+  color: var(--prose-editor-fg-faint, var(--text-muted, #666666));
+  font-weight: 500;
+  user-select: none;
+}
+
+.cm-prose-link {
+  color: var(--prose-editor-link, #818cf8);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  /* No pointer cursor on the link text — the text is editable like
+   * any other content. The pointer cursor is scoped to the trailing
+   * icon below, which is the actual open-in-new-tab affordance. */
+}
+
+.cm-prose-link:hover {
+  color: var(--prose-editor-link-hover, #a5b4fc);
+}
+
+/* External-link icon. In prose it's a `::after` pseudo-element; inside
+ * table cells it's a real `.cm-prose-link-icon` element (a pseudo can't
+ * receive a click, so the in-cell icon wouldn't open the link). Both
+ * share the masked-SVG visual so the color tracks the link color via
+ * `background-color`. */
+.cm-prose-link::after,
+.cm-prose-link-icon {
+  display: inline-block;
+  width: 0.78em;
+  height: 0.78em;
+  margin-left: 0.32em;
+  vertical-align: -0.02em;
+  cursor: pointer;
+  background-color: color-mix(in srgb, var(--prose-editor-link, #818cf8) 82%, white 18%);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cpath d='M10.0002 5H8.2002C7.08009 5 6.51962 5 6.0918 5.21799C5.71547 5.40973 5.40973 5.71547 5.21799 6.0918C5 6.51962 5 7.08009 5 8.2002V15.8002C5 16.9203 5 17.4801 5.21799 17.9079C5.40973 18.2842 5.71547 18.5905 6.0918 18.7822C6.5192 19 7.07899 19 8.19691 19H15.8031C16.921 19 17.48 19 17.9074 18.7822C18.2837 18.5905 18.5905 18.2839 18.7822 17.9076C19 17.4802 19 16.921 19 15.8031V14M20 9V4M20 4H15M20 4L13 11' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cpath d='M10.0002 5H8.2002C7.08009 5 6.51962 5 6.0918 5.21799C5.71547 5.40973 5.40973 5.71547 5.21799 6.0918C5 6.51962 5 7.08009 5 8.2002V15.8002C5 16.9203 5 17.4801 5.21799 17.9079C5.40973 18.2842 5.71547 18.5905 6.0918 18.7822C6.5192 19 7.07899 19 8.19691 19H15.8031C16.921 19 17.48 19 17.9074 18.7822C18.2837 18.5905 18.5905 18.2839 18.7822 17.9076C19 17.4802 19 16.921 19 15.8031V14M20 9V4M20 4H15M20 4L13 11' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  opacity: 0.9;
+}
+
+.cm-prose-link::after {
+  content: "";
+}
+
+/* The real in-cell icon must be clickable but never selectable / part
+ * of caret navigation. */
+.cm-prose-link-icon {
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* In cells the icon is a real element — suppress the pseudo so the icon
+ * doesn't render twice. */
+.cm-prose-table-cell-source .cm-prose-link::after {
+  content: none;
+}
+
+.cm-prose-link:hover::after,
+.cm-prose-link-icon:hover {
+  background-color: color-mix(in srgb, var(--prose-editor-link-hover, #a5b4fc) 84%, white 16%);
+  opacity: 1;
+}
+
+.cm-prose-wiki-link {
+  color: var(--prose-editor-link, #818cf8);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.cm-prose-wiki-link:hover {
+  color: var(--prose-editor-link-hover, #a5b4fc);
+}
+
+.cm-prose-wiki-link-missing,
+.cm-prose-wiki-link-unresolved {
+  color: var(--prose-editor-fg-muted, #888);
+  text-decoration-style: dotted;
+}
+
+.cm-prose-wiki-link-loading {
+  color: var(--prose-editor-fg-muted, #888);
+}
+
+.cm-prose-wiki-link-hidden-syntax {
+  color: transparent;
+  font-size: 0;
+  letter-spacing: 0;
+  user-select: none;
+}
+
+/* Horizontal rule — on inactive lines, the raw `***` / `---` /
+ * `___` characters are hidden by Decoration.replace, and a visual
+ * rule is drawn through the center of the line via a pseudo-element.
+ * The line keeps its natural line-height so height stays stable
+ * between active and inactive states (active shows the raw chars). */
+.cm-line.cm-prose-hr {
+  position: relative;
+}
+
+.cm-line.cm-prose-hr::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid var(--prose-editor-border, #3d3d3d);
+  pointer-events: none;
+}
+
+/* Image block widget — rendered below the source line containing
+ * the `![alt](url)` markdown. Natural image size up to the editor's
+ * content width (`max-width: 100%` of .cm-content, which is the
+ * reading-width column). Smaller images render at their own size,
+ * left-aligned. Aspect ratio preserved by `height: auto`. */
+.cm-prose-image {
+  padding: 0.35em 0;
+}
+
+.cm-prose-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.4em;
+}
+
+/* Bullet widget — replaces the raw `-` / `*` marker on bullet-list
+ * items. Matches the visual weight of a real list marker while
+ * staying in the muted-secondary color so the item text dominates. */
+/* Shared marker alcove — forces bullet, task checkbox, and
+ * ordered-list number into the same fixed horizontal width so the
+ * inline-preview line padding / text-indent math is stable across
+ * list kinds. Width here must match ALCOVE_EM in inline-preview.ts
+ * (`ListMark` branch). Without the fixed width, wrapped-line
+ * indent lands in different places for each kind because the raw
+ * marker widths differ per font. */
+.cm-prose-list-marker {
+  display: inline-block;
+  width: 0.9em;
+  margin-right: 0.3em;
+  text-align: right;
+}
+
+/* GFM task-list checkbox widget — replaces `[ ]` / `[x]` in a task
+ * item. Width matches the list-marker wrapper (0.9em); `margin-right:
+ * 0.3em` adds the breathing room between the checkbox and the item
+ * text. Total footprint = 1.2em, which is what ALCOVE_EM expects in
+ * inline-preview.ts (bullets and checkboxes share the same alcove so
+ * first-line content aligns with wrapped-line content consistently).
+ * The trailing space after `[ ]` in the source is swallowed by the
+ * replace decoration. */
+.cm-prose-task-checkbox {
+  appearance: auto;
+  cursor: pointer;
+  margin-right: 0.5em;
+  vertical-align: -0.1em;
+  accent-color: var(--prose-editor-accent, var(--accent-color, #1976d2));
+}
+
+.cm-prose-task-bracket {
+  color: var(--prose-editor-fg-faint, var(--text-muted, #666666));
+  user-select: none;
+}
+
+/* Whole-line strike for completed task items. */
+.cm-line.cm-prose-task-done {
+  color: var(--prose-editor-fg-faint, #666);
+  text-decoration: line-through;
+}
+
+/* WYSIWYG table block widget — emitted by `tables()` in
+ * table-widget.ts. The Table node's source range is fully replaced
+ * by this rendered `<table>`; users interact with cells directly
+ * via `contenteditable`, with Tab / Shift-Tab moving focus between
+ * cells and Tab past the last cell appending a new row.
+ *
+ * Horizontal scroll on the wrapper so wide tables (common in
+ * RSS-ingested content) don't squish their cells to unreadable
+ * widths on narrow viewports. The inner `<table>` uses
+ * `width: max-content` + `min-width: 100%` so it fills the reading
+ * column when narrow and grows past it (triggering the scrollbar)
+ * when content needs more room. `overscroll-behavior-x: contain`
+ * keeps a horizontal flick from bubbling up and scrolling the
+ * whole editor sideways. */
+/* Table wrapper — horizontal scroll contained here so wide
+ * tables don't push the editor's content box wider than the
+ * viewport. Paired with `.cm-content { min-width: 0 }` in the
+ * theme, which is what actually keeps the content box pinned to
+ * parent width (CM6's base theme sets `min-width: max-content`,
+ * which otherwise lets a wide child expand the whole scroller).
+ * Without that pairing no amount of table-level overflow
+ * constraints would hold — the symptom was the editor briefly
+ * going wider than the viewport on mobile when a wide table
+ * entered the rendered viewport. */
+.cm-prose-table {
+  /* Use padding, not margin, for vertical rhythm around the table.
+   * CM6's heightmap measures block-widget heights via
+   * `getBoundingClientRect`, which EXCLUDES margin but INCLUDES
+   * padding. A `margin: 0.5em 0` here meant the heightmap allocated
+   * less height than the DOM layout flow actually consumed — 1em
+   * (~17px) less on typical font sizes. That drift shifted every
+   * line below the table in CM6's heightmap vs the DOM, so clicks
+   * at a visual Y were routed to the doc line BELOW the one
+   * visually targeted. User-visible symptom: clicking an empty
+   * line above a heading placed the caret on the heading; clicking
+   * text in a task item with the caret on the empty line below
+   * left the caret in place (because the "wrong" line was the same
+   * as the current caret). Padding keeps the bbox honest so CM6's
+   * heightmap matches the DOM. */
+  padding: 0.5em 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cm-prose-table table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  font-family: var(--prose-editor-font, system-ui, sans-serif);
+}
+
+.cm-prose-table th,
+.cm-line.cm-prose-hr {
+  border-top: 1px solid var(--prose-editor-border, var(--border-color, rgba(0, 0, 0, 0.12)));
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.cm-prose-table th,
+.cm-prose-table td {
+  border: 1px solid var(--prose-editor-border, #3d3d3d);
+  padding: 0.35em 0.6em;
+  text-align: left;
+  vertical-align: top;
+  min-width: 2em;
+  min-height: 1.5em;
+}
+
+.cm-prose-table th {
+  font-weight: 700;
+  background: var(--prose-editor-code-bg, color-mix(in srgb, #2d2d2d 88%, black 12%));
+}
+
+/* Native CodeMirror live table line & syntax styling */
+.cm-line.cm-table-header-line {
+  background: color-mix(in srgb, var(--prose-editor-accent, #1976d2) 10%, transparent);
+  font-weight: 600;
+}
+
+.cm-line.cm-table-row-line {
+  background: color-mix(in srgb, var(--text-main, #1a1a1a) 3%, transparent);
+}
+
+.cm-line.cm-table-delim-line {
+  color: var(--prose-editor-fg-faint, rgba(128, 128, 128, 0.4));
+  font-size: 0.85em;
+  letter-spacing: -0.05em;
+}
+
+.cm-table-pipe-syntax {
+  color: var(--prose-editor-fg-faint, rgba(128, 128, 128, 0.45));
+  font-weight: bold;
+}
+
+/* Cells aren't contenteditable themselves; the inner source element
+ * is. Outline the whole cell when focus lands inside so the edit
+ * target reads as "the cell" even though the DOM is split. */
+.cm-prose-table th:focus-within,
+.cm-prose-table td:focus-within {
+  outline: 2px solid var(--prose-editor-accent, #7c3aed);
+  outline-offset: -2px;
+}
+
+/* The editable source inside a cell — always shows the raw markdown
+ * the user types, whether or not the cell also has a rendered image
+ * preview below. Blank outline because the cell's :focus-within
+ * ring is what signals the active edit target. */
+.cm-prose-table-cell-source {
+  outline: none;
+  min-height: 1.2em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Inline-mark delimiters (`**`, `__`, `*`, `_`, `~~`, `[`, `]`, `(`, `)`,
+ * URLs) inside table cells. Hidden by default so the reader sees only
+ * the rendered content — bold text without `**`, link text without
+ * brackets or URL. The delimiters remain in the DOM (so textContent
+ * round-trips to the raw markdown on input) but take zero space and
+ * the caret can't navigate into them.
+ *
+ * When the caret enters a mark wrap, JS adds `active` and the
+ * descendant delimiters reveal — so the user can actually edit them.
+ * Nested marks (bold-containing-italic) all reveal together when any
+ * of them contains the caret, because the JS walks ancestors. */
+.cm-prose-table-cell-source .cm-prose-mark {
+  display: none;
+}
+
+.cm-prose-table-cell-source .cm-prose-strong-wrap.active > .cm-prose-mark,
+.cm-prose-table-cell-source .cm-prose-em-wrap.active > .cm-prose-mark,
+.cm-prose-table-cell-source .cm-prose-strike-wrap.active > .cm-prose-mark,
+.cm-prose-table-cell-source .cm-prose-link-wrap.active > .cm-prose-mark {
+  display: inline;
+  color: var(--prose-editor-fg-faint, #666);
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+}
+
+/* Link URL: monospace hint + size cut so a long URL doesn't dominate
+ * the cell's width once its wrap becomes active. */
+.cm-prose-table-cell-source .cm-prose-link-wrap.active > .cm-prose-link-url {
+  font-family: var(--prose-editor-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.88em;
+}
+
+/* Rendered image preview strip below the source text. Mirrors how
+ * block-level images render outside a table: the `![alt](url)`
+ * markdown is the source of truth, but the user sees the image in
+ * the resting state — the raw markdown only appears when the cell
+ * is focused for editing (see :focus-within rule below). */
+.cm-prose-table-cell-preview {
+  margin-top: 0.35em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+  user-select: none;
+}
+
+/* Mirror the block-image invariant from outside tables: on an
+ * inactive cell, the raw `![alt](url)` markdown hides and only the
+ * rendered image shows. Focus the cell (click or Tab) to bring the
+ * source back so it can be edited.
+ *
+ * We visually hide the source without `display: none` so it stays in
+ * the DOM and remains focusable — Tab nav calls `source.focus()`
+ * explicitly and would silently fail on a display:none element. The
+ * position:absolute + zero-size pattern keeps the element interactive
+ * while taking no visible space. */
+.cm-prose-table th[data-has-image]:not(:focus-within) .cm-prose-table-cell-source,
+.cm-prose-table td[data-has-image]:not(:focus-within) .cm-prose-table-cell-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Inline images inside table cells. Capped so a tall image doesn't
+ * balloon a single row into half the viewport. Users who want larger
+ * in-cell images can do without for now — we'd need Obsidian's
+ * `[[file|width]]` alias syntax to make it controllable. */
+.cm-prose-table-cell-image {
+  display: block;
+  max-width: 14em;
+  max-height: 5em;
+  border-radius: 0.2em;
+  cursor: pointer;
+}
+
+/* Table context menu — right-click a cell to insert / delete rows
+ * and columns. Mounted on document.body so positioning isn't
+ * affected by CM6's overflow scroll. */
+.cm-prose-table-menu {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--prose-editor-bg-panel, var(--bg-app, #ffffff));
+  border: 1px solid var(--prose-editor-border, var(--border-color, rgba(0, 0, 0, 0.12)));
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 0.8125rem;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+  user-select: none;
+}
+
+.cm-prose-table-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cm-prose-table-menu-item:hover {
+  background: var(--prose-editor-bg-surface, #2d2d2d);
+}
+
+.cm-prose-table-menu-sep {
+  height: 1px;
+  margin: 0.25rem 0;
+  background: var(--prose-editor-border, #3d3d3d);
+}
+
+/* Find-in-document panel — single compact row of input + match
+ * counter + prev / next / close icon buttons. Rendered at the top
+ * of the editor by the `search()` extension; DOM built in the
+ * editor component (`defaultSearchPanel`). Styled to match the
+ * rest of the app's control surface: card-toned background,
+ * rounded inputs with an accent focus ring, muted-secondary for
+ * secondary text. */
+.prose-editor-search-panel {
+  padding: 0.5rem 0.6rem;
+  background: var(--prose-editor-bg-panel, #252525);
+  border-bottom: 1px solid var(--prose-editor-border, #3d3d3d);
+  font-family: var(--prose-editor-font, system-ui, sans-serif);
+  color: var(--prose-editor-fg, #dcddde);
+}
+
+.prose-editor-search-panel form {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cm-prose-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.4rem 0.65rem;
+  background: var(--prose-editor-bg-surface, #2d2d2d);
+  border: 1px solid var(--prose-editor-border, #3d3d3d);
+  border-radius: var(--prose-editor-radius, 6px);
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.cm-prose-search-input:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--prose-editor-accent, #7c3aed);
+}
+
+.cm-prose-search-input::placeholder {
+  color: var(--prose-editor-fg-muted, #888);
+}
+
+.cm-prose-tag-hash {
+  color: var(--prose-editor-fg-muted, var(--text-muted, #666666));
+}
+
+.cm-prose-wiki-pipe {
+  color: var(--prose-editor-fg-muted, var(--text-muted, #666666));
+  user-select: none;
+}
+
+.cm-prose-search-count {
+  flex: 0 0 auto;
+  color: var(--prose-editor-fg-muted, #888);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  min-width: 0;
+  user-select: none;
+}
+
+.cm-prose-search-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--prose-editor-radius, 6px);
+  color: var(--prose-editor-fg-muted, #888);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.cm-prose-search-btn:hover {
+  background: var(--prose-editor-bg-surface, #2d2d2d);
+  color: var(--prose-editor-fg, #dcddde);
+}
+
+.cm-prose-search-btn:focus-visible {
+  outline: none;
+  border-color: var(--prose-editor-accent, #7c3aed);
+  color: var(--prose-editor-fg, #dcddde);
+}
+
+.cm-prose-search-btn svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* Highlight matches in the document. Active match gets a stronger
+ * fill; other matches share the same tone in a lighter shade. The
+ * background-color custom properties are pre-mixed in src/index.css
+ * to alpha-blend cleanly over whatever theme backdrop is active. */
+.cm-searchMatch {
+  background: var(--prose-editor-search-bg, rgba(124, 58, 237, 0.28));
+  border-radius: 2px;
+}
+
+.cm-searchMatch-selected {
+  background: var(--prose-editor-search-bg-active, rgba(124, 58, 237, 0.6));
+}
+
+/* Initial reveal highlight — paired with the `initialRevealText` prop
+ * and the `revealText()` imperative method on the editor handle.
+ * Starts at a stronger accent-tinted background, settles to a softer
+ * one, then fades to transparent over ~3.2s so the reader's eye
+ * catches the match on arrival without the highlight lingering.
+ *
+ * Two tokens so consumers can theme either the peak or the settled
+ * state independently of the main search-match colors. */
+.cm-initialRevealMatch {
+  background: var(
+    --prose-editor-initial-reveal-bg,
+    color-mix(in srgb, var(--prose-editor-accent-soft, #a78bfa) 28%, transparent 72%)
+  );
+  border-radius: 0.2rem;
+  animation: prose-initial-reveal-fade 3.2s ease-out forwards;
+}
+
+@keyframes prose-initial-reveal-fade {
+  0% {
+    background: var(
+      --prose-editor-initial-reveal-bg-strong,
+      color-mix(in srgb, var(--prose-editor-accent-soft, #a78bfa) 42%, transparent 58%)
+    );
+  }
+  65% {
+    background: var(
+      --prose-editor-initial-reveal-bg,
+      color-mix(in srgb, var(--prose-editor-accent-soft, #a78bfa) 28%, transparent 72%)
+    );
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* The editor dynamically inherits tokens via CSS variables from the theme engine */
+.cm-prose-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+  margin: 0.5rem 0;
+}

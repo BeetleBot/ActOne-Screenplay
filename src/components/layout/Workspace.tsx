@@ -6,6 +6,7 @@ import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
 import { ScriptEditor } from "../ScriptEditor";
+import { ProseEditor } from "../ProseEditor";
 import { AmbientPanel } from "../AmbientPanel";
 import { MusePanel } from "../MusePanel";
 import Button from "@mui/material/Button";
@@ -30,6 +31,8 @@ export const Workspace = React.memo<WorkspaceProps>(({
 
   const activeFile = files.find(f => f.id === activeFileId);
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
+  const activeScript = activeFile && activeFile.scripts && activeFile.activeScriptIndex !== undefined ? activeFile.scripts[activeFile.activeScriptIndex] : null;
+  const isMarkdown = activeScript?.type === "markdown";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -98,8 +101,8 @@ export const Workspace = React.memo<WorkspaceProps>(({
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
               if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA" && target.tagName !== "SELECT" &&
-                  target.tagName !== "BUTTON" && !target.closest("button") && !target.closest("input") &&
-                  !target.closest("textarea") && !target.closest("select") && target.contentEditable !== "true") {
+                target.tagName !== "BUTTON" && !target.closest("button") && !target.closest("input") &&
+                !target.closest("textarea") && !target.closest("select") && target.contentEditable !== "true") {
                 e.currentTarget.focus();
               }
             }}
@@ -174,12 +177,12 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 </Typography>
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <Button
                   variant="outlined"
                   size="small"
                   startIcon={<AddIcon sx={{ fontSize: 16 }} />}
-                  onClick={() => addScript()}
+                  onClick={() => addScript(undefined, "fountain")}
                   sx={{
                     borderRadius: '6px',
                     textTransform: 'none',
@@ -230,13 +233,69 @@ export const Workspace = React.memo<WorkspaceProps>(({
                     .fountain
                   </Box>
                 </Button>
+
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+                  onClick={() => addScript(undefined, "markdown")}
+                  sx={{
+                    borderRadius: '6px',
+                    textTransform: 'none',
+                    fontSize: '0.825rem',
+                    fontWeight: 500,
+                    pl: 1.75,
+                    pr: 1.25,
+                    py: 0.6,
+                    borderColor: 'divider',
+                    color: 'text.primary',
+                    bgcolor: 'background.paper',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    transition: 'all var(--duration-fast) var(--easing-standard)',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      borderColor: 'text.secondary',
+                      '& .fountain-tag': {
+                        borderColor: 'text.secondary',
+                        bgcolor: 'action.selected',
+                      },
+                    },
+                  }}
+                >
+                  <span>Create a new prose</span>
+                  <Box
+                    component="span"
+                    className="fountain-tag"
+                    sx={{
+                      ml: 0.75,
+                      px: 0.75,
+                      py: 0.15,
+                      borderRadius: '4px',
+                      fontSize: '0.7rem',
+                      fontFamily: '"Courier Prime", monospace',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      bgcolor: 'action.hover',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      lineHeight: 1.4,
+                      letterSpacing: '0.02em',
+                      transition: 'all var(--duration-fast) var(--easing-standard)',
+                    }}
+                  >
+                    .md
+                  </Box>
+                </Button>
               </Box>
             </Box>
           </Box>
         ) : (
-          <Box 
-            id="editor-workspace" 
-            className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`} 
+          <Box
+            id="editor-workspace"
+            className={`editor-scroll-area ${typewriterMode ? 'typewriter-active' : ''}`}
             sx={{ flex: 1, overflow: 'auto' }}
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
@@ -253,7 +312,11 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 transition: 'zoom var(--duration-slow) var(--easing-standard)',
               }}
             >
-              <ErrorBoundary name="editor"><ScriptEditor /></ErrorBoundary>
+              {isMarkdown ? (
+                <ErrorBoundary name="prose-editor"><ProseEditor /></ErrorBoundary>
+              ) : (
+                <ErrorBoundary name="editor"><ScriptEditor /></ErrorBoundary>
+              )}
             </Box>
           </Box>
         )}

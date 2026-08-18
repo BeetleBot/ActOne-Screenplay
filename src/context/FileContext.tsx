@@ -59,8 +59,8 @@ export interface FileContextProps {
   scriptFileName: string;
   isBundle: boolean;
   setActiveScript: (index: number) => void;
-  addScript: (name?: string) => Promise<string | null>;
-  importScript: () => Promise<string | null>;
+  addScript: (name?: string, forceType?: "fountain" | "markdown") => Promise<string | null>;
+  importScript: (type?: "fountain" | "markdown") => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
   duplicateScript: (index: number, name?: string) => Promise<string | null>;
   deleteScript: (index: number) => Promise<boolean>;
@@ -562,6 +562,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (bundle && bundle.scripts && bundle.scripts.length > 0) {
               scripts = bundle.scripts;
               settings = bundle.settings;
+              if (bundle.isLegacy) {
+                // Auto-upgrade legacy bundles on disk immediately
+                await saveActoneFile(path, scripts, settings);
+                logger.info("file", `Automatically upgraded legacy bundle to Gen 3: ${path}`);
+              }
             } else {
               throw new Error("No screenplay content found in archive");
             }
@@ -715,6 +720,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             scripts = bundle.scripts;
             content = bundle.scripts[0]?.content || "";
             settings = bundle.settings;
+            if (bundle.isLegacy) {
+              await saveActoneFile(res.path, scripts, settings);
+              logger.info("file", `Automatically upgraded legacy bundle to Gen 3: ${res.path}`);
+            }
           } catch (e) {
             logger.error("file", "Failed to read actone bundle", e);
             await confirm({
@@ -1144,22 +1153,29 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveScriptIndexState(index);
   }, [files, activeFileId, rawText, paperSize]);
 
-  const addScript = useCallback(async (name?: string): Promise<string | null> => {
+  const addScript = useCallback(async (name?: string, forceType?: "fountain" | "markdown"): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts) return null;
 
+    const isMarkdown = forceType === "markdown" || (forceType !== "fountain" && (name?.trim().toLowerCase().endsWith(".md") ?? false));
+    const title = isMarkdown ? "New Prose" : "New Script";
+    const message = isMarkdown ? "Enter a name for the prose file:" : "Enter a name for the script:";
+
     const baseName = name || (await prompt({
-      title: "New Script",
-      message: "Enter a name for the new script:",
+      title,
+      message,
       defaultValue: "Untitled"
     }));
     if (!baseName) return null;
 
-    const uniqueName = getUniqueName(baseName.trim(), file.scripts);
-    const fileName = `${sanitizeFileName(uniqueName)}.fountain`;
+    const rawName = baseName.trim().toLowerCase().endsWith(".md") ? baseName.trim().slice(0, -3) : baseName.trim();
+    const uniqueName = getUniqueName(rawName, file.scripts);
+    const fileName = isMarkdown ? `files/${sanitizeFileName(uniqueName)}.md` : `files/${sanitizeFileName(uniqueName)}.fountain`;
+    
     const newScript: ScriptInfo = {
       name: uniqueName,
       fileName,
+      type: isMarkdown ? "markdown" : "fountain",
       content: "",
       savedContent: "",
     };
@@ -1201,7 +1217,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const updatedScripts = file.scripts.map((s, i) =>
-      i === index ? { ...s, name: trimmed, fileName: `${sanitizeFileName(trimmed)}.fountain` } : s
+      i === index ? { ...s, name: trimmed, fileName: s.type === "markdown" ? `files/${sanitizeFileName(trimmed)}.md` : `${sanitizeFileName(trimmed)}.fountain` } : s
     );
 
     setFiles(prev => prev.map(f => f.id === activeFileId ? {
@@ -1219,10 +1235,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const source = file.scripts[index];
     const newName = getUniqueName(name?.trim() || source.name, file.scripts);
-    const newFileName = `${sanitizeFileName(newName)}.fountain`;
+    const isMarkdown = source.type === "markdown";
+    const newFileName = isMarkdown ? `files/${sanitizeFileName(newName)}.md` : `${sanitizeFileName(newName)}.fountain`;
     const newScript: ScriptInfo = {
       name: newName,
       fileName: newFileName,
+      type: source.type,
       content: source.content,
       savedContent: source.savedContent,
     };
@@ -1319,7 +1337,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [files, activeFileId, confirm, paperSize]);
 
-  const importScript = useCallback(async (): Promise<string | null> => {
+  const importScript = useCallback(async (type?: "fountain" | "markdown"): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts) return null;
 
@@ -1328,16 +1346,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (isTauri) {
       try {
-        const result = await invoke<{ path: string; name?: string; extension?: string } | null>("import_script_dialog");
+        const result = await invoke<{ path: string; name?: string; extension?: string } | null>("import_script_dialog", { format: type });
         if (!result || !result.path) return null;
-        fileName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "") || "Imported";
+        fileName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|spmd|md|markdown)$/i, "") || "Imported";
         
         if (result.path.toLowerCase().endsWith(".fadein")) {
           const bytes = await invoke<number[]>("read_file_binary", { path: result.path });
           content = parseScriptFileToFountain(result.path, new Uint8Array(bytes));
         } else {
           const raw = await invoke<string>("read_file_content", { path: result.path });
-          content = parseScriptFileToFountain(result.path, raw);
+          content = type === "markdown" ? raw : parseScriptFileToFountain(result.path, raw);
         }
       } catch (e) {
         logger.error("file", "Import script dialog failed", e);
@@ -1347,17 +1365,17 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       content = await new Promise<string | null>((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".fountain,.txt,.fdx,.fadein,.spmd";
+        input.accept = type === "markdown" ? ".md,.markdown,.txt" : ".fountain,.txt,.fdx,.fadein,.spmd";
         input.onchange = async () => {
           const f = input.files?.[0];
           if (!f) { resolve(null); return; }
-          fileName = f.name.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "");
+          fileName = f.name.replace(/\.(fountain|txt|fdx|fadein|spmd|md|markdown)$/i, "");
           if (f.name.toLowerCase().endsWith(".fadein")) {
             const buf = await f.arrayBuffer();
             resolve(parseScriptFileToFountain(f.name, new Uint8Array(buf)));
           } else {
             const text = await f.text();
-            resolve(parseScriptFileToFountain(f.name, text));
+            resolve(type === "markdown" ? text : parseScriptFileToFountain(f.name, text));
           }
         };
         input.click();
@@ -1366,12 +1384,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const uniqueName = getUniqueName(fileName.trim() || "Imported", file.scripts);
-    const safeFileName = `${sanitizeFileName(uniqueName)}.fountain`;
+    const ext = type === "markdown" ? "md" : "fountain";
+    const safeFileName = `${sanitizeFileName(uniqueName)}.${ext}`;
     const newScript: ScriptInfo = {
       name: uniqueName,
       fileName: safeFileName,
       content,
       savedContent: content,
+      type: type || "fountain",
     };
 
     const updatedScripts = [...file.scripts, newScript];

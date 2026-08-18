@@ -1,4 +1,5 @@
 @import "./fonts.css";
+@import "./prose-editor.css";
 
 :root {
   color-scheme: light;
@@ -29,6 +30,21 @@
   --accent-rgb: 25,118,210;
   --titlebar-bg: #f8f9fa;
   --editor-cursor: #1a1a1a;
+
+  --prose-editor-fg: var(--text-main, #1a1a1a);
+  --prose-editor-fg-muted: var(--text-muted, #666666);
+  --prose-editor-fg-faint: color-mix(in srgb, var(--text-main, #1a1a1a) 35%, transparent);
+  --prose-editor-accent: var(--accent-color, #1976d2);
+  --prose-editor-accent-bright: var(--accent-color, #1976d2);
+  --prose-editor-accent-soft: color-mix(in srgb, var(--accent-color, #1976d2) 40%, transparent);
+  --prose-editor-border: var(--border-color, rgba(0,0,0,0.12));
+  --prose-editor-bg: var(--bg-editor, transparent);
+  --prose-editor-bg-surface: var(--bg-sidebar, #f8f9fa);
+  --prose-editor-bg-panel: var(--bg-app, #ffffff);
+  --prose-editor-link: var(--accent-color, #1976d2);
+  --prose-editor-link-hover: color-mix(in srgb, var(--accent-color, #1976d2) 80%, var(--text-main, #1a1a1a));
+  --prose-editor-code-bg: color-mix(in srgb, var(--text-main, #1a1a1a) 6%, transparent);
+  --prose-editor-selection-bg: var(--selection-bg, rgba(46, 170, 220, 0.3));
 
   --skeleton-base: rgba(0, 0, 0, 0.06);
   --skeleton-shine: rgba(0, 0, 0, 0.12);

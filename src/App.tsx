@@ -215,7 +215,25 @@ function AppInner() {
     saveFileAs,
     closeFile: useCallback(() => closeFile(activeFileId), [closeFile, activeFileId]),
     togglePalette,
-    exportPDF: useCallback(() => setShowExportModal(true), []),
+    exportPDF: useCallback(() => {
+      const activeFile = files.find(f => f.id === activeFileId);
+      const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
+      const isProseDoc = activeScript?.type === "markdown" ||
+        activeScript?.fileName?.endsWith(".md") ||
+        activeScript?.fileName?.endsWith(".markdown") ||
+        activeFile?.filePath?.endsWith(".md") ||
+        activeFile?.filePath?.endsWith(".markdown");
+
+      if (isProseDoc) {
+        confirm({
+          title: "Export Prose",
+          message: "Exporting prose documents is not implemented yet.",
+          buttons: [{ value: "ok", label: "OK", variant: "contained" }]
+        });
+        return;
+      }
+      setShowExportModal(true);
+    }, [files, activeFileId, confirm, setShowExportModal]),
     toggleSidebar: useCallback(() => setIsSidebarOpen(prev => !prev), []),
     toggleZenMode: useCallback(() => setIsZenMode(!isZenMode), [isZenMode, setIsZenMode]),
     getEditorView: useCallback(() => editorView, [editorView]),

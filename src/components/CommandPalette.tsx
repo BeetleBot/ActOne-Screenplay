@@ -105,8 +105,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     saveFileAs,
     closeFile,
     activeFileId,
+    files,
     importAsActoneProject,
   } = useFile();
+
+  const activeFile = files?.find(f => f.id === activeFileId);
+  const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
+  const isProse = activeScript?.type === "markdown" ||
+    activeScript?.fileName?.endsWith(".md") ||
+    activeScript?.fileName?.endsWith(".markdown") ||
+    activeFile?.filePath?.endsWith(".md") ||
+    activeFile?.filePath?.endsWith(".markdown");
 
   const { editorView } = useEditor();
   const { autoAddSceneNumbers, clearSceneNumbers } = useScriptEditor();
@@ -253,11 +262,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     // File
     { id: "file-new", name: "New Project", category: "File", icon: <NoteAddIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+N", action: () => { newFile(); onClose(); } },
     { id: "file-open", name: "Open Project...", category: "File", icon: <FolderOpenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+O", action: () => { openFile(); onClose(); } },
-    { id: "file-import", name: "Import Screenplay...", category: "File", icon: <DescriptionIcon sx={{ fontSize: 16 }} />, action: handleImport },
+    ...(!isProse ? [{ id: "file-import", name: "Import Screenplay...", category: "File", icon: <DescriptionIcon sx={{ fontSize: 16 }} />, action: handleImport }] : []),
     { id: "file-save", name: "Save Project", category: "File", icon: <SaveIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+S", action: () => { saveFile(); onClose(); } },
     { id: "file-save-as", name: "Save Project As...", category: "File", icon: <FileDownloadIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+S", action: () => { saveFileAs(); onClose(); } },
     { id: "file-close", name: "Close Active Project", category: "File", icon: <DeleteIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+Q", action: () => { closeFile(activeFileId); onClose(); } },
-    { id: "file-export", name: "Export...", category: "File", icon: <FileDownloadIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+P", action: () => { onExportPDF(); onClose(); } },
+    { id: "file-export", name: isProse ? "Export Prose..." : "Export Script...", category: "File", icon: <FileDownloadIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+P", action: () => { onExportPDF(); onClose(); } },
 
     // Edit
     { id: "edit-undo", name: "Undo", category: "Edit", icon: <ContentCutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Z", action: handleUndo },
@@ -265,7 +274,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "edit-cut", name: "Cut Selected", category: "Edit", icon: <ContentCutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+X", action: () => handleEditorAction("cut") },
     { id: "edit-copy", name: "Copy Selected", category: "Edit", icon: <ContentCopyIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+C", action: () => handleEditorAction("copy") },
     { id: "edit-paste", name: "Paste Clipboard", category: "Edit", icon: <AssignmentIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
-    { id: "edit-find", name: "Find in Screenplay", category: "Edit", icon: <SearchIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+F", action: () => handleEditorAction("find") },
+    { id: "edit-find", name: isProse ? "Find in Document" : "Find in Screenplay", category: "Edit", icon: <SearchIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+F", action: () => handleEditorAction("find") },
     { id: "edit-spellcheck", name: spellcheckEnabled ? "Disable Spellcheck" : "Enable Spellcheck", category: "Edit", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setSpellcheckEnabled(!spellcheckEnabled); onClose(); } },
 
     // View
@@ -276,27 +285,32 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
     { id: "view-zoom-reset", name: `Reset Editor Scale (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
     { id: "view-interface-scale-reset", name: `Reset Interface Scale (${appScale}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, action: () => { setAppScale(100); onClose(); } },
-    { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
-    { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
+    ...(!isProse ? [
+      { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
+      { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
+    ] : []),
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },
+
     // Format
-    { id: "format-fix-formatting", name: "Fix Formatting", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => {
-      if (editorView) {
-        const fullText = editorView.state.doc.toString();
-        const report = fixFormatting(fullText);
-        if (report.formattedText !== fullText) {
-          editorView.dispatch({
-            changes: { from: 0, to: fullText.length, insert: report.formattedText }
-          });
+    ...(!isProse ? [
+      { id: "format-fix-formatting", name: "Fix Formatting", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => {
+        if (editorView) {
+          const fullText = editorView.state.doc.toString();
+          const report = fixFormatting(fullText);
+          if (report.formattedText !== fullText) {
+            editorView.dispatch({
+              changes: { from: 0, to: fullText.length, insert: report.formattedText }
+            });
+          }
+          onFixFormattingResult?.(report);
         }
-        onFixFormattingResult?.(report);
-      }
-      onClose();
-    } },
-    { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },
-    { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenStructureModal(); onClose(); } },
-    { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { autoAddSceneNumbers(); onClose(); } },
-    { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <DeleteIcon sx={{ fontSize: 16 }} />, action: () => { clearSceneNumbers(); onClose(); } },
+        onClose();
+      } },
+      { id: "format-title-page", name: "Edit Title Page...", category: "Format", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { onOpenTitlePageModal(); onClose(); } },
+      { id: "format-import-structure", name: "Import Structure Template...", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { onOpenStructureModal(); onClose(); } },
+      { id: "format-renumber", name: "Renumber Scene Headings", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { autoAddSceneNumbers(); onClose(); } },
+      { id: "format-clear", name: "Clear Scene Numbers", category: "Format", icon: <DeleteIcon sx={{ fontSize: 16 }} />, action: () => { clearSceneNumbers(); onClose(); } },
+    ] : []),
 
     // Settings
     { id: "settings-modal", name: "Open Settings...", category: "Settings", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+,", action: () => { onOpenSettingsModal(); onClose(); } },
@@ -311,7 +325,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "help-about", name: "About ActOne", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, action: () => { onOpenAboutModal?.(); onClose(); } },
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, shortcut: "F1", action: () => { onOpenHelpModal(); onClose(); } },
     { id: "help-tutorial", name: "Interactive Tutorial...", category: "Help", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { openTutorialsWindow?.(); onClose(); } },
-    { id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } },
+    ...(!isProse ? [{ id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } }] : []),
     { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://discord.gg/zpFPpdAxnW"); onClose(); } },
   ];
 

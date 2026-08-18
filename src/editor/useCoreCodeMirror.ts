@@ -312,6 +312,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           const docStr = update.state.doc.toString();
+          lastDispatchedTextRef.current = docStr;
           pendingRawTextRef.current = docStr;
           if (rawTextDebounceTimerRef.current !== null) {
             clearTimeout(rawTextDebounceTimerRef.current);
@@ -454,7 +455,8 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
           });
         });
       } else {
-        if (pendingRawTextRef.current === null && view.state.doc.toString() !== rawText) {
+        const docCurrent = view.state.doc.toString();
+        if (rawText !== docCurrent && rawText !== lastDispatchedTextRef.current && pendingRawTextRef.current === null) {
           const scrollArea = getScrollArea(view);
           const savedScrollTop = scrollArea ? scrollArea.scrollTop : null;
 

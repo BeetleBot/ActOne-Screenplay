@@ -15,6 +15,7 @@ export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus, files } = useFile();
   const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, cancelTranslation, activeRightPane, setActiveRightPane, spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage } = useUI();
   const activeFile = files.find(f => f.id === activeFileId);
+  const isMarkdown = isBundle && scripts[activeScriptIndex]?.fileName?.endsWith(".md");
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
   const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
@@ -42,6 +43,7 @@ export const StatusBar = React.memo(() => {
     window.addEventListener("dictionary-changed", handler);
     return () => window.removeEventListener("dictionary-changed", handler);
   }, []);
+
 
   const museConfigured = provider !== "none";
 
@@ -96,7 +98,10 @@ export const StatusBar = React.memo(() => {
     let pages = 1;
     let currentPage = 1;
 
-    if (hasBreaks) {
+    if (isMarkdown) {
+      pages = Math.max(1, Math.ceil(docLinesCount / 40));
+      currentPage = Math.min(pages, Math.max(1, Math.ceil(currentLineNumber / 40)));
+    } else if (hasBreaks) {
       if (hasTitlePage) {
         pages = Math.max(1, breaks.length);
         const contentBreaks = breaks.filter(b => b <= currentLineNumber);
@@ -120,7 +125,7 @@ export const StatusBar = React.memo(() => {
       currentPage: currentPage.toLocaleString(), 
       sceneCount: sceneCount.toLocaleString() 
     };
-  }, [rawText, parsedDoc, activeLineNumber]);
+  }, [rawText, parsedDoc, activeLineNumber, isMarkdown]);
 
   const sprintDetails = useMemo(() => {
     if (!currentSprint) return null;
@@ -596,9 +601,14 @@ export const StatusBar = React.memo(() => {
                 </Typography>
               ) : (
                 <>
-                  <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
-                    Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
+                  <Typography id="status-mode" variant="caption" sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'primary.main', bgcolor: 'action.hover', px: 0.8, py: 0.2, borderRadius: 0.5, whiteSpace: "nowrap" }}>
+                    {isMarkdown ? "Prose" : "Script"}
                   </Typography>
+                  {!isMarkdown && (
+                    <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
+                      Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
+                    </Typography>
+                  )}
                   <Typography id="status-words" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
                     Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
                   </Typography>

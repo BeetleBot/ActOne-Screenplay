@@ -6,6 +6,7 @@ vi.mock("../../context", () => ({
   useUI: () => ({ fontFamily: "font-courier", spellcheckEnabled: true }),
   useEditor: () => ({ updateSettings: vi.fn() }),
   useParking: () => ({ addItem: vi.fn() }),
+  useFile: () => ({ files: [], activeFileId: null }),
 }));
 
 import { CoreEditor } from "./CoreEditor";

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { EditorView } from "@codemirror/view";
-import { useUI, useEditor, useParking } from "../../context";
+import { useUI, useEditor, useParking, useFile } from "../../context";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { setContextMenuHighlightEffect } from "../../editor/contextMenuState";
 import { toggleInlineMarker as toggleInlineMarkerShared } from "../../editor/formatUtils";
@@ -24,7 +24,16 @@ export interface CoreEditorProps {
 export const CoreEditor = React.memo(({ containerRef, viewRef, extraContextMenuItems }: CoreEditorProps) => {
   const { fontFamily, spellcheckEnabled } = useUI();
   const { updateSettings } = useEditor();
+  const { files, activeFileId } = useFile();
   const parking = useParking();
+
+  const activeFile = files?.find(f => f.id === activeFileId);
+  const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
+  const isProse = activeScript?.type === "markdown" ||
+    activeScript?.fileName?.endsWith(".md") ||
+    activeScript?.fileName?.endsWith(".markdown") ||
+    activeFile?.filePath?.endsWith(".md") ||
+    activeFile?.filePath?.endsWith(".markdown");
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
   const menuSelectionRef = useRef<MenuSelectionSnap | null>(null);
@@ -187,7 +196,7 @@ export const CoreEditor = React.memo(({ containerRef, viewRef, extraContextMenuI
       { label: "Look Up Word", enabled: hasSel, action: handleLookUpSelection },
       "separator",
       { label: "Create Task", enabled: hasSel, action: handleCreateTaskFromSelection },
-      { label: "Park Selection", enabled: hasSel, action: handleParkSelection },
+      ...(!isProse ? [{ label: "Park Selection", enabled: hasSel, action: handleParkSelection } satisfies ContextMenuItem] : []),
     ];
 
     if (v && menuSelectionRef.current && menuSelectionRef.current.from !== menuSelectionRef.current.to) {

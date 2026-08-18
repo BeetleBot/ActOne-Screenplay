@@ -29,6 +29,8 @@ export const ScriptsView = React.memo(() => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [showExportAll, setShowExportAll] = useState(false);
+  const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+  const [importMenuAnchor, setImportMenuAnchor] = useState<HTMLElement | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const mouseDragRef = useRef<number | null>(null);
   const mouseOverRef = useRef<number | null>(null);
@@ -36,13 +38,35 @@ export const ScriptsView = React.memo(() => {
 
   if (!isBundle) return null;
 
-  const handleAdd = async () => {
+  const handleAddClick = (e: React.MouseEvent<HTMLElement>) => {
+    setAddMenuAnchor(e.currentTarget);
+  };
+
+  const handleAddClose = () => {
+    setAddMenuAnchor(null);
+  };
+
+  const handleAddScriptType = async (type: "fountain" | "markdown") => {
+    handleAddClose();
     const newIndex = scripts.length;
-    const newName = await addScript("Untitled");
+    const newName = await addScript(undefined, type);
     if (newName) {
       setEditingIndex(newIndex);
       setEditingValue(newName);
     }
+  };
+
+  const handleImportClick = (e: React.MouseEvent<HTMLElement>) => {
+    setImportMenuAnchor(e.currentTarget);
+  };
+
+  const handleImportClose = () => {
+    setImportMenuAnchor(null);
+  };
+
+  const handleImportScriptType = async (type: "fountain" | "markdown") => {
+    handleImportClose();
+    await importScript(type);
   };
 
   const handleRenameOpen = () => {
@@ -166,21 +190,21 @@ export const ScriptsView = React.memo(() => {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, height: 40, minHeight: 40, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-          Scripts
+          Project
         </Typography>
         <Box sx={{ display: "flex", gap: 0.25, alignItems: "center" }}>
-          <Tooltip title="Scripts displays the list of files in the current bundle. Drag to reorder, add new scripts, or import fountain files.">
+          <Tooltip title="Project displays the list of files in the current bundle. Drag to reorder, add new files, or import fountain files.">
             <span>
               <InfoOutlinedIcon sx={{ fontSize: 16, opacity: 0.6, cursor: "help", mr: 0.5 }} />
             </span>
           </Tooltip>
-          <IconButton size="small" onClick={importScript} title="Import Fountain File" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
+          <IconButton size="small" onClick={handleImportClick} title="Import File" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
             <DownloadIcon sx={{ fontSize: 16 }} />
           </IconButton>
-          <IconButton size="small" onClick={handleAdd} title="Add Script">
+          <IconButton size="small" onClick={handleAddClick} title="Add New File">
             <AddIcon sx={{ fontSize: 16 }} />
           </IconButton>
-          <IconButton size="small" onClick={() => setShowExportAll(true)} title="Export All Scripts" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
+          <IconButton size="small" onClick={() => setShowExportAll(true)} title="Export All Files" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
             <SaveIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Box>
@@ -189,7 +213,7 @@ export const ScriptsView = React.memo(() => {
       <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, p: 1.5 }}>
         {scripts.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", px: 1, py: 2, fontSize: 12 }}>
-            No scripts yet. Add one.
+            No files yet. Add one.
           </Typography>
         ) : (
           <List disablePadding ref={listRef}>
@@ -291,6 +315,22 @@ export const ScriptsView = React.memo(() => {
       </Box>
 
       <Menu
+        anchorEl={importMenuAnchor}
+        open={Boolean(importMenuAnchor)}
+        onClose={handleImportClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        sx={{ "& .MuiPaper-root": { width: 160 } }}
+      >
+        <MenuItem onClick={() => handleImportScriptType("fountain")} sx={{ fontSize: "0.85rem" }}>
+          Import Screenplay
+        </MenuItem>
+        <MenuItem onClick={() => handleImportScriptType("markdown")} sx={{ fontSize: "0.85rem" }}>
+          Import Prose
+        </MenuItem>
+      </Menu>
+
+      <Menu
         anchorEl={menuState?.anchorEl}
         open={!!menuState}
         onClose={() => setMenuState(null)}
@@ -305,6 +345,22 @@ export const ScriptsView = React.memo(() => {
         <MenuItem onClick={handleDuplicate} dense>Duplicate</MenuItem>
         <Divider />
         <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
+      </Menu>
+
+      <Menu
+        anchorEl={addMenuAnchor}
+        open={!!addMenuAnchor}
+        onClose={handleAddClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { minWidth: 140 } } }}
+      >
+        <MenuItem onClick={() => handleAddScriptType("fountain")} dense>
+          <Typography variant="body2">Script (.fountain)</Typography>
+        </MenuItem>
+        <MenuItem onClick={() => handleAddScriptType("markdown")} dense>
+          <Typography variant="body2">Prose (.md)</Typography>
+        </MenuItem>
       </Menu>
 
       {showExportAll && <ExportModal batchExport onClose={() => setShowExportAll(false)} />}

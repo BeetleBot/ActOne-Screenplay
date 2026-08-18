@@ -32,7 +32,7 @@ describe("ExportModal Component", () => {
 
   it("renders export options", () => {
     render(React.createElement(ExportModal, { onClose: vi.fn() }));
-    expect(screen.getByText(/export screenplay/i)).toBeTruthy();
+    expect(screen.getByText(/export script/i)).toBeTruthy();
   });
 
   it("renders start-each-scene-on-new-page option in PDF pane", () => {

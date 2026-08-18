@@ -47,50 +47,49 @@ describe("actone bundle", () => {
     const unpacked = unpackActoneBundle(legacy, "MyScript");
     expect(unpacked.scripts).toHaveLength(1);
     expect(unpacked.scripts[0].name).toBe("MyScript");
-    expect(unpacked.scripts[0].fileName).toBe("document.fountain");
+    expect(unpacked.scripts[0].fileName).toBe("files/MyScript.fountain");
     expect(unpacked.scripts[0].content).toBe("INT. TEST - DAY\n\nHello.");
   });
 
   it("handles empty content gracefully", () => {
-    const scripts = makeScripts([{ name: "Empty", content: "" }]);
-    const packed = packActoneBundle(scripts, {});
-    const unpacked = unpackActoneBundle(packed);
+    const bundle = packActoneBundle([{ name: "Empty", fileName: "files/Empty.fountain", content: "", savedContent: "" }], {});
+    const unpacked = unpackActoneBundle(bundle);
     expect(unpacked.scripts[0].content).toBe("");
   });
 
   it("packs and unpacks with settings", () => {
-    const scripts = makeScripts([{ name: "Main", content: "INT. ROOM - NIGHT" }]);
-    const settings = { revisionModeEnabled: true, genders: { JOHN: "male" } };
+    const scripts: ScriptInfo[] = [
+      { name: "S1", fileName: "files/S1.fountain", content: "A", savedContent: "A" }
+    ];
+    const settings = { notepad: "notes", someCustom: 42 };
     const packed = packActoneBundle(scripts, settings);
     const unpacked = unpackActoneBundle(packed);
-    expect(unpacked.settings.genders).toEqual({ JOHN: "male" });
-    expect(unpacked.settings.todos).toEqual([]);
+    expect(unpacked.settings.notepad).toBe("notes");
+    expect(unpacked.settings.someCustom).toBe(42);
   });
 
   it("packs and unpacks with todos, parking, sprint", () => {
-    const scripts = makeScripts([{ name: "Main", content: "Action line." }]);
+    const scripts: ScriptInfo[] = [{ name: "S", fileName: "files/S.fountain", content: "A", savedContent: "A" }];
     const settings = {
-      todos: [{ id: "1", text: "Fix this", completed: false }],
-      parking: [{ id: "p1", text: "Parked text", createdAt: 100 }],
-      sprintHistory: [{ id: "s1", startTime: 0, endTime: 1, durationMinutes: 5, wordCount: 100, content: "" }],
-      productionTags: { tags: [], definitions: [] },
+      todos: [{ id: "1", text: "t" }],
+      parking: [{ text: "p" }],
+      sprintHistory: [{ date: "now" }]
     };
     const packed = packActoneBundle(scripts, settings);
     const unpacked = unpackActoneBundle(packed);
-    expect(unpacked.settings.todos).toHaveLength(1);
-    expect(unpacked.settings.parking).toHaveLength(1);
-    expect(unpacked.settings.sprintHistory).toHaveLength(1);
-    expect(unpacked.settings.productionTags).toEqual({ tags: [], definitions: [] });
+    expect(unpacked.settings.todos).toEqual([{ id: "1", text: "t" }]);
+    expect(unpacked.settings.parking).toEqual([{ text: "p" }]);
+    expect(unpacked.settings.sprintHistory).toEqual([{ date: "now" }]);
   });
 
-  it("fountain.json exists in new bundles", () => {
-    const scripts = makeScripts([{ name: "Main", content: "Test." }]);
+  it("project.json exists in new bundles", () => {
+    const scripts: ScriptInfo[] = [{ name: "Main", fileName: "files/Main.fountain", type: "fountain", content: "...", savedContent: "..." }];
     const packed = packActoneBundle(scripts, {});
     const zipBytes = packed.slice(4);
     const unzipped = unzipSync(zipBytes);
-    expect(unzipped["fountain.json"]).toBeDefined();
-    const manifest = JSON.parse(strFromU8(unzipped["fountain.json"]));
-    expect(manifest).toEqual([{ name: "Main", file: "Main.fountain" }]);
+    expect(unzipped["project.json"]).toBeDefined();
+    const manifest = JSON.parse(strFromU8(unzipped["project.json"]));
+    expect(manifest).toEqual([{ name: "Main", file: "files/Main.fountain", type: "fountain" }]);
   });
 
   it("prepends ACT1 magic to packed bundles", () => {

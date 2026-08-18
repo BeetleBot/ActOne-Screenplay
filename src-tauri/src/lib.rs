@@ -133,15 +133,19 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
         Some("fountain") => {
             dialog = dialog.add_filter("Fountain (.fountain, .txt)", &["fountain", "txt", "spmd"]);
         }
+        Some("markdown") => {
+            dialog = dialog.add_filter("Markdown (.md, .markdown, .txt)", &["md", "markdown", "txt"]);
+        }
         _ => {
             dialog = dialog
                 .add_filter(
                     "All Supported Scripts",
-                    &["fdx", "fadein", "fountain", "txt", "spmd"],
+                    &["fdx", "fadein", "fountain", "txt", "spmd", "md", "markdown"],
                 )
                 .add_filter("Final Draft (.fdx)", &["fdx"])
                 .add_filter("Fade In (.fadein)", &["fadein"])
-                .add_filter("Fountain (.fountain, .txt)", &["fountain", "txt", "spmd"]);
+                .add_filter("Fountain (.fountain, .txt)", &["fountain", "txt", "spmd"])
+                .add_filter("Markdown (.md, .markdown, .txt)", &["md", "markdown", "txt"]);
         }
     }
     let file = dialog.pick_file()?;
@@ -481,6 +485,8 @@ fn get_fonts_for_script(
 fn get_detected_scripts(text: String) -> Vec<String> {
     font_cache::detect_scripts(&text)
 }
+
+
 
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]

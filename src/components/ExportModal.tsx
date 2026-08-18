@@ -907,7 +907,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
     >
       <DialogTitle sx={{ m: 0, p: 0 }}>
         <TitleBar
-          title="Export Screenplay"
+          title="Export Script"
           icon={<DownloadIcon sx={{ fontSize: 16 }} />}
           isModal
           onClose={onClose}
