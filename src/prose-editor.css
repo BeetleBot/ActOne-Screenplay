@@ -107,32 +107,105 @@
   color: var(--prose-editor-fg-muted, var(--text-muted, #666666));
 }
 
-/* Blockquote lines — each line in the quote gets a left rail. Putting
- * the rail on every line means the visual continues for multi-line
- * quotes even though each line is an independent DOM element. */
+/* Blockquote lines — solid stepped indicator bar on the left indicating depth + subtle backdrop */
 .cm-line.cm-prose-blockquote {
-  padding-left: 0.65rem;
-  margin-left: -0.5rem;
-  border-left: 2.5px solid var(--prose-editor-accent-soft, var(--accent-color, #1976d2));
-  color: var(--prose-editor-fg-muted, var(--text-muted, #666666));
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
+  background-color: var(--prose-editor-blockquote-bg, color-mix(in srgb, var(--prose-editor-accent-soft, var(--accent-color, #10b981)) 10%, transparent)) !important;
+  background-repeat: no-repeat !important;
+  background-position: left top !important;
 }
 
+.cm-prose-quote-mark {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  display: inline-block;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.cm-prose-header-mark,
+.cm-prose-emphasis-mark,
+.cm-prose-code-mark,
+.cm-prose-link-mark,
+.cm-prose-strike-mark,
+.cm-prose-syntax-mark {
+  color: var(--prose-editor-fg-faint, var(--text-muted, #888888)) !important;
+  font-weight: normal;
+  opacity: 0.75;
+}
+
+/* Depth 0: 1 `>` (1ch bar). */
+.cm-line.cm-prose-blockquote-depth-0 {
+  background-image: linear-gradient(
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981)),
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981))
+  ) !important;
+  background-size: 1ch 100% !important;
+}
+
+/* Depth 1: 2 `>>` (2ch bar). */
 .cm-line.cm-prose-blockquote-depth-1 {
-  margin-left: 0.5rem;
-  padding-left: 0.65rem;
-  border-left: 2.5px solid var(--prose-editor-accent-soft, var(--accent-color, #1976d2));
+  background-image: linear-gradient(
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981)),
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981))
+  ) !important;
+  background-size: 2ch 100% !important;
 }
 
+/* Depth 2: 3 `>>>` (3ch bar). */
 .cm-line.cm-prose-blockquote-depth-2 {
-  margin-left: 1.5rem;
-  padding-left: 0.65rem;
-  border-left: 2.5px solid var(--prose-editor-accent-soft, var(--accent-color, #1976d2));
+  background-image: linear-gradient(
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981)),
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981))
+  ) !important;
+  background-size: 3ch 100% !important;
 }
 
+/* Depth 3: 4 `>>>>` (4ch bar). */
 .cm-line.cm-prose-blockquote-depth-3 {
-  margin-left: 2.5rem;
-  padding-left: 0.65rem;
-  border-left: 2.5px solid var(--prose-editor-accent-soft, var(--accent-color, #1976d2));
+  background-image: linear-gradient(
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981)),
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981))
+  ) !important;
+  background-size: 4ch 100% !important;
+}
+
+/* Depth 4: 5 `>>>>>` (5ch bar). */
+.cm-line.cm-prose-blockquote-depth-4 {
+  background-image: linear-gradient(
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981)),
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981))
+  ) !important;
+  background-size: 5ch 100% !important;
+}
+
+/* Depth 5: 6 `>>>>>>` (6ch bar). */
+.cm-line.cm-prose-blockquote-depth-5 {
+  background-image: linear-gradient(
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981)),
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981))
+  ) !important;
+  background-size: 6ch 100% !important;
+}
+
+/* Depth 6: 7 `>>>>>>>` (7ch bar). */
+.cm-line.cm-prose-blockquote-depth-6 {
+  background-image: linear-gradient(
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981)),
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981))
+  ) !important;
+  background-size: 7ch 100% !important;
+}
+
+/* Depth 7: 8 `>>>>>>>>` (8ch bar). */
+.cm-line.cm-prose-blockquote-depth-7 {
+  background-image: linear-gradient(
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981)),
+    var(--prose-editor-accent-soft, var(--accent-color, #10b981))
+  ) !important;
+  background-size: 8ch 100% !important;
 }
 
 /* Fenced-code lines — subtle backdrop plus a left rail so the block
@@ -144,8 +217,8 @@
   font-family: var(--prose-editor-font-mono, var(--font-editor, monospace));
   font-size: 0.92em;
   background: var(--prose-editor-code-bg, color-mix(in srgb, var(--text-main, #1a1a1a) 6%, transparent));
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
 }
 
 /* Inline content marks — applied on the text inside **…**, *…*, `…`,

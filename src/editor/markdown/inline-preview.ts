@@ -199,18 +199,13 @@ const HIDEABLE_SYNTAX = new Set([
   'QuoteMark',
 ]);
 
-// Children of a Link node whose visibility follows the link-scoped
-// rule (cursor-inside-link) instead of the default line-based rule.
-// The same token names can appear under an Image node — those stay
-// on the line-based rule because images are a different UX surface.
-const LINK_CHILD_SYNTAX = new Set(['LinkMark', 'URL', 'LinkTitle']);
-
 const INLINE_MARK_CLASS: Record<string, string> = {
   StrongEmphasis: 'cm-prose-strong',
   Emphasis: 'cm-prose-em',
   InlineCode: 'cm-prose-inline-code',
   Strikethrough: 'cm-prose-strike',
   Link: 'cm-prose-link',
+  QuoteMark: 'cm-prose-quote-mark',
 };
 
 class BulletWidget extends WidgetType {
@@ -359,6 +354,7 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
   // aren't included; they already have their own widget UX and the
   // line-based reveal is the right fit for `![alt](url)`.
   const activeLinkStarts = new Set<number>();
+  const blockquoteDepthByLine = new Map<number, number>();
 
   // Single pre-order walk. A tree walk visits a parent before its
   // children, which lets us compute two pieces of look-ahead state on
@@ -402,18 +398,19 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
         }
       }
       if (node.name === 'Blockquote') {
-        let depth = 0;
+        let astDepth = 0;
         let p = node.node.parent;
         while (p) {
-          if (p.name === 'Blockquote') depth++;
+          if (p.name === 'Blockquote') astDepth++;
           p = p.parent;
         }
-        const depthClass = `cm-prose-blockquote cm-prose-blockquote-depth-${depth}`;
         const firstLine = doc.lineAt(node.from);
         const lastLine = doc.lineAt(node.to);
         for (let n = firstLine.number; n <= lastLine.number; n++) {
           const line = doc.line(n);
-          ranges.push(Decoration.line({ class: depthClass }).range(line.from));
+          const match = line.text.match(/^(\s*(?:>\s*)+)/);
+          const depth = match ? Math.max(0, (match[1].match(/>/g) || []).length - 1) : astDepth;
+          blockquoteDepthByLine.set(n, depth);
         }
       } else {
         const lineClass = LINE_CLASS_BY_BLOCK[node.name];
@@ -433,36 +430,15 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
       }
 
       if (HIDEABLE_SYNTAX.has(node.name) && node.from < node.to) {
-        const lineNum = doc.lineAt(node.from).number;
+        let syntaxClass = 'cm-prose-syntax-mark';
+        if (node.name === 'QuoteMark') syntaxClass = 'cm-prose-quote-mark';
+        else if (node.name === 'HeaderMark') syntaxClass = 'cm-prose-header-mark';
+        else if (node.name === 'EmphasisMark') syntaxClass = 'cm-prose-emphasis-mark';
+        else if (node.name === 'CodeMark' || node.name === 'CodeInfo') syntaxClass = 'cm-prose-code-mark';
+        else if (node.name === 'LinkMark' || node.name === 'URL' || node.name === 'LinkTitle') syntaxClass = 'cm-prose-link-mark';
+        else if (node.name === 'StrikethroughMark') syntaxClass = 'cm-prose-strike-mark';
 
-        // Link children use a link-scoped rule (cursor-inside-link)
-        // rather than the line-based rule. A LinkMark under an
-        // Image node falls through to line-based — images have
-        // their own widget UX that the line-based reveal fits.
-        let shouldHide: boolean;
-        if (LINK_CHILD_SYNTAX.has(node.name)) {
-          let parent = node.node.parent;
-          while (parent && parent.name !== 'Link' && parent.name !== 'Image') {
-            parent = parent.parent;
-          }
-          if (parent && parent.name === 'Link') {
-            shouldHide = !activeLinkStarts.has(parent.from);
-          } else {
-            shouldHide = !activeLines.has(lineNum);
-          }
-        } else {
-          shouldHide = !activeLines.has(lineNum);
-        }
-
-        if (shouldHide) {
-          let hideTo = node.to;
-          if (node.name === 'HeaderMark' || node.name === 'QuoteMark') {
-            while (hideTo < doc.length && doc.sliceString(hideTo, hideTo + 1) === ' ') {
-              hideTo++;
-            }
-          }
-          pushReplace(ranges, doc, node.from, hideTo);
-        }
+        ranges.push(Decoration.mark({ class: syntaxClass }).range(node.from, node.to));
       }
 
       // Backslash escapes: `\.`, `\*`, `\(`, etc. RSS-to-markdown
@@ -625,6 +601,18 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
       }
     },
   });
+
+  for (const [lineNum, depth] of blockquoteDepthByLine.entries()) {
+    const line = doc.line(lineNum);
+    const active = activeLines.has(lineNum);
+    ranges.push(
+      Decoration.line({
+        class: `cm-prose-blockquote cm-prose-blockquote-depth-${depth} ${
+          active ? 'cm-prose-blockquote-active' : 'cm-prose-blockquote-inactive'
+        }`,
+      }).range(line.from),
+    );
+  }
 
   // Supplemental inline marks for the line containing the cursor.
   // CommonMark's flanking rules say that `**foo **` is not emphasis
@@ -843,28 +831,35 @@ const inlinePreviewPlugin = ViewPlugin.fromClass(
 // you start a new list adjacent to an existing one — lezer sees both as
 // siblings in a loose list, and the new item sprouts a blank line the
 // user didn't intend. In our inline-preview mode loose vs tight lists
-// look identical anyway, so we always continue tight.
-function insertTightListItem(view: EditorView): boolean {
+function getNextOrderedListNumber(doc: Text, currentLineNumber: number, targetIndent: string): number {
+  let prevLineNum = currentLineNumber - 1;
+  while (prevLineNum >= 1) {
+    const prevLine = doc.line(prevLineNum);
+    const prevText = prevLine.text;
+    if (!prevText.trim()) break;
+    const match = prevText.match(/^(\s*)(\d+)\.\s+/);
+    if (match) {
+      if (match[1] === targetIndent) {
+        return parseInt(match[2], 10) + 1;
+      }
+      if (match[1].length < targetIndent.length) {
+        break;
+      }
+    }
+    prevLineNum--;
+  }
+  return 1;
+}
+
+function handleListEnter(view: EditorView): boolean {
   const { state } = view;
   const sel = state.selection.main;
   if (!sel.empty) return false;
   const from = sel.from;
   const line = state.doc.lineAt(from);
 
-  const tree = syntaxTree(state);
-  let cursor = tree.resolveInner(from, -1).cursor();
-  let inBulletList = false;
-  for (;;) {
-    if (cursor.name === 'BulletList') {
-      inBulletList = true;
-      break;
-    }
-    if (!cursor.parent()) break;
-  }
-  if (!inBulletList) return false;
-
   const lineText = state.doc.sliceString(line.from, line.to);
-  const prefix = lineText.match(/^(\s*)([-*+])(\s+)/);
+  const prefix = lineText.match(/^(\s*)([-*+]|\d+\.)(\s+)/);
   if (!prefix) return false;
 
   const [whole, indent, marker] = prefix;
@@ -874,11 +869,19 @@ function insertTightListItem(view: EditorView): boolean {
   const taskPrefixLen = taskMatch ? taskMatch[0].length : 0;
   const contentAfterPrefix = rest.slice(taskPrefixLen);
 
+  const isOrdered = /^\d+\./.test(marker);
+
   if (!contentAfterPrefix.trim()) {
     const depth = Math.floor(indent.length / 2);
     if (depth >= 1) {
       const outerIndent = indent.slice(0, indent.length - 2);
-      const continuation = taskMatch ? `${marker} [ ] ` : `${marker} `;
+      let continuation: string;
+      if (isOrdered) {
+        const nextNum = getNextOrderedListNumber(state.doc, line.number, outerIndent);
+        continuation = `${nextNum}. `;
+      } else {
+        continuation = taskMatch ? `${marker} [ ] ` : `${marker} `;
+      }
       const replacement = `${outerIndent}${continuation}`;
       view.dispatch({
         changes: { from: line.from, to: line.to, insert: replacement },
@@ -893,13 +896,182 @@ function insertTightListItem(view: EditorView): boolean {
     return true;
   }
 
-  const continuation = taskMatch ? `${marker} [ ] ` : `${marker} `;
+  let continuation: string;
+  if (isOrdered) {
+    const curNum = parseInt(marker, 10);
+    continuation = `${isNaN(curNum) ? 1 : curNum + 1}. `;
+  } else {
+    continuation = taskMatch ? `${marker} [ ] ` : `${marker} `;
+  }
+
   const insert = `\n${indent}${continuation}`;
   view.dispatch({
     changes: { from, to: from, insert },
     selection: EditorSelection.cursor(from + insert.length),
   });
   return true;
+}
+
+function handleBlockquoteEnter(view: EditorView): boolean {
+  const { state } = view;
+  const sel = state.selection.main;
+  if (!sel.empty) return false;
+  const from = sel.from;
+  const line = state.doc.lineAt(from);
+  const lineText = line.text;
+
+  const bqMatch = lineText.match(/^(\s*(?:>\s*)+)/);
+  if (!bqMatch) return false;
+
+  const prefix = bqMatch[1];
+  const rest = lineText.slice(prefix.length);
+
+  if (!rest.trim()) {
+    view.dispatch({
+      changes: { from: line.from, to: line.to, insert: '' },
+      selection: EditorSelection.cursor(line.from),
+    });
+    return true;
+  }
+
+  if (from < line.from + prefix.length) {
+    return false;
+  }
+
+  const normPrefix = prefix.endsWith(' ') ? prefix : `${prefix} `;
+  const insert = `\n${normPrefix}`;
+  view.dispatch({
+    changes: { from, to: from, insert },
+    selection: EditorSelection.cursor(from + insert.length),
+  });
+  return true;
+}
+
+const blockquoteInputHandler = EditorView.inputHandler.of((view, from, to, text) => {
+  if (text !== '>') return false;
+  if (from !== to) return false;
+
+  const { state } = view;
+  const line = state.doc.lineAt(from);
+  const lineText = line.text;
+  const col = from - line.from;
+
+  const beforeCursor = lineText.slice(0, col);
+  const afterCursor = lineText.slice(col);
+
+  if (afterCursor.trim() === '' && /^(\s*(?:>\s*)*>)\s+$/.test(beforeCursor)) {
+    const match = beforeCursor.match(/^(\s*(?:>\s*)*>)\s+$/);
+    if (match) {
+      const quotePrefix = match[1];
+      const newPrefix = `${quotePrefix}> `;
+      view.dispatch({
+        changes: { from: line.from, to: line.from + col + afterCursor.length, insert: newPrefix },
+        selection: EditorSelection.cursor(line.from + newPrefix.length),
+      });
+      return true;
+    }
+  }
+
+  return false;
+});
+
+function handleMarkdownTab(view: EditorView): boolean {
+  const { state } = view;
+  const sel = state.selection.main;
+  if (!sel.empty) return false;
+  const line = state.doc.lineAt(sel.from);
+  const lineText = line.text;
+  const col = sel.from - line.from;
+
+  // 1. Blockquotes
+  const bqMatch = lineText.match(/^(\s*(?:>\s*)*>)([\s\S]*)$/);
+  if (bqMatch) {
+    const prefix = bqMatch[1];
+    const rest = bqMatch[2];
+    const newPrefix = `${prefix}>`;
+    const replacement = `${newPrefix}${rest}`;
+    view.dispatch({
+      changes: { from: line.from, to: line.to, insert: replacement },
+      selection: EditorSelection.cursor(line.from + col + 1),
+    });
+    return true;
+  }
+
+  // 2. Lists (unordered: -, *, + or ordered: 1., 2.)
+  const listMatch = lineText.match(/^(\s*)([-*+]|\d+\.)(\s+[\s\S]*|\s*)$/);
+  if (listMatch) {
+    const indent = listMatch[1];
+    const marker = listMatch[2];
+    const rest = listMatch[3];
+    const newIndent = `${indent}  `;
+    const newMarker = /^\d+\./.test(marker) ? '1.' : marker;
+    const replacement = `${newIndent}${newMarker}${rest}`;
+    const delta = replacement.length - lineText.length;
+    view.dispatch({
+      changes: { from: line.from, to: line.to, insert: replacement },
+      selection: EditorSelection.cursor(Math.max(line.from + newIndent.length + newMarker.length, sel.from + delta)),
+    });
+    return true;
+  }
+
+  return false;
+}
+
+function handleMarkdownShiftTab(view: EditorView): boolean {
+  const { state } = view;
+  const sel = state.selection.main;
+  if (!sel.empty) return false;
+  const line = state.doc.lineAt(sel.from);
+  const lineText = line.text;
+
+  // 1. Blockquotes
+  const bqMatch = lineText.match(/^(\s*(?:>\s*)*>)([\s\S]*)$/);
+  if (bqMatch) {
+    const prefix = bqMatch[1];
+    const rest = bqMatch[2];
+    const lastArrowIdx = prefix.lastIndexOf('>');
+    if (lastArrowIdx !== -1) {
+      const newPrefix = prefix.slice(0, lastArrowIdx) + prefix.slice(lastArrowIdx + 1);
+      const replacement = newPrefix.trim() === '' ? rest.replace(/^\s/, '') : `${newPrefix}${rest}`;
+      const delta = replacement.length - lineText.length;
+      view.dispatch({
+        changes: { from: line.from, to: line.to, insert: replacement },
+        selection: EditorSelection.cursor(Math.max(line.from, sel.from + delta)),
+      });
+      return true;
+    }
+  }
+
+  // 2. Lists
+  const listMatch = lineText.match(/^(\s*)([-*+]|\d+\.)(\s+[\s\S]*|\s*)$/);
+  if (listMatch) {
+    const indent = listMatch[1];
+    const marker = listMatch[2];
+    const rest = listMatch[3];
+    if (indent.length >= 2) {
+      const newIndent = indent.slice(2);
+      let newMarker = marker;
+      if (/^\d+\./.test(marker)) {
+        const nextNum = getNextOrderedListNumber(state.doc, line.number, newIndent);
+        newMarker = `${nextNum}.`;
+      }
+      const replacement = `${newIndent}${newMarker}${rest}`;
+      const delta = replacement.length - lineText.length;
+      view.dispatch({
+        changes: { from: line.from, to: line.to, insert: replacement },
+        selection: EditorSelection.cursor(Math.max(line.from + newIndent.length + newMarker.length, sel.from + delta)),
+      });
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function handleMarkdownEnter(view: EditorView): boolean {
+  if (handleBlockquoteEnter(view)) return true;
+  if (handleListEnter(view)) return true;
+  return false;
 }
 
 function makeLinkClickHandler(onLinkClick: (url: string) => void): Extension {
@@ -945,11 +1117,15 @@ export function inlinePreview(config: InlinePreviewConfig = {}): Extension {
     inlinePreviewPlugin,
     freezeMousePlugin,
     treeProgressPlugin,
+    blockquoteInputHandler,
     makeLinkClickHandler(onLinkClick),
-    // Prec.highest to beat @codemirror/lang-markdown's own Enter
-    // handler, which is registered internally by the `markdown()`
-    // extension (not just via the exported markdownKeymap) and
-    // otherwise wins precedence.
-    Prec.highest(keymap.of([{ key: 'Enter', run: insertTightListItem }])),
+    // Prec.highest to beat @codemirror/lang-markdown's own Enter / Tab handlers
+    Prec.highest(
+      keymap.of([
+        { key: 'Enter', run: handleMarkdownEnter },
+        { key: 'Tab', run: handleMarkdownTab },
+        { key: 'Shift-Tab', run: handleMarkdownShiftTab },
+      ]),
+    ),
   ];
 }
