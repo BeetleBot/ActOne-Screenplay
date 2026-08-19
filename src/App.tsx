@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@mui/material";
-import { AppProviders, useFile, useUI, useEditor, useScriptEditor, ThemeProvider, SprintProvider, useCustomModal } from "./context";
+import { AppProviders, useFile, useUI, useEditor, useScriptEditor, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
 import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialsWindow } from "./components";
 import { logger } from "./utils/logger";
@@ -857,11 +857,9 @@ function App() {
   return (
     <ErrorBoundary fullScreen name="app-root">
       <AppProviders>
-        <ThemeProvider>
-          <SprintProvider>
-            <AppInner />
-          </SprintProvider>
-        </ThemeProvider>
+        <SprintProvider>
+          <AppInner />
+        </SprintProvider>
       </AppProviders>
     </ErrorBoundary>
   );

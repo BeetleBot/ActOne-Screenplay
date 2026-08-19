@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef } from "react";
+import React, { createContext, useContext, useState, useRef, useEffect } from "react";
 import { useUI } from "./UIContext";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -53,6 +53,19 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [promptOpts, setPromptOpts] = useState<PromptOptions | null>(null);
   const [promptValue, setPromptValue] = useState("");
   const promptResolveRef = useRef<((value: string | null) => void) | null>(null);
+  const promptInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (promptOpen) {
+      const timer = setTimeout(() => {
+        if (promptInputRef.current) {
+          promptInputRef.current.focus();
+          promptInputRef.current.select();
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [promptOpen]);
 
   const confirm = (options: ConfirmOptions): Promise<string> => {
     return new Promise((resolve) => {
@@ -107,22 +120,29 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           paper: {
             sx: {
               borderRadius: 0,
-              minWidth: 280,
+              minWidth: 320,
+              maxWidth: 440,
               p: 0.5,
-              zoom: `${appScale}%`
-            }
-          }
+              bgcolor: "background.paper",
+              color: "text.primary",
+              backgroundImage: "none",
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.45)",
+              zoom: `${appScale}%`,
+            },
+          },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: "1rem" }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: "0.95rem", color: "text.primary", pt: 1.5, px: 2, pb: 0.5 }}>
           {confirmOpts?.title}
         </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ fontSize: "0.85rem" }}>
+        <DialogContent sx={{ px: 2, py: 1 }}>
+          <DialogContentText sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
             {confirmOpts?.message}
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ px: 1.5, pb: 0.75, gap: 0.5 }}>
+        <DialogActions sx={{ px: 2, pb: 1.5, pt: 1, gap: 0.75 }}>
           {confirmOpts?.buttons.map((btn) => (
             <Button
               key={btn.value}
@@ -130,7 +150,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
               variant={btn.variant || "outlined"}
               color={btn.color || "primary"}
               size="small"
-              sx={{ fontSize: "0.8rem", px: 2 }}
+              sx={{ borderRadius: 0, fontSize: "0.78rem", px: 2 }}
             >
               {btn.label}
             </Button>
@@ -146,53 +166,68 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           paper: {
             sx: {
               borderRadius: 0,
-              minWidth: 280,
+              minWidth: 320,
+              maxWidth: 420,
               p: 0.5,
-              zoom: `${appScale}%`
-            }
-          }
+              bgcolor: "background.paper",
+              color: "text.primary",
+              backgroundImage: "none",
+              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.45)",
+              border: "1px solid",
+              borderColor: "divider",
+              zoom: `${appScale}%`,
+            },
+          },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 600, fontSize: "1rem" }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: "0.95rem", letterSpacing: "0.01em", pt: 1.5, pb: 0.5, px: 2, color: "text.primary" }}>
           {promptOpts?.title}
         </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 1.5, fontSize: "0.85rem" }}>
-            {promptOpts?.message}
-          </DialogContentText>
+        <DialogContent sx={{ px: 2, py: 1 }}>
+          {promptOpts?.message && (
+            <DialogContentText sx={{ mb: 1.5, fontSize: "0.82rem", color: "text.secondary" }}>
+              {promptOpts?.message}
+            </DialogContentText>
+          )}
           <TextField
+            inputRef={promptInputRef}
             autoFocus
             margin="dense"
             fullWidth
+            size="small"
             variant="outlined"
             placeholder={promptOpts?.placeholder}
             value={promptValue}
             onChange={(e) => setPromptValue(e.target.value)}
+            onFocus={(e) => {
+              e.target.select();
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 handlePromptSubmit();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                handlePromptCancel();
               }
             }}
             slotProps={{
-              htmlInput: {
-                style: { fontSize: "0.85rem" }
-              }
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 0,
-              }
+              input: {
+                sx: {
+                  borderRadius: 0,
+                  fontSize: "0.85rem",
+                },
+              },
             }}
           />
         </DialogContent>
-        <DialogActions sx={{ px: 1.5, pb: 0.75, gap: 0.5 }}>
+        <DialogActions sx={{ px: 2, pb: 1.5, pt: 1, gap: 0.75 }}>
           <Button
             onClick={handlePromptCancel}
             variant="text"
             color="inherit"
             size="small"
-            sx={{ fontSize: "0.8rem", px: 2 }}
+            sx={{ borderRadius: 0, fontSize: "0.78rem", px: 2, fontWeight: 500, color: "text.secondary" }}
           >
             Cancel
           </Button>
@@ -201,7 +236,12 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
             variant="contained"
             color="primary"
             size="small"
-            sx={{ fontSize: "0.8rem", px: 2 }}
+            sx={{
+              borderRadius: 0,
+              fontSize: "0.78rem",
+              px: 2.5,
+              fontWeight: 600,
+            }}
           >
             OK
           </Button>

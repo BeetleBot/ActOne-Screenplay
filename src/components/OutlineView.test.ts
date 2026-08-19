@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getSceneColor, getSceneTitle, buildTree, flattenSelectable } from "./OutlineView";
+import { getSceneColor, getSceneTitle, buildTree, flattenSelectable, parseProseHeadings } from "./OutlineView";
 import { LineType, ParsedLine } from "../parser/FountainParser";
 
 describe("OutlineView Helpers", () => {
@@ -116,6 +116,57 @@ describe("OutlineView Helpers", () => {
       const tree = buildTree(items, {});
       expect(tree).toHaveLength(1);
       expect(tree[0].item.line.type).toBe(LineType.synopse);
+    });
+  });
+
+  describe("parseProseHeadings", () => {
+    it("parses H1 to H6 headings with line numbers", () => {
+      const text = [
+        "# Chapter 1: Introduction",
+        "Some body text here.",
+        "## Section 1.1: Background",
+        "### Detail Point",
+        "#### Sub-detail",
+        "##### Minor point",
+        "###### Deep footnote header",
+        "# Chapter 2: Conclusion",
+      ].join("\n");
+
+      const headings = parseProseHeadings(text);
+      expect(headings).toHaveLength(7);
+      expect(headings[0]).toEqual({
+        id: "prose-heading-0",
+        level: 1,
+        title: "Chapter 1: Introduction",
+        lineNumber: 0,
+      });
+      expect(headings[1]).toEqual({
+        id: "prose-heading-2",
+        level: 2,
+        title: "Section 1.1: Background",
+        lineNumber: 2,
+      });
+      expect(headings[2]).toEqual({
+        id: "prose-heading-3",
+        level: 3,
+        title: "Detail Point",
+        lineNumber: 3,
+      });
+      expect(headings[6]).toEqual({
+        id: "prose-heading-7",
+        level: 1,
+        title: "Chapter 2: Conclusion",
+        lineNumber: 7,
+      });
+    });
+
+    it("returns empty array for text with no markdown headings", () => {
+      const text = "Just regular paragraphs\nand text without headings.";
+      expect(parseProseHeadings(text)).toEqual([]);
+    });
+
+    it("handles empty or blank string gracefully", () => {
+      expect(parseProseHeadings("")).toEqual([]);
     });
   });
 });

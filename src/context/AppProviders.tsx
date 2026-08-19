@@ -1,5 +1,6 @@
 import React from "react";
 import { UIProvider } from "./UIContext";
+import { ThemeProvider } from "./ThemeContext";
 import { FileProvider } from "./FileContext";
 import { EditorProvider } from "./EditorContext";
 import { ScriptEditorProvider } from "./ScriptEditorContext";
@@ -11,21 +12,23 @@ import { SnapshotProvider } from "./SnapshotContext";
 export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <UIProvider>
-      <CustomModalProvider>
-        <FileProvider>
-          <SnapshotProvider>
-            <EditorProvider>
-              <ScriptEditorProvider>
-                <CursorProvider>
-                  <ParkingProvider>
-                    {children}
-                  </ParkingProvider>
-                </CursorProvider>
-              </ScriptEditorProvider>
-            </EditorProvider>
-          </SnapshotProvider>
-        </FileProvider>
-      </CustomModalProvider>
+      <ThemeProvider>
+        <CustomModalProvider>
+          <FileProvider>
+            <SnapshotProvider>
+              <EditorProvider>
+                <ScriptEditorProvider>
+                  <CursorProvider>
+                    <ParkingProvider>
+                      {children}
+                    </ParkingProvider>
+                  </CursorProvider>
+                </ScriptEditorProvider>
+              </EditorProvider>
+            </SnapshotProvider>
+          </FileProvider>
+        </CustomModalProvider>
+      </ThemeProvider>
     </UIProvider>
   );
 };

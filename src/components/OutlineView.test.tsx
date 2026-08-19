@@ -8,10 +8,14 @@ const mockScrollToLine = vi.fn();
 const mockSetSelectedSceneId = vi.fn();
 const mockReorderScenes = vi.fn();
 let mockLines: ParsedLine[] = [];
+let mockRawText = "";
+let mockFiles: any[] = [];
 
 vi.mock("../context", () => ({
   useFile: () => ({
     get parsedDoc() { return { lines: mockLines } as unknown as FountainDocument; },
+    get rawText() { return mockRawText; },
+    get files() { return mockFiles; },
     activeFileId: "file1",
   }),
   useEditor: () => ({
@@ -32,6 +36,8 @@ import { OutlineView } from "./OutlineView";
 beforeEach(() => {
   vi.clearAllMocks();
   mockLines = [];
+  mockRawText = "";
+  mockFiles = [];
 });
 
 describe("OutlineView Component", () => {
@@ -72,5 +78,28 @@ describe("OutlineView Component", () => {
     ];
     const { container } = render(React.createElement(OutlineView));
     expect(container.textContent).toContain("EXT. HOUSE - DAY");
+  });
+
+  it("renders prose headings list when in prose mode", () => {
+    mockFiles = [
+      {
+        id: "file1",
+        activeScriptIndex: 0,
+        scripts: [
+          {
+            name: "Chapter 1",
+            type: "markdown",
+            content: "# Main Title\n\nIntro text.\n\n## Section 1\n\nBody.\n\n### Sub-Section 1.1\n\nDetails.",
+          },
+        ],
+      },
+    ];
+    const { container } = render(React.createElement(OutlineView));
+    expect(container.textContent).toContain("Main Title");
+    expect(container.textContent).toContain("Section 1");
+    expect(container.textContent).toContain("Sub-Section 1.1");
+    expect(container.textContent).toContain("H1");
+    expect(container.textContent).toContain("H2");
+    expect(container.textContent).toContain("H3");
   });
 });

@@ -1,7 +1,14 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { useFile } from "../context";
-import { AddIcon, DownloadIcon, DragHandleIcon, SaveIcon, InfoOutlinedIcon } from "./Icons";
-import { ExportModal } from "./ExportModal";
+import {
+  AddIcon,
+  DownloadIcon,
+  DragHandleIcon,
+  InfoOutlinedIcon,
+  SearchIcon,
+  CloseIcon,
+  MoreVertIcon,
+} from "./Icons";
 
 import {
   Box,
@@ -9,34 +16,53 @@ import {
   IconButton,
   List,
   ListItemButton,
-  ListItemText,
   Menu,
   MenuItem,
   Divider,
   TextField,
   Tooltip,
 } from "@mui/material";
+import { OutlineTag } from "./OutlineView";
 
 export const ScriptsView = React.memo(() => {
   const {
-    scripts, activeScriptIndex, isBundle,
-    setActiveScript, addScript, importScript, renameScript, duplicateScript, deleteScript, moveScript,
+    scripts,
+    activeScriptIndex,
+    isBundle,
+    setActiveScript,
+    addScript,
+    importScript,
+    renameScript,
+    duplicateScript,
+    deleteScript,
+    moveScript,
   } = useFile();
 
+  const [searchQuery, setSearchQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
-  const [showExportAll, setShowExportAll] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
   const [importMenuAnchor, setImportMenuAnchor] = useState<HTMLElement | null>(null);
+
   const listRef = useRef<HTMLUListElement>(null);
   const mouseDragRef = useRef<number | null>(null);
   const mouseOverRef = useRef<number | null>(null);
   const ghostRef = useRef<HTMLDivElement | null>(null);
 
   if (!isBundle) return null;
+
+  const filteredScripts = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return scripts.map((s, index) => ({ script: s, originalIndex: index }));
+    }
+    const q = searchQuery.toLowerCase();
+    return scripts
+      .map((s, index) => ({ script: s, originalIndex: index }))
+      .filter(({ script }) => script.name.toLowerCase().includes(q));
+  }, [scripts, searchQuery]);
 
   const handleAddClick = (e: React.MouseEvent<HTMLElement>) => {
     setAddMenuAnchor(e.currentTarget);
@@ -125,16 +151,19 @@ export const ScriptsView = React.memo(() => {
       position: "fixed",
       pointerEvents: "none",
       zIndex: "10000",
-      opacity: "0.85",
-      padding: "4px 10px",
-      background: "rgb(25, 118, 210)",
+      opacity: "0.9",
+      padding: "5px 12px",
+      background: "var(--button-color, rgb(25, 118, 210))",
       color: "white",
       borderRadius: "0",
-      fontSize: "13px",
+      fontSize: "12px",
+      fontWeight: "600",
+      fontFamily: "var(--font-ui)",
       left: e.clientX + "px",
       top: e.clientY + "px",
       transform: "translate(-50%, -50%)",
       whiteSpace: "nowrap",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
     });
     document.body.appendChild(ghost);
     ghostRef.current = ghost;
@@ -188,139 +217,250 @@ export const ScriptsView = React.memo(() => {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, height: 40, minHeight: 40, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
           Project
         </Typography>
         <Box sx={{ display: "flex", gap: 0.25, alignItems: "center" }}>
-          <Tooltip title="Project displays the list of files in the current bundle. Drag to reorder, add new files, or import fountain files.">
+          <Tooltip title="Project displays the list of files in the current bundle. Drag to reorder, add new files, or import files.">
             <span>
-              <InfoOutlinedIcon sx={{ fontSize: 16, opacity: 0.6, cursor: "help", mr: 0.5 }} />
+              <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help", mr: 0.5 }} />
             </span>
           </Tooltip>
           <IconButton size="small" onClick={handleImportClick} title="Import File" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
-            <DownloadIcon sx={{ fontSize: 16 }} />
+            <DownloadIcon sx={{ fontSize: 14 }} />
           </IconButton>
-          <IconButton size="small" onClick={handleAddClick} title="Add New File">
-            <AddIcon sx={{ fontSize: 16 }} />
-          </IconButton>
-          <IconButton size="small" onClick={() => setShowExportAll(true)} title="Export All Files" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
-            <SaveIcon sx={{ fontSize: 16 }} />
+          <IconButton size="small" onClick={handleAddClick} title="Add New File" sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
+            <AddIcon sx={{ fontSize: 14 }} />
           </IconButton>
         </Box>
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0, p: 1.5 }}>
-        {scripts.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", px: 1, py: 2, fontSize: 12 }}>
-            No files yet. Add one.
-          </Typography>
-        ) : (
-          <List disablePadding ref={listRef}>
-            {scripts.map((script, index) => {
-              const isActive = index === activeScriptIndex;
-              const isDragging = dragIndex === index;
-              const isOver = overIndex === index && !isDragging;
-              return (
-                <ListItemButton
-                  key={script.fileName}
-                  dense
-                  selected={isActive}
-                  disableRipple={dragIndex !== null}
-                  onClick={() => { if (dragIndex === null) setActiveScript(index); }}
-                  onDoubleClick={() => {
-                    setEditingIndex(index);
-                    setEditingValue(script.name);
-                  }}
-                  data-script-index={index}
-                  sx={{
-                    borderRadius: 0, mb: 0.25, pr: 1, py: 0.5, pl: 0.5,
-                    opacity: isDragging ? 0.4 : 1,
-                    borderTop: isOver ? "2px solid" : "2px solid transparent",
-                    borderTopColor: isOver ? "primary.main" : "transparent",
-                    transition: "border-top-color var(--duration-fast) ease, opacity var(--duration-fast) ease",
-                    "&.Mui-selected": {
-                      bgcolor: "action.selected",
-                      "&:hover": { bgcolor: "action.selected" },
-                    },
-                  }}
-                >
-                  <Box
-                    onMouseDown={(e) => handleHandleMouseDown(e, index)}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      cursor: "grab",
-                      color: "text.disabled",
-                      mr: 0.5,
-                      flexShrink: 0,
-                      "&:hover": { color: "text.secondary" },
-                      "&:active": { cursor: "grabbing" },
-                    }}
-                  >
-                    <DragHandleIcon sx={{ fontSize: 16 }} />
-                  </Box>
-                  {editingIndex === index ? (
-                    <TextField
-                      autoFocus
-                      size="small"
-                      value={editingValue}
-                      onChange={(e) => setEditingValue(e.target.value)}
-                      onBlur={() => handleRenameSave(index)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleRenameSave(index);
-                        } else if (e.key === "Escape") {
-                          setEditingIndex(null);
-                          setEditingValue("");
-                        }
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      onDoubleClick={(e) => e.stopPropagation()}
-                      slotProps={{
-                        input: {
-                          sx: { fontSize: "0.8rem", py: 0.25, height: 24 }
-                        }
-                      }}
-                      sx={{ flex: 1, mr: 1 }}
-                    />
-                  ) : (
-                    <ListItemText
-                      primary={script.name}
-                      secondary={isActive && dragIndex === null ? "active" : undefined}
-                      slotProps={{
-                        primary: { sx: { fontWeight: isActive ? 700 : 500, fontSize: "0.8rem" } },
-                        secondary: { sx: { fontSize: "0.6rem", color: "primary.main" } },
-                      }}
-                      sx={{ minWidth: 0 }}
-                    />
-                  )}
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuState({ anchorEl: e.currentTarget, index });
-                    }}
-                    sx={{ opacity: 0.5, "&:hover": { opacity: 1 }, flexShrink: 0 }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                    </svg>
-                  </IconButton>
-                </ListItemButton>
-              );
-            })}
-          </List>
+      {/* Main Content Area */}
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Search Bar */}
+        {scripts.length > 3 && (
+          <Box sx={{ p: 1.5, pb: 0.8 }}>
+            <TextField
+              placeholder="Search files..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              fullWidth
+              slotProps={{
+                input: {
+                  sx: {
+                    bgcolor: "background.paper",
+                    fontSize: "0.75rem",
+                    "& fieldset": { border: "none" },
+                  },
+                  startAdornment: (
+                    <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
+                      <SearchIcon />
+                    </Box>
+                  ),
+                  endAdornment: searchQuery && (
+                    <IconButton size="small" onClick={() => setSearchQuery("")}>
+                      <CloseIcon />
+                    </IconButton>
+                  ),
+                },
+              }}
+            />
+          </Box>
         )}
+
+        {/* File List */}
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            outline: "none",
+            fontSize: "12.5px",
+            fontFamily: "var(--font-ui)",
+            "&::-webkit-scrollbar": {
+              width: 8,
+            },
+            "&::-webkit-scrollbar-track": {
+              bgcolor: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              bgcolor: "var(--button-color, rgba(0, 0, 0, 0.35))",
+              borderRadius: 0,
+              border: "none",
+              "&:hover": {
+                bgcolor: "primary.main",
+              },
+            },
+          }}
+        >
+          {scripts.length === 0 ? (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 3, textAlign: "center", height: "60%", opacity: 0.6 }}>
+              <InfoOutlinedIcon sx={{ fontSize: 24, mb: 1, opacity: 0.5 }} />
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, fontSize: "0.75rem" }}>
+                No files yet
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+                Click + above to add a screenplay or prose document.
+              </Typography>
+            </Box>
+          ) : filteredScripts.length === 0 ? (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 3, textAlign: "center", height: "60%", opacity: 0.6 }}>
+              <InfoOutlinedIcon sx={{ fontSize: 24, mb: 1, opacity: 0.5 }} />
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, fontSize: "0.75rem" }}>
+                No matching files
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+                Try a different search query.
+              </Typography>
+            </Box>
+          ) : (
+            <List disablePadding ref={listRef} sx={{ display: "flex", flexDirection: "column", px: 1.2, py: 0.8 }}>
+              {filteredScripts.map(({ script, originalIndex }) => {
+                const isActive = originalIndex === activeScriptIndex;
+                const isDragging = dragIndex === originalIndex;
+                const isOver = overIndex === originalIndex && !isDragging;
+                const isMarkdown = script.type === "markdown" || script.fileName?.endsWith(".md") || script.fileName?.endsWith(".markdown");
+
+                return (
+                  <ListItemButton
+                    key={script.fileName}
+                    dense
+                    selected={isActive}
+                    disableRipple={dragIndex !== null}
+                    onClick={() => {
+                      if (dragIndex === null) setActiveScript(originalIndex);
+                    }}
+                    onDoubleClick={() => {
+                      setEditingIndex(originalIndex);
+                      setEditingValue(script.name);
+                    }}
+                    data-script-index={originalIndex}
+                    sx={{
+                      borderRadius: 0,
+                      mb: 0.35,
+                      px: 1,
+                      py: 0.45,
+                      opacity: isDragging ? 0.4 : 1,
+                      border: "1px solid",
+                      borderColor: isOver
+                        ? "var(--button-color, primary.main)"
+                        : isActive
+                        ? "var(--button-color, primary.main)"
+                        : "color-mix(in srgb, var(--text-main) 8%, transparent)",
+                      bgcolor: isActive ? "action.selected" : "background.paper",
+                      boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.06)" : "0 1px 2px rgba(0,0,0,0.02)",
+                      transition: "all var(--duration-fast) ease",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "color-mix(in srgb, var(--button-color) 40%, transparent)",
+                      },
+                    }}
+                  >
+                    {/* 1. Drag Handle on Left */}
+                    <Box
+                      onMouseDown={(e) => handleHandleMouseDown(e, originalIndex)}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        cursor: "grab",
+                        color: "text.disabled",
+                        mr: 0.8,
+                        flexShrink: 0,
+                        "&:hover": { color: "text.secondary" },
+                        "&:active": { cursor: "grabbing" },
+                      }}
+                      title="Drag to reorder"
+                    >
+                      <DragHandleIcon sx={{ fontSize: 13 }} />
+                    </Box>
+
+                    {/* 2. File Name or Edit Input */}
+                    {editingIndex === originalIndex ? (
+                      <TextField
+                        autoFocus
+                        size="small"
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        onBlur={() => handleRenameSave(originalIndex)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleRenameSave(originalIndex);
+                          } else if (e.key === "Escape") {
+                            setEditingIndex(null);
+                            setEditingValue("");
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        onDoubleClick={(e) => e.stopPropagation()}
+                        slotProps={{
+                          input: {
+                            sx: { fontSize: "0.8rem", py: 0.2, height: 22 },
+                          },
+                        }}
+                        sx={{ flex: 1, mr: 0.5 }}
+                      />
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: isActive ? 700 : 500,
+                          color: "text.primary",
+                          fontSize: "0.8rem",
+                          fontFamily: "var(--font-ui)",
+                          letterSpacing: "0.01em",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          flex: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        {script.name}
+                      </Typography>
+                    )}
+
+                    {/* 3. Document Type Badge on Right */}
+                    <OutlineTag
+                      label={isMarkdown ? "MD" : "FOUNTAIN"}
+                      variant={isMarkdown ? "accent" : "default"}
+                      size="0.7rem"
+                      sx={{ ml: 0.8, mr: 0.5 }}
+                    />
+
+                    {/* 4. More Options Context Menu Button */}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuState({ anchorEl: e.currentTarget, index: originalIndex });
+                      }}
+                      sx={{
+                        p: 0.25,
+                        opacity: 0.4,
+                        "&:hover": { opacity: 1 },
+                        flexShrink: 0,
+                      }}
+                    >
+                      <MoreVertIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </ListItemButton>
+                );
+              })}
+            </List>
+          )}
+        </Box>
       </Box>
 
+      {/* Import Dropdown Menu */}
       <Menu
         anchorEl={importMenuAnchor}
         open={Boolean(importMenuAnchor)}
         onClose={handleImportClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        sx={{ "& .MuiPaper-root": { width: 160 } }}
+        sx={{ "& .MuiPaper-root": { width: 170 } }}
       >
         <MenuItem onClick={() => handleImportScriptType("fountain")} sx={{ fontSize: "0.85rem" }}>
           Import Screenplay
@@ -330,6 +470,7 @@ export const ScriptsView = React.memo(() => {
         </MenuItem>
       </Menu>
 
+      {/* Item Context Menu */}
       <Menu
         anchorEl={menuState?.anchorEl}
         open={!!menuState}
@@ -347,24 +488,22 @@ export const ScriptsView = React.memo(() => {
         <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
       </Menu>
 
+      {/* Add New Document Menu */}
       <Menu
         anchorEl={addMenuAnchor}
         open={!!addMenuAnchor}
         onClose={handleAddClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { minWidth: 140 } } }}
+        slotProps={{ paper: { sx: { minWidth: 150 } } }}
       >
         <MenuItem onClick={() => handleAddScriptType("fountain")} dense>
-          <Typography variant="body2">Script (.fountain)</Typography>
+          <Typography variant="body2">Screenplay (.fountain)</Typography>
         </MenuItem>
         <MenuItem onClick={() => handleAddScriptType("markdown")} dense>
           <Typography variant="body2">Prose (.md)</Typography>
         </MenuItem>
       </Menu>
-
-      {showExportAll && <ExportModal batchExport onClose={() => setShowExportAll(false)} />}
-
     </Box>
   );
 });

@@ -395,20 +395,24 @@ export const StatusBar = React.memo(() => {
             onClose={() => setAnchorEl(null)}
             slotProps={{ paper: { sx: { maxHeight: 200, width: 220 } } }}
           >
-            {scripts.map((script, idx) => (
-              <MenuItem 
-                key={script.fileName} 
-                selected={idx === activeScriptIndex}
-                onClick={() => handleScriptSelect(idx)}
-              >
-                <ListItemText 
-                  primary={`${script.name}.fountain`} 
-                  slotProps={{
-                    primary: { sx: { fontWeight: idx === activeScriptIndex ? 700 : 400, fontSize: 13 } },
-                  }}
-                />
-              </MenuItem>
-            ))}
+            {scripts.map((script, idx) => {
+              const ext = script.type === "markdown" || script.fileName?.endsWith(".md") || script.fileName?.endsWith(".markdown") ? "md" : "fountain";
+              const displayName = script.fileName?.split("/").pop() || `${script.name}.${ext}`;
+              return (
+                <MenuItem 
+                  key={script.fileName} 
+                  selected={idx === activeScriptIndex}
+                  onClick={() => handleScriptSelect(idx)}
+                >
+                  <ListItemText 
+                    primary={displayName} 
+                    slotProps={{
+                      primary: { sx: { fontWeight: idx === activeScriptIndex ? 700 : 400, fontSize: 13 } },
+                    }}
+                  />
+                </MenuItem>
+              );
+            })}
           </Menu>
         )}
       </Box>

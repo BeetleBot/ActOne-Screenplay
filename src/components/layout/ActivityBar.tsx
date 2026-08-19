@@ -69,7 +69,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     activeFile?.filePath?.endsWith(".markdown");
 
   const allTabs = [
-    { id: "outline", icon: <ViewAgendaIcon sx={{ fontSize: 20 }} />, title: "Outline", scriptOnly: true },
+    { id: "outline", icon: <ViewAgendaIcon sx={{ fontSize: 20 }} />, title: "Outline" },
     { id: "scripts", icon: <FolderSimplePlusIcon sx={{ fontSize: 20 }} />, title: "Project" },
     { id: "notepad", icon: <AddNotesIcon sx={{ fontSize: 20 }} />, title: "Notepad" },
     { id: "markers", icon: <BeenhereIcon sx={{ fontSize: 20 }} />, title: "Markers", scriptOnly: true },
@@ -83,7 +83,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   const tabs = supportsExtended ? availableTabs : availableTabs.filter(t => t.id === "outline" || t.id === "scripts");
 
   React.useEffect(() => {
-    if (isProse && (activeTab === "outline" || activeTab === "markers" || activeTab === "sprint" || activeTab === "parking")) {
+    if (isProse && (activeTab === "markers" || activeTab === "sprint" || activeTab === "parking")) {
       setActiveTab("scripts");
     }
   }, [isProse, activeTab, setActiveTab]);
