@@ -7,7 +7,6 @@ import { AboutModal } from './AboutModal';
 import { QuickGuideModal } from './QuickGuideModal';
 import { FixFormattingModal } from './FixFormattingModal';
 import { ErrorBoundary } from './ErrorBoundary';
-import { useFile, useCustomModal } from '../context';
 import type { FixFormattingReport } from '../utils/fixFormatting';
 
 export interface ModalManagerProps {
@@ -60,8 +59,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   const setShowAbout = externalSetShowAbout || setLocalShowAbout;
 
   const [fixFormattingReport, setFixFormattingReport] = useState<FixFormattingReport | null>(null);
-  const { files, activeFileId } = useFile();
-  const { confirm } = useCustomModal();
 
   return (
     <>
@@ -70,22 +67,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           isOpen={isPaletteOpen}
           onClose={() => setIsPaletteOpen(false)}
           onExportPDF={() => {
-            const activeFile = files.find(f => f.id === activeFileId);
-            const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
-            const isProseDoc = activeScript?.type === "markdown" ||
-              activeScript?.fileName?.endsWith(".md") ||
-              activeScript?.fileName?.endsWith(".markdown") ||
-              activeFile?.filePath?.endsWith(".md") ||
-              activeFile?.filePath?.endsWith(".markdown");
-
-            if (isProseDoc) {
-              confirm({
-                title: "Export Prose",
-                message: "Exporting prose documents is not implemented yet.",
-                buttons: [{ value: "ok", label: "OK", variant: "contained" }]
-              });
-              return;
-            }
             setShowExportModal(true);
           }}
           toggleSidebar={toggleSidebar}

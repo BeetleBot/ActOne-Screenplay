@@ -10,12 +10,13 @@ import { DownloadIcon, MuseIcon } from "../Icons";
 import { useStoreUpdateCheck } from "../../hooks";
 import { usePromptConfig } from "../../hooks/usePromptConfig";
 import { useModalWindows } from "../../hooks/useModalWindows";
+import { isProseScript } from "../../utils/scriptMode";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus, files } = useFile();
   const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, cancelTranslation, activeRightPane, setActiveRightPane, spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage } = useUI();
   const activeFile = files.find(f => f.id === activeFileId);
-  const isMarkdown = isBundle && scripts[activeScriptIndex]?.fileName?.endsWith(".md");
+  const isMarkdown = isProseScript(scripts[activeScriptIndex], filePath);
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
   const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
@@ -396,7 +397,7 @@ export const StatusBar = React.memo(() => {
             slotProps={{ paper: { sx: { maxHeight: 200, width: 220 } } }}
           >
             {scripts.map((script, idx) => {
-              const ext = script.type === "markdown" || script.fileName?.endsWith(".md") || script.fileName?.endsWith(".markdown") ? "md" : "fountain";
+              const ext = isProseScript(script) ? "md" : "fountain";
               const displayName = script.fileName?.split("/").pop() || `${script.name}.${ext}`;
               return (
                 <MenuItem 

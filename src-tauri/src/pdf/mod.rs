@@ -3,7 +3,8 @@ pub mod fadein;
 pub mod fadein_pack;
 mod fdx;
 mod parser;
-
+pub mod prose;
+pub use self::prose::export::ProsePdfExporter;
 pub mod rich_string;
 pub mod screenplay;
 pub use self::screenplay::Screenplay;

@@ -2,15 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 
+let mockFileState = {
+  rawText: "EXT. HOUSE - DAY\n\nHello.",
+  isBundle: false,
+  activeScriptName: "Script",
+  filePath: null,
+  updateSettings: vi.fn(),
+  parsedDoc: { lines: [], settings: {}, screenplayText: "EXT. HOUSE - DAY\n\nHello." },
+  scripts: [{ id: "s1", name: "Script", type: "fountain", content: "EXT. HOUSE - DAY\n\nHello." }],
+  activeScriptIndex: 0,
+};
+
 vi.mock("../context", () => ({
-  useFile: () => ({
-    rawText: "EXT. HOUSE - DAY\n\nHello.",
-    isBundle: false,
-    activeScriptName: "Script",
-    filePath: null,
-    updateSettings: vi.fn(),
-    parsedDoc: { lines: [], settings: {}, screenplayText: "EXT. HOUSE - DAY\n\nHello." },
-  }),
+  useFile: () => mockFileState,
   useUI: () => ({
     fontFamily: "courier-prime",
     paperSize: "letter",
@@ -18,10 +22,35 @@ vi.mock("../context", () => ({
   }),
 }));
 
-import { ExportModal } from "./ExportModal";
+import { ExportModal, assetsToBase64Map } from "./ExportModal";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockFileState = {
+    rawText: "EXT. HOUSE - DAY\n\nHello.",
+    isBundle: false,
+    activeScriptName: "Script",
+    filePath: null,
+    updateSettings: vi.fn(),
+    parsedDoc: { lines: [], settings: {}, screenplayText: "EXT. HOUSE - DAY\n\nHello." },
+    scripts: [{ id: "s1", name: "Script", type: "fountain", content: "EXT. HOUSE - DAY\n\nHello." }],
+    activeScriptIndex: 0,
+  };
+});
+
+describe("assetsToBase64Map", () => {
+  it("converts byte arrays to base64 strings", () => {
+    const assets = {
+      "img.png": new Uint8Array([72, 101, 108, 108, 111]),
+    };
+    const map = assetsToBase64Map(assets);
+    expect(map["img.png"]).toBe("SGVsbG8=");
+  });
+
+  it("handles undefined or empty assets", () => {
+    expect(assetsToBase64Map(undefined)).toEqual({});
+    expect(assetsToBase64Map({})).toEqual({});
+  });
 });
 
 describe("ExportModal Component", () => {
@@ -30,13 +59,22 @@ describe("ExportModal Component", () => {
     expect(container).toBeTruthy();
   });
 
-  it("renders export options", () => {
+  it("renders script mode export options", () => {
     render(React.createElement(ExportModal, { onClose: vi.fn() }));
     expect(screen.getByText(/export script/i)).toBeTruthy();
+    expect(screen.getByText(/start each scene on new page/i)).toBeTruthy();
+    expect(screen.getByText(/^fountain$/i)).toBeTruthy();
   });
 
-  it("renders start-each-scene-on-new-page option in PDF pane", () => {
+  it("renders prose mode export modal correctly", () => {
+    mockFileState = {
+      ...mockFileState,
+      scripts: [{ id: "s1", name: "Chapter 1", type: "markdown", content: "# Chapter 1\n\nSome prose text." }],
+    };
     render(React.createElement(ExportModal, { onClose: vi.fn() }));
-    expect(screen.getByText(/start each scene on new page/i)).toBeTruthy();
+    expect(screen.getByText(/export prose/i)).toBeTruthy();
+    expect(screen.getByText(/markdown \(\.md\)/i)).toBeTruthy();
+    expect(screen.queryByText(/^fountain$/i)).toBeNull();
+    expect(screen.queryByText(/element formatting/i)).toBeNull();
   });
 });

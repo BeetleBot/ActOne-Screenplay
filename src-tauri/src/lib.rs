@@ -644,6 +644,197 @@ fn generate_fdx_string(fountain_text: String) -> String {
 }
 
 #[tauri::command]
+fn export_markdown(content: String, default_directory: Option<String>) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new();
+    if let Some(dir) = &default_directory {
+        dialog = dialog.set_directory(dir);
+    }
+    let file = dialog
+        .add_filter("Markdown Document", &["md", "markdown"])
+        .save_file()?;
+
+    let mut file_path = file;
+    if file_path.extension().is_none() {
+        file_path.set_extension("md");
+    }
+
+    if fs::write(&file_path, &content).is_ok() {
+        return Some(file_path.to_string_lossy().to_string());
+    }
+    None
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+fn export_prose_pdf(
+    markdown_text: String,
+    paper_size: Option<String>,
+    font_family: Option<String>,
+    watermark_header_enabled: Option<bool>,
+    watermark_header_text: Option<String>,
+    watermark_header_opacity: Option<f32>,
+    watermark_footer_enabled: Option<bool>,
+    watermark_footer_text: Option<String>,
+    watermark_footer_opacity: Option<f32>,
+    watermark_center_enabled: Option<bool>,
+    watermark_center_type: Option<String>,
+    watermark_center_text: Option<String>,
+    watermark_center_image_path: Option<String>,
+    watermark_center_opacity: Option<f32>,
+    watermark_center_grayscale: Option<bool>,
+    script_fonts: Option<String>,
+    assets: Option<std::collections::HashMap<String, String>>,
+    default_directory: Option<String>,
+) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new();
+    if let Some(dir) = &default_directory {
+        dialog = dialog.set_directory(dir);
+    }
+    let file = dialog.add_filter("PDF Document", &["pdf"]).save_file()?;
+
+    let paper = if paper_size.as_deref() == Some("letter") {
+        pdf::LETTER
+    } else {
+        pdf::A4
+    };
+    let font_str = font_family.unwrap_or_default();
+    let export_font = if font_str == "courier-prime-sans" {
+        "courier_prime_sans".to_string()
+    } else if font_str == "courier-prime" {
+        "courier_prime".to_string()
+    } else {
+        font_str
+    };
+
+    let mut image_map = std::collections::HashMap::new();
+    if let Some(assets_map) = assets {
+        use base64::Engine;
+        for (key, base64_str) in assets_map {
+            let clean = if let Some(idx) = base64_str.find(',') {
+                &base64_str[idx + 1..]
+            } else {
+                &base64_str
+            };
+            if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(clean) {
+                image_map.insert(key, decoded);
+            }
+        }
+    }
+
+    let exporter = pdf::prose::export::ProsePdfExporter {
+        paper_size: paper,
+        export_font,
+        watermark_header_enabled: watermark_header_enabled.unwrap_or(false),
+        watermark_header_text: watermark_header_text.unwrap_or_default(),
+        watermark_header_opacity: watermark_header_opacity.unwrap_or(1.0),
+        watermark_footer_enabled: watermark_footer_enabled.unwrap_or(false),
+        watermark_footer_text: watermark_footer_text.unwrap_or_default(),
+        watermark_footer_opacity: watermark_footer_opacity.unwrap_or(1.0),
+        watermark_center_enabled: watermark_center_enabled.unwrap_or(false),
+        watermark_center_type: watermark_center_type.unwrap_or_else(|| "text".to_string()),
+        watermark_center_text: watermark_center_text.unwrap_or_default(),
+        watermark_center_image_path: watermark_center_image_path.unwrap_or_default(),
+        watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
+        watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
+        script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
+        images: image_map,
+        base_dir: default_directory.map(std::path::PathBuf::from),
+        image_cache: std::cell::RefCell::new(std::collections::HashMap::new()),
+    };
+
+    let mut file_path = file;
+    if file_path.extension().is_none() {
+        file_path.set_extension("pdf");
+    }
+
+    let mut out_file = std::fs::File::create(&file_path).ok()?;
+    if let Err(e) = exporter.export(&markdown_text, &mut out_file) {
+        eprintln!("export_prose_pdf failed: {:?}", e);
+        return None;
+    }
+    Some(file_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+fn generate_prose_pdf_bytes(
+    markdown_text: String,
+    paper_size: Option<String>,
+    font_family: Option<String>,
+    watermark_header_enabled: Option<bool>,
+    watermark_header_text: Option<String>,
+    watermark_header_opacity: Option<f32>,
+    watermark_footer_enabled: Option<bool>,
+    watermark_footer_text: Option<String>,
+    watermark_footer_opacity: Option<f32>,
+    watermark_center_enabled: Option<bool>,
+    watermark_center_type: Option<String>,
+    watermark_center_text: Option<String>,
+    watermark_center_image_path: Option<String>,
+    watermark_center_opacity: Option<f32>,
+    watermark_center_grayscale: Option<bool>,
+    script_fonts: Option<String>,
+    assets: Option<std::collections::HashMap<String, String>>,
+    default_directory: Option<String>,
+) -> Option<Vec<u8>> {
+    let paper = if paper_size.as_deref() == Some("letter") {
+        pdf::LETTER
+    } else {
+        pdf::A4
+    };
+    let font_str = font_family.unwrap_or_default();
+    let export_font = if font_str == "courier-prime-sans" {
+        "courier_prime_sans".to_string()
+    } else if font_str == "courier-prime" {
+        "courier_prime".to_string()
+    } else {
+        font_str
+    };
+
+    let mut image_map = std::collections::HashMap::new();
+    if let Some(assets_map) = assets {
+        use base64::Engine;
+        for (key, base64_str) in assets_map {
+            let clean = if let Some(idx) = base64_str.find(',') {
+                &base64_str[idx + 1..]
+            } else {
+                &base64_str
+            };
+            if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(clean) {
+                image_map.insert(key, decoded);
+            }
+        }
+    }
+
+    let exporter = pdf::prose::export::ProsePdfExporter {
+        paper_size: paper,
+        export_font,
+        watermark_header_enabled: watermark_header_enabled.unwrap_or(false),
+        watermark_header_text: watermark_header_text.unwrap_or_default(),
+        watermark_header_opacity: watermark_header_opacity.unwrap_or(1.0),
+        watermark_footer_enabled: watermark_footer_enabled.unwrap_or(false),
+        watermark_footer_text: watermark_footer_text.unwrap_or_default(),
+        watermark_footer_opacity: watermark_footer_opacity.unwrap_or(1.0),
+        watermark_center_enabled: watermark_center_enabled.unwrap_or(false),
+        watermark_center_type: watermark_center_type.unwrap_or_else(|| "text".to_string()),
+        watermark_center_text: watermark_center_text.unwrap_or_default(),
+        watermark_center_image_path: watermark_center_image_path.unwrap_or_default(),
+        watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
+        watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
+        script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
+        images: image_map,
+        base_dir: default_directory.map(std::path::PathBuf::from),
+        image_cache: std::cell::RefCell::new(std::collections::HashMap::new()),
+    };
+
+    let mut buf = std::io::Cursor::new(Vec::new());
+    if exporter.export(&markdown_text, &mut buf).is_ok() {
+        return Some(buf.into_inner());
+    }
+    None
+}
+
+#[tauri::command]
 fn read_file_content(path: String) -> Result<String, String> {
     fs::read_to_string(path).map_err(|e| e.to_string())
 }
@@ -870,6 +1061,9 @@ pub fn run() {
             save_file_dialog,
             save_pdf_dialog,
             export_pdf,
+            export_prose_pdf,
+            generate_prose_pdf_bytes,
+            export_markdown,
             export_fountain,
             export_csv,
             export_fdx,

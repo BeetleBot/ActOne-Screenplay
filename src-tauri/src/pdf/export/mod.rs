@@ -11,6 +11,7 @@
 pub mod elements;
 pub mod layout;
 pub mod pdf;
+pub mod shared;
 pub mod title_page;
 
 use std::{

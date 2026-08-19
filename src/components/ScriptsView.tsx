@@ -23,6 +23,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { OutlineTag } from "./OutlineView";
+import { isProseScript } from "../utils/scriptMode";
 
 export const ScriptsView = React.memo(() => {
   const {
@@ -321,7 +322,7 @@ export const ScriptsView = React.memo(() => {
                 const isActive = originalIndex === activeScriptIndex;
                 const isDragging = dragIndex === originalIndex;
                 const isOver = overIndex === originalIndex && !isDragging;
-                const isMarkdown = script.type === "markdown" || script.fileName?.endsWith(".md") || script.fileName?.endsWith(".markdown");
+                const isMarkdown = isProseScript(script);
 
                 return (
                   <ListItemButton

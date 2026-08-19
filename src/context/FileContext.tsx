@@ -6,6 +6,7 @@ import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundleAsync } from "../utils";
 import { parseScriptFileToFountain } from "../utils/text";
 import type { ScriptInfo } from "../utils";
+import { isProseScript } from "../utils/scriptMode";
 import { logger } from "../utils/logger";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
@@ -1223,7 +1224,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const updatedScripts = file.scripts.map((s, i) =>
-      i === index ? { ...s, name: trimmed, fileName: s.type === "markdown" ? `files/${sanitizeFileName(trimmed)}.md` : `${sanitizeFileName(trimmed)}.fountain` } : s
+      i === index ? { ...s, name: trimmed, fileName: isProseScript(s) ? `files/${sanitizeFileName(trimmed)}.md` : `${sanitizeFileName(trimmed)}.fountain` } : s
     );
 
     setFiles(prev => prev.map(f => f.id === activeFileId ? {
@@ -1241,7 +1242,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const source = file.scripts[index];
     const newName = getUniqueName(name?.trim() || source.name, file.scripts);
-    const isMarkdown = source.type === "markdown";
+    const isMarkdown = isProseScript(source);
     const newFileName = isMarkdown ? `files/${sanitizeFileName(newName)}.md` : `${sanitizeFileName(newName)}.fountain`;
     const newScript: ScriptInfo = {
       name: newName,

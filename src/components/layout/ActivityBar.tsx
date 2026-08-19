@@ -18,6 +18,7 @@ import {
   GarageIcon, MoreHorizIcon,
 } from "../Icons";
 import { ThemeLogo } from "../ThemeLogo";
+import { isProseScript } from "../../utils/scriptMode";
 
 interface ActivityBarProps {
   activeTab: string;
@@ -62,11 +63,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   };
 
   const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
-  const isProse = activeScript?.type === "markdown" ||
-    activeScript?.fileName?.endsWith(".md") ||
-    activeScript?.fileName?.endsWith(".markdown") ||
-    activeFile?.filePath?.endsWith(".md") ||
-    activeFile?.filePath?.endsWith(".markdown");
+  const isProse = isProseScript(activeScript, activeFile?.filePath);
 
   const allTabs = [
     { id: "outline", icon: <ViewAgendaIcon sx={{ fontSize: 20 }} />, title: "Outline" },

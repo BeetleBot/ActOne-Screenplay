@@ -132,6 +132,7 @@ impl RichString {
         if let Some(e) = other.elements.first()
             && let Some(l) = self.elements.last_mut()
             && e.attributes == l.attributes
+            && e.link_url == l.link_url
         {
             l.text.push_str(&e.text);
             other.elements.drain(..1);
@@ -256,6 +257,7 @@ impl<'a> Iterator for RichIterator<'a> {
 pub struct Element {
     pub text: String,
     pub(crate) attributes: Attributes,
+    pub link_url: Option<String>,
 }
 
 impl Element {
@@ -265,7 +267,13 @@ impl Element {
         Self {
             text,
             attributes: Attributes::empty(),
+            link_url: None,
         }
+    }
+
+    /// Sets the URL for this element if it is a link.
+    pub fn set_link(&mut self, url: String) {
+        self.link_url = Some(url);
     }
 
     /// If the element is styled as bold.
@@ -311,6 +319,29 @@ impl Element {
     pub fn set_sans(&mut self) {
         self.attributes.insert(Attributes::SANS);
     }
+
+    /// If the element is styled with a strikethrough.
+    #[must_use]
+    pub fn is_strike(&self) -> bool {
+        self.attributes.contains(Attributes::STRIKE)
+    }
+
+    /// Sets the element to be formatted with a strikethrough.
+    pub fn set_strike(&mut self) {
+        self.attributes.insert(Attributes::STRIKE);
+    }
+
+    /// If the element should always use a monospace (Courier) family,
+    /// regardless of the document export font.
+    #[must_use]
+    pub fn is_mono(&self) -> bool {
+        self.attributes.contains(Attributes::MONO)
+    }
+
+    /// Sets the element to be formatted with a monospace (Courier) family.
+    pub fn set_mono(&mut self) {
+        self.attributes.insert(Attributes::MONO);
+    }
 }
 
 bitflags! {
@@ -321,6 +352,8 @@ bitflags! {
         const UNDERLINE = 0b010;
         const ITALIC    = 0b100;
         const SANS      = 0b1000;
+        const STRIKE    = 0b1_0000;
+        const MONO      = 0b10_0000;
     }
 }
 

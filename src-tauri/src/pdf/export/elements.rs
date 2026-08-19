@@ -99,6 +99,8 @@ pub struct ShapedLine {
     pub runs: Vec<ShapedRun>,
     pub width: f32,
     pub underline_ranges: Vec<(f32, f32)>,
+    pub strike_ranges: Vec<(f32, f32)>,
+    pub link_ranges: Vec<(f32, f32, String)>,
 }
 
 pub struct ShapedParagraph {
@@ -254,7 +256,7 @@ fn split_indices_by_script(text: &str) -> Vec<(usize, usize, bool)> {
     ranges
 }
 
-fn shape_rich_string(
+pub(crate) fn shape_rich_string(
     font_system: &mut FontSystem,
     content: &RichString,
     max_width: f32,
@@ -271,6 +273,8 @@ fn shape_rich_string(
         export_font == "courier_prime_sans" || content.elements.iter().any(|e| e.is_sans());
     let base_family = if is_sans {
         "Courier Prime Sans"
+    } else if !export_font.is_empty() && export_font != "courier_prime" {
+        export_font
     } else {
         "Courier Prime"
     };
@@ -282,6 +286,10 @@ fn shape_rich_string(
     let mut italic_spans: Vec<(usize, usize)> = Vec::new();
     // Build underline span map: (byte_start, byte_end) for each underlined region
     let mut underline_spans: Vec<(usize, usize)> = Vec::new();
+    // Build strikethrough span map: (byte_start, byte_end) for each struck region
+    let mut strike_spans: Vec<(usize, usize)> = Vec::new();
+    // Build link span map: (byte_start, byte_end, url)
+    let mut link_spans: Vec<(usize, usize, String)> = Vec::new();
     let mut span_offset = 0;
     for element in &content.elements {
         let byte_len = element.text.len();
@@ -291,6 +299,12 @@ fn shape_rich_string(
             }
             if element.is_underline() {
                 underline_spans.push((span_offset, span_offset + byte_len));
+            }
+            if element.is_strike() {
+                strike_spans.push((span_offset, span_offset + byte_len));
+            }
+            if let Some(url) = &element.link_url {
+                link_spans.push((span_offset, span_offset + byte_len, url.clone()));
             }
         }
         span_offset += byte_len;
@@ -310,13 +324,18 @@ fn shape_rich_string(
         if element.is_bold() {
             base_attrs = base_attrs.weight(Weight::BOLD);
         }
+        if element.is_mono() {
+            base_attrs = base_attrs.family(Family::Name("Courier Prime"));
+        }
 
         let ranges = split_indices_by_script(&element.text);
         for (start, end, is_eng) in ranges {
             let substring = &element.text[start..end];
             let mut attrs = base_attrs;
             if is_eng {
-                attrs = attrs.family(Family::Name(base_family));
+                if !element.is_mono() {
+                    attrs = attrs.family(Family::Name(base_family));
+                }
                 if element.is_italic() {
                     attrs = attrs.style(cosmic_text::Style::Italic);
                 }
@@ -340,6 +359,8 @@ fn shape_rich_string(
         let mut current_start_x = 0.0;
         let mut current_is_italic = false;
         let mut underline_x_ranges: Vec<(f32, f32)> = Vec::new();
+        let mut strike_x_ranges: Vec<(f32, f32)> = Vec::new();
+        let mut link_x_ranges: Vec<(f32, f32, String)> = Vec::new();
 
         for glyph in run.glyphs.iter() {
             let mut start = glyph.start;
@@ -386,6 +407,21 @@ fn shape_rich_string(
                 underline_x_ranges.push((glyph.x, glyph.w));
             }
 
+            // Check if this glyph falls within any strikethrough span
+            let glyph_is_struck = strike_spans
+                .iter()
+                .any(|(st_start, st_end)| start < *st_end && end > *st_start);
+            if glyph_is_struck {
+                strike_x_ranges.push((glyph.x, glyph.w));
+            }
+
+            // Check if this glyph falls within any link span
+            for (l_start, l_end, url) in &link_spans {
+                if start < *l_end && end > *l_start {
+                    link_x_ranges.push((glyph.x, glyph.w, url.clone()));
+                }
+            }
+
             current_glyphs.push(KrillaGlyphWrapper {
                 glyph_id: glyph.glyph_id as u32,
                 start,
@@ -424,10 +460,44 @@ fn shape_rich_string(
             }
         }
 
+        // Merge overlapping/adjacent strikethrough x-ranges
+        strike_x_ranges.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        let mut merged_strike: Vec<(f32, f32)> = Vec::new();
+        for (x, w) in strike_x_ranges {
+            if let Some(last) = merged_strike.last_mut() {
+                let last_end = last.0 + last.1;
+                if x <= last_end + 0.5 {
+                    last.1 = (x + w - last.0).max(last.1);
+                } else {
+                    merged_strike.push((x, w));
+                }
+            } else {
+                merged_strike.push((x, w));
+            }
+        }
+
+        // Merge overlapping/adjacent link x-ranges
+        link_x_ranges.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        let mut merged_links: Vec<(f32, f32, String)> = Vec::new();
+        for (x, w, url) in link_x_ranges {
+            if let Some(last) = merged_links.last_mut() {
+                let last_end = last.0 + last.1;
+                if last.2 == url && x <= last_end + 0.5 {
+                    last.1 = (x + w - last.0).max(last.1);
+                } else {
+                    merged_links.push((x, w, url));
+                }
+            } else {
+                merged_links.push((x, w, url));
+            }
+        }
+
         lines.push(ShapedLine {
             runs: runs_in_line,
             width: line_width,
             underline_ranges: merged,
+            strike_ranges: merged_strike,
+            link_ranges: merged_links,
         });
     }
 
@@ -449,6 +519,8 @@ fn shape_rich_string(
             }],
             width: 0.0,
             underline_ranges: vec![],
+            strike_ranges: vec![],
+            link_ranges: vec![],
         });
     }
 
@@ -726,7 +798,7 @@ pub fn get_krilla_font(
     font
 }
 
-fn draw_shaped_line(
+pub(crate) fn draw_shaped_line(
     ctx: &mut DrawContext<'_, '_>,
     line: &ShapedLine,
     x: f32,
@@ -771,6 +843,19 @@ fn draw_shaped_line(
     for (ul_x, ul_width) in &line.underline_ranges {
         if *ul_width > 0.0
             && let Some(r) = Rect::from_xywh(x + ul_x, y + 1.2, *ul_width, 0.5)
+        {
+            let mut pb = PathBuilder::new();
+            pb.push_rect(r);
+            pb.close();
+            if let Some(path) = pb.finish() {
+                ctx.surface.draw_path(&path);
+            }
+        }
+    }
+
+    for (st_x, st_width) in &line.strike_ranges {
+        if *st_width > 0.0
+            && let Some(r) = Rect::from_xywh(x + st_x, y - 0.28 * font_size, *st_width, 0.6)
         {
             let mut pb = PathBuilder::new();
             pb.push_rect(r);
@@ -1153,8 +1238,27 @@ pub fn write_element(
     can_split: bool,
     residual: &mut Option<usize>,
 ) -> std::io::Result<bool> {
+    write_element_sized(
+        ctx,
+        content,
+        margin,
+        alignment,
+        can_split,
+        residual,
+        FONT_SIZE,
+    )
+}
+
+pub fn write_element_sized(
+    ctx: &mut DrawContext<'_, '_>,
+    content: &RichString,
+    margin: &Margin,
+    alignment: Alignment,
+    can_split: bool,
+    residual: &mut Option<usize>,
+    font_size: f32,
+) -> std::io::Result<bool> {
     let max_width = margin.content_width(ctx.layout_info.size);
-    let font_size = FONT_SIZE;
     let shaped = shape_rich_string(
         ctx.font_system,
         content,
@@ -1298,8 +1402,27 @@ pub fn measure_element_height(
     export_font: &str,
     script_fonts: &HashMap<String, String>,
 ) -> f32 {
+    measure_element_height_sized(
+        font_system,
+        content,
+        margin,
+        size,
+        export_font,
+        script_fonts,
+        FONT_SIZE,
+    )
+}
+
+pub fn measure_element_height_sized(
+    font_system: &mut FontSystem,
+    content: &RichString,
+    margin: &Margin,
+    size: &PaperSize,
+    export_font: &str,
+    script_fonts: &HashMap<String, String>,
+    font_size: f32,
+) -> f32 {
     let max_width = margin.content_width(size);
-    let font_size = FONT_SIZE;
     let shaped = shape_rich_string(
         font_system,
         content,

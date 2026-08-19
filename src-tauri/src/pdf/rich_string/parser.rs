@@ -126,6 +126,7 @@ pub(crate) fn push_parsed(
         rich_string.elements.push(Element {
             text: token,
             attributes: a,
+            link_url: None,
         });
     }
 }

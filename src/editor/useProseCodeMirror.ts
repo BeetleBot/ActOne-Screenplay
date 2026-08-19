@@ -9,16 +9,32 @@ import { imageBlocks } from "./markdown/image-blocks";
 import { treeProgressPlugin } from "./markdown/tree-progress";
 
 const globalAssetUrlCache = new Map<string, string>();
+const globalAssetBytesCache = new Map<string, Uint8Array>();
 
 export function registerAssetBlob(key: string, data: Uint8Array | Blob): string {
   const existing = globalAssetUrlCache.get(key);
   if (existing) {
     URL.revokeObjectURL(existing);
   }
+  if (data instanceof Uint8Array) {
+    globalAssetBytesCache.set(key, data);
+  } else if (data instanceof Blob) {
+    data.arrayBuffer().then(buf => {
+      globalAssetBytesCache.set(key, new Uint8Array(buf));
+    });
+  }
   const blob = data instanceof Blob ? data : new Blob([data as Uint8Array]);
   const url = URL.createObjectURL(blob);
   globalAssetUrlCache.set(key, url);
   return url;
+}
+
+export function getAllCachedAssetBytes(): Record<string, Uint8Array> {
+  const res: Record<string, Uint8Array> = {};
+  for (const [k, v] of globalAssetBytesCache.entries()) {
+    res[k] = v;
+  }
+  return res;
 }
 
 export function getAssetBlobUrl(key: string, assets?: Record<string, Uint8Array>): string | null {

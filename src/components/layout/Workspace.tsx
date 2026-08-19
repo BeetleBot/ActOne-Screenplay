@@ -15,6 +15,7 @@ import { AddIcon } from "../Icons";
 
 
 import { ErrorBoundary } from "../ErrorBoundary";
+import { isProseScript } from "../../utils/scriptMode";
 
 interface WorkspaceProps {
   isSidebarOpen: boolean;
@@ -32,7 +33,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
   const activeFile = files.find(f => f.id === activeFileId);
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
   const activeScript = activeFile && activeFile.scripts && activeFile.activeScriptIndex !== undefined ? activeFile.scripts[activeFile.activeScriptIndex] : null;
-  const isMarkdown = activeScript?.type === "markdown";
+  const isMarkdown = isProseScript(activeScript, activeFile?.filePath);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

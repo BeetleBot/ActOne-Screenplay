@@ -8,6 +8,7 @@ import { logger } from "../utils/logger";
 import { parseScriptFileToFountain } from "../utils/text";
 import { fixFormatting, type FixFormattingReport } from "../utils/fixFormatting";
 import { useModalWindows } from "../hooks/useModalWindows";
+import { isProseScript } from "../utils/scriptMode";
 
 
 
@@ -111,11 +112,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
 
   const activeFile = files?.find(f => f.id === activeFileId);
   const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
-  const isProse = activeScript?.type === "markdown" ||
-    activeScript?.fileName?.endsWith(".md") ||
-    activeScript?.fileName?.endsWith(".markdown") ||
-    activeFile?.filePath?.endsWith(".md") ||
-    activeFile?.filePath?.endsWith(".markdown");
+  const isProse = isProseScript(activeScript, activeFile?.filePath);
 
   const { editorView } = useEditor();
   const { autoAddSceneNumbers, clearSceneNumbers } = useScriptEditor();

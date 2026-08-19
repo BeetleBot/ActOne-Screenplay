@@ -26,7 +26,39 @@ import {
   Divider,
 } from "@mui/material";
 
-type ExportFormat = "pdf" | "fountain" | "fdx" | "fadein";
+import { isProseScript } from "../utils/scriptMode";
+import { getAllCachedAssetBytes } from "../editor/useProseCodeMirror";
+
+export function assetsToBase64Map(assets?: Record<string, Uint8Array | ArrayBuffer | number[] | Record<string, unknown>>): Record<string, string> {
+  if (!assets) return {};
+  const res: Record<string, string> = {};
+  for (const [key, rawBytes] of Object.entries(assets)) {
+    if (!rawBytes) continue;
+    let u8: Uint8Array;
+    if (rawBytes instanceof Uint8Array) {
+      u8 = rawBytes;
+    } else if (rawBytes instanceof ArrayBuffer) {
+      u8 = new Uint8Array(rawBytes);
+    } else if (Array.isArray(rawBytes)) {
+      u8 = new Uint8Array(rawBytes);
+    } else if (typeof rawBytes === "object" && rawBytes !== null) {
+      u8 = new Uint8Array(Object.values(rawBytes) as number[]);
+    } else {
+      continue;
+    }
+    let binary = "";
+    const len = u8.length;
+    const CHUNK_SIZE = 8192;
+    for (let i = 0; i < len; i += CHUNK_SIZE) {
+      const sub = u8.subarray(i, i + CHUNK_SIZE);
+      binary += String.fromCharCode.apply(null, sub as unknown as number[]);
+    }
+    res[key] = btoa(binary);
+  }
+  return res;
+}
+
+type ExportFormat = "pdf" | "fountain" | "fdx" | "fadein" | "markdown";
 type PdfSubTab = "document" | "formatting" | "watermarks";
 
 interface ElementFormat {
@@ -209,11 +241,15 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 );
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }) => {
-  const { rawText, isBundle, activeScriptName, filePath, updateSettings, parsedDoc, scripts } = useFile();
+  const { rawText, isBundle, activeScriptName, filePath, updateSettings, parsedDoc, scripts, activeScriptIndex } = useFile();
   const { fontFamily, paperSize, appScale } = useUI();
+
+  const activeScript = scripts?.[activeScriptIndex ?? 0];
+  const isProse = isProseScript(activeScript, filePath);
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [pdfSubTab, setPdfSubTab] = useState<PdfSubTab>("document");
+  const [isExporting, setIsExporting] = useState(false);
 
   const savedFormats = parsedDoc?.settings?.elementFormats as ElementFormats | undefined;
   const [elementFormats, setElementFormats] = useState<ElementFormats>(
@@ -336,7 +372,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
         const revisedLines: boolean[] = [];
-
         const result = await invoke<string | null>("export_pdf", {
           fountainText: rawText,
           paperSize,
@@ -368,9 +403,88 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       } else {
         alert("PDF export is only supported in the desktop app.");
       }
-      onClose();
     } catch (e) {
       logger.error("export", "handleExportPDF failed", e);
+    }
+  };
+
+  const handleExportProsePDF = async () => {
+    try {
+      updateWatermarkSettings(currentWatermarkSettings());
+      const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+      if (isTauri) {
+        const cachedAssets = getAllCachedAssetBytes();
+        const docAssets = (parsedDoc?.settings?.assets || (parsedDoc as unknown as { assets?: Record<string, Uint8Array> })?.assets) as Record<string, Uint8Array> | undefined;
+        const allAssets: Record<string, Uint8Array> = {
+          ...cachedAssets,
+          ...(docAssets || {}),
+        };
+        const filteredAssets: Record<string, Uint8Array> = {};
+        for (const [k, v] of Object.entries(allAssets)) {
+          const filename = k.replace(/^files\/assets\//, "").replace(/^assets\//, "");
+          if (rawText.includes(filename) || rawText.includes(k)) {
+            filteredAssets[k] = v;
+          }
+        }
+        const rawAssets = Object.keys(filteredAssets).length > 0 ? filteredAssets : allAssets;
+        const assetsMap = assetsToBase64Map(rawAssets);
+        const documentDir = filePath ? filePath.substring(0, Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'))) : undefined;
+        const defaultDir = documentDir || getLastExportDir();
+
+        const result = await invoke<string | null>("export_prose_pdf", {
+          markdownText: rawText,
+          paperSize,
+          fontFamily: selectedFont,
+          watermarkHeaderEnabled,
+          watermarkHeaderText,
+          watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
+          watermarkFooterEnabled,
+          watermarkFooterText,
+          watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
+          watermarkCenterEnabled,
+          watermarkCenterType,
+          watermarkCenterText,
+          watermarkCenterImagePath,
+          watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
+          watermarkCenterGrayscale,
+          scriptFonts: JSON.stringify(scriptFonts),
+          assets: assetsMap,
+          defaultDirectory: defaultDir,
+        });
+        if (result) saveLastExportDir(result);
+      } else {
+        alert("PDF export is only supported in the desktop app.");
+      }
+    } catch (e) {
+      logger.error("export", "handleExportProsePDF failed", e);
+    }
+  };
+
+  const handleExportMarkdown = async () => {
+    try {
+      const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+      if (isTauri) {
+        const result = await invoke<string | null>("export_markdown", {
+          content: rawText,
+          defaultDirectory: getLastExportDir(),
+        });
+        if (result) saveLastExportDir(result);
+      } else {
+        const bundleName = filePath
+          ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt|md)$/i, "") || "Untitled"
+          : "Untitled";
+        const scriptSuffix = isBundle ? `_${activeScriptName}` : "";
+        const downloadName = `${bundleName}${scriptSuffix}.md`;
+        const blob = new Blob([rawText], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = downloadName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      logger.error("export", "handleExportMarkdown failed", e);
     }
   };
 
@@ -403,7 +517,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         a.click();
         URL.revokeObjectURL(url);
       }
-      onClose();
     } catch (e) {
       logger.error("export", "handleExportFountain failed", e);
     }
@@ -436,7 +549,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         a.click();
         URL.revokeObjectURL(url);
       }
-      onClose();
     } catch (e) {
       logger.error("export", "handleExportFDX failed", e);
     }
@@ -469,7 +581,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         a.click();
         URL.revokeObjectURL(url);
       }
-      onClose();
     } catch (e) {
       logger.error("export", "handleExportFadeIn failed", e);
     }
@@ -477,7 +588,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
 
   const handleBatchExport = async () => {
     const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-    if (!isTauri) { onClose(); return; }
+    if (!isTauri) { return; }
 
     try {
       updateWatermarkSettings(currentWatermarkSettings());
@@ -503,82 +614,144 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           await invoke("save_file_binary", { path: `${dir}/${sanitizedName}.fadein`, bytes })
             .catch(e => logger.error("export", `Batch FadeIn failed for ${sanitizedName}`, e));
         } else if (format === "pdf") {
-          const revisedLines: boolean[] = [];
-          const bytes = await invoke<number[]>("generate_pdf_bytes", {
-            fountainText: script.content,
-            paperSize,
-            fontFamily: selectedFont,
-            elementFormats: JSON.stringify(elementFormats),
-            mirrorSceneNumbers: sceneNumberMode,
-            exportSections,
-            exportSynopses,
-            exportTitlePage,
-            exportSceneColors,
-            scenePageBreaks,
-            revisedLines,
-            watermarkHeaderEnabled,
-            watermarkHeaderText,
-            watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
-            watermarkFooterEnabled,
-            watermarkFooterText,
-            watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
-            watermarkCenterEnabled,
-            watermarkCenterType,
-            watermarkCenterText,
-            watermarkCenterImagePath,
-            watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
-            watermarkCenterGrayscale,
-            scriptFonts: JSON.stringify(scriptFonts),
-          });
-          await invoke("save_file_binary", { path: `${dir}/${sanitizedName}.pdf`, bytes })
-            .catch(e => logger.error("export", `Batch PDF failed for ${sanitizedName}`, e));
+          const scriptIsProse = isProseScript(script, filePath);
+          let bytes: number[] | null = null;
+          if (scriptIsProse) {
+            bytes = await invoke<number[]>("generate_prose_pdf_bytes", {
+              markdownText: script.content,
+              paperSize,
+              fontFamily: selectedFont,
+              watermarkHeaderEnabled,
+              watermarkHeaderText,
+              watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
+              watermarkFooterEnabled,
+              watermarkFooterText,
+              watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
+              watermarkCenterEnabled,
+              watermarkCenterType,
+              watermarkCenterText,
+              watermarkCenterImagePath,
+              watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
+              watermarkCenterGrayscale,
+              scriptFonts: JSON.stringify(scriptFonts),
+              assets: assetsToBase64Map({
+                ...getAllCachedAssetBytes(),
+                ...((parsedDoc?.settings?.assets || (parsedDoc as unknown as { assets?: Record<string, Uint8Array> })?.assets) as Record<string, Uint8Array> | undefined || {}),
+              }),
+              defaultDirectory: dir,
+            });
+          } else {
+            const revisedLines: boolean[] = [];
+            bytes = await invoke<number[]>("generate_pdf_bytes", {
+              fountainText: script.content,
+              paperSize,
+              fontFamily: selectedFont,
+              elementFormats: JSON.stringify(elementFormats),
+              mirrorSceneNumbers: sceneNumberMode,
+              exportSections,
+              exportSynopses,
+              exportTitlePage,
+              exportSceneColors,
+              scenePageBreaks,
+              revisedLines,
+              watermarkHeaderEnabled,
+              watermarkHeaderText,
+              watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
+              watermarkFooterEnabled,
+              watermarkFooterText,
+              watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
+              watermarkCenterEnabled,
+              watermarkCenterType,
+              watermarkCenterText,
+              watermarkCenterImagePath,
+              watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
+              watermarkCenterGrayscale,
+              scriptFonts: JSON.stringify(scriptFonts),
+            });
+          }
+          if (bytes) {
+            await invoke("save_file_binary", { path: `${dir}/${sanitizedName}.pdf`, bytes })
+              .catch(e => logger.error("export", `Batch PDF failed for ${sanitizedName}`, e));
+          }
         }
       }
     } catch (e) {
       logger.error("export", "handleBatchExport failed", e);
     }
-    onClose();
   };
 
-  const handleExport = () => {
-    if (batchExport) {
-      handleBatchExport();
-      return;
-    }
-    if (format === "pdf") {
-      handleExportPDF();
-    } else if (format === "fdx") {
-      handleExportFDX();
-    } else if (format === "fadein") {
-      handleExportFadeIn();
-    } else {
-      handleExportFountain();
+  const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      if (batchExport) {
+        await handleBatchExport();
+        return;
+      }
+      if (isProse) {
+        if (format === "markdown") {
+          await handleExportMarkdown();
+        } else {
+          await handleExportProsePDF();
+        }
+        return;
+      }
+      if (format === "pdf") {
+        await handleExportPDF();
+      } else if (format === "fdx") {
+        await handleExportFDX();
+      } else if (format === "fadein") {
+        await handleExportFadeIn();
+      } else {
+        await handleExportFountain();
+      }
+    } finally {
+      setIsExporting(false);
+      onClose();
     }
   };
 
-  const formatLabel = format === "pdf" ? "PDF" : format === "fdx" ? "FDX" : format === "fadein" ? "Fade In" : "Fountain";
+  const formatLabel = isProse
+    ? (format === "markdown" ? "Markdown (.md)" : "PDF")
+    : (format === "pdf" ? "PDF" : format === "fdx" ? "FDX" : format === "fadein" ? "Fade In" : "Fountain");
 
   /* ── Render right panel content ── */
   const renderContent = () => {
+    // Markdown (.md) for Prose
+    if (format === "markdown") {
+      return (
+        <Box>
+          <SectionTitle>Markdown Export</SectionTitle>
+          <Typography sx={{ fontSize: 12.5, color: "text.secondary", lineHeight: 1.6, mb: 2 }}>
+            Exports your document as a standard Markdown (.md) file.
+          </Typography>
+        </Box>
+      );
+    }
+
     // PDF > Document
     if (format === "pdf" && pdfSubTab === "document") {
       return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-          <Box>
-            <SectionTitle>Page Options</SectionTitle>
-            <Box sx={{ display: "flex", flexDirection: "column" }}>
-              <OptionRow label="Include Title Page" checked={exportTitlePage} onChange={setExportTitlePage} />
-              <OptionRow label="Export Scene Colors" checked={exportSceneColors} onChange={handleSceneColorToggle} />
-              <OptionRow label="Section Headings (#)" checked={exportSections} onChange={setExportSections} />
-              <OptionRow label="Include Synopses (=)" checked={exportSynopses} onChange={setExportSynopses} />
-              <OptionRow label="Start Each Scene on New Page" checked={scenePageBreaks} onChange={setScenePageBreaks} />
-            </Box>
-          </Box>
+          {!isProse && (
+            <>
+              <Box>
+                <SectionTitle>Page Options</SectionTitle>
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <OptionRow label="Include Title Page" checked={exportTitlePage} onChange={setExportTitlePage} />
+                  <OptionRow label="Export Scene Colors" checked={exportSceneColors} onChange={handleSceneColorToggle} />
+                  <OptionRow label="Section Headings (#)" checked={exportSections} onChange={setExportSections} />
+                  <OptionRow label="Include Synopses (=)" checked={exportSynopses} onChange={setExportSynopses} />
+                  <OptionRow label="Start Each Scene on New Page" checked={scenePageBreaks} onChange={setScenePageBreaks} />
+                </Box>
+              </Box>
 
-          <Divider />
+              <Divider />
+            </>
+          )}
 
           <Box>
-            <SectionTitle>Screenplay Font</SectionTitle>
+            <SectionTitle>{isProse ? "Document Font" : "Screenplay Font"}</SectionTitle>
             <Select
               size="small"
               fullWidth
@@ -907,102 +1080,161 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
     >
       <DialogTitle sx={{ m: 0, p: 0 }}>
         <TitleBar
-          title="Export Script"
+          title={isProse ? "Export Prose" : "Export Script"}
           icon={<DownloadIcon sx={{ fontSize: 16 }} />}
           isModal
           onClose={onClose}
         />
       </DialogTitle>
 
-      {/* 2-Column Body */}
-      <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
-
-        {/* ── Left Sidebar ── */}
+      {/* Body or Progress View */}
+      {exportProgress?.open ? (
         <Box
           sx={{
-            width: 190,
-            flexShrink: 0,
-            borderRight: "1px solid",
-            borderColor: "divider",
-            bgcolor: "action.hover",
             display: "flex",
             flexDirection: "column",
-            py: 1.5,
-            px: 1,
-            gap: 0.25,
-            overflowY: "auto",
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 1,
+            p: 4,
+            textAlign: "center",
+            minHeight: 340,
           }}
         >
-          {/* Script target */}
-          <Box sx={{ px: 1, mb: 1 }}>
-            <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.disabled", letterSpacing: 0.6, textTransform: "uppercase", mb: 0.25 }}>
-              {batchExport ? "Batch Export" : "Exporting"}
+          <Box sx={{ width: "100%", maxWidth: 380 }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 0.75, color: "text.primary" }}>
+              {exportProgress.title}
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <DescriptionIcon sx={{ fontSize: 13, color: "text.secondary" }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 700, color: "text.primary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {batchExport && isBundle ? `${scripts.length} scripts` : activeScriptName}
+            <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 3 }}>
+              {exportProgress.stepText}
+            </Typography>
+            <LinearProgress
+              variant={exportProgress.progress >= 0 ? "determinate" : "indeterminate"}
+              value={Math.min(exportProgress.progress, 100)}
+              color="primary"
+              sx={{
+                height: 10,
+                borderRadius: 5,
+                bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                "& .MuiLinearProgress-bar": {
+                  borderRadius: 5,
+                  transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                },
+              }}
+            />
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+              <Typography sx={{ fontSize: 11, color: "text.secondary", fontWeight: 700 }}>
+                {Math.min(exportProgress.progress, 100)}%
               </Typography>
             </Box>
-            <Chip
-              label={`${paperSize === "letter" ? "US Letter" : "A4"} · ${selectedFont === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}`}
-              size="small"
-              sx={{ height: 18, fontSize: 9.5, fontWeight: 600, mt: 0.5, borderRadius: 0.5, bgcolor: "background.paper" }}
-            />
+          </Box>
+        </Box>
+      ) : (
+        <>
+          <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
+            {/* ── Left Sidebar ── */}
+            <Box
+              sx={{
+                width: 190,
+                flexShrink: 0,
+                borderRight: "1px solid",
+                borderColor: "divider",
+                bgcolor: "action.hover",
+                display: "flex",
+                flexDirection: "column",
+                py: 1.5,
+                px: 1,
+                gap: 0.25,
+                overflowY: "auto",
+              }}
+            >
+              {/* Script target */}
+              <Box sx={{ px: 1, mb: 1 }}>
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.disabled", letterSpacing: 0.6, textTransform: "uppercase", mb: 0.25 }}>
+                  {batchExport ? "Batch Export" : "Exporting"}
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <DescriptionIcon sx={{ fontSize: 13, color: "text.secondary" }} />
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: "text.primary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {batchExport && isBundle ? `${scripts.length} scripts` : activeScriptName}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`${paperSize === "letter" ? "US Letter" : "A4"} · ${selectedFont === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}`}
+                  size="small"
+                  sx={{ height: 18, fontSize: 9.5, fontWeight: 600, mt: 0.5, borderRadius: 0.5, bgcolor: "background.paper" }}
+                />
+              </Box>
+
+              <Divider sx={{ mb: 0.5 }} />
+
+              {/* Format nav */}
+              {isProse ? (
+                <>
+                  <NavItem label="PDF Document" active={format === "pdf"} onClick={() => { setFormat("pdf"); if (pdfSubTab === "formatting") setPdfSubTab("document"); }} />
+                  {format === "pdf" && (
+                    <>
+                      <NavItem label="Document & Layout" active={pdfSubTab === "document"} onClick={() => setPdfSubTab("document")} indent />
+                      <NavItem label="Watermarks" active={pdfSubTab === "watermarks"} onClick={() => setPdfSubTab("watermarks")} indent />
+                    </>
+                  )}
+                  <NavItem label="Markdown (.md)" active={format === "markdown"} onClick={() => setFormat("markdown")} />
+                </>
+              ) : (
+                <>
+                  <NavItem label="PDF Document" active={format === "pdf"} onClick={() => setFormat("pdf")} />
+                  {format === "pdf" && (
+                    <>
+                      <NavItem label="Document & Layout" active={pdfSubTab === "document"} onClick={() => setPdfSubTab("document")} indent />
+                      <NavItem label="Element Formatting" active={pdfSubTab === "formatting"} onClick={() => setPdfSubTab("formatting")} indent />
+                      <NavItem label="Watermarks" active={pdfSubTab === "watermarks"} onClick={() => setPdfSubTab("watermarks")} indent />
+                    </>
+                  )}
+                  <NavItem label="Fountain" active={format === "fountain"} onClick={() => setFormat("fountain")} />
+                  <NavItem label="Final Draft (.fdx)" active={format === "fdx"} onClick={() => setFormat("fdx")} />
+                  <NavItem label="Fade In (.fadein)" active={format === "fadein"} onClick={() => setFormat("fadein")} />
+                </>
+              )}
+            </Box>
+
+            {/* ── Right Panel ── */}
+            <Box sx={{ flex: 1, overflowY: "auto", p: 2.5 }}>
+              {renderContent()}
+            </Box>
           </Box>
 
-          <Divider sx={{ mb: 0.5 }} />
-
-          {/* Format nav */}
-          <NavItem label="PDF Document" active={format === "pdf"} onClick={() => setFormat("pdf")} />
-
-          {format === "pdf" && (
-            <>
-              <NavItem label="Document & Layout" active={pdfSubTab === "document"} onClick={() => setPdfSubTab("document")} indent />
-              <NavItem label="Element Formatting" active={pdfSubTab === "formatting"} onClick={() => setPdfSubTab("formatting")} indent />
-              <NavItem label="Watermarks" active={pdfSubTab === "watermarks"} onClick={() => setPdfSubTab("watermarks")} indent />
-            </>
-          )}
-
-          <NavItem label="Fountain" active={format === "fountain"} onClick={() => setFormat("fountain")} />
-          <NavItem label="Final Draft (.fdx)" active={format === "fdx"} onClick={() => setFormat("fdx")} />
-          <NavItem label="Fade In (.fadein)" active={format === "fadein"} onClick={() => setFormat("fadein")} />
-        </Box>
-
-        {/* ── Right Panel ── */}
-        <Box sx={{ flex: 1, overflowY: "auto", p: 2.5 }}>
-          {renderContent()}
-        </Box>
-      </Box>
-
-      {/* ── Footer ── */}
-      <DialogActions sx={{ px: 2, py: 1.25, justifyContent: "space-between", borderTop: "1px solid", borderColor: "divider" }}>
-        <Button
-          onClick={onClose}
-          color="inherit"
-          size="small"
-          sx={{ fontSize: 12, textTransform: "none", borderRadius: 0, px: 2 }}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleExport}
-          variant="contained"
-          color="primary"
-          size="small"
-          startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
-          sx={{
-            fontSize: 12,
-            fontWeight: 700,
-            textTransform: "none",
-            px: 2.5,
-            borderRadius: 0,
-            boxShadow: "none",
-          }}
-        >
-          {batchExport ? `Export All as ${formatLabel}` : `Export to ${formatLabel}`}
-        </Button>
-      </DialogActions>
+          {/* ── Footer ── */}
+          <DialogActions sx={{ px: 2, py: 1.25, justifyContent: "space-between", borderTop: "1px solid", borderColor: "divider" }}>
+            <Button
+              onClick={onClose}
+              disabled={isExporting}
+              color="inherit"
+              size="small"
+              sx={{ fontSize: 12, textTransform: "none", borderRadius: 0, px: 2 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExport}
+              disabled={isExporting}
+              variant="contained"
+              color="primary"
+              size="small"
+              startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
+              sx={{
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: "none",
+                px: 2.5,
+                borderRadius: 0,
+                boxShadow: "none",
+              }}
+            >
+              {isExporting ? "Exporting..." : (batchExport ? `Export All as ${formatLabel}` : `Export to ${formatLabel}`)}
+            </Button>
+          </DialogActions>
+        </>
+      )}
 
       {/* System Font Picker Dialog */}
       {systemFontPickerScript && (

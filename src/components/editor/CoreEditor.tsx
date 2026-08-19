@@ -8,6 +8,7 @@ import { ContextMenu, type ContextMenuItem, type ContextMenuItemDef } from "../C
 import { getWordAtPosition } from "../../utils/wordUtils";
 import { spellDecoField } from "../../editor/spellcheck";
 import { logger } from "../../utils/logger";
+import { isProseScript } from "../../utils/scriptMode";
 
 export interface MenuSelectionSnap {
   from: number;
@@ -29,11 +30,7 @@ export const CoreEditor = React.memo(({ containerRef, viewRef, extraContextMenuI
 
   const activeFile = files?.find(f => f.id === activeFileId);
   const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
-  const isProse = activeScript?.type === "markdown" ||
-    activeScript?.fileName?.endsWith(".md") ||
-    activeScript?.fileName?.endsWith(".markdown") ||
-    activeFile?.filePath?.endsWith(".md") ||
-    activeFile?.filePath?.endsWith(".markdown");
+  const isProse = isProseScript(activeScript, activeFile?.filePath);
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
   const menuSelectionRef = useRef<MenuSelectionSnap | null>(null);
