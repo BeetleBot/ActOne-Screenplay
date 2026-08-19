@@ -21,12 +21,14 @@ export const ProseEditor = React.memo(() => {
     const newAssetKey = `files/assets/${file.name}`;
     
     registerAssetBlob(newAssetKey, uint8Array);
+    registerAssetBlob(file.name, uint8Array);
 
     updateSettings((prev) => ({
       ...prev,
       assets: {
         ...(prev.assets || {}),
-        [newAssetKey]: uint8Array
+        [newAssetKey]: uint8Array,
+        [file.name]: uint8Array,
       }
     }));
     const from = view.state.selection.main.from;

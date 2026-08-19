@@ -68,7 +68,15 @@ class ImageWidget extends WidgetType {
     const resolvedSrc = this.resolver ? this.resolver(this.src) : this.src;
     img.src = resolvedSrc;
     img.alt = this.alt;
-    img.loading = 'lazy';
+    img.loading = 'eager';
+    img.onerror = () => {
+      if (this.resolver) {
+        const retrySrc = this.resolver(this.src);
+        if (retrySrc && retrySrc !== img.src && !retrySrc.startsWith("asset://")) {
+          img.src = retrySrc;
+        }
+      }
+    };
     // Set intrinsic dims from the cache so the widget reserves the
     // right box before the image decodes — prevents the remount +
     // resize cycle that halts iOS momentum scroll. On first-ever

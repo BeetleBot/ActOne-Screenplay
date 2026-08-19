@@ -412,22 +412,15 @@
  * marker widths differ per font. */
 .cm-prose-list-marker {
   display: inline-block;
-  width: 0.9em;
-  margin-right: 0.3em;
-  text-align: right;
+  margin-right: 0.5em;
+  text-align: left;
 }
 
-/* GFM task-list checkbox widget — replaces `[ ]` / `[x]` in a task
- * item. Width matches the list-marker wrapper (0.9em); `margin-right:
- * 0.3em` adds the breathing room between the checkbox and the item
- * text. Total footprint = 1.2em, which is what ALCOVE_EM expects in
- * inline-preview.ts (bullets and checkboxes share the same alcove so
- * first-line content aligns with wrapped-line content consistently).
- * The trailing space after `[ ]` in the source is swallowed by the
- * replace decoration. */
+/* GFM task-list checkbox widget — replaces `[ ]` / `[x]` in a task item. */
 .cm-prose-task-checkbox {
   appearance: auto;
   cursor: pointer;
+  margin-left: 0;
   margin-right: 0.5em;
   vertical-align: -0.1em;
   accent-color: var(--prose-editor-accent, var(--accent-color, #1976d2));

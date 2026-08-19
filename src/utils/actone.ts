@@ -210,9 +210,8 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     const assets = settings.assets as Record<string, Uint8Array> | undefined;
     if (assets) {
       for (const key in assets) {
-        if (key.startsWith("files/assets/")) {
-          entries[key] = assets[key];
-        }
+        const fullKey = key.startsWith("files/assets/") ? key : `files/assets/${key}`;
+        entries[fullKey] = assets[key];
       }
     }
 
@@ -285,9 +284,8 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
     const assets = settings.assets as Record<string, Uint8Array> | undefined;
     if (assets) {
       for (const key in assets) {
-        if (key.startsWith("files/assets/")) {
-          entries[key] = assets[key];
-        }
+        const fullKey = key.startsWith("files/assets/") ? key : `files/assets/${key}`;
+        entries[fullKey] = assets[key];
       }
     }
 

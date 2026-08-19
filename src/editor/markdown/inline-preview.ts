@@ -483,17 +483,17 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
         // first line back so the marker lands in the alcove.
         const rawIndent = node.from - line.from;
         const depth = Math.max(0, Math.floor(rawIndent / 2));
-        const BASE_EM = 0.8;
-        const ALCOVE_EM = 1.2;
-        const LEVEL_EM = 0.6;
-        const padding = BASE_EM + ALCOVE_EM + depth * LEVEL_EM;
-        ranges.push(
-          Decoration.line({
-            attributes: {
-              style: `padding-left: ${padding}em; text-indent: -${ALCOVE_EM}em`,
-            },
-          }).range(line.from),
-        );
+        const LEVEL_EM = 1.5;
+        const padding = depth * LEVEL_EM;
+        if (padding > 0) {
+          ranges.push(
+            Decoration.line({
+              attributes: {
+                style: `padding-left: ${padding}em;`,
+              },
+            }).range(line.from),
+          );
+        }
 
         // Figure out how far past node.to the mark's trailing
         // space lives. For tasks, CM6 pre-computed taskFrom as

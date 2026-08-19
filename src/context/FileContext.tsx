@@ -9,6 +9,7 @@ import type { ScriptInfo } from "../utils";
 import { logger } from "../utils/logger";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
+import { registerAssetBlob } from "../editor/useProseCodeMirror";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SettingsUpdater = (prev: Record<string, any>) => Record<string, any>;
@@ -178,17 +179,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updateAll = () => {
       setFiles(prev => prev.map(f => {
         const doc = parseScreenplay(f.rawText, paperSize);
-        const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-          ? doc.settings
-          : f.parsedDoc.settings;
+        const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
         const pageBreaks = isTauri && f.parsedDoc?.pageBreaks ? f.parsedDoc.pageBreaks : doc.pageBreaks;
         return { ...f, parsedDoc: { ...doc, settings: mergedSettings, pageBreaks } };
       }));
       setParsedDoc(prevDoc => {
         const doc = parseScreenplay(rawText, paperSize);
-        const mergedSettings = (doc.settings && Object.keys(doc.settings).length > 0)
-          ? doc.settings
-          : prevDoc.settings;
+        const mergedSettings = { ...(prevDoc.settings || {}), ...(doc.settings || {}) };
         const pageBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
         return { ...doc, settings: mergedSettings, pageBreaks };
       });
@@ -346,9 +343,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const doc = await parseScreenplayAsync(normalized, paperSize);
       setFiles(prev => prev.map(f => {
         if (f.id === activeFileId) {
-          const mergedSettings = doc.settings && Object.keys(doc.settings).length > 0
-            ? doc.settings
-            : f.parsedDoc.settings;
+          const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
 
           let updatedScripts = f.scripts;
           if (updatedScripts && updatedScripts.length > 0) {
@@ -374,9 +369,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return f;
       }));
       setParsedDoc(prevDoc => {
-        const mergedSettings = doc.settings && Object.keys(doc.settings).length > 0
-          ? doc.settings
-          : prevDoc.settings;
+        const mergedSettings = { ...(prevDoc.settings || {}), ...(doc.settings || {}) };
         const existingBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
         return { ...doc, settings: mergedSettings, pageBreaks: existingBreaks };
       });
@@ -389,9 +382,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setFiles(prev => prev.map(f => {
       if (f.id === fileId) {
-        const mergedSettings = doc.settings && Object.keys(doc.settings).length > 0
-          ? doc.settings
-          : f.parsedDoc.settings;
+        const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
 
         let updatedScripts = f.scripts;
         const targetIdx = scriptIndex ?? f.activeScriptIndex ?? 0;
@@ -562,6 +553,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (bundle && bundle.scripts && bundle.scripts.length > 0) {
               scripts = bundle.scripts;
               settings = bundle.settings;
+              if (bundle.assets) {
+                for (const k in bundle.assets) {
+                  registerAssetBlob(k, bundle.assets[k]);
+                }
+              }
               if (bundle.isLegacy) {
                 // Auto-upgrade legacy bundles on disk immediately
                 await saveActoneFile(path, scripts, settings);
@@ -683,6 +679,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const bundleName = file.name.replace(/\.(actone|zip|actone\.zip)$/i, "");
             const bundle = unpackActoneBundle(new Uint8Array(arrayBuffer), bundleName);
             const scripts = bundle.scripts;
+            if (bundle.assets) {
+              for (const k in bundle.assets) {
+                registerAssetBlob(k, bundle.assets[k]);
+              }
+            }
             resolve({ path: file.name, content: scripts[0]?.content || "", settings: bundle.settings });
           } else {
             const content = await file.text();
@@ -720,6 +721,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             scripts = bundle.scripts;
             content = bundle.scripts[0]?.content || "";
             settings = bundle.settings;
+            if (bundle.assets) {
+              for (const k in bundle.assets) {
+                registerAssetBlob(k, bundle.assets[k]);
+              }
+            }
             if (bundle.isLegacy) {
               await saveActoneFile(res.path, scripts, settings);
               logger.info("file", `Automatically upgraded legacy bundle to Gen 3: ${res.path}`);
@@ -1188,13 +1194,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       rawText: "",
       savedText: "",
       isDirty: true,
-      parsedDoc: parseScreenplay("", paperSize),
+      parsedDoc: { ...parseScreenplay("", paperSize), settings: f.parsedDoc.settings },
     } : f));
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(updatedScripts.length - 1);
     setRawTextState("");
-    setParsedDoc(parseScreenplay("", paperSize));
+    setParsedDoc(prev => ({ ...parseScreenplay("", paperSize), settings: prev.settings }));
 
     return uniqueName;
   }, [files, activeFileId, prompt, paperSize]);
@@ -1256,13 +1262,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       rawText: newScript.content,
       savedText: newScript.savedContent,
       isDirty: true,
-      parsedDoc: parseScreenplay(newScript.content, paperSize),
+      parsedDoc: { ...parseScreenplay(newScript.content, paperSize), settings: file.parsedDoc.settings },
     } : f));
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(newActiveIndex);
     setRawTextState(newScript.content);
-    setParsedDoc(parseScreenplay(newScript.content, paperSize));
+    setParsedDoc({ ...parseScreenplay(newScript.content, paperSize), settings: file.parsedDoc.settings });
 
     return newName;
   }, [files, activeFileId, paperSize]);

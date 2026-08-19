@@ -22,11 +22,20 @@ export function registerAssetBlob(key: string, data: Uint8Array | Blob): string 
 }
 
 export function getAssetBlobUrl(key: string, assets?: Record<string, Uint8Array>): string | null {
-  if (globalAssetUrlCache.has(key)) {
-    return globalAssetUrlCache.get(key)!;
-  }
-  if (assets && assets[key]) {
-    return registerAssetBlob(key, assets[key]);
+  const decodedKey = decodeURIComponent(key);
+  const keysToTry = [
+    decodedKey,
+    key,
+    decodedKey.startsWith("files/assets/") ? decodedKey.slice(13) : `files/assets/${decodedKey}`,
+    key.startsWith("files/assets/") ? key.slice(13) : `files/assets/${key}`,
+  ];
+  for (const k of keysToTry) {
+    if (globalAssetUrlCache.has(k)) {
+      return globalAssetUrlCache.get(k)!;
+    }
+    if (assets && assets[k]) {
+      return registerAssetBlob(k, assets[k]);
+    }
   }
   return null;
 }
@@ -42,10 +51,25 @@ export function useProseCodeMirror({ containerRef, onInsertImage }: ProseCodeMir
   const assetsRef = useRef(assets);
   assetsRef.current = assets;
 
+  // Pre-register any assets found in parsedDoc.settings into globalAssetUrlCache
+  if (assets) {
+    for (const k in assets) {
+      if (!globalAssetUrlCache.has(k)) {
+        registerAssetBlob(k, assets[k]);
+      }
+    }
+  }
+
   const urlResolver = useCallback((url: string) => {
     if (url.startsWith("asset://")) {
-      const key = url.slice(8); // e.g. files/assets/foo.png
+      const key = url.slice(8);
       const blobUrl = getAssetBlobUrl(key, assetsRef.current);
+      if (blobUrl) {
+        return blobUrl;
+      }
+    }
+    if (url.startsWith("files/assets/") || url.startsWith("assets/")) {
+      const blobUrl = getAssetBlobUrl(url, assetsRef.current);
       if (blobUrl) {
         return blobUrl;
       }
