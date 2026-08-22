@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useUI, useEditor, useFile } from "../../context";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Divider from "@mui/material/Divider";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
@@ -9,10 +12,10 @@ import { ScriptEditor } from "../ScriptEditor";
 import { ProseEditor } from "../ProseEditor";
 import { AmbientPanel } from "../AmbientPanel";
 import { MusePanel } from "../MusePanel";
-import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { AddIcon } from "../Icons";
-
+import { DescriptionIcon, MenuBookIcon, UploadIcon } from "../Icons";
+import { StructureImportModal } from "../StructureImportModal";
+import { ThemeLogo } from "../ThemeLogo";
 
 import { ErrorBoundary } from "../ErrorBoundary";
 import { isProseScript } from "../../utils/scriptMode";
@@ -26,9 +29,11 @@ export const Workspace = React.memo<WorkspaceProps>(({
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [importAnchorEl, setImportAnchorEl] = useState<null | HTMLElement>(null);
+  const [showStructureModal, setShowStructureModal] = useState(false);
   const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane } = useUI();
   const { editorView } = useEditor();
-  const { activeFileId, files, addScript } = useFile();
+  const { activeFileId, files, addScript, importScript } = useFile();
 
   const activeFile = files.find(f => f.id === activeFileId);
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
@@ -147,79 +152,100 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 2,
-                maxWidth: 420,
+                gap: 2.5,
+                maxWidth: 480,
                 width: '100%',
-                textAlign: 'center',
               }}
             >
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75, width: '100%' }}>
-                <Typography
+              {/* Header */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <Box
                   sx={{
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    letterSpacing: '0.01em',
+                    width: 60,
+                    height: 60,
                     color: 'text.primary',
-                    textAlign: 'center',
+                    mb: 0.25,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  Act One, Scene One.
+                  <ThemeLogo variant="solid" />
+                </Box>
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '1.15rem',
+                    color: 'text.primary',
+                    letterSpacing: '-0.015em',
+                  }}
+                >
+                  ActOne Screenplay
                 </Typography>
                 <Typography
-                  variant="caption"
                   sx={{
                     color: 'text.secondary',
-                    fontSize: '0.825rem',
-                    lineHeight: 1.45,
-                    textAlign: 'center',
-                    maxWidth: 340,
+                    fontSize: '0.815rem',
+                    mt: 0.5,
                   }}
                 >
-                  Every screenplay starts here. Create your first script to begin writing.
+                  Create or import documents for this project
                 </Typography>
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center' }}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+              {/* Native Action Panel */}
+              <Box
+                sx={{
+                  width: '100%',
+                  borderRadius: 0,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Row 1: Screenplay */}
+                <Box
+                  component="button"
+                  type="button"
                   onClick={() => addScript(undefined, "fountain")}
                   sx={{
-                    borderRadius: '6px',
-                    textTransform: 'none',
-                    fontSize: '0.825rem',
-                    fontWeight: 500,
-                    pl: 1.75,
-                    pr: 1.25,
-                    py: 0.6,
-                    borderColor: 'divider',
-                    color: 'text.primary',
-                    bgcolor: 'background.paper',
-                    display: 'inline-flex',
+                    width: '100%',
+                    display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 0.5,
-                    transition: 'all var(--duration-fast) var(--easing-standard)',
+                    justifyContent: 'space-between',
+                    p: 1.75,
+                    border: 'none',
+                    borderRadius: 0,
+                    bgcolor: 'transparent',
+                    color: 'text.primary',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    font: 'inherit',
+                    transition: 'background-color var(--duration-fast) var(--easing-standard)',
                     '&:hover': {
                       bgcolor: 'action.hover',
-                      borderColor: 'text.secondary',
-                      '& .fountain-tag': {
-                        borderColor: 'text.secondary',
-                        bgcolor: 'action.selected',
-                      },
                     },
                   }}
                 >
-                  <span>Create a new script</span>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
+                      <DescriptionIcon sx={{ fontSize: 18 }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', color: 'text.primary', lineHeight: 1.3 }}>
+                        New Screenplay
+                      </Typography>
+                      <Typography sx={{ color: 'text.secondary', fontSize: '0.75rem', lineHeight: 1.3, mt: 0.25 }}>
+                        Fountain format with automatic screenplay pagination
+                      </Typography>
+                    </Box>
+                  </Box>
                   <Box
-                    component="span"
-                    className="fountain-tag"
                     sx={{
-                      ml: 0.75,
                       px: 0.75,
-                      py: 0.15,
-                      borderRadius: '4px',
+                      py: 0.2,
+                      borderRadius: 0,
                       fontSize: '0.7rem',
                       fontFamily: '"Courier Prime", monospace',
                       fontWeight: 600,
@@ -227,55 +253,59 @@ export const Workspace = React.memo<WorkspaceProps>(({
                       bgcolor: 'action.hover',
                       border: '1px solid',
                       borderColor: 'divider',
-                      lineHeight: 1.4,
+                      lineHeight: 1.3,
                       letterSpacing: '0.02em',
-                      transition: 'all var(--duration-fast) var(--easing-standard)',
+                      flexShrink: 0,
                     }}
                   >
                     .fountain
                   </Box>
-                </Button>
+                </Box>
 
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+                <Divider />
+
+                {/* Row 2: Prose */}
+                <Box
+                  component="button"
+                  type="button"
                   onClick={() => addScript(undefined, "markdown")}
                   sx={{
-                    borderRadius: '6px',
-                    textTransform: 'none',
-                    fontSize: '0.825rem',
-                    fontWeight: 500,
-                    pl: 1.75,
-                    pr: 1.25,
-                    py: 0.6,
-                    borderColor: 'divider',
-                    color: 'text.primary',
-                    bgcolor: 'background.paper',
-                    display: 'inline-flex',
+                    width: '100%',
+                    display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 0.5,
-                    transition: 'all var(--duration-fast) var(--easing-standard)',
+                    justifyContent: 'space-between',
+                    p: 1.75,
+                    border: 'none',
+                    borderRadius: 0,
+                    bgcolor: 'transparent',
+                    color: 'text.primary',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    font: 'inherit',
+                    transition: 'background-color var(--duration-fast) var(--easing-standard)',
                     '&:hover': {
                       bgcolor: 'action.hover',
-                      borderColor: 'text.secondary',
-                      '& .fountain-tag': {
-                        borderColor: 'text.secondary',
-                        bgcolor: 'action.selected',
-                      },
                     },
                   }}
                 >
-                  <span>Create a new prose</span>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
+                      <MenuBookIcon sx={{ fontSize: 18 }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', color: 'text.primary', lineHeight: 1.3 }}>
+                        New Prose Document
+                      </Typography>
+                      <Typography sx={{ color: 'text.secondary', fontSize: '0.75rem', lineHeight: 1.3, mt: 0.25 }}>
+                        Markdown format for treatments, chapters, and notes
+                      </Typography>
+                    </Box>
+                  </Box>
                   <Box
-                    component="span"
-                    className="fountain-tag"
                     sx={{
-                      ml: 0.75,
                       px: 0.75,
-                      py: 0.15,
-                      borderRadius: '4px',
+                      py: 0.2,
+                      borderRadius: 0,
                       fontSize: '0.7rem',
                       fontFamily: '"Courier Prime", monospace',
                       fontWeight: 600,
@@ -283,16 +313,122 @@ export const Workspace = React.memo<WorkspaceProps>(({
                       bgcolor: 'action.hover',
                       border: '1px solid',
                       borderColor: 'divider',
-                      lineHeight: 1.4,
+                      lineHeight: 1.3,
                       letterSpacing: '0.02em',
-                      transition: 'all var(--duration-fast) var(--easing-standard)',
+                      flexShrink: 0,
                     }}
                   >
                     .md
                   </Box>
-                </Button>
+                </Box>
+
+                <Divider />
+
+                {/* Row 3: Import / Template */}
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={(e) => setImportAnchorEl(e.currentTarget)}
+                  sx={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    p: 1.75,
+                    border: 'none',
+                    borderRadius: 0,
+                    bgcolor: 'transparent',
+                    color: 'text.primary',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    font: 'inherit',
+                    transition: 'background-color var(--duration-fast) var(--easing-standard)',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
+                      <UploadIcon sx={{ fontSize: 18 }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', color: 'text.primary', lineHeight: 1.3 }}>
+                        Import or Structure Template...
+                      </Typography>
+                      <Typography sx={{ color: 'text.secondary', fontSize: '0.75rem', lineHeight: 1.3, mt: 0.25 }}>
+                        Import .fountain, .fdx, .fadein, .md, or structure template
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box
+                    sx={{
+                      px: 0.75,
+                      py: 0.2,
+                      borderRadius: 0,
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      bgcolor: 'action.hover',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      lineHeight: 1.3,
+                      letterSpacing: '0.02em',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Import
+                  </Box>
+                </Box>
               </Box>
+
+              {/* Menu for Import / Template */}
+              <Menu
+                anchorEl={importAnchorEl}
+                open={Boolean(importAnchorEl)}
+                onClose={() => setImportAnchorEl(null)}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      borderRadius: 0,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      minWidth: 260,
+                    }
+                  }
+                }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setImportAnchorEl(null);
+                    importScript("fountain");
+                  }}
+                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: 0 }}
+                >
+                  Import Screenplay (.fountain, .fdx, .fadein)
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setImportAnchorEl(null);
+                    importScript("markdown");
+                  }}
+                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: 0 }}
+                >
+                  Import Prose (.md)
+                </MenuItem>
+                <Divider sx={{ my: 0.5 }} />
+                <MenuItem
+                  onClick={() => {
+                    setImportAnchorEl(null);
+                    setShowStructureModal(true);
+                  }}
+                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: 0 }}
+                >
+                  Screenplay Structure Template...
+                </MenuItem>
+              </Menu>
             </Box>
+            {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
           </Box>
         ) : (
           <Box
