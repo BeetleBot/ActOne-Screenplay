@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.18] - 2026-08-22
+
+### Added / Improved
+- 🚀 **Project Landing Pad & Zero-Script Projects** – New `.actone` projects now start cleanly on the interactive Landing Pad, offering instant actions to create a Screenplay (`.fountain`), start Prose (`.md`), or import existing files without forcing a blank editor.
+- 📝 **Prose & Markdown Document Support (`.md`)** – Introduced native multi-document Prose support within `.actone` bundles. Write treatments, outlines, character bibles, and prose notes alongside your screenplays with full Markdown formatting (headings, blockquotes, ordered/unordered lists, and code blocks).
+- 📊 **Prose-Specific Statistics & Metrics** – Switched status bar and document metrics to context-aware modes: displaying word count, character count, and estimated reading time for Prose documents, and page count, scene count, and characters for Screenplay documents.
+- 📄 **Native Rust Markdown PDF Export** – Extended the backend Rust PDF export engine to render Markdown prose documents with clean typography, blockquote indentation, formatted lists, and custom styling.
+- 🏗️ **Modularized Core Editor Architecture** – Refactored the editing core into `CoreEditor`, `useCoreCodeMirror`, and `useScriptCodeMirror` with `ScriptEditorContext`, streamlining state management, scene navigation, and multi-document switching.
+- 🗂️ **"Project Pane" Nomenclature & UI Unification** – Renamed the legacy "Scripts Pane" to "Project Pane" across the Activity Bar, tooltips, Command Palette, and documentation to reflect multi-document screenplay and prose workspaces.
+- 🎓 **Interactive Onboarding Tutorials Redesign** – Updated interactive tours for the new UI: the Basic UI Tour launches on the Landing Pad and seamlessly loads the sample screenplay (*Bee Detective v2*) upon advancing. Completely removed obsolete tagging steps and updated Outline View guides.
+- ⌨️ **High-Visibility Shortcut Badge on Tour Cards** – Replaced the condensed shortcut label on Tour Card buttons with a prominent, high-contrast `Shift+Enter` badge.
+- 📋 **Seamless Structure Template Import on Plain Projects** – Importing screenplay structure templates (Save the Cat, Hero's Journey, Three-Act Structure) into an empty project now automatically generates `<filename>_<structurename>.fountain`, populates the structure beats, and opens the editor.
+
+### Fixed
+- 🔌 **Tauri IPC Listener Cleanup Stability** – Fixed race conditions during window and file switching where unlisteners could trigger before handler registration completed, eliminating `TypeError: Cannot read properties of undefined (reading 'handlerId')` errors.
+- 📜 **Prose Document Parsing in File Context** – Corrected settings merging and document state updates when switching between screenplay and markdown documents within multi-script bundles.
+
 ## [0.4.17] - 2026-08-17
 
 ### Added / Improved
