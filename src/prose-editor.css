@@ -396,7 +396,7 @@
  * marker widths differ per font. */
 .cm-prose-list-marker {
   display: inline-block;
-  margin-right: 0.5em;
+  padding-right: 0.5em;
   text-align: left;
 }
 
