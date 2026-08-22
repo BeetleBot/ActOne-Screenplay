@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.19] - 2026-08-22
+
+### Fixed
+- 💾 **Prose Document Save & Content Preservation** – Resolved an issue where opening an `.actone` bundle with an active prose/markdown document (`.md`) caused its text content to be saved as an empty string. The saving and file-opening routines now directly use raw markdown text and initialize dedicated prose structures rather than reading empty screenplay line lists.
+
 ## [0.4.18] - 2026-08-22
 
 ### Added / Improved
