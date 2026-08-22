@@ -379,7 +379,10 @@ const tableBlurFormatField = EditorView.updateListener.of((update) => {
   if (update.selectionSet && !update.docChanged) {
     const prevHead = update.startState.selection.main.head;
     const curHead = update.state.selection.main.head;
-    if (prevHead !== curHead) {
+    if (prevHead !== curHead && prevHead <= update.startState.doc.length) {
+      const prevLineText = update.startState.doc.lineAt(prevHead).text;
+      if (!prevLineText.includes('|')) return;
+
       // Check if previous position was in a table
       const tree = syntaxTree(update.startState);
       let prevTable: SyntaxNode | null = null;

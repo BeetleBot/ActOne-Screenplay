@@ -165,20 +165,50 @@ class SpellcheckPluginView {
 
       const builder = new RangeSetBuilder<Decoration>();
       const sorted = [...misspelled].sort((a, b) => a.from - b.from);
-
       const docLen = view.state.doc.length;
-      let lastTo = 0;
 
-      for (const item of sorted) {
-        if (item.from >= lastTo && item.to <= docLen && item.from < item.to) {
-          builder.add(item.from, item.to, spellErrorMark);
-          lastTo = item.to;
+      if (isFull) {
+        let lastTo = 0;
+        for (const item of sorted) {
+          if (item.from >= lastTo && item.to <= docLen && item.from < item.to) {
+            builder.add(item.from, item.to, spellErrorMark);
+            lastTo = item.to;
+          }
         }
-      }
+        view.dispatch({
+          effects: setSpellDecosEffect.of(builder.finish()),
+        });
+      } else {
+        // Range-scoped update: keep existing decos outside checked ranges, replace within checked ranges
+        const currentDecos = view.state.field(spellDecoField, false) || Decoration.none;
+        const minChecked = ranges.reduce((m, r) => Math.min(m, r.offset), docLen);
+        const maxChecked = ranges.reduce((m, r) => Math.max(m, r.offset + r.text.length), 0);
 
-      view.dispatch({
-        effects: setSpellDecosEffect.of(builder.finish()),
-      });
+        const newRanges: { from: number; to: number }[] = [];
+        currentDecos.between(0, docLen, (from, to) => {
+          if (to <= minChecked || from >= maxChecked) {
+            newRanges.push({ from, to });
+          }
+        });
+
+        for (const item of sorted) {
+          if (item.from >= minChecked && item.to <= maxChecked && item.from < item.to) {
+            newRanges.push({ from: item.from, to: item.to });
+          }
+        }
+
+        newRanges.sort((a, b) => a.from - b.from);
+        let lastTo = 0;
+        for (const r of newRanges) {
+          if (r.from >= lastTo && r.to <= docLen && r.from < r.to) {
+            builder.add(r.from, r.to, spellErrorMark);
+            lastTo = r.to;
+          }
+        }
+        view.dispatch({
+          effects: setSpellDecosEffect.of(builder.finish()),
+        });
+      }
       this.hasPerformedInitialCheck = true;
     } catch (err) {
       console.warn("[Spellcheck] check_text error:", err);

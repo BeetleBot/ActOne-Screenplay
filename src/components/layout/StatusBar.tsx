@@ -82,12 +82,11 @@ export const StatusBar = React.memo(() => {
     return { words, chars };
   }, [editorView, editorView?.state.selection.main.from, editorView?.state.selection.main.to, rawText]);
 
-  const stats = useMemo(() => {
+  const docStats = useMemo(() => {
     const text = rawText || "";
     const words = countWords(text);
     const chars = text.length;
     const docLinesCount = text ? text.split("\n").length : 1;
-    const currentLineNumber = Math.max(1, activeLineNumber + 1);
 
     const hasTitlePage = parsedDoc?.lines?.some(
       l => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown
@@ -96,37 +95,57 @@ export const StatusBar = React.memo(() => {
     const breaks = parsedDoc?.pageBreaks || [];
     const hasBreaks = breaks.length > 0;
 
-    let pages = 1;
-    let currentPage = 1;
-
+    let pages: number;
     if (isMarkdown) {
       pages = Math.max(1, Math.ceil(docLinesCount / 40));
-      currentPage = Math.min(pages, Math.max(1, Math.ceil(currentLineNumber / 40)));
     } else if (hasBreaks) {
       if (hasTitlePage) {
         pages = Math.max(1, breaks.length);
-        const contentBreaks = breaks.filter(b => b <= currentLineNumber);
-        currentPage = Math.min(pages, Math.max(1, contentBreaks.length));
       } else {
         pages = breaks.length + 1;
-        const passedBreaks = breaks.filter(b => b <= currentLineNumber);
-        currentPage = Math.min(pages, passedBreaks.length + 1);
       }
     } else {
       pages = Math.max(1, Math.ceil(docLinesCount / 54));
-      currentPage = Math.min(pages, Math.max(1, Math.ceil(currentLineNumber / 54)));
     }
 
     const sceneCount = parsedDoc?.lines ? parsedDoc.lines.filter(l => l.type === LineType.heading).length : 0;
 
-    return { 
-      words: words.toLocaleString(), 
-      chars: chars.toLocaleString(), 
-      pages: pages.toLocaleString(), 
-      currentPage: currentPage.toLocaleString(), 
-      sceneCount: sceneCount.toLocaleString() 
+    return {
+      words: words.toLocaleString(),
+      chars: chars.toLocaleString(),
+      pages: pages.toLocaleString(),
+      rawPages: pages,
+      hasBreaks,
+      hasTitlePage,
+      breaks,
+      sceneCount: sceneCount.toLocaleString()
     };
-  }, [rawText, parsedDoc, activeLineNumber, isMarkdown]);
+  }, [rawText, parsedDoc, isMarkdown]);
+
+  const currentPage = useMemo(() => {
+    const currentLineNumber = Math.max(1, activeLineNumber + 1);
+    if (isMarkdown) {
+      return Math.min(docStats.rawPages, Math.max(1, Math.ceil(currentLineNumber / 40)));
+    }
+    if (docStats.hasBreaks) {
+      if (docStats.hasTitlePage) {
+        const contentBreaks = docStats.breaks.filter(b => b <= currentLineNumber);
+        return Math.min(docStats.rawPages, Math.max(1, contentBreaks.length));
+      } else {
+        const passedBreaks = docStats.breaks.filter(b => b <= currentLineNumber);
+        return Math.min(docStats.rawPages, passedBreaks.length + 1);
+      }
+    }
+    return Math.min(docStats.rawPages, Math.max(1, Math.ceil(currentLineNumber / 54)));
+  }, [activeLineNumber, isMarkdown, docStats]);
+
+  const stats = useMemo(() => ({
+    words: docStats.words,
+    chars: docStats.chars,
+    pages: docStats.pages,
+    currentPage: currentPage.toLocaleString(),
+    sceneCount: docStats.sceneCount
+  }), [docStats, currentPage]);
 
   const sprintDetails = useMemo(() => {
     if (!currentSprint) return null;

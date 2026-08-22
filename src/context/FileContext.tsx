@@ -331,16 +331,33 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveScriptIndexState(0);
   };
 
+  const createProseDocument = (text: string, existingSettings?: Record<string, unknown>): FountainDocument => {
+    return {
+      lines: [],
+      settings: existingSettings || {},
+      screenplayText: text,
+      pageBreaks: undefined,
+      lineToSceneMap: undefined,
+    };
+  };
+
   const setRawText = (text: string) => {
     const normalized = text.replace(/\r\n/g, "\n");
     setRawTextState(normalized);
+
+    const activeF = filesRef.current.find(f => f.id === activeFileIdRef.current);
+    const activeScr = activeF?.scripts && activeF.activeScriptIndex !== undefined ? activeF.scripts[activeF.activeScriptIndex] : undefined;
+    const isProse = isProseScript(activeScr, activeF?.filePath);
 
     if (parseTimeoutRef.current !== null) {
       clearTimeout(parseTimeoutRef.current);
     }
     parseTimeoutRef.current = setTimeout(async () => {
       parseTimeoutRef.current = null;
-      const doc = await parseScreenplayAsync(normalized, paperSize);
+      const doc = isProse 
+        ? createProseDocument(normalized, activeF?.parsedDoc.settings)
+        : await parseScreenplayAsync(normalized, paperSize);
+
       setFiles(prev => prev.map(f => {
         if (f.id === activeFileId) {
           const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
@@ -362,7 +379,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ...f,
             rawText: normalized,
             isDirty,
-            parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: existingBreaks },
+            parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : existingBreaks },
             scripts: updatedScripts,
           };
         }
@@ -371,21 +388,27 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setParsedDoc(prevDoc => {
         const mergedSettings = { ...(prevDoc.settings || {}), ...(doc.settings || {}) };
         const existingBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
-        return { ...doc, settings: mergedSettings, pageBreaks: existingBreaks };
+        return { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : existingBreaks };
       });
     }, 100);
   };
 
   const updateFileScriptContent = useCallback(async (fileId: string, scriptIndex: number | undefined, text: string) => {
     const normalized = text.replace(/\r\n/g, "\n");
-    const doc = await parseScreenplayAsync(normalized, paperSize);
+    const targetFile = filesRef.current.find(f => f.id === fileId);
+    const targetIdx = scriptIndex ?? targetFile?.activeScriptIndex ?? 0;
+    const targetScr = targetFile?.scripts && targetFile.scripts[targetIdx];
+    const isProse = isProseScript(targetScr, targetFile?.filePath);
+
+    const doc = isProse
+      ? createProseDocument(normalized, targetFile?.parsedDoc.settings)
+      : await parseScreenplayAsync(normalized, paperSize);
 
     setFiles(prev => prev.map(f => {
       if (f.id === fileId) {
         const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
 
         let updatedScripts = f.scripts;
-        const targetIdx = scriptIndex ?? f.activeScriptIndex ?? 0;
         if (updatedScripts && updatedScripts.length > 0) {
           updatedScripts = updatedScripts.map((s, i) =>
             i === targetIdx ? { ...s, content: normalized } : s
@@ -405,7 +428,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setRawTextState(normalized);
           setParsedDoc(prevDoc => {
             const activeExistingBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
-            return { ...doc, settings: mergedSettings, pageBreaks: activeExistingBreaks };
+            return { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : activeExistingBreaks };
           });
         }
 
@@ -413,7 +436,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...f,
           rawText: normalized,
           isDirty,
-          parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: existingBreaks },
+          parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : existingBreaks },
           scripts: updatedScripts,
         };
       }
@@ -462,6 +485,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!isTauri) return;
+    const curFile = files.find(f => f.id === activeFileId);
+    const curScript = curFile?.scripts && curFile.activeScriptIndex !== undefined ? curFile.scripts[curFile.activeScriptIndex] : undefined;
+    if (isProseScript(curScript, curFile?.filePath)) return;
 
     const handler = setTimeout(async () => {
       try {
@@ -500,10 +526,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 200);
 
     return () => clearTimeout(handler);
-  }, [rawText, paperSize, fontFamily, activeFileId, isTauri, parsedDoc.settings?.elementFormats, parsedDoc.settings?.scriptFonts]);
+  }, [rawText, paperSize, fontFamily, activeFileId, isTauri, parsedDoc.settings?.elementFormats, parsedDoc.settings?.scriptFonts, files]);
 
   useEffect(() => {
     if (isTauri) return;
+    const curFile = files.find(f => f.id === activeFileId);
+    const curScript = curFile?.scripts && curFile.activeScriptIndex !== undefined ? curFile.scripts[curFile.activeScriptIndex] : undefined;
+    if (isProseScript(curScript, curFile?.filePath)) return;
 
     const handler = setTimeout(() => {
       const parsed = parseScreenplay(rawText, paperSize);
@@ -524,7 +553,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 250);
 
     return () => clearTimeout(handler);
-  }, [rawText, paperSize, activeFileId, isTauri]);
+  }, [rawText, paperSize, activeFileId, isTauri, files]);
 
   const isActonePath = (p: string) => {
     const lower = p.toLowerCase();
