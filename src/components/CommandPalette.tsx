@@ -175,7 +175,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         const f = input.files?.[0];
         if (!f) return;
         const name = f.name.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "");
-        let fountainText = "";
+        let fountainText: string;
         if (f.name.toLowerCase().endsWith(".fadein")) {
           const buf = await f.arrayBuffer();
           fountainText = parseScriptFileToFountain(f.name, new Uint8Array(buf));

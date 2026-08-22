@@ -124,7 +124,7 @@ export class OpenAICompatibleProvider implements AIProvider {
         // If we already received partial response before stream cut off, return what we have
         return text;
       }
-      throw new Error(e?.message || "Failed to decode response stream from AI provider.");
+      throw new Error(e?.message || "Failed to decode response stream from AI provider.", { cause: e });
     }
     return text;
   }

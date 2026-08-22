@@ -271,8 +271,7 @@ export const OutlineView = React.memo(() => {
     () => parsedDoc.lines
       .map((line, index) => ({ line, index }))
       .filter(({ line }) => line.isOutlineElement || line.type === LineType.synopse),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [outlineSignature]
+    [outlineSignature, parsedDoc.lines]
   );
 
   // Scenes-only list for drag-and-drop indexing

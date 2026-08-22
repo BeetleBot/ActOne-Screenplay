@@ -433,7 +433,7 @@ export function useAIChat(
       }
 
       try {
-        let currentPrompt = systemPrompt;
+        const currentPrompt = systemPrompt;
         let loopCount = 0;
         let accumulatedContent = "";
 
@@ -496,7 +496,7 @@ export function useAIChat(
                 replaceSceneText,
                 updateSettings,
                 openXrayWindow,
-                scriptFileName: scriptFileName || (filePath ? filePath.split(/[\/\\]/).pop() : "") || "",
+                scriptFileName: scriptFileName || (filePath ? filePath.split(/[/\\]/).pop() : "") || "",
               });
 
               let pendingApply: { sceneNumber: number; fountainText: string } | undefined;

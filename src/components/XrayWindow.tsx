@@ -83,7 +83,7 @@ function cleanSceneHeading(heading: string): string {
     .replace(/#.*?#/g, "")
     .replace(/^\d+\.\s*/, "")
     .replace(/\[\[.*?\]\]/g, "")
-    .replace(/[\*_~]/g, "")
+    .replace(/[*_~]/g, "")
     .trim()
     .toUpperCase();
 }

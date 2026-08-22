@@ -584,7 +584,7 @@ function AppInner() {
     return () => {
       active = false;
       if (unlisten) {
-        try { if (typeof unlisten === "function") unlisten(); } catch (e) { /* Safe discard */ }
+        try { if (typeof unlisten === "function") unlisten(); } catch { /* Safe discard */ }
       }
     };
   }, []);
@@ -672,7 +672,7 @@ function AppInner() {
     return () => {
       active = false;
       if (unlisten) {
-        try { if (typeof unlisten === "function") unlisten(); } catch (e) { /* Safe discard */ }
+        try { if (typeof unlisten === "function") unlisten(); } catch { /* Safe discard */ }
       }
     };
   }, []);

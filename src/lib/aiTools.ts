@@ -349,8 +349,6 @@ export function executeToolCall(
     let wordCount = 0;
     const charSpeechCounts: Record<string, number> = {};
 
-    let currentSpeakingChar: string | null = null;
-
     for (const l of lines) {
       const trimmed = l.text.trim();
       if (!trimmed) continue;
@@ -361,8 +359,8 @@ export function executeToolCall(
       if (l.type === LineType.heading) continue;
 
       if (l.type === LineType.character || l.type === LineType.dualDialogueCharacter) {
-        currentSpeakingChar = trimmed.replace(/\s*\([^)]*\)/g, "").replace(/\^/g, "").trim().toUpperCase();
-        charSpeechCounts[currentSpeakingChar] = (charSpeechCounts[currentSpeakingChar] || 0) + 1;
+        const speakingChar = trimmed.replace(/\s*\([^)]*\)/g, "").replace(/\^/g, "").trim().toUpperCase();
+        charSpeechCounts[speakingChar] = (charSpeechCounts[speakingChar] || 0) + 1;
       } else if (l.type === LineType.dialogue || l.type === LineType.dualDialogue) {
         dialogueLines++;
       } else if (l.type === LineType.action) {

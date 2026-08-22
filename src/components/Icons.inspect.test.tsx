@@ -1,12 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { render } from "@testing-library/react";
 import React from "react";
-import {
-  AddIcon, BookmarkIcon, ArchiveIcon, AutoAwesomeIcon, CameraIcon,
-  ContentCopyIcon, DeleteIcon, DescriptionIcon, DownloadIcon, FolderOpenIcon,
-  LibraryBooksIcon, MoreHorizIcon, NoteAddIcon, SaveIcon, UploadIcon,
-  SearchIcon, CloseIcon, CheckIcon, HomeIcon, PersonIcon
-} from "./Icons";
+import { AddIcon, BookmarkIcon } from "./Icons";
 
 describe("Icons - inspect rendered output", () => {
   it("AddIcon", () => {

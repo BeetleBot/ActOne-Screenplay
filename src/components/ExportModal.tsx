@@ -550,7 +550,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       if (!dir) return;
 
       for (const script of scripts) {
-        // eslint-disable-next-line no-control-regex
         const sanitizedName = script.name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").trim() || "Untitled";
 
         if (format === "fountain") {

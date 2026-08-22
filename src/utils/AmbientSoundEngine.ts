@@ -73,7 +73,7 @@ class AmbientSoundEngine {
 
 
 
-    let url = "";
+    let url: string;
     switch (trackName) {
       case "Light Rain": url = "/sounds/light-rain.mp3"; break;
       case "Coffee Shop": url = "/sounds/cafe.mp3"; break;
@@ -103,7 +103,9 @@ class AmbientSoundEngine {
       try {
         node.stop();
         node.disconnect();
-      } catch (e) {}
+      } catch {
+        /* ignore stop errors */
+      }
     });
     this.activeSources = [];
 
