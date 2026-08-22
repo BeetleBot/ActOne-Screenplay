@@ -628,19 +628,22 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const activeScript = scripts[0] || { name: "Untitled", fileName: "Untitled.fountain", content: "", savedContent: "" };
     const content = activeScript.content;
-    const parsed = parseScreenplay(content, paperSize);
+    const isProse = isProseScript(activeScript, normalizedPath);
+    const parsed = isProse
+      ? createProseDocument(content, settings)
+      : parseScreenplay(content, paperSize);
     if (isActone) {
       parsed.settings = settings;
     }
-    const cleanText = parsed.screenplayText;
+    const cleanText = isProse ? content : parsed.screenplayText;
 
     const currentActive = files.find(f => f.id === activeFileId);
     const isDefault = currentActive && !currentActive.filePath &&
                       (currentActive.rawText === "" || !currentActive.isDirty);
 
     if (isDefault && currentActive) {
-      setFiles(prev => prev.map(f => f.id === activeFileId ? {
-        ...f,
+      const updatedFile: ScreenplayFile = {
+        ...currentActive,
         filePath: normalizedPath,
         rawText: cleanText,
         savedText: cleanText,
@@ -648,7 +651,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         parsedDoc: parsed,
         scripts,
         activeScriptIndex: 0,
-      } : f));
+      };
+      setFiles(prev => prev.map(f => f.id === activeFileId ? updatedFile : f));
+      filesRef.current = filesRef.current.map(f => f.id === activeFileId ? updatedFile : f);
       setFilePath(normalizedPath);
       setRawTextState(cleanText);
       setParsedDoc(parsed);
@@ -669,7 +674,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeScriptIndex: 0,
       };
       setFiles(prev => [...prev, newFileObj]);
+      filesRef.current = [...filesRef.current, newFileObj];
       setActiveFileIdState(newId);
+      activeFileIdRef.current = newId;
       setFilePath(normalizedPath);
       setRawTextState(cleanText);
       setParsedDoc(parsed);
@@ -770,11 +777,15 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }];
       }
 
-      const parsed = parseScreenplay(content, paperSize);
+      const activeScript = scripts[0] || { name: "Untitled", fileName: "Untitled.fountain", content: "", savedContent: "" };
+      const isProse = isProseScript(activeScript, normalizedPath);
+      const parsed = isProse
+        ? createProseDocument(content, settings)
+        : parseScreenplay(content, paperSize);
       if (isActone) {
         parsed.settings = settings;
       }
-      const cleanText = parsed.screenplayText.replace(/\r\n/g, "\n");
+      const cleanText = isProse ? content.replace(/\r\n/g, "\n") : parsed.screenplayText.replace(/\r\n/g, "\n");
 
       if (isDefault && currentActive) {
         const updatedFiles = files.map(f => f.id === activeFileId ? {
@@ -788,6 +799,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           activeScriptIndex: 0,
         } : f);
         setFiles(updatedFiles);
+        filesRef.current = updatedFiles;
         setFilePath(normalizedPath);
         setRawTextState(cleanText);
         setParsedDoc(parsed);
@@ -807,7 +819,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           activeScriptIndex: 0,
         };
         setFiles(prev => [...prev, newFileObj]);
+        filesRef.current = [...filesRef.current, newFileObj];
         setActiveFileIdState(newId);
+        activeFileIdRef.current = newId;
         setFilePath(normalizedPath);
         setRawTextState(cleanText);
         setParsedDoc(parsed);
@@ -832,7 +846,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const cleanFountainText = currentActive.parsedDoc.lines.map(l => l.text).join("\n");
+    const activeScr = currentActive.scripts && currentActive.activeScriptIndex !== undefined ? currentActive.scripts[currentActive.activeScriptIndex] : undefined;
+    const isProse = isProseScript(activeScr, currentActive.filePath);
+    const cleanTextToSave = isProse || !currentActive.parsedDoc.lines?.length
+      ? currentActive.rawText
+      : currentActive.parsedDoc.lines.map(l => l.text).join("\n");
     const isActone = currentActive.filePath.toLowerCase().endsWith(".actone");
     const normalizedPath = isActone ? currentActive.filePath.replace(/\.actone$/i, ".actone") : currentActive.filePath;
 
@@ -841,15 +859,15 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let updatedScripts = currentActive.scripts ? [...currentActive.scripts] : [];
       if (updatedScripts.length > 0) {
         const idx = currentActive.activeScriptIndex ?? 0;
-        updatedScripts[idx] = { ...updatedScripts[idx], content: cleanFountainText };
+        updatedScripts[idx] = { ...updatedScripts[idx], content: cleanTextToSave };
         // Mark every script as saved
         updatedScripts = updatedScripts.map(s => ({ ...s, savedContent: s.content }));
       } else {
         updatedScripts = [{
           name: normalizedPath.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
           fileName: "document.fountain",
-          content: cleanFountainText,
-          savedContent: cleanFountainText,
+          content: cleanTextToSave,
+          savedContent: cleanTextToSave,
         }];
       }
 
@@ -912,7 +930,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsSaving(true);
         setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
         try {
-          await invoke("save_file_content", { path: currentActive.filePath, content: cleanFountainText });
+          await invoke("save_file_content", { path: currentActive.filePath, content: cleanTextToSave });
           setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
           triggerSaveStatusSaved();
         } catch (e) {
@@ -929,7 +947,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else {
         try {
-          const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
+          const blob = new Blob([cleanTextToSave], { type: "text/plain;charset=utf-8" });
           const url = URL.createObjectURL(blob);
           const link = document.createElement("a");
           link.href = url;
@@ -959,14 +977,18 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logger.warn("file", "saveFileAs: No file found for id:", currentId);
       return null;
     }
-    const cleanFountainText = currentActive.parsedDoc.lines.map(l => l.text).join("\n");
+    const activeScr = currentActive.scripts && currentActive.activeScriptIndex !== undefined ? currentActive.scripts[currentActive.activeScriptIndex] : undefined;
+    const isProse = isProseScript(activeScr, currentActive.filePath);
+    const cleanTextToSave = isProse || !currentActive.parsedDoc.lines?.length
+      ? currentActive.rawText
+      : currentActive.parsedDoc.lines.map(l => l.text).join("\n");
     const defaultName = suggestedName || currentActive.scripts?.[currentActive.activeScriptIndex ?? 0]?.name || "Untitled";
 
     setSaveStatus("saving");
     if (isTauri) {
       try {
         const path = await invoke<string | null>("save_file_dialog", {
-          content: cleanFountainText,
+          content: cleanTextToSave,
           defaultName: defaultName,
         });
         if (path) {
@@ -977,8 +999,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             finalScripts = finalScripts || [{
               name: normalizedPath.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled",
               fileName: "document.fountain",
-              content: cleanFountainText,
-              savedContent: cleanFountainText,
+              content: cleanTextToSave,
+              savedContent: cleanTextToSave,
             }];
             await saveActoneFile(normalizedPath, finalScripts, currentActive.parsedDoc.settings);
           }
@@ -1033,8 +1055,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const finalScripts = currentActive.scripts || [{
               name: finalName.replace(/\.actone$/i, ""),
               fileName: "document.fountain",
-              content: cleanFountainText,
-              savedContent: cleanFountainText,
+              content: cleanTextToSave,
+              savedContent: cleanTextToSave,
             }];
             const zipped = await packActoneBundleAsync(finalScripts, currentActive.parsedDoc.settings);
             const blob = new Blob([zipped], { type: "application/zip" });
@@ -1056,7 +1078,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setActiveScriptIndexState(currentActive.activeScriptIndex ?? 0);
             triggerSaveStatusSaved();
           } else {
-            const blob = new Blob([cleanFountainText], { type: "text/plain;charset=utf-8" });
+            const blob = new Blob([cleanTextToSave], { type: "text/plain;charset=utf-8" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
@@ -1152,7 +1174,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       i === (file.activeScriptIndex ?? 0) ? { ...s, content: rawText } : s
     );
     const newScript = updatedScripts[index];
-    const doc = parseScreenplay(newScript.content, paperSize);
+    const isProse = isProseScript(newScript, file.filePath);
+    const doc = isProse
+      ? createProseDocument(newScript.content, file.parsedDoc.settings)
+      : parseScreenplay(newScript.content, paperSize);
     if (file.parsedDoc.settings) {
       doc.settings = file.parsedDoc.settings;
     }
@@ -1282,6 +1307,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const insertAt = index + 1;
     const updatedScripts = [...file.scripts.slice(0, insertAt), newScript, ...file.scripts.slice(insertAt)];
     const newActiveIndex = insertAt;
+    const parsed = isMarkdown
+      ? createProseDocument(newScript.content, file.parsedDoc.settings)
+      : parseScreenplay(newScript.content, paperSize);
 
     setFiles(prev => prev.map(f => f.id === activeFileId ? {
       ...f,
@@ -1290,13 +1318,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       rawText: newScript.content,
       savedText: newScript.savedContent,
       isDirty: true,
-      parsedDoc: { ...parseScreenplay(newScript.content, paperSize), settings: file.parsedDoc.settings },
+      parsedDoc: parsed,
     } : f));
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(newActiveIndex);
     setRawTextState(newScript.content);
-    setParsedDoc({ ...parseScreenplay(newScript.content, paperSize), settings: file.parsedDoc.settings });
+    setParsedDoc(parsed);
 
     return newName;
   }, [files, activeFileId, paperSize]);
@@ -1348,7 +1376,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const newActiveScript = updatedScripts[newActiveIndex];
-    const doc = parseScreenplay(newActiveScript.content, paperSize);
+    const isProse = isProseScript(newActiveScript, file.filePath);
+    const doc = isProse
+      ? createProseDocument(newActiveScript.content, file.parsedDoc.settings)
+      : parseScreenplay(newActiveScript.content, paperSize);
     if (file.parsedDoc.settings) {
       doc.settings = file.parsedDoc.settings;
     }
@@ -1420,6 +1451,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const uniqueName = getUniqueName(fileName.trim() || "Imported", file.scripts);
     const ext = type === "markdown" ? "md" : "fountain";
     const safeFileName = `${sanitizeFileName(uniqueName)}.${ext}`;
+    const isMarkdown = type === "markdown";
     const newScript: ScriptInfo = {
       name: uniqueName,
       fileName: safeFileName,
@@ -1429,6 +1461,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const updatedScripts = [...file.scripts, newScript];
+    const parsed = isMarkdown
+      ? createProseDocument(content, file.parsedDoc.settings)
+      : parseScreenplay(content, paperSize);
+
     setFiles(prev => prev.map(f => f.id === activeFileId ? {
       ...f,
       scripts: updatedScripts,
@@ -1436,13 +1472,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       rawText: content,
       savedText: content,
       isDirty: true,
-      parsedDoc: parseScreenplay(content, paperSize),
+      parsedDoc: parsed,
     } : f));
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(updatedScripts.length - 1);
     setRawTextState(content);
-    setParsedDoc(parseScreenplay(content, paperSize));
+    setParsedDoc(parsed);
 
     return uniqueName;
   }, [files, activeFileId, isTauri, paperSize]);
@@ -1469,6 +1505,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const targetScript = updatedScripts[newActiveIndex];
+    const isProse = isProseScript(targetScript, file.filePath);
+    const doc = isProse
+      ? createProseDocument(targetScript.content, file.parsedDoc.settings)
+      : parseScreenplay(targetScript.content, paperSize);
+    if (file.parsedDoc.settings) {
+      doc.settings = file.parsedDoc.settings;
+    }
+
     setFiles(prev => prev.map(f => f.id === activeFileId ? {
       ...f,
       scripts: updatedScripts,
@@ -1476,13 +1520,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       rawText: targetScript.content,
       savedText: targetScript.savedContent,
       isDirty: true,
-      parsedDoc: parseScreenplay(targetScript.content, paperSize),
+      parsedDoc: doc,
     } : f));
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(newActiveIndex);
     setRawTextState(targetScript.content);
-    setParsedDoc(parseScreenplay(targetScript.content, paperSize));
+    setParsedDoc(doc);
   }, [files, activeFileId, paperSize]);
 
   const selectFileRef = useRef(selectFile);

@@ -4,7 +4,7 @@ import React from "react";
 import { UIProvider } from "./UIContext";
 import { FileProvider, useFile } from "./FileContext";
 import { CustomModalProvider } from "./CustomModalContext";
-import { packActoneBundle } from "../utils";
+import { packActoneBundle, unpackActoneBundle } from "../utils";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -169,6 +169,49 @@ describe("FileContext", () => {
     expect(result.current.scripts.map((s) => s.name)).toEqual(["Untitled", "Untitled (2)"]);
   });
 
+  it("preserves prose document content when saving an actone bundle", async () => {
+    let savedBytes: number[] | null = null;
+    const initialProseContent = "# Treatment\n\nThis is a prose document.";
+    const mockedBytes = Array.from(
+      packActoneBundle(
+        [
+          { name: "Treatment", fileName: "files/Treatment.md", type: "markdown", content: initialProseContent, savedContent: initialProseContent },
+          { name: "Script", fileName: "files/Script.fountain", type: "fountain", content: "INT. ROOM - DAY\n\nHi.", savedContent: "INT. ROOM - DAY\n\nHi." },
+        ],
+        {}
+      )
+    );
+
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === "read_file_binary") {
+        return mockedBytes;
+      }
+      if (cmd === "save_file_binary") {
+        const payload = args as { path: string; bytes: number[] };
+        savedBytes = payload.bytes;
+        return null;
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      await result.current.openFilePath("C:/scripts/project.actone");
+    });
+
+    expect(result.current.rawText).toBe(initialProseContent);
+    expect(result.current.scripts[0].content).toBe(initialProseContent);
+
+    await act(async () => {
+      await result.current.saveFile();
+    });
+
+    expect(savedBytes).not.toBeNull();
+    const unpacked = unpackActoneBundle(new Uint8Array(savedBytes!));
+    expect(unpacked.scripts[0].content).toBe(initialProseContent);
+    expect(unpacked.scripts[1].content).toBe("INT. ROOM - DAY\n\nHi.");
+  });
 });
 
 
