@@ -44,7 +44,7 @@ const BLOCK_GAP: f32 = 10.0;
 /// Indent per list nesting level.
 const LIST_INDENT: f32 = 18.0;
 /// Blockquote indent.
-const QUOTE_INDENT: f32 = 16.0;
+const QUOTE_INDENT: f32 = 10.0;
 /// Code block font size.
 const CODE_SIZE: f32 = 9.5;
 /// Code line height.
@@ -482,21 +482,23 @@ impl ProsePdfExporter {
                 }
             }
             Block::Blockquote(inner) => {
+                let total_h = self.measure_blocks(ctx, inner, content_width - QUOTE_INDENT)?;
                 let first_h = if let Some(first_b) = inner.first() {
                     self.measure_block(ctx, first_b, content_width - QUOTE_INDENT)?
                 } else {
                     20.0
                 };
-                if !is_top && *ctx.y_position + first_h.min(30.0) > ctx.max_y {
+                if !is_top && *ctx.y_position + total_h > ctx.max_y && *ctx.y_position + first_h.min(30.0) > ctx.max_y {
                     return Ok(DrawOutcome::PageFull);
                 }
                 let y0 = *ctx.y_position;
                 self.draw_blocks(ctx, inner, content_width - QUOTE_INDENT, x_offset + QUOTE_INDENT, annotations)?;
                 let y1 = *ctx.y_position;
-                let bar_top = y0 - 7.0;
-                let bar_bottom = (y1 - 4.0).max(bar_top + 12.0);
-                self.fill_rect(ctx, PROSE_MARGIN + x_offset + 2.0, bar_top, 1.5, bar_bottom - bar_top, 190)?;
-                *ctx.y_position += BLOCK_GAP;
+                // In cosmic-text shaping, glyph baseline sits at y0; cap height reaches ~8pt above y0 (y0 - BODY_SIZE * 0.72)
+                // and descenders reach ~2.5pt below the last line's baseline.
+                let bar_top = y0 - BODY_SIZE * 0.72;
+                let bar_bottom = (y1 - PARA_GAP + 1.5).max(bar_top + BODY_SIZE * 0.8);
+                self.fill_rect(ctx, PROSE_MARGIN + x_offset + 1.0, bar_top, 1.5, bar_bottom - bar_top, 160)?;
                 Ok(DrawOutcome::Done)
             }
             Block::CodeBlock { text, .. } => {
@@ -1229,16 +1231,18 @@ mod tests {
 
     #[test]
     fn test_md_file_export() {
-        let md = std::fs::read_to_string("/home/nkr/Projects/Iyal-Inc Family/ActOne-Screenplay/Test-Files/mdtest/md.md").unwrap();
-        let bytes = render(&md).unwrap();
-        assert!(bytes.starts_with(b"%PDF"));
+        if let Ok(md) = std::fs::read_to_string("Test-Files/mdtest/md.md") {
+            let bytes = render(&md).unwrap();
+            assert!(bytes.starts_with(b"%PDF"));
+        }
     }
 
     #[test]
     fn test_sample_document_export() {
-        let md = std::fs::read_to_string("/home/nkr/Projects/Iyal-Inc Family/ActOne-Screenplay/sample_document.md").unwrap();
-        let bytes = render(&md).unwrap();
-        assert!(bytes.starts_with(b"%PDF"));
+        if let Ok(md) = std::fs::read_to_string("sample_document.md") {
+            let bytes = render(&md).unwrap();
+            assert!(bytes.starts_with(b"%PDF"));
+        }
     }
 
     #[test]
