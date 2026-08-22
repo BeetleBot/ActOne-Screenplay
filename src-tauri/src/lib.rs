@@ -683,7 +683,6 @@ fn export_prose_pdf(
     watermark_center_opacity: Option<f32>,
     watermark_center_grayscale: Option<bool>,
     script_fonts: Option<String>,
-    assets: Option<std::collections::HashMap<String, String>>,
     default_directory: Option<String>,
 ) -> Option<String> {
     let mut dialog = rfd::FileDialog::new();
@@ -706,21 +705,6 @@ fn export_prose_pdf(
         font_str
     };
 
-    let mut image_map = std::collections::HashMap::new();
-    if let Some(assets_map) = assets {
-        use base64::Engine;
-        for (key, base64_str) in assets_map {
-            let clean = if let Some(idx) = base64_str.find(',') {
-                &base64_str[idx + 1..]
-            } else {
-                &base64_str
-            };
-            if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(clean) {
-                image_map.insert(key, decoded);
-            }
-        }
-    }
-
     let exporter = pdf::prose::export::ProsePdfExporter {
         paper_size: paper,
         export_font,
@@ -737,9 +721,6 @@ fn export_prose_pdf(
         watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
         watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
         script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
-        images: image_map,
-        base_dir: default_directory.map(std::path::PathBuf::from),
-        image_cache: std::cell::RefCell::new(std::collections::HashMap::new()),
     };
 
     let mut file_path = file;
@@ -774,8 +755,6 @@ fn generate_prose_pdf_bytes(
     watermark_center_opacity: Option<f32>,
     watermark_center_grayscale: Option<bool>,
     script_fonts: Option<String>,
-    assets: Option<std::collections::HashMap<String, String>>,
-    default_directory: Option<String>,
 ) -> Option<Vec<u8>> {
     let paper = if paper_size.as_deref() == Some("letter") {
         pdf::LETTER
@@ -790,21 +769,6 @@ fn generate_prose_pdf_bytes(
     } else {
         font_str
     };
-
-    let mut image_map = std::collections::HashMap::new();
-    if let Some(assets_map) = assets {
-        use base64::Engine;
-        for (key, base64_str) in assets_map {
-            let clean = if let Some(idx) = base64_str.find(',') {
-                &base64_str[idx + 1..]
-            } else {
-                &base64_str
-            };
-            if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(clean) {
-                image_map.insert(key, decoded);
-            }
-        }
-    }
 
     let exporter = pdf::prose::export::ProsePdfExporter {
         paper_size: paper,
@@ -822,9 +786,6 @@ fn generate_prose_pdf_bytes(
         watermark_center_opacity: watermark_center_opacity.unwrap_or(0.4),
         watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
         script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
-        images: image_map,
-        base_dir: default_directory.map(std::path::PathBuf::from),
-        image_cache: std::cell::RefCell::new(std::collections::HashMap::new()),
     };
 
     let mut buf = std::io::Cursor::new(Vec::new());

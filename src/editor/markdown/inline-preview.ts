@@ -350,9 +350,7 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
   // `from` positions of Link nodes whose range overlaps a selection.
   // Link children (LinkMark/URL/LinkTitle) hide unless their parent
   // Link's `from` is in this set — i.e. the cursor has entered the
-  // link specifically, not merely landed on the same line. Images
-  // aren't included; they already have their own widget UX and the
-  // line-based reveal is the right fit for `![alt](url)`.
+  // link specifically, not merely landed on the same line.
   const activeLinkStarts = new Set<number>();
   const blockquoteDepthByLine = new Map<number, number>();
 
@@ -552,27 +550,6 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
         if (!activeLines.has(line.number)) {
           ranges.push(Decoration.line({ class: 'cm-prose-hr' }).range(line.from));
           pushReplace(ranges, doc, line.from, line.to);
-        }
-      }
-
-      if (node.name === 'Image' && node.from < node.to) {
-        const imageLine = doc.lineAt(node.from);
-        const lineNum = imageLine.number;
-        if (!activeLines.has(lineNum)) {
-          // Hide the raw `![alt](url)` on inactive lines so only the
-          // rendered image block (emitted by the image-blocks state
-          // field below the line) shows. We deliberately keep the
-          // now-empty source `.cm-line` at its default line-height
-          // rather than collapsing it via `display: none`: on iOS
-          // Safari, toggling a line from its text-measured height
-          // to zero mid-scroll shifts every subsequent line up by
-          // that amount, which the scroll engine reads as an
-          // anchor conflict and halts kinetic momentum — visible
-          // as "scroll stops right before an image when you scroll
-          // back up." The tradeoff is one line of empty space
-          // above each rendered image, which actually reads a bit
-          // cleaner as visual separation anyway.
-          pushReplace(ranges, doc, node.from, node.to);
         }
       }
 

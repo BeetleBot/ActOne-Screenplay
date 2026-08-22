@@ -517,6 +517,9 @@ Markdown syntax characters remain clearly visible and styled with subtle contras
 - **Code**: \`\`inline code\`\`
 - **Links**: \`[Link Text](https://example.com)\`
 
+### Images Not Supported
+Image embeds (\`![alt](url)\`) are not supported in ActOne Screenplay — there is no image insertion in the prose editor, and image markdown is not rendered in the editor or exported PDF.
+
 ### Stepped Blockquote Left Rail
 - Typing \`>\`, \`>>\`, or \`>>>\` generates a solid stepped colored indicator bar on the left.
 - Each nesting level precisely matches the width of the \`>\` syntax markers (\`1ch\` per depth level), with the \`>\` markers embedded cleanly inside the rail.

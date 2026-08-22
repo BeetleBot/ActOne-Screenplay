@@ -5,14 +5,12 @@
 
 use std::collections::HashMap;
 use std::io::Write;
-use std::path::PathBuf;
 
 use cosmic_text::FontSystem;
 use krilla::{
     Document,
     color::luma,
     geom::{PathBuilder, Point, Rect},
-    image::Image,
     page::PageSettings,
     paint::{Fill, Paint, Stroke},
 };
@@ -61,8 +59,6 @@ const TABLE_SIZE: f32 = 10.0;
 const TABLE_PAD_H: f32 = 6.0;
 /// Table cell vertical padding.
 const TABLE_PAD_V: f32 = 4.0;
-/// Spacing around images.
-const IMAGE_GAP: f32 = 10.0;
 
 /// Residual render state for blocks split across pages.
 enum Residual {
@@ -110,11 +106,6 @@ pub struct ProsePdfExporter {
     pub watermark_center_opacity: f32,
     pub watermark_center_grayscale: bool,
     pub script_fonts: HashMap<String, String>,
-    /// Image bytes keyed by the `src` attribute as written in the Markdown.
-    pub images: HashMap<String, Vec<u8>>,
-    /// Directory used to resolve relative image paths that are not in `images`.
-    pub base_dir: Option<PathBuf>,
-    pub image_cache: std::cell::RefCell<HashMap<String, Option<Image>>>,
 }
 
 impl Default for ProsePdfExporter {
@@ -135,9 +126,6 @@ impl Default for ProsePdfExporter {
             watermark_center_opacity: 0.4,
             watermark_center_grayscale: false,
             script_fonts: HashMap::new(),
-            images: HashMap::new(),
-            base_dir: None,
-            image_cache: std::cell::RefCell::new(HashMap::new()),
         }
     }
 }
@@ -574,20 +562,6 @@ impl ProsePdfExporter {
                 *ctx.y_position += 16.0;
                 Ok(DrawOutcome::Done)
             }
-            Block::Image { src, alt } => {
-                let img = self.load_image(src);
-                let height = if let Some(img) = &img {
-                    self.image_height(img, content_width)
-                } else {
-                    160.0
-                } + IMAGE_GAP;
-                if !is_top && *ctx.y_position + height > ctx.max_y {
-                    return Ok(DrawOutcome::PageFull);
-                }
-                self.draw_image(ctx, img.as_ref(), alt, x, content_width)?;
-                *ctx.y_position += IMAGE_GAP;
-                Ok(DrawOutcome::Done)
-            }
             Block::RawHtml(_) => Ok(DrawOutcome::Done),
             Block::FootnoteDefinition { .. } => Ok(DrawOutcome::Done),
         }
@@ -639,16 +613,6 @@ impl ProsePdfExporter {
                 Ok(self.measure_table(ctx, header, rows, col_w)? + BLOCK_GAP)
             }
             Block::HorizontalRule => Ok(16.0),
-            Block::Image { src, alt } => {
-                let img = self.load_image(src);
-                let h = if let Some(img) = &img {
-                    self.image_height(img, content_width)
-                } else {
-                    160.0
-                };
-                let _ = alt;
-                Ok(h + IMAGE_GAP)
-            }
             Block::RawHtml(_) => Ok(0.0),
             Block::FootnoteDefinition { .. } => Ok(0.0),
         }
@@ -1039,75 +1003,8 @@ impl ProsePdfExporter {
         Ok((more, drawn))
     }
 
-    fn image_dimensions(&self, img: &Image, content_width: f32) -> (f32, f32) {
-        let (w, h) = img.size();
-        let max_prose_img_w = (content_width * 0.70).min(320.0);
-        let max_prose_img_h = (self.page_printable_height() * 0.35).min(220.0);
-        let scale = (max_prose_img_w / w as f32)
-            .min(max_prose_img_h / h as f32)
-            .min(1.0);
-        (w as f32 * scale, h as f32 * scale)
-    }
-
-    fn image_height(&self, img: &Image, content_width: f32) -> f32 {
-        self.image_dimensions(img, content_width).1
-    }
-
     fn page_printable_height(&self) -> f32 {
         self.paper_size.y - self.paper_size.top_margin() - self.paper_size.bottom_margin()
-    }
-
-    fn draw_image(
-        &self,
-        ctx: &mut DrawContext<'_, '_>,
-        img: Option<&Image>,
-        alt: &str,
-        _x: f32,
-        content_width: f32,
-    ) -> std::io::Result<()> {
-        let y = *ctx.y_position;
-        if let Some(img) = img {
-            let (dw, dh) = self.image_dimensions(img, content_width);
-            let img_x = PROSE_MARGIN + (content_width - dw).max(0.0) / 2.0;
-            if let Some(size) = krilla::geom::Size::from_wh(dw, dh) {
-                ctx.surface
-                    .push_transform(&krilla::geom::Transform::from_translate(img_x, y));
-                ctx.surface.draw_image(img.clone(), size);
-                ctx.surface.pop();
-            }
-            *ctx.y_position = y + dh;
-        } else {
-            let (dw, dh) = (content_width.min(320.0), 100.0);
-            let img_x = PROSE_MARGIN + (content_width - dw).max(0.0) / 2.0;
-            self.fill_rect(ctx, img_x, y, dw, dh, 238)?;
-            self.stroke_rect(ctx, img_x, y, dw, dh, 210, 0.75)?;
-            let label = if alt.is_empty() { "image" } else { alt };
-            let rs: RichString = format!("[{label}]").into();
-            let label_h = measure_rich(ctx, &rs, dw - 24.0, BODY_SIZE)?;
-            let mut y2 = y + (dh - label_h) / 2.0;
-            let mut inner_ctx = DrawContext {
-                layout_info: ctx.layout_info,
-                surface: ctx.surface,
-                y_position: &mut y2,
-                max_y: y + dh,
-                is_revised: false,
-                font_system: ctx.font_system,
-                font_cache: ctx.font_cache,
-            };
-            let mut res = None;
-            let mut dummy_annots = Vec::new();
-            write_rich_block(
-                &mut inner_ctx,
-                &rs,
-                img_x + 12.0,
-                dw - 24.0,
-                BODY_SIZE,
-                &mut res,
-                &mut dummy_annots,
-            )?;
-            *ctx.y_position = y + dh;
-        }
-        Ok(())
     }
 
     fn fill_rect(
@@ -1187,228 +1084,7 @@ impl ProsePdfExporter {
         Ok(())
     }
 
-    fn load_image(&self, src: &str) -> Option<Image> {
-        if let Some(cached) = self.image_cache.borrow().get(src) {
-            return cached.clone();
-        }
-        let img = self.get_image_bytes(src).and_then(|b| decode_image(&b));
-        self.image_cache.borrow_mut().insert(src.to_string(), img.clone());
-        img
     }
-
-    fn get_image_bytes(&self, src: &str) -> Option<Vec<u8>> {
-        let raw_src = src.trim().trim_matches(|c| c == '<' || c == '>' || c == '"' || c == '\'');
-        if raw_src.starts_with("data:") {
-            if let Some(comma_idx) = raw_src.find(',') {
-                let base64_str = &raw_src[comma_idx + 1..];
-                use base64::Engine;
-                return base64::engine::general_purpose::STANDARD
-                    .decode(base64_str.trim())
-                    .ok();
-            }
-        }
-
-        let clean_query = raw_src.split('?').next().unwrap_or(raw_src);
-        let clean_hash = clean_query.split('#').next().unwrap_or(clean_query);
-
-        let decoded_src = percent_decode_str(clean_hash);
-        let clean_src = strip_prefixes(clean_hash);
-        let clean_decoded = strip_prefixes(&decoded_src);
-        let filename_src = std::path::Path::new(clean_src)
-            .file_name()
-            .and_then(|f| f.to_str())
-            .unwrap_or(clean_src);
-        let filename_decoded = std::path::Path::new(clean_decoded)
-            .file_name()
-            .and_then(|f| f.to_str())
-            .unwrap_or(clean_decoded);
-
-        let filename_src_lower = filename_src.to_lowercase();
-        let filename_decoded_lower = filename_decoded.to_lowercase();
-        let clean_src_lower = clean_src.to_lowercase();
-        let clean_decoded_lower = clean_decoded.to_lowercase();
-
-        let candidates = [
-            clean_hash.to_string(),
-            decoded_src.clone(),
-            clean_src.to_string(),
-            clean_decoded.to_string(),
-            filename_src.to_string(),
-            filename_decoded.to_string(),
-            format!("files/assets/{clean_src}"),
-            format!("files/assets/{clean_decoded}"),
-            format!("files/assets/{filename_src}"),
-            format!("files/assets/{filename_decoded}"),
-            format!("assets/{clean_src}"),
-            format!("assets/{clean_decoded}"),
-            format!("assets/{filename_src}"),
-            format!("assets/{filename_decoded}"),
-        ];
-
-        for (k, v) in &self.images {
-            let k_clean = strip_prefixes(k);
-            let k_file = std::path::Path::new(k_clean)
-                .file_name()
-                .and_then(|f| f.to_str())
-                .unwrap_or(k_clean);
-            let k_lower = k.to_lowercase();
-            let k_clean_lower = k_clean.to_lowercase();
-            let k_file_lower = k_file.to_lowercase();
-
-            if k == clean_hash
-                || k == &decoded_src
-                || k_clean == clean_src
-                || k_clean == clean_decoded
-                || k_file == filename_src
-                || k_file == filename_decoded
-                || k_lower == clean_src_lower
-                || k_clean_lower == clean_src_lower
-                || k_clean_lower == clean_decoded_lower
-                || k_file_lower == filename_src_lower
-                || k_file_lower == filename_decoded_lower
-                || k_clean_lower.ends_with(&filename_src_lower)
-                || filename_src_lower.ends_with(&k_file_lower)
-            {
-                return Some(v.clone());
-            }
-        }
-
-        for cand in &candidates {
-            if let Some(bytes) = self.images.get(cand) {
-                return Some(bytes.clone());
-            }
-        }
-
-        if self.images.len() == 1 {
-            return self.images.values().next().cloned();
-        }
-
-        // Direct absolute path check
-        for p_str in &[clean_src, clean_decoded, clean_hash, &decoded_src] {
-            let p = std::path::Path::new(p_str);
-            if p.is_absolute() && p.exists() {
-                if let Ok(bytes) = std::fs::read(p) {
-                    return Some(bytes);
-                }
-            }
-        }
-
-        if let Some(base) = &self.base_dir {
-            let mut dirs = vec![base.clone()];
-            if let Some(p) = base.parent() {
-                dirs.push(p.to_path_buf());
-                if let Some(gp) = p.parent() {
-                    dirs.push(gp.to_path_buf());
-                }
-            }
-            for d in dirs {
-                for cand in &candidates {
-                    let p = d.join(cand);
-                    if p.exists() {
-                        if let Ok(bytes) = std::fs::read(&p) {
-                            return Some(bytes);
-                        }
-                    }
-                }
-            }
-        }
-
-        if let Ok(cwd) = std::env::current_dir() {
-            for cand in &candidates {
-                let p = cwd.join(cand);
-                if p.exists() {
-                    if let Ok(bytes) = std::fs::read(&p) {
-                        return Some(bytes);
-                    }
-                }
-            }
-        }
-
-        None
-    }
-}
-
-fn strip_prefixes(mut s: &str) -> &str {
-    loop {
-        let prev = s;
-        s = s
-            .trim_start_matches("asset://localhost/")
-            .trim_start_matches("asset://")
-            .trim_start_matches("https://asset.localhost/")
-            .trim_start_matches("http://asset.localhost/")
-            .trim_start_matches("files/assets/")
-            .trim_start_matches("assets/")
-            .trim_start_matches('/')
-            .trim_start_matches("./");
-        if s == prev {
-            break;
-        }
-    }
-    s
-}
-
-fn percent_decode_str(s: &str) -> String {
-    let mut result = Vec::new();
-    let bytes = s.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' && i + 2 < bytes.len() {
-            if let Ok(hex) = u8::from_str_radix(&s[i + 1..i + 3], 16) {
-                result.push(hex);
-                i += 3;
-                continue;
-            }
-        }
-        result.push(bytes[i]);
-        i += 1;
-    }
-    String::from_utf8(result).unwrap_or_else(|_| s.to_string())
-}
-
-fn decode_image(bytes: &[u8]) -> Option<Image> {
-    if bytes.starts_with(b"\x89PNG") {
-        if let Ok(img) = Image::from_png(bytes.to_vec().into(), false) {
-            return Some(img);
-        }
-    }
-    if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
-        if let Ok(img) = Image::from_jpeg(bytes.to_vec().into(), false) {
-            return Some(img);
-        }
-    }
-    if bytes.starts_with(b"GIF8") {
-        if let Ok(img) = Image::from_gif(bytes.to_vec().into(), false) {
-            return Some(img);
-        }
-    }
-    if let Ok(mut dyn_img) = image::load_from_memory(bytes) {
-        if dyn_img.width() > 1600 || dyn_img.height() > 1600 {
-            dyn_img = dyn_img.resize(1600, 1600, image::imageops::FilterType::Triangle);
-        }
-        let rgba = dyn_img.to_rgba8();
-        let mut png_buf = Vec::new();
-        use image::ImageEncoder;
-        let encoder = image::codecs::png::PngEncoder::new_with_quality(
-            &mut png_buf,
-            image::codecs::png::CompressionType::Fast,
-            image::codecs::png::FilterType::NoFilter,
-        );
-        if encoder
-            .write_image(
-                rgba.as_raw(),
-                rgba.width(),
-                rgba.height(),
-                image::ExtendedColorType::Rgba8,
-            )
-            .is_ok()
-        {
-            if let Ok(img) = Image::from_png(png_buf.into(), false) {
-                return Some(img);
-            }
-        }
-    }
-    None
-}
 
 fn heading_metrics(level: u8) -> (f32, f32, f32) {
     match level {
@@ -1541,32 +1217,6 @@ mod tests {
     #[test]
     fn exports_empty_document() {
         let bytes = render("").unwrap();
-        assert!(bytes.starts_with(b"%PDF"));
-    }
-
-    #[test]
-    fn test_strip_prefixes() {
-        assert_eq!(strip_prefixes("asset://files/assets/pic.png"), "pic.png");
-        assert_eq!(strip_prefixes("https://asset.localhost/files/assets/pic.png"), "pic.png");
-        assert_eq!(strip_prefixes("./files/assets/pic.png"), "pic.png");
-        assert_eq!(strip_prefixes("files/assets/pic.png"), "pic.png");
-        assert_eq!(strip_prefixes("assets/pic.png"), "pic.png");
-        assert_eq!(strip_prefixes("pic.png"), "pic.png");
-    }
-
-    #[test]
-    fn exports_with_asset_image() {
-        use image::ImageEncoder;
-        let mut exporter = ProsePdfExporter::default();
-        let img_buf = image::RgbaImage::new(2, 2);
-        let mut png_bytes = Vec::new();
-        image::codecs::png::PngEncoder::new(&mut png_bytes)
-            .write_image(&img_buf, 2, 2, image::ExtendedColorType::Rgba8)
-            .unwrap();
-        exporter.images.insert("pic.png".to_string(), png_bytes);
-        let mut buf = std::io::Cursor::new(Vec::new());
-        exporter.export("![My Image](asset://files/assets/pic.png)", &mut buf).unwrap();
-        let bytes = buf.into_inner();
         assert!(bytes.starts_with(b"%PDF"));
     }
 

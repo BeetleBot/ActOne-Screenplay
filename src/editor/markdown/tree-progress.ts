@@ -3,9 +3,9 @@ import { StateEffect } from '@codemirror/state';
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 
 // Broadcasts that lezer's incremental parser has advanced past where
-// it was last observed. Consumers (tables, images, inline-preview)
-// watch for this effect and rebuild their decorations so content
-// parsed into existence during idle time actually renders.
+// it was last observed. Consumers (tables, inline-preview) watch for
+// this effect and rebuild their decorations so content parsed into
+// existence during idle time actually renders.
 //
 // Needed because:
 //  - Our StateField builders call `ensureSyntaxTree(state, docLen,
@@ -14,8 +14,8 @@ import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 //    budget, the tree covers only a prefix of the doc at mount.
 //  - StateFields only recompute on transactions. Without a transaction
 //    carrying a signal, the background parser can advance all it
-//    wants and the decorations never catch up — late tables and
-//    images stay as raw `| col |` / `![…](…)` text forever.
+//    wants and the decorations never catch up — late tables stay as
+//    raw `| col |` text forever.
 //  - The inline-preview ViewPlugin has the same shape: it walks a
 //    possibly-partial tree and caches the result.
 export const treeGrowthEffect = StateEffect.define<null>();
@@ -24,8 +24,8 @@ export const treeGrowthEffect = StateEffect.define<null>();
 // effect. A too-small threshold means a storm of tiny rebuilds while
 // the parser chews through the doc; too large means the user might
 // scroll past an unparsed region before it catches up. 8KB is roughly
-// two viewport-heights of text and reliably contains several table/
-// image blocks in our sample content.
+// two viewport-heights of text and reliably contains several table
+// blocks in our sample content.
 const GROWTH_THRESHOLD = 8192;
 
 // Budget per idle tick — short enough to keep the main thread

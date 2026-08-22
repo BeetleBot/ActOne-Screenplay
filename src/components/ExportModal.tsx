@@ -27,36 +27,6 @@ import {
 } from "@mui/material";
 
 import { isProseScript } from "../utils/scriptMode";
-import { getAllCachedAssetBytes } from "../editor/useProseCodeMirror";
-
-export function assetsToBase64Map(assets?: Record<string, Uint8Array | ArrayBuffer | number[] | Record<string, unknown>>): Record<string, string> {
-  if (!assets) return {};
-  const res: Record<string, string> = {};
-  for (const [key, rawBytes] of Object.entries(assets)) {
-    if (!rawBytes) continue;
-    let u8: Uint8Array;
-    if (rawBytes instanceof Uint8Array) {
-      u8 = rawBytes;
-    } else if (rawBytes instanceof ArrayBuffer) {
-      u8 = new Uint8Array(rawBytes);
-    } else if (Array.isArray(rawBytes)) {
-      u8 = new Uint8Array(rawBytes);
-    } else if (typeof rawBytes === "object" && rawBytes !== null) {
-      u8 = new Uint8Array(Object.values(rawBytes) as number[]);
-    } else {
-      continue;
-    }
-    let binary = "";
-    const len = u8.length;
-    const CHUNK_SIZE = 8192;
-    for (let i = 0; i < len; i += CHUNK_SIZE) {
-      const sub = u8.subarray(i, i + CHUNK_SIZE);
-      binary += String.fromCharCode.apply(null, sub as unknown as number[]);
-    }
-    res[key] = btoa(binary);
-  }
-  return res;
-}
 
 type ExportFormat = "pdf" | "fountain" | "fdx" | "fadein" | "markdown";
 type PdfSubTab = "document" | "formatting" | "watermarks";
@@ -413,21 +383,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
       updateWatermarkSettings(currentWatermarkSettings());
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
-        const cachedAssets = getAllCachedAssetBytes();
-        const docAssets = (parsedDoc?.settings?.assets || (parsedDoc as unknown as { assets?: Record<string, Uint8Array> })?.assets) as Record<string, Uint8Array> | undefined;
-        const allAssets: Record<string, Uint8Array> = {
-          ...cachedAssets,
-          ...(docAssets || {}),
-        };
-        const filteredAssets: Record<string, Uint8Array> = {};
-        for (const [k, v] of Object.entries(allAssets)) {
-          const filename = k.replace(/^files\/assets\//, "").replace(/^assets\//, "");
-          if (rawText.includes(filename) || rawText.includes(k)) {
-            filteredAssets[k] = v;
-          }
-        }
-        const rawAssets = Object.keys(filteredAssets).length > 0 ? filteredAssets : allAssets;
-        const assetsMap = assetsToBase64Map(rawAssets);
         const documentDir = filePath ? filePath.substring(0, Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'))) : undefined;
         const defaultDir = documentDir || getLastExportDir();
 
@@ -448,7 +403,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
           watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
           watermarkCenterGrayscale,
           scriptFonts: JSON.stringify(scriptFonts),
-          assets: assetsMap,
           defaultDirectory: defaultDir,
         });
         if (result) saveLastExportDir(result);
@@ -634,10 +588,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
               watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
               watermarkCenterGrayscale,
               scriptFonts: JSON.stringify(scriptFonts),
-              assets: assetsToBase64Map({
-                ...getAllCachedAssetBytes(),
-                ...((parsedDoc?.settings?.assets || (parsedDoc as unknown as { assets?: Record<string, Uint8Array> })?.assets) as Record<string, Uint8Array> | undefined || {}),
-              }),
               defaultDirectory: dir,
             });
           } else {
@@ -1087,49 +1037,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
         />
       </DialogTitle>
 
-      {/* Body or Progress View */}
-      {exportProgress?.open ? (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 1,
-            p: 4,
-            textAlign: "center",
-            minHeight: 340,
-          }}
-        >
-          <Box sx={{ width: "100%", maxWidth: 380 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 0.75, color: "text.primary" }}>
-              {exportProgress.title}
-            </Typography>
-            <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 3 }}>
-              {exportProgress.stepText}
-            </Typography>
-            <LinearProgress
-              variant={exportProgress.progress >= 0 ? "determinate" : "indeterminate"}
-              value={Math.min(exportProgress.progress, 100)}
-              color="primary"
-              sx={{
-                height: 10,
-                borderRadius: 5,
-                bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
-                "& .MuiLinearProgress-bar": {
-                  borderRadius: 5,
-                  transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                },
-              }}
-            />
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-              <Typography sx={{ fontSize: 11, color: "text.secondary", fontWeight: 700 }}>
-                {Math.min(exportProgress.progress, 100)}%
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      ) : (
+      {/* Body */}
         <>
           <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
             {/* ── Left Sidebar ── */}
@@ -1233,8 +1141,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
               {isExporting ? "Exporting..." : (batchExport ? `Export All as ${formatLabel}` : `Export to ${formatLabel}`)}
             </Button>
           </DialogActions>
-        </>
-      )}
+      </>
 
       {/* System Font Picker Dialog */}
       {systemFontPickerScript && (

@@ -1,45 +1,19 @@
-import React, { useRef, useCallback } from "react";
-import { useProseCodeMirror, registerAssetBlob } from "../editor/useProseCodeMirror";
+import React, { useRef } from "react";
+import { useProseCodeMirror } from "../editor/useProseCodeMirror";
 import { CoreEditor, type MenuSelectionSnap } from "./editor/CoreEditor";
 import { type ContextMenuItem, type ContextMenuItemDef } from "./ContextMenu";
-import { useFile, useUI } from "../context";
+import { useUI } from "../context";
 import { usePromptConfig } from "../hooks/usePromptConfig";
 import { getLanguageDetails } from "../constants/languages";
 import { createAIProvider } from "../lib/aiProviders";
-import { EditorView } from "@codemirror/view";
 import { logger } from "../utils/logger";
 
 export const ProseEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { updateSettings } = useFile();
   const { setActiveRightPane, setActiveTab, setAiStatus } = useUI();
   const promptConfig = usePromptConfig();
 
-  const handleInsertImage = useCallback(async (file: File, view: EditorView) => {
-    const bytes = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(bytes);
-    const newAssetKey = `files/assets/${file.name}`;
-    
-    registerAssetBlob(newAssetKey, uint8Array);
-    registerAssetBlob(file.name, uint8Array);
-
-    updateSettings((prev) => ({
-      ...prev,
-      assets: {
-        ...(prev.assets || {}),
-        [newAssetKey]: uint8Array,
-        [file.name]: uint8Array,
-      }
-    }));
-    const from = view.state.selection.main.from;
-    const insertText = `\n![${file.name}](asset://${newAssetKey})\n`;
-    view.dispatch({
-      changes: { from, insert: insertText },
-      selection: { anchor: from + insertText.length }
-    });
-  }, [updateSettings]);
-  
-  const viewRef = useProseCodeMirror({ containerRef, onInsertImage: handleInsertImage });
+  const viewRef = useProseCodeMirror({ containerRef });
 
   const handlePromptAction = (action: "lookup" | "synonyms", snap: MenuSelectionSnap | null, closeMenu: () => void) => {
     const v = viewRef.current;
@@ -165,24 +139,6 @@ export const ProseEditor = React.memo(() => {
             selection: { anchor: from + tableTemplate.length }
           });
           v.focus();
-        }
-      },
-      {
-        label: "Insert Image",
-        action: () => {
-          closeMenu();
-          const v = viewRef.current;
-          if (!v) return;
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/*';
-          input.onchange = (e) => {
-            const target = e.target as HTMLInputElement;
-            if (target.files && target.files.length > 0) {
-              handleInsertImage(target.files[0], v);
-            }
-          };
-          input.click();
         }
       }
     ];

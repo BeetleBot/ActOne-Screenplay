@@ -27,7 +27,6 @@ pub enum Block {
     CodeBlock { lang: String, text: String },
     Table { alignments: Vec<Align>, header: Vec<RichString>, rows: Vec<Vec<RichString>> },
     HorizontalRule,
-    Image { src: String, alt: String },
     RawHtml(String),
     FootnoteDefinition { label: String, blocks: Vec<Block> },
 }
@@ -58,20 +57,6 @@ struct Style {
     mono: bool,
 }
 
-/// Content collected while parsing inline content. Images are kept separate so
-/// they can be emitted as standalone block images.
-enum InlineItem {
-    Text(RichString),
-    Image { src: String, alt: String },
-}
-
-/// Kind of leaf block being assembled from inline items.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum LeafKind {
-    Paragraph,
-    Heading(u8),
-}
-
 /// Parses Markdown source into a [`ProseDoc`].
 pub fn parse(src: &str) -> ProseDoc {
     let mut options = Options::empty();
@@ -100,14 +85,18 @@ fn parse_blocks<'a>(
             Event::Start(tag) => match tag {
                 Tag::Paragraph => {
                     *index += 1;
-                    let items = parse_inline(src, events, index, TagEnd::Paragraph);
-                    blocks.extend(items_to_blocks(items, LeafKind::Paragraph));
+                    let rs = parse_inline(src, events, index, TagEnd::Paragraph);
+                    if !rs.elements.is_empty() {
+                        blocks.push(Block::Paragraph(rs));
+                    }
                 }
                 Tag::Heading { level, .. } => {
                     let heading_level = *level;
                     *index += 1;
-                    let items = parse_inline(src, events, index, TagEnd::Heading(heading_level));
-                    blocks.extend(items_to_blocks(items, LeafKind::Heading(heading_level as u8)));
+                    let rs = parse_inline(src, events, index, TagEnd::Heading(heading_level));
+                    if !rs.elements.is_empty() {
+                        blocks.push(Block::Heading { level: heading_level as u8, content: rs });
+                    }
                 }
                 Tag::BlockQuote(_) => {
                     *index += 1;
@@ -199,9 +188,7 @@ fn parse_blocks<'a>(
                                         }
                                         Event::Start(Tag::TableCell) => {
                                             *index += 1;
-                                            let items =
-                                                parse_inline(src, events, index, TagEnd::TableCell);
-                                            header.push(items_to_rich_string(items));
+                                            header.push(parse_inline(src, events, index, TagEnd::TableCell));
                                         }
                                         _ => *index += 1,
                                     }
@@ -292,8 +279,7 @@ fn parse_table_row<'a>(
             }
             Event::Start(Tag::TableCell) => {
                 *index += 1;
-                let items = parse_inline(src, events, index, TagEnd::TableCell);
-                cells.push(items_to_rich_string(items));
+                cells.push(parse_inline(src, events, index, TagEnd::TableCell));
             }
             _ => *index += 1,
         }
@@ -301,18 +287,16 @@ fn parse_table_row<'a>(
     cells
 }
 
-/// Parses inline content until the given end tag. Returns text and image items.
+/// Parses inline content until the given end tag.
 fn parse_inline<'a>(
     src: &str,
     events: &[(Event<'a>, std::ops::Range<usize>)],
     index: &mut usize,
     stop: TagEnd,
-) -> Vec<InlineItem> {
-    let mut items = Vec::new();
+) -> RichString {
     let mut current = RichString::new();
     let mut styles: Vec<Style> = vec![Style::default()];
     let mut links: Vec<String> = Vec::new();
-    let mut in_image: Option<(String, String)> = None;
 
     while *index < events.len() {
         let (event, range) = &events[*index];
@@ -376,66 +360,43 @@ fn parse_inline<'a>(
                 links.pop();
                 *index += 1;
             }
-            Event::Start(Tag::Image { dest_url, .. }) => {
-                in_image = Some((dest_url.to_string(), String::new()));
-                *index += 1;
-            }
-            Event::End(TagEnd::Image) => {
-                if let Some((src, alt)) = in_image.take() {
-                    if !current.elements.is_empty() {
-                        items.push(InlineItem::Text(std::mem::take(&mut current)));
-                    }
-                    items.push(InlineItem::Image { src, alt });
-                }
-                *index += 1;
-            }
             Event::Text(text) => {
                 let text = text.to_string();
-                match in_image.as_mut() {
-                    Some((_, alt)) => alt.push_str(&text),
-                    None => push_styled(
-                        &mut current,
-                        &text,
-                        *styles.last().unwrap(),
-                        links.last().map(|s| s.as_str()),
-                    ),
-                }
+                push_styled(
+                    &mut current,
+                    &text,
+                    *styles.last().unwrap(),
+                    links.last().map(|s| s.as_str()),
+                );
                 *index += 1;
             }
             Event::Code(text) => {
-                if in_image.is_none() {
-                    let mut s = *styles.last().unwrap();
-                    s.mono = true;
-                    push_styled(
-                        &mut current,
-                        text,
-                        s,
-                        links.last().map(|s| s.as_str()),
-                    );
-                }
+                let mut s = *styles.last().unwrap();
+                s.mono = true;
+                push_styled(
+                    &mut current,
+                    text,
+                    s,
+                    links.last().map(|s| s.as_str()),
+                );
                 *index += 1;
             }
             Event::SoftBreak => {
-                match in_image.as_mut() {
-                    Some((_, alt)) => alt.push(' '),
-                    None => push_styled(
-                        &mut current,
-                        "\n",
-                        *styles.last().unwrap(),
-                        links.last().map(|s| s.as_str()),
-                    ),
-                }
+                push_styled(
+                    &mut current,
+                    "\n",
+                    *styles.last().unwrap(),
+                    links.last().map(|s| s.as_str()),
+                );
                 *index += 1;
             }
             Event::HardBreak => {
-                if in_image.is_none() {
-                    push_styled(
-                        &mut current,
-                        "\n",
-                        *styles.last().unwrap(),
-                        links.last().map(|s| s.as_str()),
-                    );
-                }
+                push_styled(
+                    &mut current,
+                    "\n",
+                    *styles.last().unwrap(),
+                    links.last().map(|s| s.as_str()),
+                );
                 *index += 1;
             }
             Event::InlineHtml(html) => {
@@ -451,35 +412,28 @@ fn parse_inline<'a>(
                     }
                     *index += 1;
                 } else {
-                    if in_image.is_none() {
-                        push_styled(
-                            &mut current,
-                            html,
-                            *styles.last().unwrap(),
-                            links.last().map(|s| s.as_str()),
-                        );
-                    }
+                    push_styled(
+                        &mut current,
+                        html,
+                        *styles.last().unwrap(),
+                        links.last().map(|s| s.as_str()),
+                    );
                     *index += 1;
                 }
             }
             Event::FootnoteReference(label) => {
-                if in_image.is_none() {
-                    push_styled(
-                        &mut current,
-                        &format!("[{label}]"),
-                        *styles.last().unwrap(),
-                        links.last().map(|s| s.as_str()),
-                    );
-                }
+                push_styled(
+                    &mut current,
+                    &format!("[{label}]"),
+                    *styles.last().unwrap(),
+                    links.last().map(|s| s.as_str()),
+                );
                 *index += 1;
             }
             _ => *index += 1,
         }
     }
-    if !current.elements.is_empty() {
-        items.push(InlineItem::Text(current));
-    }
-    items
+    current
 }
 
 /// Pushes text with a style onto a [`RichString`], merging with the previous
@@ -514,48 +468,6 @@ fn push_styled(rs: &mut RichString, text: &str, style: Style, link: Option<&str>
         }
     }
     rs.elements.push(el);
-}
-
-/// Converts inline items into blocks, splitting paragraphs around images so
-/// each image becomes a standalone [`Block::Image`].
-fn items_to_blocks(items: Vec<InlineItem>, kind: LeafKind) -> Vec<Block> {
-    let mut out = Vec::new();
-    let mut pending: Option<RichString> = None;
-    for item in items {
-        match item {
-            InlineItem::Text(rs) => {
-                if !rs.elements.is_empty() {
-                    pending.get_or_insert_with(RichString::new).append(rs);
-                }
-            }
-            InlineItem::Image { src, alt } => {
-                flush_pending(&mut pending, kind, &mut out);
-                out.push(Block::Image { src, alt });
-            }
-        }
-    }
-    flush_pending(&mut pending, kind, &mut out);
-    out
-}
-
-/// Combines inline items into a single [`RichString`] (images are dropped).
-fn items_to_rich_string(items: Vec<InlineItem>) -> RichString {
-    let mut out = RichString::new();
-    for item in items {
-        if let InlineItem::Text(rs) = item {
-            out.append(rs);
-        }
-    }
-    out
-}
-
-fn flush_pending(pending: &mut Option<RichString>, kind: LeafKind, out: &mut Vec<Block>) {
-    if let Some(rs) = pending.take() {
-        match kind {
-            LeafKind::Paragraph => out.push(Block::Paragraph(rs)),
-            LeafKind::Heading(level) => out.push(Block::Heading { level, content: rs }),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -673,23 +585,18 @@ mod tests {
     }
 
     #[test]
-    fn standalone_image_becomes_image_block() {
+    fn image_markdown_renders_alt_text() {
         let doc = parse("![alt text](images/cat.png)\n");
-        assert_eq!(
-            doc.blocks[0],
-            Block::Image {
-                src: "images/cat.png".to_string(),
-                alt: "alt text".to_string()
-            }
-        );
+        assert_eq!(doc.blocks[0], Block::Paragraph(RichString::from("alt text")));
     }
 
     #[test]
-    fn inline_image_splits_paragraph() {
+    fn inline_image_renders_alt_text_inline() {
         let doc = parse("Before ![pic](a.png) after\n");
-        assert!(matches!(doc.blocks[0], Block::Paragraph(_)));
-        assert!(matches!(doc.blocks[1], Block::Image { .. }));
-        assert!(matches!(doc.blocks[2], Block::Paragraph(_)));
+        let Block::Paragraph(rs) = &doc.blocks[0] else {
+            panic!("expected paragraph");
+        };
+        assert_eq!(rs.to_plain_string(), "Before pic after");
     }
 
     #[test]

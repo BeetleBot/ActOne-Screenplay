@@ -18,7 +18,6 @@ export interface ActoneBundle {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
   promptChats?: { conversations: unknown[]; activeConversationId: string | null };
-  assets?: Record<string, Uint8Array>;
   isLegacy?: boolean;
 }
 
@@ -47,6 +46,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   if (unzipped["settings.json"]) {
     try { parsedSettings = JSON.parse(strFromU8(unzipped["settings.json"])); } catch (e) { logger.warn("actone", "Failed to parse settings.json", e); }
   }
+  delete parsedSettings.assets;
   const tryParse = <T>(key: string, fallback: T): T => {
     const buf = unzipped[key];
     if (!buf || buf.length === 0) return fallback;
@@ -63,14 +63,6 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
     tryParse("prompt.json", { conversations: [], activeConversationId: null }));
 
   let scripts: ScriptInfo[];
-  let assets: Record<string, Uint8Array> = {};
-
-  // Extract assets
-  for (const key in unzipped) {
-    if (key.startsWith("files/assets/") && !key.endsWith("/")) {
-      assets[key] = unzipped[key];
-    }
-  }
 
   const settings: Record<string, unknown> = {
     ...parsedSettings,
@@ -163,9 +155,8 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   }
 
   const isLegacy = Object.keys(oldToNewPath).length > 0;
-  settings.assets = assets;
 
-  return { scripts, settings, promptChats: promptChatsData as ActoneBundle["promptChats"], assets, isLegacy };
+  return { scripts, settings, promptChats: promptChatsData as ActoneBundle["promptChats"], isLegacy };
 
 }
 
@@ -206,14 +197,6 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
       "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
       "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
     };
-    
-    const assets = settings.assets as Record<string, Uint8Array> | undefined;
-    if (assets) {
-      for (const key in assets) {
-        const fullKey = key.startsWith("files/assets/") ? key : `files/assets/${key}`;
-        entries[fullKey] = assets[key];
-      }
-    }
 
   if (scripts.length > 1) {
     entries["characters.json"] = strToU8(JSON.stringify(resolvePerScript("genders", scripts), null, 2));
@@ -280,15 +263,6 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
       "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
     };
-    
-    const assets = settings.assets as Record<string, Uint8Array> | undefined;
-    if (assets) {
-      for (const key in assets) {
-        const fullKey = key.startsWith("files/assets/") ? key : `files/assets/${key}`;
-        entries[fullKey] = assets[key];
-      }
-    }
-
 
     if (scripts.length > 1) {
       entries["characters.json"] = strToU8(JSON.stringify(resolvePerScript("genders", scripts), null, 2));

@@ -3,9 +3,13 @@
 This file showcases all the markdown elements supported by our application for PDF export and live preview.
 
 ## Headings
+
 ### Heading 3
+
 #### Heading 4
+
 ##### Heading 5
+
 ###### Heading 6
 
 ---
@@ -18,18 +22,21 @@ You can strike through text like ~~this~~, or use `inline code` for technical te
 
 ## Blockquotes
 
->test
->>block code 2
->>>block code 3
->>test
->>>test
->>test
->>>>test
->>>>
+> test
+> 
+> > block code 2
+> > 
+> > > block code 3
+> > > test
+> > > test
+> > > test
+> > > 
+> > > > test
 
 ## Lists
 
 ### Unordered Lists
+
 * Item 1
 * Item 2
   * Sub-item 2.1
@@ -40,11 +47,12 @@ You can strike through text like ~~this~~, or use `inline code` for technical te
 * test 
 
 ### Ordered Lists
+
 1. First item
 2. Second item
    1. Sub-item 1
    2. Sub-item 2
-     1. Test
+      1. Test
    3. sub item 3
 3. Third item
 4. 
@@ -75,10 +83,6 @@ fn main() {
 
 ## Links and Images
 
-
-![20260726_134010.png](asset://files/assets/20260726_134010.png)
-
-
 [Link to OpenAI](https://openai.com)
 
 ## Checklists
@@ -87,8 +91,8 @@ fn main() {
 - [ ] Incomplete task
 - [ ] Another incomplete task
 - [x] Another completed task
-
-
+  
+  
 
 ---
 

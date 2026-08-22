@@ -384,22 +384,6 @@
   pointer-events: none;
 }
 
-/* Image block widget — rendered below the source line containing
- * the `![alt](url)` markdown. Natural image size up to the editor's
- * content width (`max-width: 100%` of .cm-content, which is the
- * reading-width column). Smaller images render at their own size,
- * left-aligned. Aspect ratio preserved by `height: auto`. */
-.cm-prose-image {
-  padding: 0.35em 0;
-}
-
-.cm-prose-image img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.4em;
-}
-
 /* Bullet widget — replaces the raw `-` / `*` marker on bullet-list
  * items. Matches the visual weight of a real list marker while
  * staying in the muted-secondary color so the item text dominates. */
@@ -542,8 +526,7 @@
 }
 
 /* The editable source inside a cell — always shows the raw markdown
- * the user types, whether or not the cell also has a rendered image
- * preview below. Blank outline because the cell's :focus-within
+ * the user types. Blank outline because the cell's :focus-within
  * ring is what signals the active edit target. */
 .cm-prose-table-cell-source {
   outline: none;
@@ -583,52 +566,6 @@
 .cm-prose-table-cell-source .cm-prose-link-wrap.active > .cm-prose-link-url {
   font-family: var(--prose-editor-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-size: 0.88em;
-}
-
-/* Rendered image preview strip below the source text. Mirrors how
- * block-level images render outside a table: the `![alt](url)`
- * markdown is the source of truth, but the user sees the image in
- * the resting state — the raw markdown only appears when the cell
- * is focused for editing (see :focus-within rule below). */
-.cm-prose-table-cell-preview {
-  margin-top: 0.35em;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3em;
-  user-select: none;
-}
-
-/* Mirror the block-image invariant from outside tables: on an
- * inactive cell, the raw `![alt](url)` markdown hides and only the
- * rendered image shows. Focus the cell (click or Tab) to bring the
- * source back so it can be edited.
- *
- * We visually hide the source without `display: none` so it stays in
- * the DOM and remains focusable — Tab nav calls `source.focus()`
- * explicitly and would silently fail on a display:none element. The
- * position:absolute + zero-size pattern keeps the element interactive
- * while taking no visible space. */
-.cm-prose-table th[data-has-image]:not(:focus-within) .cm-prose-table-cell-source,
-.cm-prose-table td[data-has-image]:not(:focus-within) .cm-prose-table-cell-source {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-/* Inline images inside table cells. Capped so a tall image doesn't
- * balloon a single row into half the viewport. Users who want larger
- * in-cell images can do without for now — we'd need Obsidian's
- * `[[file|width]]` alias syntax to make it controllable. */
-.cm-prose-table-cell-image {
-  display: block;
-  max-width: 14em;
-  max-height: 5em;
-  border-radius: 0.2em;
-  cursor: pointer;
 }
 
 /* Table context menu — right-click a cell to insert / delete rows
@@ -811,13 +748,4 @@
   100% {
     background: transparent;
   }
-}
-
-/* The editor dynamically inherits tokens via CSS variables from the theme engine */
-.cm-prose-image img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-  display: block;
-  margin: 0.5rem 0;
 }

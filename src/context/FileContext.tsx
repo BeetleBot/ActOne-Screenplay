@@ -10,7 +10,6 @@ import { isProseScript } from "../utils/scriptMode";
 import { logger } from "../utils/logger";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
-import { registerAssetBlob } from "../editor/useProseCodeMirror";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SettingsUpdater = (prev: Record<string, any>) => Record<string, any>;
@@ -554,11 +553,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (bundle && bundle.scripts && bundle.scripts.length > 0) {
               scripts = bundle.scripts;
               settings = bundle.settings;
-              if (bundle.assets) {
-                for (const k in bundle.assets) {
-                  registerAssetBlob(k, bundle.assets[k]);
-                }
-              }
               if (bundle.isLegacy) {
                 // Auto-upgrade legacy bundles on disk immediately
                 await saveActoneFile(path, scripts, settings);
@@ -680,11 +674,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const bundleName = file.name.replace(/\.(actone|zip|actone\.zip)$/i, "");
             const bundle = unpackActoneBundle(new Uint8Array(arrayBuffer), bundleName);
             const scripts = bundle.scripts;
-            if (bundle.assets) {
-              for (const k in bundle.assets) {
-                registerAssetBlob(k, bundle.assets[k]);
-              }
-            }
             resolve({ path: file.name, content: scripts[0]?.content || "", settings: bundle.settings });
           } else {
             const content = await file.text();
@@ -722,11 +711,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             scripts = bundle.scripts;
             content = bundle.scripts[0]?.content || "";
             settings = bundle.settings;
-            if (bundle.assets) {
-              for (const k in bundle.assets) {
-                registerAssetBlob(k, bundle.assets[k]);
-              }
-            }
             if (bundle.isLegacy) {
               await saveActoneFile(res.path, scripts, settings);
               logger.info("file", `Automatically upgraded legacy bundle to Gen 3: ${res.path}`);

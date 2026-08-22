@@ -22,7 +22,7 @@ vi.mock("../context", () => ({
   }),
 }));
 
-import { ExportModal, assetsToBase64Map } from "./ExportModal";
+import { ExportModal } from "./ExportModal";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -36,21 +36,6 @@ beforeEach(() => {
     scripts: [{ id: "s1", name: "Script", type: "fountain", content: "EXT. HOUSE - DAY\n\nHello." }],
     activeScriptIndex: 0,
   };
-});
-
-describe("assetsToBase64Map", () => {
-  it("converts byte arrays to base64 strings", () => {
-    const assets = {
-      "img.png": new Uint8Array([72, 101, 108, 108, 111]),
-    };
-    const map = assetsToBase64Map(assets);
-    expect(map["img.png"]).toBe("SGVsbG8=");
-  });
-
-  it("handles undefined or empty assets", () => {
-    expect(assetsToBase64Map(undefined)).toEqual({});
-    expect(assetsToBase64Map({})).toEqual({});
-  });
 });
 
 describe("ExportModal Component", () => {
