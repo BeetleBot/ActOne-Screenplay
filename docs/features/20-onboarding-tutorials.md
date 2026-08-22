@@ -17,7 +17,7 @@ The window is rendered either as a standalone Tauri window (`?modal=tutorials`, 
 ## Overview
 
 The onboarding system consists of four paths:
-1. **🧭 App Tour (`ui`)**: An end-to-end walkthrough of the workspace — Activity Bar panels, Header, Editor, Status Bar — finishing with a hands-on Command Palette discovery.
+1. **🧭 App Tour (`ui`)**: An end-to-end walkthrough of the workspace — Activity Bar, Project Panel, Landing Pad & Document Types, Header, Editor Workspace, and Status Bar — finishing with hands-on Command Palette discovery.
 2. **✍ Basic Fountain Syntax (`fountain`)**: A hands-on sandbox tutorial instructing users to type scene headings, characters, dialogue, parentheticals, transitions, and camera shots.
 3. **🎨 Advanced Syntax (`advanced`)**: Sections, subsections, synopses, scene colours, storyline tags, and markers — six production-ready Fountain features. Users type each syntax in a blank sandbox (like the Basic Fountain tour), then explore a 6-scene demo via the Outline navigator and Markers pane.
 4. **🎨 Theming Tour (`theming`)**: Opens the Bee Detective sample in the main window and the Theme Manager window with an embedded tour card. Covers picking a theme, creating a custom one, and exporting/importing .actheme files.

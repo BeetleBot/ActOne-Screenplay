@@ -32,12 +32,23 @@ interface StructureImportModalProps {
 }
 
 export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onClose }) => {
-  const { rawText, setRawText } = useFile();
+  const { rawText, setRawText, files, activeFileId, filePath, addScript } = useFile();
   const { editorView } = useEditor();
   const { appScale } = useUI();
   const [structures, setStructures] = useState<Structure[]>([]);
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const activeFile = files.find(f => f.id === activeFileId);
+  const hasNoScripts = !activeFile?.scripts || activeFile.scripts.length === 0;
+
+  const getBaseFileName = () => {
+    if (filePath) {
+      const filename = filePath.split(/[/\\]/).pop() || "Untitled";
+      return filename.replace(/\.(actone|fountain|txt)$/i, "");
+    }
+    return "Untitled";
+  };
 
   useEffect(() => {
     const fetchStructures = async () => {
@@ -55,8 +66,6 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
     };
     fetchStructures();
   }, []);
-
-
 
   const buildFountainText = (s: Structure, includeHeader = true) => {
     let text = "";
@@ -77,8 +86,20 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
     return text.trimEnd() + "\n";
   };
 
-  const handleInsertAtCursor = () => {
+  const importIntoNewScript = async (s: Structure) => {
+    const baseName = getBaseFileName();
+    const scriptName = `${baseName}_${s.name}`;
+    const fountainText = buildFountainText(s, true);
+    await addScript(scriptName, "fountain", fountainText);
+    onClose();
+  };
+
+  const handleInsertAtCursor = async () => {
     if (!selectedStructure) return;
+    if (hasNoScripts) {
+      await importIntoNewScript(selectedStructure);
+      return;
+    }
     const insertText = "\n\n" + buildFountainText(selectedStructure, false);
     
     if (editorView) {
@@ -95,8 +116,12 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
     onClose();
   };
 
-  const handleAppendToEnd = () => {
+  const handleAppendToEnd = async () => {
     if (!selectedStructure) return;
+    if (hasNoScripts) {
+      await importIntoNewScript(selectedStructure);
+      return;
+    }
     const insertText = (rawText.trim() ? rawText + "\n\n" : "") + buildFountainText(selectedStructure, true);
     setRawText(insertText);
     onClose();
@@ -104,6 +129,10 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
 
   const handleOverwrite = async () => {
     if (!selectedStructure) return;
+    if (hasNoScripts) {
+      await importIntoNewScript(selectedStructure);
+      return;
+    }
     const isConfirmed = await confirmDialog("Are you sure you want to overwrite your entire screenplay with this structure outline? This cannot be undone.", { kind: "warning" });
     if (isConfirmed) {
       setRawText(buildFountainText(selectedStructure, true));
@@ -179,38 +208,50 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
 
       <DialogActions sx={{ px: 2.5, py: 2, flexDirection: "column", gap: 1, alignItems: "stretch" }}>
         {selectedStructure ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
-              <Button
-                variant="contained"
-                onClick={handleInsertAtCursor}
-                startIcon={<AddCircleIcon sx={{ fontSize: 13 }} />}
-                size="small"
-                sx={{ fontSize: 11, borderRadius: 0, py: 0.75, textTransform: "none", fontWeight: 600 }}
-              >
-                Insert at Cursor
-              </Button>
+          hasNoScripts ? (
+            <Button
+              variant="contained"
+              onClick={() => importIntoNewScript(selectedStructure)}
+              startIcon={<AddCircleIcon sx={{ fontSize: 13 }} />}
+              size="small"
+              sx={{ fontSize: 11, borderRadius: 0, py: 0.85, textTransform: "none", fontWeight: 600 }}
+            >
+              Create Script ({getBaseFileName()}_{selectedStructure.name}.fountain)
+            </Button>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+                <Button
+                  variant="contained"
+                  onClick={handleInsertAtCursor}
+                  startIcon={<AddCircleIcon sx={{ fontSize: 13 }} />}
+                  size="small"
+                  sx={{ fontSize: 11, borderRadius: 0, py: 0.75, textTransform: "none", fontWeight: 600 }}
+                >
+                  Insert at Cursor
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleAppendToEnd}
+                  startIcon={<ArrowCircleDownIcon sx={{ fontSize: 13 }} />}
+                  size="small"
+                  sx={{ fontSize: 11, borderRadius: 0, py: 0.75, textTransform: "none", fontWeight: 600 }}
+                >
+                  Append to End
+                </Button>
+              </Box>
               <Button
                 variant="outlined"
-                onClick={handleAppendToEnd}
-                startIcon={<ArrowCircleDownIcon sx={{ fontSize: 13 }} />}
+                onClick={handleOverwrite}
+                startIcon={<RestartAltIcon sx={{ fontSize: 13 }} />}
                 size="small"
+                color="error"
                 sx={{ fontSize: 11, borderRadius: 0, py: 0.75, textTransform: "none", fontWeight: 600 }}
               >
-                Append to End
+                Overwrite Screenplay
               </Button>
             </Box>
-            <Button
-              variant="outlined"
-              onClick={handleOverwrite}
-              startIcon={<RestartAltIcon sx={{ fontSize: 13 }} />}
-              size="small"
-              color="error"
-              sx={{ fontSize: 11, borderRadius: 0, py: 0.75, textTransform: "none", fontWeight: 600 }}
-            >
-              Overwrite Screenplay
-            </Button>
-          </Box>
+          )
         ) : (
           <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", fontSize: 10.5, py: 1 }}>
             Select a template above to see import options.

@@ -90,41 +90,40 @@ function AppInner() {
           win.once("tauri://error", () => {});
         } catch { /* not in Tauri */ }
       }, 500);
+    } else if (type === "ui") {
+      newFile();
+      setActiveTour(type);
     } else {
-      if (!activeFileId) {
-        try {
-          const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-          if (isTauriEnv) {
-            const { invoke } = await import("@tauri-apps/api/core");
-            const bytes = await invoke<number[]>("get_sample_bundle");
-            const bundle = unpackActoneBundle(new Uint8Array(bytes), "Bee Detective v2");
-            newFile(bundle.scripts[0]?.content || "");
-          } else {
-            const res = await fetch("/samples/BeeDetectiveTour.actone");
-            const buf = await res.arrayBuffer();
-            const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
-            newFile(bundle.scripts[0]?.content || "");
-          }
-        } catch {
-          newFile();
-        }
-      }
       setActiveTour(type);
     }
-  }, [newFile, activeFileId, openFilePath, setActiveTour]);
+  }, [newFile, activeFileId, setActiveTour]);
 
   useEffect(() => {
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (!isTauri) return;
+    let active = true;
     let unlisten: (() => void) | undefined;
     const setup = async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        unlisten = await listen<{ type: "ui" | "fountain" | "advanced" | "theming" }>("tutorial:start", (event) => {
+        const fn = await listen<{ type: "ui" | "fountain" | "advanced" | "theming" }>("tutorial:start", (event) => {
+          if (!active) return;
           handleTutorialStart(event.payload.type);
         });
+        if (!active) {
+          try { if (typeof fn === "function") fn(); } catch {}
+        } else {
+          unlisten = fn;
+        }
       } catch { /* not in Tauri */ }
     };
     setup();
-    return () => { if (unlisten) unlisten(); };
+    return () => {
+      active = false;
+      if (unlisten) {
+        try { if (typeof unlisten === "function") unlisten(); } catch {}
+      }
+    };
   }, [handleTutorialStart]);
 
   // Polling fallback to guarantee communication between Tauri windows for tutorial launch
@@ -469,7 +468,9 @@ function AppInner() {
       const type = (rawType === "fountain" ? "fountain" : rawType === "advanced" ? "advanced" : rawType === "theming" ? "theming" : "ui") as "ui" | "fountain" | "advanced" | "theming";
       localStorage.removeItem("pending-tutorial-type");
       localStorage.removeItem("pending-action");
-      if (type === "ui" || type === "theming") {
+      if (type === "ui") {
+        newFile();
+      } else if (type === "theming") {
         (async () => {
           try {
             const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -530,38 +531,7 @@ function AppInner() {
     }, 100);
   }, []);
 
-  // Listen for OS file open events (from Rust backend)
-  useEffect(() => {
-    let active = true;
-    let unlisten: (() => void) | undefined;
-    const setup = async () => {
-      try {
-        const { listen } = await import("@tauri-apps/api/event");
-        const fn = await listen<string[]>("file-opened", (event) => {
-          if (!active) return;
-          const paths = event.payload;
-          if (!paths || paths.length === 0) return;
-          // In editor window, open files directly
-          for (const p of paths) {
-            openFilePath(p);
-          }
-        });
-        if (!active) {
-          try { fn(); } catch {}
-        } else {
-          unlisten = fn;
-        }
-      } catch (e) { logger.error("app", "Failed to listen for file-opened events", e); }
-    };
-    if (files.length > 0) setup();
-    return () => {
-      active = false;
-      if (unlisten) {
-        try { unlisten(); } catch (e) { /* Safe discard */ }
-      }
-    };
-  }, [openFilePath, files.length]);
-
+  const openFilePathRef = useRef(openFilePath);
   const filesRef = useRef(files);
   const saveFileRef = useRef(saveFile);
   const selectFileRef = useRef(selectFile);
@@ -573,6 +543,7 @@ function AppInner() {
   const scriptFileNameRef = useRef(scriptFileName);
 
   useEffect(() => {
+    openFilePathRef.current = openFilePath;
     filesRef.current = files;
     saveFileRef.current = saveFile;
     selectFileRef.current = selectFile;
@@ -582,7 +553,41 @@ function AppInner() {
     updateSettingsRef.current = updateSettings;
     activeFileIdRef.current = activeFileId;
     scriptFileNameRef.current = scriptFileName;
-  }, [files, saveFile, selectFile, confirm, editorView, parsedDoc, updateSettings, activeFileId, scriptFileName]);
+  }, [openFilePath, files, saveFile, selectFile, confirm, editorView, parsedDoc, updateSettings, activeFileId, scriptFileName]);
+
+  // Listen for OS file open events (from Rust backend)
+  useEffect(() => {
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (!isTauri) return;
+
+    let active = true;
+    let unlisten: (() => void) | undefined;
+    const setup = async () => {
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        const fn = await listen<string[]>("file-opened", (event) => {
+          if (!active) return;
+          const paths = event.payload;
+          if (!paths || paths.length === 0) return;
+          for (const p of paths) {
+            openFilePathRef.current(p);
+          }
+        });
+        if (!active) {
+          try { if (typeof fn === "function") fn(); } catch {}
+        } else {
+          unlisten = fn;
+        }
+      } catch (e) { logger.error("app", "Failed to listen for file-opened events", e); }
+    };
+    setup();
+    return () => {
+      active = false;
+      if (unlisten) {
+        try { if (typeof unlisten === "function") unlisten(); } catch (e) { /* Safe discard */ }
+      }
+    };
+  }, []);
 
   const isExitingRef = useRef(false);
 
@@ -643,6 +648,8 @@ function AppInner() {
     let active = true;
     const setupCloseListener = async () => {
       try {
+        const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+        if (!isTauri) return;
         const { getCurrentWindow } = await import("@tauri-apps/api/window");
         const win = getCurrentWindow();
         const fn = await win.onCloseRequested((event) => {
@@ -653,7 +660,7 @@ function AppInner() {
           handleCloseRequest();
         });
         if (!active) {
-          try { fn(); } catch {}
+          try { if (typeof fn === "function") fn(); } catch {}
         } else {
           unlisten = fn;
         }
@@ -665,7 +672,7 @@ function AppInner() {
     return () => {
       active = false;
       if (unlisten) {
-        try { unlisten(); } catch (e) { /* Safe discard */ }
+        try { if (typeof unlisten === "function") unlisten(); } catch (e) { /* Safe discard */ }
       }
     };
   }, []);

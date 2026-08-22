@@ -61,7 +61,7 @@ describe("CrossWindowTourCard", () => {
 
   it("renders Shift+Enter hint on Next button", () => {
     render(React.createElement(CrossWindowTourCard, defaultProps));
-    expect(screen.getByText("+Enter")).toBeTruthy();
+    expect(screen.getByText("Shift+Enter")).toBeTruthy();
   });
 
   it("disables Next button when task is not complete", () => {

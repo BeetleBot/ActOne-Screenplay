@@ -320,16 +320,33 @@ export const CrossWindowTourCard: React.FC<CrossWindowTourCardProps> = ({
                   py: 0.4,
                   px: 1.5,
                   display: "flex",
-                  flexDirection: "column",
+                  flexDirection: "row",
                   alignItems: "center",
-                  lineHeight: 1.2,
+                  gap: 0.75,
                   minWidth: 80,
                 }}
               >
                 <span>{isLastStep ? "Finish" : (step.nextLabel ?? "Next")}</span>
-                <Typography component="span" variant="caption" sx={{ fontSize: 9, opacity: 0.7, lineHeight: 1 }}>
-                  +Enter
-                </Typography>
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: 9.5,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    px: 0.5,
+                    py: 0.25,
+                    borderRadius: "2px",
+                    bgcolor: "action.selected",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    opacity: 0.9,
+                    color: "inherit",
+                    letterSpacing: "0.02em",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Shift+Enter
+                </Box>
               </Button>
             </Box>
           </Box>

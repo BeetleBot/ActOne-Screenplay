@@ -130,6 +130,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
       <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {hasNoScripts ? (
           <Box
+            id="landing-pad"
             sx={{
               flex: 1,
               display: 'flex',

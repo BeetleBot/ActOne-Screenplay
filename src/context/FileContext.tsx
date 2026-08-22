@@ -60,7 +60,7 @@ export interface FileContextProps {
   scriptFileName: string;
   isBundle: boolean;
   setActiveScript: (index: number) => void;
-  addScript: (name?: string, forceType?: "fountain" | "markdown") => Promise<string | null>;
+  addScript: (name?: string, forceType?: "fountain" | "markdown", initialContent?: string) => Promise<string | null>;
   importScript: (type?: "fountain" | "markdown") => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
   duplicateScript: (index: number, name?: string) => Promise<string | null>;
@@ -1173,7 +1173,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveScriptIndexState(index);
   }, [files, activeFileId, rawText, paperSize]);
 
-  const addScript = useCallback(async (name?: string, forceType?: "fountain" | "markdown"): Promise<string | null> => {
+  const addScript = useCallback(async (name?: string, forceType?: "fountain" | "markdown", initialContent: string = ""): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts) return null;
 
@@ -1192,11 +1192,15 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const uniqueName = getUniqueName(rawName, file.scripts);
     const fileName = isMarkdown ? `files/${sanitizeFileName(uniqueName)}.md` : `files/${sanitizeFileName(uniqueName)}.fountain`;
     
+    const parsed = isMarkdown
+      ? createProseDocument(initialContent, file.parsedDoc.settings)
+      : parseScreenplay(initialContent, paperSize);
+
     const newScript: ScriptInfo = {
       name: uniqueName,
       fileName,
       type: isMarkdown ? "markdown" : "fountain",
-      content: "",
+      content: initialContent,
       savedContent: "",
     };
 
@@ -1205,16 +1209,26 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...f,
       scripts: updatedScripts,
       activeScriptIndex: updatedScripts.length - 1,
-      rawText: "",
+      rawText: initialContent,
       savedText: "",
-      isDirty: true,
-      parsedDoc: { ...parseScreenplay("", paperSize), settings: f.parsedDoc.settings },
+      isDirty: initialContent !== "",
+      parsedDoc: { ...parsed, settings: f.parsedDoc.settings },
     } : f));
+
+    filesRef.current = filesRef.current.map(f => f.id === activeFileId ? {
+      ...f,
+      scripts: updatedScripts,
+      activeScriptIndex: updatedScripts.length - 1,
+      rawText: initialContent,
+      savedText: "",
+      isDirty: initialContent !== "",
+      parsedDoc: { ...parsed, settings: f.parsedDoc.settings },
+    } : f);
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(updatedScripts.length - 1);
-    setRawTextState("");
-    setParsedDoc(prev => ({ ...parseScreenplay("", paperSize), settings: prev.settings }));
+    setRawTextState(initialContent);
+    setParsedDoc(prev => ({ ...parsed, settings: prev.settings }));
 
     return uniqueName;
   }, [files, activeFileId, prompt, paperSize]);

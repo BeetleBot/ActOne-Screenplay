@@ -11,7 +11,7 @@ interface TutorialItem {
   id: string;
   title: string;
   description: string;
-  tourType?: "ui" | "fountain" | "tagging" | "advanced" | "theming";
+  tourType?: "ui" | "fountain" | "advanced" | "theming";
   comingSoon?: boolean;
 }
 
@@ -26,7 +26,7 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
     id: "ui",
     label: "UI",
     tutorials: [
-      { id: "basic-ui", title: "Basic UI", description: "Explore every part of the workspace: Activity Bar, Quick Settings, Header tabs, Editor, Status Bar — plus the fastest way to navigate ActOne.", tourType: "ui" },
+      { id: "basic-ui", title: "Basic UI", description: "Explore every part of the workspace: Activity Bar, Project Panel, Landing Pad & Document Types, Header tabs, Editor, and Status Bar.", tourType: "ui" },
       { id: "theming", title: "Theming", description: "Customize colors and appearance to match your workflow.", tourType: "theming" },
     ],
   },
@@ -35,14 +35,7 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
     label: "WRITING",
     tutorials: [
       { id: "basic-fountain", title: "Basic Fountain Syntax", description: "Hands-on writing sandbox. Practice scene headings, dialogue, parentheticals, transitions, and shots.", tourType: "fountain" },
-      { id: "advanced-syntax", title: "Advanced Syntax", description: "Scene colours, storylines, markers — learn production-ready Fountain features.", tourType: "advanced" },
-    ],
-  },
-  {
-    id: "tags",
-    label: "TAGS",
-    tutorials: [
-      { id: "tagging-pt1", title: "Tagging Pt.1", description: "Create production tags, discover auto-populated Cast tags, and toggle tag visibility in the editor.", tourType: "tagging" },
+      { id: "advanced-syntax", title: "Advanced Syntax", description: "Sections, synopses, scene colours, storylines, markers — learn production-ready Fountain features.", tourType: "advanced" },
     ],
   },
 ];
@@ -92,7 +85,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
     document.body.classList.toggle("dark-theme", currentThemeConfig.isDark);
   }, [currentThemeConfig.isDark]);
 
-  const handleStartTutorial = async (tourType: "ui" | "fountain" | "tagging" | "advanced" | "theming") => {
+  const handleStartTutorial = async (tourType: "ui" | "fountain" | "advanced" | "theming") => {
     localStorage.setItem("pending-tutorial-type", tourType);
     localStorage.setItem("pending-action", "tutorial");
 

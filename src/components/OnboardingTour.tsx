@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useEditor } from "../context";
+import { useEditor, useFile } from "../context";
 import { CrossWindowTourCard } from "./CrossWindowTourCard";
+import { unpackActoneBundle } from "../utils";
 import type { TourStep } from "../types/tour";
 
 interface OnboardingTourProps {
@@ -14,34 +15,39 @@ export const UI_STEPS: TourStep[] = [
     description: "Let's take a guided tour of the workspace to get you familiar with every part of the interface.",
   },
   {
+    targetId: "landing-pad",
+    title: "The Landing Pad",
+    description: "When starting a fresh project, ActOne displays the Landing Pad instead of a blank editor. From here, choose 'Create a new script (.fountain)' for screenplays with real-time formatting, or 'Create a new prose (.md)' for treatments, character bios, and series bibles.",
+  },
+  {
     targetId: "activity-bar",
     title: "The Activity Bar",
-    description: "This vertical strip on the far left is your main navigation hub. Each icon switches to a different side panel. The Quick Settings menu lives at the bottom. Let's walk through every panel.",
+    description: "This vertical strip on the far left is your main navigation hub. Each icon switches to a different side panel. When starting on the Landing Pad, the sidebar automatically opens to your Project panel.",
+  },
+  {
+    targetId: "activity-tab-scripts",
+    title: "Project Panel",
+    description: "Manage all documents in your project bundle (.actone). Add multiple screenplays (.fountain) or prose documents (.md), drag to reorder files, search, or import existing drafts.",
   },
   {
     targetId: "activity-tab-outline",
     title: "Outline Panel",
-    description: "Shows your screenplay's structure as a tree of scenes. You can drag to reorder scenes, collapse sections, and jump to any part of your script instantly.",
-  },
-  {
-    targetId: "activity-tab-scripts",
-    title: "Scripts Panel",
-    description: "When working with .actone bundles, this panel lists all the scripts inside the bundle. Use the + icon to add multiple .fountain scripts to your bundle and switch between them seamlessly.",
+    description: "Once you have a screenplay open, the Outline panel displays your structure as a tree of scenes and sections. You can drag to reorder scenes, filter by scene color or storyline, and jump anywhere instantly.",
   },
   {
     targetId: "activity-tab-notepad",
     title: "Notepad Panel",
-    description: "A scratchpad for quick notes, character ideas, plot points - anything you want to jot down alongside your screenplay. Notes persist with your file.",
+    description: "A scratchpad for quick notes, character ideas, and plot points. Notes persist with your project file alongside your documents.",
   },
   {
     targetId: "activity-tab-markers",
     title: "Markers / Production Breakdown",
-    description: "Tag and categorize your scenes for production planning. Assign props, cast, locations, and generate breakdown reports to keep your shoot organized.",
+    description: "Review inline markers and scene breakdown tags for production planning. Assign props, cast, locations, and view summaries right beside your script.",
   },
   {
     targetId: "activity-tab-todo",
     title: "Tasks Panel",
-    description: "Keep track of writing goals and to-do items. Mark tasks as complete, set priorities, and manage your revision checklist right alongside your script.",
+    description: "Keep track of writing goals and to-do items. Mark tasks as complete, set priorities, and manage your revision checklist right alongside your project.",
   },
   {
     targetId: "activity-tab-snapshots",
@@ -51,17 +57,17 @@ export const UI_STEPS: TourStep[] = [
   {
     targetId: "activity-tab-sprint",
     title: "Sprint Tracker",
-    description: "A built-in writing timer. Set a duration and write against the clock. Track your words-per-minute and see how your pace evolves across sessions.",
+    description: "A built-in writing timer for screenplays. Set a duration, write against the clock, and track your words-per-minute pace across writing sessions.",
   },
   {
     targetId: "activity-tab-parking",
     title: "Parking Panel",
-    description: "Stash deleted or unused text here instead of losing it forever. Great for alternate dialogue, cut scenes, or lines you want to revisit later.",
+    description: "Stash deleted or unused text here instead of losing it forever. Great for alternate dialogue, cut scenes, or ideas you want to revisit later.",
   },
   {
     targetId: "activity-tab-parking",
     title: "Close the Panel",
-    description: "Click the Parking button again to close the sidebar. Activity Bar buttons toggle their panels — clicking the active button dismisses the pane. Remember this when you want to free up screen space.",
+    description: "Click the active panel icon again to dismiss the sidebar and free up screen space. Note that script-specific tools (Markers, Sprint, Parking) adapt automatically when editing screenplays vs. prose.",
     detect: () => {
       const sidebar = document.getElementById("sidebar-container");
       return !sidebar || sidebar.offsetWidth === 0;
@@ -71,12 +77,12 @@ export const UI_STEPS: TourStep[] = [
   {
     targetId: "quick-settings",
     title: "Quick Settings",
-    description: "Click the gear icon at the bottom of the Activity Bar to open the Quick Settings menu. Toggle Typewriter Mode, switch themes, choose Letter/A4 paper size, hide Fountain markup, and open the full Settings window.",
+    description: "Click the three-dots icon (...) at the bottom of the Activity Bar to open Quick Settings. Toggle Typewriter Mode, syntax colors, switch themes, pick Letter/A4 paper size, or open the full Settings window.",
   },
   {
     targetId: "quick-settings",
     title: "Escape to Close",
-    description: "Press Escape to close menus and dropdowns like the Quick Settings menu. It's a universal shortcut across ActOne. Note: Escape does not close sidebar panels — those need a button click on the active Activity Bar tab.",
+    description: "Press Escape to close menus and dropdowns like Quick Settings. It's a universal shortcut across ActOne.",
     detect: () => {
       const menuPaper = Array.from(document.querySelectorAll<HTMLElement>(".MuiMenu-paper"))
         .find((el) => el.textContent && el.textContent.includes("Quick Settings"));
@@ -88,36 +94,31 @@ export const UI_STEPS: TourStep[] = [
   {
     targetId: "header-bar",
     title: "The Header Bar",
-    description: "This strip holds your open file tabs - click any tab to switch, middle-click to close. Use the + button to create a new file. On the right, the window controls let you minimize, maximize, and close the app.",
-  },
-  {
-    targetId: "editor-workspace",
-    title: "The Editor Workspace",
-    description: "Your main writing area. ActOne is a distraction-free environment that formats your screenplay in real time as you type. Fountain markup becomes proper screenplay layout instantly.",
+    description: "This strip holds your open project tabs - click any tab to switch, middle-click to close. Use the + button to create a new project. On the right, the window controls let you minimize, maximize, and close the app.",
   },
   {
     targetId: "status-bar",
     title: "The Status Bar",
-    description: "The very bottom of the window gives you live file information and tools. Let's look at each section.",
+    description: "The bottom bar provides live document feedback, project save status, Muse AI assistant access, and analysis tools.",
   },
   {
     targetId: "status-file-name",
-    title: "Status Bar - File & Save Status",
-    description: "The left side shows the current file name (or active script name for bundles). A spinning indicator means saving is in progress; a green checkmark confirms it's saved to disk.",
+    title: "Status Bar - Project & Save Status",
+    description: "The left side shows your project name and the active document. A spinning indicator means saving is in progress; a green checkmark confirms changes are saved to disk.",
   },
   {
     targetId: "status-scenes",
     title: "Status Bar - Document Statistics",
-    description: "Keep an eye on your Scene count, running Word count, and your current Page number out of estimated total pages. All three update live as you type.",
+    description: "Keep an eye on live statistics: Scene count, Word count, and Estimated Pages for screenplays (or Word count for prose documents).",
   },
   {
     targetId: "status-xray",
     title: "Status Bar - X-Ray Deep Analysis",
-    description: "The bar chart icon opens the X-Ray analysis window. It runs a deep pacing report: character speech balance, scene length distribution, page count breakdown, and more.",
+    description: "The bar chart icon opens the X-Ray analysis window. It provides deep script pacing reports: character speech balance, scene length distribution, and page count breakdowns.",
   },
   {
     title: "Where Did the Menu Go?",
-    description: "You've seen the panels, the header, the editor, and the status bar. But where's the File menu? How do you open a new screenplay, save, or export without menus? The answer is a single shortcut: Ctrl+K.",
+    description: "You've seen the Landing Pad, panels, header, and status bar. But where is the traditional menu bar? In ActOne, every single command is accessible through one fast shortcut: Ctrl+K.",
   },
   {
     targetId: "command-palette-btn",
@@ -338,7 +339,7 @@ export const ADVANCED_STEPS: TourStep[] = [
   {
     targetId: "sidebar-container",
     title: "Explore the Navigator",
-    description: "Look at how sections (#) and subsections (##) are nested with proper indentation. Synopses (=) appear in italics beneath each scene. Coloured left-edge bars match each scene's [[color]] tag. Storyline pills appear as uppercase badges beside each heading. Click around and explore.",
+    description: "Look at how sections (#) and subsections (##) are nested with proper indentation. Synopses (=) appear in italics beneath each scene. Scene colors tint the background cards, and storyline pills appear as uppercase badges beside each heading. Click around and explore.",
     cardPosition: "left",
   },
   {
@@ -420,9 +421,11 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   onCloseTour,
 }) => {
   const { editorView } = useEditor();
+  const { importAsActoneProject } = useFile();
   const [activeStep, setActiveStepState] = useState(0);
   const [taskComplete, setTaskComplete] = useState(false);
   const sandboxCreated = useRef(false);
+  const sampleLoadedRef = useRef(false);
 
   const steps = activeTour === "fountain" 
     ? FOUNTAIN_STEPS 
@@ -441,6 +444,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     localStorage.removeItem("actone-tour-step");
     setTaskComplete(false);
     sandboxCreated.current = false;
+    sampleLoadedRef.current = false;
   }, [activeTour]);
 
   const handleClose = () => {
@@ -462,6 +466,37 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   };
 
   const progress = ((activeStep + 1) / steps.length) * 100;
+
+  // Handle UI tour sample screenplay loading after Landing Pad step (step 1)
+  useEffect(() => {
+    if (activeTour !== "ui" || activeStep < 2 || sampleLoadedRef.current) return;
+    sampleLoadedRef.current = true;
+
+    (async () => {
+      try {
+        const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+        let bundleContent = "";
+        if (isTauriEnv) {
+          const { invoke } = await import("@tauri-apps/api/core");
+          const bytes = await invoke<number[]>("get_sample_bundle");
+          const bundle = unpackActoneBundle(new Uint8Array(bytes), "Bee Detective v2");
+          bundleContent = bundle.scripts[0]?.content || "";
+        } else {
+          const res = await fetch("/samples/BeeDetectiveTour.actone");
+          const buf = await res.arrayBuffer();
+          const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
+          bundleContent = bundle.scripts[0]?.content || "";
+        }
+        if (bundleContent) {
+          await importAsActoneProject(bundleContent, "Bee Detective v2", false);
+        }
+      } catch (e) {
+        console.error("Failed to load sample bundle for UI tour:", e);
+        const fallbackContent = `Title: BEE DETECTIVE\nAuthor: ActOne\n\n# ACT ONE\n\nINT. HONEYCOMB OFFICE - DAY [[blue]] [[storyline Main Plot]]\n\n= Barnaby investigates the great pollen heist.\n\nBARNABY\n(buzzing quietly)\nSomeone cleared out the hive vault.\n\n[[marker red: Sound design notes]]\n\nEXT. FLOWER GARDEN - SUNSET [[yellow]] [[storyline Main Plot]]\n\nBARNABY\nWe need to find the Queen before sundown.\n\n> FADE OUT.`;
+        await importAsActoneProject(fallbackContent, "Bee Detective v2", false);
+      }
+    })();
+  }, [activeTour, activeStep, importAsActoneProject]);
 
   // Handle focus, newline injection, and demo screenplay injection
   useEffect(() => {
