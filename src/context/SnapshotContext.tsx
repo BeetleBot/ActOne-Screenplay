@@ -99,7 +99,7 @@ export const useSnapshots = () => {
 };
 
 export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { filePath, saveStatus, openFilePath } = useFile();
+  const { filePath, saveStatus, openSnapshotAsNewProject } = useFile();
   const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([]);
   const [isPanelOpen, setPanelOpen] = useState(false);
   const [settings, setSettings] = useState<SnapshotSettings>(loadSettings);
@@ -226,11 +226,11 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const openSnapshotAsFile = useCallback(async (info: SnapshotInfo) => {
     try {
-      await openFilePath(info.snapshot_path);
+      await openSnapshotAsNewProject(info.snapshot_path);
     } catch (e) {
       logger.warn("snapshots", "Failed to open snapshot as file", e);
     }
-  }, [openFilePath]);
+  }, [openSnapshotAsNewProject]);
 
   // Auto-snapshot timer
   useEffect(() => {

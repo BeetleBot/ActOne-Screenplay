@@ -212,6 +212,75 @@ describe("FileContext", () => {
     expect(unpacked.scripts[0].content).toBe(initialProseContent);
     expect(unpacked.scripts[1].content).toBe("INT. ROOM - DAY\n\nHi.");
   });
+
+  it("saves the target file directly during targeted saveFile call", async () => {
+    let savedContent: string | null = null;
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === "save_file_content") {
+        const payload = args as { path: string; content: string };
+        savedContent = payload.content;
+        return null;
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      result.current.newFile("ACTIVE TAB CONTENT");
+    });
+
+    const activeId = result.current.activeFileId;
+
+    await act(async () => {
+      result.current.newFile("SECOND TAB CONTENT");
+    });
+
+    const secondId = result.current.activeFileId;
+    expect(secondId).not.toBe(activeId);
+
+    // Give the second file a path
+    await act(async () => {
+      result.current.files.find(f => f.id === secondId)!.filePath = "/path/second.fountain";
+    });
+
+    await act(async () => {
+      await result.current.saveFile(secondId);
+    });
+
+    expect(savedContent).toBe("SECOND TAB CONTENT");
+  });
+
+  it("opens snapshot as a new unsaved project with null filePath", async () => {
+    const initialProseContent = "# Treatment Notes";
+    const mockedBytes = Array.from(
+      packActoneBundle(
+        [
+          { name: "Treatment", fileName: "files/Treatment.md", type: "markdown", content: initialProseContent, savedContent: initialProseContent },
+        ],
+        {}
+      )
+    );
+
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === "read_file_binary") {
+        return mockedBytes;
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      await result.current.openSnapshotAsNewProject("/project/.snapshots/project_20260822_190000.actone");
+    });
+
+    expect(result.current.filePath).toBeNull();
+    const activeF = result.current.files.find(f => f.id === result.current.activeFileId);
+    expect(activeF?.isDirty).toBe(true);
+    expect(result.current.rawText).toBe(initialProseContent);
+    expect(result.current.recentFiles.some(f => f.path.includes(".snapshots"))).toBe(false);
+  });
 });
 
 

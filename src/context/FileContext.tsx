@@ -66,6 +66,7 @@ export interface FileContextProps {
   duplicateScript: (index: number, name?: string) => Promise<string | null>;
   deleteScript: (index: number) => Promise<boolean>;
   moveScript: (fromIndex: number, toIndex: number) => Promise<void>;
+  openSnapshotAsNewProject: (snapshotPath: string) => Promise<void>;
   saveStatus: "idle" | "saving" | "saved";
 }
 
@@ -178,16 +179,25 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const updateAll = () => {
       setFiles(prev => prev.map(f => {
-        const doc = parseScreenplay(f.rawText, paperSize);
+        const activeScr = f.scripts && f.activeScriptIndex !== undefined ? f.scripts[f.activeScriptIndex] : undefined;
+        const isProse = isProseScript(activeScr, f.filePath);
+        const doc = isProse
+          ? createProseDocument(f.rawText, f.parsedDoc.settings)
+          : parseScreenplay(f.rawText, paperSize);
         const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
         const pageBreaks = isTauri && f.parsedDoc?.pageBreaks ? f.parsedDoc.pageBreaks : doc.pageBreaks;
-        return { ...f, parsedDoc: { ...doc, settings: mergedSettings, pageBreaks } };
+        return { ...f, parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : pageBreaks } };
       }));
       setParsedDoc(prevDoc => {
-        const doc = parseScreenplay(rawText, paperSize);
+        const currentActive = filesRef.current.find(f => f.id === activeFileIdRef.current);
+        const activeScr = currentActive?.scripts && currentActive.activeScriptIndex !== undefined ? currentActive.scripts[currentActive.activeScriptIndex] : undefined;
+        const isProse = isProseScript(activeScr, currentActive?.filePath);
+        const doc = isProse
+          ? createProseDocument(rawText, prevDoc.settings)
+          : parseScreenplay(rawText, paperSize);
         const mergedSettings = { ...(prevDoc.settings || {}), ...(doc.settings || {}) };
         const pageBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
-        return { ...doc, settings: mergedSettings, pageBreaks };
+        return { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : pageBreaks };
       });
     };
     updateAll();
@@ -250,11 +260,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (confirmClose === "cancel") return;
       if (confirmClose === "save") {
-        const originalActiveId = activeFileId;
-        if (originalActiveId !== id) {
-          selectFile(id);
-        }
-        await saveFile();
+        await saveFile(id);
       }
     }
 
@@ -293,8 +299,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (confirmClose === "cancel") return;
       if (confirmClose === "save") {
-        selectFile(f.id);
-        await saveFile();
+        await saveFile(f.id);
       }
     }
     const fileToKeep = files.find(f => f.id === id);
@@ -318,8 +323,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (confirmClose === "cancel") return;
       if (confirmClose === "save") {
-        selectFile(f.id);
-        await saveFile();
+        await saveFile(f.id);
       }
     }
     setFiles([]);
@@ -838,11 +842,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await invoke("save_file_binary", { path: normalizedPath, bytes: Array.from(zipped) });
   };
 
-  const saveFile = async () => {
-    const currentActive = files.find(f => f.id === activeFileId);
+  const saveFile = async (targetFileId?: string) => {
+    const currentId = targetFileId || activeFileIdRef.current || activeFileId;
+    const currentActive = filesRef.current.find(f => f.id === currentId) || files.find(f => f.id === currentId);
     if (!currentActive) return;
     if (!currentActive.filePath) {
-      await saveFileAs();
+      await saveFileAs(currentId);
       return;
     }
 
@@ -853,6 +858,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       : currentActive.parsedDoc.lines.map(l => l.text).join("\n");
     const isActone = currentActive.filePath.toLowerCase().endsWith(".actone");
     const normalizedPath = isActone ? currentActive.filePath.replace(/\.actone$/i, ".actone") : currentActive.filePath;
+    const isCurrentActiveTab = currentId === (activeFileIdRef.current || activeFileId);
 
     setSaveStatus("saving");
     if (isActone) {
@@ -872,19 +878,21 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (isTauri) {
-        setIsSaving(true);
-        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
+        if (isCurrentActiveTab) setIsSaving(true);
+        setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: true } : f));
         try {
           await saveActoneFile(normalizedPath, updatedScripts, currentActive.parsedDoc.settings);
-          setFiles(prev => prev.map(f => f.id === activeFileId ? {
+          setFiles(prev => prev.map(f => f.id === currentId ? {
             ...f,
             isDirty: false,
-            savedText: rawText,
+            savedText: f.rawText,
             scripts: updatedScripts,
             filePath: normalizedPath,
           } : f));
-          setFilePath(normalizedPath);
-          triggerSaveStatusSaved();
+          if (isCurrentActiveTab) {
+            setFilePath(normalizedPath);
+            triggerSaveStatusSaved();
+          }
         } catch (e) {
           logger.error("file", "Save actone file failed", e);
           setSaveStatus("idle");
@@ -894,8 +902,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
           });
         } finally {
-          setIsSaving(false);
-          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
+          if (isCurrentActiveTab) setIsSaving(false);
+          setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: false } : f));
         }
       } else {
         try {
@@ -907,14 +915,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link.download = normalizedPath;
           link.click();
           URL.revokeObjectURL(url);
-          setFiles(prev => prev.map(f => f.id === activeFileId ? {
+          setFiles(prev => prev.map(f => f.id === currentId ? {
             ...f,
             isDirty: false,
-            savedText: rawText,
+            savedText: f.rawText,
             scripts: updatedScripts,
             filePath: normalizedPath,
           } : f));
-          triggerSaveStatusSaved();
+          if (isCurrentActiveTab) triggerSaveStatusSaved();
         } catch (e) {
           logger.error("file", "Save actone file failed (browser)", e);
           setSaveStatus("idle");
@@ -927,12 +935,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } else {
       if (isTauri) {
-        setIsSaving(true);
-        setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: true } : f));
+        if (isCurrentActiveTab) setIsSaving(true);
+        setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: true } : f));
         try {
           await invoke("save_file_content", { path: currentActive.filePath, content: cleanTextToSave });
-          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
-          triggerSaveStatusSaved();
+          setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isDirty: false, savedText: f.rawText } : f));
+          if (isCurrentActiveTab) triggerSaveStatusSaved();
         } catch (e) {
           logger.error("file", "Save file content failed", e);
           setSaveStatus("idle");
@@ -942,8 +950,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
           });
         } finally {
-          setIsSaving(false);
-          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isSaving: false } : f));
+          if (isCurrentActiveTab) setIsSaving(false);
+          setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: false } : f));
         }
       } else {
         try {
@@ -955,8 +963,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link.download = normalizedPlainPath;
           link.click();
           URL.revokeObjectURL(url);
-          setFiles(prev => prev.map(f => f.id === activeFileId ? { ...f, isDirty: false, savedText: rawText } : f));
-          triggerSaveStatusSaved();
+          setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isDirty: false, savedText: f.rawText } : f));
+          if (isCurrentActiveTab) triggerSaveStatusSaved();
         } catch (e) {
           logger.error("file", "Save file failed (browser)", e);
           setSaveStatus("idle");
@@ -1529,6 +1537,71 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setParsedDoc(doc);
   }, [files, activeFileId, paperSize]);
 
+  const openSnapshotAsNewProject = useCallback(async (snapshotPath: string) => {
+    if (!isTauri) return;
+    try {
+      const isActone = isActonePath(snapshotPath);
+      const bundleName = snapshotPath.split(/[/\\]/).pop()?.replace(/\.(actone|zip|actone\.zip|fountain|txt)$/i, "") || "Untitled";
+      const cleanBundleName = `${bundleName.replace(/_\d{8}_\d{6}$/i, "")} (Snapshot)`;
+      let scripts: ScriptInfo[] = [];
+      let settings: Record<string, unknown> = {};
+      let rawTextContent = "";
+
+      if (isActone) {
+        const bytes = await invoke<number[]>("read_file_binary", { path: snapshotPath });
+        const bundle = unpackActoneBundle(new Uint8Array(bytes), cleanBundleName);
+        scripts = bundle.scripts;
+        rawTextContent = bundle.scripts[0]?.content || "";
+        settings = bundle.settings;
+      } else {
+        rawTextContent = await invoke<string>("read_file_content", { path: snapshotPath });
+        scripts = [{
+          name: cleanBundleName,
+          fileName: `${cleanBundleName}.fountain`,
+          content: rawTextContent,
+          savedContent: "",
+        }];
+      }
+
+      const activeScr = scripts.length > 0 ? scripts[0] : undefined;
+      const isProse = isProseScript(activeScr);
+      const parsed = isProse
+        ? createProseDocument(rawTextContent, settings)
+        : parseScreenplay(rawTextContent, paperSize);
+      if (settings) {
+        parsed.settings = settings;
+      }
+
+      const newId = generateUUID();
+      const newFileObj: ScreenplayFile = {
+        id: newId,
+        filePath: null,
+        rawText: rawTextContent,
+        parsedDoc: parsed,
+        isSaving: false,
+        isDirty: true,
+        savedText: "",
+        scripts,
+        activeScriptIndex: scripts.length > 0 ? 0 : undefined,
+      };
+
+      setFiles(prev => [...prev, newFileObj]);
+      setActiveFileIdState(newId);
+      setRawTextState(rawTextContent);
+      setFilePath(null);
+      setParsedDoc(parsed);
+      setScriptsState(scripts);
+      setActiveScriptIndexState(0);
+    } catch (e) {
+      logger.error("file", "Failed to open snapshot as new project", e);
+      await confirm({
+        title: "Error Opening Snapshot",
+        message: "Could not open snapshot archive.",
+        buttons: [{ value: "ok", label: "OK", variant: "contained", color: "error" }]
+      });
+    }
+  }, [isTauri, paperSize, confirm]);
+
   const selectFileRef = useRef(selectFile);
   const saveFileRef = useRef(saveFile);
 
@@ -1559,7 +1632,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const file = currentFiles.find(f => f.id === currentId);
       if (file && file.isDirty && file.filePath) {
         const idleDuration = Date.now() - lastTypingTimeRef.current;
-        // Only trigger auto-save if user has been idle (not typing) for at least 1500ms
         if (idleDuration >= 1500) {
           if (typeof window !== "undefined" && "requestIdleCallback" in window) {
             (window as any).requestIdleCallback(() => {
@@ -1650,6 +1722,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         duplicateScript,
         deleteScript,
         moveScript,
+        openSnapshotAsNewProject,
         saveStatus,
       }}
     >

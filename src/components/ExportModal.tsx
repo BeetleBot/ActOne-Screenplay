@@ -75,7 +75,6 @@ const DEFAULT_ELEMENT_FORMATS: ElementFormats = {
 
 interface ExportModalProps {
   onClose: () => void;
-  batchExport?: boolean;
 }
 
 function stripFountainForExport(
@@ -210,7 +209,7 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </Typography>
 );
 
-export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }) => {
+export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   const { rawText, isBundle, activeScriptName, filePath, updateSettings, parsedDoc, scripts, activeScriptIndex } = useFile();
   const { fontFamily, paperSize, appScale } = useUI();
 
@@ -540,103 +539,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
     }
   };
 
-  const handleBatchExport = async () => {
-    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-    if (!isTauri) { return; }
-
-    try {
-      updateWatermarkSettings(currentWatermarkSettings());
-      const dir = await invoke<string | null>("pick_directory");
-      if (!dir) return;
-
-      for (const script of scripts) {
-        const sanitizedName = script.name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").trim() || "Untitled";
-
-        if (format === "fountain") {
-          const cleaned = stripFountainForExport(script.content, { sections: exportSections, synopses: exportSynopses, titlePage: exportTitlePage });
-          await invoke("save_file_content", { path: `${dir}/${sanitizedName}.fountain`, content: cleaned })
-            .catch(e => logger.error("export", `Batch fountain failed for ${sanitizedName}`, e));
-        } else if (format === "fdx") {
-          const cleaned = stripFountainForExport(script.content, { sections: false, synopses: false, titlePage: exportTitlePage });
-          const fdx = await invoke<string>("generate_fdx_string", { fountainText: cleaned });
-          await invoke("save_file_content", { path: `${dir}/${sanitizedName}.fdx`, content: fdx })
-            .catch(e => logger.error("export", `Batch FDX failed for ${sanitizedName}`, e));
-        } else if (format === "fadein") {
-          const cleaned = stripFountainForExport(script.content, { sections: false, synopses: false, titlePage: exportTitlePage });
-          const bytes = await invoke<number[]>("generate_fadein_bytes", { fountainText: cleaned });
-          await invoke("save_file_binary", { path: `${dir}/${sanitizedName}.fadein`, bytes })
-            .catch(e => logger.error("export", `Batch FadeIn failed for ${sanitizedName}`, e));
-        } else if (format === "pdf") {
-          const scriptIsProse = isProseScript(script, filePath);
-          let bytes: number[] | null = null;
-          if (scriptIsProse) {
-            bytes = await invoke<number[]>("generate_prose_pdf_bytes", {
-              markdownText: script.content,
-              paperSize,
-              fontFamily: selectedFont,
-              watermarkHeaderEnabled,
-              watermarkHeaderText,
-              watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
-              watermarkFooterEnabled,
-              watermarkFooterText,
-              watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
-              watermarkCenterEnabled,
-              watermarkCenterType,
-              watermarkCenterText,
-              watermarkCenterImagePath,
-              watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
-              watermarkCenterGrayscale,
-              scriptFonts: JSON.stringify(scriptFonts),
-              defaultDirectory: dir,
-            });
-          } else {
-            const revisedLines: boolean[] = [];
-            bytes = await invoke<number[]>("generate_pdf_bytes", {
-              fountainText: script.content,
-              paperSize,
-              fontFamily: selectedFont,
-              elementFormats: JSON.stringify(elementFormats),
-              mirrorSceneNumbers: sceneNumberMode,
-              exportSections,
-              exportSynopses,
-              exportTitlePage,
-              exportSceneColors,
-              scenePageBreaks,
-              revisedLines,
-              watermarkHeaderEnabled,
-              watermarkHeaderText,
-              watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
-              watermarkFooterEnabled,
-              watermarkFooterText,
-              watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
-              watermarkCenterEnabled,
-              watermarkCenterType,
-              watermarkCenterText,
-              watermarkCenterImagePath,
-              watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
-              watermarkCenterGrayscale,
-              scriptFonts: JSON.stringify(scriptFonts),
-            });
-          }
-          if (bytes) {
-            await invoke("save_file_binary", { path: `${dir}/${sanitizedName}.pdf`, bytes })
-              .catch(e => logger.error("export", `Batch PDF failed for ${sanitizedName}`, e));
-          }
-        }
-      }
-    } catch (e) {
-      logger.error("export", "handleBatchExport failed", e);
-    }
-  };
-
   const handleExport = async () => {
     if (isExporting) return;
     setIsExporting(true);
     try {
-      if (batchExport) {
-        await handleBatchExport();
-        return;
-      }
       if (isProse) {
         if (format === "markdown") {
           await handleExportMarkdown();
@@ -1058,12 +964,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
               {/* Script target */}
               <Box sx={{ px: 1, mb: 1 }}>
                 <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.disabled", letterSpacing: 0.6, textTransform: "uppercase", mb: 0.25 }}>
-                  {batchExport ? "Batch Export" : "Exporting"}
+                  Exporting
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                   <DescriptionIcon sx={{ fontSize: 13, color: "text.secondary" }} />
                   <Typography sx={{ fontSize: 12, fontWeight: 700, color: "text.primary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {batchExport && isBundle ? `${scripts.length} scripts` : activeScriptName}
+                    {activeScriptName}
                   </Typography>
                 </Box>
                 <Chip
@@ -1137,7 +1043,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose, batchExport }
                 boxShadow: "none",
               }}
             >
-              {isExporting ? "Exporting..." : (batchExport ? `Export All as ${formatLabel}` : `Export to ${formatLabel}`)}
+              {isExporting ? "Exporting..." : `Export to ${formatLabel}`}
             </Button>
           </DialogActions>
       </>
