@@ -47,12 +47,12 @@ The Welcome screen also shows a rotating random writing quote from famous screen
     category: "Getting Started",
     tags: ["landing pad", "new script", "empty project", "create"],
     relatedIds: ["new-project", "scripts-manager", "welcome-screen"],
-    content: `When you create a new project with no scripts, or delete all existing scripts from a project, ActOne displays the **Landing Pad**:
+    content: `When you create a new project with no documents, or delete all existing documents from a project, ActOne displays the **Project Workspace** landing pad:
 
-- **Create a New Script**: Click the central "Create a new script" button to name and initialize your first screenplay in the project.
-- **Sidebar Integration**: The sidebar automatically switches to the **Scripts** pane so you can manage, add, or import scripts.
-- **Feature Buttons**: Sidebar tools (Outline, Notepad, Tasks, Markers, etc.) are temporarily disabled until a script exists to edit.
-- **Status Bar & Muse**: Word/page statistics display *"No active script"*, and the Muse AI assistant button is muted until a script is open.`,
+- **New Screenplay (\`.fountain\`)**: Create and initialize an industry-standard screenplay with automatic pagination and formatting.
+- **New Prose Document (\`.md\`)**: Create a Markdown document for treatments, story beat sheets, character bibles, and notes.
+- **Import or Structure Template**: Import existing files (\`.fountain\`, \`.fdx\`, \`.fadein\`, \`.md\`) or start with a Three-Act, Hero's Journey, or Save the Cat structure template.
+- **Sidebar Integration**: The sidebar automatically switches to the **Project & Scripts** pane where you can organize, reorder, or rename all documents in your project.`,
   },
   {
     id: "open-file",
@@ -260,6 +260,224 @@ Transitions render right-aligned in PDF exports.`,
     tags: ["boneyard", "comments", "/*", "hidden"],
     relatedIds: ["notes-markers"],
     content: `Wrap text in \`/*\` and \`*/\` to create boneyard comments — sections that are completely ignored by the parser and invisible in exports. Useful for hiding alternate lines or notes.`,
+  },
+
+  // ===== MARKDOWN SYNTAX =====
+  {
+    id: "markdown-overview",
+    title: "Markdown & Prose Overview",
+    category: "Markdown Syntax",
+    tags: ["markdown", "prose", "overview", "syntax", "guide", "writing"],
+    relatedIds: ["markdown-headings", "markdown-formatting", "markdown-lists", "markdown-blockquotes", "prose-markdown-editor"],
+    content: `ActOne features first-class multi-document workspace support. In addition to industry-standard Fountain screenplays, you can create and edit **Prose Documents (\`.md\`)** directly inside your \`.actone\` project bundles.
+
+### Why Use Prose in ActOne?
+- **Treatment & Beat Sheets**: Write comprehensive story treatments and narrative overviews alongside your screenplay drafts.
+- **Character Bibles & World-Building**: Maintain rich lore, locations, character biographies, and production notes.
+- **Director's Pitch & Synopses**: Craft polished pitch decks, series bibles, and episode breakdowns.
+
+### Live Inline Formatting
+ActOne's Prose editor renders Markdown elements with live inline visual styling while keeping the underlying markdown syntax characters clean, readable, and fully editable.
+
+### Quick Syntax Summary
+| Element | Syntax Example | Rendered Style |
+| :--- | :--- | :--- |
+| **Heading 1** | \`# Title\` | Large bold title |
+| **Heading 2** | \`## Section\` | Subsection title |
+| **Bold** | \`**bold text**\` | **bold text** |
+| **Italic** | \`*italic text*\` | *italic text* |
+| **Strikethrough** | \`~~deleted~~\` | ~~deleted~~ |
+| **Inline Code** | \`\` \`code\` \`\` | Monospace tag |
+| **Bulleted List** | \`- Item\` or \`* Item\` | Clean bullet list |
+| **Numbered List** | \`1. Item\` | Sequential list |
+| **Task Checkbox** | \`- [ ] To-do\` | Interactive checkbox |
+| **Blockquote** | \`> Quote\` | Stepped colored rail |
+| **Table** | \`| Col 1 | Col 2 |\` | Interactive table |`,
+  },
+  {
+    id: "markdown-headings",
+    title: "Headings & Section Dividers",
+    category: "Markdown Syntax",
+    tags: ["headings", "headers", "titles", "h1", "h2", "h3", "divider", "hr"],
+    relatedIds: ["markdown-overview", "markdown-formatting", "outline-navigator"],
+    content: `Structure your prose documents into hierarchical sections using Markdown heading prefixes:
+
+### Heading Levels
+Prefix any line with one to six hash (\`#\`) characters followed by a space:
+- \`# Heading 1\` — Document Title or Major Chapter
+- \`## Heading 2\` — Act or Main Section
+- \`### Heading 3\` — Subsection or Beat
+- \`#### Heading 4\` — Sub-beat or Detailed Note
+- \`##### Heading 5\` — Minor Header
+- \`###### Heading 6\` — Sub-header
+
+> [!TIP]
+> Headings automatically populate the **Outline View** in the sidebar, allowing you to jump instantly between chapters and sections.
+
+### Horizontal Rules (Dividers)
+Create a clean horizontal dividing line between scenes or sections by typing three or more hyphens, asterisks, or underscores on their own line:
+\`\`\`markdown
+---
+\`\`\`
+or
+\`\`\`markdown
+***
+\`\`\``,
+  },
+  {
+    id: "markdown-formatting",
+    title: "Text Formatting & Emphasis",
+    category: "Markdown Syntax",
+    tags: ["bold", "italic", "strikethrough", "code", "links", "formatting", "emphasis"],
+    relatedIds: ["markdown-overview", "markdown-headings", "markdown-lists"],
+    content: `Style inline words and phrases with standard Markdown emphasis:
+
+### Bold & Italic
+- **Bold**: Wrap text with double asterisks or double underscores:
+  \`**important beat**\` or \`__important beat__\`
+- **Italic**: Wrap text with single asterisks or single underscores:
+  \`*whispering voice*\` or \`_whispering voice_\`
+- **Bold + Italic**: Wrap text with triple asterisks:
+  \`***crucial plot twist***\`
+
+### Strikethrough
+Wrap text with double tildes to mark deleted or revised ideas:
+\`~~discarded scene concept~~\`
+
+### Inline Code & Monospace
+Wrap text in single backticks for technical terms, timecodes, or cues:
+\`\`\`markdown
+Set lighting cue to \`CUE_NIGHT_04\` at \`01:24:10\`.
+\`\`\`
+
+### Hyperlinks
+Create clickable external links using standard Markdown link syntax:
+\`[ActOne Website](https://iyal.ink)\`
+ActOne displays an external link affordance icon next to the link so you can open it in your default web browser with a single click.`,
+  },
+  {
+    id: "markdown-lists",
+    title: "Lists & Interactive Task Checkboxes",
+    category: "Markdown Syntax",
+    tags: ["lists", "bullets", "numbered", "tasks", "checkbox", "indentation", "todo"],
+    relatedIds: ["markdown-overview", "markdown-blockquotes", "tasks"],
+    content: `Create bulleted lists, sequential numbered steps, and interactive to-do checklists in your notes and prose documents.
+
+### Bulleted (Unordered) Lists
+Start a line with a dash (\`-\`), asterisk (\`*\`), or plus (\`+\`) followed by a space:
+\`\`\`markdown
+- Character motivations
+* Key story beats
++ Unresolved conflicts
+\`\`\`
+ActOne replaces the raw prefix with clean, aligned bullet indicators with comfortable spacing.
+
+### Numbered (Ordered) Lists
+Start a line with a number followed by a period and space:
+\`\`\`markdown
+1. Setup and Inciting Incident
+2. Rising Action and Midpoint Climax
+3. Climax and Resolution
+\`\`\`
+- **Automatic Re-numbering**: Pressing <kbd>Enter</kbd> automatically generates the next sequential number (e.g. \`2.\`, \`3.\`).
+- If you delete or reorder items, ActOne maintains smooth sequential order.
+
+### Interactive Task Checklists
+Create task checkboxes for production to-do lists and revision trackers:
+\`\`\`markdown
+- [ ] Research period costumes
+- [x] Finalize dialogue polish for Act II
+\`\`\`
+> [!NOTE]
+> Checkboxes are **interactive**! You can click the checkbox directly inside the editor to toggle between completed (\`[x]\`) and pending (\`[ ]\`). Completed task lines receive a clean subtle strikethrough.
+
+### Smart List Navigation
+- **Indent Sub-item**: Press <kbd>Tab</kbd> to indent a list item into a nested sub-list.
+- **Un-indent**: Press <kbd>Shift+Tab</kbd> to un-indent back to the parent level.
+- **Exit List**: Press <kbd>Enter</kbd> on an empty list item to immediately clear the marker and resume standard paragraph writing.`,
+  },
+  {
+    id: "markdown-blockquotes",
+    title: "Blockquotes & Stepped Rails",
+    category: "Markdown Syntax",
+    tags: ["blockquote", "quote", "rail", "dialogue quote", "citation", "nesting"],
+    relatedIds: ["markdown-overview", "markdown-lists", "prose-markdown-editor"],
+    content: `Highlight important quotes, voice-over transcripts, or script citations using blockquotes.
+
+### Creating Blockquotes
+Start a line with a greater-than symbol (\`>\`) followed by a space:
+\`\`\`markdown
+> "Every great story is born from a single moment of genuine vulnerability."
+\`\`\`
+
+### Visual Stepped Indicator Rails
+- ActOne renders blockquotes with vertical colored indicator rails on the left margin.
+- Each nesting depth adds a distinct stepped indentation level.
+
+### Multi-Level Nesting
+Nest blockquotes for character back-and-forths or threaded notes:
+\`\`\`markdown
+> Producer Notes:
+>> Director Response: We will adjust the lighting for this scene.
+\`\`\`
+
+### Smart Keyboard Shortcuts
+- **Increase Depth**: Press <kbd>Tab</kbd> on a blockquote line to increase nesting depth (\`>\` → \`>>\`).
+- **Decrease Depth**: Press <kbd>Shift+Tab</kbd> to decrease nesting depth (\`>>\` → \`>\`).
+- **Continue on Enter**: Pressing <kbd>Enter</kbd> preserves the active blockquote depth on the new line.
+- **Exit Blockquote**: Pressing <kbd>Enter</kbd> on an empty blockquote line clears the quote rail and returns to standard text.`,
+  },
+  {
+    id: "markdown-tables",
+    title: "Tables & Grid Formatting",
+    category: "Markdown Syntax",
+    tags: ["tables", "grid", "data", "columns", "rows", "cast matrix"],
+    relatedIds: ["markdown-overview", "prose-markdown-editor", "markdown-codeblocks"],
+    content: `Create structured tables for character grids, schedule timelines, scene breakdowns, or budget summaries.
+
+### Table Syntax
+Separate column values using pipe (\`|\`) characters, and define the header separator with hyphens (\`---\`):
+
+\`\`\`markdown
+| Scene | Location | Characters | Mood |
+| :--- | :--- | :--- | :--- |
+| 1 | Int. Detective Office | Nirmal, Kasi | Tense |
+| 2 | Ext. Waterfront | Nirmal | Melancholic |
+\`\`\`
+
+### Column Alignment
+- **Left Align**: \`:---\` (default)
+- **Center Align**: \`:---:\`
+- **Right Align**: \`---:\`
+
+### Live Interactive Table Widget
+When table rendering is active, ActOne renders the Markdown table as a live, interactive UI table:
+- **Direct Cell Editing**: Click any cell to type and edit content directly.
+- **<kbd>Tab</kbd> Navigation**: Press <kbd>Tab</kbd> to jump seamlessly to the next cell; press <kbd>Shift+Tab</kbd> to jump to the previous cell.
+- **Auto-Append Row**: Pressing <kbd>Tab</kbd> on the last cell in the table automatically appends a new blank row.`,
+  },
+  {
+    id: "markdown-codeblocks",
+    title: "Fenced Code Blocks & Preformatted Text",
+    category: "Markdown Syntax",
+    tags: ["code", "codeblocks", "pre", "monospace", "technical", "fenced"],
+    relatedIds: ["markdown-overview", "markdown-formatting", "markdown-tables"],
+    content: `Embed multi-line technical snippets, camera rig setups, or preformatted text blocks using fenced code blocks.
+
+### Creating Code Blocks
+Wrap the content in triple backticks:
+
+\`\`\`markdown
+\`\`\`json
+{
+  "scene": "Opening Teaser",
+  "camera": "Arri Alexa Mini LF",
+  "lens": "Signature Prime 35mm"
+}
+\`\`\`
+\`\`\`
+
+Code blocks render in a high-contrast monospace container with distinct background tinting and preserved whitespace formatting.`,
   },
 
   // ===== WRITING TOOLS =====
@@ -507,7 +725,7 @@ Panels that require the .actone bundle are hidden for plain \`.fountain\` files.
     title: "Prose & Markdown Editing",
     category: "Workspace & Views",
     tags: ["prose", "markdown", "lists", "blockquotes", "formatting", "indentation", "notes"],
-    relatedIds: ["notepad", "inline-formatting"],
+    relatedIds: ["markdown-overview", "markdown-lists", "markdown-blockquotes", "markdown-tables", "notepad"],
     content: `ActOne's Prose & Markdown editor provides an intuitive, formatted Markdown editing experience with live inline decorations:
 
 ### Always-Visible Syntax Highlighting
@@ -1255,6 +1473,7 @@ Muse does not currently provide @command autocomplete. Write requests in normal 
 export const categories = [
   "Getting Started",
   "Fountain Syntax",
+  "Markdown Syntax",
   "Writing Tools",
   "Workspace & Views",
   "Production Features",
