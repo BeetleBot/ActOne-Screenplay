@@ -282,7 +282,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                     {item.forcedSyntax && (
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, p: 1.5, borderRadius: "8px", bgcolor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
                         <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: muiTheme.palette.primary.main, letterSpacing: 0.5 }}>
-                          Force Syntax ({item.forcedSyntax})
+                          {item.autoSyntax ? "Force Syntax" : "Syntax"} ({item.forcedSyntax})
                         </Typography>
                         {item.forcedExample && (
                           <Box sx={{ p: 1, borderRadius: "6px", bgcolor: isDark ? "#0d1117" : "#f6f8fa", fontFamily: "monospace", fontSize: "0.8rem", color: isDark ? "#e6edf3" : "#24292f", whiteSpace: "pre-wrap" }}>

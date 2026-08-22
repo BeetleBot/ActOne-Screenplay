@@ -100,9 +100,9 @@ export const SYNTAX_REGISTRY: SyntaxItem[] = [
   },
   {
     name: "Scene Color Highlighting",
-    forcedSyntax: "[[color]]",
-    forcedExample: "INT. WAREHOUSE - NIGHT [[color red]]\nEXT. PARK - DAY [[color blue]]",
-    description: "Scene background highlight colors assigned in scene headings using double brackets [[color red]]."
+    forcedSyntax: "[[red]]",
+    forcedExample: "INT. WAREHOUSE - NIGHT [[red]]\nEXT. PARK - DAY [[blue]]",
+    description: "Scene background highlight colors assigned in scene headings using double brackets [[red]]."
   },
 ];
 
