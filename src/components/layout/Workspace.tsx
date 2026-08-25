@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useUI, useEditor, useFile } from "../../context";
+import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Menu from "@mui/material/Menu";
@@ -10,7 +11,6 @@ import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
 import { ScriptEditor } from "../ScriptEditor";
 import { ProseEditor } from "../ProseEditor";
-import { AmbientPanel } from "../AmbientPanel";
 import { MusePanel } from "../MusePanel";
 import Typography from "@mui/material/Typography";
 import { DescriptionIcon, MenuBookIcon, UploadIcon } from "../Icons";
@@ -96,13 +96,22 @@ export const Workspace = React.memo<WorkspaceProps>(({
             className="sidebar"
             elevation={0}
             tabIndex={-1}
-            square
             sx={{
-              width: isZenMode ? 0 : sidebarWidth, flexShrink: 0, outline: 'none',
-              borderRight: isZenMode ? '0px solid' : '1px solid',
-              borderColor: 'divider', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column',
+              width: isZenMode ? 0 : sidebarWidth,
+              flexShrink: 0,
+              outline: 'none',
+              m: isZenMode ? 0 : 0.75,
+              mr: isZenMode ? 0 : 0.25,
+              borderRadius: isZenMode ? 0 : '12px',
+              border: isZenMode ? 'none' : '1px solid',
+              borderColor: 'divider',
+              boxShadow: (t) => isZenMode ? 'none' : (t.palette.mode === 'dark' ? '0 8px 24px rgba(0,0,0,0.35)' : '0 2px 12px rgba(0,0,0,0.06)'),
+              bgcolor: 'background.paper',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
               pointerEvents: isZenMode ? 'none' : 'auto',
+              transition: 'all 0.15s ease',
             }}
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
@@ -123,9 +132,13 @@ export const Workspace = React.memo<WorkspaceProps>(({
             className="sidebar-resizer"
             onMouseDown={() => setIsDragging(true)}
             sx={{
-              width: isZenMode ? 0 : 4, cursor: 'col-resize', flexShrink: 0,
+              width: isZenMode ? 0 : 4,
+              cursor: 'col-resize',
+              flexShrink: 0,
+              my: 1,
+              borderRadius: '2px',
               pointerEvents: isZenMode ? 'none' : 'auto',
-              '&:hover': { bgcolor: 'var(--button-color)', opacity: 0.3 },
+              '&:hover': { bgcolor: 'primary.main', opacity: 0.5 },
               transition: 'background-color var(--duration-fast)',
             }}
           />
@@ -197,11 +210,15 @@ export const Workspace = React.memo<WorkspaceProps>(({
               <Box
                 sx={{
                   width: '100%',
-                  borderRadius: 0,
+                  borderRadius: '12px',
                   border: '1px solid',
                   borderColor: 'divider',
                   bgcolor: 'background.paper',
-                  overflow: 'hidden',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+                  p: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0.75,
                 }}
               >
                 {/* Row 1: Screenplay */}
@@ -214,39 +231,45 @@ export const Workspace = React.memo<WorkspaceProps>(({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    p: 1.75,
-                    border: 'none',
-                    borderRadius: 0,
+                    p: 1.5,
+                    border: '1px solid',
+                    borderColor: 'transparent',
+                    borderRadius: '8px',
                     bgcolor: 'transparent',
                     color: 'text.primary',
                     cursor: 'pointer',
                     textAlign: 'left',
                     font: 'inherit',
-                    transition: 'background-color var(--duration-fast) var(--easing-standard)',
+                    transition: 'all 0.15s ease',
                     '&:hover': {
                       bgcolor: 'action.hover',
+                      borderColor: 'divider',
+                      transform: 'translateY(-1px)',
+                    },
+                    '&:active': {
+                      transform: 'scale(0.99)',
                     },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
-                      <DescriptionIcon sx={{ fontSize: 18 }} />
+                    <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', p: 1, borderRadius: '8px', bgcolor: (t) => alpha(t.palette.primary.main, 0.1) }}>
+                      <DescriptionIcon sx={{ fontSize: 20 }} />
                     </Box>
                     <Box>
-                      <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', color: 'text.primary', lineHeight: 1.3 }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: '0.88rem', color: 'text.primary', lineHeight: 1.3 }}>
                         New Screenplay
                       </Typography>
-                      <Typography sx={{ color: 'text.secondary', fontSize: '0.75rem', lineHeight: 1.3, mt: 0.25 }}>
+                      <Typography sx={{ color: 'text.secondary', fontSize: '0.76rem', lineHeight: 1.3, mt: 0.25 }}>
                         Fountain format with automatic screenplay pagination
                       </Typography>
                     </Box>
                   </Box>
                   <Box
                     sx={{
-                      px: 0.75,
-                      py: 0.2,
-                      borderRadius: 0,
-                      fontSize: '0.7rem',
+                      px: 1,
+                      py: 0.35,
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
                       fontFamily: '"Courier Prime", monospace',
                       fontWeight: 600,
                       color: 'text.secondary',
@@ -262,8 +285,6 @@ export const Workspace = React.memo<WorkspaceProps>(({
                   </Box>
                 </Box>
 
-                <Divider />
-
                 {/* Row 2: Prose */}
                 <Box
                   component="button"
@@ -274,39 +295,45 @@ export const Workspace = React.memo<WorkspaceProps>(({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    p: 1.75,
-                    border: 'none',
-                    borderRadius: 0,
+                    p: 1.5,
+                    border: '1px solid',
+                    borderColor: 'transparent',
+                    borderRadius: '8px',
                     bgcolor: 'transparent',
                     color: 'text.primary',
                     cursor: 'pointer',
                     textAlign: 'left',
                     font: 'inherit',
-                    transition: 'background-color var(--duration-fast) var(--easing-standard)',
+                    transition: 'all 0.15s ease',
                     '&:hover': {
                       bgcolor: 'action.hover',
+                      borderColor: 'divider',
+                      transform: 'translateY(-1px)',
+                    },
+                    '&:active': {
+                      transform: 'scale(0.99)',
                     },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
-                      <MenuBookIcon sx={{ fontSize: 18 }} />
+                    <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', p: 1, borderRadius: '8px', bgcolor: (t) => alpha(t.palette.primary.main, 0.1) }}>
+                      <MenuBookIcon sx={{ fontSize: 20 }} />
                     </Box>
                     <Box>
-                      <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', color: 'text.primary', lineHeight: 1.3 }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: '0.88rem', color: 'text.primary', lineHeight: 1.3 }}>
                         New Prose Document
                       </Typography>
-                      <Typography sx={{ color: 'text.secondary', fontSize: '0.75rem', lineHeight: 1.3, mt: 0.25 }}>
+                      <Typography sx={{ color: 'text.secondary', fontSize: '0.76rem', lineHeight: 1.3, mt: 0.25 }}>
                         Markdown format for treatments, chapters, and notes
                       </Typography>
                     </Box>
                   </Box>
                   <Box
                     sx={{
-                      px: 0.75,
-                      py: 0.2,
-                      borderRadius: 0,
-                      fontSize: '0.7rem',
+                      px: 1,
+                      py: 0.35,
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
                       fontFamily: '"Courier Prime", monospace',
                       fontWeight: 600,
                       color: 'text.secondary',
@@ -322,8 +349,6 @@ export const Workspace = React.memo<WorkspaceProps>(({
                   </Box>
                 </Box>
 
-                <Divider />
-
                 {/* Row 3: Import / Template */}
                 <Box
                   component="button"
@@ -334,39 +359,45 @@ export const Workspace = React.memo<WorkspaceProps>(({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    p: 1.75,
-                    border: 'none',
-                    borderRadius: 0,
+                    p: 1.5,
+                    border: '1px solid',
+                    borderColor: 'transparent',
+                    borderRadius: '8px',
                     bgcolor: 'transparent',
                     color: 'text.primary',
                     cursor: 'pointer',
                     textAlign: 'left',
                     font: 'inherit',
-                    transition: 'background-color var(--duration-fast) var(--easing-standard)',
+                    transition: 'all 0.15s ease',
                     '&:hover': {
                       bgcolor: 'action.hover',
+                      borderColor: 'divider',
+                      transform: 'translateY(-1px)',
+                    },
+                    '&:active': {
+                      transform: 'scale(0.99)',
                     },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
-                      <UploadIcon sx={{ fontSize: 18 }} />
+                    <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', p: 1, borderRadius: '8px', bgcolor: (t) => alpha(t.palette.primary.main, 0.1) }}>
+                      <UploadIcon sx={{ fontSize: 20 }} />
                     </Box>
                     <Box>
-                      <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', color: 'text.primary', lineHeight: 1.3 }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: '0.88rem', color: 'text.primary', lineHeight: 1.3 }}>
                         Import or Structure Template...
                       </Typography>
-                      <Typography sx={{ color: 'text.secondary', fontSize: '0.75rem', lineHeight: 1.3, mt: 0.25 }}>
+                      <Typography sx={{ color: 'text.secondary', fontSize: '0.76rem', lineHeight: 1.3, mt: 0.25 }}>
                         Import .fountain, .fdx, .fadein, .md, or structure template
                       </Typography>
                     </Box>
                   </Box>
                   <Box
                     sx={{
-                      px: 0.75,
-                      py: 0.2,
-                      borderRadius: 0,
-                      fontSize: '0.7rem',
+                      px: 1,
+                      py: 0.35,
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
                       fontWeight: 600,
                       color: 'text.secondary',
                       bgcolor: 'action.hover',
@@ -390,9 +421,10 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 slotProps={{
                   paper: {
                     sx: {
-                      borderRadius: 0,
+                      borderRadius: '10px',
                       border: '1px solid',
                       borderColor: 'divider',
+                      p: 0.5,
                       minWidth: 260,
                     }
                   }
@@ -403,7 +435,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
                     setImportAnchorEl(null);
                     importScript("fountain");
                   }}
-                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: 0 }}
+                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: '6px' }}
                 >
                   Import Screenplay (.fountain, .fdx, .fadein)
                 </MenuItem>
@@ -412,7 +444,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
                     setImportAnchorEl(null);
                     importScript("markdown");
                   }}
-                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: 0 }}
+                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: '6px' }}
                 >
                   Import Prose (.md)
                 </MenuItem>
@@ -422,7 +454,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
                     setImportAnchorEl(null);
                     setShowStructureModal(true);
                   }}
-                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: 0 }}
+                  sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: '6px' }}
                 >
                   Screenplay Structure Template...
                 </MenuItem>
@@ -463,12 +495,6 @@ export const Workspace = React.memo<WorkspaceProps>(({
       {activeRightPane === "search" && (
         <RightPane type="search" onClose={() => setActiveRightPane(null)} errorBoundaryName="search-pane">
           <SearchPanel />
-        </RightPane>
-      )}
-
-      {activeRightPane === "ambient" && (
-        <RightPane type="ambient" onClose={() => setActiveRightPane(null)} errorBoundaryName="ambient-pane" ariaLabel="Ambient Sounds">
-          <AmbientPanel />
         </RightPane>
       )}
 

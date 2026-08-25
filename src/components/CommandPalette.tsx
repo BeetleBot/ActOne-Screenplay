@@ -2,7 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFile, useEditor, useScriptEditor, useUI } from "../context";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
-import { NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon, SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon, ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon, ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon } from "./Icons";
+import {
+  NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon,
+  SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon,
+  ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon,
+  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon
+} from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 import { parseScriptFileToFountain } from "../utils/text";
@@ -82,6 +87,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   isOpen,
   onClose,
   onExportPDF,
+  toggleSidebar,
+  isSidebarOpen,
   onOpenStructureModal,
   onOpenSettingsModal,
   onOpenTitlePageModal,
@@ -275,6 +282,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "edit-spellcheck", name: spellcheckEnabled ? "Disable Spellcheck" : "Enable Spellcheck", category: "Edit", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setSpellcheckEnabled(!spellcheckEnabled); onClose(); } },
 
     // View
+    ...(toggleSidebar ? [{ id: "view-toggle-sidebar", name: isSidebarOpen ? "Hide Sidebar" : "Show Sidebar", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } }] : []),
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <FullscreenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },
     { id: "view-focus-mode", name: lineFocusEnabled ? "Disable Focus Mode" : "Enable Focus Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setLineFocusEnabled(!lineFocusEnabled); onClose(); } },
@@ -408,13 +416,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         paper: {
           sx: {
             zoom: `${appScale}%`,
-            borderRadius: 0,
-            backgroundColor: theme.palette.background.paper + (isDark ? "d9" : "eb"),
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            borderRadius: "14px",
+            overflow: "hidden",
+            backgroundColor: theme.palette.background.paper + (isDark ? "e6" : "f2"),
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
             border: "1px solid",
-            borderColor: "divider",
-            boxShadow: isDark ? "none" : theme.shadows[8],
+            borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)",
+            boxShadow: isDark
+              ? "0 20px 48px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08)"
+              : "0 20px 48px -8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04)",
             backgroundImage: "none",
             color: theme.palette.text.primary,
             cursor: "none",
@@ -422,7 +433,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         },
       }}
     >
-      <Box data-tour-palette sx={{ px: 2, py: 1 }}>
+      <Box data-tour-palette sx={{ p: 1.5, pb: 1 }}>
         <TextField
           inputRef={inputRef}
           placeholder="Type a command or search..."
@@ -438,20 +449,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
             input: {
               autoComplete: "off",
               sx: {
-                fontSize: "0.85rem",
+                fontSize: "0.88rem",
                 "& fieldset": { border: "none" },
                 "&:hover fieldset": { border: "none" },
                 "&.Mui-focused fieldset": { border: "none" },
-                bgcolor: isDark ? `${theme.palette.text.primary}14` : `${theme.palette.text.primary}0a`,
-                borderRadius: 0,
+                bgcolor: isDark ? `${theme.palette.text.primary}12` : `${theme.palette.text.primary}08`,
+                borderRadius: "8px",
                 px: 1.5,
+                py: 0.3,
                 color: theme.palette.text.primary,
                 "& input": { color: theme.palette.text.primary },
-                "& input::placeholder": { color: theme.palette.text.secondary, opacity: 0.5 },
+                "& input::placeholder": { color: theme.palette.text.secondary, opacity: 0.6 },
               },
               startAdornment: (
-                <Box sx={{ display: "flex", color: "text.secondary", mr: 1 }}>
-                  <SearchIcon sx={{ fontSize: 18 }} />
+                <Box sx={{ display: "flex", color: "var(--button-color, primary.main)", mr: 1.2 }}>
+                  <SearchIcon sx={{ fontSize: 20 }} />
                 </Box>
               ),
             },
@@ -465,21 +477,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
             No results found for "{search}"
           </Typography>
         ) : (
-          <List disablePadding>
+          <List disablePadding sx={{ px: 1, py: 0.5 }}>
             {Object.keys(groupedCommands).map((cat) => (
               <Box key={cat}>
                 <ListSubheader
                   sx={{
-                    bgcolor: theme.palette.background.paper,
-                    color: theme.palette.text.secondary,
+                    bgcolor: "transparent",
+                    color: "text.secondary",
                     fontSize: 10,
                     fontWeight: 700,
                     textTransform: "uppercase",
+                    letterSpacing: "0.05em",
                     py: 0.5,
-                    px: 2,
-                    lineHeight: "26px",
+                    px: 1.5,
+                    lineHeight: "24px",
                     zIndex: 2,
-                    borderBottom: `1px solid ${theme.palette.divider}`,
                   }}
                 >
                   {cat}
@@ -495,14 +507,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
                       onClick={cmd.action}
                       onMouseEnter={() => setSelectedIndex(index)}
                       sx={{
-                        py: 1,
-                        px: 2,
-                        gap: 1,
+                        py: 0.8,
+                        px: 1.5,
+                        my: 0.25,
+                        borderRadius: "6px",
+                        gap: 1.2,
+                        transition: "all var(--duration-fast) ease",
                         "&.Mui-selected": {
                           backgroundColor: `${theme.palette.primary.main}20`,
                         },
                         "&:hover": {
-                          backgroundColor: `${theme.palette.primary.main}10`,
+                          backgroundColor: `${theme.palette.primary.main}12`,
                         },
                       }}
                     >
@@ -510,14 +525,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
                         {cmd.icon}
                       </ListItemIcon>
                       <ListItemText
-                        primary={<Typography variant="body2" sx={{ fontWeight: isSelected ? 600 : 400 }}>{cmd.name}</Typography>}
+                        primary={<Typography variant="body2" sx={{ fontWeight: isSelected ? 600 : 400, fontSize: "0.84rem" }}>{cmd.name}</Typography>}
                       />
                       {cmd.shortcut && (
                         <Chip
                            label={cmd.shortcut}
                            size="small"
                            variant="outlined"
-                           sx={{ fontSize: 9, height: 16, fontFamily: "monospace", opacity: 0.7, borderColor: "divider" }}
+                           sx={{ fontSize: 9.5, height: 18, fontFamily: "monospace", opacity: 0.85, borderRadius: "4px", borderColor: "divider" }}
                         />
                       )}
                     </ListItemButton>
@@ -534,13 +549,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
       <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: isDark ? `${theme.palette.background.default}66` : "action.hover", color: theme.palette.text.secondary }}>
         <Box sx={{ display: "flex", gap: 1.5 }}>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0 }}>↑↓</Typography> navigate
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.6, py: 0.2, borderRadius: "4px" }}>↑↓</Typography> navigate
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0 }}>Enter</Typography> run
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.6, py: 0.2, borderRadius: "4px" }}>Enter</Typography> run
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.5, py: 0.2, borderRadius: 0 }}>Esc</Typography> close
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.6, py: 0.2, borderRadius: "4px" }}>Esc</Typography> close
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.7 }}>ActOne Palette</Typography>

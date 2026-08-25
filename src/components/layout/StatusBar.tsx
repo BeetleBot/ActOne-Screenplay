@@ -14,7 +14,7 @@ import { isProseScript } from "../../utils/scriptMode";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus, files } = useFile();
-  const { isZenMode, activeAmbientTrack, stopAmbientTrack, aiStatus, translationState, setTranslationState, cancelTranslation, activeRightPane, setActiveRightPane, spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage } = useUI();
+  const { isZenMode, aiStatus, translationState, setTranslationState, cancelTranslation, activeRightPane, setActiveRightPane, spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage } = useUI();
   const activeFile = files.find(f => f.id === activeFileId);
   const isMarkdown = isProseScript(scripts[activeScriptIndex], filePath);
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
@@ -182,42 +182,51 @@ export const StatusBar = React.memo(() => {
     <Box 
       id="status-bar"
       sx={{ 
-        height: isZenMode ? 0 : 28, 
-        bgcolor: "background.paper", 
-        borderTop: isZenMode ? 0 : 1,
-        borderColor: "divider",
+        height: isZenMode ? 0 : 30, 
+        bgcolor: 'transparent', 
+        borderTop: 0,
         display: "flex", 
         alignItems: "center", 
         justifyContent: "space-between", 
-        pl: 2, 
-        pr: 0, 
+        pl: 1.5, 
+        pr: 0.5, 
         userSelect: "none", 
         flexShrink: isZenMode ? 1 : 0,
         pointerEvents: isZenMode ? 'none' : 'auto',
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
-        <Typography
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+        <Box
           id="status-file-name"
           onClick={handleScriptClick}
-          variant="caption" 
           sx={{ 
             fontSize: 11, 
             color: "text.secondary",
             cursor: !hasNoScripts && isBundle && scripts.length > 0 ? "pointer" : "default",
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            '&:hover': !hasNoScripts && isBundle && scripts.length > 0 ? { color: "primary.main" } : {},
+            bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
+            border: "none",
+            px: 1.25,
+            py: 0.25,
+            borderRadius: "20px",
+            '&:hover': !hasNoScripts && isBundle && scripts.length > 0 ? { 
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+              color: "primary.main" 
+            } : {},
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
             maxWidth: { xs: 150, sm: 250, md: 350 },
-            flexShrink: 0
+            flexShrink: 0,
+            transition: "all 0.15s ease",
           }}
         >
-          {hasNoScripts ? "Project: " : "File: "}
-          <strong style={{ color: "var(--text-main)", marginLeft: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <Typography variant="caption" sx={{ fontSize: 11, color: "inherit", fontWeight: 500 }}>
+            {hasNoScripts ? "Project: " : "File: "}
+          </Typography>
+          <strong style={{ color: "var(--text-main)", marginLeft: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }}>
             {hasNoScripts ? fileName : (isBundle ? `${activeScriptName} (${fileName})` : fileName)}
           </strong>
           {hasNoScripts ? (
@@ -227,7 +236,7 @@ export const StatusBar = React.memo(() => {
           ) : (
             isBundle && scripts.length > 0 && <span style={{ marginLeft: 4, fontSize: 8, flexShrink: 0 }}>▼</span>
           )}
-        </Typography>
+        </Box>
 
 
         {saveStatus !== "idle" && (
@@ -439,37 +448,6 @@ export const StatusBar = React.memo(() => {
 
         <Box sx={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, flexShrink: 0, mr: 2 }}>
-            {activeAmbientTrack && (
-              <Typography
-                id="status-ambient"
-                variant="caption"
-                onClick={stopAmbientTrack}
-                sx={{
-                  fontSize: 10,
-                  color: "primary.main",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  cursor: "pointer",
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-                  border: "1px solid",
-                  borderColor: (t) => alpha(t.palette.primary.main, 0.15),
-                  px: 1.2,
-                  py: 0.25,
-                  borderRadius: 0,
-                  transition: "all var(--duration-normal) ease",
-                  "&:hover": {
-                    bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
-                  },
-                }}
-                title={`Click to stop: ${activeAmbientTrack}`}
-              >
-                <span className="ambient-pulse" style={{ display: "inline-block", width: 4, height: 4, borderRadius: "50%", backgroundColor: "currentColor" }} />
-                ♪ {activeAmbientTrack}
-              </Typography>
-            )}
-
             {sprintDetails && (
               <Typography
                 id="status-sprint"
@@ -652,9 +630,10 @@ export const StatusBar = React.memo(() => {
             title={hasNoScripts ? "Muse is unavailable when no script is open" : (museConfigured ? "Muse is configured — click to open the Muse pane" : "Muse is not configured — click to open Muse settings")}
             aria-label={hasNoScripts ? "Muse unavailable" : (museConfigured ? "Open Muse pane" : "Open Muse settings")}
             sx={{
-              width: 28,
-              alignSelf: "stretch",
-              ml: 0,
+              width: 26,
+              height: 22,
+              alignSelf: "center",
+              mr: 0.5,
               flexShrink: 0,
               display: "flex",
               alignItems: "center",
@@ -667,7 +646,7 @@ export const StatusBar = React.memo(() => {
                     : "linear-gradient(135deg, #ef5350 0%, #c62828 100%)"),
               opacity: hasNoScripts ? 0.35 : 1,
               pointerEvents: hasNoScripts ? "none" : "auto",
-              borderRadius: 0,
+              borderRadius: "6px",
               border: "none",
               padding: 0,
               cursor: hasNoScripts ? "default" : "pointer",

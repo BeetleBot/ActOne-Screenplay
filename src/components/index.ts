@@ -23,7 +23,6 @@ export { TodoView } from './TodoView';
 export { WelcomeScreenWindow } from './WelcomeScreen';
 export { OnboardingTour } from './OnboardingTour';
 export { CrossWindowTourCard } from './CrossWindowTourCard';
-export { AmbientPanel } from './AmbientPanel';
 export { WindowResizeHandles } from './WindowResizeHandles';
 export { SettingsWindow } from './SettingsWindow';
 export { HelpWindow } from './HelpWindow';

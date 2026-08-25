@@ -4,7 +4,6 @@ import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 import { setPrefs } from "../theme/AppPrefsEngine";
 import { setThemeState } from "../theme/ThemeEngine";
-import { ambientSoundEngine } from "../utils/AmbientSoundEngine";
 import { getTauriWindow } from "../utils/window";
 
 export interface UIContextProps {
@@ -16,11 +15,6 @@ export interface UIContextProps {
   setIsZenMode: (enabled: boolean) => void;
   typewriterMode: boolean;
   setTypewriterMode: (enabled: boolean) => void;
-  activeAmbientTrack: string | null;
-  playAmbientTrack: (track: string) => void;
-  stopAmbientTrack: () => void;
-  ambientVolume: number;
-  setAmbientVolume: (vol: number) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   zoomLevel: number;
@@ -219,36 +213,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   useEffect(() => {
     document.documentElement.style.setProperty("--app-scale", `${appScale}%`);
   }, [appScale]);
-
-  const [activeAmbientTrack, setActiveAmbientTrack] = useState<string | null>(null);
-  const [ambientVolume, setAmbientVolumeState] = useState<number>(() => {
-    try {
-      const stored = localStorage.getItem("ambient-volume");
-      return stored ? parseFloat(stored) : 0.5;
-    } catch {
-      return 0.5;
-    }
-  });
-
-  const playAmbientTrack = (track: string) => {
-    setActiveAmbientTrack(track);
-    ambientSoundEngine.play(track);
-  };
-
-  const stopAmbientTrack = () => {
-    setActiveAmbientTrack(null);
-    ambientSoundEngine.stop();
-  };
-
-  const setAmbientVolume = (vol: number) => {
-    setAmbientVolumeState(vol);
-    ambientSoundEngine.setVolume(vol);
-    try { localStorage.setItem("ambient-volume", String(vol)); } catch { /* localStorage may be full or unavailable */ }
-  };
-
-  useEffect(() => {
-    ambientSoundEngine.setVolume(ambientVolume);
-  }, [ambientVolume]);
 
   const [isZenMode, setIsZenModeState] = useState(false);
 
@@ -474,11 +438,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setTranslationState,
         registerTranslationAbort,
         cancelTranslation,
-        activeAmbientTrack,
-        playAmbientTrack,
-        stopAmbientTrack,
-        ambientVolume,
-        setAmbientVolume,
       }}
     >
       {children}
