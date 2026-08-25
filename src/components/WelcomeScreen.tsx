@@ -652,8 +652,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             borderRadius: "14px",
             border: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)",
             bgcolor: "background.paper",
-            boxShadow: (t) => t.palette.mode === "dark" 
-              ? "0 10px 30px -4px rgba(0,0,0,0.5), 0 2px 8px -2px rgba(0,0,0,0.3)" 
+            boxShadow: (t) => t.palette.mode === "dark"
+              ? "0 10px 30px -4px rgba(0,0,0,0.5), 0 2px 8px -2px rgba(0,0,0,0.3)"
               : "0 8px 24px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03)",
             display: "flex",
             flexDirection: "column",
@@ -835,8 +835,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               bgcolor: "background.paper",
               border: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)",
               borderRadius: "14px",
-              boxShadow: (t) => t.palette.mode === "dark" 
-                ? "0 10px 30px -4px rgba(0,0,0,0.5), 0 2px 8px -2px rgba(0,0,0,0.3)" 
+              boxShadow: (t) => t.palette.mode === "dark"
+                ? "0 10px 30px -4px rgba(0,0,0,0.5), 0 2px 8px -2px rgba(0,0,0,0.3)"
                 : "0 8px 24px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03)",
               overflow: "hidden",
             }}
