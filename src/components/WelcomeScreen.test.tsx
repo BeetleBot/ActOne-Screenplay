@@ -20,6 +20,7 @@ vi.mock("../hooks/useStoreUpdateCheck", () => ({
 vi.mock("../context/WindowContext", () => ({
   useModalWindows: () => ({
     openHelpWindow: vi.fn(),
+    openTutorialsWindow: vi.fn(),
   }),
 }));
 
@@ -27,6 +28,11 @@ vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => ({
     close: vi.fn(),
     minimize: vi.fn(),
+    maximize: vi.fn(),
+    unmaximize: vi.fn(),
+    isMaximized: vi.fn().mockResolvedValue(false),
+    isResizable: vi.fn().mockResolvedValue(false),
+    onResized: vi.fn().mockResolvedValue(() => {}),
     startDragging: vi.fn(),
   }),
 }));
@@ -44,6 +50,7 @@ vi.mock("../context/FileContext", () => ({
     recentFiles: mockRecentFiles,
     openFilePath: vi.fn(),
     removeFromRecent: vi.fn(),
+    importAsActoneProject: vi.fn(),
   }),
 }));
 
@@ -81,20 +88,14 @@ describe("WelcomeScreenWindow", () => {
     expect(screen.queryByText("Script 11.fountain")).not.toBeInTheDocument();
   });
 
-  it("renders the version number in the header and status bar", () => {
+  it("renders the version number in status bar", () => {
     render(<WelcomeScreenWindow />);
-    expect(screen.getAllByText("vtest-version [beta]").length).toBe(2);
+    expect(screen.getByText("vtest-version [beta]")).toBeInTheDocument();
   });
 
-  it("renders the Welcome To ActOne Screenplay title", () => {
+  it("renders the ActOne Screenplay title", () => {
     render(<WelcomeScreenWindow />);
-    expect(screen.getByText("Welcome To ActOne Screenplay!")).toBeInTheDocument();
-  });
-
-  it("renders a quote on screen", () => {
-    render(<WelcomeScreenWindow />);
-    const quoteChars = screen.getAllByText(/["\u201c]/);
-    expect(quoteChars.length).toBeGreaterThan(0);
+    expect(screen.getByText("ActOne Screenplay")).toBeInTheDocument();
   });
 
   it("renders action cards with labels", () => {
@@ -106,21 +107,19 @@ describe("WelcomeScreenWindow", () => {
     expect(screen.getByText("Tutorials")).toBeInTheDocument();
   });
 
-  it("shows keyboard shortcut hints and descriptions", () => {
+  it("shows action button CTA labels", () => {
     render(<WelcomeScreenWindow />);
-    expect(screen.getByText("Ctrl+N")).toBeInTheDocument();
-    expect(screen.getByText(".actone files")).toBeInTheDocument();
-    expect(screen.getByText("FDX, FadeIn, Fountain")).toBeInTheDocument();
+    expect(screen.getByText("Create")).toBeInTheDocument();
+    expect(screen.getByText("Open")).toBeInTheDocument();
+    expect(screen.getByText("Import")).toBeInTheDocument();
+    expect(screen.getByText("Choose")).toBeInTheDocument();
+    expect(screen.getByText("Start")).toBeInTheDocument();
   });
 
-  it("shows Interactive tours on Tutorials", () => {
-    render(<WelcomeScreenWindow />);
-    expect(screen.getByText("Interactive tours")).toBeInTheDocument();
-  });
-
-  it("renders Discord and Help buttons", () => {
+  it("renders Discord, Theme, and Help buttons", () => {
     render(<WelcomeScreenWindow />);
     expect(screen.getByText("Discord")).toBeInTheDocument();
+    expect(screen.getByText("Theme")).toBeInTheDocument();
     expect(screen.getByLabelText("Help")).toBeInTheDocument();
   });
 
@@ -132,10 +131,5 @@ describe("WelcomeScreenWindow", () => {
   it("does not show update button when no update available", () => {
     render(<WelcomeScreenWindow />);
     expect(screen.queryByText("Update Available")).not.toBeInTheDocument();
-  });
-
-  it("renders the Structure template subtitle on Templates", () => {
-    render(<WelcomeScreenWindow />);
-    expect(screen.getByText("Structure template")).toBeInTheDocument();
   });
 });

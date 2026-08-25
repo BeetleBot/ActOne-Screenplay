@@ -9,10 +9,16 @@ import { Box, Typography, useTheme, alpha, Menu, MenuItem, IconButton, Tooltip }
 import { logger } from "../utils/logger";
 import { parseScriptFileToFountain } from "../utils/text";
 import { ThemeLogo } from "./ThemeLogo";
-import { AddIcon, FolderOpenIcon, CombineColumnsIcon, HelpOutlinedIcon, DeleteIcon, DiscordIcon, PlayArrowIcon, MenuBookIcon, DescriptionIcon, ColorLensIcon, DownloadIcon } from "./Icons";
-import { getRandomQuote, type Quote } from "../data/quotes";
+import { TitleBar } from "./TitleBar";
+import {
+  HelpOutlinedIcon,
+  DeleteIcon,
+  DiscordIcon,
+  MenuBookIcon,
+  DescriptionIcon,
+  ColorLensIcon,
+} from "./Icons";
 import { themes as themeList, ADAPTIVE_THEME_META, THEME_CATEGORIES } from "../theme/muiTheme";
-
 
 interface WelcomeScreenWindowProps {
   standalone?: boolean;
@@ -56,33 +62,31 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const appVersion = __APP_VERSION__;
   const appChannel = __APP_CHANNEL__;
 
-  const [quote, setQuote] = useState<Quote>(getRandomQuote());
-  const handleQuoteClick = () => setQuote(getRandomQuote());
-  const emptyMessages = [
-    "What are you doing? This is empty. Start writing!",
-    "No recent projects yet. What are you waiting for?",
-    "This space is screaming for a screenplay.",
-    "Blank pages don't write themselves!",
-    "Your next masterpiece is just a click away.",
-    "Don't leave me hanging. Create something!",
-  ];
-  const [emptyMessage] = useState(() => emptyMessages[Math.floor(Math.random() * emptyMessages.length)]);
   const [themeAnchor, setThemeAnchor] = useState<null | HTMLElement>(null);
   const { theme: currentThemeId, setTheme: setAppTheme, customThemes } = useAppTheme();
   const theme = useTheme();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
 
   useEffect(() => {
-    invoke<string[]>("get_cli_args").then((paths) => {
-      if (paths && paths.length > 0) {
-        const filePath = paths[0];
-        localStorage.setItem("pending-open-path", filePath);
-        localStorage.setItem("pending-action", "open");
-        createEditorWindow("open").then(created => {
-          if (created) closeWelcome();
-        });
-      }
-    }).catch(e => logger.error("welcome", "get_cli_args failed", e));
+    const timer = requestAnimationFrame(() => {
+      window.dispatchEvent(new MouseEvent("mousemove", { clientX: 1, clientY: 1 }));
+    });
+    return () => cancelAnimationFrame(timer);
+  }, []);
+
+  useEffect(() => {
+    invoke<string[]>("get_cli_args")
+      .then((paths) => {
+        if (paths && paths.length > 0) {
+          const filePath = paths[0];
+          localStorage.setItem("pending-open-path", filePath);
+          localStorage.setItem("pending-action", "open");
+          createEditorWindow("open").then((created) => {
+            if (created) closeWelcome();
+          });
+        }
+      })
+      .catch((e) => logger.error("welcome", "get_cli_args failed", e));
   }, []);
 
   useEffect(() => {
@@ -96,14 +100,18 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           const filePath = paths[0];
           localStorage.setItem("pending-open-path", filePath);
           localStorage.setItem("pending-action", "open");
-          createEditorWindow("open").then(created => {
+          createEditorWindow("open").then((created) => {
             if (created) closeWelcome();
           });
         });
-      } catch (e) { logger.error("welcome", "Failed to listen for file-opened events", e); }
+      } catch (e) {
+        logger.error("welcome", "Failed to listen for file-opened events", e);
+      }
     };
     setup();
-    return () => { if (unlisten) unlisten(); };
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, []);
 
   useEffect(() => {
@@ -121,7 +129,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             unlisten();
             closeWelcome();
           });
-          setTimeout(() => { unlisten(); }, 10000);
+          setTimeout(() => {
+            unlisten();
+          }, 10000);
         }
       } else if (ctrl && e.key === "o") {
         e.stopPropagation();
@@ -138,10 +148,14 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 unlisten();
                 closeWelcome();
               });
-              setTimeout(() => { unlisten(); }, 10000);
+              setTimeout(() => {
+                unlisten();
+              }, 10000);
             }
           }
-        } catch (err) { logger.error("welcome", "Ctrl+O failed", err); }
+        } catch (err) {
+          logger.error("welcome", "Ctrl+O failed", err);
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown, true);
@@ -160,9 +174,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
       });
       await Promise.race([
         new Promise<void>((resolve) => webview.once("tauri://created", () => resolve())),
-        new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), 5000)
-        ),
+        new Promise<void>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
       ]);
       return true;
     } catch (e) {
@@ -190,10 +202,15 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             unlisten();
             closeWelcome();
           });
-          setTimeout(() => { unlisten(); }, 10000);
+          setTimeout(() => {
+            unlisten();
+          }, 10000);
           return;
         }
-      } catch (e) { logger.error("welcome", "handleNew failed", e); }
+      } catch (e) {
+        logger.error("welcome", "handleNew failed", e);
+      }
+      return;
     }
     newFile();
   };
@@ -212,11 +229,16 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               unlisten();
               closeWelcome();
             });
-            setTimeout(() => { unlisten(); }, 10000);
+            setTimeout(() => {
+              unlisten();
+            }, 10000);
             return;
           }
         }
-      } catch (e) { logger.error("welcome", "handleOpen failed", e); }
+      } catch (e) {
+        logger.error("welcome", "handleOpen failed", e);
+      }
+      return;
     }
     await openFile();
   };
@@ -224,7 +246,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const handleImport = async (format?: string) => {
     if (standalone) {
       try {
-        const result = await invoke<{ path: string; name: string; extension: string } | null>("import_script_dialog", { format: format || null });
+        const result = await invoke<{ path: string; name: string; extension: string } | null>("import_script_dialog", {
+          format: format || null,
+        });
         if (result && result.path) {
           let fountainText = "";
           if (result.path.toLowerCase().endsWith(".fadein")) {
@@ -234,7 +258,13 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             const raw = await invoke<string>("read_file_content", { path: result.path });
             fountainText = parseScriptFileToFountain(result.path, raw);
           }
-          const scriptName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "") || "Untitled";
+          const scriptName =
+            result.name ||
+            result.path
+              .split(/[/\\]/)
+              .pop()
+              ?.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "") ||
+            "Untitled";
 
           localStorage.setItem("pending-import-name", scriptName);
           localStorage.setItem("pending-import-content", fountainText);
@@ -246,7 +276,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               unlisten();
               closeWelcome();
             });
-            setTimeout(() => { unlisten(); }, 10000);
+            setTimeout(() => {
+              unlisten();
+            }, 10000);
             return;
           }
         }
@@ -256,7 +288,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
       return;
     }
 
-    // In-browser / non-standalone fallback
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".fdx,.fadein,.fountain,.txt,.spmd";
@@ -277,8 +308,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     input.click();
   };
 
-
-
   const handleTemplates = async () => {
     if (standalone) {
       try {
@@ -290,10 +319,15 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             unlisten();
             closeWelcome();
           });
-          setTimeout(() => { unlisten(); }, 10000);
+          setTimeout(() => {
+            unlisten();
+          }, 10000);
           return;
         }
-      } catch (e) { logger.error("welcome", "handleTemplates failed", e); }
+      } catch (e) {
+        logger.error("welcome", "handleTemplates failed", e);
+      }
+      return;
     }
     newFile();
   };
@@ -304,8 +338,14 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         localStorage.setItem("pending-open-path", path);
         localStorage.setItem("pending-action", "open");
         const created = await createEditorWindow("open");
-        if (created) { closeWelcome(); return; }
-      } catch (e) { logger.error("welcome", "handleOpenRecent failed", e); }
+        if (created) {
+          closeWelcome();
+          return;
+        }
+      } catch (e) {
+        logger.error("welcome", "handleOpenRecent failed", e);
+      }
+      return;
     }
     openFilePath(path);
   };
@@ -334,160 +374,20 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        bgcolor: theme.palette.background.paper,
+        bgcolor: theme.palette.background.default,
         color: theme.palette.text.primary,
         overflow: "hidden",
         boxSizing: "border-box",
-        fontFamily: '"Noto Sans", sans-serif',
-        "& .MuiTypography-root": { fontFamily: '"Noto Sans", sans-serif' },
+        userSelect: "none",
       }}
     >
-      <Box sx={{ display: "flex", height: 120, minHeight: 120, borderBottom: `1px solid ${theme.palette.divider}` }}>
-          <Box
-            onMouseDown={(e) => { if (e.button === 0) { getCurrentWindow().startDragging().catch(() => {}); } }}
-            sx={{
-              width: "20%",
-              borderRight: `1px solid rgba(0,0,0,0.2)`,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: theme.palette.primary.main,
-              p: 1,
-              boxSizing: "border-box",
-              cursor: "grab",
-            }}
-          >
-            <Box sx={{ width: 100, height: 100, color: theme.palette.primary.contrastText, lineHeight: 0, filter: `drop-shadow(0 0 12px ${alpha(theme.palette.primary.contrastText, 0.3)})` }}>
-            <ThemeLogo variant="solid" />
-          </Box>
-        </Box>
+      <TitleBar
+        title="Welcome To ActOne!"
+        onClose={closeWelcome}
+        updateAvailable={!!updateAvailable}
+        installUpdate={installUpdate}
+      />
 
-        <Box sx={{ width: "60%", display: "flex", flexDirection: "column", borderRight: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}>
-          <Box
-            sx={{
-              height: 40,
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Typography sx={{ fontWeight: 800, fontSize: 18, letterSpacing: "-0.01em", color: theme.palette.text.primary }}>
-              Welcome To ActOne Screenplay!
-            </Typography>
-          </Box>
-          <Box
-            className="clickable"
-            onClick={handleQuoteClick}
-            sx={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              px: 2,
-              textAlign: "center",
-              cursor: "pointer",
-              "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
-            }}
-          >
-            <Box key={quote.text} sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
-              <Typography
-                sx={{
-                  fontStyle: "italic",
-                  fontSize: 13.5,
-                  fontWeight: 400,
-                  color: theme.palette.text.secondary,
-                  lineHeight: 1.45,
-                  letterSpacing: 0.1,
-                  fontFamily: '"Georgia", "Times New Roman", serif !important',
-                }}
-              >
-                &ldquo;{quote.text}&rdquo;
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: theme.palette.text.disabled,
-                  lineHeight: 1.2,
-                  letterSpacing: 0.3,
-                  fontFamily: '"Noto Sans", sans-serif !important',
-                }}
-              >
-                &mdash; {quote.author}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            width: "20%",
-            display: "flex",
-            flexDirection: "column",
-            boxSizing: "border-box",
-            bgcolor: theme.palette.background.paper,
-          }}
-        >
-          <Box
-            sx={{
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderBottom: `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            <Typography sx={{ fontSize: 12, fontWeight: 600, color: theme.palette.text.disabled }}>
-              {appVersion ? `v${appVersion} [${appChannel}]` : "version"}
-            </Typography>
-          </Box>
-
-          <Box
-            className="clickable"
-            onClick={() => {
-              import("@tauri-apps/plugin-opener")
-                .then(({ openUrl }) => openUrl("https://discord.gg/zpFPpdAxnW"))
-                .catch(() => window.open("https://discord.gg/zpFPpdAxnW", "_blank"));
-            }}
-            sx={{
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 0.5,
-              cursor: "pointer",
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08), textDecoration: "underline" },
-            }}
-          >
-            <DiscordIcon sx={{ fontSize: 18, color: theme.palette.text.primary }} />
-            <Typography sx={{ fontSize: 13, fontWeight: 500, color: theme.palette.text.primary }}>
-              Discord
-            </Typography>
-          </Box>
-
-          <Box
-            className="clickable"
-            onClick={handleOpenThemeMenu}
-            sx={{
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 0.5,
-              cursor: "pointer",
-              "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08), textDecoration: "underline" },
-            }}
-          >
-            <ColorLensIcon sx={{ fontSize: 18, color: theme.palette.text.primary }} />
-            <Typography sx={{ fontSize: 13, fontWeight: 500, color: theme.palette.text.primary }}>
-              Theme
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
       <Menu
         anchorEl={themeAnchor}
         open={Boolean(themeAnchor)}
@@ -496,9 +396,12 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           paper: {
             sx: {
               border: `1px solid ${theme.palette.divider}`,
-              boxShadow: "none",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
+              borderRadius: "8px",
               minWidth: 220,
               maxHeight: 420,
+              mt: -0.5,
+              bgcolor: theme.palette.background.paper,
             },
           },
         }}
@@ -509,15 +412,15 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           return (
             <Box key={cat.category}>
               {catIdx === 0 && (
-                <Box sx={{ pt: 0.5, pb: 0.25, px: 2 }}>
-                  <Typography sx={{ fontSize: 9.5, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
+                <Box sx={{ pt: 0.75, pb: 0.25, px: 2 }}>
+                  <Typography sx={{ fontSize: 10, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
                     {cat.label}
                   </Typography>
                 </Box>
               )}
               {catIdx > 0 && (
                 <Box sx={{ pt: 0.75, pb: 0.25, px: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-                  <Typography sx={{ fontSize: 9.5, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
+                  <Typography sx={{ fontSize: 10, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
                     {cat.label}
                   </Typography>
                 </Box>
@@ -527,13 +430,18 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                   key={cat.adaptiveId}
                   selected={currentThemeId === cat.adaptiveId}
                   onClick={() => handleSelectTheme(cat.adaptiveId!)}
-                  sx={{ py: 0.5 }}
+                  sx={{ py: 0.6, px: 1.5, mx: 0.5, borderRadius: "5px" }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
                     <Box
                       sx={{
-                        width: 22, height: 22, flexShrink: 0,
-                        display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden",
+                        width: 18,
+                        height: 18,
+                        flexShrink: 0,
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        overflow: "hidden",
+                        borderRadius: "3px",
                         border: `1.5px solid ${currentThemeId === cat.adaptiveId ? theme.palette.primary.main : theme.palette.divider}`,
                       }}
                     >
@@ -557,13 +465,18 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                     key={t.id}
                     selected={isActive}
                     onClick={() => handleSelectTheme(t.id)}
-                    sx={{ py: 0.5 }}
+                    sx={{ py: 0.6, px: 1.5, mx: 0.5, borderRadius: "5px" }}
                   >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
                       <Box
                         sx={{
-                          width: 22, height: 22, flexShrink: 0,
-                          display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden",
+                          width: 18,
+                          height: 18,
+                          flexShrink: 0,
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          overflow: "hidden",
+                          borderRadius: "3px",
                           border: `1.5px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
                         }}
                       >
@@ -588,7 +501,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         {customThemes.length > 0 && (
           <Box>
             <Box sx={{ pt: 0.75, pb: 0.25, px: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-              <Typography sx={{ fontSize: 9.5, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
+              <Typography sx={{ fontSize: 10, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
                 CUSTOM
               </Typography>
             </Box>
@@ -599,13 +512,18 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                   key={t.id}
                   selected={isActive}
                   onClick={() => handleSelectTheme(t.id)}
-                  sx={{ py: 0.5 }}
+                  sx={{ py: 0.6, px: 1.5, mx: 0.5, borderRadius: "5px" }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
                     <Box
                       sx={{
-                        width: 22, height: 22, flexShrink: 0,
-                        display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden",
+                        width: 18,
+                        height: 18,
+                        flexShrink: 0,
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        overflow: "hidden",
+                        borderRadius: "3px",
                         border: `1.5px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
                       }}
                     >
@@ -627,315 +545,425 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         )}
       </Menu>
 
-      <Box sx={{ display: "flex", height: 120, minHeight: 120, borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}>
-        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box
-            className="clickable"
-            onClick={handleNew}
-            sx={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              cursor: "pointer",
-              p: 1,
-              boxSizing: "border-box",
-              transition: "all 0.15s ease",
-              border: `2px solid transparent`,
-              "&:hover": {
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                borderColor: alpha(theme.palette.primary.main, 0.4),
-              },
-            }}
-          >
-            <AddIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
-            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>New Project</Typography>
-            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Ctrl+N</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box
-            className="clickable"
-            onClick={handleOpen}
-            sx={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              cursor: "pointer",
-              p: 1,
-              boxSizing: "border-box",
-              transition: "all 0.15s ease",
-              "&:hover": {
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-              },
-            }}
-          >
-            <FolderOpenIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
-            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Open Project</Typography>
-            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>.actone files</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box
-            className="clickable"
-            onClick={() => handleImport()}
-            sx={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              cursor: "pointer",
-              p: 1,
-              boxSizing: "border-box",
-              transition: "all 0.15s ease",
-              "&:hover": {
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-              },
-            }}
-          >
-            <DescriptionIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
-            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Import Script</Typography>
-            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>FDX, FadeIn, Fountain</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ width: "20%", borderRight: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box
-            className="clickable"
-            onClick={handleTemplates}
-            sx={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              cursor: "pointer",
-              p: 1,
-              boxSizing: "border-box",
-              transition: "all 0.15s ease",
-              "&:hover": {
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-              },
-            }}
-          >
-            <CombineColumnsIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
-            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Templates</Typography>
-            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Structure template</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ width: "20%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Box
-            className="clickable"
-            onClick={() => onOpenTutorials ? onOpenTutorials() : openTutorialsWindow()}
-            sx={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              cursor: "pointer",
-              p: 1,
-              boxSizing: "border-box",
-              transition: "all 0.15s ease",
-              "&:hover": {
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-              },
-            }}
-          >
-            <PlayArrowIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mb: 0.75 }} />
-            <Typography sx={{ fontWeight: "bold", fontSize: 13, color: theme.palette.text.primary }}>Tutorials</Typography>
-            <Typography sx={{ fontSize: 10, color: theme.palette.text.secondary }}>Interactive tours</Typography>
-          </Box>
-        </Box>
-      </Box>
-
+      {/* Main Body - Floating Islands Layout */}
       <Box
         sx={{
           flex: 1,
-          bgcolor: theme.palette.background.paper,
-          p: 2,
           display: "flex",
-          flexDirection: "column",
-          boxSizing: "border-box",
+          minHeight: 0,
           overflow: "hidden",
+          p: 1,
+          gap: 1,
         }}
       >
-        <Typography sx={{ fontSize: 16, fontWeight: "bold", mb: 1, color: theme.palette.text.primary }}>
-          Recent files
-        </Typography>
-
+        {/* Left Sidebar: Recent Screenplays */}
         <Box
           sx={{
-            flex: 1,
-            overflowY: "auto",
-            pr: 1,
-            "&::-webkit-scrollbar": {
-              width: "16px",
-            },
-            "&::-webkit-scrollbar-track": {
-              background: theme.palette.background.paper,
-              borderLeft: `1px solid ${theme.palette.divider}`,
-            },
-            "&::-webkit-scrollbar-thumb": {
-              background: theme.palette.text.secondary,
-              border: `3px solid ${theme.palette.background.paper}`,
-            },
+            width: "38%",
+            minWidth: 240,
+            maxWidth: 320,
+            borderRadius: "12px",
+            border: `1px solid ${theme.palette.divider}`,
+            bgcolor: "background.paper",
+            boxShadow: (t) => t.palette.mode === "dark" ? "0 8px 24px rgba(0,0,0,0.35)" : "0 2px 12px rgba(0,0,0,0.06)",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
           }}
         >
-          {recentFiles.length > 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-              {recentFiles.slice(0, 10).map((item: RecentFile) => {
-                const fileType = getFileTypeIcon(item.name);
-                const directory = getDirectory(item.path);
-                const relTime = getRelativeTime(item.lastOpened);
-                return (
-                  <Box
-                    key={item.path}
-                    className="clickable"
-                    onClick={() => handleOpenRecent(item.path)}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.25,
-                      bgcolor: theme.palette.background.paper,
-                      border: `1px solid ${theme.palette.divider}`,
-                      px: 1.25,
-                      py: 0.9,
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      position: "relative",
-                      overflow: "hidden",
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.06),
-                        borderColor: alpha(theme.palette.primary.main, 0.4),
-                      },
-                    }}
-                  >
+          <Box sx={{ p: 2, pb: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Recent files
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              px: 1.25,
+              pb: 1.5,
+            }}
+          >
+            {recentFiles.length > 0 ? (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                {recentFiles.slice(0, 10).map((item: RecentFile) => {
+                  const fileType = getFileTypeIcon(item.name);
+                  const directory = getDirectory(item.path);
+                  const relTime = getRelativeTime(item.lastOpened);
+                  return (
                     <Box
+                      key={item.path}
+                      className="clickable"
+                      onClick={() => handleOpenRecent(item.path)}
                       sx={{
-                        width: 30,
-                        height: 30,
-                        minWidth: 30,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        color: theme.palette.primary.main,
-                        flexShrink: 0,
+                        gap: 1.2,
+                        borderRadius: "8px",
+                        px: 1.25,
+                        py: 0.8,
+                        cursor: "pointer",
+                        transition: "all 0.12s ease",
+                        border: `1px solid transparent`,
+                        "&:hover": {
+                          bgcolor: alpha(theme.palette.text.primary, 0.05),
+                          border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                          "& .delete-btn": { opacity: 0.7 },
+                        },
                       }}
                     >
-                      {fileType === "actone" ? (
-                        <MenuBookIcon sx={{ fontSize: 18 }} />
-                      ) : (
-                        <DescriptionIcon sx={{ fontSize: 18 }} />
-                      )}
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0.15 }}>
-                      <Typography
+                      <Box
                         sx={{
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: theme.palette.text.primary,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          lineHeight: 1.25,
+                          width: 24,
+                          height: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: "6px",
+                          bgcolor: fileType === "actone" ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.text.primary, 0.06),
+                          color: fileType === "actone" ? theme.palette.primary.main : theme.palette.text.secondary,
+                          flexShrink: 0,
                         }}
                       >
-                        {item.name}
-                      </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
+                        {fileType === "actone" ? <MenuBookIcon sx={{ fontSize: 14 }} /> : <DescriptionIcon sx={{ fontSize: 14 }} />}
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
                         <Typography
                           sx={{
-                            fontSize: 10,
-                            color: theme.palette.text.secondary,
+                            fontSize: 12.5,
+                            fontWeight: 600,
+                            color: theme.palette.text.primary,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            flex: 1,
-                            minWidth: 0,
-                            lineHeight: 1.2,
+                            lineHeight: 1.25,
                           }}
                         >
-                          {directory}
+                          {item.name}
                         </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: 10,
-                            color: theme.palette.text.disabled,
-                            flexShrink: 0,
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          ·
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: 10,
-                            color: theme.palette.text.disabled,
-                            flexShrink: 0,
-                            lineHeight: 1.2,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {relTime}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0, mt: 0.2 }}>
+                          <Typography
+                            sx={{
+                              fontSize: 10.5,
+                              color: theme.palette.text.disabled,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              flex: 1,
+                              minWidth: 0,
+                              lineHeight: 1.1,
+                            }}
+                          >
+                            {directory}
+                          </Typography>
+                          <Typography sx={{ fontSize: 10.5, color: theme.palette.text.disabled, flexShrink: 0, lineHeight: 1.1 }}>
+                            ·
+                          </Typography>
+                          <Typography sx={{ fontSize: 10.5, color: theme.palette.text.disabled, flexShrink: 0, lineHeight: 1.1 }}>
+                            {relTime}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box
+                        className="clickable delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromRecent(item.path);
+                        }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          p: 0.5,
+                          borderRadius: "4px",
+                          opacity: 0,
+                          transition: "all 0.12s ease",
+                          flexShrink: 0,
+                          "&:hover": {
+                            opacity: "1 !important",
+                            bgcolor: alpha(theme.palette.error.main, 0.12),
+                            color: theme.palette.error.main,
+                          },
+                        }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 13 }} />
                       </Box>
                     </Box>
-                    <Box
-                      className="clickable"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFromRecent(item.path);
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        p: 0.5,
-                        opacity: 0.4,
-                        transition: "opacity 0.15s ease",
-                        flexShrink: 0,
-                        "&:hover": { opacity: 1 },
-                      }}
-                    >
-                      <DeleteIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
-                    </Box>
-                  </Box>
-                );
-              })}
+                  );
+                })}
+              </Box>
+            ) : (
+              <Box sx={{ display: "flex", height: "100%", minHeight: 140, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0.75, p: 2, opacity: 0.7 }}>
+                <MenuBookIcon sx={{ fontSize: 28, color: theme.palette.text.disabled, mb: 0.5 }} />
+                <Typography sx={{ fontSize: 11.5, color: theme.palette.text.secondary, textAlign: "center" }}>
+                  No recent projects
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Box>
+
+        {/* Right Main Panel: Centered Hero & Actions */}
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            px: 3,
+            py: 2,
+            overflowY: "auto",
+          }}
+        >
+          {/* Logo & Title Header */}
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2.5 }}>
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                color: theme.palette.primary.main,
+                mb: 1.25,
+                filter: `drop-shadow(0 6px 16px ${alpha(theme.palette.primary.main, 0.35)})`,
+              }}
+            >
+              <ThemeLogo variant="solid" />
             </Box>
-          ) : (
-            <Box sx={{ display: "flex", height: "100%", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0.75 }}>
-              <MenuBookIcon sx={{ fontSize: 40, color: alpha(theme.palette.text.disabled, 0.3), mb: 0.5 }} />
-              <Typography sx={{ fontStyle: "italic", color: theme.palette.text.secondary, textAlign: "center", px: 2 }}>
-                {emptyMessage}
-              </Typography>
-              <Typography sx={{ fontSize: 10, color: theme.palette.text.disabled }}>
-                Press Ctrl+N to get started
-              </Typography>
+            <Typography sx={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: theme.palette.text.primary }}>
+              ActOne Screenplay
+            </Typography>
+            <Typography sx={{ fontSize: 11.5, color: theme.palette.text.disabled, mt: 0.25 }}>
+              {appVersion ? `Version ${appVersion} [${appChannel}]` : "Screenplay Editor"}
+            </Typography>
+          </Box>
+
+          {/* Action List Container */}
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: 440,
+              bgcolor: "background.paper",
+              border: `1px solid ${theme.palette.divider}`,
+              borderRadius: "12px",
+              boxShadow: (t) => t.palette.mode === "dark" ? "0 8px 24px rgba(0,0,0,0.35)" : "0 2px 12px rgba(0,0,0,0.06)",
+              overflow: "hidden",
+            }}
+          >
+            {/* New Project */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 2.25,
+                py: 1.3,
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+              }}
+            >
+              <Box sx={{ pr: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: theme.palette.text.primary, lineHeight: 1.3 }}>
+                  New Project
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, mt: 0.2 }}>
+                  Create a new blank screenplay project (Ctrl+N).
+                </Typography>
+              </Box>
+              <Box
+                className="clickable"
+                onClick={handleNew}
+                sx={{
+                  px: 2.25,
+                  py: 0.5,
+                  borderRadius: "20px",
+                  bgcolor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  fontWeight: 600,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.primary.main, 0.88),
+                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.35)}`,
+                  },
+                }}
+              >
+                Create
+              </Box>
             </Box>
-          )}
+
+            {/* Open Project */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 2.25,
+                py: 1.3,
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+              }}
+            >
+              <Box sx={{ pr: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: theme.palette.text.primary, lineHeight: 1.3 }}>
+                  Open Project
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, mt: 0.2 }}>
+                  Open existing .actone screenplay bundle files.
+                </Typography>
+              </Box>
+              <Box
+                className="clickable"
+                onClick={handleOpen}
+                sx={{
+                  px: 2.25,
+                  py: 0.5,
+                  borderRadius: "20px",
+                  bgcolor: alpha(theme.palette.text.primary, 0.06),
+                  color: theme.palette.text.primary,
+                  fontWeight: 600,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.text.primary, 0.12),
+                  },
+                }}
+              >
+                Open
+              </Box>
+            </Box>
+
+            {/* Import Script */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 2.25,
+                py: 1.3,
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+              }}
+            >
+              <Box sx={{ pr: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: theme.palette.text.primary, lineHeight: 1.3 }}>
+                  Import Script
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, mt: 0.2 }}>
+                  FDX, FadeIn, Fountain, or plain text files.
+                </Typography>
+              </Box>
+              <Box
+                className="clickable"
+                onClick={() => handleImport()}
+                sx={{
+                  px: 2.25,
+                  py: 0.5,
+                  borderRadius: "20px",
+                  bgcolor: alpha(theme.palette.text.primary, 0.06),
+                  color: theme.palette.text.primary,
+                  fontWeight: 600,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.text.primary, 0.12),
+                  },
+                }}
+              >
+                Import
+              </Box>
+            </Box>
+
+            {/* Templates */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 2.25,
+                py: 1.3,
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+              }}
+            >
+              <Box sx={{ pr: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: theme.palette.text.primary, lineHeight: 1.3 }}>
+                  Templates
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, mt: 0.2 }}>
+                  Start with a screenplay 3-Act structure template.
+                </Typography>
+              </Box>
+              <Box
+                className="clickable"
+                onClick={handleTemplates}
+                sx={{
+                  px: 2.25,
+                  py: 0.5,
+                  borderRadius: "20px",
+                  bgcolor: alpha(theme.palette.text.primary, 0.06),
+                  color: theme.palette.text.primary,
+                  fontWeight: 600,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.text.primary, 0.12),
+                  },
+                }}
+              >
+                Choose
+              </Box>
+            </Box>
+
+            {/* Tutorials */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 2.25,
+                py: 1.3,
+              }}
+            >
+              <Box sx={{ pr: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: theme.palette.text.primary, lineHeight: 1.3 }}>
+                  Tutorials
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, mt: 0.2 }}>
+                  Learn how ActOne works with interactive tours.
+                </Typography>
+              </Box>
+              <Box
+                className="clickable"
+                onClick={() => (onOpenTutorials ? onOpenTutorials() : openTutorialsWindow())}
+                sx={{
+                  px: 2.25,
+                  py: 0.5,
+                  borderRadius: "20px",
+                  bgcolor: alpha(theme.palette.text.primary, 0.06),
+                  color: theme.palette.text.primary,
+                  fontWeight: 600,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.text.primary, 0.12),
+                  },
+                }}
+              >
+                Start
+              </Box>
+            </Box>
+          </Box>
         </Box>
       </Box>
 
+      {/* Footer bar */}
       <Box
         sx={{
           display: "flex",
@@ -944,47 +972,19 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           height: 36,
           minHeight: 36,
           borderTop: `1px solid ${theme.palette.divider}`,
-          bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.02)"),
+          bgcolor: theme.palette.background.paper,
           px: 2,
           flexShrink: 0,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", minWidth: 120 }}>
-          {updateAvailable ? (
-            <Box
-              onClick={(e) => { e.stopPropagation(); installUpdate(); }}
-              onMouseDown={(e) => e.stopPropagation()}
-              title="Click to install update from Microsoft Store"
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 0.75,
-                cursor: "pointer",
-                bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                color: "primary.main",
-                fontSize: 11,
-                fontWeight: 600,
-                px: 1.25,
-                py: 0.3,
-                transition: "all 0.15s ease",
-                "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.22) },
-              }}
-            >
-              <DownloadIcon sx={{ fontSize: 13 }} />
-              <Typography sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1, letterSpacing: 0.2 }}>
-                Update Available
-              </Typography>
-            </Box>
-          ) : (
-            <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, fontWeight: 500, fontFamily: "monospace" }}>
-              {appVersion ? `v${appVersion} [${appChannel}]` : "v0.4.3"}
-            </Typography>
-          )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled, fontWeight: 500, fontFamily: "monospace" }}>
+            {appVersion ? `v${appVersion} [${appChannel}]` : "v0.4.3"}
+          </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 700, color: theme.palette.text.secondary }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 500, color: theme.palette.text.disabled }}>
             © 2026
           </Typography>
           <Typography
@@ -1000,22 +1000,73 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             }}
             sx={{
               fontSize: 11,
-              fontWeight: 700,
-              color: theme.palette.primary.main,
+              fontWeight: 600,
+              color: theme.palette.text.secondary,
               cursor: "pointer",
               "&:hover": {
+                color: theme.palette.primary.main,
                 textDecoration: "underline",
               },
             }}
           >
             iyal.ink
           </Typography>
-          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 500, color: theme.palette.text.secondary }}>
+          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 400, color: theme.palette.text.disabled }}>
             — Tools for the story in progress.
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", minWidth: 120 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box
+            className="clickable"
+            onClick={() => {
+              import("@tauri-apps/plugin-opener")
+                .then(({ openUrl }) => openUrl("https://discord.gg/zpFPpdAxnW"))
+                .catch(() => window.open("https://discord.gg/zpFPpdAxnW", "_blank"));
+            }}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.5,
+              px: 0.75,
+              py: 0.25,
+              borderRadius: "4px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+              color: theme.palette.text.secondary,
+              "&:hover": {
+                color: theme.palette.text.primary,
+                bgcolor: alpha(theme.palette.text.primary, 0.05),
+              },
+            }}
+          >
+            <DiscordIcon sx={{ fontSize: 13 }} />
+            <Typography sx={{ fontSize: 11, fontWeight: 500 }}>Discord</Typography>
+          </Box>
+
+          <Box
+            className="clickable"
+            onClick={handleOpenThemeMenu}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.5,
+              px: 0.75,
+              py: 0.25,
+              borderRadius: "4px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+              color: theme.palette.text.secondary,
+              "&:hover": {
+                color: theme.palette.text.primary,
+                bgcolor: alpha(theme.palette.text.primary, 0.05),
+              },
+            }}
+          >
+            <ColorLensIcon sx={{ fontSize: 13 }} />
+            <Typography sx={{ fontSize: 11, fontWeight: 500 }}>Theme</Typography>
+          </Box>
+
           <Tooltip title="Help & Documentation">
             <IconButton
               onClick={handleHelp}
@@ -1024,7 +1075,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               sx={{
                 p: 0.5,
                 color: theme.palette.text.secondary,
-                "&:hover": { color: theme.palette.text.primary, bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                borderRadius: "4px",
+                "&:hover": { color: theme.palette.text.primary, bgcolor: alpha(theme.palette.text.primary, 0.05) },
               }}
             >
               <HelpOutlinedIcon sx={{ fontSize: 15 }} />
@@ -1032,7 +1084,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           </Tooltip>
         </Box>
       </Box>
-
     </Box>
   );
 };
