@@ -695,8 +695,8 @@ function AppInner() {
       
       const webview = new WebviewWindow("welcome", {
         url: "/",
-        width: 600,
-        height: 540,
+        width: 800,
+        height: 620,
         center: true,
         decorations: false,
         resizable: false,

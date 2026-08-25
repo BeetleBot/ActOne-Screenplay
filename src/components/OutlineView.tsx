@@ -197,10 +197,10 @@ export const OutlineView = React.memo(() => {
 
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [searchQuery, setSearchQuery] = useState("");
-  const showSections = true;
-  const showScenes = true;
-  const showSynopses = false;
-  const showStorylines = true;
+  const [showSections, setShowSections] = useState(true);
+  const [showScenes, setShowScenes] = useState(true);
+  const [showSynopses, setShowSynopses] = useState(false);
+  const [showStorylines, setShowStorylines] = useState(true);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedStoryline, setSelectedStoryline] = useState<string | null>(null);
@@ -632,11 +632,7 @@ export const OutlineView = React.memo(() => {
             px: 1,
             py: 0.4,
             borderRadius: "2px",
-            bgcolor: "color-mix(in srgb, var(--text-main) 4%, transparent)",
-            transition: "all var(--duration-fast) ease",
-            "&:hover": {
-              bgcolor: "color-mix(in srgb, var(--button-color) 8%, transparent)",
-            },
+            bgcolor: "transparent",
           }}
         >
           <Typography
@@ -673,14 +669,10 @@ export const OutlineView = React.memo(() => {
           px: 1,
           py: 0.4,
           borderRadius: "2px",
-          bgcolor: "color-mix(in srgb, var(--text-main) 4%, transparent)",
+          bgcolor: "transparent",
           display: "flex",
           flexDirection: "column",
           gap: 0.3,
-          transition: "all var(--duration-fast) ease",
-          "&:hover": {
-            bgcolor: "color-mix(in srgb, var(--button-color) 8%, transparent)",
-          },
         }}
       >
         {synopses.map((syn) => (
@@ -1277,6 +1269,36 @@ export const OutlineView = React.memo(() => {
           open={Boolean(menuAnchor)}
           onClose={() => setMenuAnchor(null)}
         >
+          <Box sx={{ px: 1.5, py: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
+              Show
+            </Typography>
+          </Box>
+          <MenuItem onClick={() => setShowSections((p) => !p)}>
+            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSections ? "primary.main" : "text.disabled" }}>
+              {showSections ? "✓" : "○"}
+            </Box>
+            Sections
+          </MenuItem>
+          <MenuItem onClick={() => setShowScenes((p) => !p)}>
+            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showScenes ? "primary.main" : "text.disabled" }}>
+              {showScenes ? "✓" : "○"}
+            </Box>
+            Scenes
+          </MenuItem>
+          <MenuItem onClick={() => setShowSynopses((p) => !p)}>
+            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSynopses ? "primary.main" : "text.disabled" }}>
+              {showSynopses ? "✓" : "○"}
+            </Box>
+            Synopses
+          </MenuItem>
+          <MenuItem onClick={() => setShowStorylines((p) => !p)}>
+            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showStorylines ? "primary.main" : "text.disabled" }}>
+              {showStorylines ? "✓" : "○"}
+            </Box>
+            Storylines
+          </MenuItem>
+          <Box sx={{ borderTop: "1px solid", borderColor: "divider", my: 0.5 }} />
           <Box sx={{ px: 1.5, py: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
               Outline Size
