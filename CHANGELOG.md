@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.20] - 2026-08-26
+
+### Added / Improved
+- 🎨 **Comprehensive UI Overhaul & Design System Unification** – Unified all UI elements across the app with consistent border radii (pill buttons, rounded cards, dialog surfaces) and soft multi-layered elevation shadows across both light and dark modes.
+- 🚀 **Redesigned Welcome Screen** – Modernized the welcome experience with floating window controls, an enlarged ActOne brand mark, elevated floating island cards with smooth hover feedback, and a StatusBar-styled footer with centered copyright info.
+- 🪟 **Streamlined TitleBar Across All Windows** – Cleaned up TitleBar headers across all secondary windows and modals (Settings, Help, Export, Themes, X-Ray, About, Tutorials, Fix Formatting, Title Page Editor, Structure Import) by removing redundant icons and resolving hardware-accelerated tile clipping on WebKitGTK.
+- 🎬 **Standalone Fountain Mode Refinement** – Automatically hides the Project / Scripts pane from the Activity Bar when working on standalone Fountain files (`.fountain`, `.txt`), preserving a focused, distraction-free environment.
+- 🧹 **Feature & Footprint Cleanup** – Completely removed legacy ambient sound features and dependencies, streamlining application settings and memory footprint.
+
+### Fixed
+- 📂 **Welcome Screen File Picker Stability** – Prevented duplicate dialog triggers when dismissing or canceling the file picker on the Welcome Screen.
+- 🖥️ **WebKitGTK Compositor Artifacts** – Fixed hardware-accelerated clipping and uninitialized tile issues on borderless windows under Linux WebKitGTK.
+
 ## [0.4.19] - 2026-08-22
 
 ### Fixed
