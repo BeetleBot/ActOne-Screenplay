@@ -119,7 +119,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 0,
+              borderRadius: '12px',
               minWidth: 320,
               maxWidth: 440,
               p: 0.5,
@@ -150,7 +150,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
               variant={btn.variant || "outlined"}
               color={btn.color || "primary"}
               size="small"
-              sx={{ borderRadius: 0, fontSize: "0.78rem", px: 2 }}
+              sx={{ borderRadius: '6px', fontSize: "0.78rem", px: 2 }}
             >
               {btn.label}
             </Button>
@@ -165,7 +165,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 0,
+              borderRadius: '12px',
               minWidth: 320,
               maxWidth: 420,
               p: 0.5,
@@ -214,7 +214,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
             slotProps={{
               input: {
                 sx: {
-                  borderRadius: 0,
+                  borderRadius: '6px',
                   fontSize: "0.85rem",
                 },
               },
@@ -227,7 +227,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
             variant="text"
             color="inherit"
             size="small"
-            sx={{ borderRadius: 0, fontSize: "0.78rem", px: 2, fontWeight: 500, color: "text.secondary" }}
+            sx={{ borderRadius: '6px', fontSize: "0.78rem", px: 2, fontWeight: 500, color: "text.secondary" }}
           >
             Cancel
           </Button>
@@ -237,7 +237,7 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
             color="primary"
             size="small"
             sx={{
-              borderRadius: 0,
+              borderRadius: '6px',
               fontSize: "0.78rem",
               px: 2.5,
               fontWeight: 600,

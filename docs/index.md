@@ -2,6 +2,8 @@
 
 Welcome to the ActOne documentation. This site covers everything from architecture and development to feature usage and API references.
 
+> **Design System:** The warm **Arc / Craft** visual language is authoritative in [`DESIGN.md`](../DESIGN.md) — 5 elevation levels, radius/shadow/motion tokens, and full shell/overlay/panel specifications (implemented in `src/index.css`, `src/constants.ts`, `src/theme/muiTheme.ts`).
+
 ---
 
 ## Developer Guide
@@ -23,7 +25,7 @@ Architecture, setup, and implementation details for developers working on ActOne
 | [Editor Integration](developer-guide/05-editor.md) | CodeMirror 6 setup, extensions, editor features |
 | [Fountain Parser](developer-guide/06-fountain-parser.md) | Both frontend (TypeScript) and backend (Rust) parsers |
 | [State Management](developer-guide/08-state-management.md) | All 7 React contexts, state, actions, persistence |
-| [Theming System](developer-guide/11-theming.md) | 17 built-in themes, category+adaptive system, custom themes, color system |
+| [Theming System](developer-guide/11-theming.md) | 17 built-in themes, category+adaptive system, custom themes, color system, Craft design system (radii/shadows/motion) |
 
 ### Backend
 
@@ -93,23 +95,23 @@ End-user documentation for every feature in ActOne.
 |----------|-------------|
 | [Editor](features/01-editor.md) | Core editing features, syntax highlighting, smart typing |
 | [Autocomplete](features/02-autocomplete.md) | Ghost text suggestions for characters, transitions, etc. |
-| [Sidebar Panels](features/03-sidebar.md) | 8 sidebar tabs: Outline, Scripts, Notepad, Markers, Tasks, Snapshots, Sprint, Parking |
-| [Export](features/05-export.md) | PDF, FDX, FadeIn, Fountain, CSV export |
-| [Multi-Script Bundles](features/06-scripts.md) | Managing multiple scripts in .actone bundles |
-| [Parking](features/07-parking.md) | Temporary text storage |
-| [Sprint Tracking](features/08-sprint.md) | Timed writing sessions |
-| [Todos & Markers](features/09-todos-markers.md) | Task list and margin markers |
-| [Character Management](features/10-characters.md) | Character list and gender tracking |
-| [Snapshots](features/11-snapshots.md) | File versioning system |
-| [Themes](features/12-themes.md) | Built-in and custom themes |
+| [Sidebar Panels](features/03-sidebar.md) | 8 sidebar tabs (46px grouped dock, pill active) + Header pill tabs, Search/Muse floating panes |
+| [Export](features/05-export.md) | PDF, FDX, FadeIn, Fountain, CSV export — pill nav + rounded modal |
+| [Multi-Script Bundles](features/06-scripts.md) | Managing multiple scripts in .actone bundles (rounded cards, pill search) |
+| [Parking](features/07-parking.md) | Temporary text storage (rounded cards) |
+| [Sprint Tracking](features/08-sprint.md) | Countdown timer with presets, history & leaderboard (pill controls, 12px cards) |
+| [Todos & Markers](features/09-todos-markers.md) | Task list and margin markers (rounded cards, pill filters) |
+| [Character Management](features/10-characters.md) | Character list and gender tracking (X-Ray Characters mode) |
+| [Snapshots](features/11-snapshots.md) | File versioning system (pill filters, two-tier cards, Browse… picker) |
+| [Themes](features/12-themes.md) | Built-in and custom themes + Craft design system (radii/shadows) |
 | [Command Palette](features/13-command-palette.md) | Fuzzy-search command launcher |
-| [Structure Templates](features/14-structure-templates.md) | 8 story structure templates |
-| [Title Page Editor](features/15-title-page.md) | Title page metadata editing |
-| [X-Ray Analysis](features/17-xray.md) | Screenplay analysis dashboard |
-| [Settings](features/18-settings.md) | All configuration options, including spellcheck |
-| [Help Guide](features/19-help-guide.md) | Built-in searchable help system |
+| [Structure Templates](features/14-structure-templates.md) | 8 story structure templates (rounded nav pills) |
+| [Title Page Editor](features/15-title-page.md) | Title page metadata editing (pill tabs, 8px cards) |
+| [X-Ray Analysis](features/17-xray.md) | Screenplay analysis dashboard (pill modes, transparent TitleBar) |
+| [Settings](features/18-settings.md) | All configuration options — pill tabs, 8px cards, ambient removal |
+| [Help Guide](features/19-help-guide.md) | 88 searchable articles across 10 categories (incl. Markdown Syntax) |
 | [Interactive Tutorials](features/20-onboarding-tutorials.md) | User onboarding and Fountain writing tours |
-| [Muse AI Assistant](features/21-muse.md) | AI screenwriting assistant (v0.4.0+) |
+| [Muse AI Assistant](features/21-muse.md) | AI screenwriting assistant — pill composer (v0.4.0+) |
 
 ---
 

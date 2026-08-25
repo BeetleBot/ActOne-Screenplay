@@ -197,6 +197,7 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
             sx={{
               px: 0.85,
               py: 0.25,
+              borderRadius: "6px",
               bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(244, 67, 54, 0.14)" : "rgba(211, 47, 47, 0.08)"),
               border: "1px solid",
               borderColor: "error.main",
@@ -210,7 +211,7 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
             {report.code}
           </Box>
           <Tooltip title={copiedRef ? "Copied!" : "Copy Error Reference"}>
-            <IconButton size="small" onClick={() => void copyRef()} sx={{ p: 0.5, color: "text.secondary", "&:hover": { color: "text.primary" } }}>
+            <IconButton size="small" onClick={() => void copyRef()} sx={{ borderRadius: "6px", p: 0.5, color: "text.secondary", "&:hover": { color: "text.primary" } }}>
               <CopyIcon />
             </IconButton>
           </Tooltip>
@@ -232,6 +233,7 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
         <Box
           sx={{
             p: 1.25,
+            borderRadius: "8px",
             bgcolor: "action.hover",
             border: "1px solid",
             borderColor: "divider",
@@ -248,6 +250,7 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
           <Box
             sx={{
               p: 1.25,
+              borderRadius: "8px",
               bgcolor: "action.hover",
               border: "1px solid",
               borderColor: "divider",
@@ -270,7 +273,7 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
               <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10.5, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5 }}>
                 Technical Stack Trace
               </Typography>
-              <Button size="small" variant="outlined" color="inherit" onClick={() => setShowTrace((prev) => !prev)} sx={{ fontSize: 10, py: 0.1, px: 1, textTransform: "none", minWidth: 0 }}>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => setShowTrace((prev) => !prev)} sx={{ borderRadius: "6px", fontSize: 10, py: 0.1, px: 1, textTransform: "none", minWidth: 0 }}>
                 {showTrace ? "Hide Trace" : "Show Trace"}
               </Button>
             </Box>
@@ -279,9 +282,11 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
               <Box
                 sx={{
                   position: "relative",
+                  borderRadius: "8px",
                   bgcolor: "action.hover",
                   border: "1px solid",
                   borderColor: "divider",
+                  overflow: "hidden",
                 }}
               >
                 <Tooltip title={copiedTrace ? "Copied!" : "Copy Trace"}>
@@ -290,9 +295,10 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
                     onClick={() => void copyTrace()}
                     sx={{
                       position: "absolute",
-                      top: 4,
-                      right: 4,
+                      top: 6,
+                      right: 6,
                       p: 0.5,
+                      borderRadius: "6px",
                       bgcolor: "background.paper",
                       border: "1px solid",
                       borderColor: "divider",
@@ -352,15 +358,15 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", gap: 1 }}>
             {showPrimary && (
-              <Button size="small" variant="contained" color="primary" onClick={() => void primaryAction()} sx={{ fontSize: 11, px: 1.75, py: 0.5 }}>
+              <Button size="small" variant="contained" color="primary" onClick={() => void primaryAction()} sx={{ borderRadius: "6px", fontSize: 11, px: 1.75, py: 0.5 }}>
                 {primaryLabel}
               </Button>
             )}
-            <Button size="small" variant="outlined" color="inherit" onClick={() => void copy()} sx={{ fontSize: 11, px: 1.75, py: 0.5 }}>
+            <Button size="small" variant="outlined" color="inherit" onClick={() => void copy()} sx={{ borderRadius: "6px", fontSize: 11, px: 1.75, py: 0.5 }}>
               {copied ? "Copied" : "Copy Details"}
             </Button>
           </Box>
-          <Button size="small" color="inherit" onClick={() => void closeCrashWindow()} sx={{ fontSize: 11, color: "text.secondary" }}>
+          <Button size="small" color="inherit" onClick={() => void closeCrashWindow()} sx={{ borderRadius: "6px", fontSize: 11, color: "text.secondary" }}>
             Dismiss
           </Button>
         </Box>

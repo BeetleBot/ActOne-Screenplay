@@ -141,13 +141,19 @@ export function AIChatComposer({
             minWidth: 0,
             display: "flex",
             alignItems: "center",
+            borderRadius: "20px",
             border: "1px solid",
             borderColor: "divider",
             bgcolor: "background.default",
             position: "relative",
-            "&:focus-within": { borderColor: "primary.main" },
-            transition: "border-color 0.15s",
+            px: 0.5,
+            "&:focus-within": {
+              borderColor: "primary.main",
+              boxShadow: "0 0 0 2px color-mix(in srgb, var(--button-color) 20%, transparent)",
+            },
+            transition: "all 0.15s ease",
             gap: 0,
+            overflow: "hidden",
           }}
         >
           <textarea
@@ -172,13 +178,14 @@ export function AIChatComposer({
           sx={{
             width: 32,
             height: 32,
-            borderRadius: 0,
+            borderRadius: "20px",
             bgcolor: "primary.main",
             color: "primary.contrastText",
             flexShrink: 0,
-            "&:hover": { opacity: 0.85 },
+            "&:hover": { opacity: 0.9, transform: "scale(1.04)" },
+            "&:active": { transform: "scale(0.96)" },
             "&.Mui-disabled": { bgcolor: "action.disabledBackground", color: "action.disabled" },
-            transition: "background-color 0.15s",
+            transition: "all 0.15s ease",
           }}
         >
           {streaming

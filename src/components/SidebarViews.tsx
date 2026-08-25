@@ -205,7 +205,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
               onClick={handleParkSelection}
               disabled={editorView?.state.selection.main.empty}
               startIcon={<AddIcon sx={{ fontSize: 16 }} />}
-              sx={{ textTransform: "none", fontSize: 11, fontWeight: 600 }}
+              sx={{ borderRadius: "20px", textTransform: "none", fontSize: "0.75rem", fontWeight: 600, px: 1.5, py: 0.5 }}
             >
               Park Selection
             </Button>
@@ -248,16 +248,18 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
                   sx={{
                     cursor: "pointer",
                     position: "relative",
-                    borderRadius: 0,
+                    borderRadius: "8px",
                     maxHeight: "140px",
                     display: "flex",
                     flexDirection: "column",
                     flexShrink: 0,
-                    bgcolor: isSelected ? "action.selected" : "transparent",
-                    transition: "border-color var(--duration-fast) ease, background-color var(--duration-fast) ease",
+                    bgcolor: isSelected ? "action.selected" : "background.paper",
+                    borderColor: isSelected ? "primary.main" : "divider",
+                    transition: "all var(--duration-fast) ease",
                     "&:hover": {
                       borderColor: "primary.main",
                       bgcolor: isSelected ? "action.selected" : "action.hover",
+                      transform: "translateY(-1px)",
                     },
                   }}
                 >

@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useId } from "react";
 import { alpha, useTheme } from "@mui/material/styles";
 
 export const ThemeLogo: React.FC<{ sx?: React.CSSProperties; variant?: "faded" | "solid" }> = ({ sx, variant = "faded" }) => {
   const theme = useTheme();
+  const rawId = useId();
+  const gradId = `logo-fade-${rawId.replace(/:/g, "")}`;
   const txt = theme.palette.text.primary;
   return (
     <svg
@@ -13,13 +15,13 @@ export const ThemeLogo: React.FC<{ sx?: React.CSSProperties; variant?: "faded" |
       style={{
         width: "100%",
         height: "100%",
-        transition: "color 0.3s ease",
+        display: "block",
         ...sx,
       }}
     >
       {variant === "faded" && (
         <defs>
-          <linearGradient id="logo-fade" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={alpha(txt, 0.85)} />
             <stop offset="100%" stopColor={alpha(txt, 0.35)} />
           </linearGradient>
@@ -27,7 +29,7 @@ export const ThemeLogo: React.FC<{ sx?: React.CSSProperties; variant?: "faded" |
       )}
       <g
         transform="translate(0,3000) scale(0.1,-0.1)"
-        fill={variant === "faded" ? "url(#logo-fade)" : "currentColor"}
+        fill={variant === "faded" ? `url(#${gradId})` : "currentColor"}
         stroke="none"
       >
         <path d="M8674 26030 c-305 -41 -482 -158 -593 -395 -116 -245 -163 -580 -163 -1170 0 -539 39 -861 134 -1110 86 -224 224 -369 408 -426 181 -56 96 -53 1628 -57 1108 -2 1413 -5 1409 -15 -8 -22 -3828 -11638 -3883 -11809 l-54 -167 -748 -4 c-812 -4 -840 -6 -1011 -63 -277 -93 -429 -336 -495 -793 -29 -199 -40 -393 -40 -731 1 -610 52 -952 181 -1205 125 -246 304 -347 667 -375 162 -13 6410 -13 6572 0 363 28 542 129 667 375 129 253 180 595 181 1205 0 338 -11 532 -40 731 -66 457 -218 700 -495 793 -166 56 -209 59 -929 65 l-666 6 333 1060 c183 583 340 1084 348 1113 l16 52 2837 0 2837 0 344 -1103 c190 -606 347 -1108 349 -1114 3 -10 -135 -13 -670 -13 -706 0 -873 -7 -1023 -42 -141 -32 -227 -78 -316 -167 -84 -84 -134 -165 -180 -293 -94 -256 -137 -673 -126 -1213 13 -589 77 -924 221 -1150 106 -165 241 -246 487 -292 88 -16 299 -18 3474 -21 2140 -2 3433 1 3525 7 362 24 537 110 666 327 148 250 206 602 206 1254 1 352 -8 513 -38 725 -63 445 -205 685 -464 788 -172 68 -304 76 -1150 77 l-685 0 -57 178 c-1627 5101 -4494 14064 -4513 14112 -79 194 -172 338 -299 466 -200 201 -444 313 -831 381 -94 16 -329 18 -4030 19 -2161 1 -3957 -2 -3991 -6z m7273 -6450 c513 -1807 933 -3288 933 -3292 0 -5 -871 -8 -1936 -8 -1544 0 -1935 3 -1932 13 2 6 434 1489 959 3295 l954 3283 45 -3 44 -3 933 -3285z" />

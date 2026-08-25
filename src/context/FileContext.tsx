@@ -574,7 +574,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     let settings = {};
-    let scripts: ScriptInfo[] = [];
+    let scripts: ScriptInfo[];
     const bundleName = path.split(/[/\\]/).pop()?.replace(/\.(actone|zip|actone\.zip)$/i, "") || "Untitled";
 
     try {

@@ -183,8 +183,6 @@ interface UIContextValue {
     lineFocusEnabled: boolean;
     fountainColorsEnabled: boolean;
     iconStyle: 'fill' | 'duotone' | 'regular';
-    activeAmbientTrack: string | null;
-    ambientVolume: number;
     aiStatus: string | null;
     translationState: 'idle' | 'running' | 'paused' | 'cancelled';
 }
@@ -211,11 +209,8 @@ setHideSyntaxEnabled(enabled: boolean): void;
 setHideTagsEnabled(enabled: boolean): void;
 setLineFocusEnabled(enabled: boolean): void;
 setFountainColorsEnabled(enabled: boolean): void;
-setIconStyle(style: 'fill' | 'duotone' | 'regular'): void;
-playAmbientTrack(track: string): void;
-stopAmbientTrack(): void;
-setAmbientVolume(vol: number): void;
-setAiStatus(status: string | null): void;
+ setIconStyle(style: 'fill' | 'duotone' | 'regular'): void;
+ setAiStatus(status: string | null): void;
 setTranslationState(state: 'idle' | 'running' | 'paused' | 'cancelled'): void;
 registerTranslationAbort(controller: AbortController | null): void;
 cancelTranslation(): void;

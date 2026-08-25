@@ -107,7 +107,12 @@ export const FOUNTAIN_SYNTAX_RULES = [
   "   - Rephrasing must NEVER change the language of the text. Rephrase exactly in the same language the user has written (e.g. if the input is in German, the output must be in German; if Hindi, Hindi, etc.)."
 ].join("\n");
 
-export const PILL_RADIUS = "0px";
+export const PILL_RADIUS = "6px";
+export const RADIUS_XS = "4px";
+export const RADIUS_SM = "6px";
+export const RADIUS_MD = "8px";
+export const RADIUS_LG = "12px";
+export const RADIUS_PILL = "9999px";
 
 export const MAX_RECENT_FILES = 10;
 

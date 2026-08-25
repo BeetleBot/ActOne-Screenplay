@@ -79,7 +79,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           alignItems: "center",
           gap: 1.5,
           p: 1.25,
-          m: 0.5,
+          m: 0.75,
+          borderRadius: "8px",
           border: "1px solid",
           borderColor: "error.main",
           bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(244, 67, 54, 0.08)" : "rgba(211, 47, 47, 0.04)"),
@@ -94,6 +95,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             gap: 0.75,
             px: 0.75,
             py: 0.25,
+            borderRadius: "4px",
             bgcolor: "error.main",
             color: "error.contrastText",
             fontSize: 11,
@@ -107,13 +109,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           {errorMessage}
         </Typography>
         <Tooltip title="Copy error details">
-          <IconButton size="small" onClick={handleCopy} sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}>
+          <IconButton size="small" onClick={handleCopy} sx={{ borderRadius: "6px", color: "text.secondary", "&:hover": { color: "text.primary" } }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
             </svg>
           </IconButton>
         </Tooltip>
-        <Button size="small" variant="outlined" color="primary" onClick={this.handleReset} sx={{ fontSize: 11, py: 0.25, px: 1.25, minWidth: 0, textTransform: "none" }}>
+        <Button size="small" variant="outlined" color="primary" onClick={this.handleReset} sx={{ borderRadius: "6px", fontSize: 11, py: 0.25, px: 1.25, minWidth: 0, textTransform: "none" }}>
           Retry
         </Button>
       </Box>

@@ -282,7 +282,7 @@ function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "background.default", color: "text.primary", overflow: "hidden" }}>
       {onClose && (
-        <TitleBar title="X-Ray Analysis" onClose={onClose} icon={<BarChartIcon sx={{ fontSize: 16 }} />} />
+        <TitleBar title="X-Ray Analysis" onClose={onClose} />
       )}
 
       {/* Header Tabs */}

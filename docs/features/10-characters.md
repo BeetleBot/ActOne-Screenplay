@@ -1,15 +1,15 @@
 # Character Management
 
-The character panel is embedded within the **Outline** sidebar tab as an inline sub-tab (alongside Statistics). Switch between Outline, Characters, and Statistics using tab headers inside the Outline panel.
+Character tracking lives in the **X-Ray Analysis** window (Status Bar bar-chart icon or Command Palette → "Open X-Ray Analysis…"), not as an inline Outline sub-tab.
 
-## Character List
+## Character List (X-Ray → Characters mode)
 
-The panel automatically detects all characters in the document by scanning for all-uppercase character cue lines (excluding known non-character words like `INT.`, `EXT.`, `CUT TO`, etc.).
+The X-Ray window automatically detects all characters by scanning for all-uppercase character cue lines (excluding non-character words like `INT.`, `EXT.`, `CUT TO`, etc.) and shows a data-dense list sorted by frequency. Switch to the **Characters** mode at the top of the X-Ray window (transparent TitleBar, `28px` rounded window controls).
 
 For each character:
-- **Name** displayed in uppercase
-- **Gender indicator** pill (cycle through Male / Female / Other / Unknown)
-- Click to jump to the character's first line in the editor
+- **Name** displayed in uppercase with dialogue line count and role
+- **Gender indicator** pill (Male / Female / Non-binary / Unknown) — click a row to edit gender/role inline; persisted to `characters.json` in the `.actone` bundle
+- Click to jump to the character's first line; the Dialogue-by-Gender chart in X-Ray's Statistics mode visualizes the distribution
 
 ## Gender Data
 

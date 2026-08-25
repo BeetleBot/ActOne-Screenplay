@@ -356,7 +356,7 @@ const shared: ThemeOptions = {
       },
     },
   },
-  shape: { borderRadius: 0 },
+  shape: { borderRadius: 6 },
   transitions: {
     duration: { shortest: 120, shorter: 200, short: 300 },
   },
@@ -528,7 +528,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
         },
         styleOverrides: {
           root: {
-            borderRadius: 0,
+            borderRadius: 6,
             textTransform: 'none',
             fontWeight: 600,
             transition: 'all 0.15s ease-in-out',
@@ -607,18 +607,18 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
         },
         styleOverrides: {
           paper: {
-            borderRadius: 0,
+            borderRadius: 12,
             outline: 'none',
             border: '1px solid',
             borderColor: c.border,
-            boxShadow: 'none',
+            boxShadow: '0 16px 40px -8px rgba(0, 0, 0, 0.25)',
             '&:focus-visible': { outline: 'none' },
           },
         },
       },
       MuiPaper: {
         styleOverrides: {
-          root: { backgroundImage: 'none' },
+          root: { backgroundImage: 'none', borderRadius: 8 },
         },
       },
       MuiPopover: {
@@ -626,9 +626,10 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
           slotProps: {
             paper: {
               sx: {
+                borderRadius: '8px',
                 border: '1px solid',
                 borderColor: c.border,
-                boxShadow: 'none',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                 backgroundImage: 'none',
                 backgroundColor: c.dropdown,
                 color: c.dropdownText,
@@ -645,16 +646,17 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
           slotProps: {
             paper: {
               sx: {
+                borderRadius: '8px',
                 border: '1px solid',
                 borderColor: c.border,
-                boxShadow: 'none',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
               },
             },
           },
         },
         styleOverrides: {
           paper: {
-            borderRadius: 0,
+            borderRadius: 8,
             backgroundColor: c.dropdown,
             color: c.dropdownText,
             padding: '4px 0',
@@ -678,7 +680,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
             paddingLeft: '10px',
             paddingRight: '10px',
             minHeight: '28px',
-            borderRadius: 0,
+            borderRadius: 6,
             margin: '2px 6px',
             transition: 'background-color 0.1s',
             '&.Mui-selected': {
@@ -718,7 +720,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
       MuiOutlinedInput: {
         styleOverrides: {
           root: {
-            borderRadius: 0,
+            borderRadius: 6,
             backgroundColor: c.dropdown,
             border: '1px solid',
             borderColor: c.border,
@@ -757,14 +759,14 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
         defaultProps: {
           MenuProps: {
             slotProps: {
-              paper: { sx: { mt: '2px' } },
+              paper: { sx: { mt: '2px', borderRadius: '8px' } },
             },
           },
         },
         styleOverrides: {
           root: {
             fontSize: '12px',
-            borderRadius: 0,
+            borderRadius: 6,
             '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
             backgroundColor: c.dropdown,
             '&:hover': { backgroundColor: 'action.hover' },
@@ -786,6 +788,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
           paper: {
             backgroundColor: c.dropdown,
             color: c.dropdownText,
+            borderRadius: 8,
           },
         },
       },
@@ -825,7 +828,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
             color: c.text,
             border: '1px solid',
             borderColor: c.border,
-            borderRadius: 0,
+            borderRadius: 4,
             fontSize: '10px',
             padding: '2px 6px',
             boxShadow: 'none',
@@ -847,7 +850,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
             padding: 6,
           },
           track: {
-            borderRadius: 0,
+            borderRadius: 10,
             border: '1px solid',
             borderColor: c.border,
             backgroundColor: 'transparent',
@@ -857,7 +860,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColo
             boxShadow: 'none',
             width: 14,
             height: 14,
-            borderRadius: 0,
+            borderRadius: 8,
             backgroundColor: c.textSecondary,
             transition: 'transform 0.18s, background-color 0.18s',
           },

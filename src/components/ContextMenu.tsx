@@ -180,8 +180,8 @@ function MenuLayer({ items, left, top, depth, onClose, closeAll, onEnter }: Menu
         color: "var(--dropdown-text)",
         border: "1px solid",
         borderColor: theme.palette.divider,
-        borderRadius: 0,
-        boxShadow: "none",
+        borderRadius: '8px',
+        boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
         outline: "none",
         scrollbarWidth: "thin",
       })}

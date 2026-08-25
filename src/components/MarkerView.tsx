@@ -3,7 +3,8 @@ import { useFile, useEditor } from "../context";
 import { PILL_RADIUS } from "../constants";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
-import { SearchIcon, CloseIcon, InfoOutlinedIcon } from "./Icons";
+import { SearchIcon, CloseIcon, InfoOutlinedIcon, TuneIcon } from "./Icons";
+import { OutlineTag } from "./OutlineView";
 
 import {
   Box,
@@ -15,6 +16,9 @@ import {
   ListItemButton,
   ListItemText,
   Tooltip,
+  Popover,
+  Badge,
+  Grid,
 } from "@mui/material";
 
 interface MarkerItem {
@@ -30,6 +34,8 @@ export const MarkerView = React.memo(() => {
   const { scrollToLine } = useEditor();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLElement | null>(null);
+  const activeFilterCount = selectedColor ? 1 : 0;
 
   const markersList = useMemo(() => {
     const list: MarkerItem[] = [];
@@ -148,75 +154,128 @@ export const MarkerView = React.memo(() => {
         </Box>
       </Box>
 
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, gap: 2, overflow: "hidden" }}>
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 1.5, gap: 1.5, overflow: "hidden" }}>
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-        <TextField
-          placeholder="Filter markers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          size="small"
-          fullWidth
-          slotProps={{
-            input: {
-              sx: {
-                bgcolor: "background.paper",
-                fontSize: "0.75rem",
-                "& fieldset": { border: "none" },
+          <TextField
+            placeholder="Filter markers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            fullWidth
+            slotProps={{
+              input: {
+                sx: {
+                  bgcolor: "background.paper",
+                  fontSize: "0.75rem",
+                  borderRadius: "20px",
+                  "& fieldset": { border: "none" },
+                },
+                startAdornment: (
+                  <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
+                    <SearchIcon sx={{ fontSize: 14 }} />
+                  </Box>
+                ),
+                endAdornment: searchQuery && (
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <CloseIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                ),
               },
-              startAdornment: (
-                <Box sx={{ display: "flex", color: "text.secondary", mr: 0.8 }}>
-                  <SearchIcon sx={{ fontSize: 14 }} />
-                </Box>
-              ),
-              endAdornment: searchQuery && (
-                <IconButton
-                  size="small"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <CloseIcon sx={{ fontSize: 14 }} />
-                </IconButton>
-              ),
-            },
-          }}
-        />
-      </Box>
-
-      {Object.keys(colorStats).length > 0 && (
-        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mt: -1 }}>
-          {Object.entries(colorStats).map(([color, count]) => {
-            const isSelected = selectedColor === color;
-            const colorVal = getMarkerColorValue(color);
-            return (
-              <Box
-                key={color}
-                onClick={() => setSelectedColor(isSelected ? null : color)}
-                sx={{
-                  fontSize: "8.5px",
-                  fontFamily: "var(--font-ui)",
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  px: 1,
-                  py: 0.3,
-                  borderRadius: 0,
-                  cursor: "pointer",
-                  userSelect: "none",
-                  border: "1px solid",
-                  borderColor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 30%, transparent)`,
-                  bgcolor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 8%, transparent)`,
-                  color: isSelected ? "#ffffff" : `color-mix(in srgb, ${colorVal} 85%, currentColor)`,
-                  transition: "all var(--duration-normal) ease",
-                  "&:hover": {
-                    borderColor: colorVal,
-                    bgcolor: isSelected ? colorVal : `color-mix(in srgb, ${colorVal} 15%, transparent)`,
-                  },
-                }}
-              >
-                {color.toUpperCase()} ({count})
-              </Box>
-            );
-          })}
+            }}
+          />
+          <IconButton
+            size="small"
+            onClick={(e) => setFilterAnchorEl(e.currentTarget)}
+            sx={{
+              border: "1px solid",
+              borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
+              bgcolor: activeFilterCount > 0 ? "action.selected" : "action.hover",
+              borderRadius: "20px",
+              height: "auto",
+              minHeight: 0,
+              minWidth: 0,
+              alignSelf: "stretch",
+              width: 32,
+              p: 0.3,
+            }}
+          >
+            <Badge badgeContent={activeFilterCount} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}>
+              <TuneIcon sx={{ fontSize: 14 }} />
+            </Badge>
+          </IconButton>
         </Box>
-      )}
+
+        <Popover
+          open={Boolean(filterAnchorEl)}
+          anchorEl={filterAnchorEl}
+          onClose={() => setFilterAnchorEl(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          slotProps={{ paper: { sx: { p: 1.5, width: 240, borderRadius: "8px" } } }}
+        >
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 1 }}>
+            Filter Markers
+          </Typography>
+
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
+              Marker Color
+            </Typography>
+            <Grid container spacing={0.5}>
+              <Grid>
+                <Chip
+                  label={`All Colors (${markersList.length})`}
+                  size="small"
+                  onClick={() => setSelectedColor(null)}
+                  sx={{
+                    fontSize: 9.5,
+                    height: 20,
+                    borderRadius: "4px",
+                    fontWeight: selectedColor === null ? 700 : 500,
+                    border: "1px solid",
+                    borderColor: selectedColor === null ? "primary.main" : "divider",
+                    bgcolor: selectedColor === null ? "primary.main" : "transparent",
+                    color: selectedColor === null ? "#fff" : "text.secondary",
+                    cursor: "pointer",
+                    "&:hover": {
+                      bgcolor: selectedColor === null ? "primary.main" : "action.hover",
+                    },
+                  }}
+                />
+              </Grid>
+              {Object.entries(colorStats).map(([color, count]) => {
+                const isSelected = selectedColor === color;
+                const colorVal = getMarkerColorValue(color);
+                return (
+                  <Grid key={color}>
+                    <Chip
+                      label={`${color.toUpperCase()} (${count})`}
+                      size="small"
+                      onClick={() => setSelectedColor(isSelected ? null : color)}
+                      sx={{
+                        fontSize: 9.5,
+                        height: 20,
+                        borderRadius: "4px",
+                        fontWeight: isSelected ? 700 : 500,
+                        border: "1px solid",
+                        borderColor: isSelected ? colorVal : "divider",
+                        bgcolor: isSelected ? colorVal : "transparent",
+                        color: isSelected ? "#fff" : "text.secondary",
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: isSelected ? colorVal : "action.hover",
+                        },
+                      }}
+                    />
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Box>
+        </Popover>
 
       <List 
         tabIndex={0}
@@ -226,6 +285,9 @@ export const MarkerView = React.memo(() => {
           overflowY: "auto", 
           outline: "none",
           p: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 0.4,
           "&:focus": { outline: "none" }
         }}
       >
@@ -240,141 +302,145 @@ export const MarkerView = React.memo(() => {
             const isSelected = activeMarkerIdx === idx;
             const cleanDesc = (m.line.marker?.description || "Marker").replace(/\s+/g, " ").trim();
             const cleanContext = (m.context || "").replace(/\s+/g, " ").trim();
+            const hasSubCardContent = !!cleanContext || (m.sceneStorylines && m.sceneStorylines.length > 0);
+
             return (
-              <ListItemButton
-                key={m.line.id}
-                data-marker-id={m.line.id}
-                selected={isSelected}
-                onClick={(e) => {
-                  setActiveMarkerIdx(idx);
-                  handleMarkerClick(m.index);
-                  e.currentTarget.parentElement?.focus();
-                }}
-                sx={{
-                  pl: 1.5,
-                  py: 0.5,
-                  borderRadius: 0,
-                  mb: 0.25,
-                  alignItems: "center",
-                  transition: "all var(--duration-fast) ease",
-                  bgcolor: isSelected
-                    ? (colorVal.startsWith("var")
-                        ? `color-mix(in srgb, ${colorVal} 20%, transparent)`
-                        : `${colorVal}30`)
-                    : (colorVal.startsWith("var")
-                        ? `color-mix(in srgb, ${colorVal} 8%, transparent)`
-                        : `${colorVal}12`),
-                  "&.Mui-selected": {
-                    bgcolor: colorVal.startsWith("var")
-                      ? `color-mix(in srgb, ${colorVal} 20%, transparent)`
-                      : `${colorVal}30`,
+              <Box key={m.line.id} sx={{ display: "flex", flexDirection: "column" }}>
+                <ListItemButton
+                  data-marker-id={m.line.id}
+                  selected={isSelected}
+                  onClick={(e) => {
+                    setActiveMarkerIdx(idx);
+                    handleMarkerClick(m.index);
+                    e.currentTarget.parentElement?.focus();
+                  }}
+                  sx={{
+                    py: 0.4,
+                    px: 0.8,
+                    borderRadius: hasSubCardContent ? "6px 6px 0 0" : "6px",
+                    mb: hasSubCardContent ? 0 : 0.4,
+                    border: "1px solid",
+                    borderColor: isSelected
+                      ? "var(--button-color, primary.main)"
+                      : "color-mix(in srgb, var(--text-main) 10%, transparent)",
+                    boxShadow: isSelected ? "0 1px 3px rgba(0,0,0,0.06)" : "0 1px 2px rgba(0,0,0,0.02)",
+                    transition: "all var(--duration-fast) ease",
+                    bgcolor: isSelected
+                      ? (colorVal.startsWith("var")
+                          ? `color-mix(in srgb, ${colorVal} 24%, transparent)`
+                          : `${colorVal}35`)
+                      : (colorVal.startsWith("var")
+                          ? `color-mix(in srgb, ${colorVal} 12%, transparent)`
+                          : `${colorVal}1A`),
+                    position: "relative",
                     "&:hover": {
+                      borderColor: "color-mix(in srgb, var(--button-color) 40%, transparent)",
                       bgcolor: colorVal.startsWith("var")
-                        ? `color-mix(in srgb, ${colorVal} 25%, transparent)`
-                        : `${colorVal}38`,
+                        ? `color-mix(in srgb, ${colorVal} 20%, transparent)`
+                        : `${colorVal}28`,
                     },
-                  },
-                  "&:hover": {
-                    bgcolor: colorVal.startsWith("var")
-                      ? `color-mix(in srgb, ${colorVal} 15%, transparent)`
-                      : `${colorVal}22`,
-                  },
-                }}
-              >
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: "flex", gap: 0.8, alignItems: "center", flexWrap: "wrap" }}>
-                      <Box
-                        sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          bgcolor: colorVal,
-                          flexShrink: 0,
-                        }}
-                      />
-                      {m.sceneNumber && (
+                    "&.Mui-selected": {
+                      bgcolor: colorVal.startsWith("var")
+                        ? `color-mix(in srgb, ${colorVal} 24%, transparent)`
+                        : `${colorVal}35`,
+                      "&:hover": {
+                        bgcolor: colorVal.startsWith("var")
+                          ? `color-mix(in srgb, ${colorVal} 28%, transparent)`
+                          : `${colorVal}40`,
+                      }
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: "flex", gap: 0.6, alignItems: "center", width: "100%" }}>
+                        <OutlineTag label={`L${m.index + 1}`} size="0.65rem" />
+                        {m.sceneNumber && (
+                          <OutlineTag label={`#${m.sceneNumber}`} size="0.65rem" />
+                        )}
                         <Typography
-                          variant="caption"
+                          variant="body2"
                           sx={{
-                            bgcolor: "action.selected",
-                            px: 0.4,
-                            borderRadius: 0,
-                            fontSize: '8.5px',
                             fontWeight: 700,
-                            color: "text.secondary",
+                            color: "text.primary",
+                            fontSize: "12px",
+                            fontFamily: "var(--font-ui)",
+                            letterSpacing: "0.01em",
+                            flex: 1,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          {m.sceneNumber}
+                          {cleanDesc}
                         </Typography>
-                      )}
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: isSelected ? 600 : 400,
-                          fontSize: '13px',
-                          color: isSelected ? "primary.main" : "text.primary",
-                          fontFamily: "var(--font-ui)",
-                          letterSpacing: "0.01em",
-                        }}
-                      >
-                        {cleanDesc}
-                      </Typography>
-                      {m.sceneStorylines && m.sceneStorylines.length > 0 && (
-                        <Box sx={{ display: "flex", gap: 0.4 }}>
-                          {m.sceneStorylines.map((sl) => (
-                            <Chip
-                              key={sl}
-                              label={sl}
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                height: 12,
-                                fontSize: '7.5px',
-                                p: 0,
-                                borderRadius: PILL_RADIUS,
-                                textTransform: "lowercase",
-                              }}
-                            />
-                          ))}
-                        </Box>
-                      )}
-                    </Box>
-                  }
-                  secondary={
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 0.1, pl: 1.5 }}>
+                      </Box>
+                    }
+                  />
+                </ListItemButton>
+
+                {hasSubCardContent && (
+                  <Box
+                    sx={{
+                      mb: 0.4,
+                      p: "5px 8px",
+                      borderRadius: "0 0 6px 6px",
+                      border: "1px solid",
+                      borderColor: "color-mix(in srgb, var(--text-main) 10%, transparent)",
+                      borderTop: "none",
+                      bgcolor: "color-mix(in srgb, var(--text-main) 3%, transparent)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 0.4,
+                    }}
+                  >
+                    {cleanContext && (
                       <Typography
                         variant="caption"
                         color="text.secondary"
                         sx={{
-                          fontSize: 10,
-                          maxWidth: "70%",
+                          fontSize: "10.5px",
+                          fontFamily: "var(--font-ui)",
+                          letterSpacing: "0.01em",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
-                          fontStyle: "italic",
                         }}
                       >
                         {cleanContext}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          bgcolor: "action.selected",
-                          px: 0.6,
-                          py: 0.2,
-                          borderRadius: 0,
-                          fontSize: 9,
-                          fontWeight: 700,
-                          color: "text.secondary",
-                        }}
-                      >
-                        Line {m.index + 1}
-                      </Typography>
-                    </Box>
-                  }
-                />
-              </ListItemButton>
+                    )}
+                    {m.sceneStorylines && m.sceneStorylines.length > 0 && (
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6 }}>
+                        {m.sceneStorylines.map((sl) => (
+                          <Box
+                            key={sl}
+                            sx={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              px: 0.8,
+                              py: 0.25,
+                              borderRadius: "4px",
+                              border: "1px solid",
+                              borderColor: "divider",
+                              bgcolor: "background.paper",
+                              color: "text.secondary",
+                              fontSize: "9.5px",
+                              fontWeight: 600,
+                              letterSpacing: "0.03em",
+                              textTransform: "uppercase",
+                              fontFamily: "var(--font-ui)",
+                              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                            }}
+                          >
+                            {sl}
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              </Box>
             );
           })
         )}

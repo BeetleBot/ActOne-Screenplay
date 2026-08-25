@@ -44,8 +44,8 @@ Manages UI chrome state and editor preferences:
 | `autocompleteEnabled` | `boolean` | Ghost text suggestions |
 | `smartQuotesEnabled` | `boolean` | Auto curly quotes |
 | `matchParenthesesEnabled` | `boolean` | Auto-close brackets |
-| `activeRightPane` | `string \| null` | Right pane type (`'search' \| 'ambient' \| 'prompt' \| null`) |
-| `rightPaneWidth` | `number` | Right pane width in px (240-700) |
+| `activeRightPane` | `string \| null` | Right pane type (`'search' \| 'prompt' \| null`) — `'ambient'` was removed in v0.4.19 |
+| `rightPaneWidth` | `number` | Right pane width in px (240-700) — right pane is a floating `12px` card with `8px` shadow |
 | `autoSaveEnabled` | `boolean` | Auto-save toggle |
 | `autoSaveInterval` | `number` | Auto-save interval in ms (default 300000) |
 | `hideSyntaxEnabled` | `boolean` | Hide Fountain markup characters |
@@ -53,8 +53,6 @@ Manages UI chrome state and editor preferences:
 | `lineFocusEnabled` | `boolean` | Focus on active line |
 | `fountainColorsEnabled` | `boolean` | Toggle syntax coloring |
 | `iconStyle` | `'fill' \| 'duotone' \| 'regular'` | Phosphor icon weight |
-| `activeAmbientTrack` | `string \| null` | Currently playing ambient track |
-| `ambientVolume` | `number` | Ambient volume (0-1) |
 | `aiStatus` | `string` | Muse/provider status indicator |
 | `translationState` | `'idle' \| 'running' \| 'paused' \| 'cancelled'` | Scene translation state |
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
-import { MoreVertIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon, InfoOutlinedIcon } from "./Icons";
+import { MoreHorizIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon, InfoOutlinedIcon } from "./Icons";
 
 import { isProseScript } from "../utils/scriptMode";
 
@@ -53,7 +53,7 @@ export const OutlineTag: React.FC<OutlineTagProps> = ({
         color: isAccent ? "var(--button-color)" : "text.primary",
         px: 0.6,
         py: 0.15,
-        borderRadius: 0,
+        borderRadius: "4px",
         fontSize: size,
         fontWeight: 700,
         fontFamily: "var(--font-ui)",
@@ -197,10 +197,10 @@ export const OutlineView = React.memo(() => {
 
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSections, setShowSections] = useState(true);
-  const [showScenes, setShowScenes] = useState(true);
-  const [showSynopses, setShowSynopses] = useState(false);
-  const [showStorylines, setShowStorylines] = useState(true);
+  const showSections = true;
+  const showScenes = true;
+  const showSynopses = false;
+  const showStorylines = true;
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedStoryline, setSelectedStoryline] = useState<string | null>(null);
@@ -745,7 +745,7 @@ export const OutlineView = React.memo(() => {
               py: isLevel1 ? 0.4 : 0.25,
               mt: isLevel1 ? 1.2 : 0.4,
               mb: 0.2,
-              borderRadius: 0,
+              borderRadius: "6px",
               borderTop: isLevel1 ? "1px solid" : "none",
               borderColor: "color-mix(in srgb, var(--button-color) 25%, transparent)",
               bgcolor: "transparent",
@@ -810,7 +810,7 @@ export const OutlineView = React.memo(() => {
           ref={isActive ? activeItemRef : null}
           selected={isActive}
           onClick={(e) => { handleItemClick(item, true, e); }}
-          sx={{ pl: `${12 + Math.min(depth * 8, 16)}px`, py: 0.15, borderRadius: 0, mb: 0.1 }}
+          sx={{ pl: `${12 + Math.min(depth * 8, 16)}px`, py: 0.15, borderRadius: "4px", mb: 0.1 }}
         >
           <Box component="span" sx={{ mr: 0.8, fontSize: 10, color: "text.secondary" }}>•</Box>
           <ListItemText
@@ -840,13 +840,15 @@ export const OutlineView = React.memo(() => {
             ml: `${sceneIndent}px`,
             py: 0.4,
             px: 0.8,
-            borderRadius: 0,
+            borderRadius: hasSubCardContent ? "6px 6px 0 0" : "6px",
             mb: hasSubCardContent ? 0 : 0.4,
             opacity: isDragging ? 0.4 : 1,
             border: "1px solid",
             borderColor: isActive
               ? "var(--button-color, primary.main)"
               : "color-mix(in srgb, var(--text-main) 10%, transparent)",
+            boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.06)" : "0 1px 2px rgba(0,0,0,0.02)",
+            transition: "all var(--duration-fast) ease",
             bgcolor: showDragOver
               ? "action.hover"
               : isActive
@@ -860,8 +862,6 @@ export const OutlineView = React.memo(() => {
                         ? `color-mix(in srgb, ${sceneColor} 12%, transparent)`
                         : `${sceneColor}1A`)
                     : "background.paper"),
-            boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.06)" : "0 1px 2px rgba(0,0,0,0.02)",
-            transition: "all var(--duration-fast) ease",
             position: "relative",
             "&:hover": {
               borderColor: "color-mix(in srgb, var(--button-color) 40%, transparent)",
@@ -950,6 +950,7 @@ export const OutlineView = React.memo(() => {
               ml: `${sceneIndent}px`,
               mb: 0.4,
               p: "6px 8px",
+              borderRadius: "0 0 6px 6px",
               border: "1px solid",
               borderColor: "color-mix(in srgb, var(--text-main) 10%, transparent)",
               borderTop: "none",
@@ -967,18 +968,19 @@ export const OutlineView = React.memo(() => {
                     sx={{
                       display: "inline-flex",
                       alignItems: "center",
-                      px: 0.6,
-                      py: 0.2,
-                      borderRadius: 0,
+                      px: 0.8,
+                      py: 0.25,
+                      borderRadius: "4px",
                       border: "1px solid",
-                      borderColor: "color-mix(in srgb, var(--text-main) 10%, transparent)",
-                      bgcolor: "action.hover",
+                      borderColor: "divider",
+                      bgcolor: "background.paper",
                       color: "text.secondary",
-                      fontSize: "9px",
+                      fontSize: "9.5px",
                       fontWeight: 600,
                       letterSpacing: "0.03em",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-ui)",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
                     }}
                   >
                     {sl}
@@ -1033,20 +1035,41 @@ export const OutlineView = React.memo(() => {
 
   if (isProse) {
     return (
-      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, height: 40, minHeight: 40, borderBottom: "1px solid", borderColor: "divider" }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-            Outline
+      <Box
+        id="outline-view"
+        sx={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "background.paper",
+          overflow: "hidden",
+          userSelect: "none",
+          borderRight: 1,
+          borderColor: "divider",
+        }}
+      >
+        <Box sx={{
+          p: 1.5,
+          pb: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: 1,
+          borderColor: "divider",
+        }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Table of Contents
           </Typography>
-          <Box sx={{ display: "flex", gap: 0.25, alignItems: "center" }}>
-            <Tooltip title="Outline displays all headings and sub-headings in your prose document. Click any heading to jump to it.">
-              <span>
-                <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
-              </span>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Tooltip title="Outline font size">
+              <IconButton
+                size="small"
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+                sx={{ p: 0.4 }}
+              >
+                <MoreHorizIcon sx={{ fontSize: 16 }} />
+              </IconButton>
             </Tooltip>
-            <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
-              <MoreVertIcon sx={{ fontSize: 14 }} />
-            </IconButton>
           </Box>
           <Menu
             anchorEl={menuAnchor}
@@ -1087,6 +1110,7 @@ export const OutlineView = React.memo(() => {
                   sx: {
                     bgcolor: "background.paper",
                     fontSize: "0.75rem",
+                    borderRadius: "20px",
                     "& fieldset": { border: "none" },
                   },
                   startAdornment: (
@@ -1117,14 +1141,14 @@ export const OutlineView = React.memo(() => {
               fontSize: fontSizeMap[outlineFontSize],
               fontFamily: "var(--font-ui)",
               "&::-webkit-scrollbar": {
-                width: 8,
+                width: 6,
               },
               "&::-webkit-scrollbar-track": {
                 bgcolor: "transparent",
               },
               "&::-webkit-scrollbar-thumb": {
-                bgcolor: "var(--button-color, rgba(0, 0, 0, 0.35))",
-                borderRadius: 0,
+                bgcolor: "var(--button-color, rgba(120, 120, 120, 0.25))",
+                borderRadius: "9999px",
                 border: "none",
                 "&:hover": {
                   bgcolor: "primary.main",
@@ -1160,7 +1184,7 @@ export const OutlineView = React.memo(() => {
                         pl: `${8 + indent}px`,
                         pr: 1,
                         py: heading.level === 1 ? 0.45 : 0.25,
-                        borderRadius: 0,
+                        borderRadius: "6px",
                         mb: 0.3,
                         border: "1px solid",
                         borderColor: isActive
@@ -1212,68 +1236,47 @@ export const OutlineView = React.memo(() => {
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, height: 40, minHeight: 40, borderBottom: "1px solid", borderColor: "divider" }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-          Navigator
+    <Box
+      id="outline-view"
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "background.paper",
+        overflow: "hidden",
+        userSelect: "none",
+        borderRight: 1,
+        borderColor: "divider",
+      }}
+    >
+      <Box sx={{
+        p: 1.5,
+        pb: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        borderBottom: 1,
+        borderColor: "divider",
+      }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Outline
         </Typography>
-        <Box sx={{ display: "flex", gap: 0.25, alignItems: "center" }}>
-          <Tooltip title="Outline displays the headings and synopses of your screenplay. Drag scenes to reorder them.">
-            <span>
-              <InfoOutlinedIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
-            </span>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Tooltip title="Outline font size">
+            <IconButton
+              size="small"
+              onClick={(e) => setMenuAnchor(e.currentTarget)}
+              sx={{ p: 0.4 }}
+            >
+              <MoreHorizIcon sx={{ fontSize: 16 }} />
+            </IconButton>
           </Tooltip>
-          <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}>
-            <MoreVertIcon sx={{ fontSize: 14 }} />
-          </IconButton>
         </Box>
         <Menu
           anchorEl={menuAnchor}
           open={Boolean(menuAnchor)}
           onClose={() => setMenuAnchor(null)}
         >
-          <Box sx={{ px: 1.5, py: 0.5 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
-              Show
-            </Typography>
-          </Box>
-          <MenuItem
-            onClick={() => { setShowSections(p => !p); }}
-            
-          >
-            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSections ? "primary.main" : "text.disabled" }}>
-              {showSections ? "✓" : "○"}
-            </Box>
-            Sections
-          </MenuItem>
-          <MenuItem
-            onClick={() => { setShowScenes(p => !p); }}
-            
-          >
-            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showScenes ? "primary.main" : "text.disabled" }}>
-              {showScenes ? "✓" : "○"}
-            </Box>
-            Scenes
-          </MenuItem>
-          <MenuItem
-            onClick={() => { setShowSynopses(p => !p); }}
-            
-          >
-            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSynopses ? "primary.main" : "text.disabled" }}>
-              {showSynopses ? "✓" : "○"}
-            </Box>
-            Synopses
-          </MenuItem>
-          <MenuItem
-            onClick={() => { setShowStorylines(p => !p); }}
-            
-          >
-            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showStorylines ? "primary.main" : "text.disabled" }}>
-              {showStorylines ? "✓" : "○"}
-            </Box>
-            Storylines
-          </MenuItem>
-          <Box sx={{ borderTop: "1px solid", borderColor: "divider", my: 0.5 }} />
           <Box sx={{ px: 1.5, py: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
               Outline Size
@@ -1296,7 +1299,7 @@ export const OutlineView = React.memo(() => {
       </Box>
 
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <Box sx={{ p: 1.5, pb: 1, display: "flex", gap: 0, alignItems: "stretch" }}>
+        <Box sx={{ p: 1.5, pb: 1, display: "flex", gap: 0.8 }}>
           <TextField
             placeholder="Search outline..."
             value={searchQuery}
@@ -1308,6 +1311,7 @@ export const OutlineView = React.memo(() => {
                 sx: {
                   bgcolor: "background.paper",
                   fontSize: "0.75rem",
+                  borderRadius: "20px",
                   "& fieldset": { border: "none" },
                 },
                 startAdornment: (
@@ -1330,7 +1334,7 @@ export const OutlineView = React.memo(() => {
               border: "1px solid",
               borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
               bgcolor: activeFilterCount > 0 ? "action.selected" : "action.hover",
-              borderRadius: 0,
+              borderRadius: "20px",
               height: "auto",
               minHeight: 0,
               minWidth: 0,
@@ -1350,7 +1354,7 @@ export const OutlineView = React.memo(() => {
         onClose={() => setFilterAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { p: 1.5, width: 260, borderRadius: 0 } } }}
+        slotProps={{ paper: { sx: { p: 1.5, width: 260, borderRadius: "8px" } } }}
       >
         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 1 }}>
           Filter Outline
@@ -1385,7 +1389,7 @@ export const OutlineView = React.memo(() => {
                     sx={{
                       fontSize: 9.5,
                       height: 20,
-                      borderRadius: 0,
+                      borderRadius: "4px",
                       fontWeight: isSelected ? 700 : 500,
                       border: "1px solid",
                       borderColor: isSelected ? (hex || "primary.main") : "divider",
@@ -1420,7 +1424,7 @@ export const OutlineView = React.memo(() => {
                       sx={{
                         fontSize: 9.5,
                         height: 20,
-                        borderRadius: 0,
+                        borderRadius: "4px",
                         fontWeight: isSelected ? 700 : 500,
                         border: "1px solid",
                         borderColor: isSelected ? "primary.main" : "divider",
@@ -1454,14 +1458,14 @@ export const OutlineView = React.memo(() => {
           fontSize: fontSizeMap[outlineFontSize],
           fontFamily: "var(--font-ui)",
           "&::-webkit-scrollbar": {
-            width: 8,
+            width: 6,
           },
           "&::-webkit-scrollbar-track": {
             bgcolor: "transparent",
           },
           "&::-webkit-scrollbar-thumb": {
-            bgcolor: "var(--button-color, rgba(0, 0, 0, 0.35))",
-            borderRadius: 0,
+            bgcolor: "var(--button-color, rgba(120, 120, 120, 0.25))",
+            borderRadius: "9999px",
             border: "none",
             "&:hover": {
               bgcolor: "primary.main",

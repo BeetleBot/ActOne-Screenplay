@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useFile, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
+import { alpha } from "@mui/material/styles";
 import { DownloadIcon, DescriptionIcon } from "./Icons";
 import { TitleBar } from "./TitleBar";
 import { SystemFontPicker } from "./SystemFontPicker";
@@ -153,18 +154,20 @@ const NavItem: React.FC<{
       display: "flex",
       alignItems: "center",
       gap: 1,
-      px: indent ? 2.5 : 1.5,
-      py: 0.65,
+      pl: indent ? 3 : 1.5,
+      pr: 1.5,
+      py: 0.75,
       cursor: "pointer",
-      borderRadius: 1,
+      borderRadius: "6px",
       fontSize: 12.5,
       fontWeight: active ? 700 : 500,
-      color: active ? "primary.main" : "text.secondary",
-      bgcolor: active ? "action.selected" : "transparent",
-      borderLeft: indent ? "2px solid" : "none",
-      borderColor: active ? "primary.main" : "transparent",
+      color: (t) => active ? (t.palette.mode === "dark" ? "#ffffff" : t.palette.primary.main) : "text.secondary",
+      bgcolor: (t) => active ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.25 : 0.12) : "transparent",
       transition: "all 0.12s ease",
-      '&:hover': { bgcolor: active ? "action.selected" : "action.hover", color: active ? "primary.main" : "text.primary" },
+      "&:hover": {
+        bgcolor: (t) => active ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.32 : 0.18) : alpha(t.palette.text.primary, 0.06),
+        color: (t) => active ? (t.palette.mode === "dark" ? "#ffffff" : t.palette.primary.main) : "text.primary",
+      },
       userSelect: "none",
     }}
   >
@@ -921,7 +924,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       sx={{
         '& .MuiDialog-paper': {
           zoom: `${appScale}%`,
-          borderRadius: 0,
+          borderRadius: "12px",
           height: 520,
           maxHeight: '90vh',
           bgcolor: 'background.paper',
@@ -936,7 +939,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       <DialogTitle sx={{ m: 0, p: 0 }}>
         <TitleBar
           title={isProse ? "Export Prose" : "Export Script"}
-          icon={<DownloadIcon sx={{ fontSize: 16 }} />}
           isModal
           onClose={onClose}
         />
@@ -975,7 +977,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 <Chip
                   label={`${paperSize === "letter" ? "US Letter" : "A4"} · ${selectedFont === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}`}
                   size="small"
-                  sx={{ height: 18, fontSize: 9.5, fontWeight: 600, mt: 0.5, borderRadius: 0.5, bgcolor: "background.paper" }}
+                  sx={{ height: 18, fontSize: 9.5, fontWeight: 600, mt: 0.5, borderRadius: "4px", bgcolor: "background.paper" }}
                 />
               </Box>
 
@@ -1023,7 +1025,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
               disabled={isExporting}
               color="inherit"
               size="small"
-              sx={{ fontSize: 12, textTransform: "none", borderRadius: 0, px: 2 }}
+              sx={{ fontSize: 12, fontWeight: 600, textTransform: "none", borderRadius: "20px", px: 2.25, py: 0.6 }}
             >
               Cancel
             </Button>
@@ -1038,8 +1040,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 fontSize: 12,
                 fontWeight: 700,
                 textTransform: "none",
-                px: 2.5,
-                borderRadius: 0,
+                px: 2.75,
+                py: 0.6,
+                borderRadius: "20px",
                 boxShadow: "none",
               }}
             >

@@ -722,7 +722,6 @@ function AppInner() {
   if (!isModalWindow && !isEditorWindow && files.length === 0) {
     return (
       <>
-        <WindowResizeHandles resizeEnabled={false} showDragHandle />
         <ErrorBoundary name="welcome">
           <WelcomeScreenWindow standalone onOpenTutorials={() => setShowTutorialsModal(true)} />
         </ErrorBoundary>
@@ -745,7 +744,7 @@ function AppInner() {
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
-                  borderRadius: 0,
+                  borderRadius: '12px',
                 }
               }
             }}
@@ -830,7 +829,7 @@ function AppInner() {
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
-              borderRadius: 0,
+              borderRadius: '12px',
             }
           }
         }}

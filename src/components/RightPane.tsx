@@ -50,24 +50,32 @@ export const RightPane: React.FC<RightPaneProps> = ({
           width: 4,
           cursor: "col-resize",
           flexShrink: 0,
-          "&:hover": { bgcolor: "var(--button-color)", opacity: 0.3 },
+          my: 1,
+          borderRadius: '2px',
+          "&:hover": { bgcolor: "primary.main", opacity: 0.5 },
+          transition: 'background-color var(--duration-fast)',
         }}
       />
       <Paper
         className="right-pane"
         elevation={0}
-        square
         data-pane-type={type}
         aria-label={ariaLabel}
         sx={{
           width: rightPaneWidth,
           flexShrink: 0,
-          borderLeft: "1px solid",
+          m: 0.75,
+          ml: 0.25,
+          borderRadius: '12px',
+          border: "1px solid",
           borderColor: "divider",
+          boxShadow: (t) => t.palette.mode === 'dark' ? '0 8px 24px rgba(0,0,0,0.35)' : '0 2px 12px rgba(0,0,0,0.06)',
+          bgcolor: 'background.paper',
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           position: "relative",
+          transition: 'all 0.15s ease',
         }}
       >
         <IconButton
@@ -80,6 +88,7 @@ export const RightPane: React.FC<RightPaneProps> = ({
             right: 6,
             zIndex: 2,
             opacity: 0.6,
+            borderRadius: '6px',
             "&:hover": { opacity: 1 },
           }}
         >

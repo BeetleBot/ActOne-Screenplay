@@ -1,11 +1,12 @@
 # Title Page Editor
 
-The Title Page Editor modal allows editing the screenplay's title page metadata without manually formatting Fountain title page syntax.
+The Title Page Editor modal (`12px` radius, transparent TitleBar with `28px` rounded controls) allows editing the screenplay's title page metadata without manually formatting Fountain title page syntax.
 
 ## Opening
 
 - **Command Palette** → "Edit Title Page"
 - **Export Modal** → click "Edit Title Page"
+- Modal uses two **pill-segmented tabs** (Form / Raw — `8px` inset track, `6px` active pill), `8px` rounded section cards, `6px` rounded inputs, and pill action buttons (`20px`). Footer offers **Clear Title Page** (error), **Cancel**, and **Apply Changes** (contained pill).
 
 ## Fields
 

@@ -57,13 +57,13 @@ export const SystemFontPicker: React.FC<SystemFontPickerProps> = ({
       maxWidth="sm"
       disableScrollLock
       transitionDuration={200}
-      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0, maxHeight: '85vh' } }}
+      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px', maxHeight: '85vh', overflow: 'hidden' } }}
     >
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>
           Choose {script} Font
         </Typography>
-        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary" }}>
+        <IconButton aria-label="close" onClick={onClose} sx={{ color: "text.secondary", borderRadius: '6px' }}>
           <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
       </DialogTitle>
@@ -77,7 +77,7 @@ export const SystemFontPicker: React.FC<SystemFontPickerProps> = ({
           slotProps={{
             input: {
               startAdornment: <SearchIcon sx={{ fontSize: 16, mr: 0.5, color: "text.secondary" }} />,
-              style: { fontSize: 12 },
+              style: { fontSize: 12, borderRadius: '6px' },
             },
           }}
           sx={{ mb: 0.5 }}
@@ -91,7 +91,7 @@ export const SystemFontPicker: React.FC<SystemFontPickerProps> = ({
                 onSelect(font);
                 onClose();
               }}
-              sx={{ borderRadius: 0, py: 0.3, minHeight: 30 }}
+              sx={{ borderRadius: '6px', py: 0.4, minHeight: 32, mb: 0.3 }}
             >
               <ListItemText
                 primary={font}

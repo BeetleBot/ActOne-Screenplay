@@ -31,7 +31,7 @@ App
               Workspace
                 SidebarViews (routes sidebar panels)
                 FountainEditor (CodeMirror 6 container)
-                SearchPanel / AmbientPanel / MusePanel (right panes)
+                SearchPanel / MusePanel (right panes — AmbientPanel was removed in v0.4.19)
                StatusBar (file, save, document, sprint, spellcheck, AI, and scene information)
             ModalManager
               CommandPalette
@@ -49,7 +49,7 @@ ActOne uses **React Context** for application state. There are 7 providers in `A
 
 | Context | File | Purpose |
 |---------|------|---------|
-| `UIProvider` | `UIContext.tsx` | View mode, zoom level, zen mode, font/paper/editor preferences, spellcheck state, ambient audio, icon style |
+| `UIProvider` | `UIContext.tsx` | View mode, zoom level, zen mode, font/paper/editor preferences, spellcheck state, icon style |
 | `CustomModalProvider` | `CustomModalContext.tsx` | `confirm()`-style modal dialogs |
 | `FileProvider` | `FileContext.tsx` | Multi-tab file open/save/close, CRLF normalization, script management |
 | `SnapshotProvider` | `SnapshotContext.tsx` | Snapshot creation, listing, restoration |
@@ -81,9 +81,9 @@ ErrorBoundary
 |-----------|------|---------|
 | `MainLayout` | `layout/MainLayout.tsx` | Grid layout combining HeaderBar, ActivityBar, Workspace, StatusBar |
 | `HeaderBar` | `layout/HeaderBar.tsx` | Multi-file tabs, window controls, themed context menu (close/close others/close all), update banner |
-| `ActivityBar` | `layout/ActivityBar.tsx` | Command palette button, 8 sidebar icon tabs, quick settings menu with theme picker |
+| `ActivityBar` | `layout/ActivityBar.tsx` | Slim 46px grouped dock (Content/Tools), 8 sidebar tabs in 38×38px 8px rounded items with pill active + hairline separator, quick settings + zen toggle; command palette trigger moved to header |
 | `StatusBar` | `layout/StatusBar.tsx` | File and save status, word/character/page counts, sprint tracker, scene location, script switcher, AI status, X-Ray, and Muse indicator |
-| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor, manages search, ambient, and Muse right panes |
+| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor, manages search and Muse right panes |
 
 ### Sidebar Panels (8 tabs)
 
@@ -105,8 +105,7 @@ ErrorBoundary
 | `FountainEditor` | `FountainEditor.tsx` | Editor shell — themed context menus, drag-drop, right-click actions, tag/format/transform menus |
 | `ContextMenu` | `ContextMenu.tsx` | Compact themed context-menu portal with hover/focus selection, submenus, viewport clamping, and keyboard navigation |
 | `OutlineView` | `OutlineView.tsx` | Scene/section outline tree with drag-reorder, colors, numbers |
-| `SearchPanel` | `SearchPanel.tsx` | Find/replace panel (Ctrl+F) |
-| `AmbientPanel` | `AmbientPanel.tsx` | Ambient sound selection panel |
+| `SearchPanel` | `SearchPanel.tsx` | Find/replace panel (Ctrl+F) — floating card `12px` radius, pill inputs/toggles, `8px` rows |
 
 ### Modals
 
@@ -123,7 +122,7 @@ ErrorBoundary
 | Window | File | Purpose |
 |--------|------|---------|
 | `SettingsWindow` | `SettingsWindow.tsx` | All app settings |
-| `HelpWindow` | `HelpWindow.tsx` | Searchable help articles grouped into 9 categories |
+| `HelpWindow` | `HelpWindow.tsx` | Searchable help articles grouped into 10 categories (88 articles) with Fuse.js search + markdown rendering |
 | `XrayWindow` | `XrayWindow.tsx` | Screenplay analysis dashboard |
 | `TutorialsWindow` | `TutorialsWindow.tsx` | Interactive tutorial launcher |
 | `ThemeManagerWindow` | `ThemeManagerWindow.tsx` | Custom theme editor |
@@ -145,11 +144,9 @@ The panel provides:
 
 The composer is normal text input. It does not provide `@write-scene`, `@q`, `@lookup`, or `@synonyms` autocomplete. See `docs/features/21-muse.md` for the provider, tool, persistence, and privacy contract.
 
-## Audio System
+## Audio System (Removed)
 
-ActOne uses an asset-based audio engine for ambient sounds:
-- **MP3 Assets**: Replaced the legacy procedural generation engine (Tone.js) with high-quality bundled MP3 assets for better performance and reliability.
-- **Offline Capable**: All sound assets are bundled natively within the app (`~10MB`), ensuring full offline functionality without external network requests.
+Ambient sound was **completely removed** in v0.4.19 (commit `ed45a8b`). No audio engine, `AmbientPanel`, or ambient-related context state remains in the codebase. Historical references to ambient audio in older docs should be ignored.
 
 ## Spellcheck Integration
 

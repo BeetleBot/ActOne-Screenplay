@@ -3,7 +3,7 @@ import Fuse from "fuse.js";
 import { List } from "react-window";
 import { articles, categories, HelpArticle } from "../data/helpArticles";
 import { HelpMarkdown } from "./HelpMarkdown";
-import { SearchIcon, ClearIcon, OpenInNewIcon, LibraryBooksIcon, HelpOutlinedIcon } from "./Icons";
+import { SearchIcon, ClearIcon, OpenInNewIcon, LibraryBooksIcon } from "./Icons";
 import { TitleBar } from "./TitleBar";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
@@ -197,7 +197,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   return (
     <>
-      <TitleBar title="Help Wiki" onClose={onClose} icon={<HelpOutlinedIcon sx={{ fontSize: 16 }} />} />
+      <TitleBar title="Help Wiki" onClose={onClose} />
       <Box
         data-tauri-drag-region
         sx={{
@@ -220,7 +220,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <Chip
             label={`${articles.length}`}
             size="small"
-            sx={{ fontSize: 9.5, height: 18, borderRadius: 0, fontWeight: 600 }}
+            sx={{ fontSize: 9.5, height: 18, borderRadius: '20px', fontWeight: 600 }}
           />
         </Box>
         <TextField
@@ -232,7 +232,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             flex: 1,
             maxWidth: 320,
             "& .MuiOutlinedInput-root": {
-              borderRadius: 0,
+              borderRadius: '20px',
               height: 28,
               fontSize: 12,
               bgcolor: "action.hover",
@@ -286,7 +286,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   fontSize: 10,
                   height: 22,
                   fontWeight: 600,
-                  borderRadius: 0,
+                  borderRadius: '20px',
                   bgcolor: selectedCategory === null ? "primary.main" : "action.hover",
                   color: selectedCategory === null ? "primary.contrastText" : "text.secondary",
                   "&:hover": { bgcolor: selectedCategory === null ? "primary.dark" : "action.selected" },
@@ -302,7 +302,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     fontSize: 10,
                     height: 22,
                     fontWeight: 600,
-                    borderRadius: 0,
+                    borderRadius: '20px',
                     bgcolor: selectedCategory === cat ? "primary.main" : "action.hover",
                     color: selectedCategory === cat ? "primary.contrastText" : "text.secondary",
                     "&:hover": { bgcolor: selectedCategory === cat ? "primary.dark" : "action.selected" },
@@ -383,7 +383,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       fontSize: 10,
                       fontWeight: 600,
                       cursor: "pointer",
-                      borderRadius: 0,
+                      borderRadius: '20px',
                       bgcolor: "action.hover",
                       "&:hover": { bgcolor: "action.selected" },
                     }}
@@ -407,7 +407,7 @@ const HelpWindowContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         sx={{
                           px: 1.5,
                           py: 0.8,
-                          borderRadius: 0,
+                          borderRadius: '6px',
                           cursor: "pointer",
                           bgcolor: "action.hover",
                           "&:hover": { bgcolor: "action.selected" },

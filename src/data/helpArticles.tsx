@@ -17,7 +17,7 @@ export const articles: HelpArticle[] = [
     category: "Getting Started",
     tags: ["welcome", "launch", "start"],
     relatedIds: ["new-project", "open-file", "recent-files"],
-    content: `When you launch ActOne with no files open, the Welcome screen appears. From here you can:
+    content: `When you launch ActOne with no files open, the Welcome screen appears (minimal floating top bar with pill window controls, not a full TitleBar). From here you can:
 
 - **New Project** — Create a new project. In standalone mode this opens a new editor window.
 - **Open Project** — Browse for an existing \`.actone\` project file (or legacy \`.fountain\` / \`.txt\` file) via the native file dialog.
@@ -31,7 +31,7 @@ export const articles: HelpArticle[] = [
 - **Quick Settings** (gear icon) — Open the settings sidebar to switch themes, adjust scale, and more.
 - **App version** — Build number, useful when reporting bugs.
 
-The Welcome screen also shows a rotating random writing quote from famous screenwriters.`,
+The Welcome screen also shows a rotating random writing quote from famous screenwriters. The top bar is draggable (window drag) and hosts a subtle Update pill when an update is available.`,
   },
   {
     id: "new-project",
@@ -605,28 +605,26 @@ Upon execution, a summary modal opens displaying the total number of lines remov
     category: "Writing Tools",
     tags: ["search", "replace", "ctrl+f", "regex", "preserve case"],
     relatedIds: ["look-up"],
-    content: `Press <kbd>Ctrl+F</kbd> to open the Find & Replace pane on the right side of the editor. Features:
+    content: `Press <kbd>Ctrl+F</kbd> to open the Find & Replace pane on the right side of the editor (floating paper card: \`12px\` radius, \`8px\` shadow). Features:
 
-- **Find input** — auto-populates from selected text when opened
-- **Match Case** (\`Aa\`) toggle — case-sensitive search
-- **Whole Word** (\`\\b\`) toggle — match only whole words
-- **Regex** (\`.*\`) toggle — treat search as regular expression
-- **Match counter** — shows \`currentMatch/totalMatches\` with prev/next arrows
-- **Results list** — all matches shown with scene name context and line preview; click any result to jump to it in the editor
+- **Pill Find input** (\`20px\` radius, paper background) — auto-populates from selected text when opened
+- **Pill toggles** (\`20px\` radius): **Match Case** (\`Aa\`) — case-sensitive search, **Whole Word** (\`\\b\`) — match only whole words, **Regex** (\`.*\`) — treat search as regular expression. Active toggles show a soft primary tint.
+- **Match counter** — pill chip (\`20px\`) showing \`currentMatch/totalMatches\` with prev/next arrows
+- **Results list** — rounded items (\`8px\`) with scene number pill (\`6px\`), scene context and line preview with highlighted hit (\`3px\` radius, warning background); click any result to jump to it in the editor; each row has a \`4px\` checkbox for selective replace
 - **Close** — \`×\` button in the pane header or <kbd>Esc</kbd>
 - **Enter** — jump to next match; <kbd>Shift+Enter</kbd> — jump to previous match
 
-All matches are highlighted inline in the editor with a yellow background.
+All matches are highlighted inline in the editor with a soft warning background.
 
 **Replace** (collapsible section):
 
-- **Replace input** — text field for replacement
-- **Preserve Case** (\`AB\`) toggle — intelligently adapts replacement case (ALL CAPS → ALL CAPS, Capitalized → Capitalized, lowercase → lowercase)
-- **Replace** — replaces the currently selected match and moves to next
-- **Replace Selected** — replaces only the specific match selected via checkbox in the results list
-- **Replace All** — replaces all matches with confirmation before proceeding
+- **Pill Replace input** (\`20px\` radius) — text field for replacement
+- **Preserve Case** (\`AB\`) pill toggle — intelligently adapts replacement case (ALL CAPS → ALL CAPS, Capitalized → Capitalized, lowercase → lowercase)
+- **Replace** — outlined pill button (\`20px\`) replaces the currently selected match and moves to next
+- **Replace Selected** — outlined pill button replaces only the specific match selected via checkbox
+- **Replace All** — contained pill button (\`20px\`) replaces all matches with confirmation before proceeding
 
-The pane width is adjustable — drag the left edge of the pane to resize. Press <kbd>Ctrl+F</kbd> again or click the close button to dismiss.`,
+The pane width is adjustable — drag the left edge (now a subtle rounded divider with hover glow) to resize. Press <kbd>Ctrl+F</kbd> again or click the close button to dismiss.`,
   },
   {
     id: "scene-numbers",
@@ -649,24 +647,26 @@ Scene numbers display in the editor margins and as badges in the Outline Navigat
     category: "Workspace & Views",
     tags: ["activity bar", "sidebar", "tabs", "icons"],
     relatedIds: ["outline-navigator", "sidebar-panels", "zen-mode", "quick-settings", "command-palette"],
-    content: `The Activity Bar on the left side of the window provides access to all sidebar panels. Click an icon to open that view; click again to close the sidebar. An accent-colored left indicator bar shows which panel is active.
+    content: `The Activity Bar is a slim **46px** vertical dock on the left with **4px** inset padding, organized into grouped tool sections. Click an icon to open that panel; click again to close the sidebar. The active item shows a soft pill background with the theme accent — the old left-side vertical bar indicator is no longer used.
 
-**Tabs available:**
+**Tabs available (two groups separated by a subtle hairline):**
 
-| Tab | Purpose | Requires .actone bundle? |
-|-----|---------|--------------------------|
-| Outline | Hierarchical tree of sections, scenes, synopses | No |
-| Scripts | Multi-script bundle manager | Yes (hidden for plain .fountain) |
-| Notepad | Freeform outline / notes | Yes |
-| Markers | List of \`[[marker …]]\` notes | No |
-| Tasks | To-do checklist | Yes |
-| Snapshots | Version history & restore | No |
-| Sprint | Writing timer & history | No |
-| Parking | Temporary text storage | Yes |
+| Group | Tab | Purpose | Requires .actone bundle? |
+|-------|-----|---------|--------------------------|
+| Content | Outline | Hierarchical scene cards with filter & sort | No |
+| Content | Scripts | Multi-script bundle manager | Yes (hidden for plain .fountain) |
+| Content | Notepad | Freeform outline / notes | Yes |
+| Tools | Markers | List of \`[[marker …]]\` notes | No |
+| Tools | Tasks | To-do checklist | Yes |
+| Tools | Snapshots | Version history & restore | No |
+| Tools | Sprint | Writing timer, history & leaderboard | No |
+| Tools | Parking | Temporary text storage | Yes |
 
 For plain \`.fountain\` files, only the **Outline** tab is shown in the Activity Bar. Other tabs are hidden (not shown with a banner).
 
-The bottom of the Activity Bar has a **Command Palette** button (magnifying-glass icon, <kbd>Ctrl+K</kbd>) and a **Quick Settings** button (gear icon).
+**Bottom dock:** a **Quick Settings** button (gear icon) and a **Zen Mode** toggle. The **Command Palette** (\`Ctrl+K\`) is now triggered from the header — clicking the theme logo — or via the keyboard shortcut.
+
+**Tool item visuals:** each icon sits in a \`38×38px\` rounded square (\`8px\` radius); inactive items are muted with a soft hover pill, active items use the primary accent with high-contrast icon.
 
 For character data, statistics, and analysis charts, open the **X-Ray Analysis** window from the Status Bar bar-chart icon or Command Palette — see \`xray-analysis\`.`,
   },
@@ -676,18 +676,19 @@ For character data, statistics, and analysis charts, open the **X-Ray Analysis**
     category: "Workspace & Views",
     tags: ["outline", "navigator", "sidebar", "tree", "hierarchy"],
     relatedIds: ["sections", "synopsis", "scene-reorder", "activity-bar", "scene-highlighting", "storylines"],
-    content: `The Outline sidebar (first tab) displays a hierarchical tree of your sections (\`#\`), scenes (headings), and synopses (\`=\`). Features:
+    content: `The Outline sidebar (first tab) displays a hierarchical view of your screenplay as **rounded scene cards** (not plain list rows). Features:
 
-- Click an item to scroll the editor to that line.
+- Click a card to scroll the editor to that line; the active card shows a primary-colored border, soft shadow, and subtle tint.
+- **Card anatomy:** header row with monospace scene-number badge + heading, italicized truncated synopsis, and tag badges (character pills, time-of-day, storyline chips styled as \`4px\` rounded pills). *No left-side vertical accent bars are used.*
 - Collapsible section headers — click the chevron, double-click, or use <kbd>←</kbd>/<kbd>→</kbd> to expand/collapse.
-- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>←</kbd><kbd>→</kbd> to collapse/expand sections, <kbd>Enter</kbd> to jump to line.
-- Search/filter field to find items by text.
-- Visibility toggles: show/hide **Sections**, **Scenes**, **Synopses**, and **Storylines**.
-- Color filter popover: filter by scene color with count badges, "Clear All" to reset.
+- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>←</kbd>/<kbd>→</kbd> to collapse/expand sections, <kbd>Enter</kbd> to jump to line.
+- **Pill search filter** at the top (\`9999px\` radius) with instant filtering by text, location, or character.
+- Color filter popover (via filter/tune icon): filter by scene color with count badges, "Clear All" to reset.
 - Storyline filter popover: filter by storyline label with count badges.
-- Scene color dots, scene number badges, and storyline chips displayed per item.
-- Outline font size: Small / Normal / Large (persisted in localStorage).
-- Drag-and-drop scene reordering (six-dot grab handle).`,
+- Outline font size: Small / Normal / Large via the \`⋯\` menu in the header (persisted in localStorage).
+- Drag-and-drop scene reordering via the grab handle (six-dot icon, \`14px\`) — blue ghost + insertion indicator.
+
+For prose documents (\`.md\`), the panel switches to **Table of Contents** mode listing Markdown headings.`,
   },
   {
     id: "sidebar-panels",
@@ -812,13 +813,13 @@ X-Ray data updates live as you type.`,
     category: "Workspace & Views",
     tags: ["tasks", "todo", "checklist", "revisions"],
     relatedIds: ["sidebar-panels", "sprint-timer"],
-    content: `The Tasks panel helps you track screenplay revisions and to-do items:
+    content: `The Tasks panel helps you track screenplay revisions and to-do items (rounded cards, \`8px\`):
 
-- Type a task in the input and press <kbd>Enter</kbd> or click the add button to add it.
-- Click the circle icon or press <kbd>Space</kbd>/<kbd>Enter</kbd> to toggle completion (moves to collapsible "Completed (N)" section with strikethrough text).
+- **Pill input** (\`20px\` radius) — type a task and press <kbd>Enter</kbd> or click the add button.
+- Click the circle icon or press <kbd>Space</kbd>/<kbd>Enter</kbd> to toggle completion (moves to collapsible "Completed (N)" section with strikethrough text and muted cards \`6px\`).
 - Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to select, <kbd>Enter</kbd>/<kbd>Space</kbd> to toggle, <kbd>Delete</kbd>/<kbd>Backspace</kbd> to remove.
 - Right-click selected text in the editor → **Create Task** to add it as a new task.
-- Each task has an individual delete (X) button.
+- Each task row shows storyline-like tags as rounded \`4px\` pills and has an individual delete (X) button.
 
 Persists in .actone bundles as \`todos\` in settings.`,
   },
@@ -828,19 +829,19 @@ Persists in .actone bundles as \`todos\` in settings.`,
     category: "Workspace & Views",
     tags: ["sprint", "timer", "writing", "wpm", "countdown"],
     relatedIds: ["tasks", "sidebar-panels", "statistics-overview"],
-    content: `The Sprint panel provides a countdown writing timer to boost productivity:
+    content: `The Sprint panel provides a countdown writing timer with a warm, card-based layout:
 
-- **Preset durations**: 5, 15, 25, 45, 60 minutes — click pill buttons to set.
-- **Custom duration**: Text field for 1–999 minutes.
-- **Active sprint**: Circular progress indicator, remaining time (MM:SS), words written so far (net from sprint start), live WPM calculation.
-- **Finish Sprint** — saves session to history. **Cancel** — discards session.
-- Status bar shows active sprint with remaining time and WPM.
+- **Preset durations**: pill buttons (\`20px\` radius) for **5, 15, 25, 45, 60 minutes** — active pill shows a soft primary tint. Click a pill to set the duration.
+- **Custom duration**: text field (\`8px\` radius, 85px wide) for 1–999 minutes, labeled "Custom Minutes".
+- **Start Sprint**: pill contained button (\`20px\`, full-width) with play icon — disabled until a duration is set.
+- **Active sprint card** (rounded \`12px\` paper with ambient shadow): circular progress ring, remaining time (MM:SS), and two metric pills — words written (primary) and live WPM (success). Actions: **Finish Sprint** (error pill) and **Cancel** (outlined pill).
+- Status bar shows an amber countdown pill when a sprint is active (\`MM:SS · WPM\`).
 
-**History tab:** All completed sprints with word count, date, duration, WPM, and file name. Delete individual entries or "Clear Global History".
+**History tab:** rounded list items (\`8px\`, subtle hover) with word count, date, duration, WPM, and file name. Delete individual entries; "Clear Global History" is a pill button.
 
 **Leaderboard tab:** Top 10 sprints ranked by word count with Gold (#1, \`#d4af37\`), Silver (#2, \`#c0c0c0\`), Bronze (#3, \`#cd7f32\`) badges.
 
-**Stats banner:** Personal Best WPM and Total Words Sprinted.
+**Stats banner:** pill container (\`10px\` radius) showing Personal Best WPM and Total Words Sprinted.
 
 Sprint data syncs to .actone bundles and localStorage.`,
   },
@@ -850,28 +851,28 @@ Sprint data syncs to .actone bundles and localStorage.`,
     category: "Workspace & Views",
     tags: ["snapshots", "version", "backup", "history", "restore"],
     relatedIds: ["sidebar-panels", "settings-overview"],
-    content: `The Snapshots panel saves point-in-time copies of your screenplay for easy rollback. Enable via Settings → Snapshots.
+    content: `The Snapshots panel saves point-in-time copies of your screenplay for easy rollback (rounded card layout, \`8px\`/\`12px\` radii). Enable via Settings → Snapshots.
 
 **Creating Snapshots:**
-- **Manual**: Add an optional comment and tag in the panel header, then click "New Snapshot".
+- **Manual**: Add an optional comment and tag in pill inputs (\`20px\` radius) in the panel header, then click the pill **New Snapshot** button (\`20px\`, full-width).
 - **Auto-snapshot**: Enable in Settings to take snapshots at regular intervals (1–60 min).
 - **On save**: Automatically snapshot every time you save the file.
 
 **Managing Snapshots:**
-- Each snapshot shows the date/time, file size, comment, and a colored tag (MANUAL, SAVE, AUTO, or custom).
-- Filter by tag type using the clickable pills (MANUAL / SAVE / AUTO / custom tags).
+- Each snapshot shows the date/time, file size, comment, and a colored tag (MANUAL, SAVE, AUTO, or custom) in a two-tier card — header row (\`8px 8px 0 0\`) + sub-card (\`0 0 8px 8px\`) with tags and comment.
+- Filter by tag type using pill filters (\`20px\` radius) at the top (MANUAL / SAVE / AUTO / custom tags) — active pill uses the primary accent.
 - Three-dot menu on each snapshot:
   - **Restore** — replaces the current file with the snapshot. A fresh snapshot is taken first so you never lose your current state.
   - **Open as File** — opens the snapshot content as a separate read-only tab.
   - **Delete** — removes the snapshot permanently.
 
 **Storage:**
-- **Project folder** (.snapshots/ subdirectory in the same folder as the .actone file) — default.
+- **Project folder** (\`.snapshots/\` subdirectory in the same folder as the \`.actone\` file) — default. When enabled, a custom path field with **Browse…** picker appears in Settings → Snapshots → Save Location (with Reset to Default).
 - **App data folder** (platform-specific application data directory).
-- **Custom folder** — choose any location on your filesystem.
+- **Custom folder** — choose any location via the Browse dialog.
 - Max auto-snapshots retention: 5–100 (default 20). Oldest auto-snapshots are pruned when the limit is exceeded.
 
-Snapshots are stored as separate files with metadata in \`snapshots_index.json\`. The panel also has an "Open Snapshots Folder" button to browse stored files directly.`,
+Snapshots are stored as separate files with metadata in \`snapshots_index.json\`. The panel also has an "Open Snapshots Folder" pill button to browse stored files directly. When snapshots are off, the panel shows a dashed rounded (\`12px\`) empty state with an **Enable Snapshots** pill CTA.`,
   },
   {
     id: "parking",
@@ -896,12 +897,13 @@ Persists in .actone bundle settings.`,
     category: "Workspace & Views",
     tags: ["markers", "notes", "inline", "filter"],
     relatedIds: ["notes-markers", "sidebar-panels"],
-    content: `The Markers sidebar shows all \`[[marker …]]\` notes from your script. Features:
+    content: `The Markers sidebar shows all \`[[marker …]]\` notes as **rounded cards** (not plain rows). Features:
 
-- Filter by text search (matches description and scene context).
-- Color filter popover: lists all marker colors in use with count badges; click to filter.
-- Each item shows: colored dot, scene number badge (if available), marker description text, storyline chips, scene context (italic), and line number.
-- Click a marker to scroll the editor to its position.
+- **Pill search field** (\`20px\` radius) — filter by text (matches description and scene context).
+- **Filter popover** (tune icon with active-count badge): lists all marker colors in use with count badges; click a chip to filter (chips are \`4px\` rounded).
+- Each card shows: line-number tag + scene-number badge (\`4px\` pills), description title, and a sub-card with scene context and storyline chips (uppercase \`4px\` pills with soft shadow).
+- Selected card has a primary-colored border and elevated shadow; hover lifts the border toward the accent.
+- Click a card to scroll the editor to its position.
 - Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>Enter</kbd> to jump.`,
   },
   {
@@ -951,17 +953,21 @@ Persists in .actone bundle settings.`,
     category: "Workspace & Views",
     tags: ["status bar", "info", "stats", "mode"],
     relatedIds: ["statistics-overview", "sprint-timer", "scripts-manager"],
-    content: `The Status Bar at the bottom of the window shows left-aligned and right-aligned info:
+    content: `The Status Bar is a slim **30px** bottom bar with floating capsule segments.
 
-**Left side:**
-- **Script Name** — clickable to switch scripts in multi-script bundles.
-- **Save Status** — "Saving…" spinner or "Saved" checkmark (auto-hides after 2 seconds).
-
-**Right side:**
-- **Active Sprint** (when running): colored dot + "Sprint: MM:SS / Nm (WPM)".
-- **Scenes** — count of scene headings (hidden on small screens).
-- **Words** — total word count (hidden on small screens).
+**Left group (Metrics capsule — pill \`9999px\`):**
+- **Words** — total word count with locale separators (hidden on small screens).
 - **Page** — "Page: currentPage of totalPages" (always visible).
+- When text is selected: \`N words selected\` appears in the capsule.
+
+**Center group (Script Selector capsule):**
+- Dropdown pill showing the active screenplay/bundle chapter with a soft \`▾\` arrow.
+
+**Right group (Assistant & Utilities):**
+- **Muse AI capsule** — glowing pill with a subtle purple dot indicator.
+- **Active Sprint** (when running): amber countdown pill \`MM:SS · WPM\`.
+- **Save Indicator**: green check icon (\`Saved\`) or amber dot (\`Saving…\`, auto-hides after 2s).
+- **Scenes** — scene-heading count (hidden on small screens).
 
 In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
   },
@@ -971,14 +977,18 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
     category: "Workspace & Views",
     tags: ["tabs", "files", "multi-tab", "close"],
     relatedIds: ["open-file", "new-project", "scripts-manager"],
-    content: `Open multiple scripts simultaneously in tabs in the header bar. Features:
+    content: `Open multiple projects simultaneously as **floating pill tabs** in the header bar (46px high, transparent background). Features:
 
-- **Dirty indicator**: a circular dot appears when unsaved changes exist (primary colored for active tab, text-secondary for inactive).
-- Close with <kbd>Alt+Q</kbd>, click the X, or middle-click the tab header.
+- **Tab capsules:** each tab is a pill (\`20px\` radius) with soft typography. The active tab has a paper background, ambient shadow (\`--shadow-sm\`), and a **primary-colored active dot** (6px) with a subtle glow; inactive tabs are transparent with a muted hover.
+- **Dirty indicator:** a small amber dot (\`#f59e0b\`, 6px) replaces/accompanies the close affordance when unsaved changes exist.
+- **Close button:** micro-circle (\`16×16px\`, 4px radius), muted until hover where it shows a soft error tint.
+- Close with <kbd>Alt+Q</kbd>, click the X circle, or middle-click the tab capsule.
 - Right-click a tab for **Close / Close Others / Close All** (dirty files prompt a Save & Close / Discard / Cancel dialog).
 - Scroll horizontally through tabs using the mouse wheel on the tab bar.
 - Navigate: <kbd>Ctrl+Tab</kbd> / <kbd>Ctrl+PageDown</kbd> (next), <kbd>Ctrl+Shift+Tab</kbd> / <kbd>Ctrl+PageUp</kbd> (previous). Both wrap around.
-- "+" button at the end creates a new untitled tab.`,
+- **New tab button (\`+\`):** soft circular ghost pill at the end, tooltip \`New Project (Ctrl+N)\`, hover tints to primary.
+
+The header background is transparent; window controls on the right are slim \`28px\` rounded squares with soft hover states (Close tints to crimson on hover).`,
   },
   {
     id: "quick-settings",
@@ -986,7 +996,7 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
     category: "Workspace & Views",
     tags: ["quick settings", "gear", "activity bar"],
     relatedIds: ["activity-bar", "settings-overview", "interface-scale", "editor-zoom", "theme-manager"],
-    content: `The gear icon at the bottom of the Activity Bar opens the Quick Settings menu with:
+    content: `The gear icon at the bottom of the Activity Bar opens the Quick Settings popover with:
 
 **View & Scale**
 - Interface Scale slider (75%–300%, step 5).
@@ -998,13 +1008,15 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
 - Hide Fountain Markup toggle.
 
 **Theme**
-- Theme color swatch grid — each theme shown as a 2×2 color cube (editor, sidebar, accent, dropdown). Click any swatch to switch instantly.
+- Theme color swatch grid — each theme shown as a 2×2 color cube (editor, sidebar, accent, dropdown) with \`6px\` rounded tiles. Click any swatch to switch instantly. The popover and its tiles use soft shadows and rounded corners.
 - "Manage Themes…" link to open the Theme Manager modal.
 
 **Layout & Page**
 - Paper Size toggle: Letter / A4.
 
-**Full Settings** link at the bottom opens the full Settings modal.`,
+**Full Settings** link at the bottom opens the full Settings window (five pill tabs: General / Editor / Spellcheck / Snapshots / Muse).
+
+Context menus and tooltips throughout the app use \`8px\` rounded papers and pill tooltips (\`6px\`, \`11px\` font) with ambient shadows.`,
   },
 
   // ===== PRODUCTION FEATURES =====
@@ -1211,19 +1223,19 @@ The Quick Guide is generated from the same registries used by the application, s
     category: "Settings & Customization",
     tags: ["settings", "ctrl+,", "configuration"],
     relatedIds: ["theme-manager", "auto-save", "font-paper", "interface-scale", "editor-settings"],
-    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings window. It has five tabs:
+    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings window. It has five **pill-segmented tabs** (General / Editor / Spellcheck / Snapshots / Muse) — the tab bar is a soft inset track (\`8px\` radius) with the active tab shown as a paper pill with shadow.
 
-**General:** Paper Size (Letter / A4), Interface Scale (75%–300%), Icon Style, Auto-Save toggle and interval, and Reset Settings.
+**General:** Paper Size (Letter / A4), Interface Scale (75%–300%), Icon Style, Auto-Save toggle and interval, and Reset Settings. Each section is a card (\`8px\` radius, subtle border).
 
-**Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Hide Fountain Markup, Focus Mode, and Syntax Colors.
+**Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Hide Fountain Markup, Line Focus, and Syntax Colors.
 
-**Spellcheck:** Enable spellcheck, choose an installed language, download dictionaries, manage installed languages, and clear the custom dictionary.
+**Spellcheck:** Enable spellcheck, Active Language dropdown (disabled when spellcheck is off), **Download More Languages** button, Installed Languages list (rounded \`6px\` rows; "Bundled" chip vs "Remove" for downloaded), and Personal Dictionary card with word-count chip and **Clear Custom Words**.
 
-**Snapshots:** Enable snapshots, review the project-local storage location, configure automatic and save-triggered snapshots, and set retention.
+**Snapshots:** Enable Automated Snapshots, Save Location with **Browse…** folder picker (and Reset to Default), info about the project's \`.snapshots/\` folder, and **Open Snapshots Folder** action. Retention controls live in the background.
 
 **Muse:** Configure the AI provider, model, temperatures, translation languages, and custom instructions.
 
-Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full modal.`,
+Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full window. Title bars across all secondary windows are transparent with minimal \`28px\` rounded window controls.`,
   },
   {
     id: "theme-manager",
@@ -1266,12 +1278,16 @@ Quick-switch between any theme from the **Quick Settings** menu (gear icon in th
 
 ---
 
-### Design System: Sharp & Tactile Buttons
+### Design System: Warm Craft Aesthetic
 
-ActOne features a strict **flat geometric aesthetic**:
-- **Sharp Corners**: All lists, dropdowns, chips, text inputs, dialog modals, scrollbars, and window control buttons are flattened to \`0\` border-radius.
-- **Outlined Text Boxes**: Text fields feature a sharp 1px border. Focused inputs display a crisp inner highlight border matching the theme's active accent color.
-- **Premium Buttons**: Primary buttons employ top-to-bottom tactile color gradients with a polished top edge highlight to feel physical and state-of-the-art across all custom and built-in themes.`,
+ActOne uses the **Arc / Craft** design system — a warm, tactile, literary workshop aesthetic defined in \`DESIGN.md\`:
+
+- **Rounded Capsules & Cards**: All surfaces use a harmonious radius scale — \`4px\` (chips/mini badges), \`6px\` (buttons/inputs/menu items), \`8px\` (tab pills/cards), \`12px\` (floating panels/modals), \`16px\` (welcome canvas), \`9999px\` (pill search bars/status capsules). No sharp \`0px\` corners appear in user-facing UI except the simulated manuscript page edges.
+- **Dual-Layer Ambient Shadows**: Soft diffused shadows (\`--shadow-xs/sm/md/lg/floating\`) create layered paper depth — active tab pills, scene cards, and dialogs float with subtle ambient diffusion rather than harsh black drops.
+- **Floating Pill Tabs & Controls**: Header tabs are pill capsules (\`20px\` radius) with primary-dot active indicators and amber dirty dots; window controls are \`28px\` rounded squares with soft hover glows.
+- **Pill Search & Toggles**: All filter/search inputs are pill-shaped (\`9999px\` radius); toggle groups (e.g. Settings tabs) are pill segmented controls with soft paper shadows on the active segment.
+- **Minimal Pill Scrollbars**: Thin \`6px\` capsule scroll thumbs with ambient hover, not blocky 10px bars.
+- **Premium Buttons**: Primary actions use pill (\`20px\`) contained buttons; secondary actions use outlined pills — both with tactile hover lifts and spring press feedback.`,
   },
   {
     id: "font-paper",

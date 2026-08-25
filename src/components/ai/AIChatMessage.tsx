@@ -184,7 +184,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
               sx={{
                 opacity: 0,
                 transition: "opacity 0.15s",
-                borderRadius: 0,
+                borderRadius: '4px',
                 p: 0.25,
                 color: copied ? "success.main" : "text.secondary",
               }}

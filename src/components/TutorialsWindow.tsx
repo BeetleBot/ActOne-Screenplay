@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Box, Typography, Button, Chip, ThemeProvider as MuiThemeProvider } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
-import { AutoAwesomeIcon } from "./Icons";
 import { TitleBar } from "./TitleBar";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
@@ -152,7 +151,6 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
       <Box sx={{ height: isModal ? "100%" : "100vh", display: "flex", flexDirection: "column", zoom: `${appScale}%`, overflow: "hidden" }}>
         <TitleBar
           title="Tutorials"
-          icon={<AutoAwesomeIcon sx={{ fontSize: 16 }} />}
           isModal={isModal}
           onClose={async () => {
             if (isModal && onClose) {
@@ -181,7 +179,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
                   letterSpacing: "0.04em",
                   color: activeSection === sec.id ? "primary.main" : "text.secondary",
                   bgcolor: activeSection === sec.id ? "action.selected" : "transparent",
-                  borderRadius: 0,
+                  borderRadius: '6px',
                   px: 1.5,
                   py: 0.75,
                   minWidth: 0,
@@ -202,7 +200,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
                   p: 2,
                   border: 1,
                   borderColor: "divider",
-                  borderRadius: 0,
+                  borderRadius: '8px',
                   bgcolor: "background.paper",
                   opacity: tutorial.comingSoon ? 0.6 : 1,
                 }}
@@ -212,7 +210,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
                       {tutorial.title}
                       {tutorial.comingSoon && (
-                        <Chip label="Coming soon" size="small" sx={{ ml: 1, height: 18, fontSize: 10, borderRadius: 0, fontWeight: 600 }} />
+                        <Chip label="Coming soon" size="small" sx={{ ml: 1, height: 18, fontSize: 10, borderRadius: '4px', fontWeight: 600 }} />
                       )}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
@@ -224,7 +222,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
                       variant="contained"
                       size="small"
                       onClick={() => handleStartTutorial(tutorial.tourType!)}
-                      sx={{ borderRadius: 0, fontSize: 11, textTransform: "none", py: 0.4, px: 1.5, minWidth: 72, flexShrink: 0, mt: 0.25 }}
+                      sx={{ borderRadius: '20px', fontSize: 11, fontWeight: 600, textTransform: "none", py: 0.4, px: 1.75, minWidth: 72, flexShrink: 0, mt: 0.25 }}
                     >
                       Start
                     </Button>

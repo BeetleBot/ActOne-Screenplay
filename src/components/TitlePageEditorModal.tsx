@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useFile, useUI } from "../context";
-import { TextFieldsIcon } from "./Icons";
 import { TitleBar } from "./TitleBar";
 
 import {
@@ -124,7 +123,7 @@ const inputSx = {
   fontSize: 12,
   '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
   bgcolor: 'action.hover',
-  borderRadius: 0,
+  borderRadius: '6px',
   '&:hover': { bgcolor: 'action.selected' },
   '& .MuiOutlinedInput-input': { py: 0.6, px: 1.25 },
 };
@@ -165,11 +164,10 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
   const hasTitlePage = Object.values(fields).some(v => v.trim().length > 0);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px', overflow: 'hidden' } }}>
       <DialogTitle sx={{ m: 0, p: 0 }}>
         <TitleBar
           title="Title Page Editor"
-          icon={<TextFieldsIcon sx={{ fontSize: 18 }} />}
           isModal
           onClose={onClose}
         />
@@ -182,6 +180,16 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
           onChange={(_, val) => val !== null && setActiveTab(val as number)}
           fullWidth
           size="small"
+          sx={{
+            p: '3px',
+            gap: '4px',
+            borderRadius: '8px',
+            bgcolor: 'action.hover',
+            '& .MuiToggleButtonGroup-grouped': {
+              border: 'none !important',
+              borderRadius: '6px !important',
+            },
+          }}
         >
           <ToggleButton value={0} sx={{ fontSize: 12, py: 0.3 }}>Form</ToggleButton>
           <ToggleButton value={1} sx={{ fontSize: 12, py: 0.3 }}>Raw</ToggleButton>
@@ -190,7 +198,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
 
       <DialogContent dividers sx={{ px: 2, py: 1.5, maxHeight: `${(65 * 100) / appScale}vh` }}>
         {activeTab === 0 && (
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
               METADATA FIELDS
             </Typography>
@@ -200,7 +208,6 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
                   No title page found. Fill in the fields below to create one.
                 </Typography>
               )}
-
               {FIELD_DEFS.map(({ key, label, rows }) => (
                 <Box key={key} sx={{ display: "flex", alignItems: rows && rows > 1 ? "flex-start" : "center", gap: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 11, minWidth: 80, flexShrink: 0, color: "text.secondary", pt: rows && rows > 1 ? 0.5 : 0 }}>
@@ -222,7 +229,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
         )}
 
         {activeTab === 1 && (
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
               RAW FOUNTAIN SYNTAX
             </Typography>
@@ -239,12 +246,12 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
                 sx={{
                   '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                   bgcolor: 'action.hover',
-                  borderRadius: 0,
+                  borderRadius: '6px',
                 }}
                 slotProps={{
                   input: {
                     sx: {
-                      fontFamily: "monospace",
+                      fontFamily: '"Courier Prime", Courier, monospace',
                       fontSize: 12,
                       lineHeight: 1.5,
                       py: 0.5, px: 1.25,
@@ -257,11 +264,26 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 2, py: 1, justifyContent: "space-between" }}>
-        <Button onClick={onClose} color="inherit" variant="outlined" size="small" sx={{ fontSize: 11 }}>Cancel</Button>
-        <Button onClick={handleApply} variant="contained" color="primary" size="small" sx={{ fontSize: 11 }}>
-          Apply to Document
+      <DialogActions sx={{ px: 2, py: 1.25, justifyContent: "space-between" }}>
+        <Button
+          size="small"
+          onClick={() => {
+            setFields({});
+            setFountainText("");
+          }}
+          color="error"
+          sx={{ fontSize: 11, fontWeight: 600, textTransform: "none", borderRadius: '20px', px: 1.75 }}
+        >
+          Clear Title Page
         </Button>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button size="small" onClick={onClose} sx={{ fontSize: 11, fontWeight: 600, textTransform: "none", borderRadius: '20px', px: 1.75 }}>
+            Cancel
+          </Button>
+          <Button size="small" variant="contained" onClick={handleApply} sx={{ fontSize: 11, fontWeight: 600, textTransform: "none", borderRadius: '20px', px: 2 }}>
+            Apply Changes
+          </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );

@@ -153,23 +153,32 @@ ActOne uses `@material/material-color-utilities` for color science — HCT (Hue,
 
 ---
 
-## Design System & Styling Constraints
+## Design System — Arc / Craft (Warm Tactile Studio)
 
-To maintain a cohesive, professional e-ink/monospace aesthetic across the entire application, several styling rules are enforced globally:
+The full visual language is authoritative in `DESIGN.md` (Option B: "Arc / Craft" — Warm, Tactile, Literary Craft Studio). Key tokens are implemented in `src/index.css` (`--radius-*`, `--shadow-*`, `--duration-*`) and `src/constants.ts` / `src/theme/muiTheme.ts`.
 
-### 1. Sharp Corners (Zero Border Radius)
-ActOne implements a strict flat design system with **no rounded corners**.
-- All dropdowns, inputs, list items, dialog sheets, and custom panels override Material UI's default rounded shapes with a hardcoded `borderRadius: 0` or default to the global shape settings (`shape: { borderRadius: 0 }`).
-- This applies to modals, templates, scrollbars, and window control buttons.
+### 1. Rounded Capsule Scale
+All user-facing surfaces use a harmonious radius scale — **not** sharp `0px` corners:
 
-### 2. Global Outlined Inputs
-Text boxes and inputs use a custom flat style:
-- The default Material UI `fieldset notch` is hidden.
-- The wrapper is styled with a `1px solid` border using the theme's `divider` or `border` colors.
-- Focused inputs receive an inset `boxShadow` ring matching the theme's accent color rather than an external ring.
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--radius-xs` | 4px | status dots, KBD keycaps, tag chips |
+| `--radius-sm` | 6px | buttons, inputs, dropdown items, scene cards |
+| `--radius-md` | 8px | tab capsules, dock items, banner cards |
+| `--radius-lg` | 12px | floating sidebars, tool containers, modal papers |
+| `--radius-xl` | 16px | welcome dialog, large floating canvases |
+| `--radius-pill` | 9999px | status pills, search bars, active count capsules |
 
-### 3. Premium Button Styling
-Standard `Button` elements feature a tactile 3D effect designed to look premium under any color palette:
-- **Contained Buttons**: Rendered with a top-to-bottom background gradient using the theme's primary/accent color (`accent`) mixed with a dark overlay at the bottom. It utilizes an inset highlight shadow (`inset 0 1.5px 0px rgba(255, 255, 255, 0.12)`) to create a polished top edge highlight.
-- **Outlined Buttons**: Transparent background with a `1px` border that transitions cleanly on hover/active focus states using a light color-mixed background tint.
-- **Inherit/Neutral Buttons**: Contained buttons styled with `color="inherit"` dynamically build a gradient based on the current theme's neutral button background (`button`).
+Global `shape.borderRadius` is `6` (MUI default). Papers default to `8px`, dialogs to `12px`, menus/popovers to `8px`. Pill search inputs and tab capsules use `20px`/`9999px`. Only the simulated manuscript page edges remain sharp.
+
+### 2. Dual-Layer Ambient Shadows
+No single-layer harsh black drops. Light theme uses dual-layer diffusion (`--shadow-xs/sm/md/lg/floating` + `--shadow-page`); dark theme uses deeper ambient variants. Active tab pills, scene cards, and dialogs float with subtle depth.
+
+### 3. Motion & Tactile Feedback
+`--duration-fast 0.12s` / `--duration-normal 0.20s` / `--duration-slow 0.28s` with `--easing-snappy` and `--easing-spring` curves. Cards lift on hover (`translateY(-1px)` + `--shadow-sm`), press scales to `0.98` / `0.92` for tactile bounce.
+
+### 4. Minimal Pill Scrollbars
+Thin `6px` capsule thumbs (`border-radius: 9999px`, `background-clip: padding-box`, `scrollbar-width: thin`) with soft hover, not blocky 10px bars.
+
+### 5. Input & Button Styling
+Outlined inputs have soft `6px` radius, paper backgrounds, and focus within `0 0 0 2px accent-mix` ring. Primary actions are pill contained buttons (`20px` radius); secondary are outlined pills. Contained buttons use the accent gradient with polished top-edge highlight; hover/active states use alpha-tinted feedback.

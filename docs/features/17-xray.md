@@ -1,8 +1,8 @@
 # X-Ray Analysis
 
-**Window:** `?modal=xray` — Screenplay analysis dashboard (one of the larger components)
+**Window:** `?modal=xray` — Screenplay analysis dashboard (transparent TitleBar with `28px` rounded window controls, no header icon badge)
 
-The X-Ray window is a comprehensive screenplay analysis dashboard.
+The X-Ray window is a comprehensive screenplay analysis dashboard with pill-tab modes (Statistics / Timing / Characters / Connections / Pacing).
 
 ## Features
 

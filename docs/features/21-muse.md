@@ -163,13 +163,12 @@ Context is built from the current parsed document, but the current implementatio
 
 ## Composer Behavior
 
-`AIChatComposer` is a plain multiline textarea:
+`AIChatComposer` is a pill-shaped input (container `20px` radius with `1px` divider border, focus ring `0 0 0 2px accent-mix`, focus `primary.main` border). The textarea is borderless inside the pill; the send button is a `20px` circular pill (primary) with tactile scale feedback (`scale(1.04)` on hover, `0.96` on press):
 
 - `Enter` sends the message.
-- `Shift+Enter` inserts a newline.
+- `Shift+Enter` inserts a newline (history navigation for prior prompts in this session: `↑`/`↓`).
 - `Escape` stops an active generation.
-- Up and Down navigate prompts entered during the current composer lifetime.
-- The send button becomes a stop button while streaming.
+- The send button becomes a stop button while streaming; disabled state uses `action.disabledBackground`.
 - The composer is disabled when the provider is `none`.
 
 The composer does not implement `@` command autocomplete or command mode. Users should write requests in normal language.

@@ -8,7 +8,7 @@ import {
   useTheme as useMuiTheme,
 } from "@mui/material";
 import { TitleBar } from "./TitleBar";
-import { AutoAwesomeIcon, CheckIcon } from "./Icons";
+import { CheckIcon } from "./Icons";
 import type { FixFormattingReport } from "../utils/fixFormatting";
 
 interface FixFormattingModalProps {
@@ -43,7 +43,7 @@ export const FixFormattingModal: React.FC<FixFormattingModalProps> = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 0,
+            borderRadius: '12px',
             bgcolor: "background.paper",
             color: "text.primary",
             backgroundImage: "none",
@@ -57,7 +57,7 @@ export const FixFormattingModal: React.FC<FixFormattingModalProps> = ({
         },
       }}
     >
-      <TitleBar title="Fix Formatting Result" onClose={onClose} icon={<AutoAwesomeIcon sx={{ fontSize: 16 }} />} isModal />
+      <TitleBar title="Fix Formatting Result" onClose={onClose} isModal />
 
       <Box sx={{ p: 2.5 }}>
         <Box
@@ -70,7 +70,7 @@ export const FixFormattingModal: React.FC<FixFormattingModalProps> = ({
             bgcolor: "action.hover",
             border: "1px solid",
             borderColor: "divider",
-            borderRadius: 0,
+            borderRadius: '10px',
           }}
         >
           <Box
@@ -83,7 +83,7 @@ export const FixFormattingModal: React.FC<FixFormattingModalProps> = ({
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              borderRadius: 0,
+              borderRadius: '8px',
             }}
           >
             <CheckIcon sx={{ fontSize: 24 }} />
@@ -104,11 +104,12 @@ export const FixFormattingModal: React.FC<FixFormattingModalProps> = ({
           <Box
             sx={{
               bgcolor: "background.paper",
-              borderRadius: 0,
+              borderRadius: '10px',
               display: "flex",
               flexDirection: "column",
               border: "1px solid",
               borderColor: "divider",
+              overflow: "hidden",
             }}
           >
             {stats.map((stat, idx) => (
@@ -148,9 +149,11 @@ export const FixFormattingModal: React.FC<FixFormattingModalProps> = ({
             size="small"
             onClick={onClose}
             sx={{
-              borderRadius: 0,
+              borderRadius: '20px',
               textTransform: "none",
-              fontWeight: 700,
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              py: 0.75,
               px: 3,
             }}
           >

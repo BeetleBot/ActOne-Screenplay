@@ -8,13 +8,13 @@ The Parking feature allows you to temporarily stash text snippets for later use.
 2. Right-click → **Park Selection**
 3. The text is removed from the document and stored in the Parking sidebar tab
 
-## Parking Panel (Sidebar Tab 9)
+## Parking Panel (Sidebar Tab — Tools group)
 
-Lists all parked items:
+Lists all parked items as rounded cards (`8px` radius with soft shadow):
 - Shows preview of parked text
-- Click to copy back to a chosen location
-- Delete individual items
-- Clear all button
+- Click a card to reinsert at cursor (auto-removes from Parking)
+- Delete individual items (X button)
+- Keyboard nav `↑`/`↓`, `Enter` to insert
 
 ## Persistence
 

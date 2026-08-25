@@ -156,7 +156,7 @@ export const ScriptsView = React.memo(() => {
       padding: "5px 12px",
       background: "var(--button-color, rgb(25, 118, 210))",
       color: "white",
-      borderRadius: "0",
+      borderRadius: "6px",
       fontSize: "12px",
       fontWeight: "600",
       fontFamily: "var(--font-ui)",
@@ -254,6 +254,7 @@ export const ScriptsView = React.memo(() => {
                   sx: {
                     bgcolor: "background.paper",
                     fontSize: "0.75rem",
+                    borderRadius: "20px",
                     "& fieldset": { border: "none" },
                   },
                   startAdornment: (
@@ -281,14 +282,14 @@ export const ScriptsView = React.memo(() => {
             fontSize: "12.5px",
             fontFamily: "var(--font-ui)",
             "&::-webkit-scrollbar": {
-              width: 8,
+              width: 6,
             },
             "&::-webkit-scrollbar-track": {
               bgcolor: "transparent",
             },
             "&::-webkit-scrollbar-thumb": {
-              bgcolor: "var(--button-color, rgba(0, 0, 0, 0.35))",
-              borderRadius: 0,
+              bgcolor: "var(--button-color, rgba(120, 120, 120, 0.25))",
+              borderRadius: "9999px",
               border: "none",
               "&:hover": {
                 bgcolor: "primary.main",
@@ -339,10 +340,11 @@ export const ScriptsView = React.memo(() => {
                     }}
                     data-script-index={originalIndex}
                     sx={{
-                      borderRadius: 0,
-                      mb: 0.35,
-                      px: 1,
-                      py: 0.45,
+                      borderRadius: "8px",
+                      mb: 0.6,
+                      px: 1.25,
+                      py: 0.85,
+                      minHeight: 40,
                       opacity: isDragging ? 0.4 : 1,
                       border: "1px solid",
                       borderColor: isOver
@@ -351,11 +353,12 @@ export const ScriptsView = React.memo(() => {
                         ? "var(--button-color, primary.main)"
                         : "color-mix(in srgb, var(--text-main) 8%, transparent)",
                       bgcolor: isActive ? "action.selected" : "background.paper",
-                      boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.06)" : "0 1px 2px rgba(0,0,0,0.02)",
+                      boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.08)" : "0 1px 2px rgba(0,0,0,0.02)",
                       transition: "all var(--duration-fast) ease",
                       "&:hover": {
                         bgcolor: "action.hover",
                         borderColor: "color-mix(in srgb, var(--button-color) 40%, transparent)",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
                       },
                     }}
                   >
@@ -367,14 +370,14 @@ export const ScriptsView = React.memo(() => {
                         alignItems: "center",
                         cursor: "grab",
                         color: "text.disabled",
-                        mr: 0.8,
+                        mr: 1,
                         flexShrink: 0,
                         "&:hover": { color: "text.secondary" },
                         "&:active": { cursor: "grabbing" },
                       }}
                       title="Drag to reorder"
                     >
-                      <DragHandleIcon sx={{ fontSize: 13 }} />
+                      <DragHandleIcon sx={{ fontSize: 14 }} />
                     </Box>
 
                     {/* 2. File Name or Edit Input */}
@@ -397,7 +400,7 @@ export const ScriptsView = React.memo(() => {
                         onDoubleClick={(e) => e.stopPropagation()}
                         slotProps={{
                           input: {
-                            sx: { fontSize: "0.8rem", py: 0.2, height: 22 },
+                            sx: { fontSize: "0.85rem", py: 0.3, height: 26 },
                           },
                         }}
                         sx={{ flex: 1, mr: 0.5 }}
@@ -408,7 +411,7 @@ export const ScriptsView = React.memo(() => {
                         sx={{
                           fontWeight: isActive ? 700 : 500,
                           color: "text.primary",
-                          fontSize: "0.8rem",
+                          fontSize: "0.84rem",
                           fontFamily: "var(--font-ui)",
                           letterSpacing: "0.01em",
                           overflow: "hidden",
@@ -426,8 +429,8 @@ export const ScriptsView = React.memo(() => {
                     <OutlineTag
                       label={isMarkdown ? "MD" : "FOUNTAIN"}
                       variant={isMarkdown ? "accent" : "default"}
-                      size="0.7rem"
-                      sx={{ ml: 0.8, mr: 0.5 }}
+                      size="0.72rem"
+                      sx={{ ml: 1, mr: 0.5, py: 0.2, px: 0.8, borderRadius: "5px" }}
                     />
 
                     {/* 4. More Options Context Menu Button */}
@@ -438,13 +441,13 @@ export const ScriptsView = React.memo(() => {
                         setMenuState({ anchorEl: e.currentTarget, index: originalIndex });
                       }}
                       sx={{
-                        p: 0.25,
-                        opacity: 0.4,
+                        p: 0.3,
+                        opacity: 0.5,
                         "&:hover": { opacity: 1 },
                         flexShrink: 0,
                       }}
                     >
-                      <MoreVertIcon sx={{ fontSize: 14 }} />
+                      <MoreVertIcon sx={{ fontSize: 16 }} />
                     </IconButton>
                   </ListItemButton>
                 );

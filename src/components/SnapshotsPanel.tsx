@@ -107,7 +107,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
               slotProps={{
                 input: {
                   sx: {
-                    borderRadius: 0,
+                    borderRadius: "20px",
                     fontSize: "0.8rem",
                     py: 0.3,
                     bgcolor: "background.paper",
@@ -126,7 +126,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
               slotProps={{
                 input: {
                   sx: {
-                    borderRadius: 0,
+                    borderRadius: "20px",
                     fontSize: "0.8rem",
                     py: 0.3,
                     bgcolor: "background.paper",
@@ -141,13 +141,13 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
               variant="contained"
               startIcon={<AddIcon sx={{ fontSize: 16 }} />}
               onClick={handleCreate}
-              sx={{ borderRadius: 0, py: 0.65, fontSize: "0.75rem", fontWeight: 600 }}
+              sx={{ borderRadius: "20px", py: 0.75, fontSize: "0.75rem", fontWeight: 600, textTransform: "none" }}
             >
               New Snapshot
             </Button>
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2, alignItems: "center", justifyContent: "center", py: 2.5, px: 2, bgcolor: "action.hover", borderRadius: 0, border: "1px dashed", borderColor: "divider" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2, alignItems: "center", justifyContent: "center", py: 2.5, px: 2, bgcolor: "action.hover", borderRadius: "12px", border: "1px dashed", borderColor: "divider" }}>
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", fontSize: "0.75rem" }}>
               Snapshots are currently turned off.
             </Typography>
@@ -155,7 +155,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
               size="small"
               variant="contained"
               onClick={() => updateSettings({ enabled: true })}
-              sx={{ borderRadius: 0, fontSize: "0.75rem", px: 2, py: 0.5 }}
+              sx={{ borderRadius: "20px", fontSize: "0.75rem", px: 2.5, py: 0.6, textTransform: "none" }}
             >
               Enable Snapshots
             </Button>
@@ -183,29 +183,25 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                   sx={(theme: Theme) => {
                     const baseColor = opt.isAccent ? "var(--button-color, primary.main)" : theme.palette.text.secondary;
                     return {
-                      fontSize: "8.5px",
+                      fontSize: "9px",
                       fontFamily: "var(--font-ui)",
                       fontWeight: 700,
-                      letterSpacing: "0.04em",
-                      px: 0.8,
-                      py: 0.2,
-                      borderRadius: 0,
+                      letterSpacing: "0.02em",
+                      px: 1.25,
+                      py: 0.35,
+                      borderRadius: "20px",
                       cursor: "pointer",
                       userSelect: "none",
-                      border: "1px solid",
-                      borderColor: isSelected
-                        ? "var(--button-color, primary.main)"
-                        : "color-mix(in srgb, var(--text-main) 16%, transparent)",
+                      border: "none",
                       color: isSelected ? "primary.contrastText" : baseColor,
                       backgroundColor: isSelected
                         ? "var(--button-color, primary.main)"
                         : "color-mix(in srgb, var(--text-main) 6%, transparent)",
-                      transition: "all var(--duration-fast) var(--easing-standard)",
+                      transition: "all 0.15s ease",
                       "&:hover": {
                         backgroundColor: isSelected
                           ? "var(--button-color, primary.main)"
                           : "color-mix(in srgb, var(--button-color) 15%, transparent)",
-                        borderColor: "var(--button-color, primary.main)",
                       },
                     };
                   }}
@@ -242,7 +238,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                           setContextMenu({ x: e.clientX, y: e.clientY, info });
                         }}
                         sx={{
-                          borderRadius: 0,
+                          borderRadius: "8px 8px 0 0",
                           mb: 0,
                           px: 1,
                           py: 0.45,
@@ -300,8 +296,9 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                       {/* Second Tier: Attached Sub-Card with Tags & Comment */}
                       <Box
                         sx={{
-                          mb: 0.35,
+                          mb: 0.5,
                           p: "5px 8px",
+                          borderRadius: "0 0 8px 8px",
                           border: "1px solid",
                           borderColor: "color-mix(in srgb, var(--text-main) 10%, transparent)",
                           borderTop: "none",

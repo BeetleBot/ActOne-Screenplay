@@ -7,13 +7,13 @@ import {
   List, 
   ListItem, 
   ListItemText, 
-  Divider, 
   Paper,
   TextField,
   CircularProgress,
   Tooltip,
   Tabs,
-  Tab
+  Tab,
+  alpha
 } from "@mui/material";
 import { useSprint, useFile, useEditor, type SprintSession } from "../context";
 import { countWords } from "../utils";
@@ -188,46 +188,52 @@ export const SprintView = React.memo(() => {
       </Box>
 
       {/* Content Area */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, gap: 2, overflowY: "auto" }}>
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 1.5, gap: 1.5, overflowY: "auto" }}>
         {/* Main Timer Control Area */}
         <Box sx={{ mb: 0 }}>
         {!currentSprint ? (
-          <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: 0, border: 1, borderColor: "divider" }}>
+          <Paper elevation={0} sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, borderRadius: "12px", border: "1px solid", borderColor: "divider", bgcolor: "background.paper", boxShadow: (t) => t.palette.mode === "dark" ? "0 4px 16px rgba(0,0,0,0.3)" : "0 2px 8px rgba(0,0,0,0.04)" }}>
             <Box>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase", display: "block", mb: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "text.disabled", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", mb: 1 }}>
                 Preset Duration
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {presets.map((p) => (
-                  <Box
-                    key={p}
-                    onClick={() => setSprintDuration(p)}
-                    sx={{
-                      px: 1.5,
-                      py: 0.4,
-                      borderRadius: 0,
-                      border: "1px solid",
-                      borderColor: sprintDuration === p ? "primary.main" : "divider",
-                      bgcolor: sprintDuration === p ? "color-mix(in srgb, currentColor 12%, transparent)" : "transparent",
-                      color: sprintDuration === p ? "primary.main" : "text.secondary",
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      letterSpacing: "0.04em",
-                      cursor: "pointer",
-                      textTransform: "uppercase",
-                      transition: "all var(--duration-fast)",
-                      userSelect: "none",
-                    }}
-                  >
-                    {p}m
-                  </Box>
-                ))}
+                {presets.map((p) => {
+                  const isSelected = sprintDuration === p;
+                  return (
+                    <Box
+                      key={p}
+                      onClick={() => setSprintDuration(p)}
+                      sx={{
+                        px: 1.75,
+                        py: 0.5,
+                        borderRadius: "20px",
+                        border: "none",
+                        bgcolor: (t) => isSelected ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.25 : 0.14) : alpha(t.palette.text.primary, 0.05),
+                        color: isSelected ? "primary.main" : "text.secondary",
+                        fontSize: 11,
+                        fontWeight: isSelected ? 700 : 600,
+                        letterSpacing: "0.02em",
+                        cursor: "pointer",
+                        textTransform: "uppercase",
+                        transition: "all 0.15s ease",
+                        userSelect: "none",
+                        "&:hover": {
+                          bgcolor: (t) => isSelected ? alpha(t.palette.primary.main, 0.28) : alpha(t.palette.text.primary, 0.09),
+                          color: isSelected ? "primary.main" : "text.primary",
+                        },
+                      }}
+                    >
+                      {p}m
+                    </Box>
+                  );
+                })}
               </Box>
             </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, borderTop: "1px solid", borderColor: "divider", pt: 1.5 }}>
               <Box>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>Custom Minutes</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>Custom Minutes</Typography>
                 <Typography variant="caption" color="text.secondary">Enter custom duration</Typography>
               </Box>
               <TextField
@@ -242,9 +248,9 @@ export const SprintView = React.memo(() => {
                   htmlInput: { min: 1, max: 999, style: { textAlign: 'center', fontWeight: '700', width: '50px' } }
                 }}
                 sx={{
-                  width: 90,
+                  width: 85,
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: 0,
+                    borderRadius: "8px",
                   }
                 }}
               />
@@ -253,15 +259,15 @@ export const SprintView = React.memo(() => {
             <Button
               variant="contained"
               fullWidth
+              size="small"
               startIcon={<PlayArrowIcon />}
               onClick={handleStart}
               disabled={!sprintDuration || sprintDuration <= 0}
               sx={{
-                mt: 0.5,
-                py: 1.25,
-                fontWeight: 700,
-                fontSize: "13px",
-                borderRadius: 0,
+                borderRadius: "20px",
+                py: 0.75,
+                fontSize: "0.75rem",
+                fontWeight: 600,
                 textTransform: "none",
               }}
             >
@@ -270,15 +276,17 @@ export const SprintView = React.memo(() => {
           </Paper>
         ) : (
           <Paper
-            variant="outlined"
+            elevation={0}
             sx={{
-              p: 2.5,
+              p: 2,
               display: "flex",
               flexDirection: "column",
-              gap: 2.5,
-              borderRadius: 0,
-              background: `color-mix(in srgb, var(--button-color) 6%, transparent)`,
-              border: `1px solid color-mix(in srgb, var(--button-color) 18%, transparent)`,
+              gap: 2,
+              borderRadius: "12px",
+              bgcolor: "background.paper",
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: (t) => t.palette.mode === "dark" ? "0 6px 20px rgba(0,0,0,0.35)" : "0 2px 10px rgba(0,0,0,0.05)",
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -310,8 +318,8 @@ export const SprintView = React.memo(() => {
               </Box>
             </Box>
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
-              <Box sx={{ py: 1.5, textAlign: "center", border: 1, borderColor: "divider", borderRadius: 0, bgcolor: "background.paper" }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.25 }}>
+              <Box sx={{ py: 1.25, textAlign: "center", borderRadius: "10px", bgcolor: (t) => alpha(t.palette.text.primary, 0.04) }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main" }}>
                   {sprintWords}
                 </Typography>
@@ -320,7 +328,7 @@ export const SprintView = React.memo(() => {
                 </Typography>
               </Box>
 
-              <Box sx={{ py: 1.5, textAlign: "center", border: 1, borderColor: "divider", borderRadius: 0, bgcolor: "background.paper" }}>
+              <Box sx={{ py: 1.25, textAlign: "center", borderRadius: "10px", bgcolor: (t) => alpha(t.palette.text.primary, 0.04) }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: "success.main" }}>
                   {activeWpm}
                 </Typography>
@@ -335,13 +343,15 @@ export const SprintView = React.memo(() => {
                 variant="contained"
                 color="error"
                 fullWidth
+                size="small"
                 startIcon={<StopIcon />}
                 onClick={handleStop}
                 sx={{
-                  borderRadius: 0,
+                  borderRadius: "20px",
+                  py: 0.75,
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
                   textTransform: "none",
-                  fontWeight: 700,
-                  py: 1.25,
                 }}
               >
                 Finish Sprint
@@ -349,15 +359,19 @@ export const SprintView = React.memo(() => {
               <Button 
                 variant="outlined" 
                 color="inherit" 
+                size="small"
                 onClick={handleCancel}
                 sx={{ 
-                  borderRadius: 0, 
-                  textTransform: "none", 
-                  fontWeight: 600, 
-                  py: 1.25,
+                  borderRadius: "20px", 
+                  py: 0.75,
+                  px: 2,
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  textTransform: "none",
                   borderColor: "divider",
                   "&:hover": {
-                    borderColor: "text.primary"
+                    borderColor: "text.primary",
+                    bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
                   }
                 }}
               >
@@ -369,87 +383,85 @@ export const SprintView = React.memo(() => {
       </Box>
 
       {/* Tabs and History/Leaderboard Lists */}
-      <Box sx={{ borderTop: 1, borderColor: "divider", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <Box sx={{ borderTop: "1px solid", borderColor: "divider", flex: 1, display: "flex", flexDirection: "column", minHeight: 0, pt: 1 }}>
         <Tabs 
           value={activeTab} 
           onChange={(_, val) => setActiveTab(val)} 
           variant="fullWidth" 
-          sx={{ minHeight: 40, "& .MuiTab-root": { minHeight: 40, fontSize: 11, fontWeight: 700 } }}
+          sx={{ minHeight: 36, "& .MuiTab-root": { minHeight: 36, fontSize: 11.5, fontWeight: 700, borderRadius: "20px", mx: 0.5 } }}
         >
-          <Tab icon={<HistoryIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="History" />
-          <Tab icon={<EmojiEventsIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Leaderboard" />
+          <Tab icon={<HistoryIcon sx={{ fontSize: 15 }} />} iconPosition="start" label="History" />
+          <Tab icon={<EmojiEventsIcon sx={{ fontSize: 15 }} />} iconPosition="start" label="Leaderboard" />
         </Tabs>
         
         {/* Statistics Dashboard Banner under tabs */}
-        <Box sx={{ px: 2, py: 1.5, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5, bgcolor: "action.hover", borderBottom: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ mx: 0.5, my: 1, px: 2, py: 1.25, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5, bgcolor: (t) => alpha(t.palette.text.primary, 0.04), borderRadius: "10px" }}>
           <Box sx={{ display: "flex", flexDirection: "column" }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Personal Best</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: 10.5 }}>Personal Best</Typography>
             <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{stats.pbWpm} WPM</Typography>
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column" }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Total Sprinted</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: 10.5 }}>Total Sprinted</Typography>
             <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{stats.totalWords} words</Typography>
           </Box>
         </Box>
 
-        <Box sx={{ flex: 1, overflowY: "auto" }}>
+        <Box sx={{ flex: 1, overflowY: "auto", px: 0.5 }}>
           {activeTab === 0 ? (
-            <List sx={{ width: "100%", p: 0 }}>
+            <List sx={{ width: "100%", p: 0, display: "flex", flexDirection: "column", gap: 0.5 }}>
               {sprintHistory.length === 0 ? (
                 <Typography variant="body2" color="text.secondary" sx={{ p: 3, textAlign: "center", fontStyle: "italic" }}>
                   No history yet. Start your first sprint!
                 </Typography>
               ) : (
                 sprintHistory.map((session) => (
-                  <React.Fragment key={session.id}>
-                    <ListItem
-                      alignItems="flex-start"
-                      secondaryAction={
-                        <IconButton edge="end" size="small" onClick={() => handleDeleteHistoryItem(session.id)}>
-                          <DeleteIcon sx={{ fontSize: 15 }} />
-                        </IconButton>
+                  <ListItem
+                    key={session.id}
+                    alignItems="flex-start"
+                    secondaryAction={
+                      <IconButton edge="end" size="small" onClick={() => handleDeleteHistoryItem(session.id)}>
+                        <DeleteIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    }
+                    sx={{ px: 1.5, py: 1, borderRadius: "8px", "&:hover": { bgcolor: (t) => alpha(t.palette.text.primary, 0.04) } }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: "flex", justifyContent: "space-between", pr: 2 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: 12.5 }}>
+                            {session.wordCount} words
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(session.startTime).toLocaleDateString()}
+                          </Typography>
+                        </Box>
                       }
-                      sx={{ px: 2, py: 1.25 }}
-                    >
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: "flex", justifyContent: "space-between", pr: 2 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                              {session.wordCount} words
+                      secondary={
+                        <Box sx={{ mt: 0.25 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "11px" }}>
+                            {session.durationMinutes}m • {session.durationMinutes > 0 ? Math.round(session.wordCount / session.durationMinutes) : 0} wpm
+                          </Typography>
+                          {session.fileName && (
+                            <Typography variant="caption" sx={{ opacity: 0.7, fontStyle: "italic", fontSize: "10px", display: "block" }}>
+                              File: {session.fileName}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(session.startTime).toLocaleDateString()}
-                            </Typography>
-                          </Box>
-                        }
-                        secondary={
-                          <Box sx={{ mt: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "11px" }}>
-                              {session.durationMinutes}m • {session.durationMinutes > 0 ? Math.round(session.wordCount / session.durationMinutes) : 0} wpm
-                            </Typography>
-                            {session.fileName && (
-                              <Typography variant="caption" sx={{ opacity: 0.7, fontStyle: "italic", fontSize: "10px", display: "block" }}>
-                                File: {session.fileName}
-                              </Typography>
-                            )}
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    <Divider />
-                  </React.Fragment>
+                          )}
+                        </Box>
+                      }
+                    />
+                  </ListItem>
                 ))
               )}
               {sprintHistory.length > 0 && (
-                <Box sx={{ p: 2, textAlign: "center" }}>
-                  <Button size="small" color="error" onClick={handleClearHistory} sx={{ fontSize: 10.5, textTransform: "none", fontWeight: 600 }}>
+                <Box sx={{ p: 1.5, textAlign: "center" }}>
+                  <Button size="small" color="error" onClick={handleClearHistory} sx={{ fontSize: 11, textTransform: "none", fontWeight: 600, borderRadius: "20px" }}>
                     Clear Global History
                   </Button>
                 </Box>
               )}
             </List>
           ) : (
-            <List sx={{ width: "100%", p: 0 }}>
+            <List sx={{ width: "100%", p: 0, display: "flex", flexDirection: "column", gap: 0.5 }}>
               {leaderboard.length === 0 ? (
                 <Typography variant="body2" color="text.secondary" sx={{ p: 3, textAlign: "center", fontStyle: "italic" }}>
                   Complete sprints to climb the ranks!
@@ -459,42 +471,39 @@ export const SprintView = React.memo(() => {
                   let badgeColor = "text.disabled";
                   let badgeStyle = {};
                   if (index === 0) {
-                    badgeColor = "#d4af37"; // Gold
+                    badgeColor = "#d4af37";
                     badgeStyle = { fontWeight: "900" };
                   } else if (index === 1) {
-                    badgeColor = "#c0c0c0"; // Silver
+                    badgeColor = "#c0c0c0";
                     badgeStyle = { fontWeight: "900" };
                   } else if (index === 2) {
-                    badgeColor = "#cd7f32"; // Bronze
+                    badgeColor = "#cd7f32";
                     badgeStyle = { fontWeight: "900" };
                   }
 
                   return (
-                    <React.Fragment key={session.id}>
-                      <ListItem sx={{ px: 2, py: 1.25 }}>
-                        <Box sx={{ minWidth: 32, display: "flex", alignItems: "center", justifyContent: "center", color: badgeColor, fontSize: "15px", ...badgeStyle }}>
-                          #{index + 1}
-                        </Box>
-                        <ListItemText
-                          primary={
-                            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                              <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                {session.wordCount} words
-                              </Typography>
-                              <Typography variant="body2" sx={{ color: "success.main", fontWeight: 800 }}>
-                                {session.durationMinutes > 0 ? Math.round(session.wordCount / session.durationMinutes) : 0} wpm
-                              </Typography>
-                            </Box>
-                          }
-                          secondary={
-                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px" }}>
-                              {session.durationMinutes}m sprint on {new Date(session.startTime).toLocaleDateString()}
+                    <ListItem key={session.id} sx={{ px: 1.5, py: 1, borderRadius: "8px", "&:hover": { bgcolor: (t) => alpha(t.palette.text.primary, 0.04) } }}>
+                      <Box sx={{ minWidth: 28, display: "flex", alignItems: "center", justifyContent: "center", color: badgeColor, fontSize: "14px", ...badgeStyle }}>
+                        #{index + 1}
+                      </Box>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: 12.5 }}>
+                              {session.wordCount} words
                             </Typography>
-                          }
-                        />
-                      </ListItem>
-                      <Divider />
-                    </React.Fragment>
+                            <Typography variant="body2" sx={{ color: "success.main", fontWeight: 800, fontSize: 12.5 }}>
+                              {session.durationMinutes > 0 ? Math.round(session.wordCount / session.durationMinutes) : 0} wpm
+                            </Typography>
+                          </Box>
+                        }
+                        secondary={
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px" }}>
+                            {session.durationMinutes}m sprint on {new Date(session.startTime).toLocaleDateString()}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
                   );
                 })
               )}

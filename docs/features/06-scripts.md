@@ -26,11 +26,12 @@ Project: MyProject.actone (Act One)                                     Words: 4
 Clicking the filename in the Status Bar opens a drop-up menu showing all scripts in the project. Select one to switch.
 
 **Via Scripts Sidebar Tab:**
-The Scripts tab (second in the activity bar) lists all scripts with:
-- Active script highlighted
-- Click any script to switch
-- `[+]` button to add a new script
-- Download icon to import `.fountain` / `.txt` files into the project
+The Scripts tab (second in the activity bar — Content group) lists all scripts as **rounded cards** (`8px` radius, `40px` min-height, soft shadow, drag handle `14px`):
+- **Pill search** (`20px` radius) to filter scripts; thin `6px` pill scrollbar
+- Active script highlighted with `action.selected` + border glow and stronger shadow
+- Click any card to switch; file-type tag (`FOUNTAIN`/`MD`, `5px` radius, `accent` vs `default`)
+- `[+]` button to add a new script; download icon to import `.fountain` / `.txt` files into the project
+- Drag-and-drop reordering of scripts; `⋮` menu ( `16px` icon) per card: Rename / Duplicate / Move Up/Down / Delete
 
 ## Managing Scripts
 

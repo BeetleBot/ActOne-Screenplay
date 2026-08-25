@@ -136,10 +136,11 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
               sx: {
                 bgcolor: "background.paper",
                 fontSize: "0.75rem",
+                borderRadius: "20px",
                 "& fieldset": { border: "none" },
               },
               endAdornment: (
-                <IconButton size="small" onClick={addTodo} sx={{ p: 0.5 }}>
+                <IconButton size="small" onClick={addTodo} sx={{ p: 0.5, mr: 0.25 }}>
                   <AddIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               )
@@ -172,12 +173,12 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
               data-todo-id={todo.id}
               disablePadding
               secondaryAction={
-                <IconButton edge="end" size="small" onClick={() => deleteTodo(todo.id)}>
+                <IconButton edge="end" size="small" onClick={() => deleteTodo(todo.id)} sx={{ mr: 0.5 }}>
                   <CloseIcon sx={{ fontSize: 14 }} />
                 </IconButton>
               }
               sx={(theme) => ({
-                borderRadius: 0,
+                borderRadius: "8px",
                 mb: 0.25,
                 bgcolor: isSelected
                   ? `color-mix(in srgb, ${theme.palette.text.primary} 12%, transparent)`
@@ -195,7 +196,11 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                   toggleTodo(todo.id);
                   e.currentTarget.closest("ul")?.focus();
                 }}
-                sx={{ py: 1, px: 1.5, borderRadius: 0 }}
+                sx={{
+                  borderRadius: "8px",
+                  py: 0.6,
+                  px: 1.25,
+                }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
                   <Box
@@ -220,7 +225,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                     letterSpacing: "0.06em",
                     px: 0.8,
                     py: 0.2,
-                    borderRadius: 0,
+                    borderRadius: "4px",
                     border: "1px solid",
                     borderColor: "divider",
                     color: "text.secondary",
@@ -281,8 +286,8 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                     </IconButton>
                   }
                   sx={(theme) => ({
-                    borderRadius: 0,
-                    mb: 0.25,
+                    borderRadius: "6px",
+                    mb: 0.35,
                     opacity: 0.8,
                     bgcolor: `color-mix(in srgb, ${theme.palette.text.primary} 4%, transparent)`,
                     "&:hover": {
@@ -290,7 +295,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                     }
                   })}
                 >
-                  <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 0.8, px: 1.5, borderRadius: 0 }}>
+                  <ListItemButton onClick={() => toggleTodo(todo.id)} sx={{ py: 0.8, px: 1.5, borderRadius: "6px" }}>
                     <ListItemIcon sx={{ minWidth: 32, color: "text.secondary" }}>
                       <Box
                         component="span"
@@ -318,7 +323,7 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                         letterSpacing: "0.06em",
                         px: 0.8,
                         py: 0.2,
-                        borderRadius: 0,
+                        borderRadius: "4px",
                         border: "1px solid",
                         borderColor: "divider",
                         color: "text.secondary",

@@ -1,6 +1,6 @@
 # Export
 
-`Ctrl+P` opens the Export Modal with multiple format options.
+`Ctrl+P` opens the Export Modal (`12px` radius, transparent TitleBar with `28px` rounded controls). The left nav uses `6px` rounded active pills with primary tint and shadow; actions are pill buttons (`20px`).
 
 ## PDF Export
 

@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFile, useUI } from "../../context";
 import { getTauriWindow } from "../../utils";
-import { alpha, darken } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
 import { CloseIcon, AddIcon } from "../Icons";
 import { logger } from "../../utils/logger";
 import { ContextMenu, type ContextMenuItem } from "../ContextMenu";
@@ -78,9 +76,9 @@ export const HeaderBar = React.memo(() => {
       const isTab = target.closest(".header-tab");
       const isIconButton = target.closest("button") || target.tagName === "BUTTON";
       const isInput = target.closest("input") || target.tagName === "INPUT";
-      const isMenuItem = target.closest(".MuiMenuItem-root") || target.closest(".MuiMenu-root") || target.closest(".context-menu") || target.closest(".MuiBackdrop-root") || target.tagName === "LI";
+      const isClickable = target.closest(".clickable") || target.closest(".MuiMenuItem-root") || target.closest(".MuiMenu-root") || target.closest(".context-menu") || target.closest(".MuiBackdrop-root") || target.tagName === "LI";
 
-      if (!isTab && !isIconButton && !isInput && !isMenuItem) {
+      if (!isTab && !isIconButton && !isInput && !isClickable) {
         const now = Date.now();
         if (now - lastClickTimeRef.current < 400) { handleMaximize(); lastClickTimeRef.current = 0; return; }
         lastClickTimeRef.current = now;
@@ -89,8 +87,6 @@ export const HeaderBar = React.memo(() => {
     }
   };
 
-
-
   return (
     <AppBar
       id="header-bar"
@@ -98,228 +94,248 @@ export const HeaderBar = React.memo(() => {
       elevation={0}
       onMouseDown={handleStartDrag}
       sx={{
-        bgcolor: (theme) => theme.palette.mode === 'light' ? darken(theme.palette.background.paper, 0.08) : darken(theme.palette.background.paper, 0.25),
+        bgcolor: 'transparent',
         color: (theme) => theme.palette.text.secondary,
-        borderBottom: isZenMode ? 0 : 1,
-        borderColor: "divider",
-        height: isZenMode ? 0 : 40,
-        minHeight: isZenMode ? 0 : 40,
+        borderBottom: 0,
+        height: isZenMode ? 0 : 46,
+        minHeight: isZenMode ? 0 : 46,
         zIndex: 10,
         pointerEvents: isZenMode ? 'none' : 'auto',
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', height: 40, minHeight: 40, px: 0, position: 'relative', pr: '140px' }}>
-        <Box ref={tabsContainerRef} className="header-tabs-container" sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', overflow: 'hidden', px: 0, gap: 0 }}>
-
+      <Box sx={{ display: 'flex', alignItems: 'center', height: 46, minHeight: 46, px: 1, position: 'relative', pr: '120px' }}>
+        {/* Tab Track */}
+        <Box 
+          ref={tabsContainerRef} 
+          className="header-tabs-container" 
+          sx={{ 
+            flex: 1, 
+            minWidth: 0, 
+            display: 'flex', 
+            alignItems: 'center', 
+            overflow: 'hidden', 
+            px: 0.5, 
+            gap: 0.75,
+          }}
+        >
           {files.map((file) => {
             const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled";
             const isActive = file.id === activeFileId;
             return (
-              <Tooltip
+              <Box
                 key={file.id}
-                title={
-                  <Box sx={{ p: 0.2 }}>
-                    <Typography variant="caption" sx={{ display: "block", fontWeight: 700, fontSize: 11.5, color: "inherit" }}>
-                      {display}
-                    </Typography>
-                    {file.filePath && (
-                      <Typography variant="caption" sx={{ display: "block", opacity: 0.8, fontSize: 10, wordBreak: "break-all", mt: 0.2 }}>
-                        {file.filePath}
-                      </Typography>
-                    )}
-                  </Box>
-                }
-                arrow
-                placement="bottom"
+                className={`header-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
+                onClick={() => selectFile(file.id)}
+                onContextMenu={(e) => handleContextMenu(e, file.id)}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  if (e.button === 1) { e.preventDefault(); closeFile(file.id); }
+                }}
+                onMouseUp={(e) => {
+                  if (e.button === 1) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
+                onAuxClick={(e) => {
+                  if (e.button === 1) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
+                sx={{
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1,
+                  px: 1.75, 
+                  height: 34, 
+                  width: 'auto',
+                  minWidth: 140, 
+                  maxWidth: 220, 
+                  borderRadius: '20px',
+                  cursor: 'pointer', 
+                  flexShrink: 0, 
+                  userSelect: 'none',
+                  fontSize: "0.82rem", 
+                  fontFamily: 'var(--font-ui, "Inter", sans-serif)', 
+                  whiteSpace: 'nowrap',
+                  bgcolor: (theme) => isActive ? alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.12 : 0.08) : 'transparent',
+                  color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
+                  border: 'none',
+                  boxShadow: (theme) => isActive ? (theme.palette.mode === 'dark' ? '0 2px 8px rgba(0, 0, 0, 0.35)' : '0 2px 8px rgba(0, 0, 0, 0.06)') : 'none',
+                  backdropFilter: isActive ? 'blur(8px)' : 'none',
+                  '&:hover': {
+                    bgcolor: (theme) => isActive ? alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.16 : 0.11) : alpha(theme.palette.text.primary, 0.06),
+                    color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary,
+                  },
+                  transition: 'all 0.15s ease',
+                  position: 'relative',
+                }}
               >
-                <Box
-                  className={`header-tab ${isActive ? "active" : ""} ${file.isDirty ? "dirty" : ""}`}
-                  onClick={() => selectFile(file.id)}
-                  onContextMenu={(e) => handleContextMenu(e, file.id)}
+                {/* Active dot indicator */}
+                {isActive && (
+                  <Box 
+                    sx={{ 
+                      width: 6, 
+                      height: 6, 
+                      borderRadius: '50%', 
+                      bgcolor: 'primary.main', 
+                      flexShrink: 0,
+                      boxShadow: (t) => `0 0 6px ${alpha(t.palette.primary.main, 0.6)}`,
+                    }} 
+                  />
+                )}
+                <span className="tab-name" style={{ fontFamily: 'var(--font-ui, "Inter", sans-serif)', fontWeight: isActive ? 600 : 500, letterSpacing: "0.005em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{display}</span>
+                {file.isDirty && (
+                  <Box 
+                    sx={{ 
+                      width: 6, height: 6, borderRadius: '50%', 
+                      bgcolor: '#f59e0b', 
+                      flexShrink: 0,
+                    }} 
+                  />
+                )}
+                <IconButton
+                  size="small"
+                  className="tab-close"
                   onMouseDown={(e) => {
                     e.stopPropagation();
-                    if (e.button === 1) { e.preventDefault(); closeFile(file.id); }
+                    e.preventDefault();
+                    closeFile(file.id);
                   }}
-                  onMouseUp={(e) => {
-                    if (e.button === 1) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
                   }}
-                  onAuxClick={(e) => {
-                    if (e.button === 1) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
-                  }}
-                  sx={{
-                    display: 'flex', alignItems: 'center', gap: 0.8,
-                    px: 1.5, height: 40, width: 175, minWidth: 175, maxWidth: 175, borderRadius: 0,
-                    cursor: 'pointer', flexShrink: 0, userSelect: 'none',
-                    fontSize: "0.8rem", fontFamily: 'var(--font-ui, "Inter", sans-serif)', whiteSpace: 'nowrap',
-                    bgcolor: (theme) => isActive ? theme.palette.background.paper : 'transparent',
-                    color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
-                    borderRight: 1,
-                    borderColor: 'divider',
-                    '&:hover': {
-                      bgcolor: (theme) => isActive ? theme.palette.background.paper : alpha(theme.palette.text.primary, 0.04),
-                      color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary
-                    },
-                    transition: 'all var(--duration-fast) ease',
-                    position: 'relative',
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: isActive ? 2 : 0,
-                      bgcolor: 'primary.main',
-                      transition: 'height var(--duration-fast) ease',
-                    },
+                  sx={{ 
+                    p: '3px', 
+                    borderRadius: '50%',
+                    opacity: 0.6, 
+                    color: 'inherit',
+                    '&:hover': { 
+                      opacity: 1,
+                      bgcolor: (t) => alpha(t.palette.error.main, 0.12),
+                      color: 'error.main'
+                    }, 
+                    ml: 0.25 
                   }}
                 >
-                  <span className="tab-name" style={{ fontFamily: 'var(--font-ui, "Inter", sans-serif)', fontWeight: isActive ? 700 : 500, letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{display}</span>
-                  {file.isDirty && (
-                    <Box 
-                      sx={{ 
-                        width: 5, height: 5, borderRadius: '50%', 
-                        bgcolor: (theme) => isActive ? theme.palette.primary.main : theme.palette.text.secondary, 
-                        flexShrink: 0,
-                        boxShadow: (theme) => isActive ? `0 0 4px ${alpha(theme.palette.primary.main, 0.4)}` : 'none'
-                      }} 
-                    />
-                  )}
-                  <IconButton
-                    size="small"
-                    className="tab-close"
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      closeFile(file.id);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                    sx={{ 
-                      p: '1px', 
-                      opacity: 0.6, 
-                      color: 'inherit',
-                      '&:hover': { 
-                        opacity: 1,
-                        bgcolor: 'action.hover',
-                        color: 'error.main'
-                      }, 
-                      ml: 0.5 
-                    }}
-                  >
-                    <CloseIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                </Box>
-              </Tooltip>
+                  <CloseIcon sx={{ fontSize: 13 }} />
+                </IconButton>
+              </Box>
             );
           })}
-          <Tooltip title="New File">
             <IconButton 
               size="small" 
               onClick={(e) => { e.stopPropagation(); newFile(); }} 
               onMouseDown={(e) => e.stopPropagation()}
               sx={{ 
-                p: '4px', 
-                ml: 0.5,
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
                 color: 'text.secondary',
-                '&:hover': { color: 'text.primary', bgcolor: 'action.hover' }
+                bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
+                border: 'none',
+                '&:hover': { 
+                  color: 'primary.main', 
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+                },
+                transition: 'all 0.15s ease',
               }}
             >
               <AddIcon sx={{ fontSize: 16 }} />
             </IconButton>
-          </Tooltip>
-        </Box>
-        <ContextMenu
-          open={contextMenu !== null}
-          x={contextMenu?.x ?? 0}
-          y={contextMenu?.y ?? 0}
-          items={contextMenu ? [
-            { label: "Close", action: () => closeFile(contextMenu.fileId) },
-            { label: "Close Others", action: () => closeOthers(contextMenu.fileId) },
-            { label: "Close All", action: closeAll },
-          ] satisfies ContextMenuItem[] : []}
-          onClose={() => setContextMenu(null)}
-        />
+          </Box>
 
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            flexShrink: 0,
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            height: '100%',
-            bgcolor: 'inherit',
-            zIndex: 11,
-            borderLeft: 1,
-            borderColor: 'divider',
-          }} 
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <IconButton
-            onClick={handleMinimize}
-            title="Minimize"
-            sx={{
-              width: 48, height: 40, borderRadius: 0,
-              color: 'inherit',
-              borderLeft: 1,
-              borderColor: 'divider',
-              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6H10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-            </svg>
-          </IconButton>
-          <IconButton
-            onClick={handleMaximize}
-            title={isMaximized ? "Restore" : "Maximize"}
-            sx={{
-              width: 46, height: 40, borderRadius: 0,
-              color: 'inherit',
-              borderLeft: 1,
-              borderColor: 'divider',
-              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
-            }}
-          >
-            {isMaximized ? (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M4 2H10V8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 4H8V10H2V4Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-              </svg>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.3" />
-              </svg>
-            )}
-          </IconButton>
-          <IconButton
-            onClick={handleClose}
-            title="Close"
-            sx={{
-              width: 46, height: 40, borderRadius: 0,
-              color: 'inherit',
-              borderLeft: 1,
-              borderColor: 'divider',
-              '&:hover': { bgcolor: (theme) => theme.palette.error.main, color: (theme) => theme.palette.common.white },
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </IconButton>
-        </Box>
-      </Box>
+          <ContextMenu
+            open={contextMenu !== null}
+            x={contextMenu?.x ?? 0}
+            y={contextMenu?.y ?? 0}
+            items={contextMenu ? [
+              { label: "Close", action: () => closeFile(contextMenu.fileId) },
+              { label: "Close Others", action: () => closeOthers(contextMenu.fileId) },
+              { label: "Close All", action: closeAll },
+            ] satisfies ContextMenuItem[] : []}
+            onClose={() => setContextMenu(null)}
+          />
 
+          {/* Window Controls */}
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 0.5,
+              flexShrink: 0,
+              position: 'absolute',
+              right: 8,
+              top: 0,
+              height: '100%',
+              bgcolor: 'inherit',
+              zIndex: 11,
+            }} 
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <IconButton
+              onClick={handleMinimize}
+              title="Minimize"
+              size="small"
+              sx={{
+                width: 28, 
+                height: 28, 
+                borderRadius: '6px',
+                color: 'text.secondary',
+                '&:hover': { bgcolor: (t) => alpha(t.palette.text.primary, 0.08), color: 'text.primary' },
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6H10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
+            </IconButton>
+            <IconButton
+              onClick={handleMaximize}
+              title={isMaximized ? "Restore" : "Maximize"}
+              size="small"
+              sx={{
+                width: 28, 
+                height: 28, 
+                borderRadius: '6px',
+                color: 'text.secondary',
+                '&:hover': { bgcolor: (t) => alpha(t.palette.text.primary, 0.08), color: 'text.primary' },
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {isMaximized ? (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M4 2H10V8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M2 4H8V10H2V4Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                </svg>
+              )}
+            </IconButton>
+            <IconButton
+              onClick={handleClose}
+              title="Close"
+              size="small"
+              sx={{
+                width: 28, 
+                height: 28, 
+                borderRadius: '6px',
+                color: 'text.secondary',
+                '&:hover': { bgcolor: (theme) => alpha(theme.palette.error.main, 0.15), color: (theme) => theme.palette.error.main },
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </IconButton>
+          </Box>
+        </Box>
     </AppBar>
   );
 });

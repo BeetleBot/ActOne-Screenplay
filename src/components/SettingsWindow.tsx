@@ -20,10 +20,10 @@ import {
   DialogActions,
   Chip,
 } from "@mui/material";
-import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { ThemeProvider as MuiThemeProvider, alpha } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
-import { SettingsIcon, RestartAltIcon, AddIcon, DeleteIcon, EditIcon } from "./Icons";
+import { RestartAltIcon, AddIcon, DeleteIcon, EditIcon } from "./Icons";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
@@ -569,26 +569,58 @@ interface LanguageInfoItem {
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
       <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
-        <TitleBar title="Settings" onClose={handleClose} icon={<SettingsIcon sx={{ fontSize: 16 }} />} />
-        <Box sx={{ px: 2, py: 1 }}>
+        <TitleBar title="Settings" onClose={handleClose} />
+        <Box sx={{ px: 2, py: 1.25 }}>
           <ToggleButtonGroup
             value={activeTab}
             exclusive
             onChange={(_, val) => val !== null && setActiveTab(val as number)}
             fullWidth
             size="small"
+            sx={{
+              p: '3px',
+              gap: '4px',
+              borderRadius: '8px',
+              bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
+              border: '1px solid',
+              borderColor: 'divider',
+              '& .MuiToggleButtonGroup-grouped': {
+                border: 'none !important',
+                borderRadius: '6px !important',
+                mx: 0,
+              },
+            }}
           >
-            <ToggleButton value={0} sx={{ fontSize: 12, py: 0.3 }}>General</ToggleButton>
-            <ToggleButton value={1} sx={{ fontSize: 12, py: 0.3 }}>Editor</ToggleButton>
-            <ToggleButton value={2} sx={{ fontSize: 12, py: 0.3 }}>Spellcheck</ToggleButton>
-            <ToggleButton value={3} sx={{ fontSize: 12, py: 0.3 }}>Snapshots</ToggleButton>
-            <ToggleButton value={4} sx={{ fontSize: 12, py: 0.3 }}>Muse</ToggleButton>
+            {['General', 'Editor', 'Spellcheck', 'Snapshots', 'Muse'].map((tab, idx) => {
+              const isSelected = activeTab === idx;
+              return (
+                <ToggleButton
+                  key={tab}
+                  value={idx}
+                  sx={{
+                    fontSize: 12,
+                    py: 0.4,
+                    textTransform: 'none',
+                    fontWeight: isSelected ? 600 : 500,
+                    color: isSelected ? 'text.primary' : 'text.secondary',
+                    bgcolor: isSelected ? 'background.paper !important' : 'transparent',
+                    boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease',
+                    '&:hover': {
+                      bgcolor: isSelected ? 'background.paper !important' : (t) => alpha(t.palette.text.primary, 0.05),
+                    },
+                  }}
+                >
+                  {tab}
+                </ToggleButton>
+              );
+            })}
           </ToggleButtonGroup>
         </Box>
         <Box sx={{ flex: 1, overflow: "auto", px: 2, py: 1.5 }}>
           {activeTab === 0 && (
             <Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>
                   LAYOUT & SCALE
                 </Typography>
@@ -619,7 +651,7 @@ interface LanguageInfoItem {
                   />
                 </Box>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   ICON STYLE
                 </Typography>
@@ -634,7 +666,7 @@ interface LanguageInfoItem {
                   <MenuItem value="regular">Stroke (Regular)</MenuItem>
                 </Select>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   SAVING
                 </Typography>
@@ -660,14 +692,14 @@ interface LanguageInfoItem {
                   </Select>
                 )}
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mt: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mt: 1.5 }}>
                 <Button
                   variant="outlined"
                   color="error"
                   fullWidth
                   size="small"
                   onClick={() => setResetDialogOpen(true)}
-                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
+                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
                 >
                   Reset All Settings to Default
                 </Button>
@@ -676,7 +708,7 @@ interface LanguageInfoItem {
           )}
           {activeTab === 1 && (
             <Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   TYPOGRAPHY
                 </Typography>
@@ -690,7 +722,7 @@ interface LanguageInfoItem {
                   <MenuItem value="courier-prime-sans">Courier Prime Sans</MenuItem>
                 </Select>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   VIEW
                 </Typography>
@@ -708,7 +740,7 @@ interface LanguageInfoItem {
                   aria-label="Editor Zoom"
                 />
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   EDITING
                 </Typography>
@@ -745,7 +777,7 @@ interface LanguageInfoItem {
                   />
                 </Box>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   DISPLAY
                 </Typography>
@@ -761,7 +793,7 @@ interface LanguageInfoItem {
                     control={<Switch size="small" checked={lineFocusEnabled}
                       onChange={(e) => { const v = e.target.checked; setLineFocusEnabled(v); localStorage.setItem(STORAGE_KEYS.LINE_FOCUS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.LINE_FOCUS_ENABLED, v); }}
                     />}
-                    label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Focus Mode</Typography>}
+                    label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Line Focus</Typography>}
                     sx={{ mx: 0, flex: 1 }}
                   />
                 </Box>
@@ -780,35 +812,28 @@ interface LanguageInfoItem {
           )}
           {activeTab === 2 && (
             <Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   GENERAL
                 </Typography>
                 <FormControlLabel
-                  control={
-                    <Switch
-                      size="small"
-                      checked={spellcheckEnabled}
-                      onChange={(e) => {
-                        const v = e.target.checked;
-                        setSpellcheckEnabled(v);
-                        localStorage.setItem(STORAGE_KEYS.SPELLCHECK_ENABLED, String(v));
-                        emitUpdate(STORAGE_KEYS.SPELLCHECK_ENABLED, v);
-                      }}
-                    />
-                  }
+                  control={<Switch size="small" checked={spellcheckEnabled}
+                    onChange={(e) => { const v = e.target.checked; setSpellcheckEnabled(v); localStorage.setItem(STORAGE_KEYS.SPELLCHECK_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.SPELLCHECK_ENABLED, v); }}
+                  />}
                   label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Enable Spellcheck</Typography>}
-                  sx={{ mx: 0, mb: 1, display: 'block' }}
+                  sx={{ mx: 0 }}
                 />
-                <Box sx={{ mt: 1 }}>
-                  <Typography variant="caption" sx={{ fontSize: 11, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                    Active Language
-                  </Typography>
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={spellcheckLanguage}
-                    onChange={async (e) => {
+              </Box>
+
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  ACTIVE LANGUAGE
+                </Typography>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={spellcheckLanguage}
+                  onChange={async (e) => {
                       const v = e.target.value as string;
                       setSpellcheckLanguage(v);
                       localStorage.setItem(STORAGE_KEYS.SPELLCHECK_LANGUAGE, v);
@@ -820,29 +845,32 @@ interface LanguageInfoItem {
                         }
                       } catch { void 0; }
                     }}
-                  >
-                    {(installedLanguages.length > 0 ? installedLanguages : [{ code: "en", name: "English (US)", native_name: "English (US)" }]).map((lang) => (
+                  disabled={!spellcheckEnabled}
+                >
+                  {(installedLanguages.length > 0 ? installedLanguages : [{ code: "en", name: "English (US)", native_name: "English (US)" }]).map((lang) => (
                       <MenuItem key={lang.code} value={lang.code}>
                         {lang.name} {lang.native_name !== lang.name ? `(${lang.native_name})` : ""}
                       </MenuItem>
                     ))}
-                  </Select>
-                </Box>
-              </Box>
-
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5 }}>
-                    INSTALLED LANGUAGES
-                  </Typography>
+                </Select>
+                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                   <Button
                     size="small"
                     variant="outlined"
                     onClick={() => setDownloadDialogOpen(true)}
-                    sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0, py: 0.3 }}
+                    disabled={!spellcheckEnabled}
+                    sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px', py: 0.3 }}
                   >
-                    + Download Language
+                    Download More Languages
                   </Button>
+                </Box>
+              </Box>
+
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5 }}>
+                    INSTALLED LANGUAGES
+                  </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                   {installedLanguages.map((lang) => (
@@ -853,9 +881,8 @@ interface LanguageInfoItem {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         p: 1,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        bgcolor: lang.code === spellcheckLanguage ? 'action.selected' : 'background.paper',
+                        bgcolor: 'action.hover',
+                        borderRadius: '6px',
                       }}
                     >
                       <Box>
@@ -863,67 +890,123 @@ interface LanguageInfoItem {
                           {lang.name}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 10 }}>
-                          {lang.native_name} • {lang.bundled ? "Bundled" : "Downloaded"}
+                          {lang.native_name} ({lang.code})
                         </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {lang.bundled ? (
-                          <Chip label="Bundled" size="small" sx={{ fontSize: 10, height: 20 }} />
-                        ) : (
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteLanguage(lang.code)}
-                            sx={{ color: 'error.main', p: 0.5 }}
-                            title="Delete dictionary"
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        )}
-                      </Box>
+                      {lang.bundled ? (
+                        <Chip label="Bundled" size="small" sx={{ fontSize: 10, height: 20 }} />
+                      ) : (
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteLanguage(lang.code)}
+                          sx={{ fontSize: '10px', minWidth: 'auto', p: '2px 8px' }}
+                        >
+                          Remove
+                        </Button>
+                      )}
                     </Box>
                   ))}
                 </Box>
               </Box>
 
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
-                  CUSTOM DICTIONARY
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: 12, mb: 1.5 }}>
-                  {customWordsCount} custom word{customWordsCount === 1 ? "" : "s"} added to personal dictionary.
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5 }}>
+                    PERSONAL DICTIONARY
+                  </Typography>
+                  <Chip
+                    label={`${customWordsCount} word(s)`}
+                    size="small"
+                    sx={{ fontSize: 10, height: 18 }}
+                  />
+                </Box>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 11, mb: 1 }}>
+                  Words you've added to your dictionary will not be marked as misspelled.
                 </Typography>
                 <Button
+                  size="small"
                   variant="outlined"
                   color="error"
-                  size="small"
-                  disabled={customWordsCount === 0}
                   onClick={() => setClearWordsDialogOpen(true)}
-                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
+                  disabled={customWordsCount === 0}
+                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
                 >
-                  Clear Custom Dictionary
+                  Clear Custom Words
                 </Button>
               </Box>
             </Box>
           )}
           {activeTab === 3 && (
             <Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   GENERAL
                 </Typography>
                 <FormControlLabel
                   control={<Switch size="small" checked={snapshotsEnabled} onChange={(e) => { const v = e.target.checked; setSnapshotsEnabled(v); localStorage.setItem(STORAGE_KEYS.SNAPSHOTS_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.SNAPSHOTS_ENABLED, v); }} />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Enable Snapshots</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Enable Automated Snapshots</Typography>}
                   sx={{ mx: 0 }}
                 />
               </Box>
 
               {snapshotsEnabled && (
                 <>
-                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                       SAVE LOCATION
                     </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={snapshotCustomPath}
+                        placeholder="Default application data directory"
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setSnapshotCustomPath(v);
+                          localStorage.setItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, v);
+                          emitUpdate(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, v);
+                        }}
+                        slotProps={{ input: { sx: { fontSize: 11 } } }}
+                      />
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={async () => {
+                          try {
+                            const { open } = await import("@tauri-apps/plugin-dialog");
+                            const selected = await open({ directory: true });
+                            if (selected) {
+                              setSnapshotCustomPath(selected as string);
+                              localStorage.setItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, selected as string);
+                              emitUpdate(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, selected as string);
+                            }
+                          } catch (err) {
+                            logger.error("settingsWindow", "Failed to select snapshot directory", err);
+                          }
+                        }}
+                        sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px', whiteSpace: 'nowrap' }}
+                      >
+                        Browse...
+                      </Button>
+                    </Box>
+                    {snapshotCustomPath && (
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setSnapshotCustomPath('');
+                          localStorage.removeItem(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH);
+                          emitUpdate(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, '');
+                        }}
+                        sx={{ mt: 0.5, fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
+                      >
+                        Reset to Default
+                      </Button>
+                    )}
+                  </Box>
+
+                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11, fontStyle: 'italic', mb: 1 }}>
                       Snapshots are stored in the project's `.snapshots/` folder.
                     </Typography>
@@ -938,13 +1021,13 @@ interface LanguageInfoItem {
                           logger.error("settingsWindow", "Failed to open snapshots folder", e);
                         }
                       }}
-                      sx={{ mt: 0.5, fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
+                      sx={{ mt: 0.5, fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
                     >
                       Open Snapshots Folder
                     </Button>
                   </Box>
 
-                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5 }}>
+                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                       AUTO-SNAPSHOT
                     </Typography>
@@ -1002,7 +1085,7 @@ interface LanguageInfoItem {
             <Box>
 
               {promptProvider !== "none" && providerStatus !== null && !providerStatus && promptProvider !== "openai-compatible" ? (
-                <Box sx={{ border: '1px solid', borderColor: 'error.main', borderRadius: 0, p: 2, mb: 1.5, bgcolor: 'error.dark', color: 'error.contrastText' }}>
+                <Box sx={{ border: '1px solid', borderColor: 'error.main', borderRadius: '8px', p: 2, mb: 1.5, bgcolor: 'error.dark', color: 'error.contrastText' }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                     No AI Providers Detected
                   </Typography>
@@ -1011,7 +1094,7 @@ interface LanguageInfoItem {
                   </Typography>
                 </Box>
               ) : null}
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   PROVIDER
                 </Typography>
@@ -1036,7 +1119,7 @@ interface LanguageInfoItem {
                     <Button
                       size="small"
                       variant="outlined"
-                      sx={{ fontSize: 10, borderRadius: 0 }}
+                      sx={{ fontSize: 10, borderRadius: '6px' }}
                       onClick={() => setShowModelsPanel(true)}
                     >
                       Configure Providers
@@ -1047,25 +1130,25 @@ interface LanguageInfoItem {
                   sx={{
                     mt: 1.25,
                     p: 1.25,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: 'action.hover',
-                    fontSize: '0.72rem',
-                    color: 'text.secondary',
-                    lineHeight: 1.45,
+                    borderRadius: '8px',
+                    bgcolor: "action.hover",
+                    border: "1px solid",
+                    borderColor: "divider",
                   }}
                 >
-                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem', color: 'text.primary', display: 'block', mb: 0.25 }}>
-                    Model Capacity Guidance
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, display: "block", mb: 0.5, color: "text.primary" }}>
+                    Tip: Choosing the right model
                   </Typography>
-                  Smaller local models (e.g. 2B–7B parameters) have limited instruction capacity and may struggle with multi-scene screenplay analysis or automated tool execution. For best results with complex script tasks, use larger models (14B+) or cloud providers (DeepSeek, OpenAI API).
+                  <Typography variant="caption" sx={{ fontSize: 10, color: "text.secondary", lineHeight: 1.4 }}>
+                    Smaller local models (e.g. 2B–7B parameters) have limited instruction capacity and may struggle with multi-scene screenplay analysis or automated tool execution. For best results with complex script tasks, use larger models (14B+) or cloud providers (DeepSeek, OpenAI API).
+                  </Typography>
                 </Box>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, display: 'block', mb: 1.5 }}>
                   CHAT CREATIVITY (TEMPERATURE: {promptChatTemp.toFixed(1)})
                 </Typography>
-                <Box sx={{ px: 1, display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                <Box sx={{ px: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Precise</Typography>
                   <Slider
                     size="small"
@@ -1083,7 +1166,7 @@ interface LanguageInfoItem {
                   />
                   <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Creative</Typography>
                 </Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 9, color: 'text.secondary', display: 'block', mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 9, color: 'text.secondary', display: 'block', mt: 1.5, mb: 1 }}>
                   REPHRASE CREATIVITY (TEMPERATURE: {promptRephraseTemp.toFixed(1)})
                 </Typography>
                 <Box sx={{ px: 1, display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
@@ -1126,7 +1209,7 @@ interface LanguageInfoItem {
                   <Typography variant="caption" sx={{ fontSize: 9, color: 'text.secondary' }}>More Creative</Typography>
                 </Box>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   TRANSLATE LANGUAGES
                 </Typography>
@@ -1146,7 +1229,7 @@ interface LanguageInfoItem {
                   }}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3 }}>
-                      {(selected as string[]).map(v => <Chip key={v} label={v} size="small" sx={{ borderRadius: 0, fontSize: 10, height: 20 }} />)}
+                      {(selected as string[]).map(v => <Chip key={v} label={v} size="small" sx={{ borderRadius: "4px", fontSize: 10, height: 20 }} />)}
                     </Box>
                   )}
                 >
@@ -1157,18 +1240,18 @@ interface LanguageInfoItem {
                   ))}
                 </Select>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mb: 1.5 }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Button
                   variant="outlined"
                   fullWidth
                   size="small"
                   onClick={() => setCustomInstructionsOpen(true)}
-                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}
+                  sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
                 >
                   Custom Instructions
                 </Button>
               </Box>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0, p: 1.5, mt: 1.5, bgcolor: 'action.hover', maxHeight: 200, overflow: 'auto' }}>
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mt: 1.5, bgcolor: 'action.hover', maxHeight: 200, overflow: 'auto' }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
                   FOUNTAIN RULES (AUTOMATICALLY ENFORCED)
                 </Typography>
@@ -1184,7 +1267,7 @@ interface LanguageInfoItem {
                 fullWidth
                 maxWidth="sm"
                 disableScrollLock
-                sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
+                sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
               >
                 <DialogTitle sx={{ m: 0, p: 0 }}>
                   <TitleBar
@@ -1215,7 +1298,7 @@ interface LanguageInfoItem {
                       REPHRASE PRESETS
                     </Typography>
                     {promptRephrasePresets.map((preset, i) => (
-                      <Box key={i} sx={{ mb: 1.5, p: 1, borderRadius: 1, bgcolor: "action.hover" }}>
+                      <Box key={i} sx={{ mb: 1.5, p: 1, borderRadius: '8px', bgcolor: "action.hover" }}>
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
                           <TextField
                             size="small"
@@ -1225,7 +1308,6 @@ interface LanguageInfoItem {
                               next[i] = { ...next[i], name: e.target.value };
                               setPromptRephrasePresets(next);
                               localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS, JSON.stringify(next));
-                              notifyConfigChange();
                             }}
                             placeholder="Preset name"
                             sx={{ flex: 1, '& input': { fontSize: 12, fontWeight: 600 } }}
@@ -1236,7 +1318,6 @@ interface LanguageInfoItem {
                               const next = promptRephrasePresets.filter((_, idx) => idx !== i);
                               setPromptRephrasePresets(next);
                               localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS, JSON.stringify(next));
-                              notifyConfigChange();
                             }}
                             disabled={preset.name === "Standard"}
                           >
@@ -1255,7 +1336,6 @@ interface LanguageInfoItem {
                             next[i] = { ...next[i], prompt: e.target.value };
                             setPromptRephrasePresets(next);
                             localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS, JSON.stringify(next));
-                            notifyConfigChange();
                           }}
                           placeholder="Enter instructions on how the AI should rewrite your text..."
                           sx={{ '& textarea': { fontSize: 12 } }}
@@ -1269,14 +1349,13 @@ interface LanguageInfoItem {
                         const next = [...promptRephrasePresets, { name: "New Preset", prompt: "" }];
                         setPromptRephrasePresets(next);
                         localStorage.setItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS, JSON.stringify(next));
-                        notifyConfigChange();
                       }}
-                      sx={{ fontSize: 11 }}
+                      sx={{ fontSize: 11, borderRadius: '6px' }}
                     >
                       Add Preset
                     </Button>
                   </Box>
-                  <Box sx={{ mb: 1.5 }}>
+                  <Box>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
                       TRANSLATE INSTRUCTIONS
                     </Typography>
@@ -1292,8 +1371,12 @@ interface LanguageInfoItem {
                       sx={{ '& textarea': { fontSize: 12 } }}
                     />
                   </Box>
-
                 </DialogContent>
+                <DialogActions sx={{ px: 2, py: 1 }}>
+                  <Button onClick={() => setCustomInstructionsOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}>
+                    Done
+                  </Button>
+                </DialogActions>
               </Dialog>
 
               {/* Nested Configure Providers Dialog */}
@@ -1303,7 +1386,7 @@ interface LanguageInfoItem {
                 fullWidth
                 maxWidth="xs"
                 disableScrollLock
-                sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
+                sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
               >
                 <DialogTitle sx={{ m: 0, p: 0 }}>
                   <TitleBar
@@ -1407,7 +1490,7 @@ interface LanguageInfoItem {
                             sx={{
                               border: '1px solid',
                               borderColor: selectedApiId === entry.id ? 'primary.main' : 'divider',
-                              borderRadius: 0,
+                              borderRadius: '8px',
                               p: 1.5,
                               mb: 2,
                               bgcolor: selectedApiId === entry.id ? 'action.selected' : 'transparent',
@@ -1499,7 +1582,7 @@ interface LanguageInfoItem {
                         variant="outlined"
                         startIcon={<AddIcon />}
                         onClick={addApi}
-                        sx={{ fontSize: 11, borderRadius: 0, mt: 1 }}
+                        sx={{ fontSize: 11, borderRadius: '6px', mt: 1 }}
                       >
                         Add API
                       </Button>
@@ -1517,7 +1600,7 @@ interface LanguageInfoItem {
         onClose={() => setDownloadDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
+        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
       >
         <DialogTitle sx={{ m: 0, p: 0 }}>
           <TitleBar
@@ -1560,6 +1643,7 @@ interface LanguageInfoItem {
                       p: 1,
                       border: '1px solid',
                       borderColor: 'divider',
+                      borderRadius: '6px',
                     }}
                   >
                     <Box>
@@ -1579,7 +1663,7 @@ interface LanguageInfoItem {
                           variant="contained"
                           disabled={isDownloading}
                           onClick={() => handleDownloadLanguage(lang.code)}
-                          sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0, py: 0.3 }}
+                          sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px', py: 0.3 }}
                         >
                           {isDownloading ? <CircularProgress size={14} sx={{ color: 'inherit' }} /> : "Download"}
                         </Button>
@@ -1591,7 +1675,7 @@ interface LanguageInfoItem {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 2, py: 1 }}>
-          <Button onClick={() => setDownloadDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+          <Button onClick={() => setDownloadDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}>
             Done
           </Button>
         </DialogActions>
@@ -1602,7 +1686,7 @@ interface LanguageInfoItem {
         open={clearWordsDialogOpen}
         onClose={() => setClearWordsDialogOpen(false)}
         maxWidth="xs"
-        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: 0 } }}
+        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
       >
         <DialogTitle sx={{ fontSize: 14, fontWeight: 600 }}>
           Clear Custom Dictionary
@@ -1613,16 +1697,16 @@ interface LanguageInfoItem {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button onClick={() => setClearWordsDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+          <Button onClick={() => setClearWordsDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}>
             Cancel
           </Button>
-          <Button onClick={handleClearCustomWords} variant="contained" color="error" size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+          <Button onClick={handleClearCustomWords} variant="contained" color="error" size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}>
             Clear All
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="xs">
+      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="xs" sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}>
         <DialogTitle sx={{ fontSize: 14, fontWeight: 600 }}>
           Reset Settings
         </DialogTitle>
@@ -1632,10 +1716,10 @@ interface LanguageInfoItem {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button onClick={() => setResetDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+          <Button onClick={() => setResetDialogOpen(false)} size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}>
             Cancel
           </Button>
-          <Button onClick={handleResetSettings} variant="contained" color="error" size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: 0 }}>
+          <Button onClick={handleResetSettings} variant="contained" color="error" size="small" sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}>
             Reset
           </Button>
         </DialogActions>

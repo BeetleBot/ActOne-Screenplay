@@ -10,10 +10,10 @@ import {
 import {
   Box, Typography, IconButton, TextField, Chip, List, ListItemButton,
   ListItemText, Tooltip, Button, Divider, ToggleButtonGroup, ToggleButton,
+  alpha
 } from "@mui/material";
 import { LineType } from "../parser/FountainParser";
 import { logger } from "../utils/logger";
-import { PILL_RADIUS } from "../constants";
 
 const SEARCH_QUERY_STORAGE_KEY = "actone-find-last-query";
 
@@ -328,7 +328,7 @@ export const SearchPanel: React.FC = React.memo(() => {
     return (
       <>
         {before}
-        <Box component="span" sx={{ bgcolor: "warning.main", color: "warning.contrastText", borderRadius: 0, px: 0.3 }}>
+        <Box component="span" sx={{ bgcolor: "warning.main", color: "warning.contrastText", borderRadius: "3px", px: 0.3 }}>
           {hit}
         </Box>
         {after}
@@ -367,6 +367,7 @@ export const SearchPanel: React.FC = React.memo(() => {
               sx: {
                 bgcolor: "background.paper",
                 fontSize: "0.8rem",
+                borderRadius: "20px",
                 "& fieldset": { border: "none" },
               },
               startAdornment: (
@@ -416,7 +417,7 @@ export const SearchPanel: React.FC = React.memo(() => {
             <Chip
               label={`${activeIndex < 0 ? "1" : activeIndex + 1} of ${resultRows.length}`}
               size="small"
-              sx={{ height: 22, fontSize: 10, fontWeight: 600, borderRadius: PILL_RADIUS }}
+              sx={{ height: 22, fontSize: 10, fontWeight: 600, borderRadius: "20px" }}
             />
           )}
           <ToggleButtonGroup
@@ -430,27 +431,27 @@ export const SearchPanel: React.FC = React.memo(() => {
               setWholeWord(values.includes("word"));
             }}
             sx={{
-              gap: 0.25,
+              gap: 0.5,
               "& .MuiToggleButtonGroup-grouped": {
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: "0px !important",
-                minWidth: 26,
-                height: 22,
-                fontSize: 10,
+                border: "none",
+                borderRadius: "20px !important",
+                minWidth: 28,
+                height: 24,
+                fontSize: 10.5,
                 fontWeight: 700,
-                p: "0 6px",
+                px: 1,
                 textTransform: "none",
+                bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
+                color: "text.secondary",
                 "&.Mui-selected": {
-                  bgcolor: "var(--button-color)",
-                  color: "#fff",
-                  borderColor: "var(--button-color)",
+                  bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.25 : 0.15),
+                  color: "primary.main",
                   "&:hover": {
-                    bgcolor: "var(--button-color)",
+                    bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
                   },
                 },
                 "&:hover": {
-                  bgcolor: "action.hover",
+                  bgcolor: (t) => alpha(t.palette.text.primary, 0.09),
                 },
               },
             }}
@@ -478,6 +479,7 @@ export const SearchPanel: React.FC = React.memo(() => {
                   sx: {
                     bgcolor: "background.paper",
                     fontSize: "0.8rem",
+                    borderRadius: "20px",
                     "& fieldset": { border: "none" },
                   },
                 },
@@ -488,10 +490,11 @@ export const SearchPanel: React.FC = React.memo(() => {
                 <span>
                   <Button
                     size="small"
+                    variant="outlined"
                     onClick={handleReplaceCurrent}
                     disabled={resultRows.length === 0 || activeIndex < 0}
                     startIcon={<FindReplaceIcon sx={{ fontSize: 13 }} />}
-                    sx={{ fontSize: 11, textTransform: "none", py: 0.25 }}
+                    sx={{ fontSize: 11, textTransform: "none", py: 0.35, px: 1.25, borderRadius: "20px", fontWeight: 600 }}
                   >
                     Replace
                   </Button>
@@ -501,10 +504,11 @@ export const SearchPanel: React.FC = React.memo(() => {
                 <span>
                   <Button
                     size="small"
+                    variant="contained"
                     onClick={handleReplaceAll}
                     disabled={resultRows.length === 0}
                     startIcon={<DoneAllIcon sx={{ fontSize: 13 }} />}
-                    sx={{ fontSize: 11, textTransform: "none", py: 0.25 }}
+                    sx={{ fontSize: 11, textTransform: "none", py: 0.35, px: 1.25, borderRadius: "20px", fontWeight: 600 }}
                   >
                     All ({resultRows.length})
                   </Button>
@@ -514,9 +518,10 @@ export const SearchPanel: React.FC = React.memo(() => {
                 <span>
                   <Button
                     size="small"
+                    variant="outlined"
                     onClick={handleReplaceSelected}
                     disabled={selected.size === 0}
-                    sx={{ fontSize: 11, textTransform: "none", py: 0.25 }}
+                    sx={{ fontSize: 11, textTransform: "none", py: 0.35, px: 1.25, borderRadius: "20px", fontWeight: 600 }}
                   >
                     Selected ({selected.size})
                   </Button>
@@ -583,11 +588,11 @@ export const SearchPanel: React.FC = React.memo(() => {
                       e.currentTarget.parentElement?.focus();
                     }}
                     sx={{
-                      pl: 1.5,
+                      pl: 1.25,
                       pr: 1,
-                      py: 0.75,
-                      borderRadius: 0,
-                      mb: 0.25,
+                      py: 0.6,
+                      borderRadius: "8px",
+                      mb: 0.3,
                       transition: "all var(--duration-fast) ease",
                       bgcolor: isActive ? "action.selected" : "transparent",
                       "&.Mui-selected": {
@@ -608,7 +613,7 @@ export const SearchPanel: React.FC = React.memo(() => {
                         width: 14,
                         height: 14,
                         minWidth: 14,
-                        borderRadius: 0,
+                        borderRadius: "4px",
                         border: "1.5px solid",
                         borderColor: isChecked ? "primary.main" : "divider",
                         bgcolor: isChecked ? "primary.main" : "transparent",
@@ -640,8 +645,9 @@ export const SearchPanel: React.FC = React.memo(() => {
                             variant="caption"
                             sx={{
                               bgcolor: "action.selected",
-                              px: 0.4,
-                              borderRadius: 0,
+                              px: 0.6,
+                              py: 0.1,
+                              borderRadius: "6px",
                               fontSize: "8.5px",
                               fontWeight: 700,
                               color: "text.secondary",

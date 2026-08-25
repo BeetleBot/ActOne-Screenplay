@@ -17,7 +17,6 @@ import {
   SendIcon,
   ColorLensIcon,
   InfoOutlinedIcon,
-  HelpOutlinedIcon,
 } from './Icons';
 import { TitleBar } from './TitleBar';
 import { ThemeLogo } from './ThemeLogo';
@@ -67,7 +66,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 0,
+            borderRadius: '12px',
             bgcolor: 'background.paper',
             color: 'text.primary',
             backgroundImage: 'none',
@@ -81,7 +80,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         },
       }}
     >
-      <TitleBar title="About ActOne" onClose={onClose} icon={<HelpOutlinedIcon sx={{ fontSize: 16 }} />} isModal />
+      <TitleBar title="About ActOne" onClose={onClose} isModal />
       
       <Box sx={{ p: 2.5 }}>
         {/* Header Hero Section */}
@@ -95,7 +94,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             bgcolor: 'action.hover',
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 0,
+            borderRadius: '10px',
           }}
         >
           <Box
@@ -109,7 +108,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               justifyContent: 'center',
               flexShrink: 0,
               p: 1.25,
-              borderRadius: 0,
+              borderRadius: '8px',
             }}
           >
             <ThemeLogo variant="solid" />
@@ -131,7 +130,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             label={`VERSION ${version.toUpperCase()}`}
             size="small"
             sx={{
-              borderRadius: 0,
+              borderRadius: '20px',
               fontWeight: 700,
               fontSize: '0.68rem',
               letterSpacing: '0.04em',
@@ -147,7 +146,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             label={displayThemeName.toUpperCase()}
             size="small"
             sx={{
-              borderRadius: 0,
+              borderRadius: '20px',
               fontWeight: 700,
               fontSize: '0.68rem',
               letterSpacing: '0.04em',
@@ -165,11 +164,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           <Box
             sx={{
               bgcolor: 'background.paper',
-              borderRadius: 0,
+              borderRadius: '10px',
               display: 'flex',
               flexDirection: 'column',
               border: '1px solid',
               borderColor: 'divider',
+              overflow: 'hidden',
             }}
           >
             <Box
@@ -192,12 +192,13 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 size="small"
                 onClick={() => handleOpenUrl(actoneUrl)}
                 sx={{
-                  borderRadius: 0,
+                  borderRadius: '20px',
                   textTransform: 'none',
                   fontWeight: 700,
                   fontSize: '0.75rem',
                   color: 'primary.main',
-                  p: '2px 8px',
+                  px: 1.5,
+                  py: 0.25,
                   minWidth: 'auto',
                 }}
               >
@@ -225,12 +226,13 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 size="small"
                 onClick={() => handleOpenUrl(fountUrl)}
                 sx={{
-                  borderRadius: 0,
+                  borderRadius: '20px',
                   textTransform: 'none',
                   fontWeight: 700,
                   fontSize: '0.75rem',
                   color: 'primary.main',
-                  p: '2px 8px',
+                  px: 1.5,
+                  py: 0.25,
                   minWidth: 'auto',
                 }}
               >
@@ -264,7 +266,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                   {supportEmail}
                 </Typography>
                 <Tooltip title={copied ? 'Copied!' : 'Copy Support Email'}>
-                  <IconButton size="small" onClick={handleCopyEmail} sx={{ p: '2px', borderRadius: 0 }}>
+                  <IconButton size="small" onClick={handleCopyEmail} sx={{ p: '4px', borderRadius: '20px' }}>
                     {copied ? (
                       <CheckIcon sx={{ fontSize: 14, color: 'success.main' }} />
                     ) : (
@@ -310,7 +312,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             }
             size="small"
             sx={{
-              borderRadius: 0,
+              borderRadius: '20px',
               height: 26,
               bgcolor: 'action.hover',
               border: '1px solid',

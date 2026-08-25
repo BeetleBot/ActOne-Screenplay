@@ -7,7 +7,6 @@ import { DownloadIcon } from "./Icons";
 interface TitleBarProps {
   title: string;
   onClose: () => void;
-  icon?: React.ReactNode;
   updateAvailable?: boolean;
   installUpdate?: () => void;
   isModal?: boolean;
@@ -16,7 +15,6 @@ interface TitleBarProps {
 export const TitleBar: React.FC<TitleBarProps> = ({ 
   title, 
   onClose, 
-  icon,
   updateAvailable = false,
   installUpdate,
   isModal = false
@@ -113,11 +111,10 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         justifyContent: "space-between",
         userSelect: "none",
         flexShrink: 0,
-        borderBottom: "1px solid",
-        borderColor: "divider",
-        bgcolor: "background.paper",
-        borderTopLeftRadius: 'inherit',
-        borderTopRightRadius: 'inherit',
+        borderBottom: "none",
+        bgcolor: "transparent",
+        borderTopLeftRadius: isModal ? 'inherit' : 0,
+        borderTopRightRadius: isModal ? 'inherit' : 0,
         position: 'relative',
         pr: `${controlsWidth}px`,
         cursor: "default",
@@ -128,36 +125,17 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           display: "flex", 
           alignItems: "center", 
           height: "100%", 
-          gap: 1.5, 
-          borderTopLeftRadius: 'inherit' 
+          gap: 1.25, 
+          pl: 2,
         }}
       >
-        {icon && (
-          <Box
-            sx={{
-              width: 48,
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
-              flexShrink: 0,
-              borderRight: "1px solid",
-              borderColor: "rgba(0,0,0,0.15)",
-              borderTopLeftRadius: 'inherit',
-            }}
-          >
-            {icon}
-          </Box>
-        )}
         <Typography 
           variant="caption" 
           sx={{ 
             fontWeight: 700, 
             fontSize: 11, 
-            color: "text.secondary", 
-            pl: icon ? 0 : 1.5 
+            color: "text.primary", 
+            letterSpacing: "0.04em",
           }}
         >
           {title.toUpperCase()}
@@ -168,15 +146,14 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         sx={{ 
           display: 'flex', 
           alignItems: 'center', 
+          gap: 0.5,
           flexShrink: 0,
           position: 'absolute',
-          right: 0,
+          right: 8,
           top: 0,
           height: '100%',
           bgcolor: 'inherit',
           zIndex: 11,
-          borderLeft: 1,
-          borderColor: 'divider',
         }} 
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -189,18 +166,17 @@ export const TitleBar: React.FC<TitleBarProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
-              height: 40,
-              px: 2,
+              height: 26,
+              px: 1.25,
+              borderRadius: '6px',
               cursor: 'pointer',
               bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
               color: 'primary.main',
               fontSize: 11,
               fontWeight: 700,
               whiteSpace: 'nowrap',
-              borderRight: 1,
-              borderColor: 'divider',
               flexShrink: 0,
-              transition: 'background-color 0.2s ease',
+              transition: 'all 0.15s ease',
               '&:hover': {
                 bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
               },
@@ -215,12 +191,14 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           <IconButton
             onClick={handleMinimize}
             title="Minimize"
+            size="small"
             sx={{
-              width: 48, 
-              height: 40, 
-              borderRadius: 0,
-              color: 'inherit',
-              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+              width: 28, 
+              height: 28, 
+              borderRadius: '6px',
+              color: 'text.secondary',
+              '&:hover': { bgcolor: (t) => alpha(t.palette.text.primary, 0.08), color: 'text.primary' },
+              transition: 'all 0.15s ease',
             }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
@@ -233,14 +211,14 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           <IconButton
             onClick={handleMaximize}
             title={isMaximized ? "Restore" : "Maximize"}
+            size="small"
             sx={{
-              width: 46, 
-              height: 40, 
-              borderRadius: 0,
-              color: 'inherit',
-              borderLeft: 1,
-              borderColor: 'divider',
-              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+              width: 28, 
+              height: 28, 
+              borderRadius: '6px',
+              color: 'text.secondary',
+              '&:hover': { bgcolor: (t) => alpha(t.palette.text.primary, 0.08), color: 'text.primary' },
+              transition: 'all 0.15s ease',
             }}
           >
             {isMaximized ? (
@@ -259,14 +237,14 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         <IconButton
           onClick={onClose}
           title="Close"
+          size="small"
           sx={{
-            width: 46, 
-            height: 40, 
-            borderRadius: 0,
-            color: 'inherit',
-            borderLeft: 1,
-            borderColor: 'divider',
-            '&:hover': { bgcolor: (theme) => theme.palette.error.main, color: (theme) => theme.palette.common.white },
+            width: 28, 
+            height: 28, 
+            borderRadius: '6px',
+            color: 'text.secondary',
+            '&:hover': { bgcolor: (theme) => alpha(theme.palette.error.main, 0.15), color: (theme) => theme.palette.error.main },
+            transition: 'all 0.15s ease',
           }}
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>

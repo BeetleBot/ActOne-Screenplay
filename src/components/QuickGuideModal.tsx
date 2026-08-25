@@ -15,7 +15,6 @@ import {
 import {
   SearchIcon,
   MenuBookIcon,
-  KeyboardShortcutsIcon,
 } from "./Icons";
 import { TitleBar } from "./TitleBar";
 import { SHORTCUTS_REGISTRY, SYNTAX_REGISTRY, type ShortcutItem } from "../constants/shortcuts";
@@ -89,7 +88,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
       sx={{
         "& .MuiDialog-paper": {
           zoom: `${appScale}%`,
-          borderRadius: 0,
+          borderRadius: '12px',
           height: 560,
           maxHeight: "90vh",
           bgcolor: "background.paper",
@@ -104,7 +103,6 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
       <DialogTitle sx={{ m: 0, p: 0 }}>
         <TitleBar
           title="Quick Guide"
-          icon={<KeyboardShortcutsIcon sx={{ fontSize: 16 }} />}
           isModal
           onClose={onClose}
         />

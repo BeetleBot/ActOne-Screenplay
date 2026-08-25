@@ -12,7 +12,7 @@ flowchart TD
     Windows --> Standalone[Settings, Help, X-Ray, Tutorials, Theme Manager, Crash]
     Main --> Layout[MainLayout]
     Layout --> Editor[FountainEditor + CodeMirror 6]
-    Layout --> Panels[Sidebar, Search, Ambient, Muse, Status Bar]
+    Layout --> Panels[Sidebar, Search, Muse, Status Bar]
     Main --> Contexts[React Context state domains]
     Main --> Parser[Frontend Fountain parser]
     Parser --> Worker[Parser worker / async parser]
@@ -122,7 +122,7 @@ App
               Workspace
                 SidebarViews
                 FountainEditor
-                SearchPanel or AmbientPanel
+                SearchPanel
               StatusBar
             ModalManager
               CommandPalette
@@ -131,7 +131,7 @@ App
               TitlePageEditorModal
 ```
 
-The right pane can display search, ambient audio, or Muse. Muse is provided by `MusePanel` in `Workspace` and is not a separate Tauri window.
+The right pane can display search or Muse. Muse is provided by `MusePanel` in `Workspace` and is not a separate Tauri window. (Ambient audio was removed in v0.4.19 — commit `ed45a8b`.)
 
 ## State Domains
 

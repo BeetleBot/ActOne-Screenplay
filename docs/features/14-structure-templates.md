@@ -16,7 +16,7 @@ ActOne includes 8 embedded story structure templates that can be imported into a
 ## Importing a Template
 
 1. **Command Palette** → "Import Structure Template"
-2. Select the desired structure from the list
+2. Select the desired structure from the list (modal nav items are `6px` rounded pills with primary tint for active)
 3. Choose import position (before current scene, after current scene, at document end)
 4. The template is inserted as formatted Fountain text with:
    - Section headers (`# Beat Name`)

@@ -34,9 +34,13 @@ Straight quotes (`"` and `'`) are automatically converted to curly typographic q
 
 Integrated font fallback chain (`--font-editor-indic`) featuring bundled fonts for Malayalam (*Baloo Chettan 2*, *Mukta Malar*), Hindi/Marathi (*Mukta*), Telugu (*Hind Guntur*), Bengali (*Hind Siliguri*), Gujarati (*Hind Vadodara*), Kannada (*Baloo Tamma 2*), Punjabi (*Baloo Paaji 2*), and Odia (*Baloo Bhaina 2*). Includes descender underline spacing (`text-underline-offset: 3px`).
 
+### Scrollbars & Chrome
+
+Custom pill scrollbars are used app-wide — thin `6px` capsule thumbs with `9999px` radius, `scrollbar-width: thin`, and soft ambient hover. Papers, menus, and dialogs use the craft radius + shadow tokens from `DESIGN.md`.
+
 ### Right-Click Context Menu
 
-Right-clicking opens a context menu with options:
+Right-clicking opens a context menu (`8px` radius, ambient shadow) with options:
 
 The menu is rendered inside the app so it follows the active ActOne theme while retaining compact native-style rows, keyboard navigation, hover selection, and submenu behavior.
 
@@ -86,12 +90,13 @@ Keeps your editing line vertically centered on screen. As you type, the page scr
 
 ### Find & Replace
 
-`Ctrl+F` opens the search panel. Supports:
-- **Fast, Optimized Searching**: Performance is optimized for massive scripts, using a single-pass O(N) scene context lookup.
-- **Incremental List Rendering**: To prevent DOM overloading and application lag, the search panel uses infinite scrolling to render matches incrementally (50 items at a time) as you scroll or navigate.
-- **Precise Scene Context**: Displays which Scene Heading each match belongs to.
-- **Refinement Toggles**: Case-sensitive (`Aa`) and whole-word (`\b`) matching.
-- **Flexible Replacing**: Replace single, replace selected (via checkboxes), or replace all.
+`Ctrl+F` opens the floating search panel — a paper card (`12px` radius, ambient shadow) with pill inputs. Supports:
+- **Fast, Optimized Searching**: Single-pass O(N) scene context lookup.
+- **Incremental List Rendering**: Infinite scroll rendering 50 matches at a time.
+- **Precise Scene Context**: Shows which Scene Heading each match belongs to, with scene-number pill (`6px`) and highlighted hit (`3px` radius).
+- **Pill Refinement Toggles** (`20px` radius): Case-sensitive (`Aa`), whole-word (`\b`), and regex (`.*`) matching. Active toggles show a soft primary tint.
+- **Flexible Replacing**: Replace single, replace selected (via `4px` checkboxes), or replace all — actions are pill buttons (`20px`): outlined for single/selected, contained for All.
+- **Visuals**: Pill Find/Replace inputs (`20px` radius, paper bg), match-count pill chip, result rows as `8px` rounded items with subtle hover, draggable left edge with rounded hover glow to resize.
 
 
 ### Dual Dialogue Indentation

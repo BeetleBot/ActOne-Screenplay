@@ -9,7 +9,6 @@ import { Box, Typography, useTheme, alpha, Menu, MenuItem, IconButton, Tooltip }
 import { logger } from "../utils/logger";
 import { parseScriptFileToFountain } from "../utils/text";
 import { ThemeLogo } from "./ThemeLogo";
-import { TitleBar } from "./TitleBar";
 import {
   HelpOutlinedIcon,
   DeleteIcon,
@@ -66,13 +65,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const { theme: currentThemeId, setTheme: setAppTheme, customThemes } = useAppTheme();
   const theme = useTheme();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
-
-  useEffect(() => {
-    const timer = requestAnimationFrame(() => {
-      window.dispatchEvent(new MouseEvent("mousemove", { clientX: 1, clientY: 1 }));
-    });
-    return () => cancelAnimationFrame(timer);
-  }, []);
 
   useEffect(() => {
     invoke<string[]>("get_cli_args")
@@ -188,6 +180,28 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
       await getCurrentWindow().close();
     } catch (e) {
       logger.error("welcome", "closeWelcome failed", e);
+    }
+  };
+
+  const handleMinimize = async () => {
+    try {
+      await getCurrentWindow().minimize();
+    } catch (e) {
+      logger.error("welcome", "minimize failed", e);
+    }
+  };
+
+  const handleStartDrag = async (e: React.MouseEvent) => {
+    if (e.button === 0) {
+      const target = e.target as HTMLElement;
+      const isInteractive = target.closest("button") || target.tagName === "BUTTON" || target.closest("[role='button']") || target.closest(".clickable");
+      if (!isInteractive) {
+        try {
+          await getCurrentWindow().startDragging();
+        } catch (e) {
+          logger.error("welcome", "startDragging failed", e);
+        }
+      }
     }
   };
 
@@ -369,6 +383,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
 
   return (
     <Box
+      onMouseDown={handleStartDrag}
       sx={{
         width: "100%",
         height: "100%",
@@ -379,14 +394,85 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         overflow: "hidden",
         boxSizing: "border-box",
         userSelect: "none",
+        position: "relative",
       }}
     >
-      <TitleBar
-        title="Welcome To ActOne!"
-        onClose={closeWelcome}
-        updateAvailable={!!updateAvailable}
-        installUpdate={installUpdate}
-      />
+      <Box
+        sx={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          zIndex: 30,
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+          userSelect: "none",
+        }}
+      >
+        {updateAvailable && installUpdate && (
+          <Box
+            onClick={(e) => { e.stopPropagation(); installUpdate(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            title="Click to install update from Microsoft Store"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              height: 22,
+              px: 1,
+              mr: 0.5,
+              borderRadius: "6px",
+              cursor: "pointer",
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+              color: "primary.main",
+              fontSize: 10.5,
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              transition: "all 0.15s ease",
+              "&:hover": {
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.25),
+              },
+            }}
+          >
+            Update
+          </Box>
+        )}
+        <IconButton
+          onClick={handleMinimize}
+          title="Minimize"
+          size="small"
+          sx={{
+            width: 26,
+            height: 26,
+            borderRadius: "6px",
+            color: "text.secondary",
+            "&:hover": { bgcolor: (t) => alpha(t.palette.text.primary, 0.08), color: "text.primary" },
+            transition: "all 0.15s ease",
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
+            <path d="M2 6H10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+        </IconButton>
+        <IconButton
+          onClick={closeWelcome}
+          title="Close"
+          size="small"
+          sx={{
+            width: 26,
+            height: 26,
+            borderRadius: "6px",
+            color: "text.secondary",
+            "&:hover": { bgcolor: (t) => alpha(t.palette.error.main, 0.15), color: (t) => t.palette.error.main },
+            transition: "all 0.15s ease",
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
+            <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+        </IconButton>
+      </Box>
 
       <Menu
         anchorEl={themeAnchor}
@@ -552,8 +638,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           display: "flex",
           minHeight: 0,
           overflow: "hidden",
-          p: 1,
-          gap: 1,
+          p: 1.25,
+          pt: 1.25,
+          gap: 1.25,
         }}
       >
         {/* Left Sidebar: Recent Screenplays */}
@@ -562,10 +649,12 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             width: "38%",
             minWidth: 240,
             maxWidth: 320,
-            borderRadius: "12px",
-            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: "14px",
+            border: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)",
             bgcolor: "background.paper",
-            boxShadow: (t) => t.palette.mode === "dark" ? "0 8px 24px rgba(0,0,0,0.35)" : "0 2px 12px rgba(0,0,0,0.06)",
+            boxShadow: (t) => t.palette.mode === "dark" 
+              ? "0 10px 30px -4px rgba(0,0,0,0.5), 0 2px 8px -2px rgba(0,0,0,0.3)" 
+              : "0 8px 24px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03)",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
@@ -718,11 +807,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           }}
         >
           {/* Logo & Title Header */}
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2.5 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
             <Box
               sx={{
-                width: 64,
-                height: 64,
+                width: 76,
+                height: 76,
                 color: theme.palette.primary.main,
                 mb: 1.25,
                 filter: `drop-shadow(0 6px 16px ${alpha(theme.palette.primary.main, 0.35)})`,
@@ -744,9 +833,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               width: "100%",
               maxWidth: 440,
               bgcolor: "background.paper",
-              border: `1px solid ${theme.palette.divider}`,
-              borderRadius: "12px",
-              boxShadow: (t) => t.palette.mode === "dark" ? "0 8px 24px rgba(0,0,0,0.35)" : "0 2px 12px rgba(0,0,0,0.06)",
+              border: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)",
+              borderRadius: "14px",
+              boxShadow: (t) => t.palette.mode === "dark" 
+                ? "0 10px 30px -4px rgba(0,0,0,0.5), 0 2px 8px -2px rgba(0,0,0,0.3)" 
+                : "0 8px 24px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03)",
               overflow: "hidden",
             }}
           >
@@ -757,8 +848,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 alignItems: "center",
                 justifyContent: "space-between",
                 px: 2.25,
-                py: 1.3,
-                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+                py: 1.25,
+                borderBottom: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.03)",
               }}
             >
               <Box sx={{ pr: 2 }}>
@@ -782,10 +873,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                   fontSize: 12,
                   cursor: "pointer",
                   flexShrink: 0,
+                  boxShadow: (t) => t.palette.mode === "dark" ? "none" : `0 2px 6px ${alpha(theme.palette.primary.main, 0.25)}`,
                   transition: "all 0.15s ease",
                   "&:hover": {
                     bgcolor: alpha(theme.palette.primary.main, 0.88),
-                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.35)}`,
+                    boxShadow: `0 3px 10px ${alpha(theme.palette.primary.main, 0.35)}`,
                   },
                 }}
               >
@@ -800,8 +892,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 alignItems: "center",
                 justifyContent: "space-between",
                 px: 2.25,
-                py: 1.3,
-                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+                py: 1.25,
+                borderBottom: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.03)",
               }}
             >
               <Box sx={{ pr: 2 }}>
@@ -817,17 +909,19 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 onClick={handleOpen}
                 sx={{
                   px: 2.25,
-                  py: 0.5,
+                  py: 0.45,
                   borderRadius: "20px",
-                  bgcolor: alpha(theme.palette.text.primary, 0.06),
-                  color: theme.palette.text.primary,
+                  bgcolor: (t) => t.palette.mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                  border: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+                  color: "text.primary",
                   fontWeight: 600,
                   fontSize: 12,
                   cursor: "pointer",
                   flexShrink: 0,
                   transition: "all 0.15s ease",
                   "&:hover": {
-                    bgcolor: alpha(theme.palette.text.primary, 0.12),
+                    bgcolor: (t) => alpha(t.palette.text.primary, 0.08),
+                    borderColor: (t) => alpha(t.palette.text.primary, 0.18),
                   },
                 }}
               >
@@ -842,8 +936,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 alignItems: "center",
                 justifyContent: "space-between",
                 px: 2.25,
-                py: 1.3,
-                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+                py: 1.25,
+                borderBottom: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.03)",
               }}
             >
               <Box sx={{ pr: 2 }}>
@@ -859,17 +953,19 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 onClick={() => handleImport()}
                 sx={{
                   px: 2.25,
-                  py: 0.5,
+                  py: 0.45,
                   borderRadius: "20px",
-                  bgcolor: alpha(theme.palette.text.primary, 0.06),
-                  color: theme.palette.text.primary,
+                  bgcolor: (t) => t.palette.mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                  border: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+                  color: "text.primary",
                   fontWeight: 600,
                   fontSize: 12,
                   cursor: "pointer",
                   flexShrink: 0,
                   transition: "all 0.15s ease",
                   "&:hover": {
-                    bgcolor: alpha(theme.palette.text.primary, 0.12),
+                    bgcolor: (t) => alpha(t.palette.text.primary, 0.08),
+                    borderColor: (t) => alpha(t.palette.text.primary, 0.18),
                   },
                 }}
               >
@@ -884,8 +980,8 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 alignItems: "center",
                 justifyContent: "space-between",
                 px: 2.25,
-                py: 1.3,
-                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+                py: 1.25,
+                borderBottom: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.03)",
               }}
             >
               <Box sx={{ pr: 2 }}>
@@ -901,17 +997,19 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 onClick={handleTemplates}
                 sx={{
                   px: 2.25,
-                  py: 0.5,
+                  py: 0.45,
                   borderRadius: "20px",
-                  bgcolor: alpha(theme.palette.text.primary, 0.06),
-                  color: theme.palette.text.primary,
+                  bgcolor: (t) => t.palette.mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                  border: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+                  color: "text.primary",
                   fontWeight: 600,
                   fontSize: 12,
                   cursor: "pointer",
                   flexShrink: 0,
                   transition: "all 0.15s ease",
                   "&:hover": {
-                    bgcolor: alpha(theme.palette.text.primary, 0.12),
+                    bgcolor: (t) => alpha(t.palette.text.primary, 0.08),
+                    borderColor: (t) => alpha(t.palette.text.primary, 0.18),
                   },
                 }}
               >
@@ -926,7 +1024,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 alignItems: "center",
                 justifyContent: "space-between",
                 px: 2.25,
-                py: 1.3,
+                py: 1.25,
               }}
             >
               <Box sx={{ pr: 2 }}>
@@ -942,17 +1040,19 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                 onClick={() => (onOpenTutorials ? onOpenTutorials() : openTutorialsWindow())}
                 sx={{
                   px: 2.25,
-                  py: 0.5,
+                  py: 0.45,
                   borderRadius: "20px",
-                  bgcolor: alpha(theme.palette.text.primary, 0.06),
-                  color: theme.palette.text.primary,
+                  bgcolor: (t) => t.palette.mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                  border: (t) => t.palette.mode === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+                  color: "text.primary",
                   fontWeight: 600,
                   fontSize: 12,
                   cursor: "pointer",
                   flexShrink: 0,
                   transition: "all 0.15s ease",
                   "&:hover": {
-                    bgcolor: alpha(theme.palette.text.primary, 0.12),
+                    bgcolor: (t) => alpha(t.palette.text.primary, 0.08),
+                    borderColor: (t) => alpha(t.palette.text.primary, 0.18),
                   },
                 }}
               >
@@ -963,56 +1063,65 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         </Box>
       </Box>
 
-      {/* Footer bar */}
+      {/* StatusBar-Style Footer Bar */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          height: 36,
-          minHeight: 36,
-          borderTop: `1px solid ${theme.palette.divider}`,
-          bgcolor: theme.palette.background.paper,
-          px: 2,
+          height: 28,
+          minHeight: 28,
+          borderTop: "none",
+          bgcolor: "transparent",
+          px: 1.75,
+          pb: 0.25,
           flexShrink: 0,
+          userSelect: "none",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled, fontWeight: 500, fontFamily: "monospace" }}>
+        {/* Left: Version */}
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography sx={{ fontSize: 11, color: "text.secondary", fontWeight: 500, fontFamily: "monospace" }}>
             {appVersion ? `v${appVersion} [${appChannel}]` : "v0.4.3"}
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 500, color: theme.palette.text.disabled }}>
+        {/* Center: Copyright */}
+        <Box
+          className="clickable"
+          onClick={(e) => {
+            e.stopPropagation();
+            try {
+              import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl("https://iyal.ink"));
+            } catch {
+              window.open("https://iyal.ink", "_blank");
+            }
+          }}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5,
+            cursor: "pointer",
+            "&:hover .corp-name": {
+              color: "primary.main",
+              textDecoration: "underline",
+            },
+          }}
+        >
+          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 400, color: "text.secondary" }}>
             © 2026
           </Typography>
           <Typography
+            className="corp-name"
             variant="caption"
-            component="span"
-            onClick={(e) => {
-              e.stopPropagation();
-              try {
-                import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl("https://iyal.ink"));
-              } catch {
-                window.open("https://iyal.ink", "_blank");
-              }
-            }}
             sx={{
               fontSize: 11,
               fontWeight: 600,
-              color: theme.palette.text.secondary,
-              cursor: "pointer",
-              "&:hover": {
-                color: theme.palette.primary.main,
-                textDecoration: "underline",
-              },
+              color: "text.secondary",
+              transition: "color 0.15s ease",
             }}
           >
             iyal.ink
-          </Typography>
-          <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 400, color: theme.palette.text.disabled }}>
-            — Tools for the story in progress.
           </Typography>
         </Box>
 
@@ -1027,16 +1136,16 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             sx={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 0.5,
-              px: 0.75,
-              py: 0.25,
-              borderRadius: "4px",
+              gap: 0.6,
+              px: 1,
+              py: 0.35,
+              borderRadius: "5px",
               cursor: "pointer",
               transition: "all 0.15s ease",
-              color: theme.palette.text.secondary,
+              color: "text.secondary",
               "&:hover": {
-                color: theme.palette.text.primary,
-                bgcolor: alpha(theme.palette.text.primary, 0.05),
+                color: "text.primary",
+                bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
               },
             }}
           >
@@ -1050,16 +1159,16 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             sx={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 0.5,
-              px: 0.75,
-              py: 0.25,
-              borderRadius: "4px",
+              gap: 0.6,
+              px: 1,
+              py: 0.35,
+              borderRadius: "5px",
               cursor: "pointer",
               transition: "all 0.15s ease",
-              color: theme.palette.text.secondary,
+              color: "text.secondary",
               "&:hover": {
-                color: theme.palette.text.primary,
-                bgcolor: alpha(theme.palette.text.primary, 0.05),
+                color: "text.primary",
+                bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
               },
             }}
           >
@@ -1073,10 +1182,10 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
               aria-label="Help"
               size="small"
               sx={{
-                p: 0.5,
-                color: theme.palette.text.secondary,
-                borderRadius: "4px",
-                "&:hover": { color: theme.palette.text.primary, bgcolor: alpha(theme.palette.text.primary, 0.05) },
+                p: 0.4,
+                color: "text.secondary",
+                borderRadius: "5px",
+                "&:hover": { color: "text.primary", bgcolor: (t) => alpha(t.palette.text.primary, 0.06) },
               }}
             >
               <HelpOutlinedIcon sx={{ fontSize: 15 }} />
