@@ -11,6 +11,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import { alpha } from "@mui/material/styles";
 import {
   FolderSimplePlusIcon, CheckIcon, SettingsIcon, TimerIcon,
   KeyboardArrowDownIcon, CameraIcon,
@@ -77,13 +78,19 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   ];
 
   const availableTabs = allTabs.filter(t => !isProse || !t.scriptOnly);
-  const tabs = supportsExtended ? availableTabs : availableTabs.filter(t => t.id === "outline" || t.id === "scripts");
+  const tabs = supportsExtended ? availableTabs : availableTabs.filter(t => t.id !== "scripts");
+
+  React.useEffect(() => {
+    if (!supportsExtended && activeTab === "scripts") {
+      setActiveTab("outline");
+    }
+  }, [supportsExtended, activeTab, setActiveTab]);
 
   React.useEffect(() => {
     if (isProse && (activeTab === "markers" || activeTab === "sprint" || activeTab === "parking")) {
-      setActiveTab("scripts");
+      setActiveTab(supportsExtended ? "scripts" : "outline");
     }
-  }, [isProse, activeTab, setActiveTab]);
+  }, [isProse, supportsExtended, activeTab, setActiveTab]);
 
   return (
     <Box
@@ -94,12 +101,12 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         maxWidth: isZenMode ? 0 : 48,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center',
-        bgcolor: 'background.paper',
-        borderRight: isZenMode ? 0 : 1,
-        borderColor: 'divider',
+        bgcolor: 'transparent',
+        borderRight: 0,
         flexShrink: 0,
         pointerEvents: isZenMode ? 'none' : 'auto',
         overflow: 'hidden',
+        py: 0.75,
       }}
     >
       <Box 
@@ -110,6 +117,8 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
           flex: 1, 
           overflowY: 'auto', 
           width: '100%',
+          px: 0.5,
+          gap: 0.5,
           '&::-webkit-scrollbar': { display: 'none' },
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
@@ -119,91 +128,77 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
           id="command-palette-btn"
           className="command-palette-btn"
           sx={{
-            width: 47,
-            minWidth: 47,
-            maxWidth: 47,
-            height: 40,
+            width: 36,
+            height: 36,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            position: 'relative',
+            borderRadius: '20px',
             cursor: 'pointer',
-            bgcolor: 'primary.main',
-            borderBottom: 1,
-            borderColor: 'divider',
-            transition: 'background-color var(--duration-slow) var(--easing-standard)',
+            bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
+            color: 'text.primary',
+            border: 'none',
+            mb: 0.5,
+            transition: 'all 0.15s ease',
             '&:hover': {
-              bgcolor: 'transparent',
-              '& .command-palette-icon': {
-                color: 'primary.main',
-              },
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.14),
+              color: 'primary.main',
+              boxShadow: (t) => `0 2px 8px ${alpha(t.palette.primary.main, 0.2)}`,
             },
-            '@keyframes commandPaletteBounce': {
-              '0%': { transform: 'scale(1)' },
-              '40%': { transform: 'scale(0.82)' },
-              '70%': { transform: 'scale(1.14)' },
-              '100%': { transform: 'scale(1)' },
-            },
-            '&:active .command-palette-icon': {
-              animation: 'commandPaletteBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            '&:active': {
+              transform: 'scale(0.94)',
             },
           }}
           onClick={(e) => { e.stopPropagation(); onOpenPalette?.(); }}
         >
-          <Tooltip title="Command Palette (Ctrl+K)" placement="right">
-            <Box
-              className="command-palette-icon"
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 19,
-                height: 19,
-                color: 'primary.contrastText',
-                transition: 'color var(--duration-slow) var(--easing-standard), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
-            >
-              <ThemeLogo variant="solid" />
-            </Box>
-          </Tooltip>
+          <Box
+            className="command-palette-icon"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 20,
+              height: 20,
+            }}
+          >
+            <ThemeLogo variant="solid" />
+          </Box>
         </Box>
+
         {tabs.map((tab) => {
           const isActive = isSidebarOpen && activeTab === tab.id;
           const disabled = hasNoScripts;
+          const isDividerBefore = tab.id === "markers";
           return (
-            <Tooltip key={tab.id} title={tab.title} placement="right">
+            <React.Fragment key={tab.id}>
+              {isDividerBefore && (
+                <Divider sx={{ width: 22, my: 0.4, borderColor: 'divider' }} />
+              )}
               <Box
                 id={"activity-tab-" + tab.id}
                 onClick={() => !disabled && handleClick(tab.id)}
                 sx={{
-                  width: 47,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  borderRadius: '20px',
                   cursor: disabled ? 'default' : 'pointer',
                   color: isActive ? 'primary.contrastText' : 'text.secondary',
                   bgcolor: isActive ? 'primary.main' : 'transparent',
-                  position: 'relative',
+                  boxShadow: isActive ? (t) => `0 2px 8px ${alpha(t.palette.primary.main, 0.35)}` : 'none',
                   flexShrink: 0,
-                  borderBottom: 1,
-                  borderColor: 'divider',
                   opacity: disabled ? 0.4 : 1,
                   pointerEvents: disabled ? 'none' : 'auto',
-                  transition: 'background-color var(--duration-slow) var(--easing-standard), color var(--duration-slow) var(--easing-standard)',
+                  transition: 'all 0.15s ease',
                   '&:hover': {
-                    bgcolor: disabled ? 'transparent' : 'primary.main',
-                    color: disabled ? 'text.secondary' : 'primary.contrastText',
+                    bgcolor: disabled ? 'transparent' : (isActive ? 'primary.main' : (t) => alpha(t.palette.text.primary, 0.08)),
+                    color: disabled ? 'text.secondary' : (isActive ? 'primary.contrastText' : 'text.primary'),
                   },
-                  '@keyframes activityIconBounce': {
-                    '0%': { transform: 'scale(1)' },
-                    '40%': { transform: 'scale(0.78)' },
-                    '70%': { transform: 'scale(1.12)' },
-                    '100%': { transform: 'scale(1)' },
-                  },
-                  '&:active .activity-icon-inner': {
-                    animation: 'activityIconBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  '&:active': {
+                    transform: 'scale(0.94)',
                   },
                 }}
               >
@@ -218,36 +213,36 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                   {tab.icon}
                 </Box>
               </Box>
-            </Tooltip>
+            </React.Fragment>
           );
         })}
       </Box>
 
-      <Divider sx={{ width: 28, my: 0.5 }} />
+      <Divider sx={{ width: 22, my: 0.5 }} />
 
-      <Tooltip title="Quick Settings" placement="right">
-        <Box
-          id="quick-settings"
-          onClick={(e) => setAnchorEl(e.currentTarget)}
-          sx={{
-            width: 47,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            color: anchorEl ? 'primary.contrastText' : 'text.secondary',
-            bgcolor: anchorEl ? 'primary.main' : 'transparent',
-            transition: 'background-color var(--duration-slow) var(--easing-standard), color var(--duration-slow) var(--easing-standard)',
-            '&:hover': {
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-            },
-            '&:active .activity-icon-inner': {
-              animation: 'activityIconBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            },
-          }}
-        >
+      <Box
+        id="quick-settings"
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        sx={{
+          width: 36,
+          height: 36,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '20px',
+          cursor: 'pointer',
+          color: anchorEl ? 'primary.contrastText' : 'text.secondary',
+          bgcolor: anchorEl ? 'primary.main' : 'transparent',
+          transition: 'all 0.15s ease',
+          '&:hover': {
+            bgcolor: anchorEl ? 'primary.main' : (t) => alpha(t.palette.text.primary, 0.08),
+            color: anchorEl ? 'primary.contrastText' : 'text.primary',
+          },
+          '&:active': {
+            transform: 'scale(0.94)',
+          },
+        }}
+      >
           <Box
             className="activity-icon-inner"
             sx={{
@@ -259,7 +254,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
             <MoreHorizIcon sx={{ fontSize: 20 }} />
           </Box>
         </Box>
-      </Tooltip>
+
 
       <Menu
         anchorEl={anchorEl}
@@ -370,11 +365,12 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                           <Box
                             onClick={() => setTheme(cat.adaptiveId!)}
                             sx={{
-                              width: 28, height: 28, borderRadius: 0, cursor: 'pointer',
+                              width: 28, height: 28, borderRadius: '6px', cursor: 'pointer',
                               border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                               display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
-                              '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                              transition: 'border-color var(--duration-fast) ease',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              '&:hover': { borderColor: isActive ? 'primary.main' : 'divider', transform: 'scale(1.05)' },
+                              transition: 'all var(--duration-fast) ease',
                             }}
                           >
                             <Box sx={{ bgcolor: meta.swatchColors[0] }} />
@@ -392,11 +388,12 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                           <Box
                             onClick={() => setTheme(t.id)}
                             sx={{
-                              width: 28, height: 28, borderRadius: 0, cursor: 'pointer',
+                              width: 28, height: 28, borderRadius: '6px', cursor: 'pointer',
                               border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                               display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
-                              '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                              transition: 'border-color var(--duration-fast) ease',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              '&:hover': { borderColor: isActive ? 'primary.main' : 'divider', transform: 'scale(1.05)' },
+                              transition: 'all var(--duration-fast) ease',
                             }}
                           >
                             <Box sx={{ bgcolor: t.colors.editor }} />
@@ -425,11 +422,12 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                         <Box
                           onClick={() => setTheme(t.id)}
                           sx={{
-                            width: 28, height: 28, borderRadius: 0, cursor: 'pointer',
+                            width: 28, height: 28, borderRadius: '6px', cursor: 'pointer',
                             border: '2px solid', borderColor: isActive ? 'primary.main' : 'transparent',
                             display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
-                            '&:hover': { borderColor: isActive ? 'primary.main' : 'divider' },
-                            transition: 'border-color var(--duration-fast) ease',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            '&:hover': { borderColor: isActive ? 'primary.main' : 'divider', transform: 'scale(1.05)' },
+                            transition: 'all var(--duration-fast) ease',
                           }}
                         >
                           <Box sx={{ bgcolor: t.colors.editor }} />
