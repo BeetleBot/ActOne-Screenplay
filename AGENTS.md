@@ -10,6 +10,9 @@ Cross-platform screenplay editor (Windows WebView2 & Linux webkitgtk) using Reac
 - **Tauri & Cross-Platform**: Guard Tauri API calls with `typeof window !== "undefined" && "__TAURI_INTERNALS__" in window`. Use `Path`/`PathBuf` in Rust. Normalize `\r\n` to `\n` on text read. Use `e.key` and `e.ctrlKey || e.metaKey` for keyboard shortcuts.
 - **Muse AI**: Tools defined in `src/lib/aiTools.ts` & `src/hooks/useAIChat.ts`. Single JSON tool protocol. Treat model input/output as untrusted.
 
+## Design System
+`docs/DESIGN.md` is the canonical design reference (tokens, themes, components, layout patterns). `src/theme/muiTheme.ts` + `src/index.css` are the runtime sources of truth — keep them in sync.
+
 ## Commands
 ```bash
 # Frontend: npm test | npm run typecheck | npm run lint | npm run build
