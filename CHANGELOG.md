@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.21] - 2026-08-27
+
+### Added / Improved
+- 📦 **Gen 3 Multi-Document `.actone` Bundle Layout** – Standardized the `.actone` bundle architecture so all screenplay and prose documents are cleanly organized and preserved within the `files/` directory alongside the `project.json` manifest. Automatically migrates legacy root-level script bundles on open.
+- 🔄 **Automatic Script Metadata Migration** – Renaming a document inside the Project Pane now automatically migrates all associated metadata—including notes (`notepad`), tasks (`todos`), parking lots (`parking`), character genders (`genders`), character profiles (`characterProfiles`), and production tags (`productionTags`)—to the new file path, preventing orphaned data.
+- 🧹 **Orphaned Metadata Cleanup on Script Deletion** – Deleting a script cleans up its associated metadata across all settings maps, and multi-script bundle export isolates production tags via `resolvePerScript()`.
+- 🖱️ **Project Pane Right-Click Context Menu** – Added direct `onContextMenu` support across all document cards in the Project Pane, providing instant right-click access to Rename, Move Up, Move Down, Duplicate, and Delete actions.
+- 🖱️ **1:1 Scrollbar Pointer Tracking & Rubber-Band Removal** – Replaced global `scroll-behavior: smooth` with `scroll-behavior: auto` and applied `overscroll-behavior: none` across the editor scroll area and sidebar cards. Dragging the scrollbar thumb now tracks the mouse pointer instantaneously without elastic lag or boundary bounce.
+- 🚀 **Streamlined Welcome Screen** – Removed redundant Theme dropdown options from the Welcome Screen for a cleaner, distraction-free project launcher interface.
+- 🌐 **Cross-Platform Docs Generation & Web Sync** – Created dedicated `generate_docs_linux.js`, `generate_docs_windows.js`, and auto-detecting `generate_docs.js` scripts in `iyal-ink/`, keeping the public web documentation in sync with all 88 help articles across 10 categories.
+- 🧪 **Comprehensive Automated Test Coverage** – Expanded the test suite across the entire codebase to **63 test files and 652 tests** (100% pass rate), adding coverage for UI components, Muse AI tools and providers, Theme Engine, file utilities, script analysis, and custom context providers.
+
+### Fixed
+- ✏️ **Project Pane Rename Focus & Typing Glitch** – Fixed an issue where opening the Rename input from the context menu caused focus-restoration race conditions in MUI Menu to blur the input prematurely. Configured autofocus with one-time text selection on focus to ensure uninterrupted typing.
+- 💾 **Save Pipeline Data Integrity & Re-Entrancy Guard** – Updated `saveFile` to write `rawText` directly, eliminating latency from debounced AST reconstruction. Added an `isSaving` guard to prevent Windows file-lock collisions (`SharingViolation`) during rapid double `Ctrl+S` keystrokes.
+- 🔒 **Atomic Backend File Writes** – Updated Tauri backend save dialogs for PDF and Theme exports (`save_pdf_dialog`, `save_theme_dialog`) to write atomically via temporary files, preventing partially written or corrupted files upon system interruptions.
+
 ## [0.4.20] - 2026-08-26
 
 ### Added / Improved
