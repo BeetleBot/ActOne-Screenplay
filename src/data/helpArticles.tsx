@@ -908,18 +908,19 @@ Persists in .actone bundle settings.`,
   },
   {
     id: "scripts-manager",
-    title: "Scripts Manager (Multi-Script Projects)",
+    title: "Scripts Manager (Multi-Document Projects)",
     category: "Workspace & Views",
-    tags: ["scripts", "multi-script", "project", "bundle", "manage"],
+    tags: ["scripts", "prose", "multi-script", "project", "bundle", "manage"],
     relatedIds: ["actone-bundle", "sidebar-panels"],
-    content: `The Scripts sidebar lets you manage multiple Fountain scripts/screenplays inside a single .actone project:
+    content: `The Scripts sidebar lets you manage multiple documents — Screenplays (tagged <span style="font-weight:700;">SCRIPT</span>) and Prose documents (tagged <span style="font-weight:700;">PROSE</span>) — inside a single .actone project:
 
-- **Add**: "+" button creates a new script. **Import**: download icon opens native file dialog for .fountain/.txt files.
-- **Rename**: Double-click a script name for inline edit; press <kbd>Enter</kbd> to save, <kbd>Escape</kbd> to cancel.
+- **Add**: "+" menu creates a new Screenplay (\`.fountain\`) or Prose document (\`.md\`).
+- **Import**: Download menu opens native file dialog to import Screenplays or Markdown Prose files.
+- **Rename**: Double-click a document name for inline edit, or select three-dot menu → **Rename**; press <kbd>Enter</kbd> to save, <kbd>Escape</kbd> to cancel. All per-document metadata (todos, notepad, parked items, character genders, and production tags) is automatically preserved and migrated.
 - **Duplicate**: Three-dot menu → Duplicate creates a copy with a unique name and auto-selects the name for renaming.
-- **Reorder**: Drag-and-drop scripts within the list, or use the three-dot menu → Move Up / Move Down.
-- **Delete**: Three-dot menu → Delete (with confirmation). If all scripts in a project are deleted, the project gracefully enters the Landing Pad state.
-- Click a script name to load it into the editor. The Status Bar shows the active script name — click it to quickly switch.`,
+- **Reorder**: Drag-and-drop documents by the left drag handle within the list, or use the three-dot menu → Move Up / Move Down.
+- **Delete**: Three-dot menu → Delete (with confirmation). Automatically cleans up document metadata. If all documents in a project are deleted, the project gracefully enters the Landing Pad state.
+- Click a document card to load it into the editor. The Status Bar shows the active document name — click it to quickly switch.`,
   },
   {
     id: "zen-mode",
@@ -1091,17 +1092,20 @@ The import modal shows a detailed preview of each beat. Choose insertion mode: *
     category: "Files & Projects",
     tags: ["actone", "bundle", "zip", "portable"],
     relatedIds: ["scripts-manager", "sidebar-panels", "save"],
-    content: `The **.actone** format is a ZIP archive (using the \`fflate\` library) that packages everything together. While standard .fountain files only save raw script text, .actone bundles include:
+    content: `The **.actone** format is a high-performance ZIP archive (prefixed with the 4-byte header \`ACT1\`) that packages everything in your project together:
 
-- All script files as plain \`.fountain\` text inside the archive.
-- Character gender assignments (\`characters.json\`).
-- Task checklists (\`todos.json\`).
-- Notepad contents (\`notepad.json\`).
-- Sprint session history (\`sprint_data.json\`).
-- Marker categories (\`marker.json\`).
-- Production tags and definitions (\`production_tags.json\`).
-- Parked text snippets (\`parking.json\`).
-- A manifest (\`fountain.json\`) mapping script names to their archive filenames.`,
+- **Document Files (\`files/\`)**: All screenplay (\`.fountain\`) and prose (\`.md\`) text documents.
+- **Manifest (\`project.json\`)**: Maps display names, file paths inside \`files/\`, and document types.
+- **Character Profiles & Genders (\`characters.json\` & \`settings.json\`)**: Character database and gender assignments.
+- **Task Checklists (\`todos.json\`)**: Per-document task checklists.
+- **Document Notepad (\`notepad.json\`)**: Per-document research and scratchpad notes.
+- **Parked Snippets (\`parking.json\`)**: Parked screenplay blocks and ideas.
+- **Sprint History (\`sprint_data.json\`)**: Writing sprint analytics and statistics.
+- **Production Tags (\`production_tags.json\`)**: Scene breakdown and script tagging definitions.
+- **Muse AI Chat (\`muse.json\`)**: AI writing assistant conversation history.
+- **Workspace Settings (\`settings.json\`)**: Per-script and global workspace preferences.
+
+Old or legacy bundle versions are automatically recognized upon open and transparently auto-upgraded to the modern multi-document structure upon save.`,
   },
   {
     id: "save",

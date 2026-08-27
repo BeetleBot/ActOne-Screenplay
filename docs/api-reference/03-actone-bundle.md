@@ -1,25 +1,27 @@
 # .actone Bundle Format
 
-**Implementation:** `src/utils/actone.ts` (176 lines)
+**Implementation:** `src/utils/actone.ts`
 
-The `.actone` format is ActOne's native project bundle — a ZIP archive containing one or more Fountain scripts plus metadata files, prefixed with a 4-byte magic header.
+The `.actone` format is ActOne's native multi-document project bundle — a ZIP archive containing one or more Screenplay (`.fountain`) and Prose (`.md`) documents plus per-document metadata files, prefixed with a 4-byte magic header.
 
 ## File Structure
 
 ```
-MyScreenplay.actone
-├── fountain.json                  # Script manifest (multi-script bundles)
-├── Act One.fountain               # User-named scripts
-├── Act Two.fountain
-├── settings.json                  # App settings for this bundle
-├── characters.json                # Character list with genders
-├── todos.json                     # To-do items
-├── parking.json                   # Parked text snippets
-├── notepad.json                   # Notepad content
-├── sprint_data.json               # Sprint history
-├── production_tags.json           # Production tags/categories
+MyProject.actone
+├── project.json                   # Document manifest (screenplays & prose)
+├── files/                         # Document files directory
+│   ├── Act One.fountain           # Screenplay document
+│   ├── Act Two.fountain
+│   └── Research Notes.md          # Prose document
+├── settings.json                  # Workspace preferences & character profiles
+├── characters.json                # Character list & gender assignments
+├── todos.json                     # Per-document to-do checklists
+├── parking.json                   # Per-document parked text snippets
+├── notepad.json                   # Per-document scratchpad notes
+├── sprint_data.json               # Writing sprint history & statistics
+├── production_tags.json           # Per-document scene/production tags
 ├── marker.json                    # Line markers
-├── muse.json                      # Muse prompt chat sessions (v0.4.0+; legacy: prompt.json)
+└── muse.json                      # Muse AI prompt chat sessions
 
 [4-byte magic header: "ACT1"]
 ```
@@ -28,56 +30,65 @@ MyScreenplay.actone
 
 ### Magic Header
 
-All `.actone` files start with 4 bytes: `0x41 0x43 0x54 0x31` (`ACT1`). This distinguishes them from generic ZIP files and prevents file-transfer apps (e.g., WhatsApp) from misidentifying them as plain ZIP archives.
+All `.actone` files start with 4 bytes: `0x41 0x43 0x54 0x31` (`ACT1`). This distinguishes them from generic ZIP files and prevents file-transfer apps from misidentifying them as plain ZIP archives.
 
-**Legacy format** (pre-0.3.0): Magic was appended at the end of the file. `unpackActoneBundle` still recognizes both positions for backward compatibility.
+**Legacy format** (pre-0.3.0): Magic was appended at the end of the file. `unpackActoneBundle` recognizes both start and end positions for full backward compatibility.
 
-### fountain.json (Manifest)
-
-```json
-[
-    { "name": "Act One", "file": "Act One.fountain" },
-    { "name": "Act Two", "file": "Act Two.fountain" }
-]
-```
-
-**Legacy format** (before multi-script support): No `fountain.json`. A single `document.fountain` entry exists directly in the ZIP.
-
-### settings.json
-
-```json
-{
-    "Act One.fountain": {
-        "paperSize": "Letter",
-        "sceneNumbering": true
-    }
-}
-```
-
-Settings are keyed per script filename. When migrated from legacy format, settings are keyed by `"document.fountain"`.
-
-### characters.json
+### `project.json` (Manifest)
 
 ```json
 [
-    { "name": "SHARANYA", "gender": "female" },
-    { "name": "VIKRAM", "gender": "male" }
+  { "name": "Act One", "file": "files/Act One.fountain", "type": "fountain" },
+  { "name": "Act Two", "file": "files/Act Two.fountain", "type": "fountain" },
+  { "name": "Research Notes", "file": "files/Research Notes.md", "type": "markdown" }
 ]
 ```
 
-### muse.json
+### Document Files (`files/`)
 
-Muse chat sessions stored in the bundle:
+All screenplay and prose files reside under the `files/` folder inside the archive. When unpacking legacy bundles with flat root paths (e.g., `"57.fountain"`), ActOne normalizes them to `"files/57.fountain"` and transparently upgrades them upon save.
+
+### Metadata Isolation & Migration
+
+All document-specific metadata (`notepad`, `todos`, `parking`, `genders`, `characterProfiles`, and `productionTags`) is keyed by document file path:
+- **On Document Rename**: All metadata keys are automatically migrated to the new file path via `migrateSettingsKey()`.
+- **On Document Deletion**: Orphaned keys are cleaned up in memory via `removeSettingsKey()` and filtered on pack via `resolvePerScript()`.
+
+### `characters.json`
 
 ```json
 {
-    "conversations": [],
-    "activeConversationId": null
+  "files/Act One.fountain": {
+    "SHARANYA": "female",
+    "VIKRAM": "male"
+  }
 }
 ```
 
-- Legacy bundles may contain `prompt.json` instead; it is migrated on unpack.
-- Note: the current Muse implementation keeps live chat sessions in `localStorage` (`actone_ai_chat::<path>`) and does not yet write them back into `muse.json`; the file is part of the bundle format and migration path only.
+### `todos.json`
+
+```json
+{
+  "files/Act One.fountain": [
+    { "id": "todo-1", "text": "Polish dialogue in scene 3", "completed": false, "createdAt": "2026-08-27T10:00:00.000Z" }
+  ]
+}
+```
+
+### `muse.json`
+
+Muse AI chat sessions stored in the bundle:
+
+```json
+{
+  "conversations": [],
+  "activeConversationId": null
+}
+```
+
+Legacy bundles containing `prompt.json` are automatically migrated on unpack.
+
+---
 
 ## API
 
@@ -85,8 +96,8 @@ Muse chat sessions stored in the bundle:
 
 ```typescript
 function unpackActoneBundle(
-    bytes: Uint8Array,
-    bundleName?: string
+  bytes: Uint8Array,
+  bundleName?: string
 ): ActoneBundle;
 ```
 
@@ -95,63 +106,46 @@ function unpackActoneBundle(
 **Returns:**
 ```typescript
 interface ActoneBundle {
-    scripts: ScriptInfo[];
-    settings: Record<string, any>;
+  scripts: ScriptInfo[];
+  settings: Record<string, any>;
+  promptChats?: ActonePromptChats;
+  isLegacy: boolean;
 }
 ```
 
-**Logic:**
-1. Checks for `ACT1` magic at start (new format) or end (legacy); strips it
-2. Inflates ZIP using `fflate`
-3. Looks for `fountain.json`:
-   - **Found:** Reads manifest, extracts each `.fountain` file
-   - **Not found (legacy):** Extracts `document.fountain`, creates one `ScriptInfo` with name = bundle filename
-4. Reads all metadata files (characters, todos, etc.)
-5. Returns bundled data
-
-### `packActoneBundle`
+### `packActoneBundle` / `packActoneBundleAsync`
 
 ```typescript
 function packActoneBundle(
-    scripts: ScriptInfo[],
-    settings: Record<string, any>
+  scripts: ScriptInfo[],
+  settings: Record<string, any>
 ): Uint8Array;
+
+function packActoneBundleAsync(
+  scripts: ScriptInfo[],
+  settings: Record<string, any>
+): Promise<Uint8Array>;
 ```
 
 **Input:** Scripts array + settings object.
-
-**Output:** Raw bytes ready to write as `.actone` file.
-
-**Logic:**
-1. Creates `fountain.json` manifest from scripts
-2. Deflates all files into ZIP using `fflate`
-3. Prepends `ACT1` magic header
-4. Returns full bytes
+**Output:** Raw bytes ready to write atomically as `.actone` file.
 
 ### `ScriptInfo`
 
 ```typescript
 interface ScriptInfo {
-    name: string;          // Display name (e.g., "Act One")
-    fileName: string;      // File name in ZIP (e.g., "Act One.fountain")
-    content: string;       // Current text content
-    savedContent: string;  // Last saved text content (for dirty tracking)
+  name: string;          // Display name (e.g., "Act One")
+  fileName: string;      // Canonical path in ZIP (e.g., "files/Act One.fountain")
+  content: string;       // Current text content
+  savedContent: string;  // Last saved text content (for dirty tracking)
+  type?: "fountain" | "markdown"; // Document type
 }
 ```
 
-## Legacy Compatibility
+---
 
-**Magic position:** Pre-0.3.0 files have the `ACT1` magic appended at the end. The unpacker checks both positions — start (new) first, then end (legacy), then treats the entire input as raw ZIP if no magic is found.
+## Legacy Compatibility & Auto-Upgrade
 
-**Pre-multi-script bundles:**
-- One `ScriptInfo` is created with `name` = bundle filename minus extension
-- `fileName` = `"document.fountain"`
-- On save, upgrades to the new format automatically
-
-When saving:
-- If only one script and it was a legacy format, maintains `document.fountain` name
-- Otherwise creates `fountain.json` manifest
-
-**production_tags.json Migration:**
-- Legacy files stored tags in a flat `{ tags: [], definitions: [] }` structure or a hybrid structure.
-- `unpackActoneBundle` automatically migrates this to a strictly script-keyed structure (`{ "scriptName.fountain": { tags: [], definitions: [] } }`) upon loading.
+1. **Gen 1 (Pre-0.3.0)**: Trailing `ACT1` magic + single `document.fountain`. Unpacks and auto-upgrades to Gen 3.
+2. **Gen 2 (0.3.0 - 0.4.0)**: `fountain.json` manifest with flat files. Unpacks and normalizes to `files/`.
+3. **Gen 3 (Current)**: `project.json` manifest with multi-document (`.fountain` & `.md`) support in `files/`, atomic saves, and per-document metadata isolation.
