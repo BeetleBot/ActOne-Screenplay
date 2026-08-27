@@ -41,6 +41,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     hideSyntaxEnabled, setHideSyntaxEnabled,
     isZenMode,
     fountainColorsEnabled, setFountainColorsEnabled,
+    setActiveRightPane,
   } = useUI();
   const { theme, setTheme, customThemes } = useTheme();
   const { filePath, files, activeFileId } = useFile();
@@ -59,9 +60,15 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   }, []);
 
   const handleClick = (tab: string) => {
-    if (isSidebarOpen && activeTab === tab) setIsSidebarOpen(false);
-    else { setActiveTab(tab); setIsSidebarOpen(true); }
+    if (isSidebarOpen && activeTab === tab) {
+      setIsSidebarOpen(false);
+    } else {
+      setActiveTab(tab);
+      setIsSidebarOpen(true);
+      setActiveRightPane(null);
+    }
   };
+
 
   const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
   const isProse = isProseScript(activeScript, activeFile?.filePath);
@@ -102,12 +109,14 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
         display: 'flex', flexDirection: 'column',
         alignItems: 'center',
         bgcolor: 'transparent',
-        borderRight: 0,
+        borderRight: 'none',
         flexShrink: 0,
         pointerEvents: isZenMode ? 'none' : 'auto',
         overflow: 'hidden',
         py: 0.75,
       }}
+
+
     >
       <Box 
         sx={{ 

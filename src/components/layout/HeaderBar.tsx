@@ -96,15 +96,17 @@ export const HeaderBar = React.memo(() => {
       sx={{
         bgcolor: 'transparent',
         color: (theme) => theme.palette.text.secondary,
-        borderBottom: 0,
+        borderBottom: 'none',
         height: isZenMode ? 0 : 46,
         minHeight: isZenMode ? 0 : 46,
         zIndex: 10,
         pointerEvents: isZenMode ? 'none' : 'auto',
         overflow: 'hidden',
       }}
+
+
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', height: 46, minHeight: 46, px: 1, position: 'relative', pr: '120px' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', height: 46, minHeight: 46, pl: 0, pr: '120px', position: 'relative' }}>
         {/* Tab Track */}
         <Box 
           ref={tabsContainerRef} 
@@ -115,10 +117,12 @@ export const HeaderBar = React.memo(() => {
             display: 'flex', 
             alignItems: 'center', 
             overflow: 'hidden', 
-            px: 0.5, 
+            pl: 0, 
+            pr: 0.5, 
             gap: 0.75,
           }}
         >
+
           {files.map((file) => {
             const display = file.filePath ? file.filePath.split(/[/\\]/).pop() : "Untitled";
             const isActive = file.id === activeFileId;

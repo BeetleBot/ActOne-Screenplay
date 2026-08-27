@@ -184,7 +184,7 @@ export const StatusBar = React.memo(() => {
       sx={{ 
         height: isZenMode ? 0 : 30, 
         bgcolor: 'transparent', 
-        borderTop: 0,
+        borderTop: 'none',
         display: "flex", 
         alignItems: "center", 
         justifyContent: "space-between", 
@@ -195,6 +195,8 @@ export const StatusBar = React.memo(() => {
         pointerEvents: isZenMode ? 'none' : 'auto',
         overflow: 'hidden',
       }}
+
+
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
         <Box

@@ -1036,10 +1036,9 @@ export const OutlineView = React.memo(() => {
           bgcolor: "background.paper",
           overflow: "hidden",
           userSelect: "none",
-          borderRight: 1,
-          borderColor: "divider",
         }}
       >
+
         <Box sx={{
           p: 1.5,
           pb: 1,
@@ -1237,10 +1236,9 @@ export const OutlineView = React.memo(() => {
         bgcolor: "background.paper",
         overflow: "hidden",
         userSelect: "none",
-        borderRight: 1,
-        borderColor: "divider",
       }}
     >
+
       <Box sx={{
         p: 1.5,
         pb: 1,

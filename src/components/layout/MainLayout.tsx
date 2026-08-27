@@ -33,8 +33,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   }, [hasNoScripts, setActiveTab, setIsSidebarOpen]);
 
   return (
-    <Box sx={{ display: 'flex', height: '100%', width: '100%', flex: 1, overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', height: '100%', width: '100%', flex: 1, overflow: 'hidden', bgcolor: 'background.paper' }}>
       <ErrorBoundary name="activity">
+
         <ActivityBar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
