@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import { ContentCopyIcon, CheckIcon, PlayArrowIcon } from "../Icons";
+import { copyToClipboard } from "../../utils";
 
 interface FountainBlockProps {
   fountainText: string;
@@ -19,10 +20,12 @@ export function FountainBlock({
   const [applied, setApplied] = useState(false);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(fountainText).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => undefined);
+    void copyToClipboard(fountainText).then((success) => {
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    });
   }, [fountainText]);
 
   const handleApply = useCallback(() => {

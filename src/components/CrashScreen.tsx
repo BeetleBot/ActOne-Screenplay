@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Box, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import type { ErrorReport } from "../utils/errorReport";
 import { formatErrorDetails } from "../utils/errorReport";
+import { copyToClipboard } from "../utils/clipboard";
 import { CRASH_REPORT_WINDOW_KEY } from "../constants/reporting";
+
 
 const CopyIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
@@ -104,34 +106,28 @@ export function CrashScreen({ report }: { report: ErrorReport }) {
   const canReloadWindow = report.severity === "window" && Boolean(report.windowLabel);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(formatErrorDetails(report));
+    const success = await copyToClipboard(formatErrorDetails(report));
+    if (success) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* clipboard unavailable */
     }
   };
 
   const copyRef = async () => {
-    try {
-      await navigator.clipboard.writeText(report.code);
+    const success = await copyToClipboard(report.code);
+    if (success) {
       setCopiedRef(true);
       window.setTimeout(() => setCopiedRef(false), 1600);
-    } catch {
-      /* clipboard unavailable */
     }
   };
 
   const copyTrace = async () => {
-    try {
-      if (report.stack) {
-        await navigator.clipboard.writeText(report.stack);
+    if (report.stack) {
+      const success = await copyToClipboard(report.stack);
+      if (success) {
         setCopiedTrace(true);
         window.setTimeout(() => setCopiedTrace(false), 1600);
       }
-    } catch {
-      /* clipboard unavailable */
     }
   };
 

@@ -2,7 +2,9 @@ import React from "react";
 import { Box, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { logger } from "../utils/logger";
 import { captureError, formatErrorDetails, markBoundaryCaught, type ErrorReport, type ErrorSeverity } from "../utils/errorReport";
+import { copyToClipboard } from "../utils/clipboard";
 import { showCrashScreen } from "./CrashScreen";
+
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -70,7 +72,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         hardwareConcurrency: typeof navigator === "undefined" ? 0 : navigator.hardwareConcurrency, deviceMemoryGb: null, viewport: "unknown",
       },
     };
-    const handleCopy = () => { void navigator.clipboard?.writeText(formatErrorDetails(report)); };
+    const handleCopy = () => { void copyToClipboard(formatErrorDetails(report)); };
 
     return (
       <Box

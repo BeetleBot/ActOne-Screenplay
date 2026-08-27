@@ -4,3 +4,5 @@ export { unpackActoneBundle, packActoneBundle, packActoneBundleAsync } from './a
 export type { ActoneBundle, ScriptInfo } from './actone';
 export { extractCharacters, computeStats } from './analysis';
 export type { CharacterEntry, ScriptStats } from './analysis';
+export { copyToClipboard, readFromClipboard } from './clipboard';
+

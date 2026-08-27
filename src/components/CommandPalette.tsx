@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
+import { readFromClipboard } from "../utils";
 import { useFile, useEditor, useScriptEditor, useUI } from "../context";
-import { readText } from "@tauri-apps/plugin-clipboard-manager";
+
+
 
 import {
   NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon,
@@ -225,7 +227,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     editorView.dom.focus({ preventScroll: true });
     if (cmd === "paste") {
       try {
-        const text = await readText();
+        const text = await readFromClipboard();
         const sel = editorView.state.selection.main;
         editorView.dispatch({
           changes: { from: sel.from, to: sel.to, insert: text },

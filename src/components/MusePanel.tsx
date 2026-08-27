@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from "../constants";
 import type { ApiEntry } from "../constants";
 import { LineType } from "../parser";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
+import { copyToClipboard } from "../utils";
 
 import "../styles/ai-chat.css";
 
@@ -394,7 +395,11 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
               <Tooltip title="Copy error" placement="top">
                 <IconButton
                   size="small"
-                  onClick={() => navigator.clipboard.writeText(chat.error!)}
+                  onClick={() => {
+                    if (chat.error) {
+                      void copyToClipboard(chat.error);
+                    }
+                  }}
                   sx={{ p: 0.3, mt: -0.3, color: "error.main", flexShrink: 0 }}
                 >
                   <ContentCopyIcon fontSize="inherit" />

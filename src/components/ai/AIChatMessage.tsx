@@ -2,9 +2,14 @@ import { useState, useMemo, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Box, Typography, IconButton, Tooltip } from "@mui/material";
+
 import { ContentCopyIcon, CheckIcon, AutoAwesomeIcon } from "../Icons";
 import type { ChatTurn } from "../../hooks/useAIChat";
 import { FountainBlock } from "./FountainBlock";
+import { copyToClipboard } from "../../utils";
+
+
+
 
 interface AIChatMessageProps {
   turn: ChatTurn;
@@ -95,10 +100,12 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
   const stepCount = (turn.toolCalls?.length || 0) + (turn.thinking ? 1 : 0);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(turn.content).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => undefined);
+    void copyToClipboard(turn.content).then((success) => {
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    });
   }, [turn.content]);
 
   if (turn.role === "user") {

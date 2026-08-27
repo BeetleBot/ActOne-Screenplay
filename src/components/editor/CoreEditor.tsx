@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import { useUI, useEditor, useParking, useFile } from "../../context";
-import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { copyToClipboard, readFromClipboard } from "../../utils";
+
 import { setContextMenuHighlightEffect } from "../../editor/contextMenuState";
 import { toggleInlineMarker as toggleInlineMarkerShared } from "../../editor/formatUtils";
 import { ContextMenu, type ContextMenuItem, type ContextMenuItemDef } from "../ContextMenu";
@@ -309,7 +310,7 @@ export const CoreEditor = React.memo(({ containerRef, viewRef, extraContextMenuI
     const snap = menuSelectionRef.current;
     if (cmd === "paste") {
       try {
-        const text = await readText();
+        const text = await readFromClipboard();
         const sel = v.state.selection.main;
         v.dispatch({
           changes: { from: sel.from, to: sel.to, insert: text },
@@ -320,7 +321,7 @@ export const CoreEditor = React.memo(({ containerRef, viewRef, extraContextMenuI
       }
     } else if (snap && snap.from !== snap.to && (cmd === "cut" || cmd === "copy")) {
       try {
-        await writeText(snap.text);
+        await copyToClipboard(snap.text);
         if (cmd === "cut") {
           v.dispatch({
             changes: { from: snap.from, to: snap.to, insert: "" },

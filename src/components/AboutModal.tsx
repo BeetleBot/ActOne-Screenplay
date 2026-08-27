@@ -22,6 +22,8 @@ import { TitleBar } from './TitleBar';
 import { ThemeLogo } from './ThemeLogo';
 import { useTheme as useAppTheme } from '../context';
 import { resolveThemeConfig } from '../theme/themeUtils';
+import { copyToClipboard } from '../utils';
+
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -52,9 +54,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText(supportEmail);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    void copyToClipboard(supportEmail).then((success) => {
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    });
   };
 
   return (
