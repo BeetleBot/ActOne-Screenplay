@@ -217,7 +217,22 @@ function AppInner() {
     exportPDF: useCallback(() => {
       setShowExportModal(true);
     }, [setShowExportModal]),
-    toggleSidebar: useCallback(() => setIsSidebarOpen(prev => !prev), []),
+    toggleSidebar: useCallback(() => {
+      if (activeRightPane) {
+        setActiveRightPane(null);
+        setActiveTab("outline");
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(prev => {
+          if (!prev) {
+            setActiveTab("outline");
+            return true;
+          }
+          return false;
+        });
+      }
+    }, [activeRightPane, setActiveRightPane, setActiveTab, setIsSidebarOpen]),
+
     toggleZenMode: useCallback(() => setIsZenMode(!isZenMode), [isZenMode, setIsZenMode]),
     getEditorView: useCallback(() => editorView, [editorView]),
     zoomIn: useCallback(() => setZoomLevel(zoomLevel + 10), [zoomLevel, setZoomLevel]),
@@ -229,27 +244,50 @@ function AppInner() {
     openSettings: useCallback(() => { modalWindows.openSettingsWindow(); }, [modalWindows]),
     openHelp: useCallback(() => { modalWindows.openHelpWindow(); }, [modalWindows]),
     openShortcuts: useCallback(() => setShowShortcutsModal(true), [setShowShortcutsModal]),
-    toggleSearch: useCallback(() => setActiveRightPane(activeRightPane === "search" ? null : "search"), [activeRightPane, setActiveRightPane]),
-    openMusePane: useCallback(() => setActiveRightPane("prompt"), [setActiveRightPane]),
+    toggleSearch: useCallback(() => {
+      if (activeRightPane === "search") {
+        setActiveRightPane(null);
+      } else {
+        setIsSidebarOpen(false);
+        setActiveRightPane("search");
+      }
+    }, [activeRightPane, setActiveRightPane, setIsSidebarOpen]),
+    openMusePane: useCallback(() => {
+      if (activeRightPane === "prompt") {
+        setActiveRightPane(null);
+      } else {
+        setIsSidebarOpen(false);
+        setActiveRightPane("prompt");
+      }
+    }, [activeRightPane, setActiveRightPane, setIsSidebarOpen]),
     prevScene: useCallback(() => scrollToScene("prev"), [scrollToScene]),
     nextScene: useCallback(() => scrollToScene("next"), [scrollToScene]),
     toggleSnapshotsPanel: useCallback(() => {
       if (isSidebarOpen && activeTab === "snapshots") {
         setIsSidebarOpen(false);
       } else {
+        setActiveRightPane(null);
         setActiveTab("snapshots");
         setIsSidebarOpen(true);
       }
-    }, [isSidebarOpen, activeTab, setActiveTab, setIsSidebarOpen]),
+    }, [isSidebarOpen, activeTab, setActiveTab, setIsSidebarOpen, setActiveRightPane]),
+
     isDisabled: isModalActive,
   });
 
-  // Auto-close left sidebar when right pane opens
+  // Mutual exclusivity: only one pane (left or right) can be open at a time
   useEffect(() => {
-    if (activeRightPane) {
+    if (activeRightPane && isSidebarOpen) {
       setIsSidebarOpen(false);
     }
-  }, [activeRightPane]);
+  }, [activeRightPane, isSidebarOpen]);
+
+  useEffect(() => {
+    if (isSidebarOpen && activeRightPane) {
+      setActiveRightPane(null);
+    }
+  }, [isSidebarOpen, activeRightPane, setActiveRightPane]);
+
 
   // Microsoft Store license verification check
   useEffect(() => {

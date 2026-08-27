@@ -27,11 +27,11 @@ interface WorkspaceProps {
 export const Workspace = React.memo<WorkspaceProps>(({
   isSidebarOpen,
 }) => {
-  const [sidebarWidth, setSidebarWidth] = useState<number>(260);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [importAnchorEl, setImportAnchorEl] = useState<null | HTMLElement>(null);
   const [showStructureModal, setShowStructureModal] = useState(false);
-  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane } = useUI();
+  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane, sidebarWidth, setSidebarWidth } = useUI();
+
   const { editorView } = useEditor();
   const { activeFileId, files, addScript, importScript } = useFile();
 
@@ -87,65 +87,113 @@ export const Workspace = React.memo<WorkspaceProps>(({
     view.focus();
   }, [editorView]);
 
+  const [renderedRightPane, setRenderedRightPane] = useState<string | null>(activeRightPane);
+
+
+  useEffect(() => {
+    if (activeRightPane) {
+      setRenderedRightPane(activeRightPane);
+    } else {
+      const timer = setTimeout(() => {
+        setRenderedRightPane(null);
+      }, 260);
+      return () => clearTimeout(timer);
+    }
+  }, [activeRightPane]);
+
+  const isSidebarVisible = isSidebarOpen && !isZenMode;
+  const effectiveSidebarWidth = isSidebarVisible ? sidebarWidth : 0;
+
   return (
-    <Box className="app-workspace" sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      {isSidebarOpen && (
-        <>
-          <Paper
-            id="sidebar-container"
-            className="sidebar"
-            elevation={0}
-            tabIndex={-1}
-            sx={{
-              width: isZenMode ? 0 : sidebarWidth,
-              flexShrink: 0,
-              outline: 'none',
-              m: isZenMode ? 0 : 0.75,
-              mr: isZenMode ? 0 : 0.25,
-              borderRadius: isZenMode ? 0 : '12px',
-              border: isZenMode ? 'none' : '1px solid',
-              borderColor: 'divider',
-              boxShadow: (t) => isZenMode ? 'none' : (t.palette.mode === 'dark' ? '0 8px 24px rgba(0,0,0,0.35)' : '0 2px 12px rgba(0,0,0,0.06)'),
-              bgcolor: 'background.paper',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              pointerEvents: isZenMode ? 'none' : 'auto',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseDown={(e) => {
-              const target = e.target as HTMLElement;
-              if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA" && target.tagName !== "SELECT" &&
-                target.tagName !== "BUTTON" && !target.closest("button") && !target.closest("input") &&
-                !target.closest("textarea") && !target.closest("select") && target.contentEditable !== "true") {
-                e.currentTarget.focus();
-              }
-            }}
-          >
-            <Box className="sidebar-content" sx={{ flex: 1, overflow: 'auto' }}>
-              <ErrorBoundary name="sidebar">
-                <SidebarViews activeTab={activeTab} />
-              </ErrorBoundary>
-            </Box>
-          </Paper>
-          <Box
-            className="sidebar-resizer"
-            onMouseDown={() => setIsDragging(true)}
-            sx={{
-              width: isZenMode ? 0 : 4,
-              cursor: 'col-resize',
-              flexShrink: 0,
-              my: 1,
-              borderRadius: '2px',
-              pointerEvents: isZenMode ? 'none' : 'auto',
-              '&:hover': { bgcolor: 'primary.main', opacity: 0.5 },
-              transition: 'background-color var(--duration-fast)',
-            }}
-          />
-        </>
+    <Box
+      className="app-workspace"
+      sx={{
+        display: 'flex',
+        flex: 1,
+        overflow: 'hidden',
+        bgcolor: 'background.paper',
+        border: 'none',
+        position: 'relative',
+      }}
+    >
+      <Paper
+        id="sidebar-container"
+        className="sidebar"
+        elevation={0}
+        tabIndex={-1}
+        sx={{
+          width: effectiveSidebarWidth,
+          minWidth: effectiveSidebarWidth,
+          maxWidth: effectiveSidebarWidth,
+          flexBasis: effectiveSidebarWidth,
+          flexShrink: 0,
+          flexGrow: 0,
+          outline: 'none',
+          m: 0,
+          borderRadius: 0,
+          border: 'none',
+          boxShadow: 'none',
+          bgcolor: 'background.paper',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          pointerEvents: isSidebarVisible ? 'auto' : 'none',
+          opacity: isSidebarVisible ? 1 : 0,
+          transition: isDragging
+            ? 'none'
+            : 'width 240ms cubic-bezier(0.25, 1, 0.5, 1), min-width 240ms cubic-bezier(0.25, 1, 0.5, 1), max-width 240ms cubic-bezier(0.25, 1, 0.5, 1), opacity 180ms ease',
+          willChange: 'width, opacity',
+        }}
+        onMouseDown={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA" && target.tagName !== "SELECT" &&
+            target.tagName !== "BUTTON" && !target.closest("button") && !target.closest("input") &&
+            !target.closest("textarea") && !target.closest("select") && target.contentEditable !== "true") {
+            e.currentTarget.focus();
+          }
+        }}
+      >
+        <Box className="sidebar-content" sx={{ width: '100%', height: '100%', overflow: 'auto' }}>
+          <ErrorBoundary name="sidebar">
+            <SidebarViews activeTab={activeTab} />
+          </ErrorBoundary>
+        </Box>
+      </Paper>
+      {isSidebarVisible && (
+        <Box
+          className="sidebar-resizer"
+          onMouseDown={() => setIsDragging(true)}
+          sx={{
+            width: 4,
+            cursor: 'col-resize',
+            flexShrink: 0,
+            my: 1,
+            borderRadius: '2px',
+            '&:hover': { bgcolor: 'primary.main', opacity: 0.5 },
+            transition: 'background-color var(--duration-fast)',
+          }}
+        />
       )}
 
-      <Box className="editor-container" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <Box
+        className="editor-container"
+        sx={{
+          flex: 1,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          bgcolor: 'background.default',
+          borderTopLeftRadius: isZenMode ? 0 : '12px',
+          borderBottomLeftRadius: isZenMode ? 0 : '12px',
+          borderTopRightRadius: isZenMode ? 0 : (activeRightPane ? '12px' : 0),
+          borderBottomRightRadius: isZenMode ? 0 : (activeRightPane ? '12px' : 0),
+          transition: 'border-radius 240ms cubic-bezier(0.25, 1, 0.5, 1)',
+        }}
+      >
+
+
+
         {hasNoScripts ? (
           <Box
             id="landing-pad"
@@ -492,17 +540,29 @@ export const Workspace = React.memo<WorkspaceProps>(({
         )}
       </Box>
 
-      {activeRightPane === "search" && (
-        <RightPane type="search" onClose={() => setActiveRightPane(null)} errorBoundaryName="search-pane">
+      {renderedRightPane === "search" && (
+        <RightPane
+          type="search"
+          isOpen={activeRightPane === "search"}
+          onClose={() => setActiveRightPane(null)}
+          errorBoundaryName="search-pane"
+        >
           <SearchPanel />
         </RightPane>
       )}
 
-      {activeRightPane === "prompt" && (
-        <RightPane type="prompt" onClose={() => setActiveRightPane(null)} errorBoundaryName="prompt-pane" ariaLabel="Muse">
+      {renderedRightPane === "prompt" && (
+        <RightPane
+          type="prompt"
+          isOpen={activeRightPane === "prompt"}
+          onClose={() => setActiveRightPane(null)}
+          errorBoundaryName="prompt-pane"
+          ariaLabel="Muse"
+        >
           <MusePanel onInsertAtCursor={handleInsertAtCursor} />
         </RightPane>
       )}
     </Box>
   );
 });
+

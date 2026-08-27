@@ -6,6 +6,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 
 interface RightPaneProps {
   type: string;
+  isOpen?: boolean;
   onClose: () => void;
   children: React.ReactNode;
   errorBoundaryName?: string;
@@ -14,6 +15,7 @@ interface RightPaneProps {
 
 export const RightPane: React.FC<RightPaneProps> = ({
   type,
+  isOpen = true,
   onClose,
   children,
   errorBoundaryName = "right-pane",
@@ -21,6 +23,7 @@ export const RightPane: React.FC<RightPaneProps> = ({
 }) => {
   const { rightPaneWidth, setRightPaneWidth } = useUI();
   const [isDragging, setIsDragging] = useState(false);
+  const effectiveWidth = isOpen ? rightPaneWidth : 0;
 
   useEffect(() => {
     if (!isDragging) return;
@@ -47,13 +50,17 @@ export const RightPane: React.FC<RightPaneProps> = ({
         className="right-pane-resizer"
         onMouseDown={() => setIsDragging(true)}
         sx={{
-          width: 4,
+          width: isOpen ? 4 : 0,
           cursor: "col-resize",
           flexShrink: 0,
           my: 1,
           borderRadius: '2px',
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? 'auto' : 'none',
           "&:hover": { bgcolor: "primary.main", opacity: 0.5 },
-          transition: 'background-color var(--duration-fast)',
+          transition: isDragging
+            ? 'none'
+            : 'width 240ms cubic-bezier(0.25, 1, 0.5, 1), opacity 180ms ease',
         }}
       />
       <Paper
@@ -62,20 +69,27 @@ export const RightPane: React.FC<RightPaneProps> = ({
         data-pane-type={type}
         aria-label={ariaLabel}
         sx={{
-          width: rightPaneWidth,
+          width: effectiveWidth,
+          minWidth: effectiveWidth,
+          maxWidth: effectiveWidth,
+          flexBasis: effectiveWidth,
           flexShrink: 0,
-          m: 0.75,
-          ml: 0.25,
-          borderRadius: '12px',
-          border: "1px solid",
-          borderColor: "divider",
-          boxShadow: (t) => t.palette.mode === 'dark' ? '0 8px 24px rgba(0,0,0,0.35)' : '0 2px 12px rgba(0,0,0,0.06)',
+          flexGrow: 0,
+          m: 0,
+          borderRadius: 0,
+          border: "none",
+          boxShadow: "none",
           bgcolor: 'background.paper',
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           position: "relative",
-          transition: 'all 0.15s ease',
+          pointerEvents: isOpen ? 'auto' : 'none',
+          opacity: isOpen ? 1 : 0,
+          transition: isDragging
+            ? "none"
+            : "width 240ms cubic-bezier(0.25, 1, 0.5, 1), min-width 240ms cubic-bezier(0.25, 1, 0.5, 1), max-width 240ms cubic-bezier(0.25, 1, 0.5, 1), opacity 180ms ease",
+          willChange: "width, opacity",
         }}
       >
         <IconButton
@@ -95,7 +109,7 @@ export const RightPane: React.FC<RightPaneProps> = ({
           <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
         <ErrorBoundary name={errorBoundaryName}>
-          <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <Box sx={{ width: "100%", height: "100%", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {children}
           </Box>
         </ErrorBoundary>
@@ -103,3 +117,5 @@ export const RightPane: React.FC<RightPaneProps> = ({
     </>
   );
 };
+
+
