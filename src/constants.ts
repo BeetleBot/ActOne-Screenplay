@@ -28,7 +28,9 @@ export const STORAGE_KEYS = {
   SNAPSHOT_MAX_RETENTION: "actone-snapshot-max-retention",
   FOUNTAIN_COLORS_ENABLED: "actone-fountain-colors-enabled",
   RIGHT_PANE_WIDTH: "actone-right-pane-width",
+  SIDEBAR_WIDTH: "actone-sidebar-width",
   LAST_EXPORT_DIR: "actone-last-export-dir",
+
   APP_ICON: "actone-app-icon",
   ICON_STYLE: "actone-icon-style",
   PROMPT_PROVIDER: "actone-prompt-provider",

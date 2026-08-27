@@ -109,7 +109,7 @@ export const themes: ThemeConfig[] = [
       editor: "#EEEEEE",
       text: "#101010",
       accent: "#555555",
-      sidebar: "#EEEEEE",
+      sidebar: "#E2E4E8",
       button: "#555555",
     }, false),
   },
@@ -123,7 +123,7 @@ export const themes: ThemeConfig[] = [
       editor: "#101010",
       text: "#CCCCCC",
       accent: "#555555",
-      sidebar: "#101010",
+      sidebar: "#161719",
       button: "#555555",
     }, true),
   },
@@ -168,7 +168,7 @@ export const themes: ThemeConfig[] = [
       editor: "#ffffff",
       text: "#000000",
       accent: "#000000",
-      sidebar: "#ffffff",
+      sidebar: "#f4f4f6",
       button: "#000000",
     }, false),
   },
@@ -182,10 +182,11 @@ export const themes: ThemeConfig[] = [
       editor: "#000000",
       text: "#deddda",
       accent: "#9a9996",
-      sidebar: "#000000",
+      sidebar: "#101012",
       button: "#c3c3c3",
     }, true),
   },
+
   {
     id: "sunrise",
     name: "Sunrise",
@@ -371,7 +372,7 @@ function hexToRgbStr(hex: string): string {
   return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
 }
 
-function getEditorVars(t: ThemeConfig, appScale: number, fountainColorsEnabled: boolean = true) {
+function getEditorVars(t: ThemeConfig, appScale: number, fountainColorsEnabled: boolean = false) {
   const c = t.colors;
   const isCatppuccinLatte = t.id === 'catppuccin-latte';
   const isCatppuccinMocha = t.id === 'catppuccin-mocha';
@@ -487,7 +488,7 @@ export function deriveThemeBg(accent: string, isDark: boolean): string {
   return isDark ? mixHex(accent, "#000000", 0.08) : mixHex(accent, "#ffffff", 0.03);
 }
 
-export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColorsEnabled: boolean = true) {
+export function createActOneTheme(t: ThemeConfig, appScale: number, fountainColorsEnabled: boolean = false) {
   const c = t.colors;
   const editorVars = getEditorVars(t, appScale, fountainColorsEnabled);
 

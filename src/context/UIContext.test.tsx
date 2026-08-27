@@ -127,4 +127,20 @@ describe("UIContext", () => {
 
     expect(result.current.translationState).toBe("cancelled");
   });
+
+  it("sets and persists sidebar width clamped between 180 and 800", () => {
+    const { result } = renderHook(() => useUI(), { wrapper });
+    expect(result.current.sidebarWidth).toBe(260);
+
+    act(() => result.current.setSidebarWidth(320));
+    expect(result.current.sidebarWidth).toBe(320);
+    expect(localStorage.getItem("actone-sidebar-width")).toBe("320");
+
+    act(() => result.current.setSidebarWidth(100));
+    expect(result.current.sidebarWidth).toBe(180);
+
+    act(() => result.current.setSidebarWidth(1200));
+    expect(result.current.sidebarWidth).toBe(800);
+  });
 });
+

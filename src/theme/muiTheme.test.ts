@@ -80,4 +80,18 @@ describe("createActOneTheme", () => {
     const theme = createActOneTheme(themes[1]);
     expect(theme.palette.mode).toBe("dark");
   });
+
+  it("defaults fountainColorsEnabled to false (syntax colors off by default)", () => {
+    const theme = createActOneTheme(themes[0]);
+    const overrides = theme.components?.MuiCssBaseline?.styleOverrides as string;
+    expect(overrides).toContain(`--text-editor-heading: ${themes[0].colors.text}`);
+  });
+
+  it("enables syntax colors when fountainColorsEnabled is true", () => {
+    const theme = createActOneTheme(themes[0], 100, true);
+    const overrides = theme.components?.MuiCssBaseline?.styleOverrides as string;
+    expect(overrides).toContain(`--text-editor-heading: ${themes[0].colors.accent}`);
+  });
 });
+
+

@@ -36,6 +36,9 @@ export interface UIContextProps {
   setActiveRightPane: (pane: string | null) => void;
   rightPaneWidth: number;
   setRightPaneWidth: (w: number) => void;
+  sidebarWidth: number;
+  setSidebarWidth: (w: number) => void;
+
   autoSaveEnabled: boolean;
   setAutoSaveEnabled: (enabled: boolean) => void;
   autoSaveInterval: number;
@@ -121,8 +124,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           setAutoContdEnabledState(strVal !== "false");
           break;
         case STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED:
-          setFountainColorsEnabledState(strVal !== "false");
+          setFountainColorsEnabledState(strVal === "true");
           break;
+
         case STORAGE_KEYS.ICON_STYLE:
           setIconStyleState(strVal || "fill");
           break;
@@ -203,6 +207,17 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]);
   });
 
+  const [sidebarWidth, setSidebarWidthState] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH);
+      if (stored) {
+        const n = parseInt(stored, 10);
+        if (!isNaN(n) && n >= 180 && n <= 800) return n;
+      }
+    } catch { void 0; }
+    return 260;
+  });
+
   const [activeRightPane, setActiveRightPaneState] = useState<string | null>(null);
   const [rightPaneWidth, setRightPaneWidthState] = useState<number>(() => {
     try {
@@ -214,6 +229,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     } catch { void 0; }
     return 360;
   });
+
 
   useEffect(() => {
     document.documentElement.style.setProperty("--app-scale", `${appScale}%`);
@@ -232,8 +248,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const [fountainColorsEnabled, setFountainColorsEnabledState] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED);
-    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]);
   });
+
   const [iconStyle, setIconStyleState] = useState<string>(() => {
     return localStorage.getItem(STORAGE_KEYS.ICON_STYLE) || String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]);
   });
@@ -403,6 +420,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     try { localStorage.setItem(STORAGE_KEYS.RIGHT_PANE_WIDTH, String(clamped)); } catch { void 0; }
   };
 
+  const setSidebarWidth = (w: number) => {
+    const clamped = Math.max(180, Math.min(800, w));
+    setSidebarWidthState(clamped);
+    try { localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTH, String(clamped)); } catch { void 0; }
+  };
+
   return (
     <UIContext.Provider
       value={{
@@ -435,6 +458,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setActiveRightPane: setActiveRightPaneState,
         rightPaneWidth,
         setRightPaneWidth,
+        sidebarWidth,
+        setSidebarWidth,
+
         autoSaveEnabled,
         setAutoSaveEnabled,
         autoSaveInterval,
