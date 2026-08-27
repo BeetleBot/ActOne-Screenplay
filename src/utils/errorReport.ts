@@ -133,7 +133,11 @@ function severityColor(severity?: ErrorSeverity): number {
   }
 }
 
-function diagnostics(): SystemDiagnostics {
+export function getScriptReportContext(): ScriptReportContext {
+  return { ...scriptContextState };
+}
+
+export function getSystemDiagnostics(): SystemDiagnostics {
   const nav = typeof navigator === "undefined" ? null : (navigator as Navigator & { deviceMemory?: number });
   return {
     os: systemInfo.os || "unknown",
@@ -150,6 +154,10 @@ function diagnostics(): SystemDiagnostics {
     deviceMemoryGb: nav?.deviceMemory || null,
     viewport: typeof window === "undefined" ? "unknown" : `${window.innerWidth}x${window.innerHeight}`,
   };
+}
+
+function diagnostics(): SystemDiagnostics {
+  return getSystemDiagnostics();
 }
 
 const sessionCounts = new Map<string, number>();
@@ -171,13 +179,18 @@ function hash(value: string): string {
   return Math.abs(result).toString(36).toUpperCase().padStart(6, "0").slice(-6);
 }
 
-function appVersion(): string {
+export function getAppVersion(): string {
   try {
     return typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "unknown";
   } catch {
     return "unknown";
   }
 }
+
+function appVersion(): string {
+  return getAppVersion();
+}
+
 
 function currentWindowLabel(): string | undefined {
   try {

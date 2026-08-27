@@ -42,8 +42,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
   const supportEmail = 'actonesupport@iyal.ink';
   const actoneUrl = 'https://actone.iyal.ink';
   const fountUrl = 'https://fount.iyal.ink';
-  const version = 'v0.4.6';
+  const appVersion = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.4.21';
+  const version = `v${appVersion}`;
   const displayThemeName = currentThemeConfig.name;
+
 
   const handleOpenUrl = (url: string) => {
     try {

@@ -58,4 +58,14 @@ describe("CommandPalette Component", () => {
     render(React.createElement(CommandPalette, { ...defaultProps, isOpen: true }));
     expect(screen.getByPlaceholderText("Type a command or search...")).toBeTruthy();
   });
+
+  it("triggers onOpenBugReportModal when clicking Report a Bug", () => {
+    const onOpenBugReportModal = vi.fn();
+    render(React.createElement(CommandPalette, { ...defaultProps, isOpen: true, onOpenBugReportModal }));
+    const bugItem = screen.getByText("Report a Bug");
+    bugItem.click();
+    expect(onOpenBugReportModal).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
 });
+

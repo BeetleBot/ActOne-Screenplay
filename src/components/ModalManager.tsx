@@ -4,6 +4,7 @@ import { StructureImportModal } from './StructureImportModal';
 import { CommandPalette } from './CommandPalette';
 import { TitlePageEditorModal } from './TitlePageEditorModal';
 import { AboutModal } from './AboutModal';
+import { BugReportModal } from './BugReportModal';
 import { QuickGuideModal } from './QuickGuideModal';
 import { FixFormattingModal } from './FixFormattingModal';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -28,6 +29,8 @@ export interface ModalManagerProps {
   openTutorialsWindow?: () => void;
   showAboutModal?: boolean;
   setShowAboutModal?: (open: boolean) => void;
+  showBugReportModal?: boolean;
+  setShowBugReportModal?: (open: boolean) => void;
   showShortcutsModal?: boolean;
   setShowShortcutsModal?: (open: boolean) => void;
 }
@@ -51,12 +54,18 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   openTutorialsWindow,
   showAboutModal: externalShowAbout,
   setShowAboutModal: externalSetShowAbout,
+  showBugReportModal: externalShowBugReport,
+  setShowBugReportModal: externalSetShowBugReport,
   showShortcutsModal = false,
   setShowShortcutsModal,
 }) => {
   const [localShowAbout, setLocalShowAbout] = useState(false);
   const showAbout = externalShowAbout !== undefined ? externalShowAbout : localShowAbout;
   const setShowAbout = externalSetShowAbout || setLocalShowAbout;
+
+  const [localShowBugReport, setLocalShowBugReport] = useState(false);
+  const showBugReport = externalShowBugReport !== undefined ? externalShowBugReport : localShowBugReport;
+  const setShowBugReport = externalSetShowBugReport || setLocalShowBugReport;
 
   const [fixFormattingReport, setFixFormattingReport] = useState<FixFormattingReport | null>(null);
 
@@ -81,6 +90,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onToggleSnapshotsPanel={toggleSnapshotsPanel}
           onOpenMuseSettings={() => openSettingsWindow?.("muse")}
           onOpenAboutModal={() => setShowAbout(true)}
+          onOpenBugReportModal={() => setShowBugReport(true)}
           onFixFormattingResult={(report) => setFixFormattingReport(report)}
         />
       </ErrorBoundary>
@@ -88,6 +98,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="about-modal">{showAbout && <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="bug-report-modal">{showBugReport && <BugReportModal isOpen={showBugReport} onClose={() => setShowBugReport(false)} />}</ErrorBoundary>
       <ErrorBoundary name="quickguide-modal">
         {showShortcutsModal && setShowShortcutsModal && (
           <QuickGuideModal

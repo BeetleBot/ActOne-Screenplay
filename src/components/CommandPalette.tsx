@@ -82,6 +82,7 @@ interface CommandPaletteProps {
   onOpenMuseSettings?: () => void;
   openTutorialsWindow?: () => void;
   onOpenAboutModal?: () => void;
+  onOpenBugReportModal?: () => void;
   onFixFormattingResult?: (report: FixFormattingReport) => void;
 }
 
@@ -100,6 +101,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   onToggleSnapshotsPanel,
   openTutorialsWindow,
   onOpenAboutModal,
+  onOpenBugReportModal,
   onFixFormattingResult,
 }) => {
   const theme = useTheme();
@@ -333,7 +335,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, shortcut: "F1", action: () => { onOpenHelpModal(); onClose(); } },
     { id: "help-tutorial", name: "Interactive Tutorial...", category: "Help", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { openTutorialsWindow?.(); onClose(); } },
     ...(!isProse ? [{ id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } }] : []),
-    { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://discord.gg/zpFPpdAxnW"); onClose(); } },
+    { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { if (onOpenBugReportModal) { onOpenBugReportModal(); } else { openUrl("https://discord.gg/zpFPpdAxnW"); } onClose(); } },
   ];
 
   const filteredCommands = search.trim() === ""

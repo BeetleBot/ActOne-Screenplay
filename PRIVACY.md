@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** August 7, 2026
+**Last updated:** August 28, 2026
 
 **ActOne** is a cross-platform screenplay editor. This privacy policy explains how we handle your data.
 
@@ -44,15 +44,24 @@ The only dependencies that interact with external resources are:
 
 - **Tauri's `opener` plugin**: used to open files with your operating system's default application (e.g., opening a PDF in your PDF viewer). This is a purely local operation.
 - **Muse providers** you configure (see [Muse Providers](#muse-providers)).
-- **Crash reporting** (see below).
+- **Crash reporting & User bug reporting** (see below).
 
 ## Crash Reporting
 
-When the application crashes, ActOne automatically sends a report to the configured private crash-report channel (a Discord webhook). Reports include an error code, timestamp, app version, error type, component, operating system and version, architecture, processor, CPU count, memory totals, WebView details, locale, network state, and a limited stack trace.
+When the application crashes, ActOne automatically sends a report to the configured private crash-report channel (a Discord webhook). Reports include an error code, timestamp, app version, error type, severity, component, operating system and version, architecture, processor, CPU count, memory totals, WebView details, locale, session uptime, network state, a limited stack trace, anonymous script metrics (mode, scene count, line count, estimated page count), and recent operational log events preceding the failure.
 
 - Reports are sent automatically; there is no "send report" confirmation dialog.
 - The webhook URL is distributed inside the application and can be extracted from an installed copy.
-- No screenplay content is included in crash reports.
+- **No screenplay text, dialogue, character names, or story content is ever included in crash reports.**
+
+## User-Initiated Bug Reporting
+
+You can voluntarily submit bug reports using **Report a Bug** from the Command Palette (<kbd>Ctrl+K</kbd>).
+
+- When submitting a bug report, you provide a description of the issue and may optionally include your name, contact email, and Discord username.
+- The report includes auto-detected system diagnostics (OS, processor, memory, app version, resolution) and recent operational app logs.
+- **No screenplay text, dialogue, character names, or file content is ever transmitted.**
+- The report is sent directly to the development team's private bug-reporting channel.
 
 ## Changes to This Policy
 
@@ -63,3 +72,4 @@ If this policy changes, the "Last updated" date at the top will be revised.
 For questions about this privacy policy, contact our team at:
 
 Email us : actonesupport@iyal.ink
+
