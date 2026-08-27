@@ -199,13 +199,14 @@ export interface CoreCodeMirrorProps {
 
 export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScriptSwitch, onInit }: CoreCodeMirrorProps) {
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, activeScriptIndex, activeFileId, parsedDoc } = useFile();
+  const { rawText, setRawText, activeScriptIndex, activeFileId, parsedDoc, scripts, scriptFileName } = useFile();
   const { typewriterMode, lineFocusEnabled, isZenMode, spellcheckEnabled } = useUI();
   const { setEditorView } = useEditor();
   const { setActiveLineNumber } = useCursor();
   
   const lastScriptKeyRef = useRef("");
-  const currentScriptKey = `${activeFileId}-${activeScriptIndex}`;
+  const activeScript = scripts && scripts.length > 0 ? scripts[activeScriptIndex] : undefined;
+  const currentScriptKey = `${activeFileId}::${activeScript?.fileName || scriptFileName || activeScriptIndex}`;
   const statesRef = useRef<Record<string, EditorState>>({});
   const extensionsRef = useRef<any[]>([]);
 
@@ -392,6 +393,15 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
       const isDifferentScript = lastScriptKeyRef.current !== currentScriptKey;
 
       if (isDifferentScript) {
+        if (rawTextDebounceTimerRef.current !== null) {
+          clearTimeout(rawTextDebounceTimerRef.current);
+          rawTextDebounceTimerRef.current = null;
+        }
+        if (pendingRawTextRef.current !== null) {
+          setRawTextRef.current(pendingRawTextRef.current);
+          pendingRawTextRef.current = null;
+        }
+
         const scrollArea = getScrollArea(view);
 
         if (lastScriptKeyRef.current) {

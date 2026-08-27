@@ -427,7 +427,7 @@ export const ScriptsView = React.memo(() => {
 
                     {/* 3. Document Type Badge on Right */}
                     <OutlineTag
-                      label={isMarkdown ? "MD" : "FOUNTAIN"}
+                      label={isMarkdown ? "PROSE" : "SCRIPT"}
                       variant={isMarkdown ? "accent" : "default"}
                       size="0.72rem"
                       sx={{ ml: 1, mr: 0.5, py: 0.2, px: 0.8, borderRadius: "5px" }}

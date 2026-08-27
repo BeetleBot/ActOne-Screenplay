@@ -76,8 +76,10 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   if (unzipped["project.json"]) {
     const manifest: { name: string; file: string; type?: "fountain" | "markdown" }[] = JSON.parse(strFromU8(unzipped["project.json"]));
     scripts = manifest.map((entry) => {
-      const content = unzipped[entry.file] ? strFromU8(unzipped[entry.file]) : "";
-      return { name: entry.name, fileName: entry.file, type: entry.type || "fountain", content, savedContent: content };
+      const newFile = entry.file.startsWith("files/") ? entry.file : `files/${entry.file}`;
+      if (entry.file !== newFile) oldToNewPath[entry.file] = newFile;
+      const content = unzipped[entry.file] ? strFromU8(unzipped[entry.file]) : (unzipped[newFile] ? strFromU8(unzipped[newFile]) : "");
+      return { name: entry.name, fileName: newFile, type: entry.type || "fountain", content, savedContent: content };
     });
     if (scripts.length === 0) {
       const name = bundleName || "Untitled";

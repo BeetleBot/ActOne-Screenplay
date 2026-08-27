@@ -220,7 +220,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const scriptName = "Untitled";
     const scripts: ScriptInfo[] = initialContent ? [{
       name: scriptName,
-      fileName: `${scriptName}.fountain`,
+      fileName: `files/${sanitizeFileName(scriptName)}.fountain`,
       content: initialContent,
       savedContent: initialContent,
     }] : [];
@@ -599,7 +599,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const content = await invoke<string>("read_file_content", { path });
               scripts = [{
                 name: bundleName,
-                fileName: `${bundleName}.fountain`,
+                fileName: `files/${sanitizeFileName(bundleName)}.fountain`,
                 content,
                 savedContent: content,
               }];
@@ -611,7 +611,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const content = await invoke<string>("read_file_content", { path });
           scripts = [{
             name: bundleName,
-            fileName: `${bundleName}.fountain`,
+            fileName: `files/${sanitizeFileName(bundleName)}.fountain`,
             content,
             savedContent: content,
           }];
@@ -767,7 +767,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           scripts = [{
             name: bundleName,
-            fileName: `${bundleName}.fountain`,
+            fileName: `files/${sanitizeFileName(bundleName)}.fountain`,
             content,
             savedContent: content,
           }];
@@ -775,13 +775,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         scripts = [{
           name: bundleName,
-          fileName: `${bundleName}.fountain`,
+          fileName: `files/${sanitizeFileName(bundleName)}.fountain`,
           content,
           savedContent: content,
         }];
       }
 
-      const activeScript = scripts[0] || { name: "Untitled", fileName: "Untitled.fountain", content: "", savedContent: "" };
+      const activeScript = scripts[0] || { name: "Untitled", fileName: "files/Untitled.fountain", content: "", savedContent: "" };
       const isProse = isProseScript(activeScript, normalizedPath);
       const parsed = isProse
         ? createProseDocument(content, settings)
@@ -1133,7 +1133,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanName = scriptName.trim() || "Untitled";
     const scripts: ScriptInfo[] = [{
       name: cleanName,
-      fileName: `${sanitizeFileName(cleanName)}.fountain`,
+      fileName: `files/${sanitizeFileName(cleanName)}.fountain`,
       content: initialContent,
       savedContent: "",
     }];
@@ -1284,7 +1284,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const updatedScripts = file.scripts.map((s, i) =>
-      i === index ? { ...s, name: trimmed, fileName: isProseScript(s) ? `files/${sanitizeFileName(trimmed)}.md` : `${sanitizeFileName(trimmed)}.fountain` } : s
+      i === index ? { ...s, name: trimmed, fileName: isProseScript(s) ? `files/${sanitizeFileName(trimmed)}.md` : `files/${sanitizeFileName(trimmed)}.fountain` } : s
     );
 
     setFiles(prev => prev.map(f => f.id === activeFileId ? {
@@ -1303,7 +1303,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const source = file.scripts[index];
     const newName = getUniqueName(name?.trim() || source.name, file.scripts);
     const isMarkdown = isProseScript(source);
-    const newFileName = isMarkdown ? `files/${sanitizeFileName(newName)}.md` : `${sanitizeFileName(newName)}.fountain`;
+    const newFileName = isMarkdown ? `files/${sanitizeFileName(newName)}.md` : `files/${sanitizeFileName(newName)}.fountain`;
     const newScript: ScriptInfo = {
       name: newName,
       fileName: newFileName,
@@ -1458,7 +1458,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const uniqueName = getUniqueName(fileName.trim() || "Imported", file.scripts);
     const ext = type === "markdown" ? "md" : "fountain";
-    const safeFileName = `${sanitizeFileName(uniqueName)}.${ext}`;
+    const safeFileName = `files/${sanitizeFileName(uniqueName)}.${ext}`;
     const isMarkdown = type === "markdown";
     const newScript: ScriptInfo = {
       name: uniqueName,
@@ -1498,11 +1498,15 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (toIndex < 0 || toIndex >= file.scripts.length) return;
     if (fromIndex === toIndex) return;
 
-    const updatedScripts = [...file.scripts];
+    const currentActive = file.activeScriptIndex ?? 0;
+    const syncedScripts = file.scripts.map((s, i) =>
+      i === currentActive ? { ...s, content: rawText } : s
+    );
+
+    const updatedScripts = [...syncedScripts];
     const [moved] = updatedScripts.splice(fromIndex, 1);
     updatedScripts.splice(toIndex, 0, moved);
 
-    const currentActive = file.activeScriptIndex ?? 0;
     let newActiveIndex = currentActive;
     if (currentActive === fromIndex) {
       newActiveIndex = toIndex;
@@ -1527,7 +1531,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScriptIndex: newActiveIndex,
       rawText: targetScript.content,
       savedText: targetScript.savedContent,
-      isDirty: true,
+      isDirty: isBundleDirty(updatedScripts),
       parsedDoc: doc,
     } : f));
 
@@ -1535,7 +1539,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveScriptIndexState(newActiveIndex);
     setRawTextState(targetScript.content);
     setParsedDoc(doc);
-  }, [files, activeFileId, paperSize]);
+  }, [files, activeFileId, rawText, paperSize]);
 
   const openSnapshotAsNewProject = useCallback(async (snapshotPath: string) => {
     if (!isTauri) return;
