@@ -143,13 +143,11 @@ impl SpellcheckState {
             let dicts_path = app_data.join("dictionaries");
             let _ = fs::create_dir_all(&dicts_path);
 
-            if custom_path.exists() {
-                if let Ok(content) = fs::read_to_string(&custom_path) {
-                    for line in content.lines() {
-                        let trimmed = line.trim().to_lowercase();
-                        if !trimmed.is_empty() {
-                            self.custom_words.insert(trimmed);
-                        }
+            if let Ok(content) = fs::read_to_string(&custom_path) {
+                for line in content.lines() {
+                    let trimmed = line.trim().to_lowercase();
+                    if !trimmed.is_empty() {
+                        self.custom_words.insert(trimmed);
                     }
                 }
             }
@@ -237,10 +235,8 @@ impl SpellcheckState {
             return true;
         }
 
-        if let Some(names) = char_names {
-            if names.contains(&lower) {
-                return true;
-            }
+        if char_names.is_some_and(|names| names.contains(&lower)) {
+            return true;
         }
 
         if let Some(dict) = &self.dictionary {

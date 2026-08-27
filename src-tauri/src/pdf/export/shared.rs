@@ -266,20 +266,20 @@ pub fn load_center_image(settings: &WatermarkSettings) -> Option<Image> {
     }
 }
 
-pub fn draw_watermarks<'a>(
+pub fn draw_watermarks(
     surface: &mut Surface,
     font_system: &mut FontSystem,
     layout_info: &LayoutInfo,
     settings: &WatermarkSettings,
-    center_image: Option<&'a Image>,
+    center_image: Option<&Image>,
 ) {
     let page_width = layout_info.size.x;
     let page_height = layout_info.size.y;
     let font_size = 10.0;
 
     // 1. Header Watermark
-    if settings.header_enabled && !settings.header_text.is_empty() {
-        if let Some(opacity_norm) = krilla::num::NormalizedF32::new(settings.header_opacity) {
+    if settings.header_enabled && !settings.header_text.is_empty()
+        && let Some(opacity_norm) = krilla::num::NormalizedF32::new(settings.header_opacity) {
             surface.push_opacity(opacity_norm);
             let font = layout_info.fonts.courier.regular.clone();
             let width = measure_text_width(font_system, &settings.header_text, font_size);
@@ -294,11 +294,10 @@ pub fn draw_watermarks<'a>(
             );
             surface.pop();
         }
-    }
 
     // 2. Footer Watermark
-    if settings.footer_enabled && !settings.footer_text.is_empty() {
-        if let Some(opacity_norm) = krilla::num::NormalizedF32::new(settings.footer_opacity) {
+    if settings.footer_enabled && !settings.footer_text.is_empty()
+        && let Some(opacity_norm) = krilla::num::NormalizedF32::new(settings.footer_opacity) {
             surface.push_opacity(opacity_norm);
             let font = layout_info.fonts.courier.regular.clone();
             let width = measure_text_width(font_system, &settings.footer_text, font_size);
@@ -313,7 +312,6 @@ pub fn draw_watermarks<'a>(
             );
             surface.pop();
         }
-    }
 
     // 3. Center Watermark
     if settings.center_enabled {

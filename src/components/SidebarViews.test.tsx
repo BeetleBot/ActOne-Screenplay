@@ -14,9 +14,9 @@ const mockUpdateSettings = vi.fn((updater: any) => {
   }
 });
 
-let mockEditorDispatch = vi.fn();
-let mockEditorFocus = vi.fn();
-let mockSliceDoc = vi.fn().mockReturnValue("Some selected text");
+const mockEditorDispatch = vi.fn();
+const mockEditorFocus = vi.fn();
+const mockSliceDoc = vi.fn().mockReturnValue("Some selected text");
 let mockEditorView: any = {
   state: {
     selection: { main: { empty: false, from: 0, to: 18 } },

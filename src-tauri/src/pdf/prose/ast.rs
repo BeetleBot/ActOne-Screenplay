@@ -250,8 +250,10 @@ fn parse_blocks<'a>(
             }
             Event::Code(text) => {
                 let mut rs = RichString::new();
-                let mut style = Style::default();
-                style.mono = true;
+                let style = Style {
+                    mono: true,
+                    ..Style::default()
+                };
                 push_styled(&mut rs, text, style, None);
                 if !rs.elements.is_empty() {
                     blocks.push(Block::Paragraph(rs));
@@ -461,12 +463,11 @@ fn push_styled(rs: &mut RichString, text: &str, style: Style, link: Option<&str>
     if let Some(url) = link {
         el.set_link(url.to_string());
     }
-    if let Some(last) = rs.elements.last_mut() {
-        if last.attributes == el.attributes && last.link_url == el.link_url {
+    if let Some(last) = rs.elements.last_mut()
+        && last.attributes == el.attributes && last.link_url == el.link_url {
             last.text.push_str(&el.text);
             return;
         }
-    }
     rs.elements.push(el);
 }
 

@@ -119,12 +119,12 @@ export class OpenAICompatibleProvider implements AIProvider {
           options.onChunk?.(delta);
         }
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (text.length > 0) {
         // If we already received partial response before stream cut off, return what we have
         return text;
       }
-      throw new Error(e?.message || "Failed to decode response stream from AI provider.", { cause: e });
+      throw new Error((e as Error)?.message || "Failed to decode response stream from AI provider.", { cause: e });
     }
     return text;
   }

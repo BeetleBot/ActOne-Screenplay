@@ -129,7 +129,7 @@ export const SprintView = React.memo(() => {
     if (session && filePath?.toLowerCase().endsWith(".actone")) {
       updateSettings((prev) => ({
         ...prev,
-        sprintHistory: [session, ...(prev.sprintHistory || [])]
+        sprintHistory: [session, ...((prev.sprintHistory as any[]) || [])]
       }));
     }
   };

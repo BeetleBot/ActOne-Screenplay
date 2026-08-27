@@ -77,10 +77,8 @@ fn parse_structures(content: &str) -> Vec<Structure> {
                 });
             } else {
                 // Subsequent '#' are beats
-                if let Some(beat) = current_beat.take() {
-                    if let Some(s) = current_struct.as_mut() {
-                        s.beats.push(beat);
-                    }
+                if let (Some(beat), Some(s)) = (current_beat.take(), current_struct.as_mut()) {
+                    s.beats.push(beat);
                 }
                 current_beat = Some(StructureBeat {
                     label: rest.to_string(),

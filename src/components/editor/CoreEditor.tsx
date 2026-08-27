@@ -288,7 +288,7 @@ export const CoreEditor = React.memo(({ containerRef, viewRef, extraContextMenuI
       };
       return {
         ...prev,
-        todos: [...todos, newTodo],
+        todos: [...(todos as any[]), newTodo],
       };
     });
     handleClose();

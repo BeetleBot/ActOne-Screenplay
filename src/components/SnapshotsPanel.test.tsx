@@ -177,8 +177,8 @@ describe("SnapshotsPanel Component", () => {
     it("opens snapshot from context menu 'Open as New File'", async () => {
       render(<SnapshotsPanel />);
       const firstComment = screen.getByText("First draft completed");
-      const itemContainer = firstComment.closest("div")?.parentElement!;
-      const moreBtn = itemContainer.querySelector(".MuiListItemButton-root button")!;
+      const itemContainer = firstComment.closest("div")?.parentElement;
+      const moreBtn = itemContainer!.querySelector(".MuiListItemButton-root button")!;
 
       act(() => {
         fireEvent.click(moreBtn);
@@ -198,8 +198,8 @@ describe("SnapshotsPanel Component", () => {
       mockConfirm.mockResolvedValueOnce("delete");
       render(<SnapshotsPanel />);
       const firstComment = screen.getByText("First draft completed");
-      const itemContainer = firstComment.closest("div")?.parentElement!;
-      const moreBtn = itemContainer.querySelector(".MuiListItemButton-root button")!;
+      const itemContainer = firstComment.closest("div")?.parentElement;
+      const moreBtn = itemContainer!.querySelector(".MuiListItemButton-root button")!;
 
       act(() => {
         fireEvent.click(moreBtn);
@@ -218,8 +218,8 @@ describe("SnapshotsPanel Component", () => {
       mockConfirm.mockResolvedValueOnce("cancel");
       render(<SnapshotsPanel />);
       const firstComment = screen.getByText("First draft completed");
-      const itemContainer = firstComment.closest("div")?.parentElement!;
-      const moreBtn = itemContainer.querySelector(".MuiListItemButton-root button")!;
+      const itemContainer = firstComment.closest("div")?.parentElement;
+      const moreBtn = itemContainer!.querySelector(".MuiListItemButton-root button")!;
 
       act(() => {
         fireEvent.click(moreBtn);

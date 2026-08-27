@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 //! PDF exporter for Markdown (prose) documents.
 //!
 //! Renders a [`ProseDoc`] with the same krilla pipeline and watermark

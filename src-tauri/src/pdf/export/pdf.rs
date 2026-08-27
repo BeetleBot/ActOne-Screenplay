@@ -1094,20 +1094,20 @@ fn measure_text_width(font_system: &mut FontSystem, text: &str, font_size: f32) 
     width
 }
 
-fn draw_watermarks<'a>(
+fn draw_watermarks(
     surface: &mut krilla::surface::Surface,
     font_system: &mut FontSystem,
     layout_info: &LayoutInfo,
     exporter: &PdfExporter,
-    center_image: Option<&'a Image>,
+    center_image: Option<&Image>,
 ) {
     let page_width = layout_info.size.x;
     let page_height = layout_info.size.y;
     let font_size = 10.0;
 
     // 1. Header Watermark
-    if exporter.watermark_header_enabled && !exporter.watermark_header_text.is_empty() {
-        if let Some(opacity_norm) =
+    if exporter.watermark_header_enabled && !exporter.watermark_header_text.is_empty()
+        && let Some(opacity_norm) =
             krilla::num::NormalizedF32::new(exporter.watermark_header_opacity)
         {
             surface.push_opacity(opacity_norm);
@@ -1124,11 +1124,10 @@ fn draw_watermarks<'a>(
             );
             surface.pop();
         }
-    }
 
     // 2. Footer Watermark
-    if exporter.watermark_footer_enabled && !exporter.watermark_footer_text.is_empty() {
-        if let Some(opacity_norm) =
+    if exporter.watermark_footer_enabled && !exporter.watermark_footer_text.is_empty()
+        && let Some(opacity_norm) =
             krilla::num::NormalizedF32::new(exporter.watermark_footer_opacity)
         {
             surface.push_opacity(opacity_norm);
@@ -1145,7 +1144,6 @@ fn draw_watermarks<'a>(
             );
             surface.pop();
         }
-    }
 
     // 3. Center Watermark
     if exporter.watermark_center_enabled {

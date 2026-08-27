@@ -261,14 +261,14 @@ export interface ToolExecutionContext {
   doc: FountainDocument | null;
   activeLineNumber?: number;
   replaceSceneText?: (sceneNumber: number, newFountainText: string) => boolean;
-  updateSettings?: (updater: (prev: any) => any) => void;
+  updateSettings?: (updater: (prev: Record<string, unknown>) => Record<string, unknown>) => void;
   openXrayWindow?: () => void;
   scriptFileName?: string;
 }
 
 export function executeToolCall(
   name: string,
-  args: Record<string, any>,
+  args: Record<string, unknown>,
   context: ToolExecutionContext
 ): string {
   if (!context.doc) {
@@ -458,7 +458,7 @@ export function executeToolCall(
     if (!task) return "Error: taskText required.";
 
     if (context.updateSettings) {
-      context.updateSettings((prev: any) => {
+      context.updateSettings((prev: Record<string, unknown>) => {
         const safe = prev && typeof prev === "object" ? prev : {};
         const existing = Array.isArray(safe.todos) ? safe.todos : [];
         const newTodo = { id: `todo-${Date.now()}`, text: task, completed: false, createdAt: Date.now() };
@@ -474,7 +474,7 @@ export function executeToolCall(
     if (!note) return "Error: noteText required.";
 
     if (context.updateSettings) {
-      context.updateSettings((prev: any) => {
+      context.updateSettings((prev: Record<string, unknown>) => {
         const safe = prev && typeof prev === "object" ? prev : {};
         const existing = typeof safe.parking === "string" ? safe.parking : "";
         const updated = existing ? `${existing}\n\n- ${note}` : `- ${note}`;
@@ -487,15 +487,15 @@ export function executeToolCall(
 
   if (name === "read_project_todos") {
     const raw = context.doc.settings?.todos;
-    let todos: any[] = [];
+    let todos: Array<{ text: string; completed: boolean }> = [];
     if (Array.isArray(raw)) {
       todos = raw;
     } else if (raw && typeof raw === "object") {
       const keys = Object.keys(raw);
-      todos = keys.length > 0 && Array.isArray((raw as any)[keys[0]]) ? (raw as any)[keys[0]] : [];
+      todos = keys.length > 0 && Array.isArray((raw as Record<string, unknown>)[keys[0]]) ? (raw as Record<string, unknown>)[keys[0]] as Array<{ text: string; completed: boolean }> : [];
     }
     if (todos.length === 0) return "No project To-Dos found.";
-    return "Project To-Dos:\n" + todos.map((t: any) => `- [${t.completed ? "x" : " "}] ${t.text}`).join("\n");
+    return "Project To-Dos:\n" + todos.map((t) => `- [${t.completed ? "x" : " "}] ${t.text}`).join("\n");
   }
 
   if (name === "read_parking_lot") {
@@ -555,13 +555,13 @@ export function executeToolCall(
       ? args.characters
       : [args];
 
-    const validProfiles: Array<{ name: string; updates: Record<string, any> }> = [];
+    const validProfiles: Array<{ name: string; updates: Record<string, unknown> }> = [];
 
     for (const item of rawItems) {
       if (!item || typeof item !== "object") continue;
       const cName = String(item.characterName ?? item.name ?? item.character ?? "").trim().toUpperCase();
       if (!cName) continue;
-      const updates: Record<string, any> = {};
+      const updates: Record<string, unknown> = {};
       if (item.description !== undefined) updates.description = String(item.description);
       if (item.role !== undefined) updates.role = String(item.role);
       if (item.gender !== undefined) updates.gender = String(item.gender);
@@ -579,9 +579,9 @@ export function executeToolCall(
 
     if (context.updateSettings) {
       const sf = context.scriptFileName || "";
-      context.updateSettings((prev: any) => {
+      context.updateSettings((prev: Record<string, unknown>) => {
         const safe = prev && typeof prev === "object" ? prev : {};
-        let updatedProfiles = getPerScriptSettingObject<Record<string, any>>("characterProfiles", safe, sf, {});
+        let updatedProfiles = getPerScriptSettingObject<Record<string, unknown>>("characterProfiles", safe, sf, {});
         let updatedGenders = getPerScriptSettingObject<Record<string, string>>("genders", safe, sf, {});
 
         for (const { name: cName, updates } of validProfiles) {
@@ -596,7 +596,7 @@ export function executeToolCall(
           if (updates.gender) {
             updatedGenders = {
               ...updatedGenders,
-              [cName]: updates.gender,
+              [cName]: updates.gender as string,
             };
           }
         }

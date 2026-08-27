@@ -11,7 +11,7 @@ import { getPerScriptSettingObject } from "../utils/perScriptSettings";
 export interface ToolCallStep {
   id: string;
   name: string;
-  args: Record<string, any>;
+  args: Record<string, unknown>;
   result?: string;
   status: "running" | "done" | "error";
   pendingApply?: {
@@ -115,7 +115,7 @@ function extractOuterJSON(text: string): string | null {
   return null;
 }
 
-function repairJSON(raw: string): any | null {
+function repairJSON(raw: string): Record<string, unknown> | null {
   try {
     return JSON.parse(raw);
   } catch { void 0; }
@@ -180,7 +180,7 @@ export function extractThinkingAndClean(text: string): { thinking: string | null
   return { thinking, cleanContent };
 }
 
-export function parseToolCall(text: string): { name: string; args: Record<string, any> } | null {
+export function parseToolCall(text: string): { name: string; args: Record<string, unknown> } | null {
   if (!text) return null;
 
   const codeBlockMatch = text.match(/```(?:tool_call|json)?\s*([\s\S]*?)```/i);
@@ -189,8 +189,8 @@ export function parseToolCall(text: string): { name: string; args: Record<string
     const jsonStr = extractOuterJSON(block);
     if (jsonStr) {
       const parsed = repairJSON(jsonStr);
-      if (parsed?.name) {
-        return { name: parsed.name, args: parsed.args || parsed.arguments || {} };
+      if (parsed && typeof parsed === "object" && "name" in parsed && typeof parsed.name === "string") {
+        return { name: parsed.name, args: (parsed as any).args || (parsed as any).arguments || {} };
       }
     }
   }
@@ -198,8 +198,8 @@ export function parseToolCall(text: string): { name: string; args: Record<string
   const jsonStr = extractOuterJSON(text);
   if (jsonStr) {
     const parsed = repairJSON(jsonStr);
-    if (parsed?.name) {
-      return { name: parsed.name, args: parsed.args || parsed.arguments || {} };
+    if (parsed && typeof parsed === "object" && "name" in parsed && typeof parsed.name === "string") {
+      return { name: parsed.name, args: (parsed as any).args || (parsed as any).arguments || {} };
     }
   }
 
@@ -210,7 +210,7 @@ export function parseToolCall(text: string): { name: string; args: Record<string
     if (jsonCandidate) {
       const parsed = repairJSON(jsonCandidate);
       if (parsed) {
-        return { name: toolName, args: parsed };
+        return { name: toolName, args: parsed as Record<string, unknown> };
       }
     }
   }
@@ -218,10 +218,10 @@ export function parseToolCall(text: string): { name: string; args: Record<string
   return null;
 }
 
-export function parseAllToolCalls(text: string): { name: string; args: Record<string, any> }[] {
+export function parseAllToolCalls(text: string): { name: string; args: Record<string, unknown> }[] {
   if (!text) return [];
 
-  const results: { name: string; args: Record<string, any> }[] = [];
+  const results: { name: string; args: Record<string, unknown> }[] = [];
 
   const codeBlockRegex = /```(?:tool_call|json)?\s*([\s\S]*?)```/gi;
   let match;
@@ -230,8 +230,8 @@ export function parseAllToolCalls(text: string): { name: string; args: Record<st
     const jsonStr = extractOuterJSON(block);
     if (jsonStr) {
       const parsed = repairJSON(jsonStr);
-      if (parsed?.name) {
-        results.push({ name: parsed.name, args: parsed.args || parsed.arguments || {} });
+      if (parsed && typeof parsed === "object" && "name" in parsed && typeof parsed.name === "string") {
+        results.push({ name: parsed.name, args: (parsed as any).args || (parsed as any).arguments || {} });
       } else if (Array.isArray(parsed)) {
         for (const item of parsed) {
           if (item?.name) {
@@ -291,7 +291,7 @@ export function useAIChat(
   activeFileId: string,
   activeLineNumber?: number,
   replaceSceneText?: (sceneNumber: number, newFountainText: string) => boolean,
-  updateSettings?: (updater: (prev: any) => any) => void,
+  updateSettings?: (updater: (prev: Record<string, unknown>) => Record<string, unknown>) => void,
   openXrayWindow?: () => void,
   scriptFileName?: string
 ) {
@@ -400,15 +400,15 @@ export function useAIChat(
         }
 
         const rawTodos = doc.settings?.todos;
-        let todosList: any[] = [];
+        let todosList: Array<{ text: string; completed: boolean }> = [];
         if (Array.isArray(rawTodos)) {
           todosList = rawTodos;
         } else if (rawTodos && typeof rawTodos === "object") {
           const keys = Object.keys(rawTodos);
-          todosList = keys.length > 0 && Array.isArray((rawTodos as any)[keys[0]]) ? (rawTodos as any)[keys[0]] : [];
+          todosList = keys.length > 0 && Array.isArray((rawTodos as Record<string, unknown>)[keys[0]]) ? (rawTodos as Record<string, unknown>)[keys[0]] as Array<{ text: string; completed: boolean }> : [];
         }
         if (todosList.length > 0) {
-          systemPrompt += `\n\nPROJECT TO-DOS:\n` + todosList.map((t: any) => `- [${t.completed ? "x" : " "}] ${t.text}`).join("\n");
+          systemPrompt += `\n\nPROJECT TO-DOS:\n` + todosList.map((t) => `- [${t.completed ? "x" : " "}] ${t.text}`).join("\n");
         }
 
         const parking = doc.settings?.parking;
@@ -537,7 +537,7 @@ export function useAIChat(
           break;
         }
 
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!(err instanceof DOMException && err.name === "AbortError")) {
           const msg = err instanceof Error ? err.message : String(err);
           setError(msg);

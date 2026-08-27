@@ -57,7 +57,7 @@ impl FontCache {
             .faces()
             .filter_map(|face| face.families.first().map(|(name, _)| name.clone()))
             .collect();
-        all.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+        all.sort_by_key(|a| a.to_lowercase());
         all.dedup_by(|a, b| a.to_lowercase() == b.to_lowercase());
 
         Self {

@@ -285,7 +285,7 @@ fn extract_location(heading: &str) -> Option<String> {
     if heading.is_empty() {
         return None;
     }
-    if let Some(pos) = heading.find(|c: char| c == '-' || c == '—' || c == '–') {
+    if let Some(pos) = heading.find(['-', '—', '–']) {
         let loc = heading[..pos].trim();
         let loc = loc
             .trim_start_matches(|c: char| c.is_uppercase() || c == '.' || c == ' ')

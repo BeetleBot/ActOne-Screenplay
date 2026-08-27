@@ -149,11 +149,10 @@ pub async fn ollama_chat(
     let mut buffer = String::new();
 
     while let Some(chunk) = stream.next().await {
-        if let Ok(cancelled) = CANCELLED_SESSIONS.lock() {
-            if cancelled.contains(&session_id) || cancelled.contains("*") {
+        if let Ok(cancelled) = CANCELLED_SESSIONS.lock()
+            && (cancelled.contains(&session_id) || cancelled.contains("*")) {
                 return Err("Aborted".to_string());
             }
-        }
         let bytes = chunk.map_err(|e| format!("Stream error: {}", e))?;
         buffer.push_str(&String::from_utf8_lossy(&bytes));
 
@@ -171,9 +170,9 @@ pub async fn ollama_chat(
                 if let Some(err) = parsed.error {
                     return Err(format!("Ollama error: {}", err));
                 }
-                if let Some(msg) = parsed.message {
-                    if let Some(ref content) = msg.content {
-                        if !content.is_empty() {
+                if let Some(msg) = parsed.message
+                    && let Some(ref content) = msg.content
+                        && !content.is_empty() {
                             full_text.push_str(content);
                             let _ = app.emit(
                                 "ollama-chat-chunk",
@@ -183,22 +182,20 @@ pub async fn ollama_chat(
                                 },
                             );
                         }
-                    }
-                }
             }
         }
     }
 
     // Flush anything left in the buffer
     let trimmed = buffer.trim();
-    if !trimmed.is_empty() {
-        if let Ok(parsed) = serde_json::from_str::<OllamaChatLine>(trimmed) {
+    if !trimmed.is_empty()
+        && let Ok(parsed) = serde_json::from_str::<OllamaChatLine>(trimmed) {
             if let Some(err) = parsed.error {
                 return Err(format!("Ollama error: {}", err));
             }
-            if let Some(msg) = parsed.message {
-                if let Some(ref content) = msg.content {
-                    if !content.is_empty() {
+            if let Some(msg) = parsed.message
+                && let Some(ref content) = msg.content
+                    && !content.is_empty() {
                         full_text.push_str(content);
                         let _ = app.emit(
                             "ollama-chat-chunk",
@@ -208,10 +205,7 @@ pub async fn ollama_chat(
                             },
                         );
                     }
-                }
-            }
         }
-    }
 
     Ok(full_text)
 }

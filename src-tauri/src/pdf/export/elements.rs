@@ -183,11 +183,10 @@ fn user_family_for_text(text: &str, script_fonts: &HashMap<String, String>) -> O
             0x0900..=0x097F => "devanagari",
             _ => continue,
         };
-        if let Some(font) = script_fonts.get(script) {
-            if !font.is_empty() {
+        if let Some(font) = script_fonts.get(script)
+            && !font.is_empty() {
                 return Some(font.clone());
             }
-        }
     }
     None
 }
@@ -559,11 +558,10 @@ pub fn get_krilla_font(
             .unwrap_or("")
     };
 
-    if !(is_neutral_run && is_indic_para) {
-        if let Some(font) = font_cache.get(&face_info.id) {
+    if !(is_neutral_run && is_indic_para)
+        && let Some(font) = font_cache.get(&face_info.id) {
             return font.clone();
         }
-    }
 
     let user_override = text.chars().find_map(|c| {
         let val = c as u32;
@@ -589,55 +587,55 @@ pub fn get_krilla_font(
     if user_override.is_none() && !(is_neutral_run && is_indic_para) {
         for c in text.chars() {
             let val = c as u32;
-            if val >= 0x0B80 && val <= 0x0BFF {
+            if (0x0B80..=0x0BFF).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.mukta_malar_bold.clone()
                 } else {
                     all_fonts.indic.mukta_malar_regular.clone()
                 };
-            } else if val >= 0x0C80 && val <= 0x0CFF {
+            } else if (0x0C80..=0x0CFF).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.baloo_tamma_2_bold.clone()
                 } else {
                     all_fonts.indic.baloo_tamma_2_regular.clone()
                 };
-            } else if val >= 0x0900 && val <= 0x097F {
+            } else if (0x0900..=0x097F).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.mukta_bold.clone()
                 } else {
                     all_fonts.indic.mukta_regular.clone()
                 };
-            } else if val >= 0x0C00 && val <= 0x0C7F {
+            } else if (0x0C00..=0x0C7F).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.hind_guntur_bold.clone()
                 } else {
                     all_fonts.indic.hind_guntur_regular.clone()
                 };
-            } else if val >= 0x0D00 && val <= 0x0D7F {
+            } else if (0x0D00..=0x0D7F).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.baloo_chettan_2_bold.clone()
                 } else {
                     all_fonts.indic.baloo_chettan_2_regular.clone()
                 };
-            } else if val >= 0x0980 && val <= 0x09FF {
+            } else if (0x0980..=0x09FF).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.hind_siliguri_bold.clone()
                 } else {
                     all_fonts.indic.hind_siliguri_regular.clone()
                 };
-            } else if val >= 0x0A80 && val <= 0x0AFF {
+            } else if (0x0A80..=0x0AFF).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.hind_vadodara_bold.clone()
                 } else {
                     all_fonts.indic.hind_vadodara_regular.clone()
                 };
-            } else if val >= 0x0A00 && val <= 0x0A7F {
+            } else if (0x0A00..=0x0A7F).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.baloo_paaji_2_bold.clone()
                 } else {
                     all_fonts.indic.baloo_paaji_2_regular.clone()
                 };
-            } else if val >= 0x0B00 && val <= 0x0B7F {
+            } else if (0x0B00..=0x0B7F).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.baloo_bhaina_2_bold.clone()
                 } else {
@@ -816,7 +814,7 @@ pub(crate) fn draw_shaped_line(
                 &run.paragraph_family,
             );
             let run_start_x = x + run.x_offset;
-            let need_synthetic_italic = run.is_italic && run.text.chars().any(|c| !c.is_ascii());
+            let need_synthetic_italic = run.is_italic && !run.text.is_ascii();
 
             if need_synthetic_italic {
                 // Apply a horizontal skew matrix relative to (run_start_x, y) for synthetic italic / oblique text
