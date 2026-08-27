@@ -50,6 +50,7 @@ export const STORAGE_KEYS = {
   PROMPT_Q_INSTRUCTIONS: "actone-prompt-q-instructions",
   PROMPT_SYNONYMS_INSTRUCTIONS: "actone-prompt-synonyms-instructions",
   PROMPT_LOOKUP_INSTRUCTIONS: "actone-prompt-lookup-instructions",
+  AUTO_CONTD_ENABLED: "actone-auto-contd-enabled",
 } as const;
 
 export const FOUNTAIN_SYNTAX_RULES = [

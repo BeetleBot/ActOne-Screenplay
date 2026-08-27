@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { renderHook, act, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { renderHook, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import { CustomModalProvider, useCustomModal } from "./CustomModalContext";
 import { UIProvider } from "./UIContext";

@@ -20,6 +20,7 @@ import {
   LINE_PARENTHETICAL,
   LINE_DUAL_PARENTHETICAL
 } from "./fountainSyntax";
+import { autoContdField, updateAutoContdEffect } from "./autoContd";
 
 const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
   if (localStorage.getItem("actone-smart-quotes-enabled") !== "true") return tr;
@@ -183,7 +184,7 @@ function handleTab(view: EditorView): boolean {
 }
 
 export function useScriptCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
-  const { hideSyntaxEnabled, activeRightPane } = useUI();
+  const { hideSyntaxEnabled, autoContdEnabled, activeRightPane } = useUI();
   const { scriptFileName, parsedDoc } = useFile();
 
   const scriptFileNameRef = useRef(scriptFileName);
@@ -225,6 +226,7 @@ export function useScriptCodeMirror(containerRef: React.RefObject<HTMLDivElement
     cachedCharactersField,
     cachedLocationsField,
     fountainHighlightPlugin,
+    autoContdField,
     smartQuotesExtension,
   ], [fountainKeymap]);
 
@@ -232,6 +234,7 @@ export function useScriptCodeMirror(containerRef: React.RefObject<HTMLDivElement
     view.dispatch({
       effects: [
         updateHideSyntaxEffect.of(hideSyntaxEnabled),
+        updateAutoContdEffect.of(autoContdEnabled),
         updateRightPaneOpenEffect.of(activeRightPane !== null),
         updateScriptFileNameEffect.of(scriptFileName),
         updateParsedDocEffect.of(parsedDoc)
@@ -243,6 +246,7 @@ export function useScriptCodeMirror(containerRef: React.RefObject<HTMLDivElement
     view.dispatch({
       effects: [
         updateHideSyntaxEffect.of(hideSyntaxEnabled),
+        updateAutoContdEffect.of(autoContdEnabled),
         updateRightPaneOpenEffect.of(activeRightPane !== null),
         updateScriptFileNameEffect.of(scriptFileNameRef.current),
       ]
@@ -263,6 +267,14 @@ export function useScriptCodeMirror(containerRef: React.RefObject<HTMLDivElement
       });
     }
   }, [hideSyntaxEnabled, viewRef]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: updateAutoContdEffect.of(autoContdEnabled)
+      });
+    }
+  }, [autoContdEnabled, viewRef]);
 
   useEffect(() => {
     if (viewRef.current) {

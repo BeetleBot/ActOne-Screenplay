@@ -68,6 +68,7 @@ export const SettingsWindow: React.FC = () => {
   const [autoSaveInterval, setAutoSaveInterval] = useState(() => readLocalNum(STORAGE_KEYS.AUTO_SAVE_INTERVAL, Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL])));
   const [hideSyntaxEnabled, setHideSyntaxEnabled] = useState(() => readLocalBool(STORAGE_KEYS.HIDE_SYNTAX_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED])));
   const [lineFocusEnabled, setLineFocusEnabled] = useState(() => readLocalBool(STORAGE_KEYS.LINE_FOCUS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED])));
+  const [autoContdEnabled, setAutoContdEnabled] = useState(() => readLocalBool(STORAGE_KEYS.AUTO_CONTD_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.AUTO_CONTD_ENABLED])));
   const [snapshotsEnabled, setSnapshotsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOTS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED])));
   const [snapshotLocation, setSnapshotLocation] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_LOCATION, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION])) as "project" | "app_data" | "custom");
   const [snapshotCustomPath, setSnapshotCustomPath] = useState(() => readLocal(STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH, String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH] as string)));
@@ -321,6 +322,7 @@ interface LanguageInfoItem {
     setAutoSaveInterval(Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
     setHideSyntaxEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
     setLineFocusEnabled(Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
+    setAutoContdEnabled(Boolean(DEFAULTS[STORAGE_KEYS.AUTO_CONTD_ENABLED]));
     setSnapshotsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]));
     setSnapshotLocation(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION]) as "project" | "app_data" | "custom");
     setSnapshotCustomPath(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH]));
@@ -346,6 +348,7 @@ interface LanguageInfoItem {
     setAutoSaveInterval(Number(DEFAULTS[STORAGE_KEYS.AUTO_SAVE_INTERVAL]));
     setHideSyntaxEnabled(Boolean(DEFAULTS[STORAGE_KEYS.HIDE_SYNTAX_ENABLED]));
     setLineFocusEnabled(Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]));
+    setAutoContdEnabled(Boolean(DEFAULTS[STORAGE_KEYS.AUTO_CONTD_ENABLED]));
     setSnapshotsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOTS_ENABLED]));
     setSnapshotLocation(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_LOCATION]) as "project" | "app_data" | "custom");
     setSnapshotCustomPath(String(DEFAULTS[STORAGE_KEYS.SNAPSHOT_CUSTOM_PATH]));
@@ -422,6 +425,7 @@ interface LanguageInfoItem {
           setAutoSaveInterval(d.autoSaveInterval);
           setHideSyntaxEnabled(d.hideSyntaxEnabled);
           setLineFocusEnabled(d.lineFocusEnabled);
+          if (d.autoContdEnabled !== undefined) setAutoContdEnabled(d.autoContdEnabled);
           setSnapshotsEnabled(d.snapshotsEnabled);
           setSnapshotLocation(d.snapshotLocation);
           setSnapshotCustomPath(d.snapshotCustomPath);
@@ -513,6 +517,9 @@ interface LanguageInfoItem {
     }
     if (prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== undefined && prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] !== String(lineFocusEnabled)) {
       setLineFocusEnabled(prefs[STORAGE_KEYS.LINE_FOCUS_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.AUTO_CONTD_ENABLED] !== undefined && prefs[STORAGE_KEYS.AUTO_CONTD_ENABLED] !== String(autoContdEnabled)) {
+      setAutoContdEnabled(prefs[STORAGE_KEYS.AUTO_CONTD_ENABLED] !== "false");
     }
     if (prefs[STORAGE_KEYS.SNAPSHOTS_ENABLED] !== undefined && prefs[STORAGE_KEYS.SNAPSHOTS_ENABLED] !== String(snapshotsEnabled)) {
       setSnapshotsEnabled(prefs[STORAGE_KEYS.SNAPSHOTS_ENABLED] === "true");
@@ -775,6 +782,16 @@ interface LanguageInfoItem {
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Auto-match ( )</Typography>}
                     sx={{ mx: 0, flex: 1 }}
                   />
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5 }}>
+                  <FormControlLabel
+                    control={<Switch size="small" checked={autoContdEnabled}
+                      onChange={(e) => { const v = e.target.checked; setAutoContdEnabled(v); localStorage.setItem(STORAGE_KEYS.AUTO_CONTD_ENABLED, String(v)); emitUpdate(STORAGE_KEYS.AUTO_CONTD_ENABLED, v); }}
+                    />}
+                    label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Auto (CONT'D)</Typography>}
+                    sx={{ mx: 0, flex: 1 }}
+                  />
+                  <Box sx={{ flex: 1 }} />
                 </Box>
               </Box>
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
@@ -1745,6 +1762,7 @@ interface SettingsInitData {
   hideSyntaxEnabled: boolean;
   hideTagsEnabled: boolean;
   lineFocusEnabled: boolean;
+  autoContdEnabled?: boolean;
   snapshotsEnabled: boolean;
   snapshotLocation: "project" | "app_data" | "custom";
   snapshotCustomPath: string;

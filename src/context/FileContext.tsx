@@ -511,6 +511,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           exportSections: false,
           exportSynopses: false,
           exportTitlePage: true,
+          autoContd: localStorage.getItem(STORAGE_KEYS.AUTO_CONTD_ENABLED) !== "false",
           revisedLines,
           scriptFonts: JSON.stringify(parsedDoc.settings?.scriptFonts || {}),
         });

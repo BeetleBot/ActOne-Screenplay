@@ -44,6 +44,8 @@ export interface UIContextProps {
   setHideSyntaxEnabled: (enabled: boolean) => void;
   lineFocusEnabled: boolean;
   setLineFocusEnabled: (enabled: boolean) => void;
+  autoContdEnabled: boolean;
+  setAutoContdEnabled: (enabled: boolean) => void;
   fountainColorsEnabled: boolean;
   setFountainColorsEnabled: (enabled: boolean) => void;
   iconStyle: string;
@@ -114,6 +116,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
         case STORAGE_KEYS.LINE_FOCUS_ENABLED:
           setLineFocusEnabledState(strVal === "true");
+          break;
+        case STORAGE_KEYS.AUTO_CONTD_ENABLED:
+          setAutoContdEnabledState(strVal !== "false");
           break;
         case STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED:
           setFountainColorsEnabledState(strVal !== "false");
@@ -219,6 +224,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [lineFocusEnabled, setLineFocusEnabledState] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED);
     return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]);
+  });
+  const [autoContdEnabled, setAutoContdEnabledState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.AUTO_CONTD_ENABLED);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.AUTO_CONTD_ENABLED]);
   });
 
   const [fountainColorsEnabled, setFountainColorsEnabledState] = useState<boolean>(() => {
@@ -370,6 +379,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
   };
 
+  const setAutoContdEnabled = (enabled: boolean) => {
+    setAutoContdEnabledState(enabled);
+    localStorage.setItem(STORAGE_KEYS.AUTO_CONTD_ENABLED, enabled ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.AUTO_CONTD_ENABLED, enabled ? "true" : "false");
+  };
+
   const setFountainColorsEnabled = (enabled: boolean) => {
     setFountainColorsEnabledState(enabled);
     localStorage.setItem(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, enabled ? "true" : "false");
@@ -428,6 +443,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setHideSyntaxEnabled,
         lineFocusEnabled,
         setLineFocusEnabled,
+        autoContdEnabled,
+        setAutoContdEnabled,
         fountainColorsEnabled,
         setFountainColorsEnabled,
         iconStyle,

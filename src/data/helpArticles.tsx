@@ -1231,7 +1231,7 @@ The Quick Guide is generated from the same registries used by the application, s
 
 **General:** Paper Size (Letter / A4), Interface Scale (75%–300%), Icon Style, Auto-Save toggle and interval, and Reset Settings. Each section is a card (\`8px\` radius, subtle border).
 
-**Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Hide Fountain Markup, Line Focus, and Syntax Colors.
+**Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Auto (CONT'D), Hide Fountain Markup, Line Focus, and Syntax Colors.
 
 **Spellcheck:** Enable spellcheck, Active Language dropdown (disabled when spellcheck is off), **Download More Languages** button, Installed Languages list (rounded \`6px\` rows; "Bundled" chip vs "Remove" for downloaded), and Personal Dictionary card with word-count chip and **Clear Custom Words**.
 
@@ -1335,6 +1335,7 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
 - **Character/Scene Autocomplete**: Inline ghost text suggestions.
 - **Smart Quotes**: Auto-convert to curly quotes.
 - **Auto-Match Parentheses**: Auto-insert closing \`)\`.
+- **Auto (CONT'D)**: Automatically append virtual \`(CONT'D)\` tags when characters speak consecutively.
 - **Hide Fountain Markup**: Clean reading view (hide prefixes on non-active lines).
 - **Focus Mode**: Dim all lines except the active cursor line.`,
   },

@@ -100,6 +100,7 @@ pub struct PdfExporter {
     pub watermark_center_image_path: String,
     pub watermark_center_opacity: f32,
     pub watermark_center_grayscale: bool,
+    pub auto_contd: bool,
     pub script_fonts: HashMap<String, String>,
 }
 
@@ -128,6 +129,7 @@ impl Default for PdfExporter {
             watermark_center_image_path: String::new(),
             watermark_center_opacity: 0.4,
             watermark_center_grayscale: false,
+            auto_contd: true,
             script_fonts: HashMap::new(),
         }
     }
@@ -358,6 +360,7 @@ impl PdfExporter {
         let mut residual_dialogue_idx = None;
         let mut residual_dual_dialogue_idx = (None, None);
         let mut residual_element_idx = None;
+        let mut last_speaking_character = String::new();
 
         let mut outline = Outline::new();
         let mut font_cache = HashMap::new();
@@ -693,6 +696,21 @@ impl PdfExporter {
                     }
                     Element::Dialogue(dialogue) => {
                         let mut dialogue_styled = dialogue.clone();
+                        if residual_dialogue_idx.is_none() {
+                            let char_name = dialogue.character.to_plain_string().trim().to_uppercase();
+                            let ext_str = dialogue.extension.as_ref().map(|e| e.to_plain_string().to_uppercase()).unwrap_or_default();
+                            let has_contd = ext_str.contains("CONT'D") || char_name.contains("CONT'D");
+                            if self.auto_contd && !char_name.is_empty() && char_name == last_speaking_character && !has_contd {
+                                if let Some(ext) = &dialogue.extension {
+                                    dialogue_styled.extension = Some(format!("{}) (CONT'D", ext.to_plain_string()).into());
+                                } else {
+                                    dialogue_styled.extension = Some("CONT'D".into());
+                                }
+                            }
+                            if !char_name.is_empty() {
+                                last_speaking_character = char_name;
+                            }
+                        }
                         self.apply_format(
                             &mut dialogue_styled.character,
                             &self.element_formats.character,
@@ -721,6 +739,7 @@ impl PdfExporter {
                         }
                     }
                     Element::DualDialogue(dialogue0, dialogue1) => {
+                        last_speaking_character = String::new();
                         let saved_y = *ctx.y_position;
                         let mut premature_exit = false;
 
@@ -1378,6 +1397,28 @@ This is action.
             breaks_on
         );
         assert!(breaks_on.len() > breaks_off.len());
+    }
+
+    #[test]
+    fn test_auto_contd_export() {
+        let content = "INT. ROOM - DAY\n\nJOHN\nFirst line.\n\nAction happens.\n\nJOHN\nSecond line.";
+        let screenplay = crate::pdf::parse(content);
+
+        let exporter_on = PdfExporter {
+            title_page: false,
+            auto_contd: true,
+            ..Default::default()
+        };
+        let mut out_on = Vec::new();
+        assert!(exporter_on.export(&screenplay, &mut out_on).is_ok());
+
+        let exporter_off = PdfExporter {
+            title_page: false,
+            auto_contd: false,
+            ..Default::default()
+        };
+        let mut out_off = Vec::new();
+        assert!(exporter_off.export(&screenplay, &mut out_off).is_ok());
     }
 
     #[test]

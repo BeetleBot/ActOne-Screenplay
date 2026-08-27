@@ -25,6 +25,7 @@ Settings is a standalone Tauri window with five **pill-segmented tabs** (General
 | Autocomplete | Toggle character, transition, and Fountain ghost-text suggestions |
 | Smart Quotes | Auto-convert straight quotes while typing |
 | Auto-match | Auto-close parentheses and related delimiters |
+| Auto (CONT'D) | Automatically append virtual (CONT'D) tags when characters speak consecutively |
 | Hide Markup | Hide Fountain markup on inactive lines |
 | Line Focus | Dim lines other than the active line (labeled "Line Focus" in UI) |
 | Syntax Colors | Enable or disable Fountain color decorations |

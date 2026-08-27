@@ -355,6 +355,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           exportTitlePage,
           exportSceneColors,
           scenePageBreaks,
+          autoContd: localStorage.getItem(STORAGE_KEYS.AUTO_CONTD_ENABLED) !== "false",
           revisedLines,
           watermarkHeaderEnabled,
           watermarkHeaderText,

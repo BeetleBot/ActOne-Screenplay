@@ -546,6 +546,12 @@ body {
   margin-left: 4px !important;
 }
 
+.cm-auto-contd {
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
 /* Responsive Mobile Editor Indents */
 @media (max-width: 768px) {
   .editor-container {
