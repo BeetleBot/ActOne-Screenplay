@@ -22,7 +22,14 @@ The crash window is a small standalone `WebviewWindow("crash-report")` opened at
 
 - Errors are captured by `ErrorBoundary` components, the global `uncaught`/`unhandledrejection` handlers, the pre-mount `index.html` handler, and the Rust panic hook.
 - Reports are queued locally when Discord or the network is unavailable and retried automatically.
+- Multi-window and crash window deduplication is enforced through localStorage sent-code tracking and in-flight transmission locks, ensuring each crash report code is transmitted to Discord exactly once.
+- Modal windows (e.g. `/?modal=crash`, `/?modal=settings`) skip startup queue flushing so only the primary window manages background queue retry.
 - Diagnostics are merged at send time, so a report captured before system info resolves still includes full OS/CPU/RAM details.
+- Recent action trails (the last 30 operational logs preceding the crash) are captured and included in the Discord embed and error details for instant reproduction context.
+- Embeds are color-coded by severity: 🔴 `#E53935` for `app` crashes, 🟠 `#FB8C00` for `window` crashes, and 🟡 `#FDD835` for `pane` failures.
+- Session uptime and privacy-preserved script metrics (mode, scenes count, lines count, estimated pages without text content) are automatically included.
+- Full diagnostic reports and complete un-truncated logs are uploaded alongside the embed as a `.txt` attachment (`crash-ACT-xxxx.txt`) via multipart POST.
+- Rapid error bursts and tight render loops are automatically throttled and aggregated into occurrence duration summaries.
 - Rust panic details are written to the application data directory and flushed at startup with `severity: "app"`.
 - Expected Tauri window-teardown errors, including invalid resource IDs from a closing WebView, are retained for diagnostics but do not open a crash window.
 

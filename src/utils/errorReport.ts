@@ -1,9 +1,23 @@
-import { CRASH_REPORT_WEBHOOK_URL, ERROR_REPORT_MAX_QUEUE, ERROR_REPORT_QUEUE_KEY } from "../constants/reporting";
+import {
+  CRASH_REPORT_WEBHOOK_URL,
+  ERROR_REPORT_MAX_QUEUE,
+  ERROR_REPORT_QUEUE_KEY,
+  ERROR_REPORT_SENT_KEYS,
+  ERROR_REPORT_IN_FLIGHT_KEY,
+} from "../constants/reporting";
 import { logger } from "./logger";
 
 export type ErrorReportType = "render" | "uncaught" | "unhandled-rejection" | "rust-panic" | "pre-mount";
 
 export type ErrorSeverity = "pane" | "window" | "app";
+
+export interface ScriptReportContext {
+  mode?: "Screenplay" | "Prose";
+  scenesCount?: number;
+  linesCount?: number;
+  estimatedPages?: number;
+  activeView?: string;
+}
 
 export interface ErrorReport {
   code: string;
@@ -12,12 +26,16 @@ export interface ErrorReport {
   severity: ErrorSeverity;
   message: string;
   stack?: string;
+  recentLogs?: string;
+  sessionUptime?: string;
+  scriptContext?: ScriptReportContext;
   component?: string;
   filename?: string;
   windowLabel?: string;
   appVersion: string;
   userAgent: string;
   occurrence: number;
+  occurrenceText?: string;
   diagnostics?: SystemDiagnostics;
 }
 
@@ -56,7 +74,10 @@ export function isTransientTauriTeardownError(message: string): boolean {
 }
 
 let systemInfo: Partial<SystemDiagnostics> = {};
+let scriptContextState: ScriptReportContext = {};
 let lastBoundaryCaughtAt = 0;
+const sessionStartedAt = Date.now();
+const sessionBurstMap = new Map<string, { firstAt: number; count: number; lastAt: number }>();
 
 function isDevReporting(): boolean {
   return Boolean(import.meta.env?.DEV && import.meta.env?.MODE !== "test");
@@ -66,20 +87,50 @@ export function setSystemDiagnostics(info: Partial<SystemDiagnostics>): void {
   systemInfo = { ...systemInfo, ...info };
 }
 
+export function setScriptReportContext(ctx: Partial<ScriptReportContext>): void {
+  scriptContextState = { ...scriptContextState, ...ctx };
+}
+
 export function markBoundaryCaught(): void {
   lastBoundaryCaughtAt = Date.now();
 }
 
 export function resetErrorReportSessionForTests(): void {
   sessionCounts.clear();
+  sessionBurstMap.clear();
   sentThisSession = 0;
   sending = false;
   systemInfo = {};
+  scriptContextState = {};
   lastBoundaryCaughtAt = 0;
 }
 
 export function wasJustCaughtByBoundary(windowMs = 5000): boolean {
   return Date.now() - lastBoundaryCaughtAt < windowMs;
+}
+
+export function formatUptime(uptimeMs: number): string {
+  const totalSecs = Math.max(0, Math.floor(uptimeMs / 1000));
+  if (totalSecs < 60) return `${totalSecs}s`;
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
+  if (mins < 60) return `${mins}m ${secs}s`;
+  const hours = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  return `${hours}h ${remMins}m`;
+}
+
+function severityColor(severity?: ErrorSeverity): number {
+  switch (severity) {
+    case "app":
+      return 0xe53935; // 🔴 Critical Red (#E53935)
+    case "window":
+      return 0xfb8c00; // 🟠 Orange (#FB8C00)
+    case "pane":
+      return 0xfdd835; // 🟡 Yellow (#FDD835)
+    default:
+      return 0xe53935;
+  }
 }
 
 function diagnostics(): SystemDiagnostics {
@@ -190,11 +241,13 @@ function d(report: ErrorReport): SystemDiagnostics {
 
 export function buildDiscordPayload(report: ErrorReport): string {
   const diag = d(report);
+  const occurrenceVal = report.occurrenceText || (report.occurrence > 1 ? `${report.occurrence} times` : "1 time");
   const fields: DiscordEmbedField[] = [
     { name: "Crash type", value: report.type, inline: true },
     { name: "Scope", value: report.severity, inline: true },
     { name: "Component", value: report.component || "unknown", inline: true },
-    { name: "Occurrences this session", value: report.occurrence > 1 ? `${report.occurrence} times` : "1 time", inline: true },
+    { name: "Occurrences", value: occurrenceVal, inline: true },
+    { name: "Session uptime", value: report.sessionUptime || "unknown", inline: true },
     { name: "App version", value: report.appVersion, inline: true },
     { name: "Operating system", value: `${diag.os} ${diag.osVersion}`.slice(0, 1000), inline: true },
     { name: "Architecture", value: diag.architecture, inline: true },
@@ -202,10 +255,28 @@ export function buildDiscordPayload(report: ErrorReport): string {
     { name: "Memory", value: `${memoryLabel(diag.availableMemoryMb)} available of ${memoryLabel(diag.totalMemoryMb)}`, inline: true },
     { name: "Locale · screen · network", value: `${diag.language} · ${diag.viewport} · ${diag.online ? "online" : "offline"}`, inline: true },
     { name: "Runtime", value: `${diag.hardwareConcurrency} logical cores`, inline: true },
-    { name: "WebView", value: diag.userAgent.slice(0, 1000), inline: false },
   ];
+
+  if (report.scriptContext) {
+    const ctx = report.scriptContext;
+    const parts: string[] = [];
+    if (ctx.mode) parts.push(`Mode: ${ctx.mode}`);
+    if (ctx.estimatedPages) parts.push(`~${ctx.estimatedPages} pages`);
+    if (ctx.scenesCount !== undefined) parts.push(`${ctx.scenesCount} scenes`);
+    if (ctx.linesCount !== undefined) parts.push(`${ctx.linesCount} lines`);
+    if (ctx.activeView) parts.push(`View: ${ctx.activeView}`);
+    if (parts.length > 0) {
+      fields.push({ name: "Script context", value: parts.join(" · ").slice(0, 1000), inline: false });
+    }
+  }
+
+  fields.push({ name: "WebView", value: diag.userAgent.slice(0, 1000), inline: false });
+
   if (report.stack) {
     fields.push({ name: "Stack trace", value: `\`\`\`\n${report.stack.slice(0, 980)}\n\`\`\``, inline: false });
+  }
+  if (report.recentLogs) {
+    fields.push({ name: "Recent action trail", value: `\`\`\`text\n${report.recentLogs.slice(0, 980)}\n\`\`\``, inline: false });
   }
   return JSON.stringify({
     username: "ActOne Crash Reports",
@@ -213,7 +284,7 @@ export function buildDiscordPayload(report: ErrorReport): string {
       {
         title: `ActOne crash ${report.code}`,
         description: (report.message || "Unknown error").slice(0, 1000),
-        color: 0xef5350,
+        color: severityColor(report.severity),
         timestamp: report.timestamp,
         fields,
         footer: { text: "Automatic crash report" },
@@ -222,16 +293,73 @@ export function buildDiscordPayload(report: ErrorReport): string {
   });
 }
 
+export function buildLogAttachmentText(report: ErrorReport): string {
+  const diag = d(report);
+  const sections = [
+    `================================================================`,
+    `ActOne Crash Report: ${report.code}`,
+    `Timestamp: ${report.timestamp}`,
+    `App Version: ${report.appVersion}`,
+    `Severity: ${report.severity}`,
+    `Type: ${report.type}`,
+    `Component: ${report.component || "unknown"}`,
+    `Occurrences: ${report.occurrenceText || (report.occurrence > 1 ? `${report.occurrence} times` : "1 time")}`,
+    `Session Uptime: ${report.sessionUptime || "unknown"}`,
+    `================================================================`,
+    ``,
+    `[SYSTEM DIAGNOSTICS]`,
+    `OS: ${diag.os} ${diag.osVersion}`,
+    `Architecture: ${diag.architecture}`,
+    `Processor: ${diag.cpuModel} (${diag.cpuCount} cores)`,
+    `Memory: ${memoryLabel(diag.availableMemoryMb)} available / ${memoryLabel(diag.totalMemoryMb)} total`,
+    `Logical Cores: ${diag.hardwareConcurrency}`,
+    `Display Viewport: ${diag.viewport}`,
+    `Language: ${diag.language}`,
+    `Network: ${diag.online ? "online" : "offline"}`,
+    `WebView: ${diag.userAgent}`,
+    ``,
+    `[ERROR DETAILS]`,
+    `Message: ${report.message}`,
+    `Stack Trace:`,
+    report.stack || "(no stack trace)",
+    ``,
+    `[RECENT ACTION TRAIL]`,
+    report.recentLogs || "(no recent logs)",
+    ``,
+    `================================================================`,
+  ];
+  return sections.join("\n");
+}
+
 async function sendToDiscord(report: ErrorReport): Promise<void> {
   if (isDevReporting()) return;
   const payload = buildDiscordPayload(report);
   if (import.meta.env?.MODE === "test" && CRASH_REPORT_WEBHOOK_URL.includes("discord.com")) {
     throw new Error("network disabled in tests");
   }
+  const attachmentName = `crash-${report.code}.txt`;
+  const attachmentData = buildLogAttachmentText(report);
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   if (isTauri) {
     const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("send_error_report", { webhookUrl: CRASH_REPORT_WEBHOOK_URL, payload });
+    await invoke("send_error_report", {
+      webhookUrl: CRASH_REPORT_WEBHOOK_URL,
+      payload,
+      attachmentName,
+      attachmentData,
+    });
+    return;
+  }
+  if (typeof FormData !== "undefined") {
+    const formData = new FormData();
+    formData.append("payload_json", payload);
+    const blob = new Blob([attachmentData], { type: "text/plain" });
+    formData.append("files[0]", blob, attachmentName);
+    const response = await fetch(CRASH_REPORT_WEBHOOK_URL, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error(`Discord returned ${response.status}`);
     return;
   }
   const response = await fetch(CRASH_REPORT_WEBHOOK_URL, {
@@ -242,20 +370,114 @@ async function sendToDiscord(report: ErrorReport): Promise<void> {
   if (!response.ok) throw new Error(`Discord returned ${response.status}`);
 }
 
+function readSentKeys(): Set<string> {
+  const storage = safeStorage();
+  if (!storage) return new Set();
+  try {
+    const list = JSON.parse(storage.getItem(ERROR_REPORT_SENT_KEYS) || "[]") as string[];
+    return new Set(list);
+  } catch {
+    return new Set();
+  }
+}
+
+function recordSentKey(code: string): void {
+  const storage = safeStorage();
+  if (!storage) return;
+  try {
+    const sent = Array.from(readSentKeys());
+    if (!sent.includes(code)) {
+      sent.push(code);
+      storage.setItem(ERROR_REPORT_SENT_KEYS, JSON.stringify(sent.slice(-100)));
+    }
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function readInFlight(): Record<string, number> {
+  const storage = safeStorage();
+  if (!storage) return {};
+  try {
+    return JSON.parse(storage.getItem(ERROR_REPORT_IN_FLIGHT_KEY) || "{}") as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+
+function claimInFlight(code: string, leaseMs = 30000): boolean {
+  const storage = safeStorage();
+  if (!storage) return true;
+  try {
+    const now = Date.now();
+    const inFlight = readInFlight();
+    const cleaned: Record<string, number> = {};
+    for (const [k, ts] of Object.entries(inFlight)) {
+      if (now - ts < leaseMs) {
+        cleaned[k] = ts;
+      }
+    }
+    if (cleaned[code] && now - cleaned[code] < leaseMs) {
+      return false;
+    }
+    cleaned[code] = now;
+    storage.setItem(ERROR_REPORT_IN_FLIGHT_KEY, JSON.stringify(cleaned));
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+function releaseInFlight(code: string): void {
+  const storage = safeStorage();
+  if (!storage) return;
+  try {
+    const inFlight = readInFlight();
+    delete inFlight[code];
+    storage.setItem(ERROR_REPORT_IN_FLIGHT_KEY, JSON.stringify(inFlight));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 export async function flushErrorReports(): Promise<void> {
   if (sending || sentThisSession >= MAX_SENDS_PER_SESSION) return;
   sending = true;
   try {
     let queue = readQueue();
+    const sentKeys = readSentKeys();
+    const filteredQueue = queue.filter((report) => !sentKeys.has(report.code));
+    if (filteredQueue.length !== queue.length) {
+      writeQueue(filteredQueue);
+      queue = filteredQueue;
+    }
+
     while (queue.length && sentThisSession < MAX_SENDS_PER_SESSION) {
+      const current = queue[0];
+      if (!current) break;
+
+      if (readSentKeys().has(current.code)) {
+        queue = readQueue().filter((report) => report.code !== current.code);
+        writeQueue(queue);
+        continue;
+      }
+
+      if (!claimInFlight(current.code)) {
+        queue = queue.slice(1);
+        continue;
+      }
+
       try {
-        await sendToDiscord(queue[0]);
-        const sentCode = queue[0].code;
+        await sendToDiscord(current);
         sentThisSession += 1;
-        queue = readQueue().filter((report) => report.code !== sentCode);
+        recordSentKey(current.code);
+        queue = readQueue().filter((report) => report.code !== current.code);
         writeQueue(queue);
       } catch {
+        releaseInFlight(current.code);
         break;
+      } finally {
+        releaseInFlight(current.code);
       }
     }
   } finally {
@@ -279,7 +501,29 @@ export function captureError(input: {
   const key = hash(`${input.type}:${input.component || ""}:${message}:${stack || ""}`);
   const occurrence = (sessionCounts.get(key) || 0) + 1;
   sessionCounts.set(key, occurrence);
+
+  const now = Date.now();
+  const burst = sessionBurstMap.get(key);
+  let burstCount = 1;
+  let burstDuration = 0;
+  if (burst) {
+    burst.count += 1;
+    burstDuration = Math.max(0.1, (now - burst.firstAt) / 1000);
+    burst.lastAt = now;
+    burstCount = burst.count;
+  } else {
+    sessionBurstMap.set(key, { firstAt: now, count: 1, lastAt: now });
+  }
+
+  const occurrenceText =
+    burstCount > 1
+      ? `Repeated ${burstCount} times in ${burstDuration.toFixed(1)}s`
+      : occurrence > 1
+      ? `${occurrence} times`
+      : "1 time";
+
   const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const recentLogs = logger.formatRecentLogs(30);
   const report: ErrorReport = {
     code: `ACT-${appVersion()}-${Date.now().toString(36).toUpperCase()}-${randPart}-${key}`,
     timestamp: new Date().toISOString(),
@@ -287,12 +531,16 @@ export function captureError(input: {
     severity: input.severity ?? "window",
     message,
     stack,
+    recentLogs: recentLogs || undefined,
+    sessionUptime: formatUptime(now - sessionStartedAt),
+    scriptContext: Object.keys(scriptContextState).length > 0 ? { ...scriptContextState } : undefined,
     component: input.component,
     filename: input.filename,
     windowLabel: input.windowLabel ?? currentWindowLabel(),
     appVersion: appVersion(),
     userAgent: typeof navigator === "undefined" ? "unknown" : navigator.userAgent,
     occurrence,
+    occurrenceText,
     diagnostics: diagnostics(),
   };
   logger.error("error-report", `${report.code}: ${message}`, input.error);
@@ -307,7 +555,7 @@ export function captureError(input: {
 
 export function formatErrorDetails(report: ErrorReport): string {
   const diag = d(report);
-  return [
+  const lines = [
     `Error code: ${report.code}`,
     `Type: ${report.type}`,
     `Time: ${report.timestamp}`,
@@ -317,5 +565,9 @@ export function formatErrorDetails(report: ErrorReport): string {
     `Memory: ${memoryLabel(diag.availableMemoryMb)} available of ${memoryLabel(diag.totalMemoryMb)}`,
     `Message: ${report.message}`,
     report.stack || "",
-  ].join("\n");
+  ];
+  if (report.recentLogs) {
+    lines.push(`\nRecent action trail:\n${report.recentLogs}`);
+  }
+  return lines.join("\n");
 }

@@ -1,26 +1,37 @@
-export interface ErrorReport {
+export interface LogReport {
   timestamp: string;
   module: string;
   message: string;
   stack?: string;
 }
 
+export interface LogEntry {
+  timestamp: string;
+  level: "info" | "warn" | "error";
+  module: string;
+  message: string;
+  stack?: string;
+}
+
+export type ErrorReport = LogReport;
+
 type LogLevel = "info" | "warn" | "error";
 
-const MAX_RECENT = 50;
-const recentErrors: ErrorReport[] = [];
+const MAX_RECENT_LOGS = 50;
+const recentLogs: LogEntry[] = [];
 const isDev = typeof window !== "undefined" && import.meta.env?.DEV;
 
 function log(level: LogLevel, module: string, message: string, error?: unknown) {
-  const report: ErrorReport = {
+  const entry: LogEntry = {
     timestamp: new Date().toISOString(),
+    level,
     module,
     message,
     stack: error instanceof Error ? error.stack : undefined,
   };
 
-  recentErrors.push(report);
-  if (recentErrors.length > MAX_RECENT) recentErrors.shift();
+  recentLogs.push(entry);
+  if (recentLogs.length > MAX_RECENT_LOGS) recentLogs.shift();
 
   if (isDev) {
     const prefix = `[${module}]`;
@@ -44,7 +55,30 @@ export const logger = {
   info(module: string, message: string) {
     log("info", module, message);
   },
+  getRecentLogs(): LogEntry[] {
+    return [...recentLogs];
+  },
+  getRecentLogLines(max = 30): string[] {
+    return recentLogs.slice(-max).map((e) => {
+      const time = e.timestamp.slice(11, 19);
+      const lvl = e.level === "error" ? "ERR" : e.level === "warn" ? "WRN" : "INF";
+      return `${time} [${lvl}] [${e.module}] ${e.message}`;
+    });
+  },
+  formatRecentLogs(max = 30): string {
+    return this.getRecentLogLines(max).join("\n");
+  },
   getRecentErrors(): ErrorReport[] {
-    return [...recentErrors];
+    return recentLogs
+      .filter((e) => e.level === "error")
+      .map((e) => ({
+        timestamp: e.timestamp,
+        module: e.module,
+        message: e.message,
+        stack: e.stack,
+      }));
+  },
+  clearRecentLogs() {
+    recentLogs.length = 0;
   },
 };

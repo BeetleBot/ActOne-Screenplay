@@ -1173,11 +1173,30 @@ fn get_system_info() -> SystemInfo {
 }
 
 #[tauri::command]
-async fn send_error_report(webhook_url: String, payload: String) -> Result<(), String> {
-    reqwest::Client::new()
-        .post(webhook_url)
-        .header("Content-Type", "application/json")
-        .body(payload)
+async fn send_error_report(
+    webhook_url: String,
+    payload: String,
+    attachment_name: Option<String>,
+    attachment_data: Option<String>,
+) -> Result<(), String> {
+    let client = reqwest::Client::new();
+    let request = if let (Some(name), Some(data)) = (attachment_name, attachment_data) {
+        let part = reqwest::multipart::Part::bytes(data.into_bytes())
+            .file_name(name)
+            .mime_str("text/plain")
+            .map_err(|error| error.to_string())?;
+        let form = reqwest::multipart::Form::new()
+            .text("payload_json", payload)
+            .part("files[0]", part);
+        client.post(webhook_url).multipart(form)
+    } else {
+        client
+            .post(webhook_url)
+            .header("Content-Type", "application/json")
+            .body(payload)
+    };
+
+    request
         .send()
         .await
         .map_err(|error| error.to_string())?

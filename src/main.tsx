@@ -26,21 +26,25 @@ window.addEventListener("unhandledrejection", (event) => {
   if (!wasJustCaughtByBoundary() && !isTransientTauriTeardownError(report.message)) showCrashScreen(report);
 });
 
+const params = new URLSearchParams(window.location.search);
+const modalParam = params.get("modal");
+
 void (async () => {
   if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const info = await invoke<{ os: string; os_version: string; architecture: string; cpu_model: string; cpu_count: number; total_memory_mb: number; available_memory_mb: number }>("get_system_info");
       setSystemDiagnostics({ os: info.os, osVersion: info.os_version, architecture: info.architecture, cpuModel: info.cpu_model, cpuCount: info.cpu_count, totalMemoryMb: info.total_memory_mb, availableMemoryMb: info.available_memory_mb });
-      const pendingPanic = await invoke<string>("flush_pending_panics");
-      if (pendingPanic) captureError({ type: "rust-panic", message: pendingPanic.slice(0, 5000), severity: "app" });
+      if (!modalParam) {
+        const pendingPanic = await invoke<string>("flush_pending_panics");
+        if (pendingPanic) captureError({ type: "rust-panic", message: pendingPanic.slice(0, 5000), severity: "app" });
+      }
     } catch (error) { logger.warn("error-report", "Unable to collect system diagnostics", error); }
   }
-  await flushErrorReports();
+  if (!modalParam) {
+    await flushErrorReports();
+  }
 })();
-
-const params = new URLSearchParams(window.location.search);
-const modalParam = params.get("modal");
 
 const modalWrapper = (children: React.ReactNode) => (
   <UIProvider>

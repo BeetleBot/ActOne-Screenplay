@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
-import { parseScreenplay, FountainDocument } from "../parser";
+import { parseScreenplay, FountainDocument, LineType } from "../parser";
 import { parseScreenplayAsync } from "../utils/asyncParser";
+
+
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundleAsync } from "../utils";
@@ -9,8 +11,10 @@ import { parseScriptFileToFountain } from "../utils/text";
 import { isProseScript, isActonePath } from "../utils/scriptMode";
 import { migrateSettingsKey, removeSettingsKey } from "../utils/perScriptSettings";
 import { logger } from "../utils/logger";
+import { setScriptReportContext } from "../utils/errorReport";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SettingsUpdater = (prev: Record<string, unknown>) => Record<string, unknown>;
@@ -203,6 +207,19 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     updateAll();
   }, [paperSize, isTauri]);
+
+  useEffect(() => {
+    const activeScr = activeFile?.scripts && activeFile.activeScriptIndex !== undefined ? activeFile.scripts[activeFile.activeScriptIndex] : undefined;
+    const isProse = isProseScript(activeScr, activeFile?.filePath);
+    setScriptReportContext({
+      mode: isProse ? "Prose" : "Screenplay",
+      scenesCount: parsedDoc?.lines?.filter(l => l.type === LineType.heading).length || 0,
+
+      linesCount: parsedDoc?.lines?.length || 0,
+      estimatedPages: parsedDoc?.pageBreaks?.length || Math.max(1, Math.ceil((parsedDoc?.lines?.length || 0) / 55)),
+    });
+  }, [parsedDoc, activeFile]);
+
 
   const selectFile = (id: string) => {
     const file = files.find(f => f.id === id);

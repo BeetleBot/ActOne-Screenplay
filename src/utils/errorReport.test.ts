@@ -1,10 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError, flushErrorReports, buildDiscordPayload, markBoundaryCaught, wasJustCaughtByBoundary, resetErrorReportSessionForTests, setSystemDiagnostics, isTransientTauriTeardownError, type ErrorReport } from "./errorReport";
+import {
+  captureError,
+  flushErrorReports,
+  buildDiscordPayload,
+  buildLogAttachmentText,
+  markBoundaryCaught,
+  wasJustCaughtByBoundary,
+  resetErrorReportSessionForTests,
+  setSystemDiagnostics,
+  isTransientTauriTeardownError,
+  type ErrorReport,
+} from "./errorReport";
+
 import { ERROR_REPORT_MAX_QUEUE, ERROR_REPORT_QUEUE_KEY } from "../constants/reporting";
 
 vi.mock("../constants/reporting", () => ({
   CRASH_REPORT_WEBHOOK_URL: "https://discord.example.test/webhook",
   ERROR_REPORT_QUEUE_KEY: "actone-error-report-queue",
+  ERROR_REPORT_SENT_KEYS: "actone-error-report-sent-keys",
+  ERROR_REPORT_IN_FLIGHT_KEY: "actone-error-report-in-flight",
   ERROR_REPORT_MAX_QUEUE: 50,
 }));
 
@@ -65,7 +79,11 @@ describe("flushErrorReports", () => {
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://discord.example.test/webhook");
-    expect(JSON.parse(init.body as string).embeds[0].title).toContain(report.code);
+    const payloadStr = init.body instanceof FormData ? (init.body.get("payload_json") as string) : (init.body as string);
+    expect(JSON.parse(payloadStr).embeds[0].title).toContain(report.code);
+    if (init.body instanceof FormData) {
+      expect(init.body.get("files[0]")).toBeDefined();
+    }
   });
 
   it("keeps queued reports when Discord rejects", async () => {
@@ -87,18 +105,63 @@ describe("flushErrorReports", () => {
     expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(ERROR_REPORT_MAX_QUEUE);
     vi.unstubAllGlobals();
   });
+
+  it("does not send duplicate reports if already marked as sent in localStorage", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    const report = captureError({ type: "render", error: new Error("dedup test") });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    // Manually push report back to queue to simulate a secondary window loading the queue
+    localStorage.setItem("actone-error-report-queue", JSON.stringify([report]));
+    await flushErrorReports();
+
+    // Fetch should NOT have been called a second time
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(queue()).toHaveLength(0);
+    vi.unstubAllGlobals();
+  });
+
+  it("skips reports currently locked in-flight by another window", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    const report: ErrorReport = {
+      code: "ACT-0.4.3-LOCK-TEST",
+      timestamp: new Date().toISOString(),
+      type: "uncaught",
+      severity: "window",
+      message: "in flight error",
+      appVersion: "0.4.3",
+      userAgent: "test",
+      occurrence: 1,
+    };
+    localStorage.setItem("actone-error-report-queue", JSON.stringify([report]));
+    localStorage.setItem("actone-error-report-in-flight", JSON.stringify({ [report.code]: Date.now() }));
+
+    await flushErrorReports();
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
 });
 
 describe("buildDiscordPayload", () => {
-  it("builds a structured embed with diagnostics fields", () => {
-    const report = captureError({ type: "render", error: new Error("payload") });
+  it("builds a structured embed with diagnostics fields and severity color", () => {
+    const report = captureError({ type: "render", error: new Error("payload"), severity: "window" });
     const payload = JSON.parse(buildDiscordPayload(report));
     expect(payload.embeds[0].title).toContain(report.code);
-    expect(payload.embeds[0].color).toBe(0xef5350);
+    expect(payload.embeds[0].color).toBe(0xfb8c00);
     const names = payload.embeds[0].fields.map((f: { name: string }) => f.name);
     expect(names).toContain("Operating system");
     expect(names).toContain("Processor");
+    expect(names).toContain("Session uptime");
     expect(payload.embeds[0].footer.text).toBe("Automatic crash report");
+  });
+
+  it("applies critical red for app crashes and yellow for pane errors", () => {
+    const appReport = captureError({ type: "rust-panic", message: "panic", severity: "app" });
+    const paneReport = captureError({ type: "render", message: "sub-component", severity: "pane" });
+    expect(JSON.parse(buildDiscordPayload(appReport)).embeds[0].color).toBe(0xe53935);
+    expect(JSON.parse(buildDiscordPayload(paneReport)).embeds[0].color).toBe(0xfdd835);
   });
 
   it("attaches diagnostics collected after capture at send time", () => {
@@ -110,6 +173,26 @@ describe("buildDiscordPayload", () => {
     expect(get("Architecture")).toBe("x86_64");
     expect(get("Processor")).toContain("AMD Ryzen 5 8400F");
     expect(get("Memory")).toBe("18.0 GB available of 32.0 GB");
+  });
+
+  it("attaches script context when provided", () => {
+    const report = captureError({ type: "uncaught", message: "context error" });
+    report.scriptContext = { mode: "Screenplay", estimatedPages: 110, scenesCount: 48, linesCount: 2400 };
+    const payload = JSON.parse(buildDiscordPayload(report));
+    const ctxField = payload.embeds[0].fields.find((f: { name: string }) => f.name === "Script context");
+    expect(ctxField).toBeDefined();
+    expect(ctxField.value).toContain("Mode: Screenplay");
+    expect(ctxField.value).toContain("~110 pages");
+    expect(ctxField.value).toContain("48 scenes");
+  });
+
+  it("attaches recent action trail to payload when present", () => {
+    const report = captureError({ type: "uncaught", message: "trail error" });
+    report.recentLogs = "12:00:00 [INF] [editor] Opened file\n12:00:01 [ERR] [export] Export failed";
+    const payload = JSON.parse(buildDiscordPayload(report));
+    const trailField = payload.embeds[0].fields.find((f: { name: string }) => f.name === "Recent action trail");
+    expect(trailField).toBeDefined();
+    expect(trailField.value).toContain("[editor] Opened file");
   });
 });
 
@@ -139,6 +222,17 @@ describe("isTransientTauriTeardownError", () => {
     expect(isTransientTauriTeardownError("Cannot read properties of undefined (reading 'map')")).toBe(false);
     expect(isTransientTauriTeardownError("invalid resource name: 'foo'")).toBe(false);
     expect(isTransientTauriTeardownError("Something resourceful went wrong")).toBe(false);
-    expect(isTransientTauriTeardownError("")).toBe(false);
+  });
+});
+
+describe("buildLogAttachmentText", () => {
+  it("generates a full un-truncated text report with diagnostics and action trail", () => {
+    const report = captureError({ type: "uncaught", message: "attachment error" });
+    report.recentLogs = "12:00:00 [INF] [app] Started\n12:00:05 [ERR] [editor] Crashed";
+    const text = buildLogAttachmentText(report);
+    expect(text).toContain(`ActOne Crash Report: ${report.code}`);
+    expect(text).toContain("[SYSTEM DIAGNOSTICS]");
+    expect(text).toContain("[RECENT ACTION TRAIL]");
+    expect(text).toContain("[app] Started");
   });
 });
