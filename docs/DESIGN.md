@@ -65,7 +65,17 @@ Adaptive meta (`ADAPTIVE_THEME_META:36`) groups: `adaptive` (Classic), `catppucc
 - Footer StatusBar-style `28px` (`WelcomeScreen.tsx:1066`).
 
 ### MainLayout (`src/components/layout/MainLayout.tsx:36`)
-`ActivityBar | (HeaderBar + Workspace + StatusBar)` flex column. Workspace is the editor paper (`src/index.css:182`).
+- Seamless, borderless chrome frame (`background.paper`) wrapping `ActivityBar`, `HeaderBar`, `Workspace`, and `StatusBar`.
+- `ActivityBar` (transparent, `46px`, `borderRight: none`) and `StatusBar` (transparent, `30px`, `borderTop: none`) sit flush within the outer layout surface.
+- `HeaderBar` (`46px`, `pl: 0`) aligns document tabs flush with the editor canvas top-left rounded corner.
+- Editor canvas container (`.editor-container`) sits as an extruded card with `12px` border-radius and `background.default` surface.
+
+### Extruded Panes & Mutual Exclusivity (`src/components/layout/Workspace.tsx`, `src/components/RightPane.tsx`)
+- **Extruded Geometry:** Sidebars and right-side panels extrude directly out of the continuous window chrome without interior dividing borders (`border: 'none'`, `boxShadow: 'none'`).
+- **Motion:** Panes animate using synchronized `240ms cubic-bezier(0.25, 1, 0.5, 1)` natural deceleration curves on `width`, `min-width`, and `max-width`.
+- **Fluid Content:** Inner pane containers use `width: 100%` for fluid scaling with zero trailing background gaps.
+- **Mutual Pane Exclusivity:** Only one pane (Left Sidebar or Right Pane) is open at any time. Opening a sidebar closes right panels (Muse/Search) and vice-versa.
+- **Persistence:** Pane dimensions (`sidebarWidth` 180–800px, `rightPaneWidth` 240–700px) are persisted in `localStorage`.
 
 ### TitleBar (`src/components/TitleBar.tsx:103`)
 Transparent `40px` bar, controls right `28x28 6px`, hover `alpha(text,0.08)` and close `alpha(error,0.15)`.
@@ -88,9 +98,11 @@ Transparent `40px` bar, controls right `28x28 6px`, hover `alpha(text,0.08)` and
 
 - Use `derived ThemeConfig` — never hard-code a hex. For website, map to CSS vars, not raw hex.
 - Keep radii/shadows from Section 2. No custom `border-radius: 0` or left accent bars (`AGENTS.md:8` forbids left bars on Outline items).
+- Use `240ms cubic-bezier(0.25, 1, 0.5, 1)` for layout transitions and preserve mutual pane exclusivity.
 - Icons are centralized (`src/components/Icons.tsx`). Fonts via `fonts.css`.
 - Guard Tauri calls, normalize `\r\n`, use `e.key` — see `AGENTS.md`.
 
 ## 8. References
 
-- Runtime: `src/theme/muiTheme.ts` (theme factory, MUI theme creation), `src/index.css` (tokens + editor styles), `src/components/WelcomeScreen.tsx`, `src/components/TitleBar.tsx`, `src/components/layout/MainLayout.tsx`, `src/fonts.css`, `src/prose-editor.css`.
+- Runtime: `src/theme/muiTheme.ts` (theme factory, MUI theme creation), `src/index.css` (tokens + editor styles), `src/components/WelcomeScreen.tsx`, `src/components/TitleBar.tsx`, `src/components/layout/MainLayout.tsx`, `src/components/layout/Workspace.tsx`, `src/fonts.css`, `src/prose-editor.css`.
+

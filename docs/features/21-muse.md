@@ -16,9 +16,11 @@ Muse is optional. ActOne does not provide a hosted AI service or a default model
 
 Muse is opened from the main editor by:
 
-- Pressing `Alt+M`.
+- Pressing `Alt+M` (toggles the Muse pane open and closed, automatically closing the left sidebar).
 - Clicking the Muse indicator at the far right of the status bar.
 - Opening the right pane through the existing workspace controls.
+
+Under ActOne's mutual pane exclusivity rule, opening Muse automatically collapses the left sidebar to preserve maximum editor canvas focus.
 
 The status-bar indicator behaves as follows:
 

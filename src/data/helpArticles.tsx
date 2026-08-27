@@ -100,9 +100,10 @@ Importing other screenplay formats is separate from opening an existing project.
 
 **Settings:** Open Settings, Open Spellcheck Settings, Set Font (Courier Prime / Courier Prime Sans), Set Paper Size (Letter / A4), Theme Manager.
 
-**Help:** Help Guide, Interactive Tutorial, Fountain Syntax Guide, Report a Bug.
+**Help:** Help Guide, Interactive Tutorial, Fountain Syntax Guide, Report a Bug (with diagnostics & privacy controls).
 
 Each command shows its keyboard shortcut when available. Navigate with arrow keys and press Enter to execute. Press Escape to close. Available even when modals are open.`,
+
   },
   {
     id: "script-import",
@@ -696,7 +697,9 @@ For prose documents (\`.md\`), the panel switches to **Table of Contents** mode 
     category: "Workspace & Views",
     tags: ["sidebar", "panels", "workspace", "bundle"],
     relatedIds: ["activity-bar", "outline-navigator", "actone-bundle", "xray-analysis"],
-    content: `ActOne provides several sidebar panels accessible from the **Activity Bar** (vertical icon strip on the left). Click an icon to open the corresponding panel; click again to close the sidebar.
+    content: `ActOne provides several sidebar panels accessible from the **Activity Bar** (vertical icon strip on the left). Click an icon to open the corresponding panel; click again to close the sidebar. Press <kbd>Ctrl+\\</kbd> to toggle the sidebar or switch directly into Outline View from any open right pane.
+
+**Mutual Pane Exclusivity:** To keep your writing space focused and uncluttered, only one pane (Left Sidebar or Right Pane) is active at a time. Opening a sidebar panel closes any active right-side panel, and vice versa.
 
 | Panel | Icon | Purpose | Requires .actone? |
 |-------|------|---------|-------------------|
@@ -709,9 +712,10 @@ For prose documents (\`.md\`), the panel switches to **Table of Contents** mode 
 | Sprint | Timer | Countdown writing timer with history | No |
 | Parking | Archive | Temporary text clipboard | Yes |
 
-Panels that require the .actone bundle are hidden for plain \`.fountain\` files. Use <kbd>Ctrl+Shift+S</kbd> to save as a bundle and unlock them.
+Panels that require the .actone bundle are hidden for plain \`.fountain\` files. Use <kbd>Ctrl+Shift+S</kbd> to save as a bundle and unlock them. Panel widths are persisted across sessions and animate smoothly via natural deceleration curves.
 
 **Character and statistical analysis** is available through the **X-Ray Analysis** window — open it from the bar-chart icon in the Status Bar or via Command Palette → "Open X-Ray Analysis…". See the \`xray-analysis\` article for details.`,
+
   },
   {
     id: "notepad",

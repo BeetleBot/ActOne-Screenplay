@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.22] - 2026-08-28
+
+### Added / Improved
+- 🐛 **In-App Bug Reporting & Diagnostic System** – Added a dedicated in-app Bug Report Modal (`Ctrl+K` → "Report a Bug") with reproducible steps input, system diagnostics (OS, memory, screen resolution, Tauri backend state), privacy opt-in controls, sanitized session log attachments, and direct Discord webhook integration.
+- 💬 **Automatic Consecutive `(CONT'D)` Dialogue Tagging** – Integrated smart screenplay dialogue continuation tags, automatically appending `(CONT'D)` to character names during consecutive dialogue blocks.
+- 📋 **Cross-Platform Robust Clipboard Utility** – Built a unified cross-platform clipboard service with asynchronous native clipboard access and synchronous fallback support across Windows and Linux.
+- 🪟 **Seamless Borderless Chrome & Extruded Pane Geometry** – Redesigned the primary application layout into a continuous borderless chrome surface (`MainLayout`, `ActivityBar`, `HeaderBar`, `StatusBar`) with a smooth 12px rounded editor canvas that dynamically extrudes sidebars and side panels.
+- 📐 **Mutual Pane Exclusivity** – Enforced single-pane workspace focus: opening any left-side panel instantly closes right-side panels (Muse AI / Find & Replace) and vice versa.
+- ⌨️ **Intelligent Workspace Shortcuts** – <kbd>Alt+M</kbd> now smoothly toggles the Muse AI assistant open and closed while auto-dismissing the sidebar; <kbd>Ctrl+\\</kbd> closes any open right panel and opens the Outline View.
+- 📏 **Persistent Workspace Dimensions** – Sidebar and Right Pane widths now persist across sessions and Zen Mode in `localStorage` with safety clamping.
+- 🌊 **Fluid Pane Layout & Symmetrical Transitions** – Replaced static inner container pixel constraints with fluid 100% responsive width and synchronized 240ms `cubic-bezier(0.25, 1, 0.5, 1)` natural deceleration curves across all panel entrance and exit animations.
+- 🧪 **Expanded Automated Test Coverage** – Expanded test coverage to **69 test files and 685 tests** (100% pass rate), verifying bug reporting, modal manager, keyboard shortcuts, and layout transitions.
+
 ## [0.4.21] - 2026-08-27
 
 ### Added / Improved
@@ -10,12 +23,14 @@
 - 🖱️ **1:1 Scrollbar Pointer Tracking & Rubber-Band Removal** – Replaced global `scroll-behavior: smooth` with `scroll-behavior: auto` and applied `overscroll-behavior: none` across the editor scroll area and sidebar cards. Dragging the scrollbar thumb now tracks the mouse pointer instantaneously without elastic lag or boundary bounce.
 - 🚀 **Streamlined Welcome Screen** – Removed redundant Theme dropdown options from the Welcome Screen for a cleaner, distraction-free project launcher interface.
 - 🌐 **Cross-Platform Docs Generation & Web Sync** – Created dedicated `generate_docs_linux.js`, `generate_docs_windows.js`, and auto-detecting `generate_docs.js` scripts in `iyal-ink/`, keeping the public web documentation in sync with all 88 help articles across 10 categories.
-- 🧪 **Comprehensive Automated Test Coverage** – Expanded the test suite across the entire codebase to **63 test files and 652 tests** (100% pass rate), adding coverage for UI components, Muse AI tools and providers, Theme Engine, file utilities, script analysis, and custom context providers.
+- 🧪 **Automated Test Coverage** – Expanded the test suite across the codebase to **63 test files and 652 tests** (100% pass rate).
 
 ### Fixed
 - ✏️ **Project Pane Rename Focus & Typing Glitch** – Fixed an issue where opening the Rename input from the context menu caused focus-restoration race conditions in MUI Menu to blur the input prematurely. Configured autofocus with one-time text selection on focus to ensure uninterrupted typing.
 - 💾 **Save Pipeline Data Integrity & Re-Entrancy Guard** – Updated `saveFile` to write `rawText` directly, eliminating latency from debounced AST reconstruction. Added an `isSaving` guard to prevent Windows file-lock collisions (`SharingViolation`) during rapid double `Ctrl+S` keystrokes.
 - 🔒 **Atomic Backend File Writes** – Updated Tauri backend save dialogs for PDF and Theme exports (`save_pdf_dialog`, `save_theme_dialog`) to write atomically via temporary files, preventing partially written or corrupted files upon system interruptions.
+
+
 
 ## [0.4.20] - 2026-08-26
 

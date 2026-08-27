@@ -1,6 +1,11 @@
 # Sidebar Panels
 
-The **Activity Bar** is a slim **46px** vertical dock with **4px** inset padding on the left, organized into grouped tool sections. Press `Ctrl+\` to toggle sidebar visibility. The active tool uses a soft pill background with the theme accent — the old left-side vertical accent bar is no longer used. Each icon sits in a `38×38px` rounded square (`8px` radius).
+The **Activity Bar** is a slim **46px** vertical dock with **4px** inset padding on the left, organized into grouped tool sections. Press `Ctrl+\` to toggle sidebar visibility (or switch from any right-side panel directly into Outline View). The active tool uses a soft pill background with the theme accent — the old left-side vertical accent bar is no longer used. Each icon sits in a `38×38px` rounded square (`8px` radius).
+
+Sidebar panels extrude smoothly from the borderless chrome with a `240ms` `cubic-bezier(0.25, 1, 0.5, 1)` deceleration curve. Panel widths persist across sessions and Zen Mode in `localStorage` (`180–800px`).
+
+### Mutual Pane Exclusivity
+To maintain an uncluttered workspace, only one pane (Left Sidebar or Right Pane) is active at a time. Opening a sidebar panel automatically closes any open right-side panel (Muse AI / Find & Replace), and vice versa.
 
 ## Header Tabs & Window Chrome
 
