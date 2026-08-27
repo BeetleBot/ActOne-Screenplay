@@ -247,7 +247,7 @@ fn save_theme_dialog(content: String, default_name: String) -> Option<String> {
     let mut file_path = file;
     file_path.set_extension("actheme");
     let path = file_path.to_string_lossy().to_string();
-    if fs::write(&file_path, content).is_ok() {
+    if write_file_atomically(&file_path, content).is_ok() {
         return Some(path);
     }
     None
@@ -292,7 +292,7 @@ fn save_pdf_dialog(bytes: Vec<u8>) -> Option<String> {
         .add_filter("PDF Document", &["pdf"])
         .save_file()?;
 
-    if fs::write(&file, bytes).is_ok() {
+    if write_file_atomically(&file, bytes).is_ok() {
         return Some(file.to_string_lossy().to_string());
     }
     None

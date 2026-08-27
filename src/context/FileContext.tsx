@@ -4,9 +4,10 @@ import { parseScreenplayAsync } from "../utils/asyncParser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundleAsync } from "../utils";
-import { parseScriptFileToFountain } from "../utils/text";
 import type { ScriptInfo } from "../utils";
-import { isProseScript } from "../utils/scriptMode";
+import { parseScriptFileToFountain } from "../utils/text";
+import { isProseScript, isActonePath } from "../utils/scriptMode";
+import { migrateSettingsKey, removeSettingsKey } from "../utils/perScriptSettings";
 import { logger } from "../utils/logger";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
@@ -206,6 +207,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const selectFile = (id: string) => {
     const file = files.find(f => f.id === id);
     if (!file) return;
+    if (parseTimeoutRef.current !== null) {
+      clearTimeout(parseTimeoutRef.current);
+      parseTimeoutRef.current = null;
+    }
     setActiveFileIdState(id);
     setRawTextState(file.rawText);
     setFilePath(file.filePath);
@@ -559,10 +564,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearTimeout(handler);
   }, [rawText, paperSize, activeFileId, isTauri, files]);
 
-  const isActonePath = (p: string) => {
-    const lower = p.toLowerCase();
-    return lower.endsWith(".actone") || lower.endsWith(".zip") || lower.endsWith(".actone.zip");
-  };
 
   const openFilePath = async (path: string) => {
     const isActone = isActonePath(path);
@@ -846,16 +847,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentId = targetFileId || activeFileIdRef.current || activeFileId;
     const currentActive = filesRef.current.find(f => f.id === currentId) || files.find(f => f.id === currentId);
     if (!currentActive) return;
+    if (currentActive.isSaving) return;
     if (!currentActive.filePath) {
       await saveFileAs(currentId);
       return;
     }
 
-    const activeScr = currentActive.scripts && currentActive.activeScriptIndex !== undefined ? currentActive.scripts[currentActive.activeScriptIndex] : undefined;
-    const isProse = isProseScript(activeScr, currentActive.filePath);
-    const cleanTextToSave = isProse || !currentActive.parsedDoc.lines?.length
-      ? currentActive.rawText
-      : currentActive.parsedDoc.lines.map(l => l.text).join("\n");
+    const cleanTextToSave = currentActive.rawText;
     const isActone = currentActive.filePath.toLowerCase().endsWith(".actone");
     const normalizedPath = isActone ? currentActive.filePath.replace(/\.actone$/i, ".actone") : currentActive.filePath;
     const isCurrentActiveTab = currentId === (activeFileIdRef.current || activeFileId);
@@ -1283,15 +1281,20 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
 
+    const oldFileName = file.scripts[index].fileName;
     const updatedScripts = file.scripts.map((s, i) =>
       i === index ? { ...s, name: trimmed, fileName: isProseScript(s) ? `files/${sanitizeFileName(trimmed)}.md` : `files/${sanitizeFileName(trimmed)}.fountain` } : s
     );
+    const newFileName = updatedScripts[index].fileName;
+    const migratedSettings = migrateSettingsKey(file.parsedDoc.settings, oldFileName, newFileName);
 
     setFiles(prev => prev.map(f => f.id === activeFileId ? {
       ...f,
       scripts: updatedScripts,
       isDirty: true,
+      parsedDoc: { ...f.parsedDoc, settings: migratedSettings },
     } : f));
+    setParsedDoc(prev => ({ ...prev, settings: migratedSettings }));
     setScriptsState(updatedScripts);
     return true;
   }, [files, activeFileId, confirm]);
@@ -1352,12 +1355,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     if (result !== "delete") return false;
 
+    const deletedFileName = file.scripts[index].fileName;
+    const cleanedSettings = removeSettingsKey(file.parsedDoc.settings, deletedFileName);
     const updatedScripts = file.scripts.filter((_, i) => i !== index);
 
     if (updatedScripts.length === 0) {
       const emptyDoc = parseScreenplay("", paperSize);
-      if (file.parsedDoc.settings) {
-        emptyDoc.settings = file.parsedDoc.settings;
+      if (cleanedSettings) {
+        emptyDoc.settings = cleanedSettings;
       }
       setFiles(prev => prev.map(f => f.id === activeFileId ? {
         ...f,
@@ -1386,10 +1391,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newActiveScript = updatedScripts[newActiveIndex];
     const isProse = isProseScript(newActiveScript, file.filePath);
     const doc = isProse
-      ? createProseDocument(newActiveScript.content, file.parsedDoc.settings)
+      ? createProseDocument(newActiveScript.content, cleanedSettings)
       : parseScreenplay(newActiveScript.content, paperSize);
-    if (file.parsedDoc.settings) {
-      doc.settings = file.parsedDoc.settings;
+    if (cleanedSettings) {
+      doc.settings = cleanedSettings;
     }
 
     setFiles(prev => prev.map(f => f.id === activeFileId ? {

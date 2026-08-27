@@ -19,3 +19,8 @@ export { CustomModalProvider, useCustomModal } from './CustomModalContext';
 export type { ButtonOption, ConfirmOptions, PromptOptions } from './CustomModalContext';
 export { SnapshotProvider, useSnapshots } from './SnapshotContext';
 export type { SnapshotInfo, SnapshotSettings } from './SnapshotContext';
+export { ExportProvider, useExport, DEFAULT_EXPORT_SETTINGS, DEFAULT_ELEMENT_FORMATS } from './ExportContext';
+export type { ExportFormat, PaperSize, ElementFormat, ElementFormats, ExportSettings, ExportContextProps } from './ExportContext';
+export { SearchProvider, useSearch } from './SearchContext';
+export type { SearchMatch, SearchOptions, SearchContextProps } from './SearchContext';
+

@@ -182,6 +182,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
         if (key === "todos" || key === "parking") fallback = [];
         else if (key === "notepad") fallback = "";
         else if (key === "genders") fallback = {};
+        else if (key === "productionTags") fallback = { tags: [], definitions: [] };
         result[s.fileName] = (val as Record<string, unknown>)[s.fileName] ?? fallback;
       } else {
         result[s.fileName] = val;
@@ -190,21 +191,21 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     return result;
   };
 
-    const manifest = scripts.map((s) => ({ name: s.name, file: s.fileName, type: s.type || "fountain" }));
+  const manifest = scripts.map((s) => ({ name: s.name, file: s.fileName, type: s.type || "fountain" }));
 
-    const entries: Record<string, Uint8Array> = {
-      "project.json": strToU8(JSON.stringify(manifest, null, 2)),
-      "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
-      "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
-      "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
-      "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
-    };
+  const entries: Record<string, Uint8Array> = {
+    "project.json": strToU8(JSON.stringify(manifest, null, 2)),
+    "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
+    "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
+    "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
+  };
 
   if (scripts.length > 1) {
     entries["characters.json"] = strToU8(JSON.stringify(resolvePerScript("genders", scripts), null, 2));
     entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));
     entries["parking.json"] = strToU8(JSON.stringify(resolvePerScript("parking", scripts), null, 2));
     entries["notepad.json"] = strToU8(JSON.stringify(resolvePerScript("notepad", scripts), null, 2));
+    entries["production_tags.json"] = strToU8(JSON.stringify(resolvePerScript("productionTags", scripts) || { tags: [], definitions: [] }, null, 2));
   } else {
     const genderVal = genders && typeof genders === 'object' && !Array.isArray(genders) && !Object.keys(genders).some(k => scripts.some(s => s.fileName === k))
       ? { genders }
@@ -213,6 +214,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     entries["todos.json"] = strToU8(JSON.stringify(todos || [], null, 2));
     entries["parking.json"] = strToU8(JSON.stringify(parking || [], null, 2));
     entries["notepad.json"] = strToU8(JSON.stringify(notepad || "", null, 2));
+    entries["production_tags.json"] = strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2));
   }
 
   for (const script of scripts) {
@@ -247,6 +249,7 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
           if (key === "todos" || key === "parking") fallback = [];
           else if (key === "notepad") fallback = "";
           else if (key === "genders") fallback = {};
+          else if (key === "productionTags") fallback = { tags: [], definitions: [] };
           result[s.fileName] = (val as Record<string, unknown>)[s.fileName] ?? fallback;
         } else {
           result[s.fileName] = val;
@@ -255,14 +258,12 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       return result;
     };
 
-
     const manifest = scripts.map((s) => ({ name: s.name, file: s.fileName, type: s.type || "fountain" }));
 
     const entries: Record<string, Uint8Array> = {
       "project.json": strToU8(JSON.stringify(manifest, null, 2)),
       "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
       "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
-      "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
       "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
     };
 
@@ -271,6 +272,7 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));
       entries["parking.json"] = strToU8(JSON.stringify(resolvePerScript("parking", scripts), null, 2));
       entries["notepad.json"] = strToU8(JSON.stringify(resolvePerScript("notepad", scripts), null, 2));
+      entries["production_tags.json"] = strToU8(JSON.stringify(resolvePerScript("productionTags", scripts) || { tags: [], definitions: [] }, null, 2));
     } else {
       const genderVal = genders && typeof genders === 'object' && !Array.isArray(genders) && !Object.keys(genders).some(k => scripts.some(s => s.fileName === k))
         ? { genders }
@@ -279,6 +281,7 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       entries["todos.json"] = strToU8(JSON.stringify(todos || [], null, 2));
       entries["parking.json"] = strToU8(JSON.stringify(parking || [], null, 2));
       entries["notepad.json"] = strToU8(JSON.stringify(notepad || "", null, 2));
+      entries["production_tags.json"] = strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2));
     }
 
     for (const script of scripts) {

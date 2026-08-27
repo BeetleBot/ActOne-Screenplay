@@ -479,6 +479,7 @@ export const ScriptsView = React.memo(() => {
         anchorEl={menuState?.anchorEl}
         open={!!menuState}
         onClose={() => setMenuState(null)}
+        disableRestoreFocus
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
         slotProps={{ paper: { sx: { minWidth: 130 } } }}

@@ -255,6 +255,8 @@ export const MUSE_TOOLS: AIToolDeclaration[] = [
   },
 ];
 
+export const AI_TOOLS = MUSE_TOOLS;
+
 export interface ToolExecutionContext {
   doc: FountainDocument | null;
   activeLineNumber?: number;

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { packActoneBundle, packActoneBundleAsync, unpackActoneBundle } from "./actone";
 import type { ScriptInfo } from "./actone";
+import { migrateSettingsKey } from "./perScriptSettings";
 import { zipSync, strToU8, unzipSync, strFromU8 } from "fflate";
 
 const makeScripts = (arr: { name: string; content: string; type?: "fountain" | "markdown" }[]): ScriptInfo[] =>
@@ -75,13 +76,55 @@ describe("actone bundle - Core Packing & Unpacking", () => {
       { name: "S1", content: "Scene 1 content" },
       { name: "S2", content: "Scene 2 content" },
     ]);
-    const settings = { custom: 123 };
+    const settings = {
+      custom: 123,
+      productionTags: {
+        "files/S1.fountain": { tags: [{ id: "tag1", name: "Prop" }], definitions: [] },
+        "files/S2.fountain": { tags: [{ id: "tag2", name: "Costume" }], definitions: [] },
+      },
+    };
     const syncPacked = packActoneBundle(scripts, settings);
     const asyncPacked = await packActoneBundleAsync(scripts, settings);
     
     const unpackedSync = unpackActoneBundle(syncPacked);
     const unpackedAsync = unpackActoneBundle(asyncPacked);
     expect(unpackedAsync).toEqual(unpackedSync);
+  });
+
+  it("filters orphaned productionTags for deleted scripts when packing multi-script bundle", () => {
+    const scripts = makeScripts([
+      { name: "S1", content: "Scene 1" },
+      { name: "S2", content: "Scene 2" },
+    ]);
+    const settings = {
+      productionTags: {
+        "files/S1.fountain": { tags: [{ id: "t1", name: "Car" }], definitions: [] },
+        "files/DeletedScript.fountain": { tags: [{ id: "t_orphan", name: "Orphan" }], definitions: [] },
+      },
+    };
+
+    const packed = packActoneBundle(scripts, settings);
+    const unzipped = unzipSync(packed.slice(4));
+    const prodTags = JSON.parse(strFromU8(unzipped["production_tags.json"]));
+
+    expect(prodTags["files/S1.fountain"]).toEqual({ tags: [{ id: "t1", name: "Car" }], definitions: [] });
+    expect(prodTags["files/S2.fountain"]).toEqual({ tags: [], definitions: [] });
+    expect(prodTags["files/DeletedScript.fountain"]).toBeUndefined();
+  });
+
+  it("preserves productionTags structure directly when scripts.length <= 1", () => {
+    const scripts = makeScripts([
+      { name: "SingleScript", content: "Single scene" },
+    ]);
+    const settings = {
+      productionTags: { tags: [{ id: "t1", name: "Solo" }], definitions: [] },
+    };
+
+    const packed = packActoneBundle(scripts, settings);
+    const unzipped = unzipSync(packed.slice(4));
+    const prodTags = JSON.parse(strFromU8(unzipped["production_tags.json"]));
+
+    expect(prodTags).toEqual({ tags: [{ id: "t1", name: "Solo" }], definitions: [] });
   });
 });
 
@@ -296,3 +339,163 @@ describe("actone bundle - Robust Unicode & Special Formatting", () => {
     expect(unpacked.scripts[2].content).toBe(mdProse);
   });
 });
+
+describe("actone bundle - Per-Script Settings Isolation & Script Renaming", () => {
+  it("packs a multi-script bundle with productionTags and isolates/cleans orphaned script keys via resolvePerScript", async () => {
+    const scripts: ScriptInfo[] = [
+      { name: "Script A", fileName: "files/Script A.fountain", type: "fountain", content: "SCENE A", savedContent: "SCENE A" },
+      { name: "Script B", fileName: "files/Script B.fountain", type: "fountain", content: "SCENE B", savedContent: "SCENE B" },
+    ];
+
+    const settings = {
+      notepad: {
+        "files/Script A.fountain": "Notes for A",
+        "files/Script B.fountain": "Notes for B",
+        "files/Orphaned.fountain": "Orphaned Notes",
+      },
+      todos: {
+        "files/Script A.fountain": [{ id: "tA", text: "Todo A" }],
+        "files/Script B.fountain": [{ id: "tB", text: "Todo B" }],
+        "files/Orphaned.fountain": [{ id: "tO", text: "Todo Orphan" }],
+      },
+      parking: {
+        "files/Script A.fountain": [{ id: "pA", text: "Parked A" }],
+        "files/Script B.fountain": [{ id: "pB", text: "Parked B" }],
+        "files/Orphaned.fountain": [{ id: "pO", text: "Parked Orphan" }],
+      },
+      genders: {
+        "files/Script A.fountain": { HERO: "female" },
+        "files/Script B.fountain": { VILLAIN: "male" },
+        "files/Orphaned.fountain": { GHOST: "other" },
+      },
+      productionTags: {
+        "files/Script A.fountain": { tags: [{ id: "tagA", name: "Prop A" }], definitions: [] },
+        "files/Script B.fountain": { tags: [{ id: "tagB", name: "Prop B" }], definitions: [] },
+      },
+    };
+
+    const packedSync = packActoneBundle(scripts, settings);
+    const packedAsync = await packActoneBundleAsync(scripts, settings);
+
+    for (const packed of [packedSync, packedAsync]) {
+      const rawEntries = unzipSync(packed.slice(4));
+
+      // Check raw JSON files inside the ZIP archive to ensure resolvePerScript pruned orphaned keys
+      const rawCharacters = JSON.parse(strFromU8(rawEntries["characters.json"]));
+      expect(rawCharacters["files/Script A.fountain"]).toEqual({ HERO: "female" });
+      expect(rawCharacters["files/Script B.fountain"]).toEqual({ VILLAIN: "male" });
+      expect(rawCharacters["files/Orphaned.fountain"]).toBeUndefined();
+
+      const rawTodos = JSON.parse(strFromU8(rawEntries["todos.json"]));
+      expect(rawTodos["files/Script A.fountain"]).toEqual([{ id: "tA", text: "Todo A" }]);
+      expect(rawTodos["files/Script B.fountain"]).toEqual([{ id: "tB", text: "Todo B" }]);
+      expect(rawTodos["files/Orphaned.fountain"]).toBeUndefined();
+
+      const rawParking = JSON.parse(strFromU8(rawEntries["parking.json"]));
+      expect(rawParking["files/Script A.fountain"]).toEqual([{ id: "pA", text: "Parked A" }]);
+      expect(rawParking["files/Script B.fountain"]).toEqual([{ id: "pB", text: "Parked B" }]);
+      expect(rawParking["files/Orphaned.fountain"]).toBeUndefined();
+
+      const rawNotepad = JSON.parse(strFromU8(rawEntries["notepad.json"]));
+      expect(rawNotepad["files/Script A.fountain"]).toBe("Notes for A");
+      expect(rawNotepad["files/Script B.fountain"]).toBe("Notes for B");
+      expect(rawNotepad["files/Orphaned.fountain"]).toBeUndefined();
+
+      const rawProductionTags = JSON.parse(strFromU8(rawEntries["production_tags.json"]));
+      expect(rawProductionTags["files/Script A.fountain"]).toEqual({ tags: [{ id: "tagA", name: "Prop A" }], definitions: [] });
+      expect(rawProductionTags["files/Script B.fountain"]).toEqual({ tags: [{ id: "tagB", name: "Prop B" }], definitions: [] });
+
+      // Check unpacked bundle
+      const unpacked = unpackActoneBundle(packed);
+      expect(unpacked.scripts).toHaveLength(2);
+      expect(unpacked.settings.notepad["files/Orphaned.fountain"]).toBeUndefined();
+      expect(unpacked.settings.todos["files/Orphaned.fountain"]).toBeUndefined();
+      expect(unpacked.settings.parking["files/Orphaned.fountain"]).toBeUndefined();
+      expect(unpacked.settings.genders["files/Orphaned.fountain"]).toBeUndefined();
+      expect(unpacked.settings.productionTags["files/Script A.fountain"]).toEqual({ tags: [{ id: "tagA", name: "Prop A" }], definitions: [] });
+      expect(unpacked.settings.productionTags["files/Script B.fountain"]).toEqual({ tags: [{ id: "tagB", name: "Prop B" }], definitions: [] });
+    }
+  });
+
+  it("renaming a script, saving, and unpacking preserves todos, parking, notepad, character genders, and production tags under the new filename", () => {
+    const originalScripts: ScriptInfo[] = [
+      { name: "Episode 1", fileName: "files/Episode 1.fountain", type: "fountain", content: "INT. LAB - DAY", savedContent: "INT. LAB - DAY" },
+      { name: "Episode 2", fileName: "files/Episode 2.fountain", type: "fountain", content: "EXT. FOREST - NIGHT", savedContent: "EXT. FOREST - NIGHT" },
+    ];
+
+    const initialSettings = {
+      notepad: {
+        "files/Episode 1.fountain": "Episode 1 notes",
+        "files/Episode 2.fountain": "Episode 2 notes",
+      },
+      todos: {
+        "files/Episode 1.fountain": [{ id: "t1", text: "Fix Act 1 dialogue", done: false }],
+        "files/Episode 2.fountain": [{ id: "t2", text: "Review cliffhanger", done: true }],
+      },
+      parking: {
+        "files/Episode 1.fountain": [{ id: "p1", text: "Alt punchline: What a night!" }],
+        "files/Episode 2.fountain": [{ id: "p2", text: "Intro scene ideas" }],
+      },
+      genders: {
+        "files/Episode 1.fountain": { JOHN: "male", MARY: "female" },
+        "files/Episode 2.fountain": { DETECTIVE: "non-binary" },
+      },
+      productionTags: {
+        "files/Episode 1.fountain": { tags: [{ id: "tag-car", name: "Vintage Car", category: "vehicles" }], definitions: [] },
+        "files/Episode 2.fountain": { tags: [{ id: "tag-gun", name: "Prop Revolver", category: "props" }], definitions: [] },
+      },
+    };
+
+    // Simulate renaming "Episode 1" -> "Pilot Episode"
+    const oldFileName = "files/Episode 1.fountain";
+    const newFileName = "files/Pilot Episode.fountain";
+
+    const renamedScripts: ScriptInfo[] = [
+      { name: "Pilot Episode", fileName: newFileName, type: "fountain", content: originalScripts[0].content, savedContent: originalScripts[0].savedContent },
+      originalScripts[1],
+    ];
+
+    const migratedSettings = migrateSettingsKey(initialSettings, oldFileName, newFileName);
+
+    // Save (pack) the bundle
+    const packed = packActoneBundle(renamedScripts, migratedSettings);
+
+    // Load (unpack) the bundle
+    const unpacked = unpackActoneBundle(packed);
+
+    // Scripts verification
+    expect(unpacked.scripts).toHaveLength(2);
+    expect(unpacked.scripts[0].name).toBe("Pilot Episode");
+    expect(unpacked.scripts[0].fileName).toBe("files/Pilot Episode.fountain");
+    expect(unpacked.scripts[0].content).toBe("INT. LAB - DAY");
+    expect(unpacked.scripts[1].name).toBe("Episode 2");
+    expect(unpacked.scripts[1].fileName).toBe("files/Episode 2.fountain");
+
+    // Settings verification under new filename
+    const notepad = unpacked.settings.notepad as Record<string, string>;
+    expect(notepad["files/Pilot Episode.fountain"]).toBe("Episode 1 notes");
+    expect(notepad["files/Episode 1.fountain"]).toBeUndefined();
+    expect(notepad["files/Episode 2.fountain"]).toBe("Episode 2 notes");
+
+    const todos = unpacked.settings.todos as Record<string, unknown[]>;
+    expect(todos["files/Pilot Episode.fountain"]).toEqual([{ id: "t1", text: "Fix Act 1 dialogue", done: false }]);
+    expect(todos["files/Episode 1.fountain"]).toBeUndefined();
+    expect(todos["files/Episode 2.fountain"]).toEqual([{ id: "t2", text: "Review cliffhanger", done: true }]);
+
+    const parking = unpacked.settings.parking as Record<string, unknown[]>;
+    expect(parking["files/Pilot Episode.fountain"]).toEqual([{ id: "p1", text: "Alt punchline: What a night!" }]);
+    expect(parking["files/Episode 1.fountain"]).toBeUndefined();
+    expect(parking["files/Episode 2.fountain"]).toEqual([{ id: "p2", text: "Intro scene ideas" }]);
+
+    const genders = unpacked.settings.genders as Record<string, Record<string, string>>;
+    expect(genders["files/Pilot Episode.fountain"]).toEqual({ JOHN: "male", MARY: "female" });
+    expect(genders["files/Episode 1.fountain"]).toBeUndefined();
+    expect(genders["files/Episode 2.fountain"]).toEqual({ DETECTIVE: "non-binary" });
+
+    const productionTags = unpacked.settings.productionTags as Record<string, unknown>;
+    expect(productionTags["files/Pilot Episode.fountain"]).toEqual({ tags: [{ id: "tag-car", name: "Vintage Car", category: "vehicles" }], definitions: [] });
+    expect(productionTags["files/Episode 1.fountain"]).toBeUndefined();
+    expect(productionTags["files/Episode 2.fountain"]).toEqual({ tags: [{ id: "tag-gun", name: "Prop Revolver", category: "props" }], definitions: [] });
+  });
+});
+

@@ -97,3 +97,43 @@ export function getPerScriptSettingNumber(
   if (typeof val === "number" && !isNaN(val)) return val;
   return fallback;
 }
+
+export function migrateSettingsKey(
+  settings: Record<string, any> | undefined,
+  oldFileName: string,
+  newFileName: string
+): Record<string, any> {
+  if (!settings || typeof settings !== "object") return settings || {};
+  if (oldFileName === newFileName || !oldFileName || !newFileName) return settings;
+  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles", "productionTags"];
+  const migrated = { ...settings };
+
+  for (const key of KEYED_PROPS) {
+    const val = migrated[key];
+    if (val && typeof val === "object" && !Array.isArray(val) && oldFileName in val) {
+      const { [oldFileName]: data, ...rest } = val;
+      migrated[key] = { ...rest, [newFileName]: data };
+    }
+  }
+  return migrated;
+}
+
+export function removeSettingsKey(
+  settings: Record<string, any> | undefined,
+  fileName: string
+): Record<string, any> {
+  if (!settings || typeof settings !== "object") return settings || {};
+  if (!fileName) return settings;
+  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles", "productionTags"];
+  const cleaned = { ...settings };
+
+  for (const key of KEYED_PROPS) {
+    const val = cleaned[key];
+    if (val && typeof val === "object" && !Array.isArray(val) && fileName in val) {
+      const rest = { ...val };
+      delete rest[fileName];
+      cleaned[key] = rest;
+    }
+  }
+  return cleaned;
+}
