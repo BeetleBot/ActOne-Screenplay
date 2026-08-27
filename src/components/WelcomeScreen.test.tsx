@@ -116,10 +116,10 @@ describe("WelcomeScreenWindow", () => {
     expect(screen.getByText("Start")).toBeInTheDocument();
   });
 
-  it("renders Discord, Theme, and Help buttons", () => {
+  it("renders Discord and Help buttons", () => {
     render(<WelcomeScreenWindow />);
     expect(screen.getByText("Discord")).toBeInTheDocument();
-    expect(screen.getByText("Theme")).toBeInTheDocument();
+    expect(screen.queryByText("Theme")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Help")).toBeInTheDocument();
   });
 

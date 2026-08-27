@@ -96,11 +96,19 @@ export const ScriptsView = React.memo(() => {
     await importScript(type);
   };
 
-  const handleRenameOpen = () => {
+  const handleRenameOpen = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!menuState) return;
-    setEditingIndex(menuState.index);
-    setEditingValue(scripts[menuState.index]?.name || "");
+    const targetIdx = menuState.index;
+    const currentName = scripts[targetIdx]?.name || "";
     setMenuState(null);
+    setTimeout(() => {
+      setEditingIndex(targetIdx);
+      setEditingValue(currentName);
+    }, 50);
   };
 
   const handleRenameSave = async (index: number) => {
@@ -338,6 +346,11 @@ export const ScriptsView = React.memo(() => {
                       setEditingIndex(originalIndex);
                       setEditingValue(script.name);
                     }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuState({ anchorEl: e.currentTarget, index: originalIndex });
+                    }}
                     data-script-index={originalIndex}
                     sx={{
                       borderRadius: "8px",
@@ -386,18 +399,24 @@ export const ScriptsView = React.memo(() => {
                         autoFocus
                         size="small"
                         value={editingValue}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => setEditingValue(e.target.value)}
                         onBlur={() => handleRenameSave(originalIndex)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.stopPropagation();
                             handleRenameSave(originalIndex);
                           } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setEditingIndex(null);
                             setEditingValue("");
                           }
                         }}
                         onClick={(e) => e.stopPropagation()}
                         onDoubleClick={(e) => e.stopPropagation()}
+                        onContextMenu={(e) => e.stopPropagation()}
                         slotProps={{
                           input: {
                             sx: { fontSize: "0.85rem", py: 0.3, height: 26 },

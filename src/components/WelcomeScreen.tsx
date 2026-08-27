@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { useFile, useTheme as useAppTheme } from "../context";
+import React, { useEffect } from "react";
+import { useFile } from "../context";
 import type { RecentFile } from "../context/FileContext";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useModalWindows, useStoreUpdateCheck } from "../hooks";
-import { Box, Typography, useTheme, alpha, Menu, MenuItem, IconButton, Tooltip } from "@mui/material";
+import { Box, Typography, useTheme, alpha, IconButton, Tooltip } from "@mui/material";
 import { logger } from "../utils/logger";
 import { parseScriptFileToFountain } from "../utils/text";
 import { ThemeLogo } from "./ThemeLogo";
@@ -15,9 +15,7 @@ import {
   DiscordIcon,
   MenuBookIcon,
   DescriptionIcon,
-  ColorLensIcon,
 } from "./Icons";
-import { themes as themeList, ADAPTIVE_THEME_META, THEME_CATEGORIES } from "../theme/muiTheme";
 
 interface WelcomeScreenWindowProps {
   standalone?: boolean;
@@ -61,8 +59,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
   const appVersion = __APP_VERSION__;
   const appChannel = __APP_CHANNEL__;
 
-  const [themeAnchor, setThemeAnchor] = useState<null | HTMLElement>(null);
-  const { theme: currentThemeId, setTheme: setAppTheme, customThemes } = useAppTheme();
   const theme = useTheme();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
 
@@ -368,19 +364,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
     openHelpWindow();
   };
 
-  const handleOpenThemeMenu = (e: React.MouseEvent<HTMLElement>) => {
-    setThemeAnchor(e.currentTarget);
-  };
-
-  const handleCloseThemeMenu = () => {
-    setThemeAnchor(null);
-  };
-
-  const handleSelectTheme = (themeId: string) => {
-    setAppTheme(themeId);
-    handleCloseThemeMenu();
-  };
-
   return (
     <Box
       onMouseDown={handleStartDrag}
@@ -473,163 +456,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           </svg>
         </IconButton>
       </Box>
-
-      <Menu
-        anchorEl={themeAnchor}
-        open={Boolean(themeAnchor)}
-        onClose={handleCloseThemeMenu}
-        slotProps={{
-          paper: {
-            sx: {
-              border: `1px solid ${theme.palette.divider}`,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
-              borderRadius: "8px",
-              minWidth: 220,
-              maxHeight: 420,
-              mt: -0.5,
-              bgcolor: theme.palette.background.paper,
-            },
-          },
-        }}
-      >
-        {THEME_CATEGORIES.map((cat, catIdx) => {
-          const catThemes = themeList.filter((t) => t.category === cat.category);
-          const adaptiveMeta = cat.adaptiveId ? ADAPTIVE_THEME_META[cat.adaptiveId] : null;
-          return (
-            <Box key={cat.category}>
-              {catIdx === 0 && (
-                <Box sx={{ pt: 0.75, pb: 0.25, px: 2 }}>
-                  <Typography sx={{ fontSize: 10, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
-                    {cat.label}
-                  </Typography>
-                </Box>
-              )}
-              {catIdx > 0 && (
-                <Box sx={{ pt: 0.75, pb: 0.25, px: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-                  <Typography sx={{ fontSize: 10, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
-                    {cat.label}
-                  </Typography>
-                </Box>
-              )}
-              {adaptiveMeta && (
-                <MenuItem
-                  key={cat.adaptiveId}
-                  selected={currentThemeId === cat.adaptiveId}
-                  onClick={() => handleSelectTheme(cat.adaptiveId!)}
-                  sx={{ py: 0.6, px: 1.5, mx: 0.5, borderRadius: "5px" }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
-                    <Box
-                      sx={{
-                        width: 18,
-                        height: 18,
-                        flexShrink: 0,
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        overflow: "hidden",
-                        borderRadius: "3px",
-                        border: `1.5px solid ${currentThemeId === cat.adaptiveId ? theme.palette.primary.main : theme.palette.divider}`,
-                      }}
-                    >
-                      <Box sx={{ bgcolor: adaptiveMeta.swatchColors[0] }} />
-                      <Box sx={{ bgcolor: adaptiveMeta.swatchColors[1] }} />
-                      <Box sx={{ bgcolor: adaptiveMeta.swatchColors[2] }} />
-                      <Box sx={{ bgcolor: adaptiveMeta.swatchColors[3] }} />
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontSize: 12, fontWeight: currentThemeId === cat.adaptiveId ? 600 : 500 }}>
-                        {adaptiveMeta.label}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </MenuItem>
-              )}
-              {catThemes.map((t) => {
-                const isActive = currentThemeId === t.id;
-                return (
-                  <MenuItem
-                    key={t.id}
-                    selected={isActive}
-                    onClick={() => handleSelectTheme(t.id)}
-                    sx={{ py: 0.6, px: 1.5, mx: 0.5, borderRadius: "5px" }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
-                      <Box
-                        sx={{
-                          width: 18,
-                          height: 18,
-                          flexShrink: 0,
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          overflow: "hidden",
-                          borderRadius: "3px",
-                          border: `1.5px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
-                        }}
-                      >
-                        <Box sx={{ bgcolor: t.colors.editor }} />
-                        <Box sx={{ bgcolor: t.colors.sidebar }} />
-                        <Box sx={{ bgcolor: t.colors.accent }} />
-                        <Box sx={{ bgcolor: t.colors.dropdown }} />
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: 12, fontWeight: isActive ? 600 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {t.name}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </MenuItem>
-                );
-              })}
-            </Box>
-          );
-        })}
-
-        {customThemes.length > 0 && (
-          <Box>
-            <Box sx={{ pt: 0.75, pb: 0.25, px: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-              <Typography sx={{ fontSize: 10, fontWeight: 700, color: theme.palette.text.disabled, letterSpacing: "0.08em" }}>
-                CUSTOM
-              </Typography>
-            </Box>
-            {customThemes.map((t) => {
-              const isActive = currentThemeId === t.id;
-              return (
-                <MenuItem
-                  key={t.id}
-                  selected={isActive}
-                  onClick={() => handleSelectTheme(t.id)}
-                  sx={{ py: 0.6, px: 1.5, mx: 0.5, borderRadius: "5px" }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, width: "100%" }}>
-                    <Box
-                      sx={{
-                        width: 18,
-                        height: 18,
-                        flexShrink: 0,
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        overflow: "hidden",
-                        borderRadius: "3px",
-                        border: `1.5px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
-                      }}
-                    >
-                      <Box sx={{ bgcolor: t.colors.editor }} />
-                      <Box sx={{ bgcolor: t.colors.sidebar }} />
-                      <Box sx={{ bgcolor: t.colors.accent }} />
-                      <Box sx={{ bgcolor: t.colors.dropdown }} />
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontSize: 12, fontWeight: isActive ? 600 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {t.name}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </MenuItem>
-              );
-            })}
-          </Box>
-        )}
-      </Menu>
 
       {/* Main Body - Floating Islands Layout */}
       <Box
@@ -1151,29 +977,6 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
           >
             <DiscordIcon sx={{ fontSize: 13 }} />
             <Typography sx={{ fontSize: 11, fontWeight: 500 }}>Discord</Typography>
-          </Box>
-
-          <Box
-            className="clickable"
-            onClick={handleOpenThemeMenu}
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.6,
-              px: 1,
-              py: 0.35,
-              borderRadius: "5px",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-              color: "text.secondary",
-              "&:hover": {
-                color: "text.primary",
-                bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
-              },
-            }}
-          >
-            <ColorLensIcon sx={{ fontSize: 13 }} />
-            <Typography sx={{ fontSize: 11, fontWeight: 500 }}>Theme</Typography>
           </Box>
 
           <Tooltip title="Help & Documentation">

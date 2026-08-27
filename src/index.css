@@ -158,8 +158,9 @@ textarea,
   outline: none;
 }
 
-html {
-  scroll-behavior: smooth;
+html, body {
+  scroll-behavior: auto;
+  overscroll-behavior: none;
 }
 
 body {
@@ -200,7 +201,8 @@ body {
   overflow-x: hidden;
   width: 100%;
   height: 100%;
-  overscroll-behavior: contain;
+  scroll-behavior: auto !important;
+  overscroll-behavior: none;
 }
 
 .editor-scroll-area.typewriter-active .editor-paper {

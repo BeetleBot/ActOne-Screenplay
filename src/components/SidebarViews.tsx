@@ -263,7 +263,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
                     },
                   }}
                 >
-                  <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, pr: 4, overflowY: "auto", overscrollBehavior: "contain", flex: 1 }}>
+                  <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 }, pr: 4, overflowY: "auto", overscrollBehavior: "none", flex: 1 }}>
                     <IconButton
                       size="small"
                       onClick={(e) => {

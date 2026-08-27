@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import React from "react";
 import type { ScriptInfo } from "../utils/actone";
 
@@ -197,6 +197,7 @@ describe("ScriptsView Component", () => {
 
     it("handles rename from context menu with disableRestoreFocus", async () => {
       render(<ScriptsView />);
+
       const scriptItem = screen.getByText("Screenplay Main").closest("[data-script-index]")!;
       const moreBtn = scriptItem.querySelector("button")!;
 
@@ -209,7 +210,7 @@ describe("ScriptsView Component", () => {
         fireEvent.click(renameMenuItem);
       });
 
-      const input = screen.getByDisplayValue("Screenplay Main") as HTMLInputElement;
+      const input = (await waitFor(() => screen.getByDisplayValue("Screenplay Main"))) as HTMLInputElement;
       expect(input).toBeTruthy();
 
       act(() => {
