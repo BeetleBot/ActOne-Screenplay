@@ -420,32 +420,18 @@ export const ScriptEditor = React.memo(() => {
       const langInfo = `"${lang}" (language code: ${ld.code}, native name: ${ld.native})`;
 
       const systemPrompt = [
-        promptConfig.translatePrompt || "You are a professional translation tool. Translate the user's text to the specified language.",
+        `You are a strict text translation tool. Translate the given text into ${langInfo}.`,
+        `The output MUST be written in ${ld.native} script (${ld.code}).`,
+        ld.example ? `Example of this language: "${ld.example}"` : "",
+        `NEVER output text in Tamil, Hindi, or any other Indian language unless ${ld.code} explicitly requires it.`,
         "",
-        "STRICT NON-TRANSLATION RULES (DO NOT TRANSLATE THESE):",
-        "1. DO NOT translate Title Page lines (e.g. Title:, Author:, Authors:, Credit:, Source:, Contact:, Draft date:, Copyright:). Keep the entire Title Page exactly as it appears in the original.",
-        "2. DO NOT translate Scene Headings (e.g. INT. COFFEE SHOP - DAY, EXT. PARK - NIGHT, or lines starting with INT., EXT., EST., I/E., or forced with '.'). Keep scene headings in original English/text.",
-        "3. DO NOT translate Transitions (e.g. CUT TO:, FADE IN:, DISSOLVE TO:, SMASH CUT TO:, or lines starting with '>'). Keep transitions in original English.",
-        "4. DO NOT translate Character Names (character lines in ALL CAPS above dialogue). Keep character names in original ALL CAPS as written.",
-        "",
-        "WHAT TO TRANSLATE:",
-        `5. Translate ONLY Action descriptions, Dialogue text, Parentheticals, and Synopsis text into ${langInfo}.`,
-        `   The output MUST be written in ${ld.native} script (${ld.code}).`,
-        ld.example ? `   Example of this language: "${ld.example}"` : "",
-        `   NEVER output text in Tamil, Hindi, or any other Indian language unless ${ld.code} explicitly requires it.`,
-        "",
-        "FORMATTING INSTRUCTIONS:",
-        "6. Do not add explanations, intro text, quotes, or conversational filler.",
-        "7. Preserve the EXACT same number of lines as the input. Do not merge, split, or skip any lines.",
-        "8. Do NOT introduce new line breaks, extra blank lines, or structural divisions that were not present in the original text.",
-        "9. Do NOT add or remove punctuation other than what naturally occurs in the target language.",
+        "CRITICAL RULES:",
+        `1. Translate each input line into ${langInfo}.`,
+        "2. Do NOT add preamble, conversational notes, safety disclaimers, or markdown fences.",
         isSingleLine
-          ? "10. Respond with the translated text on a SINGLE line. Do NOT add newlines, line breaks, or carriage returns."
-          : "10. Respond with the translated text preserving the exact line-by-line structure of the input.",
-        "",
-        "Follow these strict Fountain syntax rules:",
-        FOUNTAIN_SYNTAX_RULES
-      ].join("\n");
+          ? "3. Output ONLY the translated text on a SINGLE line without surrounding quotes."
+          : "3. Output ONLY the translated text preserving the exact line-by-line structure without surrounding quotes."
+      ].filter(Boolean).join("\n");
 
       const provider = createAIProvider(promptConfig);
       if (!provider) throw new Error("No AI provider configured");

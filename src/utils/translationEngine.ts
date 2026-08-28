@@ -125,41 +125,37 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       }
     });
 
-    const BATCH_SIZE = 20;
+    // Token-efficient batch size: 80 lines per batch reduces prompt overhead by ~75%
+    const BATCH_SIZE = 80;
     const totalBatches = Math.ceil(translatableIndices.length / BATCH_SIZE) || 1;
 
     const ld = getLanguageDetails(lang);
-    const langInfo = `"${lang}" (language code: ${ld.code}, native name: ${ld.native})`;
+    const langInfo = `"${lang}" (code: ${ld.code}, native: ${ld.native})`;
 
-    // Extract characters for Glossary
-    const characters = new Set<string>();
+    // Collect all character names from AST
+    const allCharacters = new Set<string>();
     if (parsedDoc?.lines) {
       parsedDoc.lines.forEach((line) => {
         if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
           const charName = line.text.replace(/\([^)]*\)/g, "").replace(/\^/g, "").trim();
-          if (charName) characters.add(charName);
+          if (charName) allCharacters.add(charName);
         }
       });
     }
-    const glossaryText = characters.size > 0 
-      ? `DO NOT TRANSLATE THESE CHARACTER NAMES & PROPER NOUNS (keep their exact original spelling):\n[${Array.from(characters).join(", ")}]` 
-      : "";
 
-    const systemPrompt = [
+    const baseSystemPrompt = [
       `You are a strict text translation tool. Translate the given numbered lines into ${langInfo}.`,
       `The output MUST be written in ${ld.native} script (${ld.code}).`,
-      ld.example ? `Example of this language: "${ld.example}"` : "",
+      ld.example ? `Example: "${ld.example}"` : "",
       `NEVER output text in Tamil, Hindi, or any other Indian language unless ${ld.code} explicitly requires it.`,
       "",
       "CRITICAL RULES:",
-      `1. Translate each numbered line into ${langInfo}.`,
-      "2. You MUST keep the exact line number tags [1], [2], [3], etc. at the beginning of each translated line.",
+      `1. Translate each line into ${langInfo}.`,
+      "2. Output format: N|<translated text> (e.g. 1|Translated text). Preserve the exact 'N|' prefix for each line.",
       "3. You MUST return EXACTLY the same number of lines as provided in the input.",
       "4. Do NOT continue the scene, do NOT add new dialogue, and do NOT add scene headings (like INT./EXT.).",
-      "5. Do NOT add preamble, conversational text, safety disclaimers, headers (like 'User Safety:', 'Note:'), or markdown code fences.",
-      "6. Output ONLY the numbered translated lines, one line per item in format: [1] <translated line>",
-      "",
-      glossaryText
+      "5. Do NOT add preamble, conversational text, safety disclaimers, or markdown code fences.",
+      "6. Output ONLY the lines in format: N|<translated text>"
     ].filter(Boolean).join("\n");
 
     const effectiveModel =
@@ -227,8 +223,29 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         return;
       }
 
-      const batchInputs = batchIndices.map((idx, i) => `[${i + 1}] ${analyzedLines[idx].cleanText}`);
+      // Compact line numbering: 1|Line text (uses ~50% fewer tokens than [1] Line text)
+      const batchInputs = batchIndices.map((idx, i) => `${i + 1}|${analyzedLines[idx].cleanText}`);
       const userPrompt = batchInputs.join("\n");
+
+      // Scope character glossary specifically to the characters relevant in this chunk
+      const batchStart = batchIndices[0];
+      const batchEnd = batchIndices[batchIndices.length - 1];
+      const relevantChars = new Set<string>();
+      for (let idx = Math.max(0, batchStart - 5); idx <= Math.min(analyzedLines.length - 1, batchEnd + 5); idx++) {
+        const text = analyzedLines[idx].original;
+        allCharacters.forEach((char) => {
+          if (text.includes(char)) {
+            relevantChars.add(char);
+          }
+        });
+      }
+
+      const glossarySuffix =
+        relevantChars.size > 0
+          ? `\nDO NOT TRANSLATE THESE CHARACTER NAMES (keep original spelling): [${Array.from(relevantChars).join(", ")}]`
+          : "";
+
+      const batchSystemPrompt = baseSystemPrompt + glossarySuffix;
 
       let translatedBatchText = "";
 
@@ -236,7 +253,7 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         await retryWithBackoff(async () => {
           translatedBatchText = "";
           await provider.chat([{ role: "user", content: userPrompt }], {
-            system: systemPrompt,
+            system: batchSystemPrompt,
             temperature: promptConfig.translateTemp !== undefined ? promptConfig.translateTemp : 0.1,
             signal: controller.signal,
             onChunk: (delta) => {
@@ -257,9 +274,10 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         .map((l) => l.trim())
         .filter((l) => !/^(\*|\-|\#)?\s*(user safety|safety|moderation|disclaimer):/i.test(l));
 
+      // Parse tags: supports N|text, [N] text, N. text, etc.
       const parsedMap = new Map<number, string>();
       for (const line of cleanedResLines) {
-        const match = line.match(/^\[?(\d+)\]?[\.\:\s\-]+([\s\S]*)$/);
+        const match = line.match(/^\[?(\d+)\]?[\|\.\:\s\-]+([\s\S]*)$/);
         if (match) {
           const num = parseInt(match[1], 10);
           const val = match[2].trim();
@@ -277,9 +295,10 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         if (parsedMap.has(num)) {
           translatedText = parsedMap.get(num) || "";
         } else if (cleanedResLines[i] !== undefined) {
-          translatedText = cleanedResLines[i].replace(/^\[?\d+\]?[\.\:\s\-]*/, "").trim();
+          translatedText = cleanedResLines[i].replace(/^\[?\d+\]?[\|\.\:\s\-]*/, "").trim();
         }
 
+        // Safety against hallucinated scene headers
         if (/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(translatedText) && !/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(item.cleanText)) {
           translatedText = item.cleanText;
         }
