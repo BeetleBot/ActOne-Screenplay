@@ -420,13 +420,17 @@ export const ScriptEditor = React.memo(() => {
       const langInfo = `"${lang}" (language code: ${ld.code}, native name: ${ld.native})`;
 
       const systemPrompt = [
-        `You are a strict text translation tool. Translate the given text into ${langInfo}.`,
+        `You are a professional screenplay translation tool. Translate the given text into ${langInfo}.`,
         `The output MUST be written in ${ld.native} script (${ld.code}).`,
         ld.example ? `Example of this language: "${ld.example}"` : "",
         `NEVER output text in Tamil, Hindi, or any other Indian language unless ${ld.code} explicitly requires it.`,
         "",
+        "TONE & STYLE GUIDELINES:",
+        "• Dialogue & Conversation: Use a natural, casual, spoken conversational tone (colloquial spoken language as spoken by real people in modern movies). Do NOT use stiff, formal, archaic, or textbook/literary phrasing.",
+        "• Action & Description: Keep action lines punchy, vivid, and cinematic.",
+        "",
         "CRITICAL RULES:",
-        `1. Translate each input line into ${langInfo}.`,
+        `1. Translate each input line into ${langInfo} using natural conversational phrasing.`,
         "2. Do NOT add preamble, conversational notes, safety disclaimers, or markdown fences.",
         isSingleLine
           ? "3. Output ONLY the translated text on a SINGLE line without surrounding quotes."
