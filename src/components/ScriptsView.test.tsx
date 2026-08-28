@@ -25,6 +25,7 @@ vi.mock("../context", () => ({
     get isBundle() {
       return mockIsBundle;
     },
+    activeFileId: "test-file-1",
     setActiveScript: mockSetActiveScript,
     addScript: mockAddScript,
     importScript: mockImportScript,
@@ -33,7 +34,12 @@ vi.mock("../context", () => ({
     deleteScript: mockDeleteScript,
     moveScript: mockMoveScript,
   }),
+  useUI: () => ({
+    translationJob: null,
+  }),
 }));
+
+vi.mock("../hooks", () => ({}));
 
 import { ScriptsView } from "./ScriptsView";
 
@@ -297,6 +303,30 @@ describe("ScriptsView Component", () => {
 
       expect(mockDeleteScript).toHaveBeenCalledWith(0);
     });
+
+    it("shows Translate Whole Script only for screenplay documents in context menu", () => {
+      render(<ScriptsView />);
+
+      // 1. Check Screenplay document context menu
+      const screenplayItem = screen.getByText("Screenplay Main").closest("[data-script-index]")!;
+      const screenplayMoreBtn = screenplayItem.querySelector("button")!;
+
+      act(() => {
+        fireEvent.click(screenplayMoreBtn);
+      });
+
+      expect(screen.getByText(/Translate Whole Script/i)).toBeTruthy();
+
+      // 2. Check Prose document context menu
+      const proseItem = screen.getByText("Notes & Worldbuilding").closest("[data-script-index]")!;
+      const proseMoreBtn = proseItem.querySelector("button")!;
+
+      act(() => {
+        fireEvent.click(proseMoreBtn);
+      });
+
+      expect(screen.queryByText(/Translate Whole Script/i)).toBeNull();
+    });
   });
 
   describe("Add and Import document menus", () => {
@@ -328,29 +358,48 @@ describe("ScriptsView Component", () => {
       expect(mockAddScript).toHaveBeenCalledWith(undefined, "markdown");
     });
 
-    it("handles Import File menu for Screenplay and Prose", async () => {
+    it("handles Import File menu for Fountain, FDX, Fade In, and Prose", async () => {
       render(<ScriptsView />);
       const importBtn = screen.getByTitle("Import File");
 
+      // Fountain
       act(() => {
         fireEvent.click(importBtn);
       });
-
-      const importScreenplayOption = screen.getByText("Import Screenplay");
+      const fountainOption = screen.getByText("Fountain (.fountain, .txt)");
       await act(async () => {
-        fireEvent.click(importScreenplayOption);
+        fireEvent.click(fountainOption);
       });
-
       expect(mockImportScript).toHaveBeenCalledWith("fountain");
 
+      // FDX
       act(() => {
         fireEvent.click(importBtn);
       });
-      const importProseOption = screen.getByText("Import Prose");
+      const fdxOption = screen.getByText("Final Draft (.fdx)");
       await act(async () => {
-        fireEvent.click(importProseOption);
+        fireEvent.click(fdxOption);
       });
+      expect(mockImportScript).toHaveBeenCalledWith("fdx");
 
+      // Fade In
+      act(() => {
+        fireEvent.click(importBtn);
+      });
+      const fadeinOption = screen.getByText("Fade In (.fadein)");
+      await act(async () => {
+        fireEvent.click(fadeinOption);
+      });
+      expect(mockImportScript).toHaveBeenCalledWith("fadein");
+
+      // Prose
+      act(() => {
+        fireEvent.click(importBtn);
+      });
+      const proseOption = screen.getByText("Prose (.md)");
+      await act(async () => {
+        fireEvent.click(proseOption);
+      });
       expect(mockImportScript).toHaveBeenCalledWith("markdown");
     });
   });

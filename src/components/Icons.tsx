@@ -12,7 +12,7 @@ import {
   Sidebar, MagnifyingGlassPlus, MagnifyingGlassMinus, Camera, CheckSquareOffset,
   Garage, Command, DotsThree, DotsSix, Books, Pencil, DiscordLogo, KeyReturn,
   SquaresFour, FolderStar, TreeStructure, Rows, ListMagnifyingGlass, GoogleLogo, FolderSimplePlus,
-  Minus, ChatDots, PaperPlaneRight
+  Minus, ChatDots, PaperPlaneRight, Pause
 } from '@phosphor-icons/react';
 import { STORAGE_KEYS } from "../constants";
 
@@ -93,6 +93,7 @@ export const RestartAltIcon = createPhosphorIcon(ArrowCounterClockwise);
 export const SaveIcon = createPhosphorIcon(FloppyDisk);
 export const SearchIcon = createPhosphorIcon(MagnifyingGlass);
 export const SettingsIcon = createPhosphorIcon(Gear);
+export const PauseIcon = createPhosphorIcon(Pause);
 export const StopIcon = createPhosphorIcon(Stop);
 export const TaskAltIcon = createPhosphorIcon(CheckCircle);
 export const TextFieldsIcon = createPhosphorIcon(TextT);

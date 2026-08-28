@@ -8,6 +8,7 @@ import { BugReportModal } from './BugReportModal';
 import { QuickGuideModal } from './QuickGuideModal';
 import { FixFormattingModal } from './FixFormattingModal';
 import { ErrorBoundary } from './ErrorBoundary';
+import { TranslationProgressModal } from './TranslationProgressModal';
 import type { FixFormattingReport } from '../utils/fixFormatting';
 
 export interface ModalManagerProps {
@@ -116,6 +117,9 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
             report={fixFormattingReport}
           />
         )}
+      </ErrorBoundary>
+      <ErrorBoundary name="translation-progress-modal">
+        <TranslationProgressModal />
       </ErrorBoundary>
     </>
   );

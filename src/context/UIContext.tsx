@@ -6,6 +6,27 @@ import { setPrefs } from "../theme/AppPrefsEngine";
 import { setThemeState } from "../theme/ThemeEngine";
 import { getTauriWindow } from "../utils/window";
 
+export interface TranslationJob {
+  fileId: string;
+  scriptIndex: number;
+  scriptName: string;
+  sourceScriptName: string;
+  lang: string;
+  langCode: string;
+  langNative: string;
+  totalBatches: number;
+  completedBatches: number;
+  activeBatches?: number[];
+  totalLines?: number;
+  translatedLines?: number;
+  startTime?: number;
+  endTime?: number;
+  model: string;
+  provider: string;
+  state: 'running' | 'paused' | 'cancelled' | 'completed' | 'error';
+  error?: string;
+}
+
 export interface UIContextProps {
   fontFamily: 'courier-prime' | 'courier-prime-sans';
   paperSize: 'letter' | 'a4';
@@ -57,8 +78,16 @@ export interface UIContextProps {
   setAiStatus: (status: string | null) => void;
   translationState: 'idle' | 'running' | 'paused' | 'cancelled';
   setTranslationState: (state: 'idle' | 'running' | 'paused' | 'cancelled') => void;
+  translatingTarget: { fileId: string; scriptIndex: number } | null;
+  setTranslatingTarget: (target: { fileId: string; scriptIndex: number } | null) => void;
+  translationJob: TranslationJob | null;
+  setTranslationJob: (job: TranslationJob | null | ((prev: TranslationJob | null) => TranslationJob | null)) => void;
   registerTranslationAbort: (controller: AbortController | null) => void;
   cancelTranslation: () => void;
+  pauseTranslation: () => void;
+  resumeTranslation: () => void;
+  isTranslationModalOpen: boolean;
+  setIsTranslationModalOpen: (open: boolean) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -181,7 +210,52 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   });
   const [aiStatus, setAiStatus] = useState<string | null>(null);
   const [translationState, setTranslationState] = useState<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
+  const [translatingTarget, setTranslatingTarget] = useState<{ fileId: string; scriptIndex: number } | null>(null);
+  const [translationJob, setTranslationJobState] = useState<TranslationJob | null>(() => {
+    try {
+      const stored = localStorage.getItem("actone-active-translation-job");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return null;
+  });
+  const [isTranslationModalOpen, setIsTranslationModalOpen] = useState(false);
   const translationAbortRef = useRef<AbortController | null>(null);
+
+  const setTranslationJob = useCallback((jobOrUpdater: TranslationJob | null | ((prev: TranslationJob | null) => TranslationJob | null)) => {
+    setTranslationJobState(prev => {
+      const next = typeof jobOrUpdater === "function" ? jobOrUpdater(prev) : jobOrUpdater;
+      try {
+        if (next) {
+          localStorage.setItem("actone-active-translation-job", JSON.stringify(next));
+        } else {
+          localStorage.removeItem("actone-active-translation-job");
+        }
+        window.dispatchEvent(new CustomEvent("translation-job-updated", { detail: next }));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "actone-active-translation-job") {
+        try {
+          const next = e.newValue ? JSON.parse(e.newValue) : null;
+          setTranslationJobState(next);
+        } catch {}
+      }
+    };
+    const handleCustom = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setTranslationJobState(detail);
+    };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("translation-job-updated", handleCustom);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("translation-job-updated", handleCustom);
+    };
+  }, []);
 
   const registerTranslationAbort = useCallback((controller: AbortController | null) => {
     translationAbortRef.current = controller;
@@ -189,8 +263,19 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const cancelTranslation = useCallback(() => {
     setTranslationState("cancelled");
+    setTranslationJob((prev) => (prev ? { ...prev, state: "cancelled" } : null));
     translationAbortRef.current?.abort();
-  }, []);
+  }, [setTranslationJob]);
+
+  const pauseTranslation = useCallback(() => {
+    setTranslationState("paused");
+    setTranslationJob((prev) => (prev ? { ...prev, state: "paused" } : null));
+  }, [setTranslationJob]);
+
+  const resumeTranslation = useCallback(() => {
+    setTranslationState("running");
+    setTranslationJob((prev) => (prev ? { ...prev, state: "running" } : null));
+  }, [setTranslationJob]);
 
 
 
@@ -479,8 +564,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAiStatus,
         translationState,
         setTranslationState,
+        translatingTarget,
+        setTranslatingTarget,
+        translationJob,
+        setTranslationJob,
         registerTranslationAbort,
         cancelTranslation,
+        pauseTranslation,
+        resumeTranslation,
+        isTranslationModalOpen,
+        setIsTranslationModalOpen,
       }}
     >
       {children}

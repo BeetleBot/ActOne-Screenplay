@@ -66,9 +66,9 @@ export interface FileContextProps {
   isBundle: boolean;
   setActiveScript: (index: number) => void;
   addScript: (name?: string, forceType?: "fountain" | "markdown", initialContent?: string) => Promise<string | null>;
-  importScript: (type?: "fountain" | "markdown") => Promise<string | null>;
+  importScript: (type?: "fountain" | "markdown" | "fdx" | "fadein") => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
-  duplicateScript: (index: number, name?: string) => Promise<string | null>;
+  duplicateScript: (index: number, name?: string, activateNew?: boolean) => Promise<string | null>;
   deleteScript: (index: number) => Promise<boolean>;
   moveScript: (fromIndex: number, toIndex: number) => Promise<void>;
   openSnapshotAsNewProject: (snapshotPath: string) => Promise<void>;
@@ -1317,7 +1317,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [files, activeFileId, confirm]);
 
-  const duplicateScript = useCallback(async (index: number, name?: string): Promise<string | null> => {
+  const duplicateScript = useCallback(async (index: number, name?: string, activateNew = true): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return null;
 
@@ -1335,25 +1335,42 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const insertAt = index + 1;
     const updatedScripts = [...file.scripts.slice(0, insertAt), newScript, ...file.scripts.slice(insertAt)];
-    const newActiveIndex = insertAt;
-    const parsed = isMarkdown
-      ? createProseDocument(newScript.content, file.parsedDoc.settings)
-      : parseScreenplay(newScript.content, paperSize);
+    
+    if (activateNew) {
+      const newActiveIndex = insertAt;
+      const parsed = isMarkdown
+        ? createProseDocument(newScript.content, file.parsedDoc.settings)
+        : parseScreenplay(newScript.content, paperSize);
 
-    setFiles(prev => prev.map(f => f.id === activeFileId ? {
-      ...f,
-      scripts: updatedScripts,
-      activeScriptIndex: newActiveIndex,
-      rawText: newScript.content,
-      savedText: newScript.savedContent,
-      isDirty: true,
-      parsedDoc: parsed,
-    } : f));
+      setFiles(prev => prev.map(f => f.id === activeFileId ? {
+        ...f,
+        scripts: updatedScripts,
+        activeScriptIndex: newActiveIndex,
+        rawText: newScript.content,
+        savedText: newScript.savedContent,
+        isDirty: true,
+        parsedDoc: parsed,
+      } : f));
 
-    setScriptsState(updatedScripts);
-    setActiveScriptIndexState(newActiveIndex);
-    setRawTextState(newScript.content);
-    setParsedDoc(parsed);
+      setScriptsState(updatedScripts);
+      setActiveScriptIndexState(newActiveIndex);
+      setRawTextState(newScript.content);
+      setParsedDoc(parsed);
+    } else {
+      // Keep current active script unchanged
+      const currentActiveIndex = file.activeScriptIndex ?? 0;
+      const preservedActiveIndex = currentActiveIndex > index ? currentActiveIndex + 1 : currentActiveIndex;
+
+      setFiles(prev => prev.map(f => f.id === activeFileId ? {
+        ...f,
+        scripts: updatedScripts,
+        activeScriptIndex: preservedActiveIndex,
+        isDirty: true,
+      } : f));
+
+      setScriptsState(updatedScripts);
+      setActiveScriptIndexState(preservedActiveIndex);
+    }
 
     return newName;
   }, [files, activeFileId, paperSize]);
@@ -1433,7 +1450,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [files, activeFileId, confirm, paperSize]);
 
-  const importScript = useCallback(async (type?: "fountain" | "markdown"): Promise<string | null> => {
+  const importScript = useCallback(async (type?: "fountain" | "markdown" | "fdx" | "fadein"): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts) return null;
 
@@ -1461,7 +1478,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       content = await new Promise<string | null>((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = type === "markdown" ? ".md,.markdown,.txt" : ".fountain,.txt,.fdx,.fadein,.spmd";
+        input.accept =
+          type === "markdown"
+            ? ".md,.markdown,.txt"
+            : type === "fdx"
+            ? ".fdx"
+            : type === "fadein"
+            ? ".fadein"
+            : ".fountain,.txt,.fdx,.fadein,.spmd";
         input.onchange = async () => {
           const f = input.files?.[0];
           if (!f) { resolve(null); return; }
@@ -1488,7 +1512,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fileName: safeFileName,
       content,
       savedContent: content,
-      type: type || "fountain",
+      type: isMarkdown ? "markdown" : "fountain",
     };
 
     const updatedScripts = [...file.scripts, newScript];

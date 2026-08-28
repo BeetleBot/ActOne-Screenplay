@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
-import { useFile } from "../context";
+import { useFile, useUI } from "../context";
 import {
   AddIcon,
   DownloadIcon,
@@ -8,6 +8,7 @@ import {
   SearchIcon,
   CloseIcon,
   MoreVertIcon,
+  AutoAwesomeIcon,
 } from "./Icons";
 
 import {
@@ -21,14 +22,19 @@ import {
   Divider,
   TextField,
   Tooltip,
+  Button,
 } from "@mui/material";
+import { usePromptConfig } from "../hooks/usePromptConfig";
+import { LineType, parseScreenplay } from "../parser";
 import { OutlineTag } from "./OutlineView";
 import { isProseScript } from "../utils/scriptMode";
+import { runTranslationJob } from "../utils/translationEngine";
 
 export const ScriptsView = React.memo(() => {
   const {
     scripts,
     activeScriptIndex,
+    activeFileId,
     isBundle,
     setActiveScript,
     addScript,
@@ -37,12 +43,28 @@ export const ScriptsView = React.memo(() => {
     duplicateScript,
     deleteScript,
     moveScript,
+    updateFileScriptContent,
   } = useFile();
+
+  const {
+    translationJob,
+    translationState,
+    setAiStatus,
+    setTranslationState,
+    setTranslatingTarget,
+    setTranslationJob,
+    registerTranslationAbort,
+    setIsTranslationModalOpen,
+  } = useUI();
+  const promptConfig = usePromptConfig();
+  const translationStateRef = useRef(translationState);
+  translationStateRef.current = translationState;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
+  const [translateMenuAnchor, setTranslateMenuAnchor] = useState<HTMLElement | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
@@ -91,7 +113,7 @@ export const ScriptsView = React.memo(() => {
     setImportMenuAnchor(null);
   };
 
-  const handleImportScriptType = async (type: "fountain" | "markdown") => {
+  const handleImportScriptType = async (type: "fountain" | "markdown" | "fdx" | "fadein") => {
     handleImportClose();
     await importScript(type);
   };
@@ -224,6 +246,136 @@ export const ScriptsView = React.memo(() => {
     document.addEventListener("mouseup", onUp);
   }, [scripts, moveScript]);
 
+  const handleTranslateWholeScript = async (targetIndex: number, lang: string) => {
+    setTranslateMenuAnchor(null);
+    setMenuState(null);
+    const sourceScript = scripts[targetIndex];
+    if (!sourceScript) return;
+
+    setAiStatus(`Preparing translation to ${lang}...`);
+
+    const rawText = sourceScript.content || "";
+    const lines = rawText.split(/\r?\n/);
+    const parsedDoc = parseScreenplay(rawText);
+    const parsedLines = parsedDoc.lines || [];
+
+    const analyzedLines = lines.map((line, i) => {
+      let clean = line;
+      const indentMatch = clean.match(/^\s+/);
+      let indent = "";
+      if (indentMatch) {
+        indent = indentMatch[0];
+        clean = clean.slice(indent.length);
+      }
+      const trimmed = clean.trim();
+      if (!trimmed) {
+        return { original: line, indent, prefix: "", suffix: "", cleanText: "", isTranslatable: false };
+      }
+      const type = parsedLines[i]?.type;
+      if (type === LineType.character || type === LineType.dualDialogueCharacter) {
+        let charName = trimmed;
+        if (!charName.startsWith("@")) charName = "@" + charName;
+        return { original: indent + charName, indent, prefix: "", suffix: "", cleanText: charName, isTranslatable: false };
+      }
+      if (type === LineType.heading) {
+        let headingText = trimmed;
+        if (!headingText.startsWith(".")) headingText = "." + headingText;
+        return { original: indent + headingText, indent, prefix: "", suffix: "", cleanText: headingText, isTranslatable: false };
+      }
+      if (type === LineType.transitionLine) {
+        let transText = trimmed;
+        if (!transText.startsWith(">")) transText = "> " + transText;
+        return { original: indent + transText, indent, prefix: "", suffix: "", cleanText: transText, isTranslatable: false };
+      }
+      const isOtherNonTranslatable = (
+        type === LineType.empty ||
+        type === LineType.section ||
+        type === LineType.pageBreak ||
+        type === LineType.more ||
+        type === LineType.dualDialogueMore ||
+        (type !== undefined && type >= LineType.titlePageTitle && type <= LineType.titlePageUnknown)
+      );
+      if (isOtherNonTranslatable) {
+        return { original: line, indent, prefix: "", suffix: "", cleanText: trimmed, isTranslatable: false };
+      }
+      let prefix = "";
+      let suffix = "";
+      if (type === LineType.action) {
+        prefix = "!";
+        if (clean.startsWith("!")) clean = clean.slice(1);
+      } else if (type === LineType.synopse) {
+        prefix = "=";
+        if (clean.startsWith("=")) clean = clean.slice(1);
+      } else if (type === LineType.shot) {
+        prefix = "!!";
+        if (clean.startsWith("!!")) clean = clean.slice(2);
+      } else if (type === LineType.centered) {
+        prefix = ">";
+        suffix = "<";
+        if (clean.startsWith(">")) clean = clean.slice(1);
+        if (clean.endsWith("<")) clean = clean.slice(0, -1);
+      } else if (type === LineType.parenthetical || type === LineType.dualDialogueParenthetical) {
+        prefix = "(";
+        suffix = ")";
+        if (clean.startsWith("(")) clean = clean.slice(1);
+        if (clean.endsWith(")")) clean = clean.slice(0, -1);
+      } else {
+        if (clean.startsWith("- ")) {
+          prefix = "- ";
+          clean = clean.slice(2);
+        } else if (clean.startsWith("-")) {
+          prefix = "-";
+          clean = clean.slice(1);
+        } else if (clean.startsWith("[[") && clean.endsWith("]]")) {
+          prefix = "[[";
+          suffix = "]]";
+          clean = clean.slice(2, -2);
+        }
+      }
+      return {
+        original: line,
+        indent,
+        prefix,
+        suffix,
+        cleanText: clean.trim(),
+        isTranslatable: true,
+      };
+    });
+
+    try {
+      const cleanScriptName = sourceScript.name.replace(/\.fountain$/i, "").trim();
+      const duplicatedName = await duplicateScript(targetIndex, `${cleanScriptName}-${lang}`, false);
+      if (!duplicatedName) throw new Error("Failed to duplicate script");
+
+      const targetScriptIndex = targetIndex + 1;
+
+      await runTranslationJob({
+        lang,
+        promptConfig,
+        sourceScriptName: sourceScript.name,
+        duplicatedName,
+        targetFileId: activeFileId,
+        targetScriptIndex,
+        lines,
+        analyzedLines,
+        parsedDoc,
+        updateFileScriptContent,
+        uiActions: {
+          setAiStatus,
+          setTranslationState,
+          setTranslatingTarget,
+          setTranslationJob,
+          setIsTranslationModalOpen,
+          registerTranslationAbort,
+          getTranslationState: () => translationStateRef.current,
+        },
+      });
+    } catch (err: any) {
+      setAiStatus(`Error setting up translation: ${err.message}`);
+      setTimeout(() => setAiStatus(null), 3000);
+    }
+  };
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
@@ -333,142 +485,203 @@ export const ScriptsView = React.memo(() => {
                 const isOver = overIndex === originalIndex && !isDragging;
                 const isMarkdown = isProseScript(script);
 
+                const isTranslating =
+                  Boolean(translationJob) &&
+                  (translationJob?.state === "running" || translationJob?.state === "paused") &&
+                  translationJob?.fileId === activeFileId &&
+                  translationJob?.scriptIndex === originalIndex;
+
                 return (
-                  <ListItemButton
-                    key={script.fileName}
-                    dense
-                    selected={isActive}
-                    disableRipple={dragIndex !== null}
-                    onClick={() => {
-                      if (dragIndex === null) setActiveScript(originalIndex);
-                    }}
-                    onDoubleClick={() => {
-                      setEditingIndex(originalIndex);
-                      setEditingValue(script.name);
-                    }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setMenuState({ anchorEl: e.currentTarget, index: originalIndex });
-                    }}
-                    data-script-index={originalIndex}
-                    sx={{
-                      borderRadius: "8px",
-                      mb: 0.6,
-                      px: 1.25,
-                      py: 0.85,
-                      minHeight: 40,
-                      opacity: isDragging ? 0.4 : 1,
-                      border: "1px solid",
-                      borderColor: isOver
-                        ? "var(--button-color, primary.main)"
-                        : isActive
-                        ? "var(--button-color, primary.main)"
-                        : "color-mix(in srgb, var(--text-main) 8%, transparent)",
-                      bgcolor: isActive ? "action.selected" : "background.paper",
-                      boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.08)" : "0 1px 2px rgba(0,0,0,0.02)",
-                      transition: "all var(--duration-fast) ease",
-                      "&:hover": {
-                        bgcolor: "action.hover",
-                        borderColor: "color-mix(in srgb, var(--button-color) 40%, transparent)",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
-                      },
-                    }}
-                  >
-                    {/* 1. Drag Handle on Left */}
-                    <Box
-                      onMouseDown={(e) => handleHandleMouseDown(e, originalIndex)}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        cursor: "grab",
-                        color: "text.disabled",
-                        mr: 1,
-                        flexShrink: 0,
-                        "&:hover": { color: "text.secondary" },
-                        "&:active": { cursor: "grabbing" },
+                  <Box key={script.fileName} sx={{ mb: 0.6 }}>
+                    <ListItemButton
+                      dense
+                      selected={isActive}
+                      disabled={isTranslating}
+                      disableRipple={dragIndex !== null || isTranslating}
+                      onClick={() => {
+                        if (dragIndex === null && !isTranslating) setActiveScript(originalIndex);
                       }}
-                      title="Drag to reorder"
-                    >
-                      <DragHandleIcon sx={{ fontSize: 14 }} />
-                    </Box>
-
-                    {/* 2. File Name or Edit Input */}
-                    {editingIndex === originalIndex ? (
-                      <TextField
-                        autoFocus
-                        size="small"
-                        value={editingValue}
-                        onFocus={(e) => e.target.select()}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        onBlur={() => handleRenameSave(originalIndex)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleRenameSave(originalIndex);
-                          } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setEditingIndex(null);
-                            setEditingValue("");
-                          }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        onDoubleClick={(e) => e.stopPropagation()}
-                        onContextMenu={(e) => e.stopPropagation()}
-                        slotProps={{
-                          input: {
-                            sx: { fontSize: "0.85rem", py: 0.3, height: 26 },
-                          },
-                        }}
-                        sx={{ flex: 1, mr: 0.5 }}
-                      />
-                    ) : (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: isActive ? 700 : 500,
-                          color: "text.primary",
-                          fontSize: "0.84rem",
-                          fontFamily: "var(--font-ui)",
-                          letterSpacing: "0.01em",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
-                        {script.name}
-                      </Typography>
-                    )}
-
-                    {/* 3. Document Type Badge on Right */}
-                    <OutlineTag
-                      label={isMarkdown ? "PROSE" : "SCRIPT"}
-                      variant={isMarkdown ? "accent" : "default"}
-                      size="0.72rem"
-                      sx={{ ml: 1, mr: 0.5, py: 0.2, px: 0.8, borderRadius: "5px" }}
-                    />
-
-                    {/* 4. More Options Context Menu Button */}
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
+                      onDoubleClick={() => {
+                        if (!isTranslating) {
+                          setEditingIndex(originalIndex);
+                          setEditingValue(script.name);
+                        }
+                      }}
+                      onContextMenu={(e) => {
+                        if (isTranslating) return;
+                        e.preventDefault();
                         e.stopPropagation();
                         setMenuState({ anchorEl: e.currentTarget, index: originalIndex });
                       }}
+                      data-script-index={originalIndex}
                       sx={{
-                        p: 0.3,
-                        opacity: 0.5,
-                        "&:hover": { opacity: 1 },
-                        flexShrink: 0,
+                        borderRadius: "8px",
+                        px: 1.25,
+                        py: 0.85,
+                        minHeight: 40,
+                        opacity: isDragging ? 0.4 : 1,
+                        cursor: isTranslating ? "default" : "pointer",
+                        border: "1px solid",
+                        borderColor: isOver
+                          ? "var(--button-color, primary.main)"
+                          : isActive
+                          ? "var(--button-color, primary.main)"
+                          : isTranslating
+                          ? "color-mix(in srgb, var(--button-color, #2EAADC) 40%, transparent)"
+                          : "color-mix(in srgb, var(--text-main) 8%, transparent)",
+                        bgcolor: isActive
+                          ? "action.selected"
+                          : isTranslating
+                          ? "color-mix(in srgb, var(--button-color, #2EAADC) 6%, background.paper)"
+                          : "background.paper",
+                        boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.08)" : "0 1px 2px rgba(0,0,0,0.02)",
+                        transition: "all var(--duration-fast) ease",
+                        "&:hover": {
+                          bgcolor: isTranslating ? undefined : "action.hover",
+                          borderColor: isTranslating ? undefined : "color-mix(in srgb, var(--button-color) 40%, transparent)",
+                          boxShadow: isTranslating ? undefined : "0 2px 6px rgba(0,0,0,0.06)",
+                        },
                       }}
                     >
-                      <MoreVertIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </ListItemButton>
+                      {/* 1. Drag Handle on Left */}
+                      {!isTranslating && (
+                        <Box
+                          onMouseDown={(e) => handleHandleMouseDown(e, originalIndex)}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            cursor: "grab",
+                            color: "text.disabled",
+                            mr: 1,
+                            flexShrink: 0,
+                            "&:hover": { color: "text.secondary" },
+                            "&:active": { cursor: "grabbing" },
+                          }}
+                          title="Drag to reorder"
+                        >
+                          <DragHandleIcon sx={{ fontSize: 14 }} />
+                        </Box>
+                      )}
+
+                      {/* 2. File Name or Edit Input */}
+                      {editingIndex === originalIndex ? (
+                        <TextField
+                          autoFocus
+                          size="small"
+                          value={editingValue}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          onBlur={() => handleRenameSave(originalIndex)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRenameSave(originalIndex);
+                            } else if (e.key === "Escape") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEditingIndex(null);
+                              setEditingValue("");
+                            }
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          onDoubleClick={(e) => e.stopPropagation()}
+                          onContextMenu={(e) => e.stopPropagation()}
+                          slotProps={{
+                            input: {
+                              sx: { fontSize: "0.85rem", py: 0.3, height: 26 },
+                            },
+                          }}
+                          sx={{ flex: 1, mr: 0.5 }}
+                        />
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: isActive || isTranslating ? 700 : 500,
+                            color: isTranslating ? "var(--button-color, primary.main)" : "text.primary",
+                            fontSize: "0.84rem",
+                            fontFamily: "var(--font-ui)",
+                            letterSpacing: "0.01em",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            flex: 1,
+                            minWidth: 0,
+                            ...(isTranslating && {
+                              color: "var(--button-color, primary.main)",
+                              animation: "pulseText 1.8s ease-in-out infinite",
+                              "@keyframes pulseText": {
+                                "0%, 100%": { opacity: 1 },
+                                "50%": { opacity: 0.4 },
+                              },
+                            }),
+                          }}
+                        >
+                          {script.name}
+                        </Typography>
+                      )}
+
+                      {/* 3. Document Type Badge on Right */}
+                      <OutlineTag
+                        label={isMarkdown ? "PROSE" : "SCRIPT"}
+                        variant={isMarkdown ? "accent" : "default"}
+                        size="0.72rem"
+                        sx={{ ml: 1, mr: isTranslating ? 0 : 0.5, py: 0.2, px: 0.8, borderRadius: "5px" }}
+                      />
+
+                      {/* 4. More Options Context Menu Button */}
+                      {!isTranslating && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuState({ anchorEl: e.currentTarget, index: originalIndex });
+                          }}
+                          sx={{
+                            p: 0.3,
+                            opacity: 0.5,
+                            "&:hover": { opacity: 1 },
+                            flexShrink: 0,
+                          }}
+                        >
+                          <MoreVertIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      )}
+                    </ListItemButton>
+
+                    {/* 5. Show Progress Button Under Translating Script */}
+                    {isTranslating && (
+                      <Box sx={{ px: 1, pt: 0.5, pb: 0.2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Typography variant="caption" sx={{ fontSize: "0.68rem", color: "text.secondary", fontWeight: 500 }}>
+                          Translating ({translationJob ? `${Math.round(((translationJob.completedBatches || 0) / (translationJob.totalBatches || 1)) * 100)}%` : "..."})
+                        </Typography>
+                        <Button
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsTranslationModalOpen(true);
+                          }}
+                          startIcon={<AutoAwesomeIcon sx={{ fontSize: 12 }} />}
+                          sx={{
+                            textTransform: "none",
+                            fontSize: "0.7rem",
+                            py: 0.2,
+                            px: 1,
+                            minHeight: 22,
+                            borderRadius: "5px",
+                            bgcolor: "color-mix(in srgb, var(--button-color, #2EAADC) 12%, transparent)",
+                            color: "var(--button-color, primary.main)",
+                            "&:hover": {
+                              bgcolor: "color-mix(in srgb, var(--button-color, #2EAADC) 22%, transparent)",
+                            },
+                          }}
+                        >
+                          Show Progress
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
                 );
               })}
             </List>
@@ -483,13 +696,20 @@ export const ScriptsView = React.memo(() => {
         onClose={handleImportClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        sx={{ "& .MuiPaper-root": { width: 170 } }}
+        sx={{ "& .MuiPaper-root": { width: 220 } }}
       >
         <MenuItem onClick={() => handleImportScriptType("fountain")} sx={{ fontSize: "0.85rem" }}>
-          Import Screenplay
+          Fountain (.fountain, .txt)
         </MenuItem>
+        <MenuItem onClick={() => handleImportScriptType("fdx")} sx={{ fontSize: "0.85rem" }}>
+          Final Draft (.fdx)
+        </MenuItem>
+        <MenuItem onClick={() => handleImportScriptType("fadein")} sx={{ fontSize: "0.85rem" }}>
+          Fade In (.fadein)
+        </MenuItem>
+        <Divider />
         <MenuItem onClick={() => handleImportScriptType("markdown")} sx={{ fontSize: "0.85rem" }}>
-          Import Prose
+          Prose (.md)
         </MenuItem>
       </Menu>
 
@@ -497,19 +717,60 @@ export const ScriptsView = React.memo(() => {
       <Menu
         anchorEl={menuState?.anchorEl}
         open={!!menuState}
-        onClose={() => setMenuState(null)}
+        onClose={() => {
+          setMenuState(null);
+          setTranslateMenuAnchor(null);
+        }}
         disableRestoreFocus
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { minWidth: 130 } } }}
+        slotProps={{ paper: { sx: { minWidth: 150 } } }}
       >
         <MenuItem onClick={handleRenameOpen} dense>Rename</MenuItem>
         <Divider />
         <MenuItem onClick={handleMoveUp} dense disabled={!menuState || menuState.index <= 0}>Move Up</MenuItem>
         <MenuItem onClick={handleMoveDown} dense disabled={!menuState || menuState.index >= scripts.length - 1}>Move Down</MenuItem>
         <MenuItem onClick={handleDuplicate} dense>Duplicate</MenuItem>
+        {menuState && !isProseScript(scripts[menuState.index]) && (
+          <>
+            <Divider />
+            <MenuItem
+              dense
+              onClick={(e) => {
+                e.stopPropagation();
+                setTranslateMenuAnchor(e.currentTarget);
+              }}
+            >
+              Translate Whole Script ▸
+            </MenuItem>
+          </>
+        )}
         <Divider />
         <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
+      </Menu>
+
+      {/* Translate Submenu */}
+      <Menu
+        anchorEl={translateMenuAnchor}
+        open={Boolean(translateMenuAnchor && menuState)}
+        onClose={() => setTranslateMenuAnchor(null)}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ paper: { sx: { minWidth: 150, maxHeight: 300 } } }}
+      >
+        {promptConfig.translateLanguages.map((lang) => (
+          <MenuItem
+            key={lang}
+            dense
+            onClick={() => {
+              if (menuState) {
+                handleTranslateWholeScript(menuState.index, lang);
+              }
+            }}
+          >
+            {lang}
+          </MenuItem>
+        ))}
       </Menu>
 
       {/* Add New Document Menu */}

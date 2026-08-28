@@ -31,6 +31,7 @@ export { HelpWindow } from './HelpWindow';
 export { ThemeManagerWindow } from './ThemeManagerWindow';
 export { XrayWindow } from './XrayWindow';
 export { TutorialsWindow } from './TutorialsWindow';
+export { TranslationProgressModal } from './TranslationProgressModal';
 export { QuickGuideModal } from './QuickGuideModal';
 
 export {

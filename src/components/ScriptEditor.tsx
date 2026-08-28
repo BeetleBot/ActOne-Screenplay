@@ -2,14 +2,16 @@ import React, { useRef, useState, useMemo } from "react";
 import { useFile, useUI, useCustomModal } from "../context";
 import { LineType } from "../parser";
 import { usePromptConfig } from "../hooks/usePromptConfig";
-import { getLanguageDetails } from "../constants/languages";
 import { useScriptCodeMirror } from "../editor";
 import { logger } from "../utils/logger";
 import { FOUNTAIN_SYNTAX_RULES } from "../constants";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
-import { createAIProvider } from "../lib/aiProviders";
+import { extractThinkingAndClean } from "../hooks/useAIChat";
 import { CoreEditor, type MenuSelectionSnap } from "./editor/CoreEditor";
 import { type ContextMenuItem, type ContextMenuItemDef } from "./ContextMenu";
+import { runTranslationJob } from "../utils/translationEngine";
+import { createAIProvider } from "../lib/aiProviders";
+import { getLanguageDetails } from "../constants/languages";
 
 const HIGHLIGHT_COLORS = [
   { key: "red", label: "Red", color: "var(--scene-color-red)" },
@@ -146,7 +148,7 @@ function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis
 
 export const ScriptEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, registerTranslationAbort } = useUI();
+  const { setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, setTranslatingTarget, setTranslationJob, setIsTranslationModalOpen, registerTranslationAbort } = useUI();
   const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>(translationState);
   translationStateRef.current = translationState;
   const { parsedDoc, activeScriptIndex, activeScriptName, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
@@ -284,32 +286,48 @@ export const ScriptEditor = React.memo(() => {
       const provider = createAIProvider(promptConfig);
       if (!provider) throw new Error("No AI provider configured");
 
-      let rephrased = await provider.chat(
+      let fullRaw = "";
+      let lastReplacedLength = to - from;
+
+      const applyStreamChunk = (rawAccumulated: string, isFinal = false) => {
+        const { cleanContent } = extractThinkingAndClean(rawAccumulated);
+        if (!cleanContent && !isFinal) return;
+
+        let processed = cleanContent;
+        if (containsNonLatin && !/[^\u0000-\u007F\u0080-\u00FF\u0100-\u017F\u0180-\u024F\u2000-\u206F]/.test(processed)) {
+          if (isFinal) processed = cleanBody;
+        }
+
+        const resLines = processed.split(/\r?\n/);
+        const finalLines = lineData.map((ld, i) => {
+          const rephrasedLine = resLines[i] !== undefined ? (isFinal ? resLines[i].trim() : resLines[i]) : (isFinal ? ld.clean : "");
+          return ld.indent + ld.prefix + rephrasedLine + (isFinal || resLines[i] !== undefined ? ld.suffix : "");
+        });
+        const currentText = finalLines.join("\n").replace(/—/g, "--");
+
+        v.dispatch({
+          changes: { from, to: from + lastReplacedLength, insert: currentText },
+          selection: { anchor: from + currentText.length },
+          effects: isFinal ? setRephraseRangeEffect.of(null) : undefined,
+        });
+        lastReplacedLength = currentText.length;
+      };
+
+      await provider.chat(
         [
           { role: "system", content: systemPrompt },
           { role: "user", content: promptContext }
         ],
-        { temperature: promptConfig.rephraseTemp }
+        {
+          temperature: promptConfig.rephraseTemp,
+          onChunk: (delta) => {
+            fullRaw += delta;
+            applyStreamChunk(fullRaw, false);
+          }
+        }
       );
-      if (!rephrased) rephrased = cleanBody;
 
-      const responseContainsNonLatin = /[^\u0000-\u007F\u0080-\u00FF\u0100-\u017F\u0180-\u024F\u2000-\u206F]/.test(rephrased);
-      if (containsNonLatin && !responseContainsNonLatin) {
-        rephrased = cleanBody;
-      }
-
-      const resLines = rephrased.split(/\r?\n/);
-      const finalLines = lineData.map((ld, i) => {
-        const rephrasedLine = resLines[i] !== undefined ? resLines[i].trim() : ld.clean;
-        return ld.indent + ld.prefix + rephrasedLine + ld.suffix;
-      });
-      const finalRephrased = finalLines.join("\n").replace(/—/g, "--");
-
-      v.dispatch({
-        changes: { from, to, insert: finalRephrased },
-        effects: setRephraseRangeEffect.of(null),
-        selection: { anchor: from + finalRephrased.length }
-      });
+      applyStreamChunk(fullRaw || cleanBody, true);
     } catch (err) {
       v.dispatch({
         effects: setRephraseRangeEffect.of(null)
@@ -428,30 +446,47 @@ export const ScriptEditor = React.memo(() => {
         "Follow these strict Fountain syntax rules:",
         FOUNTAIN_SYNTAX_RULES
       ].join("\n");
+
       const provider = createAIProvider(promptConfig);
       if (!provider) throw new Error("No AI provider configured");
 
-      let translated = await provider.chat(
+      let fullRaw = "";
+      let lastReplacedLength = to - from;
+
+      const applyStreamChunk = (rawAccumulated: string, isFinal = false) => {
+        const { cleanContent } = extractThinkingAndClean(rawAccumulated);
+        if (!cleanContent && !isFinal) return;
+
+        const resLines = cleanContent.split(/\r?\n/);
+        const finalLines = lineData.map((ld, i) => {
+          const translatedLine = resLines[i] !== undefined ? (isFinal ? resLines[i].trim() : resLines[i]) : (isFinal ? ld.clean : "");
+          return ld.indent + ld.prefix + translatedLine + (isFinal || resLines[i] !== undefined ? ld.suffix : "");
+        });
+        const currentText = finalLines.join("\n");
+
+        v.dispatch({
+          changes: { from, to: from + lastReplacedLength, insert: currentText },
+          selection: { anchor: from + currentText.length },
+          effects: isFinal ? setRephraseRangeEffect.of(null) : undefined,
+        });
+        lastReplacedLength = currentText.length;
+      };
+
+      await provider.chat(
         [
           { role: "system", content: systemPrompt },
           { role: "user", content: cleanBody }
         ],
-        { temperature: promptConfig.translateTemp }
+        {
+          temperature: promptConfig.translateTemp,
+          onChunk: (delta) => {
+            fullRaw += delta;
+            applyStreamChunk(fullRaw, false);
+          }
+        }
       );
-      if (!translated) translated = cleanBody;
 
-      const resLines = translated.split(/\r?\n/);
-      const finalLines = lineData.map((ld, i) => {
-        const translatedLine = resLines[i] !== undefined ? resLines[i].trim() : ld.clean;
-        return ld.indent + ld.prefix + translatedLine + ld.suffix;
-      });
-      const finalText = finalLines.join("\n");
-
-      v.dispatch({
-        changes: { from, to, insert: finalText },
-        effects: setRephraseRangeEffect.of(null),
-        selection: { anchor: from + finalText.length }
-      });
+      applyStreamChunk(fullRaw || cleanBody, true);
       setAiStatus(null);
     } catch (err: any) {
       const msg = err?.message || String(err);
@@ -479,125 +514,42 @@ export const ScriptEditor = React.memo(() => {
       return analyzeFountainLineWithAST(line, parsedLines[i]);
     });
 
-    const provider = createAIProvider(promptConfig);
-    if (!provider) {
-       setAiStatus("Error: AI provider is not configured.");
-       setTimeout(() => setAiStatus(null), 5000);
-       return;
-    }
-
     setTranslatingLang(lang);
 
-    const controller = new AbortController();
-    registerTranslationAbort(controller);
-
     try {
-      const targetFileId = activeFileId;
       const cleanScriptName = activeScriptName.replace(/\.fountain$/i, "").trim();
-      const duplicatedName = await duplicateScript(activeScriptIndex, `${cleanScriptName}-${lang}`);
+      const duplicatedName = await duplicateScript(activeScriptIndex, `${cleanScriptName}-${lang}`, false);
       if (!duplicatedName) throw new Error("Failed to duplicate script");
       
       const targetScriptIndex = activeScriptIndex + 1;
 
-      const currentDocLines = analyzedLines.map(item => {
-        if (!item.isTranslatable) return item.original;
-        return item.indent + item.prefix + item.cleanText + item.suffix;
+      await runTranslationJob({
+        lang,
+        promptConfig,
+        sourceScriptName: activeScriptName,
+        duplicatedName,
+        targetFileId: activeFileId,
+        targetScriptIndex,
+        lines,
+        analyzedLines,
+        parsedDoc,
+        updateFileScriptContent,
+        uiActions: {
+          setAiStatus,
+          setTranslationState,
+          setTranslatingTarget,
+          setTranslationJob,
+          setIsTranslationModalOpen,
+          registerTranslationAbort,
+          getTranslationState: () => translationStateRef.current,
+        },
       });
-      
-      updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
-
-      const translatableIndices: number[] = [];
-      analyzedLines.forEach((item, idx) => {
-        if (item.isTranslatable && item.cleanText.trim()) {
-          translatableIndices.push(idx);
-        }
-      });
-
-      const BATCH_SIZE = 20;
-      const totalBatches = Math.ceil(translatableIndices.length / BATCH_SIZE) || 1;
-
-      const ld = getLanguageDetails(lang);
-      const langInfo = `"${lang}" (language code: ${ld.code}, native name: ${ld.native})`;
-
-      const systemPrompt = [
-        `You are a professional translation tool. Translate the user's text lines to ${langInfo}.`,
-        `The output MUST be written in ${ld.native} script (${ld.code}).`,
-        ld.example ? `Example of this language: "${ld.example}"` : "",
-        `NEVER output text in Tamil, Hindi, or any other Indian language unless ${ld.code} explicitly requires it.`,
-        "",
-        "CRITICAL INSTRUCTIONS:",
-        `1. Translate each input line into ${langInfo}.`,
-        "2. You MUST return EXACTLY the same number of lines as provided in the input.",
-        "3. Do NOT combine multiple lines into a paragraph. Do NOT omit any lines.",
-        "4. Respond ONLY with the translated lines, one per line. Do not add conversational text, line numbers, or explanations."
-      ].join("\n");
-
-      for (let b = 0; b < totalBatches; b++) {
-        setTranslationState("running");
-
-        while ((translationStateRef.current as string) === "paused") {
-          setAiStatus(`Translation Paused (Part ${b + 1}/${totalBatches})`);
-          await new Promise((resolve) => setTimeout(resolve, 300));
-        }
-
-        if ((translationStateRef.current as string) === "cancelled") {
-          setAiStatus("Translation Cancelled.");
-          setTimeout(() => setAiStatus(null), 3000);
-          break;
-        }
-
-        setAiStatus(`Translating part ${b + 1}/${totalBatches} to ${lang}...`);
-        
-        const batchIndices = translatableIndices.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-        if (batchIndices.length === 0) continue;
-
-        const batchInputs = batchIndices.map(idx => analyzedLines[idx].cleanText);
-        const userPrompt = batchInputs.join("\n");
-
-        let translatedBatchText = "";
-
-        await provider.chat([{ role: "user", content: userPrompt }], {
-          system: systemPrompt,
-          temperature: promptConfig.translateTemp,
-          signal: controller.signal,
-          onChunk: (delta) => {
-            translatedBatchText += delta;
-          }
-        });
-
-        if ((translationStateRef.current as string) === "cancelled") {
-          setAiStatus("Translation Cancelled.");
-          setTimeout(() => setAiStatus(null), 3000);
-          break;
-        }
-
-        const resLines = translatedBatchText.split(/\r?\n/);
-        batchIndices.forEach((lineIdx, i) => {
-          const item = analyzedLines[lineIdx];
-          const translatedText = resLines[i] !== undefined && resLines[i].trim() ? resLines[i].trim() : item.cleanText;
-          currentDocLines[lineIdx] = item.indent + item.prefix + translatedText + item.suffix;
-        });
-        updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
-      }
-
-      if ((translationStateRef.current as string) !== "cancelled") {
-        setAiStatus("Translation Completed!");
-        setTimeout(() => setAiStatus(null), 4000);
-      }
     } catch (err: any) {
-      if (err?.name !== "AbortError") {
-        const errMsg = err?.message || String(err);
-        logger.error("editor", "Whole document translation failed", err);
-        setAiStatus(`AI Error: ${errMsg.slice(0, 60)}`);
-        setTimeout(() => setAiStatus(null), 8000);
-      } else {
-        setAiStatus("Translation Cancelled.");
-        setTimeout(() => setAiStatus(null), 3000);
-      }
+      logger.error("editor", "Whole document translation failed", err);
+      setAiStatus(`Error setting up translation: ${err.message}`);
+      setTimeout(() => setAiStatus(null), 3000);
     } finally {
-      registerTranslationAbort(null);
       setTranslatingLang(null);
-      setTranslationState("idle");
     }
   };
 
