@@ -23,7 +23,7 @@ import {
 import { ThemeProvider as MuiThemeProvider, alpha } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
-import { RestartAltIcon, AddIcon, DeleteIcon, EditIcon } from "./Icons";
+import { RestartAltIcon, AddIcon, DeleteIcon, EditIcon, CheckIcon, ContentCopyIcon } from "./Icons";
 import { createActOneTheme } from "../theme";
 import { resolveThemeConfig, type CustomTheme } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged } from "../theme/ThemeEngine";
@@ -114,7 +114,16 @@ export const SettingsWindow: React.FC = () => {
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
   });
-  const [selectedApiId, setSelectedApiId] = useState<string | null>(null);
+  const [selectedApiId, setSelectedApiId] = useState<string | null>(() => {
+    try {
+      const currentModel = localStorage.getItem(STORAGE_KEYS.PROMPT_API_MODEL) || "";
+      const currentEndpoint = localStorage.getItem(STORAGE_KEYS.PROMPT_API_ENDPOINT) || "";
+      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST);
+      const list: ApiEntry[] = raw ? JSON.parse(raw) : [];
+      const match = list.find(e => e.model === currentModel && e.endpoint === currentEndpoint) || list[0];
+      return match ? match.id : null;
+    } catch { return null; }
+  });
   const [editingApiId, setEditingApiId] = useState<string | null>(null);
   const saveApiList = (entries: ApiEntry[]) => {
     localStorage.setItem(STORAGE_KEYS.PROMPT_API_LIST, JSON.stringify(entries));
@@ -131,7 +140,22 @@ export const SettingsWindow: React.FC = () => {
     setSelectedApiId(id);
     notifyConfigChange();
   };
-  const removeApi = (id: string) => {
+  const duplicateApi = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const source = apiList.find(item => item.id === id);
+    if (!source) return;
+    const newId = crypto.randomUUID();
+    const copy: ApiEntry = {
+      ...source,
+      id: newId,
+      name: `${source.name || "API"} (Copy)`,
+    };
+    saveApiList([...apiList, copy]);
+    setEditingApiId(newId);
+    notifyConfigChange();
+  };
+  const removeApi = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const updated = apiList.filter(e => e.id !== id);
     saveApiList(updated);
     if (selectedApiId === id) {
@@ -1154,10 +1178,13 @@ interface LanguageInfoItem {
                   }}
                 >
                   <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, display: "block", mb: 0.5, color: "text.primary" }}>
-                    Tip: Choosing the right model
+                    Privacy & Data Handling Notice
                   </Typography>
-                  <Typography variant="caption" sx={{ fontSize: 10, color: "text.secondary", lineHeight: 1.4 }}>
-                    Smaller local models (e.g. 2B–7B parameters) have limited instruction capacity and may struggle with multi-scene screenplay analysis or automated tool execution. For best results with complex script tasks, use larger models (14B+) or cloud providers (DeepSeek, OpenAI API).
+                  <Typography variant="caption" sx={{ fontSize: 10, color: "text.secondary", lineHeight: 1.45, display: "block", mb: 0.5 }}>
+                    • <strong>Local Models (Ollama):</strong> All screenplay text, scene context, and queries stay strictly on your local device. No data ever leaves your computer.
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontSize: 10, color: "text.secondary", lineHeight: 1.45, display: "block" }}>
+                    • <strong>External APIs (OpenAI-compatible):</strong> Screenplay excerpts and questions are transmitted directly to your configured third-party API provider. ActOne does not proxy or store your text. Sending data to external providers is your direct choice and responsibility.
                   </Typography>
                 </Box>
               </Box>
@@ -1401,7 +1428,7 @@ interface LanguageInfoItem {
                 open={showModelsPanel}
                 onClose={() => setShowModelsPanel(false)}
                 fullWidth
-                maxWidth="xs"
+                maxWidth="sm"
                 disableScrollLock
                 sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
               >
@@ -1492,114 +1519,206 @@ interface LanguageInfoItem {
 
                   {promptProvider === "openai-compatible" && (
                     <Box>
-                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 1.5 }}>
-                        API CONFIGURATIONS
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 11, color: 'text.primary', letterSpacing: 0.5 }}>
+                          API CONFIGURATIONS
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary' }}>
+                          Click a card to set as active
+                        </Typography>
+                      </Box>
                       {apiList.length === 0 ? (
-                        <Typography variant="body2" sx={{ fontSize: 12, color: 'text.secondary', py: 2, textAlign: 'center' }}>
+                        <Typography variant="body2" sx={{ fontSize: 12, color: 'text.secondary', py: 3, textAlign: 'center' }}>
                           No APIs configured. Click "Add API" to get started.
                         </Typography>
                       ) : (
-                        apiList.map((entry) => (
-                          <Box
-                            key={entry.id}
-                            onClick={() => selectApi(entry.id)}
-                            sx={{
-                              border: '1px solid',
-                              borderColor: selectedApiId === entry.id ? 'primary.main' : 'divider',
-                              borderRadius: '8px',
-                              p: 1.5,
-                              mb: 2,
-                              bgcolor: selectedApiId === entry.id ? 'action.selected' : 'transparent',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                {selectedApiId === entry.id && (
-                                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
-                                )}
-                                {editingApiId === entry.id ? (
-                                  <TextField
+                        apiList.map((entry) => {
+                          const isActive = selectedApiId === entry.id;
+                          const isEditing = editingApiId === entry.id;
+                          return (
+                            <Box
+                              key={entry.id}
+                              onClick={() => !isEditing && selectApi(entry.id)}
+                              sx={{
+                                border: '1.5px solid',
+                                borderColor: isActive ? 'primary.main' : 'divider',
+                                borderRadius: '8px',
+                                p: 1.5,
+                                mb: 1.5,
+                                bgcolor: isActive ? (t) => alpha(t.palette.primary.main, 0.08) : 'background.paper',
+                                transition: 'all 0.15s ease',
+                                cursor: isEditing ? 'default' : 'pointer',
+                                '&:hover': isEditing ? {} : {
+                                  borderColor: isActive ? 'primary.main' : 'text.secondary',
+                                  bgcolor: (t) => alpha(t.palette.action.hover, 0.06),
+                                },
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: isEditing ? 1.25 : 0.75 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1, mr: 1 }}>
+                                  {isActive && (
+                                    <Chip
+                                      label="Active"
+                                      size="small"
+                                      color="primary"
+                                      sx={{
+                                        height: 18,
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: 0.5,
+                                        borderRadius: '4px',
+                                        flexShrink: 0,
+                                      }}
+                                    />
+                                  )}
+                                  {isEditing ? (
+                                    <TextField
+                                      size="small"
+                                      autoFocus
+                                      value={entry.name}
+                                      onChange={(e) => updateApi(entry.id, "name", e.target.value)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      placeholder="API Profile Name"
+                                      sx={{
+                                        flex: 1,
+                                        maxWidth: 220,
+                                        '& input': { fontSize: 12, fontWeight: 700, py: 0.4, color: 'text.primary' }
+                                      }}
+                                    />
+                                  ) : (
+                                    <Typography
+                                      variant="subtitle2"
+                                      sx={{
+                                        fontSize: 13,
+                                        fontWeight: 700,
+                                        color: isActive ? 'primary.main' : 'text.primary',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {entry.name || "Untitled API"}
+                                    </Typography>
+                                  )}
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                                  {isEditing ? (
+                                    <IconButton
+                                      size="small"
+                                      title="Save"
+                                      onClick={() => setEditingApiId(null)}
+                                      sx={{ p: 0.4, color: 'primary.main', bgcolor: (t) => alpha(t.palette.primary.main, 0.12) }}
+                                    >
+                                      <CheckIcon sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                  ) : (
+                                    <IconButton
+                                      size="small"
+                                      title="Edit"
+                                      onClick={() => setEditingApiId(entry.id)}
+                                      sx={{ p: 0.4, color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
+                                    >
+                                      <EditIcon sx={{ fontSize: 15 }} />
+                                    </IconButton>
+                                  )}
+                                  <IconButton
                                     size="small"
-                                    value={entry.name}
-                                    onChange={(e) => updateApi(entry.id, "name", e.target.value)}
-                                    sx={{ '& input': { fontSize: 11, py: 0.3 }, width: 160 }}
-                                    placeholder="API Name"
+                                    title="Duplicate"
+                                    onClick={(e) => duplicateApi(entry.id, e)}
+                                    sx={{ p: 0.4, color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
+                                  >
+                                    <ContentCopyIcon sx={{ fontSize: 15 }} />
+                                  </IconButton>
+                                  <IconButton
+                                    size="small"
+                                    title="Delete"
+                                    onClick={(e) => removeApi(entry.id, e)}
+                                    sx={{ p: 0.4, color: 'error.main', '&:hover': { bgcolor: (t) => alpha(t.palette.error.main, 0.1) } }}
+                                  >
+                                    <DeleteIcon sx={{ fontSize: 15 }} />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+
+                              {isEditing ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }} onClick={(e) => e.stopPropagation()}>
+                                  <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Endpoint URL"
+                                    value={entry.endpoint}
+                                    onChange={(e) => updateApi(entry.id, "endpoint", e.target.value)}
+                                    placeholder="https://api.openai.com/v1/chat/completions"
+                                    sx={{ '& input': { fontSize: 12, color: 'text.primary' } }}
                                   />
-                                ) : (
-                                  <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary' }}>
-                                    {entry.name}
+                                  <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="API Key"
+                                    type="password"
+                                    value={entry.apiKey}
+                                    onChange={(e) => updateApi(entry.id, "apiKey", e.target.value)}
+                                    placeholder="sk-..."
+                                    sx={{ '& input': { fontSize: 12, color: 'text.primary' } }}
+                                  />
+                                  <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Model"
+                                    value={entry.model}
+                                    onChange={(e) => updateApi(entry.id, "model", e.target.value)}
+                                    placeholder="e.g. gpt-4o-mini, openrouter/free"
+                                    sx={{ '& input': { fontSize: 12, color: 'text.primary' } }}
+                                  />
+                                </Box>
+                              ) : (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3, pl: 0.2 }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontSize: 11,
+                                      color: 'text.secondary',
+                                      wordBreak: 'break-all',
+                                      fontFamily: 'monospace',
+                                    }}
+                                  >
+                                    {entry.endpoint || '(no endpoint set)'}
                                   </Typography>
-                                )}
-                              </Box>
-                              <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => setEditingApiId(editingApiId === entry.id ? null : entry.id)}
-                                  sx={{ p: 0.3 }}
-                                >
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => removeApi(entry.id)}
-                                  sx={{ p: 0.3, color: 'error.main' }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Box>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        color: 'text.primary',
+                                        bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
+                                        px: 0.8,
+                                        py: 0.15,
+                                        borderRadius: '4px',
+                                        display: 'inline-block',
+                                      }}
+                                    >
+                                      {entry.model || '(no model set)'}
+                                    </Typography>
+                                    {entry.apiKey && (
+                                      <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary' }}>
+                                        Key: ••••••••
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Box>
+                              )}
                             </Box>
-                            {editingApiId === entry.id ? (
-                              <Box>
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  label="Endpoint URL"
-                                  value={entry.endpoint}
-                                  onChange={(e) => updateApi(entry.id, "endpoint", e.target.value)}
-                                  placeholder="https://api.openai.com/v1/chat/completions"
-                                  sx={{ '& input': { fontSize: 11 }, mb: 1 }}
-                                />
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  label="API Key"
-                                  type="password"
-                                  value={entry.apiKey}
-                                  onChange={(e) => updateApi(entry.id, "apiKey", e.target.value)}
-                                  placeholder="sk-..."
-                                  sx={{ '& input': { fontSize: 11 }, mb: 1 }}
-                                />
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  label="Model"
-                                  value={entry.model}
-                                  onChange={(e) => updateApi(entry.id, "model", e.target.value)}
-                                  placeholder="e.g. gpt-4o-mini"
-                                  sx={{ '& input': { fontSize: 11 } }}
-                                />
-                              </Box>
-                            ) : (
-                              <Box>
-                                <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.3 }}>
-                                  {entry.endpoint || '(no endpoint)'}
-                                </Typography>
-                                <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', display: 'block' }}>
-                                  {entry.model || '(no model)'}
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
-                        ))
+                          );
+                        })
                       )}
                       <Button
                         size="small"
-                        variant="outlined"
+                        variant="contained"
                         startIcon={<AddIcon />}
                         onClick={addApi}
-                        sx={{ fontSize: 11, borderRadius: '6px', mt: 1 }}
+                        sx={{ fontSize: 11, fontWeight: 600, borderRadius: '6px', mt: 1, textTransform: 'none' }}
                       >
                         Add API
                       </Button>

@@ -405,6 +405,8 @@ function getEditorVars(t: ThemeConfig, appScale: number, fountainColorsEnabled: 
     '--text-editor-shot': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.text})` : c.text,
     '--text-editor-meta': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 45%, ${c.text})` : c.textSecondary,
     '--text-editor-section': fountainColorsEnabled ? c.accent : c.text,
+    '--editor-highlight-bg': `color-mix(in srgb, ${c.accent} 26%, transparent)`,
+    '--editor-highlight-bg-strong': `color-mix(in srgb, ${c.accent} 38%, transparent)`,
     '--editor-cursor': c.text,
     '--editor-mouse-cursor': mouseCursorSvg,
 

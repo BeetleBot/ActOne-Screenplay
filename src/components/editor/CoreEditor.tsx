@@ -180,6 +180,7 @@ export const CoreEditor = React.memo(({ containerRef, viewRef, extraContextMenuI
           { label: "Bold", action: () => toggleInlineMarker("**") },
           { label: "Italic", action: () => toggleInlineMarker("*") },
           { label: "Underline", action: () => toggleInlineMarker("_") },
+          { label: "Highlight", action: () => toggleInlineMarker("==") },
         ],
       },
       {

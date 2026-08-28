@@ -10,6 +10,7 @@ interface TitleBarProps {
   updateAvailable?: boolean;
   installUpdate?: () => void;
   isModal?: boolean;
+  hideCloseBtn?: boolean;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({ 
@@ -17,7 +18,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   onClose, 
   updateAvailable = false,
   installUpdate,
-  isModal = false
+  isModal = false,
+  hideCloseBtn = false
 }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isResizable, setIsResizable] = useState(true);
@@ -102,6 +104,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
 
   return (
     <Box
+      data-tauri-drag-region
       onMouseDown={handleStartDrag}
       sx={{
         height: 40,
@@ -121,6 +124,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
       }}
     >
       <Box 
+        data-tauri-drag-region
         sx={{ 
           display: "flex", 
           alignItems: "center", 
@@ -130,6 +134,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         }}
       >
         <Typography 
+          data-tauri-drag-region
           variant="caption" 
           sx={{ 
             fontWeight: 700, 
@@ -234,23 +239,25 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           </IconButton>
         )}
 
-        <IconButton
-          onClick={onClose}
-          title="Close"
-          size="small"
-          sx={{
-            width: 28, 
-            height: 28, 
-            borderRadius: '6px',
-            color: 'text.secondary',
-            '&:hover': { bgcolor: (theme) => alpha(theme.palette.error.main, 0.15), color: (theme) => theme.palette.error.main },
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
-            <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </IconButton>
+        {!hideCloseBtn && (
+          <IconButton
+            onClick={onClose}
+            title="Close"
+            size="small"
+            sx={{
+              width: 28, 
+              height: 28, 
+              borderRadius: '6px',
+              color: 'text.secondary',
+              '&:hover': { bgcolor: (theme) => alpha(theme.palette.error.main, 0.15), color: (theme) => theme.palette.error.main },
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ pointerEvents: "none" }}>
+              <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+          </IconButton>
+        )}
       </Box>
     </Box>
   );

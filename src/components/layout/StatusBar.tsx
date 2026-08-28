@@ -6,22 +6,20 @@ import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
 import { useEditor, useCursor } from "../../context";
-import { DownloadIcon, MuseIcon } from "../Icons";
+import { DownloadIcon } from "../Icons";
 import { useStoreUpdateCheck } from "../../hooks";
-import { usePromptConfig } from "../../hooks/usePromptConfig";
 import { useModalWindows } from "../../hooks/useModalWindows";
 import { isProseScript } from "../../utils/scriptMode";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus, files } = useFile();
-  const { isZenMode, aiStatus, translationState, setTranslationState, cancelTranslation, activeRightPane, setActiveRightPane, spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage } = useUI();
+  const { isZenMode, aiStatus, translationState, setTranslationState, cancelTranslation, spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage } = useUI();
   const activeFile = files.find(f => f.id === activeFileId);
   const isMarkdown = isProseScript(scripts[activeScriptIndex], filePath);
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
   const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
-  const { provider } = usePromptConfig();
   const { openSettingsWindow } = useModalWindows();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [spellMenuAnchorEl, setSpellMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -44,20 +42,6 @@ export const StatusBar = React.memo(() => {
     window.addEventListener("dictionary-changed", handler);
     return () => window.removeEventListener("dictionary-changed", handler);
   }, []);
-
-
-  const museConfigured = provider !== "none";
-
-  const handleMuseIndicatorClick = () => {
-    // Yield execution so click/release animation paints immediately before pane toggle
-    setTimeout(() => {
-      if (museConfigured) {
-        setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");
-      } else {
-        openSettingsWindow("muse");
-      }
-    }, 0);
-  };
 
   const currentSprint = activeSprints[activeFileId];
 
@@ -622,67 +606,6 @@ export const StatusBar = React.memo(() => {
                 </>
               )}
             </Box>
-          </Box>
-          <Box
-            id="status-muse"
-            component="button"
-            role="button"
-            disabled={hasNoScripts}
-            onClick={hasNoScripts ? undefined : handleMuseIndicatorClick}
-            title={hasNoScripts ? "Muse is unavailable when no script is open" : (museConfigured ? "Muse is configured — click to open the Muse pane" : "Muse is not configured — click to open Muse settings")}
-            aria-label={hasNoScripts ? "Muse unavailable" : (museConfigured ? "Open Muse pane" : "Open Muse settings")}
-            sx={{
-              width: 26,
-              height: 22,
-              alignSelf: "center",
-              mr: 0.5,
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: hasNoScripts ? "transparent" : (museConfigured ? "success.main" : "error.main"),
-              background: hasNoScripts
-                ? "transparent"
-                : (museConfigured
-                    ? "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)"
-                    : "linear-gradient(135deg, #ef5350 0%, #c62828 100%)"),
-              opacity: hasNoScripts ? 0.35 : 1,
-              pointerEvents: hasNoScripts ? "none" : "auto",
-              borderRadius: "6px",
-              border: "none",
-              padding: 0,
-              cursor: hasNoScripts ? "default" : "pointer",
-              position: "relative",
-              overflow: "hidden",
-              transition: "all 0.15s ease",
-              "@keyframes museGlow": {
-                "0%, 100%": { boxShadow: "inset 0 0 3px rgba(255,255,255,0.15)" },
-                "50%": { boxShadow: "inset 0 0 8px rgba(255,255,255,0.3)" },
-              },
-              "@keyframes museGreenFade": {
-                "0%, 100%": { opacity: 0.75 },
-                "50%": { opacity: 1 },
-              },
-              "@keyframes activityIconBounce": {
-                "0%": { transform: "scale(1)" },
-                "40%": { transform: "scale(0.78)" },
-                "70%": { transform: "scale(1.12)" },
-                "100%": { transform: "scale(1)" },
-              },
-              animation: (!hasNoScripts && museConfigured) ? "museGlow 3s ease-in-out infinite" : "none",
-              "&:active .muse-icon": {
-                animation: hasNoScripts ? "none" : "activityIconBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)",
-              },
-            }}
-          >
-            <MuseIcon
-              className="muse-icon"
-              sx={{
-                fontSize: 15,
-                color: hasNoScripts ? "text.disabled" : (museConfigured ? "#c8e6c9" : "#ffcdd2"),
-                animation: (!hasNoScripts && museConfigured) ? "museGreenFade 2.8s ease-in-out infinite" : "none",
-              }}
-            />
           </Box>
         </Box>
       </Box>

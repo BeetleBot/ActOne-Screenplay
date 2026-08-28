@@ -287,6 +287,7 @@ ActOne's Prose editor renders Markdown elements with live inline visual styling 
 | **Heading 2** | \`## Section\` | Subsection title |
 | **Bold** | \`**bold text**\` | **bold text** |
 | **Italic** | \`*italic text*\` | *italic text* |
+| **Highlight** | \`==highlighted==\` | highlighted |
 | **Strikethrough** | \`~~deleted~~\` | ~~deleted~~ |
 | **Inline Code** | \`\` \`code\` \`\` | Monospace tag |
 | **Bulleted List** | \`- Item\` or \`* Item\` | Clean bullet list |
@@ -340,6 +341,10 @@ or
   \`*whispering voice*\` or \`_whispering voice_\`
 - **Bold + Italic**: Wrap text with triple asterisks:
   \`***crucial plot twist***\`
+
+### Highlight
+Wrap text with double equals to mark it with a theme-aware background highlight (Ctrl+Shift+H):
+\`==highlighted note==\`
 
 ### Strikethrough
 Wrap text with double tildes to mark deleted or revised ideas:
@@ -946,7 +951,7 @@ Persists in .actone bundle settings.`,
 - **Cut / Copy / Paste** — standard clipboard (disabled without selection).
 - **Highlight Scene** → 7 colors: Red, Orange, Yellow, Green, Blue, Purple, Pink, plus Clear.
 - **Drop Marker** → submenu with 11 colors (Blue, Brown, Cyan, Green, Magenta, Orange, Pink, Purple, Red, Yellow, Default Orange). Prompts for a description.
-- **Format** → Bold, Italic, Underline.
+- **Format** → Bold, Italic, Underline, Highlight.
 - **Transform Case** → UPPERCASE, Title Case, lowercase.
 - **Look Up Word** → Google search selection.
 - **Create Task** → adds selected text as a to-do item.
@@ -1344,34 +1349,26 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
 - **Focus Mode**: Dim all lines except the active cursor line.`,
   },
   // ===== AI & MUSE =====
+  // ===== AI & MUSE =====
   {
     id: "muse-overview",
-    title: "Muse AI Assistant Overview",
+    title: "Muse AI Feature Overview",
     category: "AI & Muse",
-    tags: ["muse", "ai", "assistant", "overview", "help"],
-    relatedIds: ["muse-configure", "muse-tools", "muse-chat"],
-    content: `**Muse** is ActOne's AI screenwriting assistant — kind, intelligent, and concise. It helps you discuss your screenplay, analyze scenes and characters, draft Fountain text, and apply selected screenplay actions without leaving your editor.
+    tags: ["muse", "muse go", "ai", "assistant", "overview", "help"],
+    relatedIds: ["muse-configure", "muse-chat"],
+    content: `**Muse** is ActOne's integrated AI feature suite. The right sidebar companion, **Muse Go!**, provides an intelligent, token-efficient conversational assistant for discussing, exploring, and analyzing your screenplay.
 
-**How to open Muse:**
+**How to open Muse Go!:**
 - Press \`Alt+M\`.
-- Click the Muse square at the far right of the Status Bar.
-- The Muse panel opens on the right side of the window.
-
-**Status Bar indicator:**
-- **Green**: AI provider is configured and ready — click to open the Muse pane.
-- **Red**: No AI provider configured — click to open Muse Settings.
+- Open Command Palette (\`Ctrl+K\`) → select **"Show Muse Go!"** (visible when Muse is configured).
+- The Muse Go! panel opens on the right side of your workspace.
 
 **Key features:**
-- **Screenplay-aware chat**: Ask questions about the active screenplay, scenes, characters, locations, and title page.
-- **Analysis tools**: Ask Muse to search the screenplay, inspect scenes, calculate statistics, or find character dialogue.
-- **Fountain drafting**: Ask for Fountain-formatted writing and use the Insert controls on returned Fountain blocks.
-- **Reviewable scene drafts**: Scene replacement requests appear as a pending review card before they are applied.
-
-- **Per-file history**: Each screenplay has its own separate chat history, stored in localStorage.
-- **Streaming responses**: Muse streams its replies in real-time as they generate.
-- **Copy & Insert**: Copy any response or insert Fountain-formatted text directly at your cursor position.
-
-Muse does not currently provide @command autocomplete. Write requests in normal language.`,
+- **Conversational Screenplay Q&A**: Ask questions about your story, character arcs, scene flow, and dialogue.
+- **Token-Efficient Dynamic Slicing**: Muse Go! uses structured script compression (~50-60% fewer tokens) and only reads the scenes relevant to your question (e.g. "Summarize scenes with John").
+- **Look up & Synonyms**: Right-click words in the editor to look up definitions and synonyms in Muse Go!.
+- **Per-file history**: Each screenplay maintains its own conversation sessions in localStorage.
+- **Real-time streaming**: Watch responses generate smoothly in real time.`,
   },
   {
     id: "muse-configure",
@@ -1379,119 +1376,64 @@ Muse does not currently provide @command autocomplete. Write requests in normal 
     category: "AI & Muse",
     tags: ["muse", "ai", "configure", "setup", "provider", "api", "openai", "ollama"],
     relatedIds: ["muse-overview", "settings-overview"],
-    content: `Before using Muse, you need to configure an AI provider. Go to **Settings** (\`Ctrl+,\`) → **Muse** tab or open the Command Palette (\`Ctrl+K\`) → **Open Settings** → select the Muse tab.
+    content: `Before using Muse Go!, you can configure an AI provider in **Settings** (\`Ctrl+,\`) → **Muse** tab.
 
 **Supported Providers:**
 
-**1. OpenAI-compatible API** — Use any compatible chat-completion endpoint.
+**1. OpenAI-compatible API** — Use any compatible chat-completion endpoint (OpenAI, OpenRouter, Groq, DeepSeek, LocalAI, vLLM).
   - **Provider**: Select "OpenAI API".
-  - **Active Model**: Choose from your configured API entries in the Muse panel or Settings.
-  - **Configure Providers**: Click "Configure Providers" to manage multiple API connections.
-    - Click **"Add API"** to create a new entry.
-    - Fill in: **Name**, **Endpoint URL**, **API Key**, and **Model**.
-    - Click an entry card to select it as active.
-    - Use the pencil icon to edit, trash icon to delete.
-    - The endpoint URL is used as-is — no \`/chat/completions\` is appended automatically.
+  - **Configure Providers**: Click "Configure Providers" to manage multiple API endpoints.
+    - Click **"Add API"** to add endpoints with custom Name, Endpoint URL, API Key, and Model name.
+    - Select your preferred active API.
 
-**2. Ollama (Local)** — Run models locally on your machine.
-  - **Provider dropdown**: Select "Ollama (Local)".
+**2. Ollama (Local)** — Run local models entirely on your device.
+  - **Provider**: Select "Ollama (Local)".
   - **Ollama URL**: Defaults to \`http://localhost:11434\`.
-  - **Model**: Select from the dropdown of models available on your Ollama server.
+  - **Model**: Select from models detected on your local Ollama server.
 
-**System Prompt:**
-- The default system prompt defines Muse's personality: kind, intelligent, concise, and screenwriting-focused.
-- You can customize the system prompt via **Settings → Muse → System Prompt**.
-**Temperature:**
-- Controls randomness (0.0 = more precise, 1.0 = more creative).
-- Chat default: 0.7. Rephrase default: 0.1. Translation default: 0.1.
-
-**Provider data:** When OpenAI-compatible is selected, prompts and screenplay context are sent to the configured endpoint. When Ollama is selected, they are sent to the configured Ollama server. API keys are currently stored in localStorage.`,
+**Privacy & Workspace Integration:**
+- When Muse is disabled ("None"), all Muse indicators and buttons remain completely hidden from your interface.`,
   },
-
   {
     id: "muse-chat",
-    title: "Using Muse Chat",
+    title: "Using Muse Go! Chat",
     category: "AI & Muse",
-    tags: ["muse", "chat", "conversation", "history", "streaming"],
+    tags: ["muse", "muse go", "chat", "conversation", "history", "streaming"],
     relatedIds: ["muse-overview", "muse-configure"],
-    content: `The Muse panel provides a full chat interface:
+    content: `The **Muse Go!** panel is your dedicated conversational companion:
 
-**Starting a conversation:**
-- Type in the "Message Muse..." input and press \`Enter\` (or click the send button).
-- Press \`Shift+Enter\` for a newline without sending.
-- Muse streams the response in real-time.
+**Asking questions:**
+- Type in the "Message Muse Go!..." composer and press \`Enter\` to send.
+- Press \`Shift+Enter\` to insert a newline.
+- Press \`Escape\` or click the Stop button to cancel streaming.
 
-**Chat history:**
-- Each screenplay file has its own separate chat history (keyed by file path in localStorage).
-- Click the **clock icon** to view and switch between past chat sessions.
-- Click the **+ icon** to start a new chat session for the current file.
-- Click the **trash icon** to clear the current session's messages.
+**Intelligent character & scene queries:**
+- Ask about specific characters: *"What does John do across his scenes?"* — Muse Go! intelligently slices only the scenes where John appears.
+- Ask about specific scenes: *"What happens in scenes 3 to 5?"* — Muse Go! loads and analyzes only those scenes.
 
-**Working with responses:**
-- **Copy** — Hover over a Muse response and click the copy button in the top-right corner to copy the full response text.
-- **Insert** — Fountain blocks (\`\`\`fountain\`\`\`) have an Insert button that places the scene text directly at your cursor in the editor.
-- **Apply draft** — A scene replacement draft has an Apply control after you review the Fountain text.
-- **Error copy** — If an error occurs, the error message has a copy button for easy debugging.
-
-**Provider & Model selector:**
-- The **Provider** dropdown at the bottom of the panel lets you switch between OpenAI API and Ollama.
-- The **Active Model** dropdown shows all configured API entries (for OpenAI) or available models (for Ollama).
-- Selecting a different API entry updates the endpoint, API key, and model automatically.
-
-**Tips:**
-- Muse's context includes your current screenplay for document-aware answers.
-- Muse remembers the conversation within a session, so you can ask follow-up questions.
-- Press **Escape** or click the stop button to cancel a response.
-- Small local models may struggle with multi-scene analysis and structured actions; larger models generally follow instructions more reliably.`,
+**Chat session management:**
+- Click the **clock icon** to view, switch, and manage past chat sessions for the current screenplay.
+- Click the **+ icon** to start a fresh conversation.
+- Click the **trash icon** to clear messages in the active session.`,
   },
   {
-    id: "muse-tools",
-    title: "Muse Tools and Screenplay Actions",
+    id: "muse-translate",
+    title: "Whole Document Translation",
     category: "AI & Muse",
-    tags: ["muse", "ai", "tools", "analysis", "scene", "x-ray", "fountain"],
-    relatedIds: ["muse-overview", "muse-chat", "xray-analysis", "notes-markers"],
-    content: `Muse can use structured tools when a request requires screenplay information or an ActOne action. You do not need to type a special command. Ask in normal language, for example:
+    tags: ["translate", "language", "whole document", "background", "multilingual", "muse"],
+    relatedIds: ["muse-overview", "muse-configure"],
+    content: `ActOne allows you to translate an entire screenplay or prose document to any supported language without disrupting your writing workflow.
 
-- "Read scene 3 and summarize the conflict."
-- "Find every scene where MAYA appears."
-- "Search for references to the red suitcase."
-- "Draft a replacement for the current scene in Fountain."
-- "Add a purple tag to scene 5."
-- "Create a profile for the protagonist and show it in X-Ray."
-
-**Read and analysis tools include:**
-
-- Read a scene by its scene index.
-- Search screenplay lines.
-- Find a character's scenes and co-stars.
-- Find scenes by location.
-- Calculate screenplay statistics.
-- Search a character's dialogue.
-- Read the lines around the active cursor.
-- Read title-page metadata.
-- Read saved todos, parking notes, and character profiles.
-
-**Action tools include:**
-
-- Draft a scene replacement for review.
-- Add a project todo.
-- Add a parking note.
-- Add a color or storyline tag to a scene heading.
-- Create or update an X-Ray character profile.
-- Open the X-Ray window.
-
-**Review behavior:**
-
-- Scene replacement is shown as a pending Fountain draft. Review it before applying it to the editor.
-- Other current settings and editor actions may be applied immediately when Muse calls them. Check the affected file and save a snapshot before large operations.
-- Scene references currently use the screenplay's ordinal scene index. If the screenplay uses printed Fountain scene numbers such as \`#42#\`, state the heading as well to avoid ambiguity.
-
-**Important limitations:**
-
-- Muse's current tool protocol is model-generated JSON/text, so tool calls may fail with smaller models.
-- The current implementation does not provide a universal approval dialog for every mutation.
-- Todos, parking notes, and character profiles are ActOne metadata. Save the screenplay as an ActOne Bundle (\`.actone\`) when you need those settings to persist with the project.
-- Treat generated facts and profile details as suggestions. Verify them against the screenplay before relying on them.`,
+### How it Works:
+1. Right-click or use the document menu → select **Translate Whole Script** → choose your target language.
+2. ActOne duplicates your document into a target script (e.g., \`MyScript-Tamil\`) and opens a dedicated **Translation Progress Window**.
+3. The progress window displays the active AI provider, model, live batch counter, and percentage bar.
+4. Click **"Run in Background"** to dismiss the progress window anytime.
+5. In the **Project Pane (Sidebar)**:
+   - The translating document is temporarily locked and displays a shimmering theme-accent animation.
+   - A **"Show Progress"** button appears under the document to reopen the progress window at any point.
+   - You can continue writing in other scripts while translation proceeds smoothly in the background.
+6. Once complete (100%), the script becomes normal, interactive, and fully editable.`,
   },
 ];
 

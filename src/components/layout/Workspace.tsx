@@ -76,6 +76,78 @@ export const Workspace = React.memo<WorkspaceProps>(({
     return () => { document.removeEventListener("mousemove", handleMouseMove); document.removeEventListener("mouseup", handleMouseUp); };
   }, [isDragging]);
 
+  useEffect(() => {
+    const el = document.getElementById("editor-workspace") as HTMLElement | null;
+    if (!el) return;
+    const SCROLLBAR_W = 14;
+    let dragging = false;
+    let trackTop = 0;
+    let trackHeight = 0;
+    let thumbHeight = 0;
+    let maxScroll = 0;
+
+    const getThumbHeight = () => {
+      if (el.scrollHeight <= el.clientHeight) return el.clientHeight;
+      const ratio = el.clientHeight / el.scrollHeight;
+      return Math.max(28, Math.min(el.clientHeight * ratio, el.clientHeight - 20));
+    };
+
+    const onDown = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      const isOnScrollbar = e.clientX >= rect.right - SCROLLBAR_W && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+      if (!isOnScrollbar || el.scrollHeight <= el.clientHeight) return;
+      const thumbH = getThumbHeight();
+      const scrollRatio = el.scrollTop / (el.scrollHeight - el.clientHeight);
+      const thumbTop = rect.top + scrollRatio * (rect.height - thumbH);
+      const thumbBottom = thumbTop + thumbH;
+      const clickedOnThumb = e.clientY >= thumbTop && e.clientY <= thumbBottom;
+      if (!clickedOnThumb) return;
+      dragging = true;
+      trackTop = rect.top;
+      trackHeight = rect.height;
+      thumbHeight = thumbH;
+      maxScroll = el.scrollHeight - el.clientHeight;
+      (e as unknown as { preventDefault: () => void }).preventDefault?.();
+      document.body.style.userSelect = "none";
+    };
+
+    const onMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      const thumbH = thumbHeight;
+      const trackH = trackHeight;
+      const maxThumbTop = trackH - thumbH;
+      if (maxThumbTop <= 0) return;
+      let thumbTopDesired = e.clientY - trackTop - thumbH / 2;
+      thumbTopDesired = Math.max(0, Math.min(maxThumbTop, thumbTopDesired));
+      const scrollRatio = thumbTopDesired / maxThumbTop;
+      const nextTop = scrollRatio * maxScroll;
+      el.scrollTop = nextTop;
+      const thumbTopNow = trackTop + scrollRatio * maxThumbTop;
+      const thumbMiddleNow = thumbTopNow + thumbH / 2;
+      const beyondTop = e.clientY < trackTop;
+      const beyondBottom = e.clientY > trackTop + trackH;
+      if (beyondTop || beyondBottom) {
+        const distToMiddle = Math.abs(e.clientY - thumbMiddleNow);
+        if (distToMiddle > thumbH / 2) return;
+      }
+    };
+
+    const onUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.userSelect = "";
+    };
+
+    el.addEventListener("mousedown", onDown, true);
+    window.addEventListener("mousemove", onMove, true);
+    window.addEventListener("mouseup", onUp, true);
+    return () => {
+      el.removeEventListener("mousedown", onDown, true);
+      window.removeEventListener("mousemove", onMove, true);
+      window.removeEventListener("mouseup", onUp, true);
+    };
+  }, []);
+
   const handleInsertAtCursor = useCallback((text: string) => {
     const view = editorView;
     if (!view) return;
@@ -186,8 +258,8 @@ export const Workspace = React.memo<WorkspaceProps>(({
           bgcolor: 'background.default',
           borderTopLeftRadius: isZenMode ? 0 : '12px',
           borderBottomLeftRadius: isZenMode ? 0 : '12px',
-          borderTopRightRadius: isZenMode ? 0 : (activeRightPane ? '12px' : 0),
-          borderBottomRightRadius: isZenMode ? 0 : (activeRightPane ? '12px' : 0),
+          borderTopRightRadius: isZenMode ? 0 : '12px',
+          borderBottomRightRadius: isZenMode ? 0 : '12px',
           transition: 'border-radius 240ms cubic-bezier(0.25, 1, 0.5, 1)',
         }}
       >
@@ -557,7 +629,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
           isOpen={activeRightPane === "prompt"}
           onClose={() => setActiveRightPane(null)}
           errorBoundaryName="prompt-pane"
-          ariaLabel="Muse"
+          ariaLabel="Muse Go!"
         >
           <MusePanel onInsertAtCursor={handleInsertAtCursor} />
         </RightPane>

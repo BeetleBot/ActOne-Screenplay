@@ -8,13 +8,14 @@ import {
   NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon,
   SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon,
   ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon,
-  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon
+  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon, MuseIcon
 } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 import { parseScriptFileToFountain } from "../utils/text";
 import { fixFormatting, type FixFormattingReport } from "../utils/fixFormatting";
 import { useModalWindows } from "../hooks/useModalWindows";
+import { usePromptConfig } from "../hooks/usePromptConfig";
 import { isProseScript } from "../utils/scriptMode";
 
 
@@ -145,8 +146,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     setLineFocusEnabled,
     spellcheckEnabled,
     setSpellcheckEnabled,
+    activeRightPane,
+    setActiveRightPane,
   } = useUI();
 
+  const { provider } = usePromptConfig();
   const { openSettingsWindow } = useModalWindows();
 
   const openUrl = (url: string) => {
@@ -299,6 +303,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
       { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
     ] : []),
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },
+    ...(provider !== "none" ? [
+      {
+        id: "view-muse-go",
+        name: activeRightPane === "prompt" ? "Hide Muse Go!" : "Show Muse Go!",
+        category: "View",
+        icon: <MuseIcon sx={{ fontSize: 16 }} />,
+        shortcut: "Alt+M",
+        action: () => {
+          setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");
+          onClose();
+        },
+      }
+    ] : []),
 
     // Format
     ...(!isProse ? [

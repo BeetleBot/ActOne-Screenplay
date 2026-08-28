@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { EditorState, RangeSetBuilder, StateField, Extension } from "@codemirror/state";
+import { EditorState, RangeSetBuilder, StateField, Extension, Compartment } from "@codemirror/state";
 import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, layer, RectangleMarker, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { search, setSearchQuery, getSearchQuery } from "@codemirror/search";
@@ -11,6 +11,8 @@ import { contextMenuHighlightField } from "./contextMenuState";
 import { pendingScrollTargetY } from "./cursorScroll";
 import { typewriterCompartment, typewriterScrollPlugin } from "./typewriter";
 import { spellcheckCompartment, spellcheckExtension, triggerSpellRecheck } from "./spellcheck";
+
+export const readOnlyCompartment = new Compartment();
 
 let scriptSwitchToken = 0;
 export const getScriptSwitchToken = () => scriptSwitchToken;
@@ -200,9 +202,11 @@ export interface CoreCodeMirrorProps {
 export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScriptSwitch, onInit }: CoreCodeMirrorProps) {
   const viewRef = useRef<EditorView | null>(null);
   const { rawText, setRawText, activeScriptIndex, activeFileId, parsedDoc, scripts, scriptFileName } = useFile();
-  const { typewriterMode, lineFocusEnabled, isZenMode, spellcheckEnabled } = useUI();
+  const { typewriterMode, lineFocusEnabled, isZenMode, spellcheckEnabled, translationState, translatingTarget } = useUI();
   const { setEditorView } = useEditor();
   const { setActiveLineNumber } = useCursor();
+  
+  const isScriptTranslating = translationState === "running" && translatingTarget?.fileId === activeFileId && translatingTarget?.scriptIndex === activeScriptIndex;
   
   const lastScriptKeyRef = useRef("");
   const activeScript = scripts && scripts.length > 0 ? scripts[activeScriptIndex] : undefined;
@@ -286,6 +290,16 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
   }, []);
 
   useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: readOnlyCompartment.reconfigure(
+          isScriptTranslating ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []
+        ),
+      });
+    }
+  }, [isScriptTranslating]);
+
+  useEffect(() => {
     if (!containerRef.current) return;
 
     const extensions = [
@@ -308,6 +322,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
       searchHighlightField,
       rephraseHighlightField,
       contextMenuHighlightField,
+      readOnlyCompartment.of(isScriptTranslating ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
       spellcheckCompartment.of(spellcheckEnabled ? spellcheckExtension : []),
       typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
       EditorView.updateListener.of((update) => {
@@ -568,6 +583,23 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
             measureResult.scrollArea.scrollTop += measureResult.diff;
           }
         });
+        scrollToPendingTarget();
+      } else if (isExternalTextChange && pendingScrollToRef.current === null) {
+        const scrollArea = getScrollArea(view);
+        if (scrollArea) {
+          const currentScrollTop = scrollArea.scrollTop;
+          const token = scriptSwitchToken;
+          view.requestMeasure({
+            read() {
+              if (scriptSwitchToken !== token) return null;
+              return { scrollArea, currentScrollTop };
+            },
+            write(measureResult) {
+              if (!measureResult) return;
+              measureResult.scrollArea.scrollTop = measureResult.currentScrollTop;
+            }
+          });
+        }
         scrollToPendingTarget();
       } else {
         scrollToPendingTarget();

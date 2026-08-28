@@ -178,6 +178,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
         return;
       }
 
+      if (key === "h" && shift) {
+        e.preventDefault();
+        toggleInlineMarker(actionsRef.current.getEditorView(), "==");
+        return;
+      }
+
       if (key === "=" || key === "+" || e.code === "Equal") {
         e.preventDefault();
         if (alt) {

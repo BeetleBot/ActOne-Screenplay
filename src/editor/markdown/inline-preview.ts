@@ -591,6 +591,22 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
     );
   }
 
+  for (let n = 1; n <= doc.lines; n++) {
+    const line = doc.line(n);
+    const text = line.text;
+    const highlightRegex = /==([^=]+)==/g;
+    let hm;
+    while ((hm = highlightRegex.exec(text)) !== null) {
+      const inner = hm[1];
+      if (inner.length === 0 || /^\s/.test(inner) || /\s$/.test(inner)) continue;
+      const start = line.from + hm.index;
+      const end = start + hm[0].length;
+      ranges.push(Decoration.mark({ class: 'cm-prose-highlight' }).range(start + 2, end - 2));
+      ranges.push(Decoration.mark({ class: 'cm-prose-highlight-mark' }).range(start, start + 2));
+      ranges.push(Decoration.mark({ class: 'cm-prose-highlight-mark' }).range(end - 2, end));
+    }
+  }
+
   // Supplemental inline marks for the line containing the cursor.
   // CommonMark's flanking rules say that `**foo **` is not emphasis
   // because the closing `**` is preceded by whitespace — lezer
@@ -633,6 +649,7 @@ const MID_TYPING_DELIMITERS: readonly {
 }[] = [
   { delim: '**', contentCls: 'cm-prose-strong', delimCls: 'cm-prose-strong-mark' },
   { delim: '__', contentCls: 'cm-prose-strong', delimCls: 'cm-prose-strong-mark' },
+  { delim: '==', contentCls: 'cm-prose-highlight', delimCls: 'cm-prose-highlight-mark' },
   { delim: '~~', contentCls: 'cm-prose-strike', delimCls: 'cm-prose-strike-mark' },
   { delim: '*', contentCls: 'cm-prose-em', delimCls: 'cm-prose-em-mark' },
   { delim: '_', contentCls: 'cm-prose-em', delimCls: 'cm-prose-em-mark' },
@@ -674,6 +691,13 @@ function supplementMidTypingEmphasis(
 
       const contentFrom = open + dLen;
       const contentTo = close;
+      if (delim === '==' && contentFrom < contentTo) {
+        const inner = text.slice(contentFrom, contentTo);
+        if (/^\s/.test(inner) || /\s$/.test(inner)) {
+          searchFrom = close + dLen;
+          continue;
+        }
+      }
       if (
         contentFrom < contentTo &&
         localCursor > open &&

@@ -518,6 +518,14 @@ body {
   color: var(--text-editor-action) !important;
 }
 
+.cm-fountain-highlight {
+  background: var(--editor-highlight-bg, rgba(255, 235, 59, 0.38)) !important;
+  border-radius: 3px !important;
+  padding: 0 1px !important;
+  box-decoration-break: clone !important;
+  -webkit-box-decoration-break: clone !important;
+}
+
 .cm-fountain-syntax {
   opacity: 0.35 !important;
 }
@@ -670,6 +678,30 @@ body.dark-theme ::-webkit-scrollbar-thumb {
 
 body.dark-theme ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.35);
+}
+
+html, body, * {
+  scroll-behavior: auto !important;
+  overscroll-behavior: none !important;
+}
+
+.editor-scroll-area,
+.cm-scroller,
+.cm-content,
+.sidebar-content,
+.MuiDialogContent-root,
+.app-workspace {
+  scroll-behavior: auto !important;
+  overscroll-behavior: none !important;
+  overscroll-behavior-y: none !important;
+  overscroll-behavior-x: none !important;
+  -webkit-overflow-scrolling: auto !important;
+  scrollbar-gutter: auto;
+}
+
+.editor-scroll-area {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 /* Print Styles */

@@ -78,6 +78,8 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
       type = LINE_EMPTY;
     } else if (/^#{1,2}(?:[^#]|$)/.test(trimmed)) {
       type = LINE_SECTION;
+    } else if (trimmed.startsWith("==") && !trimmed.startsWith("===") && trimmed.indexOf("==", 2) !== -1) {
+      type = LINE_ACTION;
     } else if (trimmed.startsWith("=")) {
       type = (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") ? LINE_PAGEBREAK : LINE_SYNOPSE;
     } else if (trimmed.startsWith("~")) {
@@ -127,6 +129,8 @@ const classifyLineAt = (doc: { line: (n: number) => { text: string }; lines: num
     type = LINE_EMPTY;
   } else if (/^#{1,2}(?:[^#]|$)/.test(trimmed)) {
     type = LINE_SECTION;
+  } else if (trimmed.startsWith("==") && !trimmed.startsWith("===") && trimmed.indexOf("==", 2) !== -1) {
+    type = LINE_ACTION;
   } else if (trimmed.startsWith("=")) {
     type = (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") ? LINE_PAGEBREAK : LINE_SYNOPSE;
   } else if (trimmed.startsWith("~")) {
@@ -418,6 +422,17 @@ export const computeFountainDecorations = (
       lineDecos.push({ from: start, to: start + 1, dec: syntaxDeco });
       lineDecos.push({ from: start + 1, to: start + m[0].length - 1, dec: Decoration.mark({ class: "cm-fountain-underline" }) });
       lineDecos.push({ from: start + m[0].length - 1, to: start + m[0].length, dec: syntaxDeco });
+    }
+
+    // Highlight ==text== (no leading/trailing space)
+    const highlightRegex = /==([^=]+)==/g;
+    while ((m = highlightRegex.exec(text)) !== null) {
+      const inner = m[1];
+      if (inner.length === 0 || /^\s/.test(inner) || /\s$/.test(inner)) continue;
+      const start = line.from + m.index;
+      lineDecos.push({ from: start, to: start + 2, dec: syntaxDeco });
+      lineDecos.push({ from: start + 2, to: start + m[0].length - 2, dec: Decoration.mark({ class: "cm-fountain-highlight" }) });
+      lineDecos.push({ from: start + m[0].length - 2, to: start + m[0].length, dec: syntaxDeco });
     }
 
     // Sort to satisfy RangeSetBuilder constraints

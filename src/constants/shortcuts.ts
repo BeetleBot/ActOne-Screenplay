@@ -133,6 +133,7 @@ export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   { id: "bold", label: "Bold Text (**)", category: "Editor & Formatting", keys: ["Ctrl", "B"] },
   { id: "italic", label: "Italic Text (*)", category: "Editor & Formatting", keys: ["Ctrl", "I"] },
   { id: "underline", label: "Underline Text (_)", category: "Editor & Formatting", keys: ["Ctrl", "U"] },
+  { id: "highlight", label: "Highlight Text (==)", category: "Editor & Formatting", keys: ["Ctrl", "Shift", "H"] },
   { id: "cycle-prefix", label: "Cycle Line Element Prefix", category: "Editor & Formatting", keys: ["Tab"] },
   { id: "accept-autocomplete", label: "Accept Autocomplete Suggestion", category: "Editor & Formatting", keys: ["Tab"] },
   { id: "undo", label: "Undo", category: "Editor & Formatting", keys: ["Ctrl", "Z"] },
