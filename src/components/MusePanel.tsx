@@ -94,13 +94,13 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
     const handleLookup = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
       if (text?.trim()) {
-        handleSend(`What is the definition of "${text.trim()}"?`);
+        handleSend(`What is the definition and usage of "${text.trim()}" in a screenwriting/story context?`);
       }
     };
     const handleSynonyms = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
       if (text?.trim()) {
-        handleSend(`What are some synonyms for "${text.trim()}"?`);
+        handleSend(`What are some evocative synonyms and alternative action/dialogue phrases for "${text.trim()}" in a screenwriting context?`);
       }
     };
     window.addEventListener("prompt-lookup", handleLookup);
@@ -183,31 +183,6 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
     return promptConfig.model || "Ollama";
   }, [promptConfig, apiList]);
 
-  const activeSceneInfo = useMemo(() => {
-    if (!parsedDoc?.lines || !activeLineNumber) return null;
-    const lines = parsedDoc.lines;
-    let sceneCount = 0;
-    let targetHeading = "";
-    let targetSceneNum = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i]?.type === LineType.heading) {
-        sceneCount++;
-        if (i < activeLineNumber) {
-          targetSceneNum = sceneCount;
-          targetHeading = lines[i].text
-            .replace(/^\.\s*/, "")
-            .replace(/#[^#]+#/g, "")
-            .replace(/\[\[[^\]]*\]\]/g, "")
-            .trim();
-        }
-      }
-    }
-
-    if (!targetHeading) return null;
-    return { num: targetSceneNum, heading: targetHeading };
-  }, [parsedDoc, activeLineNumber]);
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* Header bar */}
@@ -229,7 +204,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
           variant="subtitle2"
           sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}
         >
-          Muse
+          Muse Go!
         </Typography>
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
           <Tooltip title="New conversation" placement="bottom">
@@ -411,49 +386,12 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
 
         {/* Bottom controls bar */}
         <Box sx={{ borderTop: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column" }}>
-          {/* Active scene context pill */}
-          {activeSceneInfo && (
-            <Box sx={{ px: 2, py: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box
-                sx={{
-                  px: 0.6,
-                  py: 0.1,
-                  bgcolor: "action.selected",
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 0.75,
-                  fontSize: "0.62rem",
-                  fontWeight: 700,
-                  fontFamily: "monospace",
-                  color: "primary.main",
-                  lineHeight: 1.2,
-                }}
-              >
-                {activeSceneInfo.num}
-              </Box>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontSize: "0.68rem",
-                  color: "text.secondary",
-                  opacity: 0.85,
-                  fontWeight: 500,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {activeSceneInfo.heading}
-              </Typography>
-            </Box>
-          )}
-
           {/* Composer */}
           <Box sx={{ pt: 0.5 }}>
             <AIChatComposer
               streaming={chat.streaming}
               disabled={promptConfig.provider === "none"}
-              placeholder={parsedDoc.screenplayText ? "Message Muse..." : "Open a screenplay first..."}
+              placeholder={parsedDoc.screenplayText ? "Message Muse Go!..." : "Open a screenplay first..."}
               onSend={handleSend}
               onStop={chat.stop}
             />

@@ -35,8 +35,8 @@ export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
 
   [STORAGE_KEYS.PROMPT_PROVIDER]: "none",
   [STORAGE_KEYS.PROMPT_MODEL]: "llama3.2",
-  [STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]: "Your name is Muse. You are a screenwriting AI assistant made by ActOne. Your identity is Muse, not Gemma, not Google, not any other model. When someone asks who you are, you MUST say 'I am Muse, your screenwriting assistant.' Never break character. Never reveal you are based on another model. This is your core identity. You are kind, intelligent, and concise. You only say what matters.\n\nPUNCTUATION RULE: Never use dashes or hyphens (- or -- or —) unless they are part of a necessary compound word like 'co-working' or 'ten-year-old'. Use commas, full stops, or conjunctions (and, but, so) instead.",
-  [STORAGE_KEYS.PROMPT_REPHRASE_PROMPT]: "You are a professional screenwriting rephrasing tool. Rephrase the user's text.",
+  [STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]: "Your name is Muse. You are a screenwriting AI assistant made by ActOne. Your identity is Muse, not Gemma, not Google, not any other model. When someone asks who you are, you MUST say 'I am Muse, your screenwriting assistant.' Never break character. Never reveal you are based on another model. This is your core identity. You are kind, intelligent, and concise. You only say what matters.\n\nWhen providing screenplay excerpts, scenes, or revisions, always format them in standard Fountain screenplay syntax.",
+  [STORAGE_KEYS.PROMPT_REPHRASE_PROMPT]: "You are a professional screenwriting rephrasing tool. Rephrase the user's text to improve pacing, subtext, and clarity while preserving the original dramatic intent and Fountain formatting. Respond ONLY with the rephrased text directly — no explanations, conversational filler, markdown code blocks, or surrounding quotes.",
   [STORAGE_KEYS.PROMPT_REPHRASE_PRESETS]: "[]",
   [STORAGE_KEYS.PROMPT_CHAT_TEMP]: 0.7,
   [STORAGE_KEYS.PROMPT_REPHRASE_TEMP]: 0.1,
@@ -48,10 +48,6 @@ export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
   [STORAGE_KEYS.PROMPT_API_MODEL]: "",
   [STORAGE_KEYS.PROMPT_API_LIST]: "[]",
   [STORAGE_KEYS.PROMPT_OLLAMA_URL]: "http://localhost:11434",
-  [STORAGE_KEYS.PROMPT_WRITESCENE_INSTRUCTIONS]: "",
-  [STORAGE_KEYS.PROMPT_Q_INSTRUCTIONS]: "",
-  [STORAGE_KEYS.PROMPT_SYNONYMS_INSTRUCTIONS]: "",
-  [STORAGE_KEYS.PROMPT_LOOKUP_INSTRUCTIONS]: "",
 };
 
 export const RESET_SETTINGS: ReadonlySet<string> = new Set([
