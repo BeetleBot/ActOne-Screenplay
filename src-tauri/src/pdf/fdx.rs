@@ -66,6 +66,9 @@ fn rich_to_fdx_text(rs: &RichString) -> String {
         if !styles.is_empty() {
             attrs.push(format!("Style=\"{}\"", styles.join("+")));
         }
+        if el.is_highlight() {
+            attrs.push("BackgroundColor=\"#FFF176\"".to_string());
+        }
         let attr_str = if attrs.is_empty() {
             String::new()
         } else {

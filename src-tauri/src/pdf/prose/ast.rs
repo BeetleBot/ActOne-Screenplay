@@ -55,6 +55,7 @@ struct Style {
     underline: bool,
     strike: bool,
     mono: bool,
+    highlight: bool,
 }
 
 /// Parses Markdown source into a [`ProseDoc`].
@@ -364,12 +365,42 @@ fn parse_inline<'a>(
             }
             Event::Text(text) => {
                 let text = text.to_string();
-                push_styled(
-                    &mut current,
-                    &text,
-                    *styles.last().unwrap(),
-                    links.last().map(|s| s.as_str()),
-                );
+                let base = *styles.last().unwrap();
+                let link = links.last().map(|s| s.as_str());
+                if !text.contains("==") {
+                    push_styled(&mut current, &text, base, link);
+                } else {
+                    let mut rest = text.as_str();
+                    while let Some(start) = rest.find("==") {
+                        let before = &rest[..start];
+                        if !before.is_empty() {
+                            push_styled(&mut current, before, base, link);
+                        }
+                        let after_open = &rest[start + 2..];
+                        if let Some(end) = after_open.find("==") {
+                            let inner = &after_open[..end];
+                            if !inner.is_empty()
+                                && !inner.contains('\n')
+                                && !inner.starts_with(|c: char| c.is_whitespace())
+                                && !inner.ends_with(|c: char| c.is_whitespace())
+                            {
+                                let mut hs = base;
+                                hs.highlight = true;
+                                push_styled(&mut current, inner, hs, link);
+                            } else {
+                                push_styled(&mut current, &rest[start..start + 2 + end + 2], base, link);
+                            }
+                            rest = &after_open[end + 2..];
+                        } else {
+                            push_styled(&mut current, &rest[start..], base, link);
+                            rest = "";
+                            break;
+                        }
+                    }
+                    if !rest.is_empty() {
+                        push_styled(&mut current, rest, base, link);
+                    }
+                }
                 *index += 1;
             }
             Event::Code(text) => {
@@ -459,6 +490,9 @@ fn push_styled(rs: &mut RichString, text: &str, style: Style, link: Option<&str>
     }
     if style.mono {
         el.set_mono();
+    }
+    if style.highlight {
+        el.set_highlight();
     }
     if let Some(url) = link {
         el.set_link(url.to_string());

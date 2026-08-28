@@ -100,6 +100,7 @@ pub struct ShapedLine {
     pub width: f32,
     pub underline_ranges: Vec<(f32, f32)>,
     pub strike_ranges: Vec<(f32, f32)>,
+    pub highlight_ranges: Vec<(f32, f32)>,
     pub link_ranges: Vec<(f32, f32, String)>,
 }
 
@@ -287,6 +288,8 @@ pub(crate) fn shape_rich_string(
     let mut underline_spans: Vec<(usize, usize)> = Vec::new();
     // Build strikethrough span map: (byte_start, byte_end) for each struck region
     let mut strike_spans: Vec<(usize, usize)> = Vec::new();
+    // Build highlight span map: (byte_start, byte_end) for each highlighted region
+    let mut highlight_spans: Vec<(usize, usize)> = Vec::new();
     // Build link span map: (byte_start, byte_end, url)
     let mut link_spans: Vec<(usize, usize, String)> = Vec::new();
     let mut span_offset = 0;
@@ -301,6 +304,9 @@ pub(crate) fn shape_rich_string(
             }
             if element.is_strike() {
                 strike_spans.push((span_offset, span_offset + byte_len));
+            }
+            if element.is_highlight() {
+                highlight_spans.push((span_offset, span_offset + byte_len));
             }
             if let Some(url) = &element.link_url {
                 link_spans.push((span_offset, span_offset + byte_len, url.clone()));
@@ -359,6 +365,7 @@ pub(crate) fn shape_rich_string(
         let mut current_is_italic = false;
         let mut underline_x_ranges: Vec<(f32, f32)> = Vec::new();
         let mut strike_x_ranges: Vec<(f32, f32)> = Vec::new();
+        let mut highlight_x_ranges: Vec<(f32, f32)> = Vec::new();
         let mut link_x_ranges: Vec<(f32, f32, String)> = Vec::new();
 
         for glyph in run.glyphs.iter() {
@@ -412,6 +419,13 @@ pub(crate) fn shape_rich_string(
                 .any(|(st_start, st_end)| start < *st_end && end > *st_start);
             if glyph_is_struck {
                 strike_x_ranges.push((glyph.x, glyph.w));
+            }
+
+            let glyph_is_highlighted = highlight_spans
+                .iter()
+                .any(|(hl_start, hl_end)| start < *hl_end && end > *hl_start);
+            if glyph_is_highlighted {
+                highlight_x_ranges.push((glyph.x, glyph.w));
             }
 
             // Check if this glyph falls within any link span
@@ -475,6 +489,22 @@ pub(crate) fn shape_rich_string(
             }
         }
 
+        // Merge overlapping/adjacent highlight x-ranges
+        highlight_x_ranges.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        let mut merged_highlight: Vec<(f32, f32)> = Vec::new();
+        for (x, w) in highlight_x_ranges {
+            if let Some(last) = merged_highlight.last_mut() {
+                let last_end = last.0 + last.1;
+                if x <= last_end + 0.5 {
+                    last.1 = (x + w - last.0).max(last.1);
+                } else {
+                    merged_highlight.push((x, w));
+                }
+            } else {
+                merged_highlight.push((x, w));
+            }
+        }
+
         // Merge overlapping/adjacent link x-ranges
         link_x_ranges.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
         let mut merged_links: Vec<(f32, f32, String)> = Vec::new();
@@ -496,6 +526,7 @@ pub(crate) fn shape_rich_string(
             width: line_width,
             underline_ranges: merged,
             strike_ranges: merged_strike,
+            highlight_ranges: merged_highlight,
             link_ranges: merged_links,
         });
     }
@@ -519,6 +550,7 @@ pub(crate) fn shape_rich_string(
             width: 0.0,
             underline_ranges: vec![],
             strike_ranges: vec![],
+            highlight_ranges: vec![],
             link_ranges: vec![],
         });
     }
@@ -803,6 +835,26 @@ pub(crate) fn draw_shaped_line(
     y: f32,
     font_size: f32,
 ) {
+    if !line.highlight_ranges.is_empty() {
+        ctx.surface.set_fill(Some(krilla::paint::Fill {
+            paint: krilla::color::rgb::Color::new(255, 243, 128).into(),
+            opacity: krilla::num::NormalizedF32::new(0.55).unwrap(),
+            rule: Default::default(),
+        }));
+        for (hl_x, hl_width) in &line.highlight_ranges {
+            if *hl_width > 0.0
+                && let Some(r) = Rect::from_xywh(x + hl_x - 1.0, y - font_size * 0.78, hl_width + 2.0, font_size * 1.05)
+            {
+                let mut pb = PathBuilder::new();
+                pb.push_rect(r);
+                pb.close();
+                if let Some(path) = pb.finish() {
+                    ctx.surface.draw_path(&path);
+                }
+            }
+        }
+        ctx.surface.set_fill(None);
+    }
     for run in &line.runs {
         if let Some(face_info) = ctx.font_system.db().face(run.font_id) {
             let krilla_font = get_krilla_font(

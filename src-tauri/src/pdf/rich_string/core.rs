@@ -198,7 +198,8 @@ impl Display for RichString {
             }
 
             let element_text = format!(
-                "{}{}{}{}{}{}{}",
+                "{}{}{}{}{}{}{}{}{}",
+                attr_to_delim!(is_highlight, "=="),
                 attr_to_delim!(is_bold, "**"),
                 attr_to_delim!(is_italic, "*"),
                 attr_to_delim!(is_underline, "_"),
@@ -206,6 +207,7 @@ impl Display for RichString {
                 attr_to_delim!(is_underline, "_"),
                 attr_to_delim!(is_italic, "*"),
                 attr_to_delim!(is_bold, "**"),
+                attr_to_delim!(is_highlight, "=="),
             );
             str.push_str(&element_text);
         }
@@ -342,6 +344,17 @@ impl Element {
     pub fn set_mono(&mut self) {
         self.attributes.insert(Attributes::MONO);
     }
+
+    /// If the element is styled with a highlight background.
+    #[must_use]
+    pub fn is_highlight(&self) -> bool {
+        self.attributes.contains(Attributes::HIGHLIGHT)
+    }
+
+    /// Sets the element to be formatted with a highlight background.
+    pub fn set_highlight(&mut self) {
+        self.attributes.insert(Attributes::HIGHLIGHT);
+    }
 }
 
 bitflags! {
@@ -354,6 +367,7 @@ bitflags! {
         const SANS      = 0b1000;
         const STRIKE    = 0b1_0000;
         const MONO      = 0b10_0000;
+        const HIGHLIGHT = 0b100_0000;
     }
 }
 

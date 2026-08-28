@@ -8,7 +8,13 @@ impl<'a> Parser<'a> {
     pub(super) fn try_synopsis(&mut self, line: &str, line_idx: usize) -> bool {
         self.try_(
             line,
-            |_, s| s.trim_start().strip_prefix('='),
+            |_, s| {
+                let trimmed = s.trim_start();
+                if trimmed.starts_with("==") && !trimmed.starts_with("===") && trimmed[2..].contains("==") {
+                    return None;
+                }
+                trimmed.strip_prefix('=')
+            },
             |this, inner| {
                 let inner = inner.trim_start();
                 if this.state == State::InBlock

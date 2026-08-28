@@ -24,7 +24,7 @@ pub(crate) fn tokenize(input: &str) -> (Vec<&str>, Vec<Delimiter>) {
 
     while let Some((i, ch)) = chars.next() {
         match ch {
-            '*' | '_' => {
+            '*' | '_' | '=' => {
                 if i > start {
                     tokens.push(&input[start..i]);
                 }
