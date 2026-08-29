@@ -8,12 +8,23 @@ function isTauriEnv(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-function platformFetch(url: string, init?: RequestInit) {
+async function platformFetch(url: string, init?: RequestInit): Promise<Response> {
   if (isTauriEnv()) {
-    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
-    const headers = new Headers(init?.headers);
-    if (isLocalhost) headers.set("Origin", "http://localhost");
-    return tauriFetch(url, { ...init, headers });
+    try {
+      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
+      const headers = new Headers(init?.headers);
+      if (isLocalhost) headers.set("Origin", "http://localhost");
+      return await tauriFetch(url, { ...init, headers });
+    } catch (tauriErr) {
+      if ((init?.signal as AbortSignal)?.aborted) {
+        throw tauriErr;
+      }
+      try {
+        return await fetch(url, init);
+      } catch {
+        throw tauriErr;
+      }
+    }
   }
   return fetch(url, init);
 }

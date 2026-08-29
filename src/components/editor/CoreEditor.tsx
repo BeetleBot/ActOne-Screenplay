@@ -74,7 +74,7 @@ export const CoreEditor = React.memo(({ containerRef, viewRef, extraContextMenuI
 
       if (pos !== null && !(sel.from !== sel.to && pos >= sel.from && pos <= sel.to)) {
         if (sel.from === sel.to) {
-          v.dispatch({ selection: { anchor: pos } });
+          v.dispatch({ selection: { anchor: pos }, userEvent: "select.pointer" });
         }
       }
 

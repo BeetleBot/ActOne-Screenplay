@@ -1,6 +1,5 @@
 import React, { useRef, useState, useMemo } from "react";
 import { useFile, useUI, useCustomModal } from "../context";
-import { LineType } from "../parser";
 import { usePromptConfig } from "../hooks/usePromptConfig";
 import { useScriptCodeMirror } from "../editor";
 import { logger } from "../utils/logger";
@@ -9,7 +8,6 @@ import { setRephraseRangeEffect } from "../editor/rephraseState";
 import { extractThinkingAndClean } from "../hooks/useAIChat";
 import { CoreEditor, type MenuSelectionSnap } from "./editor/CoreEditor";
 import { type ContextMenuItem, type ContextMenuItemDef } from "./ContextMenu";
-import { runTranslationJob } from "../utils/translationEngine";
 import { createAIProvider } from "../lib/aiProviders";
 import { getLanguageDetails } from "../constants/languages";
 
@@ -38,120 +36,10 @@ const MARKER_COLORS = [
   { key: "none", label: "Default (Orange)", color: "var(--cat-other)" }
 ];
 
-interface LineAnalysis {
-  original: string;
-  indent: string;
-  prefix: string;
-  suffix: string;
-  cleanText: string;
-  isTranslatable: boolean;
-}
-
-function analyzeFountainLineWithAST(line: string, parsedLine: any): LineAnalysis {
-  let clean = line;
-  const indentMatch = clean.match(/^\s+/);
-  let indent = "";
-  if (indentMatch) {
-    indent = indentMatch[0];
-    clean = clean.slice(indent.length);
-  }
-
-  const trimmed = clean.trim();
-  if (!trimmed) {
-    return { original: line, indent, prefix: "", suffix: "", cleanText: "", isTranslatable: false };
-  }
-
-  const type = parsedLine?.type;
-
-  if (type === LineType.character || type === LineType.dualDialogueCharacter) {
-    let charName = trimmed;
-    if (!charName.startsWith("@")) {
-      charName = "@" + charName;
-    }
-    return { original: indent + charName, indent, prefix: "", suffix: "", cleanText: charName, isTranslatable: false };
-  }
-
-  if (type === LineType.heading) {
-    let headingText = trimmed;
-    if (!headingText.startsWith(".")) {
-      headingText = "." + headingText;
-    }
-    return { original: indent + headingText, indent, prefix: "", suffix: "", cleanText: headingText, isTranslatable: false };
-  }
-
-  if (type === LineType.transitionLine) {
-    let transText = trimmed;
-    if (!transText.startsWith(">")) {
-      transText = "> " + transText;
-    }
-    return { original: indent + transText, indent, prefix: "", suffix: "", cleanText: transText, isTranslatable: false };
-  }
-
-  const isOtherNonTranslatable = (
-    type === LineType.empty ||
-    type === LineType.section ||
-    type === LineType.pageBreak ||
-    type === LineType.more ||
-    type === LineType.dualDialogueMore ||
-    (type !== undefined && type >= LineType.titlePageTitle && type <= LineType.titlePageUnknown)
-  );
-
-  if (isOtherNonTranslatable) {
-    return { original: line, indent, prefix: "", suffix: "", cleanText: trimmed, isTranslatable: false };
-  }
-
-  let prefix = "";
-  let suffix = "";
-
-  if (type === LineType.action) {
-    prefix = "!";
-    if (clean.startsWith("!")) clean = clean.slice(1);
-  } else if (type === LineType.synopse) {
-    prefix = "=";
-    if (clean.startsWith("=")) clean = clean.slice(1);
-  } else if (type === LineType.shot) {
-    prefix = "!!";
-    if (clean.startsWith("!!")) clean = clean.slice(2);
-  } else if (type === LineType.centered) {
-    prefix = ">";
-    suffix = "<";
-    if (clean.startsWith(">")) clean = clean.slice(1);
-    if (clean.endsWith("<")) clean = clean.slice(0, -1);
-  } else if (type === LineType.parenthetical || type === LineType.dualDialogueParenthetical) {
-    prefix = "(";
-    suffix = ")";
-    if (clean.startsWith("(")) clean = clean.slice(1);
-    if (clean.endsWith(")")) clean = clean.slice(0, -1);
-  } else {
-    if (clean.startsWith("- ")) {
-      prefix = "- ";
-      clean = clean.slice(2);
-    } else if (clean.startsWith("-")) {
-      prefix = "-";
-      clean = clean.slice(1);
-    } else if (clean.startsWith("[[") && clean.endsWith("]]")) {
-      prefix = "[[";
-      suffix = "]]";
-      clean = clean.slice(2, -2);
-    }
-  }
-
-  return {
-    original: line,
-    indent,
-    prefix,
-    suffix,
-    cleanText: clean.trim(),
-    isTranslatable: true,
-  };
-}
-
 export const ScriptEditor = React.memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { setActiveRightPane, setActiveTab, setAiStatus, translationState, setTranslationState, setTranslatingTarget, setTranslationJob, setIsTranslationModalOpen, registerTranslationAbort } = useUI();
-  const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>(translationState);
-  translationStateRef.current = translationState;
-  const { parsedDoc, activeScriptIndex, activeScriptName, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
+  const { setActiveRightPane, setActiveTab, setAiStatus, setIsTranslationModalOpen, setTranslationSetupTarget } = useUI();
+  const { parsedDoc, activeScriptIndex, activeFileId } = useFile();
   const { prompt: showPrompt } = useCustomModal();
   
   const viewRef = useScriptCodeMirror(containerRef);
@@ -490,57 +378,11 @@ export const ScriptEditor = React.memo(() => {
     v?.focus();
   };
 
-  const handleTranslateWholeDocument = async (lang: string, closeMenu: () => void) => {
+  const handleTranslateWholeDocument = async (closeMenu: () => void) => {
     closeMenu();
-    if (!parsedDoc) return;
-    
-    setAiStatus(`Preparing translation to ${lang}...`);
-
-    const rawText = parsedDoc.screenplayText || "";
-    const lines = rawText.split(/\r?\n/);
-    const parsedLines = parsedDoc.lines || [];
-    
-    const analyzedLines = lines.map((line, i) => {
-      return analyzeFountainLineWithAST(line, parsedLines[i]);
-    });
-
-    setTranslatingLang(lang);
-
-    try {
-      const cleanScriptName = activeScriptName.replace(/\.fountain$/i, "").trim();
-      const duplicatedName = await duplicateScript(activeScriptIndex, `${cleanScriptName}-${lang}`, false);
-      if (!duplicatedName) throw new Error("Failed to duplicate script");
-      
-      const targetScriptIndex = activeScriptIndex + 1;
-
-      await runTranslationJob({
-        lang,
-        promptConfig,
-        sourceScriptName: activeScriptName,
-        duplicatedName,
-        targetFileId: activeFileId,
-        targetScriptIndex,
-        lines,
-        analyzedLines,
-        parsedDoc,
-        updateFileScriptContent,
-        uiActions: {
-          setAiStatus,
-          setTranslationState,
-          setTranslatingTarget,
-          setTranslationJob,
-          setIsTranslationModalOpen,
-          registerTranslationAbort,
-          getTranslationState: () => translationStateRef.current,
-        },
-      });
-    } catch (err: any) {
-      logger.error("editor", "Whole document translation failed", err);
-      setAiStatus(`Error setting up translation: ${err.message}`);
-      setTimeout(() => setAiStatus(null), 3000);
-    } finally {
-      setTranslatingLang(null);
-    }
+    if (!activeFileId) return;
+    setTranslationSetupTarget({ fileId: activeFileId, scriptIndex: activeScriptIndex });
+    setIsTranslationModalOpen(true);
   };
 
   const handleHighlightScene = (colorName: string, closeMenu: () => void) => {
@@ -608,12 +450,8 @@ export const ScriptEditor = React.memo(() => {
           },
         ]
       : [{
-          label: "Translate Whole Script",
-          children: promptConfig.translateLanguages.map((lang) => ({
-            label: lang,
-            enabled: translatingLang !== lang,
-            action: () => handleTranslateWholeDocument(lang, closeMenu),
-          })),
+          label: "Translate Whole Document",
+          action: () => handleTranslateWholeDocument(closeMenu),
         }];
 
     return [

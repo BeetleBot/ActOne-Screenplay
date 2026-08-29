@@ -24,11 +24,9 @@ import {
   Tooltip,
   Button,
 } from "@mui/material";
-import { usePromptConfig } from "../hooks/usePromptConfig";
-import { LineType, parseScreenplay } from "../parser";
+
 import { OutlineTag } from "./OutlineView";
 import { isProseScript } from "../utils/scriptMode";
-import { runTranslationJob } from "../utils/translationEngine";
 
 export const ScriptsView = React.memo(() => {
   const {
@@ -43,28 +41,18 @@ export const ScriptsView = React.memo(() => {
     duplicateScript,
     deleteScript,
     moveScript,
-    updateFileScriptContent,
   } = useFile();
 
   const {
     translationJob,
-    translationState,
-    setAiStatus,
-    setTranslationState,
-    setTranslatingTarget,
-    setTranslationJob,
-    registerTranslationAbort,
     setIsTranslationModalOpen,
+    setTranslationSetupTarget,
   } = useUI();
-  const promptConfig = usePromptConfig();
-  const translationStateRef = useRef(translationState);
-  translationStateRef.current = translationState;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; index: number } | null>(null);
-  const [translateMenuAnchor, setTranslateMenuAnchor] = useState<HTMLElement | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
@@ -246,134 +234,11 @@ export const ScriptsView = React.memo(() => {
     document.addEventListener("mouseup", onUp);
   }, [scripts, moveScript]);
 
-  const handleTranslateWholeScript = async (targetIndex: number, lang: string) => {
-    setTranslateMenuAnchor(null);
-    setMenuState(null);
-    const sourceScript = scripts[targetIndex];
-    if (!sourceScript) return;
 
-    setAiStatus(`Preparing translation to ${lang}...`);
-
-    const rawText = sourceScript.content || "";
-    const lines = rawText.split(/\r?\n/);
-    const parsedDoc = parseScreenplay(rawText);
-    const parsedLines = parsedDoc.lines || [];
-
-    const analyzedLines = lines.map((line, i) => {
-      let clean = line;
-      const indentMatch = clean.match(/^\s+/);
-      let indent = "";
-      if (indentMatch) {
-        indent = indentMatch[0];
-        clean = clean.slice(indent.length);
-      }
-      const trimmed = clean.trim();
-      if (!trimmed) {
-        return { original: line, indent, prefix: "", suffix: "", cleanText: "", isTranslatable: false };
-      }
-      const type = parsedLines[i]?.type;
-      if (type === LineType.character || type === LineType.dualDialogueCharacter) {
-        let charName = trimmed;
-        if (!charName.startsWith("@")) charName = "@" + charName;
-        return { original: indent + charName, indent, prefix: "", suffix: "", cleanText: charName, isTranslatable: false };
-      }
-      if (type === LineType.heading) {
-        let headingText = trimmed;
-        if (!headingText.startsWith(".")) headingText = "." + headingText;
-        return { original: indent + headingText, indent, prefix: "", suffix: "", cleanText: headingText, isTranslatable: false };
-      }
-      if (type === LineType.transitionLine) {
-        let transText = trimmed;
-        if (!transText.startsWith(">")) transText = "> " + transText;
-        return { original: indent + transText, indent, prefix: "", suffix: "", cleanText: transText, isTranslatable: false };
-      }
-      const isOtherNonTranslatable = (
-        type === LineType.empty ||
-        type === LineType.section ||
-        type === LineType.pageBreak ||
-        type === LineType.more ||
-        type === LineType.dualDialogueMore ||
-        (type !== undefined && type >= LineType.titlePageTitle && type <= LineType.titlePageUnknown)
-      );
-      if (isOtherNonTranslatable) {
-        return { original: line, indent, prefix: "", suffix: "", cleanText: trimmed, isTranslatable: false };
-      }
-      let prefix = "";
-      let suffix = "";
-      if (type === LineType.action) {
-        prefix = "!";
-        if (clean.startsWith("!")) clean = clean.slice(1);
-      } else if (type === LineType.synopse) {
-        prefix = "=";
-        if (clean.startsWith("=")) clean = clean.slice(1);
-      } else if (type === LineType.shot) {
-        prefix = "!!";
-        if (clean.startsWith("!!")) clean = clean.slice(2);
-      } else if (type === LineType.centered) {
-        prefix = ">";
-        suffix = "<";
-        if (clean.startsWith(">")) clean = clean.slice(1);
-        if (clean.endsWith("<")) clean = clean.slice(0, -1);
-      } else if (type === LineType.parenthetical || type === LineType.dualDialogueParenthetical) {
-        prefix = "(";
-        suffix = ")";
-        if (clean.startsWith("(")) clean = clean.slice(1);
-        if (clean.endsWith(")")) clean = clean.slice(0, -1);
-      } else {
-        if (clean.startsWith("- ")) {
-          prefix = "- ";
-          clean = clean.slice(2);
-        } else if (clean.startsWith("-")) {
-          prefix = "-";
-          clean = clean.slice(1);
-        } else if (clean.startsWith("[[") && clean.endsWith("]]")) {
-          prefix = "[[";
-          suffix = "]]";
-          clean = clean.slice(2, -2);
-        }
-      }
-      return {
-        original: line,
-        indent,
-        prefix,
-        suffix,
-        cleanText: clean.trim(),
-        isTranslatable: true,
-      };
-    });
-
-    try {
-      const cleanScriptName = sourceScript.name.replace(/\.fountain$/i, "").trim();
-      const duplicatedName = await duplicateScript(targetIndex, `${cleanScriptName}-${lang}`, false);
-      if (!duplicatedName) throw new Error("Failed to duplicate script");
-
-      const targetScriptIndex = targetIndex + 1;
-
-      await runTranslationJob({
-        lang,
-        promptConfig,
-        sourceScriptName: sourceScript.name,
-        duplicatedName,
-        targetFileId: activeFileId,
-        targetScriptIndex,
-        lines,
-        analyzedLines,
-        parsedDoc,
-        updateFileScriptContent,
-        uiActions: {
-          setAiStatus,
-          setTranslationState,
-          setTranslatingTarget,
-          setTranslationJob,
-          setIsTranslationModalOpen,
-          registerTranslationAbort,
-          getTranslationState: () => translationStateRef.current,
-        },
-      });
-    } catch (err: any) {
-      setAiStatus(`Error setting up translation: ${err.message}`);
-      setTimeout(() => setAiStatus(null), 3000);
-    }
+  const handleTranslateWholeScript = async (targetIndex: number) => {
+    if (!activeFileId) return;
+    setTranslationSetupTarget({ fileId: activeFileId, scriptIndex: targetIndex });
+    setIsTranslationModalOpen(true);
   };
 
   return (
@@ -719,7 +584,6 @@ export const ScriptsView = React.memo(() => {
         open={!!menuState}
         onClose={() => {
           setMenuState(null);
-          setTranslateMenuAnchor(null);
         }}
         disableRestoreFocus
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
@@ -736,41 +600,19 @@ export const ScriptsView = React.memo(() => {
             <Divider />
             <MenuItem
               dense
-              onClick={(e) => {
-                e.stopPropagation();
-                setTranslateMenuAnchor(e.currentTarget);
+              onClick={() => {
+                if (menuState) {
+                  handleTranslateWholeScript(menuState.index);
+                }
+                setMenuState(null);
               }}
             >
-              Translate Whole Script ▸
+              Translate Whole Document
             </MenuItem>
           </>
         )}
         <Divider />
         <MenuItem onClick={handleDelete} dense sx={{ color: "error.main" }}>Delete</MenuItem>
-      </Menu>
-
-      {/* Translate Submenu */}
-      <Menu
-        anchorEl={translateMenuAnchor}
-        open={Boolean(translateMenuAnchor && menuState)}
-        onClose={() => setTranslateMenuAnchor(null)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{ paper: { sx: { minWidth: 150, maxHeight: 300 } } }}
-      >
-        {promptConfig.translateLanguages.map((lang) => (
-          <MenuItem
-            key={lang}
-            dense
-            onClick={() => {
-              if (menuState) {
-                handleTranslateWholeScript(menuState.index, lang);
-              }
-            }}
-          >
-            {lang}
-          </MenuItem>
-        ))}
       </Menu>
 
       {/* Add New Document Menu */}

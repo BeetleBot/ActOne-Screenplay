@@ -4,6 +4,8 @@ import { getScriptSwitchToken } from "./useCoreCodeMirror";
 
 export const typewriterCompartment = new Compartment();
 
+let lastPointerInteractionTime = 0;
+
 export const typewriterScrollPlugin = ViewPlugin.fromClass(
   class {
     scheduled = false;
@@ -12,10 +14,15 @@ export const typewriterScrollPlugin = ViewPlugin.fromClass(
       if (!(update.docChanged || update.selectionSet)) return;
       if (!update.state.selection.main.empty) return;
       
-      // If the selection change was caused by a mouse click (pointer event),
-      // we do not scroll to center. This prevents jarring jumps when clicking.
-      const isPointerEvent = update.transactions.some(tr => tr.isUserEvent("select.pointer"));
+      const isPointerEvent = update.transactions.some(tr => 
+        tr.isUserEvent("select.pointer") || 
+        tr.isUserEvent("select.drop") ||
+        tr.isUserEvent("input.drop") ||
+        tr.isUserEvent("drop")
+      );
       if (isPointerEvent) return;
+
+      if (Date.now() - lastPointerInteractionTime < 400) return;
 
       if (this.scheduled) return;
       this.scheduled = true;
@@ -27,11 +34,25 @@ export const typewriterScrollPlugin = ViewPlugin.fromClass(
         this.scheduled = false;
         if (getScriptSwitchToken() !== token) return;
         if (!view.state.selection.main.empty) return;
+        if (Date.now() - lastPointerInteractionTime < 400) return;
         
         view.dispatch({
           effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: "center" })
         });
       });
+    }
+  },
+  {
+    eventHandlers: {
+      pointerdown: () => {
+        lastPointerInteractionTime = Date.now();
+      },
+      mousedown: () => {
+        lastPointerInteractionTime = Date.now();
+      },
+      contextmenu: () => {
+        lastPointerInteractionTime = Date.now();
+      },
     }
   }
 );

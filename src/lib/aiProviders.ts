@@ -7,12 +7,23 @@ function isTauriEnv(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-function platformFetch(url: string, init?: RequestInit) {
+async function platformFetch(url: string, init?: RequestInit): Promise<Response> {
   if (isTauriEnv()) {
-    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
-    const headers = new Headers(init?.headers);
-    if (isLocalhost) headers.set("Origin", "http://localhost");
-    return tauriFetch(url, { ...init, headers });
+    try {
+      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
+      const headers = new Headers(init?.headers);
+      if (isLocalhost) headers.set("Origin", "http://localhost");
+      return await tauriFetch(url, { ...init, headers });
+    } catch (tauriErr) {
+      if ((init?.signal as AbortSignal)?.aborted) {
+        throw tauriErr;
+      }
+      try {
+        return await fetch(url, init);
+      } catch {
+        throw tauriErr;
+      }
+    }
   }
   return fetch(url, init);
 }
@@ -39,22 +50,31 @@ async function streamLines(response: Response, onLine: (line: string) => void): 
     for (const line of (await response.text()).split("\n")) onLine(line);
     return;
   }
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let idx = buffer.indexOf("\n");
-    while (idx !== -1) {
-      onLine(buffer.slice(0, idx));
-      buffer = buffer.slice(idx + 1);
-      idx = buffer.indexOf("\n");
+  try {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let idx = buffer.indexOf("\n");
+      while (idx !== -1) {
+        onLine(buffer.slice(0, idx));
+        buffer = buffer.slice(idx + 1);
+        idx = buffer.indexOf("\n");
+      }
+    }
+    buffer += decoder.decode();
+    if (buffer) onLine(buffer);
+  } catch (err) {
+    try {
+      const text = await response.text();
+      for (const line of text.split("\n")) onLine(line);
+    } catch {
+      throw err;
     }
   }
-  buffer += decoder.decode();
-  if (buffer) onLine(buffer);
 }
 
 function sseData(line: string): unknown | null {
@@ -85,7 +105,12 @@ export class OpenAICompatibleProvider implements AIProvider {
       headers.Authorization = `Bearer ${this.apiKey}`;
     }
 
-    const response = await platformFetch(this.endpoint.replace(/\/+$/, ""), {
+    let url = this.endpoint.trim().replace(/\/+$/, "");
+    if (!url.endsWith("/chat/completions")) {
+      url = `${url}/chat/completions`;
+    }
+
+    const response = await platformFetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -121,7 +146,6 @@ export class OpenAICompatibleProvider implements AIProvider {
       });
     } catch (e: unknown) {
       if (text.length > 0) {
-        // If we already received partial response before stream cut off, return what we have
         return text;
       }
       throw new Error((e as Error)?.message || "Failed to decode response stream from AI provider.", { cause: e });

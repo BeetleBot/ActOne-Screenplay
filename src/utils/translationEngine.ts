@@ -23,6 +23,8 @@ export interface TranslationJobParams {
   lines: string[];
   analyzedLines: AnalyzedLine[];
   parsedDoc: FountainDocument | null;
+  preserveCharacterNames?: boolean;
+  dynamicToneInstructions?: string;
   updateFileScriptContent: (fileId: string, scriptIndex: number, newContent: string) => void;
   uiActions: {
     setAiStatus: (status: string | null) => void;
@@ -233,7 +235,6 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
     duplicatedName,
     targetFileId,
     targetScriptIndex,
-    lines,
     analyzedLines,
     parsedDoc,
     updateFileScriptContent,
@@ -294,8 +295,8 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       `The output MUST be written in ${ld.native} script (${ld.code}).`,
       "",
       "TONE & STYLE GUIDELINES:",
-      "• Dialogue & Conversation: Use a natural, casual, spoken conversational tone (colloquial spoken language as spoken by real people in modern movies). Do NOT use stiff, formal, archaic, or textbook/literary phrasing.",
-      "• Action & Description: Keep action lines punchy, vivid, and cinematic.",
+      params.dynamicToneInstructions || 
+      "• Dialogue & Conversation: Use a natural, casual, spoken conversational tone (colloquial spoken language as spoken by real people in modern movies). Do NOT use stiff, formal, archaic, or textbook/literary phrasing.\n• Action & Description: Keep action lines punchy, vivid, and cinematic.",
       "",
       "CRITICAL RULES:",
       `1. Translate each line into ${langInfo} with spoken conversational phrasing for dialogue.`,
@@ -381,7 +382,7 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       }
 
       const glossarySuffix =
-        relevantChars.size > 0
+        (params.preserveCharacterNames !== false && relevantChars.size > 0)
           ? `\nDO NOT TRANSLATE THESE CHARACTER NAMES (keep original spelling): [${Array.from(relevantChars).join(", ")}]`
           : "";
 

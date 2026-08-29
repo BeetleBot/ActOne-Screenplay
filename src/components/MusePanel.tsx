@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, UIEvent, useMemo } from "react";
-import { Box, Typography, IconButton, Menu, MenuItem, ListItemText, Divider, Tooltip } from "@mui/material";
+import { Box, Typography, IconButton, Menu, MenuItem, ListItemText, Divider, Tooltip, Chip } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { usePromptConfig, setPromptConfigField, fetchModels } from "../hooks/usePromptConfig";
 import { useAIChat } from "../hooks/useAIChat";
 import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
@@ -200,12 +201,23 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
           flexShrink: 0,
         }}
       >
-        <Typography
-          variant="subtitle2"
-          sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}
-        >
-          Muse Go!
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography
+            variant="subtitle2"
+            sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}
+          >
+            Muse Go!
+          </Typography>
+          <Tooltip title="Muse AI features are currently in Beta. Responses and capabilities are constantly improving with each update." arrow placement="bottom">
+            <Chip 
+              label="Beta" 
+              size="small" 
+              color="primary" 
+              variant="outlined" 
+              sx={{ height: 16, fontSize: "0.55rem", ml: 1, borderColor: (t) => alpha(t.palette.primary.main, 0.4), color: "primary.main", cursor: "help" }} 
+            />
+          </Tooltip>
+        </Box>
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
           <Tooltip title="New conversation" placement="bottom">
             <IconButton size="small" onClick={() => chat.newSession()}>

@@ -304,7 +304,7 @@ describe("ScriptsView Component", () => {
       expect(mockDeleteScript).toHaveBeenCalledWith(0);
     });
 
-    it("shows Translate Whole Script only for screenplay documents in context menu", () => {
+    it("shows Translate Whole Document only for screenplay documents in context menu", () => {
       render(<ScriptsView />);
 
       // 1. Check Screenplay document context menu
@@ -315,7 +315,7 @@ describe("ScriptsView Component", () => {
         fireEvent.click(screenplayMoreBtn);
       });
 
-      expect(screen.getByText(/Translate Whole Script/i)).toBeTruthy();
+      expect(screen.getByText(/Translate Whole Document/i)).toBeTruthy();
 
       // 2. Check Prose document context menu
       const proseItem = screen.getByText("Notes & Worldbuilding").closest("[data-script-index]")!;
@@ -325,7 +325,7 @@ describe("ScriptsView Component", () => {
         fireEvent.click(proseMoreBtn);
       });
 
-      expect(screen.queryByText(/Translate Whole Script/i)).toBeNull();
+      expect(screen.queryByText(/Translate Whole Document/i)).toBeNull();
     });
   });
 

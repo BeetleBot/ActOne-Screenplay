@@ -458,16 +458,39 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
 
+        if (f.id === activeFileIdRef.current && updatedScripts) {
+          setScriptsState(updatedScripts);
+        }
+
         return {
           ...f,
-          rawText: normalized,
+          rawText: isCurrentlyActive ? normalized : f.rawText,
           isDirty,
-          parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : existingBreaks },
+          parsedDoc: isCurrentlyActive ? { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : existingBreaks } : f.parsedDoc,
           scripts: updatedScripts,
         };
       }
       return f;
     }));
+
+    filesRef.current = filesRef.current.map(f => {
+      if (f.id === fileId) {
+        let updatedScripts = f.scripts;
+        if (updatedScripts && updatedScripts.length > 0) {
+          updatedScripts = updatedScripts.map((s, i) =>
+            i === targetIdx ? { ...s, content: normalized } : s
+          );
+        }
+        const isCurrentlyActive = (f.id === activeFileIdRef.current) &&
+          (!updatedScripts || targetIdx === activeScriptIndexRef.current);
+        return {
+          ...f,
+          rawText: isCurrentlyActive ? normalized : f.rawText,
+          scripts: updatedScripts,
+        };
+      }
+      return f;
+    });
   }, [paperSize, isBundleDirty, isTauri]);
 
   const updateSettings = (updater: SettingsUpdater) => {
@@ -1352,6 +1375,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         parsedDoc: parsed,
       } : f));
 
+      filesRef.current = filesRef.current.map(f => f.id === activeFileId ? {
+        ...f,
+        scripts: updatedScripts,
+        activeScriptIndex: newActiveIndex,
+        rawText: newScript.content,
+        savedText: newScript.savedContent,
+        isDirty: true,
+        parsedDoc: parsed,
+      } : f);
+
       setScriptsState(updatedScripts);
       setActiveScriptIndexState(newActiveIndex);
       setRawTextState(newScript.content);
@@ -1367,6 +1400,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeScriptIndex: preservedActiveIndex,
         isDirty: true,
       } : f));
+
+      filesRef.current = filesRef.current.map(f => f.id === activeFileId ? {
+        ...f,
+        scripts: updatedScripts,
+        activeScriptIndex: preservedActiveIndex,
+        isDirty: true,
+      } : f);
 
       setScriptsState(updatedScripts);
       setActiveScriptIndexState(preservedActiveIndex);

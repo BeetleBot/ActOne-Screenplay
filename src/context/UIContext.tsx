@@ -88,6 +88,9 @@ export interface UIContextProps {
   resumeTranslation: () => void;
   isTranslationModalOpen: boolean;
   setIsTranslationModalOpen: (open: boolean) => void;
+  translationSetupTarget: { fileId: string; scriptIndex: number } | null;
+  setTranslationSetupTarget: (target: { fileId: string; scriptIndex: number } | null) => void;
+  getTranslationState: () => 'idle' | 'running' | 'paused' | 'cancelled';
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -209,7 +212,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem(STORAGE_KEYS.SPELLCHECK_LANGUAGE) ?? String(DEFAULTS[STORAGE_KEYS.SPELLCHECK_LANGUAGE]);
   });
   const [aiStatus, setAiStatus] = useState<string | null>(null);
-  const [translationState, setTranslationState] = useState<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
+  const [translationState, setTranslationStateState] = useState<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
+  const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
+  const setTranslationState = useCallback((s: 'idle' | 'running' | 'paused' | 'cancelled') => {
+    translationStateRef.current = s;
+    setTranslationStateState(s);
+  }, []);
+  const getTranslationState = useCallback(() => translationStateRef.current, []);
+  
   const [translatingTarget, setTranslatingTarget] = useState<{ fileId: string; scriptIndex: number } | null>(null);
   const [translationJob, setTranslationJobState] = useState<TranslationJob | null>(() => {
     try {
@@ -219,6 +229,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return null;
   });
   const [isTranslationModalOpen, setIsTranslationModalOpen] = useState(false);
+  const [translationSetupTarget, setTranslationSetupTarget] = useState<{ fileId: string; scriptIndex: number } | null>(null);
   const translationAbortRef = useRef<AbortController | null>(null);
 
   const setTranslationJob = useCallback((jobOrUpdater: TranslationJob | null | ((prev: TranslationJob | null) => TranslationJob | null)) => {
@@ -574,6 +585,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         resumeTranslation,
         isTranslationModalOpen,
         setIsTranslationModalOpen,
+        translationSetupTarget,
+        setTranslationSetupTarget,
+        getTranslationState,
       }}
     >
       {children}

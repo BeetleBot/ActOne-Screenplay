@@ -18,6 +18,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  
+  Tooltip,
   Chip,
 } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider, alpha } from "@mui/material/styles";
@@ -1124,6 +1126,18 @@ interface LanguageInfoItem {
           )}
           {activeTab === 4 && (
             <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Muse (AI Assistant)</Typography>
+                <Tooltip title="Muse AI features are currently in Beta. Responses and capabilities are constantly improving with each update." arrow placement="top">
+                  <Chip 
+                    label="Beta" 
+                    size="small" 
+                    color="primary" 
+                    variant="outlined" 
+                    sx={{ height: 16, fontSize: "0.6rem", ml: 1, borderColor: (t) => alpha(t.palette.primary.main, 0.5), color: "primary.main", cursor: "help" }} 
+                  />
+                </Tooltip>
+              </Box>
 
               {promptProvider !== "none" && providerStatus !== null && !providerStatus && promptProvider !== "openai-compatible" ? (
                 <Box sx={{ border: '1px solid', borderColor: 'error.main', borderRadius: '8px', p: 2, mb: 1.5, bgcolor: 'error.dark', color: 'error.contrastText' }}>
@@ -1402,6 +1416,9 @@ interface LanguageInfoItem {
                   <Box>
                     <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', display: 'block', mb: 0.5 }}>
                       TRANSLATE INSTRUCTIONS
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', display: 'block', mb: 1, fontStyle: 'italic' }}>
+                      (Note: This configures in-editor selection translations. "Translate Whole Document" uses its own dynamic prompts configured in its dedicated window.)
                     </Typography>
                     <TextField
                       fullWidth
