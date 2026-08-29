@@ -12,8 +12,8 @@ import {
   DialogActions,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { useUI } from "../context/UIContext";
-import { CheckIcon, PlayArrowIcon, StopIcon, PauseIcon, AutoAwesomeIcon } from "./Icons";
+import { useUI, useFile } from "../context";
+import { CheckIcon, PlayArrowIcon, StopIcon, PauseIcon, AutoAwesomeIcon, OpenInNewIcon } from "./Icons";
 
 export const TranslationProgressModal: React.FC = () => {
   const {
@@ -24,9 +24,20 @@ export const TranslationProgressModal: React.FC = () => {
     resumeTranslation,
     cancelTranslation,
   } = useUI();
+  const { scripts, setActiveScript } = useFile();
 
   const handleClose = () => {
     setIsTranslationModalOpen(false);
+  };
+
+  const handleOpenTranslatedScript = () => {
+    if (job?.scriptName && scripts && scripts.length > 0) {
+      const idx = scripts.findIndex((s) => s.name === job.scriptName);
+      if (idx !== -1) {
+        setActiveScript(idx);
+      }
+    }
+    handleClose();
   };
 
   const handleCancel = () => {
@@ -43,9 +54,9 @@ export const TranslationProgressModal: React.FC = () => {
     }
   };
 
-  const completedBatches = job?.completedBatches ?? 0;
-  const totalBatches = job?.totalBatches && job.totalBatches > 0 ? job.totalBatches : 1;
-  const percent = Math.min(100, Math.round((completedBatches / totalBatches) * 100));
+  const translatedLines = job?.translatedLines ?? 0;
+  const totalLines = job?.totalLines && job.totalLines > 0 ? job.totalLines : 1;
+  const percent = Math.min(100, Math.round((translatedLines / totalLines) * 100));
   const isFinished = job?.state === "completed" || percent >= 100;
   const isPaused = job?.state === "paused";
   const isError = job?.state === "error";
@@ -56,14 +67,8 @@ export const TranslationProgressModal: React.FC = () => {
     return Math.max(1, Math.round((end - job.startTime) / 1000));
   }, [job?.startTime, job?.endTime]);
 
-  const activeBatches = job?.activeBatches || [];
-  let batchRangeText = `Batch ${Math.min(completedBatches + 1, totalBatches)}`;
-  if (activeBatches.length > 0) {
-    const sorted = activeBatches.map((b) => b + 1).sort((a, b) => a - b);
-    const min = sorted[0];
-    const max = sorted[sorted.length - 1];
-    batchRangeText = min === max ? `Batch ${min}` : `Batches ${min}–${max}`;
-  }
+  let progressText = `Line ${Math.min(translatedLines + 1, totalLines)} of ${totalLines}`;
+  if (isFinished) progressText = `Translated ${totalLines} lines`;
 
   return (
     <Dialog
@@ -178,7 +183,7 @@ export const TranslationProgressModal: React.FC = () => {
                   Lines Translated
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.82rem" }}>
-                  {job?.translatedLines ?? completedBatches * 20} lines ({totalBatches} batches)
+                  {job?.translatedLines ?? 0} lines ({job?.totalBatches || 1} chunks)
                 </Typography>
               </Box>
               <Box>
@@ -198,8 +203,8 @@ export const TranslationProgressModal: React.FC = () => {
                 {isError
                   ? `Translation Error: ${job?.error || "Failed"}`
                   : isPaused
-                  ? `Paused at ${batchRangeText} of ${totalBatches}`
-                  : `Translating ${batchRangeText} of ${totalBatches}...`}
+                  ? `Paused at ${progressText}`
+                  : `Translating: ${progressText}`}
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 700, color: isError ? "error.main" : "primary.main", fontSize: "0.85rem" }}>
                 {percent}%
@@ -250,15 +255,36 @@ export const TranslationProgressModal: React.FC = () => {
             </Button>
           )}
 
-          <Button
-            variant="contained"
-            size="small"
-            onClick={handleClose}
-            startIcon={isFinished ? <CheckIcon sx={{ fontSize: 16 }} /> : undefined}
-            sx={{ textTransform: "none", fontSize: "0.8rem", borderRadius: "6px", fontWeight: 600 }}
-          >
-            {isFinished ? "Done" : "Run in Background"}
-          </Button>
+          {isFinished ? (
+            <>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleClose}
+                sx={{ textTransform: "none", fontSize: "0.8rem", borderRadius: "6px" }}
+              >
+                Close
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleOpenTranslatedScript}
+                startIcon={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+                sx={{ textTransform: "none", fontSize: "0.8rem", borderRadius: "6px", fontWeight: 600 }}
+              >
+                Open Translated Script
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleClose}
+              sx={{ textTransform: "none", fontSize: "0.8rem", borderRadius: "6px", fontWeight: 600 }}
+            >
+              Run in Background
+            </Button>
+          )}
         </Box>
       </DialogActions>
     </Dialog>

@@ -1427,7 +1427,7 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
 ### How it Works:
 1. Right-click or use the document menu → select **Translate Whole Script** → choose your target language.
 2. ActOne duplicates your document into a target script (e.g., \`MyScript-Tamil\`) and opens a dedicated **Translation Progress Window**.
-3. The progress window displays the active AI provider, model, live batch counter, and percentage bar.
+3. The progress window displays the active AI provider, model, real-time line-by-line progress counter, and percentage bar.
 4. Click **"Run in Background"** to dismiss the progress window anytime.
 5. In the **Project Pane (Sidebar)**:
    - The translating document is temporarily locked and displays a shimmering theme-accent animation.

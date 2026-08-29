@@ -62,18 +62,21 @@ To prevent LLMs from translating proper nouns (e.g. translating "Baker" or "Rose
   [JOHN, SARAH, ROSE, BAKER, ...]
   ```
 
-### Step 3: Indexed Batch Tagging (`[1]`, `[2]`, `[3]`)
-Translatable lines are grouped into batches of 20 lines. To prevent line-shifting or local LLM hallucinations (e.g. when a model skips lines or attempts to "continue" the scene):
-* Lines are tagged: `[1] The postman smiles.`, `[2] This will go far. Mark it urgent.`
-* The output is matched strictly by tag `[1]`, `[2]` rather than raw line index.
-* A sanity guard checks if a hallucinated scene heading (`INT.`, `EXT.`) was returned for a dialogue line and rejects it if so.
+### Step 3: Real-Time Streamed Line Parsing
+Translatable lines are grouped into fast batches of 10 lines. To prevent line-shifting or LLM hallucinations:
+* Lines are numbered cleanly: `1|Line text`, `2|Line text`
+* Reasoning tags (`<think>...</think>`) and markdown fences are automatically stripped.
+* As the LLM streams the output, lines are incrementally parsed (`1|`, `[1]`, `1.`, etc.). The moment a line finishes streaming, it is applied directly to the document and the progress bar advances.
+* A sanity guard checks if a hallucinated scene heading (`INT.`, `EXT.`) was returned for a dialogue line and rejects it.
+* Unrecovered missing lines automatically fall back to the source text cleanly, eliminating UI lock-ups or infinite retry loops.
 
-### Step 4: Parallel Batch Concurrency (3 Workers)
-* Instead of running 100 batches sequentially (which took several minutes), batches are executed using an asynchronous concurrency pool with a concurrency limit of 3.
-* Reduces overall translation time by **~65%–75%**.
+### Step 4: Intelligent Concurrency Scaling
+* Batches are executed using an asynchronous concurrency pool.
+* **Cloud Providers (OpenAI-compatible):** Concurrency limit of 3, reducing overall translation time safely.
+* **Local Models (Ollama):** Concurrency clamped to 1 (sequential) to prevent request queue bottlenecks on local hardware.
 
 ### Step 5: Automatic Exponential Backoff Retries
-* If an individual batch encounters a network drop, timeout, or rate limit error (HTTP 429/500/503), it automatically retries up to **3 times** with exponential backoff (`1000ms`, `2000ms`, `4000ms` + random jitter) before failing.
+* If an individual batch encounters a network drop, timeout, or rate limit error (HTTP 429/500/503), it automatically retries up to **3 times** with exponential backoff (`1000ms`, `2000ms`, `4000ms` + random jitter) before failing. Individual batch errors are safely isolated so remaining screenplay batches continue uninterrupted.
 
 ---
 
@@ -81,9 +84,10 @@ Translatable lines are grouped into batches of 20 lines. To prevent line-shiftin
 
 ### TranslationProgressModal (`src/components/TranslationProgressModal.tsx`)
 1. **Simplified Language Display:** Shows clean, natural language names (e.g., `French`, `Tamil`, `Japanese`) instead of raw technical codes.
-2. **Synchronized In-Flight Batch Range:**
-   * **Modal:** Displays `Translating Batches 1–3 of 13...` alongside the percentage.
-   * **Status Bar:** Matches dynamically with `Translating parts 1–3 of 13 to Tamil...`.
+2. **Synchronized Line-by-Line Progress:**
+   * **Modal:** Displays `Translating: Line 24 of 169` alongside the percentage.
+   * **Status Bar:** Matches dynamically with `Translating line 24 of 169 to Tamil...`.
+   * **Completion Transition:** Immediately triggers a "Translation Finished Successfully" screen containing an "Open Translated Script" quick-action button.
 3. **Controls:**
    * **Stop Button:** Cleanly aborts the `AbortController` and halts all in-flight workers.
    * **Pause / Resume Button:** Uses a reactive state loop to pause async workers safely.
@@ -91,4 +95,4 @@ Translatable lines are grouped into batches of 20 lines. To prevent line-shiftin
 4. **Visual Polish:**
    * Replaced low-contrast animations with an opacity pulse animation.
    * Renders AI engine details (`Ollama (Local) • model-name` or `OpenAI API`).
-   * Displays completion summary with total lines translated and elapsed seconds upon finish.
+   * Displays completion summary with total translatable lines translated and elapsed seconds upon finish.
