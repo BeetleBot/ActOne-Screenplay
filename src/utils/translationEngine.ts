@@ -2,7 +2,6 @@ import { PromptConfig } from "../hooks/usePromptConfig";
 import { getLanguageDetails } from "../constants/languages";
 import { createAIProvider } from "../lib/aiProviders";
 import { FountainDocument, LineType } from "../parser";
-import { extractThinkingAndClean } from "../hooks/useAIChat";
 
 export interface AnalyzedLine {
   original: string;
@@ -25,6 +24,7 @@ export interface TranslationJobParams {
   parsedDoc: FountainDocument | null;
   preserveCharacterNames?: boolean;
   dynamicToneInstructions?: string;
+  retryIndices?: number[];
   updateFileScriptContent: (fileId: string, scriptIndex: number, newContent: string) => void;
   uiActions: {
     setAiStatus: (status: string | null) => void;
@@ -137,12 +137,13 @@ export function analyzeFountainLine(line: string, parsedLine: any): AnalyzedLine
 }
 
 export function parseBatchResponse(rawText: string): Map<number, string> {
-  const { cleanContent } = extractThinkingAndClean(rawText);
-  const withoutFences = cleanContent
+  const strippedText = rawText
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*$/gi, "")
     .replace(/^```[a-z]*\s*$/gim, "")
     .replace(/^```\s*$/gim, "");
 
-  const rawResLines = withoutFences.split(/\r?\n/);
+  const rawResLines = strippedText.split(/\r?\n/);
   const cleanedResLines = rawResLines
     .map((l) => l.trim())
     .filter((l) => l.length > 0 && !/^[*#-]?\s*(user safety|safety|moderation|disclaimer):/i.test(l));
@@ -193,40 +194,6 @@ function isAbortError(error: any): boolean {
   return /abort|cancel/i.test(msg);
 }
 
-async function retryWithBackoff<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000,
-  signal?: AbortSignal
-): Promise<T> {
-  let attempt = 0;
-  while (attempt < maxRetries) {
-    if (signal?.aborted) {
-      const err = new Error("AbortError");
-      err.name = "AbortError";
-      throw err;
-    }
-    try {
-      return await operation();
-    } catch (error: any) {
-      if (signal?.aborted || isAbortError(error)) {
-        const err = new Error("AbortError");
-        err.name = "AbortError";
-        throw err;
-      }
-      
-      attempt++;
-      if (attempt >= maxRetries) {
-        throw error;
-      }
-      
-      const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 500;
-      await wait(delay);
-    }
-  }
-  throw new Error("Unreachable");
-}
-
 export const runTranslationJob = async (params: TranslationJobParams) => {
   const {
     lang,
@@ -237,6 +204,7 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
     targetScriptIndex,
     analyzedLines,
     parsedDoc,
+    retryIndices,
     updateFileScriptContent,
     uiActions: {
       setAiStatus,
@@ -267,18 +235,25 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
 
     updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
 
-    const translatableIndices: number[] = [];
-    analyzedLines.forEach((item, idx) => {
-      if (item.isTranslatable && item.cleanText.trim()) {
-        translatableIndices.push(idx);
-      }
-    });
+    let translatableIndices: number[] = [];
+    if (retryIndices && retryIndices.length > 0) {
+      translatableIndices = retryIndices.filter(
+        (idx) => idx >= 0 && idx < analyzedLines.length && analyzedLines[idx].cleanText.trim()
+      );
+    } else {
+      analyzedLines.forEach((item, idx) => {
+        if (item.isTranslatable && item.cleanText.trim()) {
+          translatableIndices.push(idx);
+        }
+      });
+    }
 
-    const BATCH_SIZE = 10;
+    const isOllama = promptConfig.provider === "ollama";
+    const BATCH_SIZE = isOllama ? 10 : 20;
     const totalBatches = Math.ceil(translatableIndices.length / BATCH_SIZE) || 1;
 
     const ld = getLanguageDetails(lang);
-    const langInfo = `"${lang}" (code: ${ld.code}, native: ${ld.native})`;
+    const langInfo = `"${lang}" (${ld.native}, code: ${ld.code})`;
 
     const allCharacters = new Set<string>();
     if (parsedDoc?.lines) {
@@ -291,20 +266,18 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
     }
 
     const baseSystemPrompt = [
-      `You are a professional screenplay translation tool. Translate the given numbered lines into ${langInfo}.`,
-      `The output MUST be written in ${ld.native} script (${ld.code}).`,
+      `You are a professional screenplay translator. Translate the numbered lines into ${langInfo}.`,
+      ld.example ? `Example phrasing in ${ld.native}: "${ld.example}"` : "",
       "",
-      "TONE & STYLE GUIDELINES:",
-      params.dynamicToneInstructions || 
-      "• Dialogue & Conversation: Use a natural, casual, spoken conversational tone (colloquial spoken language as spoken by real people in modern movies). Do NOT use stiff, formal, archaic, or textbook/literary phrasing.\n• Action & Description: Keep action lines punchy, vivid, and cinematic.",
+      "TONE & STYLE:",
+      params.dynamicToneInstructions ||
+      "• Dialogue: Natural spoken conversational tone for modern movies. Never stiff or formal.\n• Action: Punchy, vivid, cinematic.",
       "",
-      "CRITICAL RULES:",
-      `1. Translate each line into ${langInfo} with spoken conversational phrasing for dialogue.`,
-      "2. Output format: N|<translated text> (e.g. 1|Translated text). Preserve the exact 'N|' prefix for each line.",
-      "3. You MUST return EXACTLY the same number of lines as provided in the input.",
-      "4. Do NOT continue the scene, do NOT add new dialogue, and do NOT add scene headings (like INT./EXT.).",
-      "5. Do NOT add preamble, conversational text, safety disclaimers, or markdown code fences.",
-      "6. Output ONLY the lines in format: N|<translated text>"
+      "RULES:",
+      "1. Format each output line as N|<translated text> exactly (e.g. 1|Translated text).",
+      "2. Return EXACTLY the same number of lines as provided.",
+      "3. Do not add explanations, notes, headings, markdown code blocks, or preamble.",
+      "4. Do not invent or continue scenes."
     ].filter(Boolean).join("\n");
 
     const effectiveModel =
@@ -328,12 +301,16 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       activeBatches: [],
       totalLines: totalTranslatableLines,
       translatedLines: 0,
+      failedLines: 0,
+      failedIndices: [],
+      latestPreview: "",
       startTime,
       model: effectiveModel,
       provider: promptConfig.provider,
       state: "running" as const,
     };
 
+    setTranslationState("running");
     setTranslatingTarget({ fileId: targetFileId, scriptIndex: targetScriptIndex });
     setTranslationJob(() => initialJob);
     setIsTranslationModalOpen(true);
@@ -341,6 +318,7 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
     let translatedLinesCount = 0;
     let completedBatches = 0;
     const activeBatchIndices = new Set<number>();
+    const failedLineIndices = new Set<number>();
 
     const updateActiveStatus = () => {
       setAiStatus(`Translating line ${Math.min(translatedLinesCount + 1, totalTranslatableLines)} of ${totalTranslatableLines} to ${lang}...`);
@@ -350,7 +328,7 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       while (getTranslationState() === "paused") {
         await wait(300);
       }
-      if (getTranslationState() === "cancelled") {
+      if (getTranslationState() === "cancelled" || controller.signal.aborted) {
         return;
       }
 
@@ -366,8 +344,17 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         return;
       }
 
-      const batchInputs = batchIndices.map((idx, i) => `${i + 1}|${analyzedLines[idx].cleanText}`);
-      const userPrompt = batchInputs.join("\n");
+      let contextHeader = "";
+      const firstLineIdx = batchIndices[0];
+      const contextLines: string[] = [];
+      for (let ci = Math.max(0, firstLineIdx - 3); ci < firstLineIdx; ci++) {
+        if (analyzedLines[ci].original.trim()) {
+          contextLines.push(analyzedLines[ci].original.trim());
+        }
+      }
+      if (contextLines.length > 0) {
+        contextHeader = `[SCENE CONTEXT - DO NOT TRANSLATE]\n${contextLines.join("\n")}\n[END CONTEXT]\n\n`;
+      }
 
       const batchStart = batchIndices[0];
       const batchEnd = batchIndices[batchIndices.length - 1];
@@ -383,96 +370,101 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
 
       const glossarySuffix =
         (params.preserveCharacterNames !== false && relevantChars.size > 0)
-          ? `\nDO NOT TRANSLATE THESE CHARACTER NAMES (keep original spelling): [${Array.from(relevantChars).join(", ")}]`
+          ? `\nPRESERVE CHARACTER NAMES: [${Array.from(relevantChars).join(", ")}]`
           : "";
 
       const batchSystemPrompt = baseSystemPrompt + glossarySuffix;
 
-      let translatedBatchText = "";
-      const processedNums = new Set<number>();
+      let missingIndices: number[] = [...batchIndices];
+      let attempt = 0;
+      const MAX_BATCH_RETRIES = 5;
 
-      const processParsedLines = (parsedMap: Map<number, string>) => {
-        let hasUpdates = false;
-        batchIndices.forEach((lineIdx, i) => {
-          const num = i + 1;
-          if (parsedMap.has(num) && !processedNums.has(num)) {
-            let translatedText = parsedMap.get(num) || "";
-            const item = analyzedLines[lineIdx];
-
-            if (/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(translatedText) && !/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(item.cleanText)) {
-              translatedText = item.cleanText;
-            }
-            if (!translatedText) translatedText = item.cleanText;
-
-            currentDocLines[lineIdx] = item.indent + item.prefix + translatedText + item.suffix;
-            processedNums.add(num);
-            translatedLinesCount++;
-            hasUpdates = true;
-          }
-        });
-
-        if (hasUpdates) {
-          updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
-          updateActiveStatus();
-          setTranslationJob((prev: any) =>
-            prev ? { ...prev, translatedLines: translatedLinesCount } : null
-          );
+      while (attempt < MAX_BATCH_RETRIES && missingIndices.length > 0) {
+        if (getTranslationState() === "cancelled" || controller.signal.aborted) {
+          activeBatchIndices.delete(b);
+          return;
         }
-      };
 
-      try {
-        await retryWithBackoff(async () => {
-          translatedBatchText = "";
-          processedNums.clear();
-          
-          await provider.chat([{ role: "user", content: userPrompt }], {
+        while (getTranslationState() === "paused") {
+          await wait(300);
+        }
+
+        const currentInputs = missingIndices.map((idx, i) => `${i + 1}|${analyzedLines[idx].cleanText}`);
+        const attemptPrompt = `${contextHeader}Translate each numbered line below:\n${currentInputs.join("\n")}`;
+
+        let fullRawResponse = "";
+
+        try {
+          await provider.chat([{ role: "user", content: attemptPrompt }], {
             system: batchSystemPrompt,
             temperature: promptConfig.translateTemp !== undefined ? promptConfig.translateTemp : 0.1,
+            maxTokens: 8192,
             signal: controller.signal,
             onChunk: (delta) => {
-              translatedBatchText += delta;
-              const lines = translatedBatchText.split("\n");
-              if (lines.length > 1) {
-                const completeLines = lines.slice(0, -1).join("\n");
-                const currentParsedMap = parseBatchResponse(completeLines);
-                processParsedLines(currentParsedMap);
+              fullRawResponse += delta;
+              const cleanPreview = fullRawResponse
+                .replace(/<think>[\s\S]*?<\/think>/gi, "")
+                .replace(/<think>[\s\S]*$/gi, "")
+                .trim();
+              const previewLines = cleanPreview.split("\n").filter((l) => l.trim().length > 0);
+              const latest = previewLines[previewLines.length - 1] || "";
+              if (latest) {
+                setTranslationJob((prev: any) =>
+                  prev ? { ...prev, latestPreview: latest } : null
+                );
               }
             },
           });
-        }, 3, 1000, controller.signal);
-      } catch (err: any) {
-        if (isAbortError(err) || controller.signal.aborted || getTranslationState() === "cancelled") {
-          return;
-        }
-        console.warn(`Batch ${b} encountered an error:`, err);
-      } finally {
-        activeBatchIndices.delete(b);
-      }
 
-      if (getTranslationState() === "cancelled" || controller.signal.aborted) {
-        return;
-      }
+          const parsedMap = parseBatchResponse(fullRawResponse);
+          const stillMissing: number[] = [];
 
-      // Final sweep for the last line and missing entries (using fallback, no retry block)
-      const finalParsedMap = parseBatchResponse(translatedBatchText);
-      batchIndices.forEach((lineIdx, i) => {
-        const num = i + 1;
-        if (!processedNums.has(num)) {
-          let translatedText = finalParsedMap.get(num) || "";
-          const item = analyzedLines[lineIdx];
+          missingIndices.forEach((lineIdx, i) => {
+            const num = i + 1;
+            const translatedText = parsedMap.get(num);
 
-          if (/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(translatedText) && !/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(item.cleanText)) {
-            translatedText = item.cleanText;
+            if (translatedText && translatedText.trim().length > 0) {
+              let finalText = translatedText.trim();
+              const item = analyzedLines[lineIdx];
+
+              if (/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(finalText) && !/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(item.cleanText)) {
+                finalText = item.cleanText;
+              }
+
+              currentDocLines[lineIdx] = item.indent + item.prefix + finalText + item.suffix;
+              translatedLinesCount++;
+            } else {
+              stillMissing.push(lineIdx);
+            }
+          });
+
+          missingIndices = stillMissing;
+
+          if (missingIndices.length === 0) {
+            break;
           }
-          if (!translatedText) translatedText = item.cleanText;
-
-          currentDocLines[lineIdx] = item.indent + item.prefix + translatedText + item.suffix;
-          processedNums.add(num);
-          translatedLinesCount++;
+        } catch (err: any) {
+          if (isAbortError(err) || controller.signal.aborted || getTranslationState() === "cancelled") {
+            activeBatchIndices.delete(b);
+            return;
+          }
         }
-      });
 
+        attempt++;
+        if (missingIndices.length > 0 && attempt < MAX_BATCH_RETRIES) {
+          await wait(1000 * Math.pow(1.5, attempt - 1));
+        }
+      }
+
+      if (missingIndices.length > 0) {
+        missingIndices.forEach((lineIdx) => {
+          failedLineIndices.add(lineIdx);
+        });
+      }
+
+      activeBatchIndices.delete(b);
       completedBatches += 1;
+
       updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
       updateActiveStatus();
       setTranslationJob((prev: any) =>
@@ -481,6 +473,8 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
               ...prev,
               completedBatches,
               translatedLines: translatedLinesCount,
+              failedLines: failedLineIndices.size,
+              failedIndices: Array.from(failedLineIndices),
               activeBatches: Array.from(activeBatchIndices),
             }
           : null
@@ -488,25 +482,29 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
     };
 
     const tasks = Array.from({ length: totalBatches }, (_, i) => () => executeBatch(i));
-    
-    await pLimit(promptConfig.provider === "ollama" ? 1 : 3, tasks);
+    const concurrency = isOllama ? 1 : 2;
+
+    await pLimit(concurrency, tasks);
 
     if (getTranslationState() !== "cancelled" && !controller.signal.aborted) {
       const endTime = Date.now();
-      setAiStatus("Translation Completed!");
+      const hasFailures = failedLineIndices.size > 0;
+      setAiStatus(hasFailures ? `Translation Finished with ${failedLineIndices.size} unparsed lines.` : "Translation Completed!");
       setTranslationJob((prev: any) =>
         prev
           ? {
               ...prev,
               completedBatches: totalBatches,
-              translatedLines: totalTranslatableLines,
+              translatedLines: translatedLinesCount,
+              failedLines: failedLineIndices.size,
+              failedIndices: Array.from(failedLineIndices),
               endTime,
               state: "completed",
             }
           : null
       );
       setIsTranslationModalOpen(true);
-      setTimeout(() => setAiStatus(null), 4000);
+      setTimeout(() => setAiStatus(null), 5000);
     } else {
       setAiStatus("Translation Cancelled.");
       setTranslationJob((prev: any) => (prev ? { ...prev, state: "cancelled", endTime: Date.now() } : null));

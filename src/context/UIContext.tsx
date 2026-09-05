@@ -19,6 +19,9 @@ export interface TranslationJob {
   activeBatches?: number[];
   totalLines?: number;
   translatedLines?: number;
+  failedLines?: number;
+  failedIndices?: number[];
+  latestPreview?: string;
   startTime?: number;
   endTime?: number;
   model: string;
@@ -224,7 +227,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [translationJob, setTranslationJobState] = useState<TranslationJob | null>(() => {
     try {
       const stored = localStorage.getItem("actone-active-translation-job");
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored) as TranslationJob;
+        if (parsed.state === "running" || parsed.state === "paused") {
+          return parsed;
+        }
+      }
     } catch {}
     return null;
   });

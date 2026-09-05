@@ -267,5 +267,56 @@ John sits down and opens his menu.
     expect(updatedContent).toContain("@SARAH");
   });
 
+  it("translates only specified retryIndices when retryIndices is provided", async () => {
+    const script = `
+JOHN
+Line one.
 
+SARAH
+Line two.
+`.trim();
+
+    const parsedDoc = parseScreenplay(script);
+    const rawLines = script.split(/\r?\n/);
+    const analyzedLines = rawLines.map((l, i) => analyzeFountainLine(l, parsedDoc.lines[i]));
+
+    let updatedContent = "";
+    const updateFileScriptContent = vi.fn((fileId, scriptIndex, content) => {
+      updatedContent = content;
+    });
+
+    const setTranslationJob = vi.fn();
+
+    const mockPromptConfig: any = {
+      provider: "mock",
+      translateLanguages: ["French"],
+    };
+
+    await runTranslationJob({
+      lang: "French",
+      promptConfig: mockPromptConfig,
+      sourceScriptName: "TestScript.fountain",
+      duplicatedName: "TestScript-French",
+      targetFileId: "file-1",
+      targetScriptIndex: 1,
+      lines: rawLines,
+      analyzedLines,
+      parsedDoc,
+      retryIndices: [1], // Only retry "Line one."
+      updateFileScriptContent,
+      uiActions: {
+        setAiStatus: vi.fn(),
+        setTranslationState: vi.fn(),
+        setTranslatingTarget: vi.fn(),
+        setTranslationJob,
+        setIsTranslationModalOpen: vi.fn(),
+        registerTranslationAbort: vi.fn(),
+        getTranslationState: () => "running",
+      },
+    });
+
+    expect(updateFileScriptContent).toHaveBeenCalled();
+    expect(updatedContent).toContain("[ES] Line one.");
+  });
 });
+

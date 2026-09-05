@@ -1098,11 +1098,11 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app_handle, event| {
             match event {
-                tauri::RunEvent::ExitRequested { .. } => {
-                    // Persist window state before exit (plugin's RunEvent::Exit save
-                    // never fires on Windows due to the explicit process::exit below)
+                tauri::RunEvent::WindowEvent { event: tauri::WindowEvent::CloseRequested { .. }, .. } => {
+                    // Save window state *before* it is destroyed to prevent 'cannot move state from Destroyed' panic
                     let _ = app_handle.save_window_state(StateFlags::all());
-
+                }
+                tauri::RunEvent::ExitRequested { .. } => {
                     // Cancel all active background AI/streaming processes
                     ollama::cancel_all_sessions();
 

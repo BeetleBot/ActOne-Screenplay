@@ -125,6 +125,23 @@ describe("aiProviders", () => {
       expect(capturedHeaders["Authorization"]).toBe("Bearer gemini-key");
     });
 
+    it("supports custom maxTokens option in payload", async () => {
+      let capturedBody: any;
+      const mockResponse = createMockStreamResponse([
+        'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n',
+        "data: [DONE]\n\n",
+      ]);
+
+      globalThis.fetch = vi.fn(async (_url: any, init?: RequestInit) => {
+        capturedBody = JSON.parse(init?.body as string);
+        return mockResponse;
+      });
+
+      const provider = new OpenAICompatibleProvider("https://api.openai.com/v1", "key", "gpt-4o");
+      await provider.chat([{ role: "user", content: "test" }], { maxTokens: 8192 });
+      expect(capturedBody.max_tokens).toBe(8192);
+    });
+
     it("formats Claude / OpenRouter / Anthropic compatible endpoint payload", async () => {
       let capturedBody: any;
 

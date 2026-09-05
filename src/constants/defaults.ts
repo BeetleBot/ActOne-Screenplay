@@ -40,7 +40,11 @@ export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
   [STORAGE_KEYS.PROMPT_REPHRASE_PRESETS]: "[]",
   [STORAGE_KEYS.PROMPT_CHAT_TEMP]: 0.7,
   [STORAGE_KEYS.PROMPT_REPHRASE_TEMP]: 0.1,
-  [STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES]: ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Hindi (Devanagari)", "Tamil", "Japanese", "Chinese"],
+  [STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES]: [
+    "English", "Spanish", "French", "German", "Italian", "Portuguese",
+    "Hindi (Devanagari)", "Tamil", "Telugu", "Kannada", "Malayalam",
+    "Japanese", "Chinese", "Korean", "Arabic", "Russian", "Turkish", "Thai"
+  ],
   [STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT]: "You are a professional screenplay translation tool. Translate the user's text to the specified language using a natural, casual, spoken conversational tone suitable for film dialogue and modern cinema. Avoid stiff, formal, or textbook phrasing. Respond ONLY with the translated text — no explanations, quotes, or additional text.",
   [STORAGE_KEYS.PROMPT_TRANSLATE_TEMP]: 0.1,
   [STORAGE_KEYS.PROMPT_API_ENDPOINT]: "",

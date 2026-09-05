@@ -38,6 +38,7 @@ export interface ChatOptions {
   signal?: AbortSignal;
   onChunk?: (delta: string) => void;
   temperature?: number;
+  maxTokens?: number;
 }
 
 export interface AIProvider {
@@ -118,7 +119,7 @@ export class OpenAICompatibleProvider implements AIProvider {
         messages: payload,
         stream: true,
         temperature: options.temperature,
-        max_tokens: 4096,
+        max_tokens: options.maxTokens ?? 4096,
       }),
       signal: options.signal,
     });
@@ -208,7 +209,10 @@ export class OllamaProvider implements AIProvider {
         model: this.model || "llama3.2",
         messages: payload,
         stream: true,
-        options: options.temperature !== undefined ? { temperature: options.temperature } : undefined
+        options: {
+          ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+          ...(options.maxTokens !== undefined ? { num_predict: options.maxTokens } : {}),
+        }
       }),
       signal: options.signal,
     });

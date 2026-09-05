@@ -1425,15 +1425,17 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
     content: `ActOne allows you to translate an entire screenplay or prose document to any supported language without disrupting your writing workflow.
 
 ### How it Works:
-1. Right-click or use the document menu → select **Translate Whole Script** → choose your target language.
-2. ActOne duplicates your document into a target script (e.g., \`MyScript-Tamil\`) and opens a dedicated **Translation Progress Window**.
-3. The progress window displays the active AI provider, model, real-time line-by-line progress counter, and percentage bar.
-4. Click **"Run in Background"** to dismiss the progress window anytime.
-5. In the **Project Pane (Sidebar)**:
-   - The translating document is temporarily locked and displays a shimmering theme-accent animation.
-   - A **"Show Progress"** button appears under the document to reopen the progress window at any point.
-   - You can continue writing in other scripts while translation proceeds smoothly in the background.
-6. Once complete (100%), the script becomes normal, interactive, and fully editable.`,
+1. Right-click or use the document menu → select **Translate Whole Script**.
+2. Configure your options in the modal:
+   - **Target Language:** Choose from 18 supported languages including English, Spanish, French, German, Italian, Portuguese, Hindi, Tamil, Telugu, Kannada, Malayalam, Japanese, Chinese, Korean, Arabic (RTL), Russian, Turkish, and Thai.
+   - **Elements & Tone:** Choose which screenplay elements to translate (Dialogue, Action, Scene Headings, Parentheticals, Transitions) and pick custom phrasing tones (Natural/Conversational, Literal, or Casual).
+   - **Character Names:** Option to keep character names unchanged to prevent proper noun mistranslation.
+   - **AI Model:** Select your preferred local or API model.
+3. ActOne duplicates your document into a target script (e.g., \`MyScript-Tamil\`) and opens a dedicated **Translation Progress Window**.
+4. The progress window displays the active AI provider, model, real-time line-by-line counter, percentage bar, and a live streaming preview.
+5. Click **"Run in Background"** to dismiss the progress window anytime and keep writing in other scripts.
+6. The engine automatically retries any unparsed lines up to 5 times. If any lines fail to parse, the completion screen highlights them and gives you a **"Retry Failed Lines"** button to re-run them with one click.
+7. Once complete, click **"Open Translated Script"** to view your translated screenplay.`,
   },
 ];
 
