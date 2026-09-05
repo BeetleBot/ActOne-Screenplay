@@ -179,9 +179,18 @@ export class OllamaProvider implements AIProvider {
         },
       );
 
+      let cleanedUp = false;
+      const safeUnlisten = () => {
+        if (cleanedUp) return;
+        cleanedUp = true;
+        try {
+          unlisten();
+        } catch {}
+      };
+
       // If the caller aborts, clean up the listener
       const abortHandler = () => {
-        unlisten();
+        safeUnlisten();
         invoke("cancel_ollama_chat", { sessionId }).catch(() => {});
       };
       options.signal?.addEventListener("abort", abortHandler, { once: true });
@@ -196,7 +205,7 @@ export class OllamaProvider implements AIProvider {
         });
         return result;
       } finally {
-        unlisten();
+        safeUnlisten();
         options.signal?.removeEventListener("abort", abortHandler);
       }
     }
