@@ -1,8 +1,13 @@
 # Changelog
 
-## [0.4.22] - 2026-08-28
+## [0.4.22] - 2026-09-05
 
 ### Added / Improved
+- 🌍 **Complete Rewrite of "Translate Whole Document"** – Overhauled the screenplay translation system to eliminate mid-stream parsing race conditions, transitioning to clean batch wait-then-parse execution with preceding scene context for narrative continuity.
+- 🔄 **Intelligent 5-Attempt Auto-Retry & Failure Reporting** – Batches automatically retry missing or unparsed lines up to 5 times with exponential backoff. Any remaining unparsed lines are surfaced in the completion screen with an instant **"Retry Failed Lines"** recovery button.
+- 📡 **Live Streaming Translation Preview** – Added a real-time live preview pane inside the translation modal displaying streaming output as the AI model produces it.
+- 🌐 **Expanded Multilingual Support** – Expanded supported translation languages from 10 to 18 (adding Korean, Arabic with RTL direction, Russian, Turkish, Telugu, Kannada, Malayalam, and Thai), each configured with native script examples.
+- ⚡ **Dynamic Token Limits & Safe Ollama Streaming** – Enabled dynamic `maxTokens` (8192 tokens for translation) in AI providers, and safeguarded Tauri event listeners with idempotent unlisten guards to prevent unhandled IPC unregister errors.
 - 🐛 **In-App Bug Reporting & Diagnostic System** – Added a dedicated in-app Bug Report Modal (`Ctrl+K` → "Report a Bug") with reproducible steps input, system diagnostics (OS, memory, screen resolution, Tauri backend state), privacy opt-in controls, sanitized session log attachments, and direct Discord webhook integration.
 - 💬 **Automatic Consecutive `(CONT'D)` Dialogue Tagging** – Integrated smart screenplay dialogue continuation tags, automatically appending `(CONT'D)` to character names during consecutive dialogue blocks.
 - 📋 **Cross-Platform Robust Clipboard Utility** – Built a unified cross-platform clipboard service with asynchronous native clipboard access and synchronous fallback support across Windows and Linux.
@@ -11,7 +16,11 @@
 - ⌨️ **Intelligent Workspace Shortcuts** – <kbd>Alt+M</kbd> now smoothly toggles the Muse AI assistant open and closed while auto-dismissing the sidebar; <kbd>Ctrl+\\</kbd> closes any open right panel and opens the Outline View.
 - 📏 **Persistent Workspace Dimensions** – Sidebar and Right Pane widths now persist across sessions and Zen Mode in `localStorage` with safety clamping.
 - 🌊 **Fluid Pane Layout & Symmetrical Transitions** – Replaced static inner container pixel constraints with fluid 100% responsive width and synchronized 240ms `cubic-bezier(0.25, 1, 0.5, 1)` natural deceleration curves across all panel entrance and exit animations.
-- 🧪 **Expanded Automated Test Coverage** – Expanded test coverage to **69 test files and 685 tests** (100% pass rate), verifying bug reporting, modal manager, keyboard shortcuts, and layout transitions.
+- 🧪 **Expanded Automated Test Coverage** – Expanded test suite to **71 test files and 709 tests** (100% pass rate), adding unit tests for translation retries, provider max_tokens, and element mapping.
+
+### Fixed
+- 🎯 **Translation Element Type Mapping** – Fixed critical bug in translation setup where integer constants did not match `LineType` enum values, ensuring checkboxes for Dialogue, Action, Headings, Parentheticals, and Transitions correctly map to the intended Fountain line types.
+- 🛡️ **Tauri Event Listener Unregister Race Condition** – Fixed unhandled `@user-script` IPC errors thrown during rapid translation batches by ensuring Tauri stream listener cleanups are idempotent.
 
 ## [0.4.21] - 2026-08-27
 
