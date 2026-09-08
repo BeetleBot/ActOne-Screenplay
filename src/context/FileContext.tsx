@@ -229,12 +229,15 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       parseTimeoutRef.current = null;
     }
     setActiveFileIdState(id);
+    activeFileIdRef.current = id;
     setRawTextState(file.rawText);
     setFilePath(file.filePath);
     setParsedDoc(file.parsedDoc);
     setIsSaving(file.isSaving);
     setScriptsState(file.scripts || []);
-    setActiveScriptIndexState(file.activeScriptIndex ?? 0);
+    const scrIdx = file.activeScriptIndex ?? 0;
+    setActiveScriptIndexState(scrIdx);
+    activeScriptIndexRef.current = scrIdx;
   };
 
   const newFile = (initialContent: string = "") => {
@@ -259,11 +262,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setFiles(prev => [...prev, newFileObj]);
     setActiveFileIdState(newId);
+    activeFileIdRef.current = newId;
     setRawTextState(initialContent);
     setFilePath(null);
     setParsedDoc(newFileObj.parsedDoc);
     setScriptsState(scripts);
     setActiveScriptIndexState(0);
+    activeScriptIndexRef.current = 0;
   };
 
   const closeFile = async (id: string, force?: boolean) => {
@@ -1205,6 +1210,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setParsedDoc(doc);
     setScriptsState(scripts);
     setActiveScriptIndexState(0);
+    activeScriptIndexRef.current = 0;
 
     if (promptSaveImmediate) {
       setTimeout(() => {
@@ -1243,6 +1249,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setParsedDoc(doc);
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(index);
+    activeScriptIndexRef.current = index;
   }, [files, activeFileId, rawText, paperSize]);
 
   const addScript = useCallback(async (name?: string, forceType?: "fountain" | "markdown", initialContent: string = ""): Promise<string | null> => {
@@ -1299,6 +1306,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(updatedScripts.length - 1);
+    activeScriptIndexRef.current = updatedScripts.length - 1;
     setRawTextState(initialContent);
     setParsedDoc(prev => ({ ...parsed, settings: prev.settings }));
 
@@ -1387,6 +1395,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setScriptsState(updatedScripts);
       setActiveScriptIndexState(newActiveIndex);
+      activeScriptIndexRef.current = newActiveIndex;
       setRawTextState(newScript.content);
       setParsedDoc(parsed);
     } else {
@@ -1410,6 +1419,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setScriptsState(updatedScripts);
       setActiveScriptIndexState(preservedActiveIndex);
+      activeScriptIndexRef.current = preservedActiveIndex;
     }
 
     return newName;
@@ -1484,6 +1494,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(newActiveIndex);
+    activeScriptIndexRef.current = newActiveIndex;
     setRawTextState(newActiveScript.content);
     setParsedDoc(doc);
 
@@ -1572,6 +1583,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(updatedScripts.length - 1);
+    activeScriptIndexRef.current = updatedScripts.length - 1;
     setRawTextState(content);
     setParsedDoc(parsed);
 
@@ -1624,9 +1636,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(newActiveIndex);
+    activeScriptIndexRef.current = newActiveIndex;
     setRawTextState(targetScript.content);
     setParsedDoc(doc);
-  }, [files, activeFileId, rawText, paperSize]);
+  }, [files, activeFileId, rawText, paperSize, isBundleDirty]);
 
   const openSnapshotAsNewProject = useCallback(async (snapshotPath: string) => {
     if (!isTauri) return;

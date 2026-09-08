@@ -357,4 +357,272 @@ Line two.
     expect(updateFileScriptContent).toHaveBeenCalled();
     expect(updatedContent).toContain("[ES] Line two.");
   });
+
+  it("strips AI-generated bullet dashes (- ) from translations when original had none", async () => {
+    const script = `
+INT. PARK - DAY
+
+JOHN
+Are you sure?
+`.trim();
+
+    const parsedDoc = parseScreenplay(script);
+    const rawLines = script.split(/\r?\n/);
+    const analyzedLines = rawLines.map((l, i) => analyzeFountainLine(l, parsedDoc.lines[i]));
+
+    let updatedContent = "";
+    const updateFileScriptContent = vi.fn((fileId, scriptIndex, content) => {
+      updatedContent = content;
+    });
+
+    const mockPromptConfig: any = {
+      provider: "openai-compatible",
+      apiEndpoint: "https://api.mock.ai/v1",
+      apiKey: "mock-key",
+      model: "mock-model",
+      translateLanguages: ["Spanish"],
+    };
+
+    // Mock provider returning a dash bullet list
+    const { createAIProvider } = await import("../lib/aiProviders");
+    vi.mocked(createAIProvider).mockReturnValue({
+      chat: vi.fn(async (messages) => {
+        const userMsg = messages.find((m: any) => m.role === "user")?.content || "";
+        if (userMsg.includes("Translate to English: Hello")) return "Hello";
+        return "- ¿Estás seguro?";
+      }),
+    } as any);
+
+    await runTranslationJob({
+      lang: "Spanish",
+      promptConfig: mockPromptConfig,
+      sourceScriptName: "TestScript.fountain",
+      duplicatedName: "TestScript-Spanish",
+      targetFileId: "file-1",
+      targetScriptIndex: 1,
+      lines: rawLines,
+      analyzedLines,
+      parsedDoc,
+      updateFileScriptContent,
+      uiActions: {
+        setAiStatus: vi.fn(),
+        setTranslationState: vi.fn(),
+        setTranslatingTarget: vi.fn(),
+        setTranslationJob: vi.fn(),
+        setIsTranslationModalOpen: vi.fn(),
+        registerTranslationAbort: vi.fn(),
+        getTranslationState: () => "running",
+      },
+    });
+
+    expect(updateFileScriptContent).toHaveBeenCalled();
+    // It should NOT contain "- ¿Estás seguro?", it should be clean "¿Estás seguro?"
+    expect(updatedContent).toContain("¿Estás seguro?");
+    expect(updatedContent).not.toContain("- ¿Estás seguro?");
+  });
+
+  it("strips echoed character name prefixes (@RADIO: or RADIO:) from dialogue lines", async () => {
+    const script = `
+INT. COCKPIT - DAY
+
+@RADIO (O.S.)
+Incoming transmission.
+
+@PILOT
+I will handle it.
+`.trim();
+
+    const parsedDoc = parseScreenplay(script);
+    const rawLines = script.split(/\r?\n/);
+    const analyzedLines = rawLines.map((l, i) => analyzeFountainLine(l, parsedDoc.lines[i]));
+
+    let updatedContent = "";
+    const updateFileScriptContent = vi.fn((fileId, scriptIndex, content) => {
+      updatedContent = content;
+    });
+
+    const mockPromptConfig: any = {
+      provider: "openai-compatible",
+      apiEndpoint: "https://api.mock.ai/v1",
+      apiKey: "mock-key",
+      model: "mock-model",
+      translateLanguages: ["Tamil"],
+    };
+
+    const { createAIProvider } = await import("../lib/aiProviders");
+    vi.mocked(createAIProvider).mockReturnValue({
+      chat: vi.fn(async (messages) => {
+        const userMsg = messages.find((m: any) => m.role === "user")?.content || "";
+        if (userMsg.includes("Translate to English: Hello")) return "Hello";
+        // Simulate LLM returning character prefixes in dialogue
+        return "@RADIO: கம்ப்யூட்டர் செய்தி.\n@PILOT: நான் சமாளிப்பேன்.";
+      }),
+    } as any);
+
+    await runTranslationJob({
+      lang: "Tamil",
+      promptConfig: mockPromptConfig,
+      sourceScriptName: "TestScript.fountain",
+      duplicatedName: "TestScript-Tamil",
+      targetFileId: "file-1",
+      targetScriptIndex: 1,
+      lines: rawLines,
+      analyzedLines,
+      parsedDoc,
+      updateFileScriptContent,
+      uiActions: {
+        setAiStatus: vi.fn(),
+        setTranslationState: vi.fn(),
+        setTranslatingTarget: vi.fn(),
+        setTranslationJob: vi.fn(),
+        setIsTranslationModalOpen: vi.fn(),
+        registerTranslationAbort: vi.fn(),
+        getTranslationState: () => "running",
+      },
+    });
+
+    expect(updateFileScriptContent).toHaveBeenCalled();
+    // Dialogue lines should not have @RADIO: or @PILOT:
+    expect(updatedContent).toContain("கம்ப்யூட்டர் செய்தி.");
+    expect(updatedContent).not.toContain("@RADIO: கம்ப்யூட்டர் செய்தி.");
+    expect(updatedContent).toContain("நான் சமாளிப்பேன்.");
+    expect(updatedContent).not.toContain("@PILOT: நான் சமாளிப்பேன்.");
+  });
+
+  it("strips stray @ before character names mentioned in action or dialogue body", async () => {
+    const script = `COOPER
+Cooper, are you ready?
+
+Cooper walks towards the airlock.`;
+
+    const parsedDoc = parseScreenplay(script);
+    const rawLines = script.split("\n");
+    const analyzedLines = rawLines.map((l, i) => {
+      const an = analyzeFountainLine(l, parsedDoc.lines[i]);
+      return { ...an, isTranslatable: parsedDoc.lines[i]?.type !== LineType.character };
+    });
+
+    let updatedContent = "";
+    const updateFileScriptContent = vi.fn((_fid, _idx, content) => {
+      updatedContent = content;
+    });
+
+    const mockPromptConfig: any = {
+      provider: "openai-compatible",
+      apiEndpoint: "https://api.mock.ai/v1",
+      apiKey: "mock-key",
+      model: "mock-model",
+      translateLanguages: ["Tamil"],
+    };
+
+    const { createAIProvider } = await import("../lib/aiProviders");
+    vi.mocked(createAIProvider).mockReturnValue({
+      chat: vi.fn(async (messages) => {
+        const userMsg = messages.find((m: any) => m.role === "user")?.content || "";
+        if (userMsg.includes("Translate to English: Hello")) return "Hello";
+        // Model echoed @ before Cooper in dialogue and action
+        return "@Cooper, நீங்கள் தயாரா?\n!@Cooper காற்று பூட்டை நோக்கி நடக்கிறார்.";
+      }),
+    } as any);
+
+    await runTranslationJob({
+      lang: "Tamil",
+      promptConfig: mockPromptConfig,
+      sourceScriptName: "TestScript.fountain",
+      duplicatedName: "TestScript-Tamil",
+      targetFileId: "file-1",
+      targetScriptIndex: 1,
+      lines: rawLines,
+      analyzedLines,
+      parsedDoc,
+      updateFileScriptContent,
+      uiActions: {
+        setAiStatus: vi.fn(),
+        setTranslationState: vi.fn(),
+        setTranslatingTarget: vi.fn(),
+        setTranslationJob: vi.fn(),
+        setIsTranslationModalOpen: vi.fn(),
+        registerTranslationAbort: vi.fn(),
+        getTranslationState: () => "running",
+      },
+    });
+
+    expect(updateFileScriptContent).toHaveBeenCalled();
+    // Character cue line should keep @
+    expect(updatedContent).toContain("@COOPER");
+    // Dialogue and action lines should have @ stripped from Cooper
+    expect(updatedContent).toContain("Cooper, நீங்கள் தயாரா?");
+    expect(updatedContent).not.toContain("@Cooper, நீங்கள் தயாரா?");
+    expect(updatedContent).toContain("!Cooper காற்று பூட்டை நோக்கி நடக்கிறார்.");
+    expect(updatedContent).not.toContain("!@Cooper");
+  });
+
+  it("strips quotation marks from dialogue, parentheses from action, and foreign glyphs", async () => {
+    const script = `COOPER
+Hello there.
+
+Cooper enters the room.`;
+
+    const parsedDoc = parseScreenplay(script);
+    const rawLines = script.split("\n");
+    const analyzedLines = rawLines.map((l, i) => {
+      const an = analyzeFountainLine(l, parsedDoc.lines[i]);
+      return { ...an, isTranslatable: parsedDoc.lines[i]?.type !== LineType.character };
+    });
+
+    let updatedContent = "";
+    const updateFileScriptContent = vi.fn((_fid, _idx, content) => {
+      updatedContent = content;
+    });
+
+    const mockPromptConfig: any = {
+      provider: "openai-compatible",
+      apiEndpoint: "https://api.mock.ai/v1",
+      apiKey: "mock-key",
+      model: "mock-model",
+      translateLanguages: ["Tamil"],
+    };
+
+    const { createAIProvider } = await import("../lib/aiProviders");
+    vi.mocked(createAIProvider).mockReturnValue({
+      chat: vi.fn(async (messages) => {
+        const userMsg = messages.find((m: any) => m.role === "user")?.content || "";
+        if (userMsg.includes("Translate to English: Hello")) return "Hello";
+        // Model returned dialogue in quotes with accidental Japanese glyph (日), and action wrapped in ( ) with Telugu glyph (క)
+        return `"வணக்கம் நண்பா.日"\n!(கூப்பர் அறைக்குள் நுழைகிறார்.క)`;
+      }),
+    } as any);
+
+    await runTranslationJob({
+      lang: "Tamil",
+      promptConfig: mockPromptConfig,
+      sourceScriptName: "TestScript.fountain",
+      duplicatedName: "TestScript-Tamil",
+      targetFileId: "file-1",
+      targetScriptIndex: 1,
+      lines: rawLines,
+      analyzedLines,
+      parsedDoc,
+      updateFileScriptContent,
+      uiActions: {
+        setAiStatus: vi.fn(),
+        setTranslationState: vi.fn(),
+        setTranslatingTarget: vi.fn(),
+        setTranslationJob: vi.fn(),
+        setIsTranslationModalOpen: vi.fn(),
+        registerTranslationAbort: vi.fn(),
+        getTranslationState: () => "running",
+      },
+    });
+
+    expect(updateFileScriptContent).toHaveBeenCalled();
+    // Quotes and Japanese glyph should be stripped from dialogue
+    expect(updatedContent).toContain("வணக்கம் நண்பா.");
+    expect(updatedContent).not.toContain('"வணக்கம் நண்பா."');
+    expect(updatedContent).not.toContain("日");
+    // Outer parentheses and Telugu glyph should be stripped from action
+    expect(updatedContent).toContain("!கூப்பர் அறைக்குள் நுழைகிறார்.");
+    expect(updatedContent).not.toContain("!(");
+    expect(updatedContent).not.toContain("క");
+  });
 });

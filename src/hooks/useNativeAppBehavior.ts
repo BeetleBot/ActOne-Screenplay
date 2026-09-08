@@ -95,12 +95,14 @@ export function useNativeAppBehavior(
     window.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("drop", handleDrop);
 
+    let unmounted = false;
     let unlistenDragDrop: (() => void) | undefined;
 
     const setupDragDrop = async () => {
       try {
         const { getCurrentWebview } = await import("@tauri-apps/api/webview");
-        unlistenDragDrop = await getCurrentWebview().onDragDropEvent((event) => {
+        const unlisten = await getCurrentWebview().onDragDropEvent((event) => {
+          if (unmounted) return;
           const payload = event.payload;
           if (payload.type === "enter") {
             onDragStateChangeRef.current?.(true);
@@ -117,6 +119,16 @@ export function useNativeAppBehavior(
             }
           }
         });
+
+        if (unmounted) {
+          try {
+            if (typeof unlisten === "function") unlisten();
+          } catch {
+            // Guard against handlerId undefined error on torn down webview
+          }
+        } else {
+          unlistenDragDrop = unlisten;
+        }
       } catch {
         // Not in Tauri — no-op, native drop is already prevented
       }
@@ -125,11 +137,18 @@ export function useNativeAppBehavior(
     setupDragDrop();
 
     return () => {
+      unmounted = true;
       document.removeEventListener("contextmenu", handleContextMenu);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("drop", handleDrop);
-      unlistenDragDrop?.();
+      if (unlistenDragDrop) {
+        try {
+          if (typeof unlistenDragDrop === "function") unlistenDragDrop();
+        } catch {
+          // Guard against handlerId undefined error on unmount
+        }
+      }
     };
   }, []);
 }

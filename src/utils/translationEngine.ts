@@ -149,6 +149,40 @@ export function analyzeFountainLine(line: string, parsedLine: any): AnalyzedLine
 }
 
 /**
+ * Strips isolated foreign language glyphs (e.g. CJK/Japanese/Chinese, or neighboring Indic scripts like Telugu/Kannada)
+ * when translating into a specific target language, preventing cross-lingual tokenizer bleeding.
+ */
+export function sanitizeForeignGlyphs(text: string, targetLang: string): string {
+  if (!text) return text;
+  const langLower = targetLang.toLowerCase();
+
+  // If target is Tamil, strip foreign non-Tamil scripts that small models accidentally bleed into:
+  // - CJK Ideographs & Japanese Hiragana/Katakana (\u3040-\u30ff, \u3400-\u4dbf, \u4e00-\u9fff, \uf900-\ufaff)
+  // - Telugu (\u0C00-\u0C7F)
+  // - Kannada (\u0C80-\u0CFF)
+  // - Malayalam (\u0D00-\u0D7F)
+  if (langLower.includes("tamil")) {
+    return text
+      .replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, "")
+      .replace(/[\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]/g, "");
+  }
+
+  // If target is Telugu, strip CJK and other non-Telugu scripts
+  if (langLower.includes("telugu")) {
+    return text
+      .replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, "")
+      .replace(/[\u0B80-\u0BFF\u0C80-\u0CFF\u0D00-\u0D7F]/g, "");
+  }
+
+  // If target is not Chinese/Japanese/Korean, strip accidental CJK characters
+  if (!langLower.includes("chinese") && !langLower.includes("japanese") && !langLower.includes("korean")) {
+    return text.replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, "");
+  }
+
+  return text;
+}
+
+/**
  * Returns an informative context label (e.g. [JOHN], [Action], [Parenthetical])
  * so the AI model understands speaker attribution and tone requirements.
  */
@@ -445,12 +479,12 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         ? promptConfig.apiModel || promptConfig.model || "openai-compatible"
         : promptConfig.model || "llama3.2";
 
-    // Collect character names
+    // Collect character names (clean proper names without @ prefix)
     const allCharacters = new Set<string>();
     if (parsedDoc?.lines) {
       parsedDoc.lines.forEach((line) => {
         if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
-          const charName = line.text.replace(/\([^)]*\)/g, "").replace(/\^/g, "").trim();
+          const charName = line.text.replace(/\([^)]*\)/g, "").replace(/[@^]/g, "").trim();
           if (charName) allCharacters.add(charName);
         }
       });
@@ -507,13 +541,9 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       return;
     }
 
-    // Update state to running
-    setTranslationJob((prev: any) => prev ? { ...prev, state: "running", statusMessage: "Starting translation..." } : null);
-
     let translatedLinesCount = 0;
-    let completedScenesCount = 0;
+    const completedSceneIndices = new Set<number>();
     const failedChunkIndices = new Set<number>();
-    let lastCompletedSceneIndex = -1;
     let currentDelay = 1000; // Auto-throttle: start at 1s
 
     // Process chunks sequentially
@@ -523,23 +553,23 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         setTranslationJob((prev: any) => prev ? {
           ...prev,
           state: "paused",
-          statusMessage: `Paused — Scene ${completedScenesCount + 1} of ${totalScenes}`,
+          statusMessage: `Paused — Scene ${completedSceneIndices.size + 1} of ${totalScenes}`,
         } : null);
         await wait(300);
       }
       if (getTranslationState() === "cancelled" || controller.signal.aborted) break;
 
       const chunk = chunks[ci];
-      const isNewScene = chunk.sceneIndex !== lastCompletedSceneIndex || ci === 0;
+      const currentSceneNumber = Math.min(completedSceneIndices.size + 1, totalScenes);
       const partLabel = chunk.totalParts ? ` (Part ${chunk.partNumber} of ${chunk.totalParts})` : "";
-      const sceneLabel = `Scene ${completedScenesCount + 1} of ${totalScenes} — ${chunk.heading}${partLabel}`;
+      const sceneLabel = `Scene ${currentSceneNumber} of ${totalScenes} — ${chunk.heading}${partLabel}`;
 
       // Update progress
       setTranslationJob((prev: any) => prev ? {
         ...prev,
         state: "running",
         currentSceneHeading: chunk.heading,
-        currentSceneIndex: completedScenesCount + 1,
+        currentSceneIndex: currentSceneNumber,
         currentPart: chunk.partNumber,
         currentTotalParts: chunk.totalParts,
         statusMessage: `Translating: ${sceneLabel}`,
@@ -566,10 +596,10 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         ld.example ? `Example phrasing in ${ld.native}: "${ld.example}"` : "",
         "",
         "ELEMENT TYPES & TONE:",
-        "- Lines labeled with a [CHARACTER NAME] are Dialogue: translate using natural, conversational, spoken phrasing suitable for cinema and modern film dialogue.",
-        "- Lines labeled [Action] are Action/Description: translate using punchy, vivid, cinematic present-tense prose.",
-        "- Lines labeled [Parenthetical] are Actor Directions: translate naturally as an emotional cue or action.",
-        "- Lines labeled [Scene Heading], [Transition], or [Shot]: translate using standard film terminology.",
+        "• Lines labeled with [Dialogue: SPEAKER] are Dialogue: translate using natural, conversational, spoken phrasing suitable for cinema and modern film dialogue.",
+        "• Lines labeled [Action] are Action/Description: translate using punchy, vivid, cinematic present-tense prose.",
+        "• Lines labeled [Parenthetical] are Actor Directions: translate naturally as an emotional cue or action.",
+        "• Lines labeled [Scene Heading], [Transition], or [Shot]: translate using standard film terminology.",
         params.dynamicToneInstructions ? `\nTone Preferences:\n${params.dynamicToneInstructions}` : "",
         "",
       ];
@@ -582,10 +612,11 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
 
       systemParts.push("RULES:");
       systemParts.push("1. Return EXACTLY 1 translated line per input line, preserving the exact line-by-line order.");
-      systemParts.push("2. Output ONLY the translated text. Do NOT include the [Label] tags, character name prefixes, numbering, or explanations in your output.");
-      systemParts.push("3. Do not invent or continue scenes.");
+      systemParts.push("2. Output ONLY the spoken or descriptive text directly. Do NOT prepend character names or speaker labels (e.g. do not write 'RADIO:' or '@RADIO:'). Do NOT include [Label] tags, numbering, markdown bullets/dashes (- or *), or explanations.");
+      systemParts.push("3. Screenplay format: Do NOT wrap Dialogue lines in quotation marks (\" or '). Do NOT wrap Action/Description lines in parentheses ( ). Output plain text lines.");
+      systemParts.push("4. Do not invent or continue scenes. Output ONLY in the target language.");
       if (params.preserveCharacterNames !== false && sceneChars.size > 0) {
-        systemParts.push(`4. Preserve these character names as-is (do not translate): ${Array.from(sceneChars).join(", ")}`);
+        systemParts.push(`5. Preserve these character names as-is (do not translate, and never add '@' to names in dialogue or action lines): ${Array.from(sceneChars).join(", ")}`);
       }
 
       const systemPrompt = systemParts.filter(Boolean).join("\n");
@@ -615,7 +646,7 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
 
         try {
           let fullRaw = "";
-          await provider.chat(
+          const chatResult = await provider.chat(
             [{ role: "user", content: userPrompt }],
             {
               system: systemPrompt,
@@ -629,15 +660,29 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
                   .replace(/<think>[\s\S]*$/gi, "")
                   .trim();
                 const previewLines = cleanPreview.split("\n").filter((l) => l.trim().length > 0);
-                const latest = previewLines[previewLines.length - 1] || "";
+                let latest = previewLines[previewLines.length - 1] || "";
                 if (latest) {
-                  setTranslationJob((prev: any) =>
-                    prev ? { ...prev, latestPreview: latest } : null
-                  );
+                  // Clean off any echoed [Label] prefix
+                  latest = latest
+                    .replace(/^\[(Dialogue:[^\]]*|Action|Parenthetical|Scene Heading|Transition|Shot)\]\s*:?\s*/i, "")
+                    .replace(/^[-*•]\s+/, "")
+                    .replace(/^["'“]\s*/, "")
+                    .replace(/\s*["'”]$/, "")
+                    .trim();
+                  latest = sanitizeForeignGlyphs(latest, lang);
+                  if (latest) {
+                    setTranslationJob((prev: any) =>
+                      prev ? { ...prev, latestPreview: latest } : null
+                    );
+                  }
                 }
               },
             },
           );
+
+          if (!fullRaw && typeof chatResult === "string") {
+            fullRaw = chatResult;
+          }
 
           // Parse response — tolerant line-by-line matching
           const { cleanContent } = extractThinkingAndClean(fullRaw);
@@ -653,6 +698,77 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
               translated = translated
                 .replace(/^\[(Dialogue:[^\]]*|Action|Parenthetical|Scene Heading|Transition|Shot)\]\s*:?\s*/i, "")
                 .trim();
+
+              // Clean off echoed character name prefixes (e.g. "@RADIO:", "RADIO:", "@PILOT:")
+              const lineType = parsedLines[lineIdx]?.type;
+              const isDialogueLine = lineType === LineType.dialogue || lineType === LineType.dualDialogue;
+
+              if (isDialogueLine) {
+                allCharacters.forEach((char) => {
+                  const cleanChar = char.replace(/^@/, "").trim();
+                  if (cleanChar && cleanChar.length >= 2) {
+                    const charRegex = new RegExp(`^@?${cleanChar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:\\s*`, "i");
+                    if (!charRegex.test(item.cleanText)) {
+                      translated = translated.replace(charRegex, "").trim();
+                    }
+                  }
+                });
+
+                // Generic speaker prefix fallback for dialogue lines (e.g. "@NAME:" or "NAME:")
+                const genericSpeakerRegex = /^@?[A-Z0-9_\s.()'-]{2,}\s*:\s*/;
+                if (genericSpeakerRegex.test(translated) && !genericSpeakerRegex.test(item.cleanText)) {
+                  translated = translated.replace(genericSpeakerRegex, "").trim();
+                }
+              }
+
+              // Strip stray '@' before character names in body text (Action, Dialogue, etc.)
+              // Fountain only uses '@' as a prefix for character cue lines, never inside dialogue or action.
+              allCharacters.forEach((char) => {
+                if (char && char.length >= 2) {
+                  const escapedChar = char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                  // Match @CharacterName when preceded by start of line or non-word character
+                  const atCharRegex = new RegExp(`(^|[^\\w@])@(${escapedChar})\\b`, "gi");
+                  if (atCharRegex.test(translated) && !atCharRegex.test(item.cleanText)) {
+                    translated = translated.replace(atCharRegex, "$1$2");
+                  }
+                }
+              });
+
+              // Strip model-generated markdown bullet dashes (- or * or •) if the original screenplay text didn't have them
+              if (!item.cleanText.startsWith("-") && !item.cleanText.startsWith("•") && !item.cleanText.startsWith("*")) {
+                translated = translated.replace(/^[-*•]\s+/, "").trim();
+              }
+
+              // Strip model-generated quotation marks around dialogue if original line did not have them
+              if (isDialogueLine) {
+                const hadQuotes = (item.cleanText.startsWith('"') && item.cleanText.endsWith('"')) ||
+                  (item.cleanText.startsWith("'") && item.cleanText.endsWith("'")) ||
+                  (item.cleanText.startsWith("“") && item.cleanText.endsWith("”"));
+                if (!hadQuotes) {
+                  translated = translated
+                    .replace(/^["'“](.*)["'”]$/s, "$1")
+                    .replace(/^["'“]\s*/, "")
+                    .replace(/\s*["'”]$/, "")
+                    .trim();
+                }
+              }
+
+              // Strip redundant leading Fountain action escape (!) if the model echoed it
+              if (item.prefix === "!" && translated.startsWith("!")) {
+                translated = translated.slice(1).trim();
+              }
+
+              // Strip model-generated parentheses around action/description lines if original was not in parentheses
+              const isActionLine = lineType === LineType.action || lineType === LineType.centered || lineType === LineType.synopse;
+              if (isActionLine) {
+                const hadParentheses = item.cleanText.startsWith("(") && item.cleanText.endsWith(")");
+                if (!hadParentheses && translated.startsWith("(") && translated.endsWith(")")) {
+                  translated = translated.slice(1, -1).trim();
+                }
+              }
+
+              // Sanitize foreign unicode script bleeding (e.g. CJK/Telugu glyphs leaking into Tamil)
+              translated = sanitizeForeignGlyphs(translated, lang);
 
               if (!translated) return;
 
@@ -741,24 +857,13 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         } : null);
       }
 
-      // Track scene completion
-      if (chunk.sceneIndex !== lastCompletedSceneIndex) {
-        if (isNewScene && lastCompletedSceneIndex !== -1) {
-          completedScenesCount++;
-        } else if (ci === 0) {
-          // First chunk doesn't increment
-        }
-        lastCompletedSceneIndex = chunk.sceneIndex;
-      }
-
-      // Check if this is the last chunk of the current scene
-      const nextChunk = chunks[ci + 1];
-      const isLastChunkOfScene = !nextChunk || nextChunk.sceneIndex !== chunk.sceneIndex;
-      if (isLastChunkOfScene) {
-        completedScenesCount++;
+      // Check if all chunks for this scene are finished
+      const remainingChunksForScene = chunks.slice(ci + 1).some((c) => c.sceneIndex === chunk.sceneIndex);
+      if (!remainingChunksForScene) {
+        completedSceneIndices.add(chunk.sceneIndex);
         setTranslationJob((prev: any) => prev ? {
           ...prev,
-          completedScenes: completedScenesCount,
+          completedScenes: completedSceneIndices.size,
         } : null);
       }
 

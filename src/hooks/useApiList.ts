@@ -3,14 +3,26 @@ import { STORAGE_KEYS } from "../constants";
 import type { ApiEntry } from "../constants";
 import { notifyConfigChange } from "./usePromptConfig";
 
+let cachedRaw: string | null = null;
+let cachedApiList: ApiEntry[] = [];
+
 function getApiList(): ApiEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST);
-    if (!raw) return [];
+    if (raw === cachedRaw) {
+      return cachedApiList;
+    }
+    cachedRaw = raw;
+    if (!raw) {
+      cachedApiList = [];
+      return cachedApiList;
+    }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    cachedApiList = Array.isArray(parsed) ? parsed : [];
+    return cachedApiList;
   } catch {
-    return [];
+    cachedApiList = [];
+    return cachedApiList;
   }
 }
 

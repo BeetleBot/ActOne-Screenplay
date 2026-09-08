@@ -60,6 +60,7 @@ export const TranslateDocumentModal: React.FC = () => {
     resumeTranslation,
     cancelTranslation,
     translationSetupTarget,
+    setTranslationSetupTarget,
     setTranslationState,
     setTranslatingTarget,
     setTranslationJob,
@@ -69,9 +70,12 @@ export const TranslateDocumentModal: React.FC = () => {
   const { scripts, activeScriptIndex, setActiveScript, duplicateScript, activeFileId, updateFileScriptContent } = useFile();
   const promptConfig = usePromptConfig();
 
-  // Mode determines what UI to show. If a job is active, show progress. Otherwise, show setup.
-  const isJobActive = translationState === "running" || translationState === "paused" || job?.state === "running" || job?.state === "completed" || job?.state === "error" || job?.state === "preflight" || job?.state === "waiting";
-  const mode = (isJobActive && job) ? "progress" : "setup";
+  // Mode determines what UI to show.
+  // If translationSetupTarget is set, the user explicitly opened setup for a script.
+  // An active in-flight job always shows progress. A completed job only shows progress if setup wasn't requested.
+  const isJobInFlight = translationState === "running" || translationState === "paused" || job?.state === "running" || job?.state === "preflight" || job?.state === "waiting";
+  const isJobFinished = (job?.state === "completed" || job?.state === "error") && !translationSetupTarget;
+  const mode = (isJobInFlight || isJobFinished) && job ? "progress" : "setup";
 
   // --- Setup State ---
   const effectiveTarget = translationSetupTarget || (activeFileId && scripts?.length ? { fileId: activeFileId, scriptIndex: activeScriptIndex ?? 0 } : null);
@@ -205,11 +209,13 @@ export const TranslateDocumentModal: React.FC = () => {
     }
 
     try {
-      const duplicatedName = await duplicateScript(effectiveTarget.scriptIndex, targetFileName.trim(), false);
+      const duplicatedName = await duplicateScript(effectiveTarget.scriptIndex, targetFileName.trim(), true);
       if (!duplicatedName) {
         setSetupError("Failed to duplicate script file.");
         return;
       }
+
+      setTranslationSetupTarget(null);
 
       const rawLines = sourceScript.content.split(/\r?\n/);
       const doc = parseScreenplay(sourceScript.content);
@@ -285,6 +291,7 @@ export const TranslateDocumentModal: React.FC = () => {
 
   const handleClose = () => {
     setIsTranslationModalOpen(false);
+    setTranslationSetupTarget(null);
     if (job && (job.state === "completed" || job.state === "error" || job.state === "cancelled")) {
       setTranslationJob(null);
     }
@@ -317,7 +324,7 @@ export const TranslateDocumentModal: React.FC = () => {
   const completedScenes = job?.completedScenes ?? 0;
   const totalScenes = job?.totalScenes && job.totalScenes > 0 ? job.totalScenes : 1;
   const percent = Math.min(100, Math.round((completedScenes / totalScenes) * 100));
-  const isFinished = job?.state === "completed" || percent >= 100;
+  const isFinished = job?.state === "completed";
   const isPaused = job?.state === "paused";
   const isError = job?.state === "error";
   const isWaiting = job?.state === "waiting";

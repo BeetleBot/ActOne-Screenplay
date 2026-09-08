@@ -352,7 +352,7 @@ export const ScriptsView = React.memo(() => {
 
                 const isTranslating =
                   Boolean(translationJob) &&
-                  (translationJob?.state === "running" || translationJob?.state === "paused") &&
+                  (translationJob?.state === "running" || translationJob?.state === "paused" || translationJob?.state === "waiting" || translationJob?.state === "preflight") &&
                   translationJob?.fileId === activeFileId &&
                   translationJob?.scriptIndex === originalIndex;
 
