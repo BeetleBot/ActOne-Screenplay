@@ -12,32 +12,12 @@ export function getPerScriptSetting(
   const isPerScriptKeyed =
     (scriptFileName in val) ||
     Object.keys(val).some(k => k.endsWith(".fountain")) ||
-    ["parking", "todos", "notepad", "productionTags", "characterProfiles", "genders"].includes(key);
+    ["parking", "todos", "notepad", "characterProfiles", "genders"].includes(key);
 
   if (isPerScriptKeyed) {
     return val[scriptFileName];
   }
   return val;
-}
-
-export function migrateProductionTags(raw: any): Record<string, any> {
-  if (!raw || typeof raw !== "object") return {};
-  
-  // Old flat format: { tags: [...], definitions: [...] }
-  // Also catches hybrid format: { tags: [], definitions: [], "33.fountain": {...} }
-  if ("tags" in raw || "definitions" in raw) {
-    const result: Record<string, any> = {};
-    for (const [key, val] of Object.entries(raw)) {
-      if (key === "tags" || key === "definitions") continue; // drop flat-format junk
-      if (val && typeof val === "object" && ("tags" in (val as any) || "definitions" in (val as any))) {
-        result[key] = val; // keep per-script entries
-      }
-    }
-    // Keep flat format as-is when there are no per-script entries (e.g. empty tags)
-    return Object.keys(result).length > 0 ? result : raw;
-  }
-  
-  return raw;
 }
 
 export function updatePerScriptSetting(
@@ -105,7 +85,7 @@ export function migrateSettingsKey(
 ): Record<string, any> {
   if (!settings || typeof settings !== "object") return settings || {};
   if (oldFileName === newFileName || !oldFileName || !newFileName) return settings;
-  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles", "productionTags"];
+  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles"];
   const migrated = { ...settings };
 
   for (const key of KEYED_PROPS) {
@@ -124,7 +104,7 @@ export function removeSettingsKey(
 ): Record<string, any> {
   if (!settings || typeof settings !== "object") return settings || {};
   if (!fileName) return settings;
-  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles", "productionTags"];
+  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles"];
   const cleaned = { ...settings };
 
   for (const key of KEYED_PROPS) {

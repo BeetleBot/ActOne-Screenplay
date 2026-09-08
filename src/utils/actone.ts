@@ -1,5 +1,4 @@
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
-import { migrateProductionTags } from "./perScriptSettings";
 import { logger } from "./logger";
 
 const ACTONE_MAGIC = new Uint8Array([0x41, 0x43, 0x54, 0x31]); // "ACT1"
@@ -58,7 +57,6 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const parkingData = tryParse("parking.json", []);
   const notepadData = tryParse("notepad.json", "");
   const sprintData = tryParse("sprint_data.json", []);
-  const productionTagsData = migrateProductionTags(tryParse("production_tags.json", { tags: [], definitions: [] }));
   const promptChatsData = tryParse("muse.json",
     tryParse("prompt.json", { conversations: [], activeConversationId: null }));
 
@@ -67,7 +65,6 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const settings: Record<string, unknown> = {
     ...parsedSettings,
     sprintHistory: sprintData,
-    productionTags: productionTagsData,
     promptChats: promptChatsData,
   };
 
@@ -165,7 +162,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string, any>): Uint8Array {
   const {
-    genders, todos, parking, notepad, sprintHistory: sprintData, productionTags, promptChats, ...restSettings
+    genders, todos, parking, notepad, sprintHistory: sprintData, promptChats, ...restSettings
   } = settings || {};
 
   const resolvePerScript = (key: string, scripts: ScriptInfo[]): unknown => {
@@ -182,7 +179,6 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
         if (key === "todos" || key === "parking") fallback = [];
         else if (key === "notepad") fallback = "";
         else if (key === "genders") fallback = {};
-        else if (key === "productionTags") fallback = { tags: [], definitions: [] };
         result[s.fileName] = (val as Record<string, unknown>)[s.fileName] ?? fallback;
       } else {
         result[s.fileName] = val;
@@ -205,7 +201,6 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));
     entries["parking.json"] = strToU8(JSON.stringify(resolvePerScript("parking", scripts), null, 2));
     entries["notepad.json"] = strToU8(JSON.stringify(resolvePerScript("notepad", scripts), null, 2));
-    entries["production_tags.json"] = strToU8(JSON.stringify(resolvePerScript("productionTags", scripts) || { tags: [], definitions: [] }, null, 2));
   } else {
     const genderVal = genders && typeof genders === 'object' && !Array.isArray(genders) && !Object.keys(genders).some(k => scripts.some(s => s.fileName === k))
       ? { genders }
@@ -214,7 +209,6 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     entries["todos.json"] = strToU8(JSON.stringify(todos || [], null, 2));
     entries["parking.json"] = strToU8(JSON.stringify(parking || [], null, 2));
     entries["notepad.json"] = strToU8(JSON.stringify(notepad || "", null, 2));
-    entries["production_tags.json"] = strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2));
   }
 
   for (const script of scripts) {
@@ -232,7 +226,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
 export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<string, any>): Promise<Uint8Array> {
   return new Promise((resolve) => {
     const {
-      genders, todos, parking, notepad, sprintHistory: sprintData, productionTags, promptChats, ...restSettings
+      genders, todos, parking, notepad, sprintHistory: sprintData, promptChats, ...restSettings
     } = settings || {};
 
     const resolvePerScript = (key: string, scripts: ScriptInfo[]): unknown => {
@@ -249,7 +243,6 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
           if (key === "todos" || key === "parking") fallback = [];
           else if (key === "notepad") fallback = "";
           else if (key === "genders") fallback = {};
-          else if (key === "productionTags") fallback = { tags: [], definitions: [] };
           result[s.fileName] = (val as Record<string, unknown>)[s.fileName] ?? fallback;
         } else {
           result[s.fileName] = val;
@@ -272,7 +265,6 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));
       entries["parking.json"] = strToU8(JSON.stringify(resolvePerScript("parking", scripts), null, 2));
       entries["notepad.json"] = strToU8(JSON.stringify(resolvePerScript("notepad", scripts), null, 2));
-      entries["production_tags.json"] = strToU8(JSON.stringify(resolvePerScript("productionTags", scripts) || { tags: [], definitions: [] }, null, 2));
     } else {
       const genderVal = genders && typeof genders === 'object' && !Array.isArray(genders) && !Object.keys(genders).some(k => scripts.some(s => s.fileName === k))
         ? { genders }
@@ -281,7 +273,6 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       entries["todos.json"] = strToU8(JSON.stringify(todos || [], null, 2));
       entries["parking.json"] = strToU8(JSON.stringify(parking || [], null, 2));
       entries["notepad.json"] = strToU8(JSON.stringify(notepad || "", null, 2));
-      entries["production_tags.json"] = strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2));
     }
 
     for (const script of scripts) {
