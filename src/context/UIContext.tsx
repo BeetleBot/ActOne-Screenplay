@@ -14,20 +14,31 @@ export interface TranslationJob {
   lang: string;
   langCode: string;
   langNative: string;
-  totalBatches: number;
-  completedBatches: number;
-  activeBatches?: number[];
+
+  // Scene-level progress
+  totalScenes: number;
+  completedScenes: number;
+  currentSceneHeading: string;
+  currentSceneIndex: number;
+  currentPart?: number;
+  currentTotalParts?: number;
+  statusMessage: string;
+
+  // Counts
   totalLines?: number;
   translatedLines?: number;
-  failedLines?: number;
-  failedIndices?: number[];
+  failedScenes?: number;
+  failedSceneIndices?: number[];
+
+  // Meta
   latestPreview?: string;
   startTime?: number;
   endTime?: number;
   model: string;
   provider: string;
-  state: 'running' | 'paused' | 'cancelled' | 'completed' | 'error';
+  state: 'preflight' | 'running' | 'paused' | 'waiting' | 'cancelled' | 'completed' | 'error';
   error?: string;
+  waitingSeconds?: number;
 }
 
 export interface UIContextProps {

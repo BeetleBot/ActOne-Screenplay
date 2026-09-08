@@ -519,7 +519,7 @@ export const ScriptsView = React.memo(() => {
                     {isTranslating && (
                       <Box sx={{ px: 1, pt: 0.5, pb: 0.2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <Typography variant="caption" sx={{ fontSize: "0.68rem", color: "text.secondary", fontWeight: 500 }}>
-                          Translating ({translationJob ? `${Math.round(((translationJob.completedBatches || 0) / (translationJob.totalBatches || 1)) * 100)}%` : "..."})
+                          Translating ({translationJob ? `${Math.round(((translationJob.completedScenes || 0) / (translationJob.totalScenes || 1)) * 100)}%` : "..."})
                         </Typography>
                         <Button
                           size="small"

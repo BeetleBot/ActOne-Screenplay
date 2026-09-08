@@ -2,21 +2,32 @@ import { describe, it, expect, vi } from "vitest";
 import { LineType, parseScreenplay } from "../parser";
 import {
   analyzeFountainLine,
-  parseBatchResponse,
-  pLimit,
+  segmentIntoScenes,
   runTranslationJob,
 } from "./translationEngine";
 
 vi.mock("../lib/aiProviders", () => ({
+  RateLimitError: class RateLimitError extends Error {
+    public retryAfterSec: number;
+    constructor(message: string, retryAfterSec: number) {
+      super(message);
+      this.name = "RateLimitError";
+      this.retryAfterSec = retryAfterSec;
+    }
+  },
   createAIProvider: vi.fn(() => ({
     chat: vi.fn(async (messages, options) => {
       const userMsg = messages.find((m: any) => m.role === "user")?.content || "";
-      const lines = userMsg.split("\n");
+      // Pre-flight check
+      if (userMsg.includes("Translate to English: Hello")) {
+        return "Hello";
+      }
+
+      // Extract lines after the --- marker
+      const markerIdx = userMsg.indexOf("---");
+      const lines = markerIdx !== -1 ? userMsg.slice(markerIdx + 3).trim().split("\n") : userMsg.split("\n");
       const translated = lines
-        .map((l: string) => {
-          const parts = l.split("|");
-          return `${parts[0]}|[ES] ${parts[1] || ""}`;
-        })
+        .map((l: string) => `[ES] ${l.trim()}`)
         .join("\n");
       if (options?.onChunk) {
         options.onChunk(translated);
@@ -106,105 +117,88 @@ describe("analyzeFountainLine", () => {
   });
 });
 
-describe("parseBatchResponse", () => {
-  it("parses pipe-delimited numbered lines", () => {
-    const raw = `
-1|First line of dialogue
-2|Second line of dialogue
-3|Third line of dialogue
+describe("segmentIntoScenes", () => {
+  it("segments screenplay into individual scenes based on headings", () => {
+    const script = `
+INT. OFFICE - DAY
+
+JOHN
+Hello.
+
+EXT. STREET - NIGHT
+
+SARAH
+Goodbye.
 `.trim();
-    const map = parseBatchResponse(raw);
-    expect(map.size).toBe(3);
-    expect(map.get(1)).toBe("First line of dialogue");
-    expect(map.get(2)).toBe("Second line of dialogue");
-    expect(map.get(3)).toBe("Third line of dialogue");
+
+    const parsed = parseScreenplay(script);
+    const rawLines = script.split(/\r?\n/);
+    const analyzed = rawLines.map((l, i) => analyzeFountainLine(l, parsed.lines[i]));
+
+    const scenes = segmentIntoScenes(analyzed, parsed.lines);
+    expect(scenes.length).toBe(2);
+    expect(scenes[0].heading).toContain("INT. OFFICE - DAY");
+    expect(scenes[1].heading).toContain("EXT. STREET - NIGHT");
+    expect(scenes[0].sceneIndex).toBe(0);
+    expect(scenes[1].sceneIndex).toBe(1);
   });
 
-  it("parses bracketed and dot-numbered lines", () => {
-    const raw = `
-[1] Line one
-2. Line two
-3: Line three
-4) Line four
-Line 5: Line five
-#6. Line six
+  it("handles preamble before the first scene heading", () => {
+    const script = `
+An opening action line before any scene.
+
+INT. CABIN - DAY
+
+BOB
+Welcome.
 `.trim();
-    const map = parseBatchResponse(raw);
-    expect(map.get(1)).toBe("Line one");
-    expect(map.get(2)).toBe("Line two");
-    expect(map.get(3)).toBe("Line three");
-    expect(map.get(4)).toBe("Line four");
-    expect(map.get(5)).toBe("Line five");
-    expect(map.get(6)).toBe("Line six");
+
+    const parsed = parseScreenplay(script);
+    const rawLines = script.split(/\r?\n/);
+    const analyzed = rawLines.map((l, i) => analyzeFountainLine(l, parsed.lines[i]));
+
+    const scenes = segmentIntoScenes(analyzed, parsed.lines);
+    expect(scenes.length).toBe(2);
+    expect(scenes[0].heading).toBe("Preamble");
+    expect(scenes[1].heading).toContain("INT. CABIN - DAY");
   });
 
-  it("strips <think>...</think> reasoning blocks", () => {
-    const raw = `
-<think>
-1. We need to translate line 1 carefully.
-2. Line 2 has tricky colloquial terms.
-</think>
-1|Translated line 1
-2|Translated line 2
+  it("returns fallback chunk if no headings exist in the document", () => {
+    const script = `
+Just some action text.
+And more action text.
 `.trim();
-    const map = parseBatchResponse(raw);
-    expect(map.size).toBe(2);
-    expect(map.get(1)).toBe("Translated line 1");
-    expect(map.get(2)).toBe("Translated line 2");
+
+    const parsed = parseScreenplay(script);
+    const rawLines = script.split(/\r?\n/);
+    const analyzed = rawLines.map((l, i) => analyzeFountainLine(l, parsed.lines[i]));
+
+    const scenes = segmentIntoScenes(analyzed, parsed.lines);
+    expect(scenes.length).toBe(1);
+    expect(scenes[0].heading).toBe("Document");
   });
 
-  it("strips markdown code fences", () => {
-    const raw = "```text\n1|Translated line 1\n2|Translated line 2\n```";
-    const map = parseBatchResponse(raw);
-    expect(map.size).toBe(2);
-    expect(map.get(1)).toBe("Translated line 1");
-    expect(map.get(2)).toBe("Translated line 2");
-  });
+  it("adaptively splits very long scenes into numbered parts", () => {
+    // Generate a scene with 45 translatable lines
+    let script = "INT. LONG SCENE - DAY\n\n";
+    for (let i = 0; i < 45; i++) {
+      script += `CHARACTER_${i % 3}\nLine number ${i}.\n\n`;
+    }
 
-  it("accumulates multi-line continuation responses", () => {
-    const raw = `
-1|This is an action sentence.
-This is the continuation of the action sentence.
-2|Second line.
-`.trim();
-    const map = parseBatchResponse(raw);
-    expect(map.size).toBe(2);
-    expect(map.get(1)).toBe("This is an action sentence. This is the continuation of the action sentence.");
-    expect(map.get(2)).toBe("Second line.");
-  });
+    const parsed = parseScreenplay(script.trim());
+    const rawLines = script.trim().split(/\r?\n/);
+    const analyzed = rawLines.map((l, i) => analyzeFountainLine(l, parsed.lines[i]));
 
-  it("ignores safety and moderation disclaimers", () => {
-    const raw = `
-Safety: Content is safe for viewing.
-1|Normal text
-`.trim();
-    const map = parseBatchResponse(raw);
-    expect(map.size).toBe(1);
-    expect(map.get(1)).toBe("Normal text");
-  });
-});
-
-describe("pLimit", () => {
-  it("limits concurrent tasks and finishes all tasks", async () => {
-    let running = 0;
-    let maxRunning = 0;
-
-    const tasks = Array.from({ length: 8 }, (_, i) => async () => {
-      running++;
-      if (running > maxRunning) maxRunning = running;
-      await new Promise((r) => setTimeout(r, 20));
-      running--;
-      return i * 2;
-    });
-
-    const results = await pLimit(3, tasks);
-    expect(maxRunning).toBeLessThanOrEqual(3);
-    expect(results).toEqual([0, 2, 4, 6, 8, 10, 12, 14]);
+    const scenes = segmentIntoScenes(analyzed, parsed.lines);
+    expect(scenes.length).toBeGreaterThan(1);
+    expect(scenes[0].partNumber).toBe(1);
+    expect(scenes[0].totalParts).toBe(scenes.length);
+    expect(scenes[1].partNumber).toBe(2);
   });
 });
 
 describe("runTranslationJob", () => {
-  it("translates all translatable lines in batches and updates script content", async () => {
+  it("translates scene by scene and updates script content", async () => {
     const script = `
 INT. DINER - NIGHT
 
@@ -235,7 +229,10 @@ John sits down and opens his menu.
     const registerTranslationAbort = vi.fn();
 
     const mockPromptConfig: any = {
-      provider: "mock",
+      provider: "openai-compatible",
+      apiEndpoint: "https://api.mock.ai/v1",
+      apiKey: "mock-key",
+      model: "mock-model",
       translateLanguages: ["Spanish"],
     };
 
@@ -249,6 +246,7 @@ John sits down and opens his menu.
       lines: rawLines,
       analyzedLines,
       parsedDoc,
+      customInstruction: "Make it colloquial",
       updateFileScriptContent,
       uiActions: {
         setAiStatus,
@@ -265,12 +263,18 @@ John sits down and opens his menu.
     expect(updatedContent).toContain(".INT. DINER - NIGHT");
     expect(updatedContent).toContain("@JOHN");
     expect(updatedContent).toContain("@SARAH");
+    expect(updatedContent).toContain("[ES] Hello Sarah.");
+    expect(updatedContent).toContain("[ES] Good to see you.");
   });
 
-  it("translates only specified retryIndices when retryIndices is provided", async () => {
+  it("retries only specified retrySceneIndices when provided", async () => {
     const script = `
+INT. SCENE ONE - DAY
+
 JOHN
 Line one.
+
+INT. SCENE TWO - NIGHT
 
 SARAH
 Line two.
@@ -285,30 +289,31 @@ Line two.
       updatedContent = content;
     });
 
-    const setTranslationJob = vi.fn();
-
     const mockPromptConfig: any = {
-      provider: "mock",
-      translateLanguages: ["French"],
+      provider: "openai-compatible",
+      apiEndpoint: "https://api.mock.ai/v1",
+      apiKey: "mock-key",
+      model: "mock-model",
+      translateLanguages: ["Spanish"],
     };
 
     await runTranslationJob({
-      lang: "French",
+      lang: "Spanish",
       promptConfig: mockPromptConfig,
       sourceScriptName: "TestScript.fountain",
-      duplicatedName: "TestScript-French",
+      duplicatedName: "TestScript-Spanish",
       targetFileId: "file-1",
       targetScriptIndex: 1,
       lines: rawLines,
       analyzedLines,
       parsedDoc,
-      retryIndices: [1], // Only retry "Line one."
+      retrySceneIndices: [1], // Only retry scene two
       updateFileScriptContent,
       uiActions: {
         setAiStatus: vi.fn(),
         setTranslationState: vi.fn(),
         setTranslatingTarget: vi.fn(),
-        setTranslationJob,
+        setTranslationJob: vi.fn(),
         setIsTranslationModalOpen: vi.fn(),
         registerTranslationAbort: vi.fn(),
         getTranslationState: () => "running",
@@ -316,7 +321,6 @@ Line two.
     });
 
     expect(updateFileScriptContent).toHaveBeenCalled();
-    expect(updatedContent).toContain("[ES] Line one.");
+    expect(updatedContent).toContain("[ES] Line two.");
   });
 });
-

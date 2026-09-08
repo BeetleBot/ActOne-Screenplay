@@ -3,6 +3,15 @@ import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
+export class RateLimitError extends Error {
+  public retryAfterSec: number;
+  constructor(message: string, retryAfterSec: number) {
+    super(message);
+    this.name = "RateLimitError";
+    this.retryAfterSec = retryAfterSec;
+  }
+}
+
 function isTauriEnv(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
@@ -125,6 +134,14 @@ export class OpenAICompatibleProvider implements AIProvider {
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfterHeader = response.headers.get("Retry-After");
+        const waitSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 10;
+        throw new RateLimitError(
+          `Rate limited by provider`,
+          isNaN(waitSec) ? 10 : waitSec
+        );
+      }
       const err = await response.text().catch(() => "Unknown error");
       throw new Error(`API error (${response.status}): ${err}`);
     }
@@ -202,6 +219,7 @@ export class OllamaProvider implements AIProvider {
           model: this.model || "llama3.2",
           messages: payload,
           temperature: options.temperature,
+          maxTokens: options.maxTokens,
         });
         return result;
       } finally {

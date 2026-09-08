@@ -40,7 +40,7 @@ export const BetaTooltip: React.FC = () => (
         height: 18, 
         fontSize: "0.65rem", 
         ml: 1.5,
-        mt: 0.2, // Tiny nudge down to align with text cap height
+        mt: 0.2,
         borderColor: (t) => alpha(t.palette.primary.main, 0.5),
         color: (t) => alpha(t.palette.primary.main, 0.8),
         cursor: "help",
@@ -70,7 +70,7 @@ export const TranslateDocumentModal: React.FC = () => {
   const promptConfig = usePromptConfig();
 
   // Mode determines what UI to show. If a job is active, show progress. Otherwise, show setup.
-  const isJobActive = translationState === "running" || translationState === "paused" || job?.state === "running" || job?.state === "completed" || job?.state === "error";
+  const isJobActive = translationState === "running" || translationState === "paused" || job?.state === "running" || job?.state === "completed" || job?.state === "error" || job?.state === "preflight" || job?.state === "waiting";
   const mode = (isJobActive && job) ? "progress" : "setup";
 
   // --- Setup State ---
@@ -85,6 +85,7 @@ export const TranslateDocumentModal: React.FC = () => {
   const [rememberSettings, setRememberSettings] = useState<boolean>(false);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("current");
+  const [customInstruction, setCustomInstruction] = useState<string>("");
 
   useEffect(() => {
     fetchModels("ollama").then((models) => {
@@ -163,6 +164,7 @@ export const TranslateDocumentModal: React.FC = () => {
           if (p.tones) setTones(p.tones);
           if (p.preserveNames !== undefined) setPreserveNames(p.preserveNames);
           if (p.selectedModelId) setSelectedModelId(p.selectedModelId);
+          if (p.customInstruction !== undefined) setCustomInstruction(p.customInstruction);
           setRememberSettings(true);
         }
       } catch {}
@@ -197,7 +199,7 @@ export const TranslateDocumentModal: React.FC = () => {
     }
 
     if (rememberSettings) {
-      localStorage.setItem("actone-translate-doc-prefs", JSON.stringify({ elements, tones, preserveNames, selectedModelId }));
+      localStorage.setItem("actone-translate-doc-prefs", JSON.stringify({ elements, tones, preserveNames, selectedModelId, customInstruction }));
     } else {
       localStorage.removeItem("actone-translate-doc-prefs");
     }
@@ -232,7 +234,7 @@ export const TranslateDocumentModal: React.FC = () => {
         return { ...analyzed, isTranslatable: translatable && !!analyzed.cleanText.trim() };
       });
 
-      // Construct dynamic system prompt
+      // Construct dynamic tone instructions
       const toneInstructions = [];
       if (elements.dialogue) toneInstructions.push(`- Dialogue lines: ${tones.dialogue}`);
       if (elements.action) toneInstructions.push(`- Action lines: ${tones.action}`);
@@ -252,6 +254,7 @@ export const TranslateDocumentModal: React.FC = () => {
         parsedDoc: doc,
         preserveCharacterNames: preserveNames,
         dynamicToneInstructions: toneInstructions.join("\n"),
+        customInstruction: customInstruction.trim() || undefined,
         updateFileScriptContent,
         uiActions: {
           setAiStatus: () => {},
@@ -311,12 +314,14 @@ export const TranslateDocumentModal: React.FC = () => {
     }
   };
 
-  const translatedLines = job?.translatedLines ?? 0;
-  const totalLines = job?.totalLines && job.totalLines > 0 ? job.totalLines : 1;
-  const percent = Math.min(100, Math.round((translatedLines / totalLines) * 100));
+  const completedScenes = job?.completedScenes ?? 0;
+  const totalScenes = job?.totalScenes && job.totalScenes > 0 ? job.totalScenes : 1;
+  const percent = Math.min(100, Math.round((completedScenes / totalScenes) * 100));
   const isFinished = job?.state === "completed" || percent >= 100;
   const isPaused = job?.state === "paused";
   const isError = job?.state === "error";
+  const isWaiting = job?.state === "waiting";
+  const isPreflight = job?.state === "preflight";
 
   const durationSec = useMemo(() => {
     if (!job?.startTime) return null;
@@ -324,8 +329,18 @@ export const TranslateDocumentModal: React.FC = () => {
     return Math.max(1, Math.round((end - job.startTime) / 1000));
   }, [job?.startTime, job?.endTime]);
 
-  let progressText = `Line ${Math.min(translatedLines + 1, totalLines)} of ${totalLines}`;
-  if (isFinished) progressText = `Translated ${totalLines} lines`;
+  // Time estimate
+  const estimatedTimeRemaining = useMemo(() => {
+    if (!job?.startTime || completedScenes < 2 || isFinished) return null;
+    const elapsed = Date.now() - job.startTime;
+    const avgPerScene = elapsed / completedScenes;
+    const remaining = (totalScenes - completedScenes) * avgPerScene;
+    const mins = Math.round(remaining / 60000);
+    if (mins < 1) return "< 1 min remaining";
+    return `~${mins} min remaining`;
+  }, [job?.startTime, completedScenes, totalScenes, isFinished]);
+
+  const statusMessage = job?.statusMessage || `Scene ${Math.min(completedScenes + 1, totalScenes)} of ${totalScenes}`;
 
   const toneOptions = ["Natural/Conversational", "Translate as it is (Literal)", "Casual/Slang"];
 
@@ -432,6 +447,19 @@ export const TranslateDocumentModal: React.FC = () => {
               </FormGroup>
             </Box>
 
+            <TextField
+              size="small"
+              fullWidth
+              multiline
+              minRows={2}
+              maxRows={4}
+              label="Custom Instructions (optional)"
+              placeholder={"e.g. \"Use formal register for the King's dialogue. Keep modern slang for the teenagers.\""}
+              value={customInstruction}
+              onChange={(e) => setCustomInstruction(e.target.value)}
+              sx={{ "& .MuiInputBase-root": { fontSize: "0.85rem" } }}
+            />
+
             <Box sx={{ display: "flex", flexDirection: "column" }}>
               <FormControlLabel
                 control={<Checkbox size="small" checked={preserveNames} onChange={(e) => setPreserveNames(e.target.checked)} />}
@@ -453,7 +481,7 @@ export const TranslateDocumentModal: React.FC = () => {
               }}
             >
               <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5, fontSize: "0.74rem", display: "block" }}>
-                💡 <strong>Tip:</strong> Translation naturalness and prompt adherence depend on the chosen AI model. Choosing a more capable model will yield higher quality dialogue and phrasing.
+                💡 <strong>Tip:</strong> Translation quality depends on the AI model. Scenes are translated one at a time with full context for better quality. A pre-flight check will verify the AI connection before starting.
               </Typography>
             </Box>
           </Box>
@@ -516,38 +544,38 @@ export const TranslateDocumentModal: React.FC = () => {
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
                   <Box sx={{ 
                     width: 48, height: 48, borderRadius: "50%", 
-                    bgcolor: (t) => alpha(job?.failedLines ? t.palette.warning.main : t.palette.primary.main, 0.1), 
-                    color: job?.failedLines ? "warning.main" : "primary.main", 
+                    bgcolor: (t) => alpha(job?.failedScenes ? t.palette.warning.main : t.palette.primary.main, 0.1), 
+                    color: job?.failedScenes ? "warning.main" : "primary.main", 
                     display: "flex", alignItems: "center", justifyContent: "center",
                     mb: 2
                   }}>
                     <CheckIcon sx={{ fontSize: 24 }} />
                   </Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: job?.failedLines ? "warning.main" : "primary.main" }}>
-                    {job?.failedLines ? "Translation Finished with Unparsed Lines" : "Translation Finished Successfully"}
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: job?.failedScenes ? "warning.main" : "primary.main" }}>
+                    {job?.failedScenes ? "Translation Finished with Failed Scenes" : "Translation Finished Successfully"}
                   </Typography>
-                  {!!job?.failedLines && (
+                  {!!job?.failedScenes && (
                     <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
-                      {job.failedLines} lines could not be parsed after 5 automatic retries. You can manually retry them now.
+                      {job.failedScenes} scene(s) could not be translated after automatic retries. You can retry them now.
                     </Typography>
                   )}
                   
                   <Box sx={{ display: "flex", width: "100%", justifyContent: "center", gap: 4, mt: 1 }}>
                     <Box sx={{ textAlign: "center" }}>
                       <Typography variant="caption" sx={{ color: "text.secondary", textTransform: 'uppercase', letterSpacing: '0.05em', display: "block", mb: 0.5 }}>
-                        Lines Translated
+                        Scenes Translated
                       </Typography>
                       <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1 }}>
-                        {job?.translatedLines ?? 0} / {job?.totalLines ?? 0}
+                        {(job?.completedScenes ?? 0) - (job?.failedScenes ?? 0)} / {job?.totalScenes ?? 0}
                       </Typography>
                     </Box>
                     <Divider orientation="vertical" flexItem />
                     <Box sx={{ textAlign: "center" }}>
                       <Typography variant="caption" sx={{ color: "text.secondary", textTransform: 'uppercase', letterSpacing: '0.05em', display: "block", mb: 0.5 }}>
-                        Failed Lines
+                        Failed Scenes
                       </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1, color: job?.failedLines ? "warning.main" : "text.primary" }}>
-                        {job?.failedLines ?? 0}
+                      <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1, color: job?.failedScenes ? "warning.main" : "text.primary" }}>
+                        {job?.failedScenes ?? 0}
                       </Typography>
                     </Box>
                     <Divider orientation="vertical" flexItem />
@@ -564,14 +592,15 @@ export const TranslateDocumentModal: React.FC = () => {
               ) : (
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1, minWidth: 0 }}>
                       {!isError && (
                         <Box 
                           sx={{ 
                             width: 8, 
                             height: 8, 
                             borderRadius: "50%", 
-                            bgcolor: isPaused ? "warning.main" : "primary.main",
+                            flexShrink: 0,
+                            bgcolor: isPaused ? "warning.main" : isWaiting ? "warning.main" : isPreflight ? "info.main" : "primary.main",
                             animation: (translationState === "running" || job?.state === "running") ? "pulseDot 1.5s infinite ease-in-out" : "none",
                             "@keyframes pulseDot": {
                               "0%": { opacity: 0.4, transform: "scale(0.8)" },
@@ -581,12 +610,12 @@ export const TranslateDocumentModal: React.FC = () => {
                           }} 
                         />
                       )}
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {isError ? `Error: ${job?.error || "Failed"}` : isPaused ? `Paused: ${progressText}` : `Translating: ${progressText}`}
+                      <Typography variant="body2" sx={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {isError ? `Error: ${job?.error || "Failed"}` : statusMessage}
                       </Typography>
                     </Box>
 
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: isError ? "error.main" : "primary.main", fontVariantNumeric: "tabular-nums" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: isError ? "error.main" : "primary.main", fontVariantNumeric: "tabular-nums", flexShrink: 0, ml: 1 }}>
                       {percent}%
                     </Typography>
                   </Box>
@@ -613,7 +642,7 @@ export const TranslateDocumentModal: React.FC = () => {
                       Model: <strong>{job?.model || "AI Model"}</strong>
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
-                      Batch {job?.completedBatches ?? 0} of {job?.totalBatches ?? 1}
+                      {estimatedTimeRemaining || `Scene ${completedScenes} of ${totalScenes}`}
                     </Typography>
                   </Box>
                 </Box>
@@ -652,14 +681,14 @@ export const TranslateDocumentModal: React.FC = () => {
             {isFinished ? (
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Button onClick={handleClose} color="inherit">Close</Button>
-                {!!job?.failedLines && job.failedIndices && job.failedIndices.length > 0 && (
+                {!!job?.failedScenes && job.failedSceneIndices && job.failedSceneIndices.length > 0 && (
                   <Button
                     variant="outlined"
                     color="warning"
                     size="small"
                     startIcon={<RestartAltIcon />}
                     onClick={async () => {
-                      if (!job || !job.failedIndices || !scripts) return;
+                      if (!job || !job.failedSceneIndices || !scripts) return;
                       const targetIdx = scripts.findIndex((s) => s.name === job.scriptName);
                       if (targetIdx === -1) return;
                       const currentScript = scripts[targetIdx];
@@ -691,7 +720,7 @@ export const TranslateDocumentModal: React.FC = () => {
                         analyzedLines: reAnalyzed,
                         parsedDoc: currentDoc,
                         preserveCharacterNames: preserveNames,
-                        retryIndices: job.failedIndices,
+                        retrySceneIndices: job.failedSceneIndices,
                         updateFileScriptContent,
                         uiActions: {
                           setAiStatus: () => {},
@@ -705,7 +734,7 @@ export const TranslateDocumentModal: React.FC = () => {
                       });
                     }}
                   >
-                    Retry Failed Lines ({job.failedLines})
+                    Retry Failed Scenes ({job.failedScenes})
                   </Button>
                 )}
               </Box>

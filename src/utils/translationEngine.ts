@@ -1,6 +1,7 @@
 import { PromptConfig } from "../hooks/usePromptConfig";
 import { getLanguageDetails } from "../constants/languages";
-import { createAIProvider } from "../lib/aiProviders";
+import { createAIProvider, RateLimitError } from "../lib/aiProviders";
+import { extractThinkingAndClean } from "../hooks/useAIChat";
 import { FountainDocument, LineType } from "../parser";
 
 export interface AnalyzedLine {
@@ -10,6 +11,16 @@ export interface AnalyzedLine {
   suffix: string;
   cleanText: string;
   isTranslatable: boolean;
+}
+
+export interface SceneChunk {
+  heading: string;
+  sceneIndex: number;
+  startLine: number;
+  endLine: number;
+  partNumber?: number;
+  totalParts?: number;
+  lineIndices: number[];
 }
 
 export interface TranslationJobParams {
@@ -24,7 +35,8 @@ export interface TranslationJobParams {
   parsedDoc: FountainDocument | null;
   preserveCharacterNames?: boolean;
   dynamicToneInstructions?: string;
-  retryIndices?: number[];
+  customInstruction?: string;
+  retrySceneIndices?: number[];
   updateFileScriptContent: (fileId: string, scriptIndex: number, newContent: string) => void;
   uiActions: {
     setAiStatus: (status: string | null) => void;
@@ -136,62 +148,185 @@ export function analyzeFountainLine(line: string, parsedLine: any): AnalyzedLine
   };
 }
 
-export function parseBatchResponse(rawText: string): Map<number, string> {
-  const strippedText = rawText
-    .replace(/<think>[\s\S]*?<\/think>/gi, "")
-    .replace(/<think>[\s\S]*$/gi, "")
-    .replace(/^```[a-z]*\s*$/gim, "")
-    .replace(/^```\s*$/gim, "");
+const SCENE_CHUNK_MAX_LINES = 35;
 
-  const rawResLines = strippedText.split(/\r?\n/);
-  const cleanedResLines = rawResLines
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0 && !/^[*#-]?\s*(user safety|safety|moderation|disclaimer):/i.test(l));
+/**
+ * Split analyzed lines into scene-based chunks.
+ * Each chunk represents one scene (heading to next heading).
+ * Long scenes (> SCENE_CHUNK_MAX_LINES translatable lines) are split
+ * at character-change boundaries into numbered parts.
+ */
+export function segmentIntoScenes(
+  analyzedLines: AnalyzedLine[],
+  parsedLines: any[],
+): SceneChunk[] {
+  // Find scene boundaries (heading lines)
+  const sceneBoundaries: { heading: string; startLine: number }[] = [];
+  const hasAnyHeadings = parsedLines.some((p) => p?.type === LineType.heading);
+  let foundFirstScene = false;
 
-  const parsedMap = new Map<number, string>();
-  let currentNum: number | null = null;
-
-  for (const line of cleanedResLines) {
-    const match = line.match(/^(?:#|Line\s*)?\[?(\d+)\]?[|.:)\s-]+([\s\S]*)$/i);
-    if (match) {
-      const num = parseInt(match[1], 10);
-      const val = match[2].trim();
-      if (!isNaN(num)) {
-        currentNum = num;
-        parsedMap.set(num, val);
-      }
-    } else if (currentNum !== null && parsedMap.has(currentNum)) {
-      const existing = parsedMap.get(currentNum) || "";
-      parsedMap.set(currentNum, existing ? `${existing} ${line}` : line);
+  for (let i = 0; i < parsedLines.length; i++) {
+    const type = parsedLines[i]?.type;
+    // Skip title page lines
+    if (type !== undefined && type >= LineType.titlePageTitle && type <= LineType.titlePageUnknown) {
+      continue;
+    }
+    if (type === LineType.heading) {
+      foundFirstScene = true;
+      sceneBoundaries.push({
+        heading: analyzedLines[i]?.cleanText || parsedLines[i]?.text || `Scene ${sceneBoundaries.length + 1}`,
+        startLine: i,
+      });
+    } else if (hasAnyHeadings && !foundFirstScene && analyzedLines[i]?.isTranslatable && analyzedLines[i]?.cleanText.trim()) {
+      // Lines before first heading form a "preamble" scene
+      foundFirstScene = true;
+      sceneBoundaries.push({
+        heading: "Preamble",
+        startLine: i,
+      });
     }
   }
 
-  return parsedMap;
+  if (sceneBoundaries.length === 0) {
+    // No scenes found — treat the whole document as one chunk
+    const allIndices = analyzedLines
+      .map((_, i) => i)
+      .filter((i) => analyzedLines[i].isTranslatable && analyzedLines[i].cleanText.trim());
+    if (allIndices.length === 0) return [];
+    return [{ heading: "Document", sceneIndex: 0, startLine: 0, endLine: analyzedLines.length - 1, lineIndices: allIndices }];
+  }
+
+  // Build raw scenes
+  const rawScenes: { heading: string; startLine: number; endLine: number; lineIndices: number[] }[] = [];
+  for (let s = 0; s < sceneBoundaries.length; s++) {
+    const start = sceneBoundaries[s].startLine;
+    const end = s + 1 < sceneBoundaries.length ? sceneBoundaries[s + 1].startLine - 1 : analyzedLines.length - 1;
+    const indices: number[] = [];
+    for (let i = start; i <= end; i++) {
+      if (analyzedLines[i].isTranslatable && analyzedLines[i].cleanText.trim()) {
+        indices.push(i);
+      }
+    }
+    if (indices.length > 0) {
+      rawScenes.push({ heading: sceneBoundaries[s].heading, startLine: start, endLine: end, lineIndices: indices });
+    }
+  }
+
+  // Apply adaptive chunking to long scenes
+  const chunks: SceneChunk[] = [];
+  let sceneIdx = 0;
+  for (const scene of rawScenes) {
+    if (scene.lineIndices.length <= SCENE_CHUNK_MAX_LINES) {
+      chunks.push({
+        heading: scene.heading,
+        sceneIndex: sceneIdx,
+        startLine: scene.startLine,
+        endLine: scene.endLine,
+        lineIndices: scene.lineIndices,
+      });
+    } else {
+      // Split at character-change boundaries
+      const parts = splitSceneIntoParts(scene.lineIndices, parsedLines);
+      for (let p = 0; p < parts.length; p++) {
+        chunks.push({
+          heading: scene.heading,
+          sceneIndex: sceneIdx,
+          startLine: scene.startLine,
+          endLine: scene.endLine,
+          partNumber: p + 1,
+          totalParts: parts.length,
+          lineIndices: parts[p],
+        });
+      }
+    }
+    sceneIdx++;
+  }
+
+  return chunks;
 }
 
-export const pLimit = async <T,>(limit: number, tasks: (() => Promise<T>)[]): Promise<T[]> => {
-  const results: Promise<T>[] = [];
-  const executing: Set<Promise<any>> = new Set();
-  for (const task of tasks) {
-    const p = Promise.resolve().then(() => task());
-    results.push(p);
-    executing.add(p);
-    const clean = () => executing.delete(p);
-    p.then(clean, clean);
-    if (executing.size >= limit) {
-      await Promise.race(Array.from(executing));
+/**
+ * Split a long scene's translatable line indices into parts of ~SCENE_CHUNK_MAX_LINES,
+ * breaking at character-name boundaries when possible.
+ */
+function splitSceneIntoParts(lineIndices: number[], parsedLines: any[]): number[][] {
+  const parts: number[][] = [];
+  let currentPart: number[] = [];
+
+  for (let i = 0; i < lineIndices.length; i++) {
+    currentPart.push(lineIndices[i]);
+
+    if (currentPart.length >= SCENE_CHUNK_MAX_LINES && i < lineIndices.length - 1) {
+      // Look for a character line nearby as a split point
+      let splitFound = false;
+      for (let look = i + 1; look < Math.min(i + 10, lineIndices.length); look++) {
+        const idx = lineIndices[look];
+        // Check if there's a character line right before this translatable line
+        for (let back = idx - 1; back >= Math.max(0, idx - 3); back--) {
+          const type = parsedLines[back]?.type;
+          if (type === LineType.character || type === LineType.dualDialogueCharacter) {
+            // Split here — current part ends at i, next part starts at look
+            // But include lines i+1..look-1 in current part
+            for (let fill = i + 1; fill < look; fill++) {
+              currentPart.push(lineIndices[fill]);
+            }
+            parts.push(currentPart);
+            currentPart = [];
+            i = look - 1; // Will be incremented by the for loop
+            splitFound = true;
+            break;
+          }
+        }
+        if (splitFound) break;
+      }
+      if (!splitFound && currentPart.length >= SCENE_CHUNK_MAX_LINES + 10) {
+        // Hard split if no character boundary found within 10 lines
+        parts.push(currentPart);
+        currentPart = [];
+      }
     }
   }
-  return Promise.all(results);
-};
+
+  if (currentPart.length > 0) {
+    parts.push(currentPart);
+  }
+
+  return parts.length > 0 ? parts : [lineIndices];
+}
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function isAbortError(error: any): boolean {
+function isAbortError(error: any, controller: AbortController): boolean {
+  // Always check the signal first — this is the definitive user-initiated abort
+  if (controller.signal.aborted) return true;
   if (!error) return false;
   if (error.name === "AbortError") return true;
+  // Only match "abort" — NOT "cancel" which Tauri uses for network drops
   const msg = typeof error === "string" ? error : error.message || String(error);
-  return /abort|cancel/i.test(msg);
+  return /\babort(ed)?\b/i.test(msg);
+}
+
+/**
+ * Run a pre-flight check to verify the AI provider is reachable.
+ */
+async function preFlightCheck(
+  params: TranslationJobParams,
+): Promise<{ ok: boolean; error?: string }> {
+  const provider = createAIProvider(params.promptConfig);
+  if (!provider) return { ok: false, error: "AI provider is not configured." };
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    await provider.chat(
+      [{ role: "user", content: "Translate to English: Hello" }],
+      { maxTokens: 50, signal: controller.signal },
+    );
+    clearTimeout(timeout);
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || String(err) };
+  }
 }
 
 export const runTranslationJob = async (params: TranslationJobParams) => {
@@ -204,7 +339,8 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
     targetScriptIndex,
     analyzedLines,
     parsedDoc,
-    retryIndices,
+    customInstruction,
+    retrySceneIndices,
     updateFileScriptContent,
     uiActions: {
       setAiStatus,
@@ -228,6 +364,7 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
   registerTranslationAbort(controller);
 
   try {
+    // Build the working copy of document lines
     const currentDocLines = analyzedLines.map((item) => {
       if (!item.isTranslatable) return item.original;
       return item.indent + item.prefix + item.cleanText + item.suffix;
@@ -235,26 +372,34 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
 
     updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
 
-    let translatableIndices: number[] = [];
-    if (retryIndices && retryIndices.length > 0) {
-      translatableIndices = retryIndices.filter(
-        (idx) => idx >= 0 && idx < analyzedLines.length && analyzedLines[idx].cleanText.trim()
-      );
+    // Segment into scenes
+    const parsedLines = parsedDoc?.lines || [];
+    const allChunks = segmentIntoScenes(analyzedLines, parsedLines);
+
+    // Filter to only retry scenes if specified
+    let chunks: SceneChunk[];
+    if (retrySceneIndices && retrySceneIndices.length > 0) {
+      const retrySet = new Set(retrySceneIndices);
+      chunks = allChunks.filter((_, i) => retrySet.has(i));
     } else {
-      analyzedLines.forEach((item, idx) => {
-        if (item.isTranslatable && item.cleanText.trim()) {
-          translatableIndices.push(idx);
-        }
-      });
+      chunks = allChunks;
     }
 
-    const isOllama = promptConfig.provider === "ollama";
-    const BATCH_SIZE = isOllama ? 10 : 20;
-    const totalBatches = Math.ceil(translatableIndices.length / BATCH_SIZE) || 1;
+    if (chunks.length === 0) {
+      setAiStatus("No translatable content found.");
+      setTimeout(() => setAiStatus(null), 5000);
+      return;
+    }
 
+    // Language & model info
     const ld = getLanguageDetails(lang);
     const langInfo = `"${lang}" (${ld.native}, code: ${ld.code})`;
+    const effectiveModel =
+      promptConfig.provider === "openai-compatible"
+        ? promptConfig.apiModel || promptConfig.model || "openai-compatible"
+        : promptConfig.model || "llama3.2";
 
+    // Collect character names
     const allCharacters = new Set<string>();
     if (parsedDoc?.lines) {
       parsedDoc.lines.forEach((line) => {
@@ -265,241 +410,306 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       });
     }
 
-    const baseSystemPrompt = [
-      `You are a professional screenplay translator. Translate the numbered lines into ${langInfo}.`,
-      ld.example ? `Example phrasing in ${ld.native}: "${ld.example}"` : "",
-      "",
-      "TONE & STYLE:",
-      params.dynamicToneInstructions ||
-      "• Dialogue: Natural spoken conversational tone for modern movies. Never stiff or formal.\n• Action: Punchy, vivid, cinematic.",
-      "",
-      "RULES:",
-      "1. Format each output line as N|<translated text> exactly (e.g. 1|Translated text).",
-      "2. Return EXACTLY the same number of lines as provided.",
-      "3. Do not add explanations, notes, headings, markdown code blocks, or preamble.",
-      "4. Do not invent or continue scenes."
-    ].filter(Boolean).join("\n");
-
-    const effectiveModel =
-      promptConfig.provider === "openai-compatible"
-        ? promptConfig.apiModel || promptConfig.model || "openai-compatible"
-        : promptConfig.model || "llama3.2";
-
+    // Count total scenes (unique scene indices)
+    const uniqueSceneIndices = new Set(chunks.map((c) => c.sceneIndex));
+    const totalScenes = uniqueSceneIndices.size;
+    const totalTranslatableLines = chunks.reduce((sum, c) => sum + c.lineIndices.length, 0);
     const startTime = Date.now();
-    const totalTranslatableLines = translatableIndices.length;
 
-    const initialJob = {
+    // Pre-flight check
+    setTranslationState("running");
+    setTranslatingTarget({ fileId: targetFileId, scriptIndex: targetScriptIndex });
+    setTranslationJob(() => ({
       fileId: targetFileId,
       scriptIndex: targetScriptIndex,
       scriptName: duplicatedName,
-      sourceScriptName: sourceScriptName,
+      sourceScriptName,
       lang,
       langCode: ld.code,
       langNative: ld.native,
-      totalBatches,
-      completedBatches: 0,
-      activeBatches: [],
+      totalScenes,
+      completedScenes: 0,
+      currentSceneHeading: "Checking AI connection...",
+      currentSceneIndex: 0,
+      statusMessage: "Checking AI connection...",
       totalLines: totalTranslatableLines,
       translatedLines: 0,
-      failedLines: 0,
-      failedIndices: [],
+      failedScenes: 0,
+      failedSceneIndices: [],
       latestPreview: "",
       startTime,
       model: effectiveModel,
       provider: promptConfig.provider,
-      state: "running" as const,
-    };
-
-    setTranslationState("running");
-    setTranslatingTarget({ fileId: targetFileId, scriptIndex: targetScriptIndex });
-    setTranslationJob(() => initialJob);
+      state: "preflight" as const,
+    }));
     setIsTranslationModalOpen(true);
 
+    const flightResult = await preFlightCheck(params);
+    if (!flightResult.ok) {
+      setAiStatus(`Pre-flight failed: ${flightResult.error}`);
+      setTranslationJob((prev: any) => prev ? {
+        ...prev,
+        state: "error",
+        error: `Pre-flight check failed: ${flightResult.error}`,
+        statusMessage: `Connection failed: ${flightResult.error}`,
+        endTime: Date.now(),
+      } : null);
+      setTimeout(() => setAiStatus(null), 8000);
+      registerTranslationAbort(null);
+      setTranslationState("idle");
+      setTranslatingTarget(null);
+      return;
+    }
+
+    // Update state to running
+    setTranslationJob((prev: any) => prev ? { ...prev, state: "running", statusMessage: "Starting translation..." } : null);
+
     let translatedLinesCount = 0;
-    let completedBatches = 0;
-    const activeBatchIndices = new Set<number>();
-    const failedLineIndices = new Set<number>();
+    let completedScenesCount = 0;
+    const failedChunkIndices = new Set<number>();
+    let lastCompletedSceneIndex = -1;
+    let currentDelay = 1000; // Auto-throttle: start at 1s
 
-    const updateActiveStatus = () => {
-      setAiStatus(`Translating line ${Math.min(translatedLinesCount + 1, totalTranslatableLines)} of ${totalTranslatableLines} to ${lang}...`);
-    };
-
-    const executeBatch = async (b: number) => {
+    // Process chunks sequentially
+    for (let ci = 0; ci < chunks.length; ci++) {
+      // Check pause/cancel
       while (getTranslationState() === "paused") {
+        setTranslationJob((prev: any) => prev ? {
+          ...prev,
+          state: "paused",
+          statusMessage: `Paused — Scene ${completedScenesCount + 1} of ${totalScenes}`,
+        } : null);
         await wait(300);
       }
-      if (getTranslationState() === "cancelled" || controller.signal.aborted) {
-        return;
-      }
+      if (getTranslationState() === "cancelled" || controller.signal.aborted) break;
 
-      activeBatchIndices.add(b);
-      updateActiveStatus();
-      setTranslationJob((prev: any) =>
-        prev ? { ...prev, activeBatches: Array.from(activeBatchIndices) } : null
-      );
+      const chunk = chunks[ci];
+      const isNewScene = chunk.sceneIndex !== lastCompletedSceneIndex || ci === 0;
+      const partLabel = chunk.totalParts ? ` (Part ${chunk.partNumber} of ${chunk.totalParts})` : "";
+      const sceneLabel = `Scene ${completedScenesCount + 1} of ${totalScenes} — ${chunk.heading}${partLabel}`;
 
-      const batchIndices = translatableIndices.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-      if (batchIndices.length === 0) {
-        activeBatchIndices.delete(b);
-        return;
-      }
+      // Update progress
+      setTranslationJob((prev: any) => prev ? {
+        ...prev,
+        state: "running",
+        currentSceneHeading: chunk.heading,
+        currentSceneIndex: completedScenesCount + 1,
+        currentPart: chunk.partNumber,
+        currentTotalParts: chunk.totalParts,
+        statusMessage: `Translating: ${sceneLabel}`,
+      } : null);
+      setAiStatus(`Translating: ${sceneLabel}`);
 
-      let contextHeader = "";
-      const firstLineIdx = batchIndices[0];
-      const contextLines: string[] = [];
-      for (let ci = Math.max(0, firstLineIdx - 3); ci < firstLineIdx; ci++) {
-        if (analyzedLines[ci].original.trim()) {
-          contextLines.push(analyzedLines[ci].original.trim());
-        }
-      }
-      if (contextLines.length > 0) {
-        contextHeader = `[SCENE CONTEXT - DO NOT TRANSLATE]\n${contextLines.join("\n")}\n[END CONTEXT]\n\n`;
-      }
+      // Build the prompt for this chunk
+      const chunkCleanTexts = chunk.lineIndices.map((idx) => analyzedLines[idx].cleanText);
 
-      const batchStart = batchIndices[0];
-      const batchEnd = batchIndices[batchIndices.length - 1];
-      const relevantChars = new Set<string>();
-      for (let idx = Math.max(0, batchStart - 5); idx <= Math.min(analyzedLines.length - 1, batchEnd + 5); idx++) {
-        const text = analyzedLines[idx].original;
+      // Find character names in this scene
+      const sceneChars = new Set<string>();
+      for (let idx = chunk.startLine; idx <= chunk.endLine; idx++) {
+        const text = analyzedLines[idx]?.original || "";
         allCharacters.forEach((char) => {
-          if (text.includes(char)) {
-            relevantChars.add(char);
-          }
+          if (text.includes(char)) sceneChars.add(char);
         });
       }
 
-      const glossarySuffix =
-        (params.preserveCharacterNames !== false && relevantChars.size > 0)
-          ? `\nPRESERVE CHARACTER NAMES: [${Array.from(relevantChars).join(", ")}]`
-          : "";
+      const systemParts = [
+        `You are a professional screenplay translator. Translate the following screenplay lines into ${langInfo}.`,
+        ld.example ? `Example phrasing in ${ld.native}: "${ld.example}"` : "",
+        "",
+        "TONE & STYLE:",
+        params.dynamicToneInstructions ||
+        "• Dialogue: Natural spoken conversational tone for modern movies. Never stiff or formal.\n• Action: Punchy, vivid, cinematic.",
+        "",
+      ];
 
-      const batchSystemPrompt = baseSystemPrompt + glossarySuffix;
+      if (customInstruction) {
+        systemParts.push("ADDITIONAL INSTRUCTIONS:");
+        systemParts.push(customInstruction);
+        systemParts.push("");
+      }
 
-      let missingIndices: number[] = [...batchIndices];
-      let attempt = 0;
-      const MAX_BATCH_RETRIES = 5;
+      systemParts.push("RULES:");
+      systemParts.push("1. Preserve the exact line-by-line structure. Output ONLY the translated lines.");
+      systemParts.push("2. Do not add numbering, explanations, notes, headings, markdown code blocks, or preamble.");
+      systemParts.push("3. Do not invent or continue scenes.");
+      if (params.preserveCharacterNames !== false && sceneChars.size > 0) {
+        systemParts.push(`4. Preserve these character names as-is (do not translate): ${Array.from(sceneChars).join(", ")}`);
+      }
 
-      while (attempt < MAX_BATCH_RETRIES && missingIndices.length > 0) {
-        if (getTranslationState() === "cancelled" || controller.signal.aborted) {
-          activeBatchIndices.delete(b);
-          return;
-        }
+      const systemPrompt = systemParts.filter(Boolean).join("\n");
+
+      const userParts = [];
+      userParts.push(`Scene: ${chunk.heading}`);
+      if (sceneChars.size > 0) {
+        userParts.push(`Characters: ${Array.from(sceneChars).join(", ")}`);
+      }
+      userParts.push("");
+      userParts.push(`Translate these ${chunkCleanTexts.length} lines:`);
+      userParts.push("---");
+      userParts.push(chunkCleanTexts.join("\n"));
+
+      const userPrompt = userParts.join("\n");
+
+      // Attempt translation with retries
+      let success = false;
+      const MAX_RETRIES = 3;
+
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        if (getTranslationState() === "cancelled" || controller.signal.aborted) break;
 
         while (getTranslationState() === "paused") {
           await wait(300);
         }
 
-        const currentInputs = missingIndices.map((idx, i) => `${i + 1}|${analyzedLines[idx].cleanText}`);
-        const attemptPrompt = `${contextHeader}Translate each numbered line below:\n${currentInputs.join("\n")}`;
-
-        let fullRawResponse = "";
-
         try {
-          await provider.chat([{ role: "user", content: attemptPrompt }], {
-            system: batchSystemPrompt,
-            temperature: promptConfig.translateTemp !== undefined ? promptConfig.translateTemp : 0.1,
-            maxTokens: 8192,
-            signal: controller.signal,
-            onChunk: (delta) => {
-              fullRawResponse += delta;
-              const cleanPreview = fullRawResponse
-                .replace(/<think>[\s\S]*?<\/think>/gi, "")
-                .replace(/<think>[\s\S]*$/gi, "")
-                .trim();
-              const previewLines = cleanPreview.split("\n").filter((l) => l.trim().length > 0);
-              const latest = previewLines[previewLines.length - 1] || "";
-              if (latest) {
-                setTranslationJob((prev: any) =>
-                  prev ? { ...prev, latestPreview: latest } : null
-                );
-              }
+          let fullRaw = "";
+          await provider.chat(
+            [{ role: "user", content: userPrompt }],
+            {
+              system: systemPrompt,
+              temperature: promptConfig.translateTemp !== undefined ? promptConfig.translateTemp : 0.3,
+              maxTokens: 8192,
+              signal: controller.signal,
+              onChunk: (delta) => {
+                fullRaw += delta;
+                const cleanPreview = fullRaw
+                  .replace(/<think>[\s\S]*?<\/think>/gi, "")
+                  .replace(/<think>[\s\S]*$/gi, "")
+                  .trim();
+                const previewLines = cleanPreview.split("\n").filter((l) => l.trim().length > 0);
+                const latest = previewLines[previewLines.length - 1] || "";
+                if (latest) {
+                  setTranslationJob((prev: any) =>
+                    prev ? { ...prev, latestPreview: latest } : null
+                  );
+                }
+              },
             },
-          });
+          );
 
-          const parsedMap = parseBatchResponse(fullRawResponse);
-          const stillMissing: number[] = [];
+          // Parse response — tolerant line-by-line matching
+          const { cleanContent } = extractThinkingAndClean(fullRaw);
+          const resLines = cleanContent.split(/\r?\n/).filter((l) => l.trim().length > 0);
 
-          missingIndices.forEach((lineIdx, i) => {
-            const num = i + 1;
-            const translatedText = parsedMap.get(num);
-
-            if (translatedText && translatedText.trim().length > 0) {
-              let finalText = translatedText.trim();
+          let linesApplied = 0;
+          chunk.lineIndices.forEach((lineIdx, i) => {
+            const translated = resLines[i]?.trim();
+            if (translated && translated.length > 0) {
               const item = analyzedLines[lineIdx];
-
-              if (/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(finalText) && !/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(item.cleanText)) {
-                finalText = item.cleanText;
+              // Safety: reject if model output a scene heading for a non-heading line
+              if (/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(translated) && !/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(item.cleanText)) {
+                return; // Keep original
               }
-
-              currentDocLines[lineIdx] = item.indent + item.prefix + finalText + item.suffix;
-              translatedLinesCount++;
-            } else {
-              stillMissing.push(lineIdx);
+              currentDocLines[lineIdx] = item.indent + item.prefix + translated + item.suffix;
+              linesApplied++;
             }
           });
 
-          missingIndices = stillMissing;
+          if (linesApplied > 0) {
+            translatedLinesCount += linesApplied;
+            updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
+            success = true;
 
-          if (missingIndices.length === 0) {
+            setTranslationJob((prev: any) => prev ? {
+              ...prev,
+              translatedLines: translatedLinesCount,
+            } : null);
             break;
           }
+          // If zero lines applied, retry
         } catch (err: any) {
-          if (isAbortError(err) || controller.signal.aborted || getTranslationState() === "cancelled") {
-            activeBatchIndices.delete(b);
-            return;
+          if (isAbortError(err, controller) || getTranslationState() === "cancelled") {
+            break;
+          }
+
+          if (err instanceof RateLimitError) {
+            const waitSec = err.retryAfterSec || 10;
+            setTranslationJob((prev: any) => prev ? {
+              ...prev,
+              state: "waiting",
+              statusMessage: `⏳ Rate limited — waiting ${waitSec}s before retrying ${sceneLabel}`,
+              waitingSeconds: waitSec,
+            } : null);
+            setAiStatus(`Rate limited — waiting ${waitSec}s...`);
+            currentDelay = Math.min(currentDelay * 2, 30000);
+            await wait(waitSec * 1000);
+            setTranslationJob((prev: any) => prev ? { ...prev, state: "running", waitingSeconds: undefined } : null);
+            continue;
+          }
+
+          // Network error — wait and retry
+          if (attempt < MAX_RETRIES - 1) {
+            const backoff = 5000 * (attempt + 1);
+            setTranslationJob((prev: any) => prev ? {
+              ...prev,
+              state: "waiting",
+              statusMessage: `⚠ Error on ${sceneLabel}, retrying in ${Math.round(backoff / 1000)}s...`,
+              waitingSeconds: Math.round(backoff / 1000),
+            } : null);
+            await wait(backoff);
+            setTranslationJob((prev: any) => prev ? { ...prev, state: "running", waitingSeconds: undefined } : null);
           }
         }
+      }
 
-        attempt++;
-        if (missingIndices.length > 0 && attempt < MAX_BATCH_RETRIES) {
-          await wait(1000 * Math.pow(1.5, attempt - 1));
+      if (!success && getTranslationState() !== "cancelled" && !controller.signal.aborted) {
+        failedChunkIndices.add(ci);
+        setTranslationJob((prev: any) => prev ? {
+          ...prev,
+          statusMessage: `⚠ ${sceneLabel} failed, moving on...`,
+          failedScenes: failedChunkIndices.size,
+          failedSceneIndices: Array.from(failedChunkIndices),
+        } : null);
+      }
+
+      // Track scene completion
+      if (chunk.sceneIndex !== lastCompletedSceneIndex) {
+        if (isNewScene && lastCompletedSceneIndex !== -1) {
+          completedScenesCount++;
+        } else if (ci === 0) {
+          // First chunk doesn't increment
         }
+        lastCompletedSceneIndex = chunk.sceneIndex;
       }
 
-      if (missingIndices.length > 0) {
-        missingIndices.forEach((lineIdx) => {
-          failedLineIndices.add(lineIdx);
-        });
+      // Check if this is the last chunk of the current scene
+      const nextChunk = chunks[ci + 1];
+      const isLastChunkOfScene = !nextChunk || nextChunk.sceneIndex !== chunk.sceneIndex;
+      if (isLastChunkOfScene) {
+        completedScenesCount++;
+        setTranslationJob((prev: any) => prev ? {
+          ...prev,
+          completedScenes: completedScenesCount,
+        } : null);
       }
 
-      activeBatchIndices.delete(b);
-      completedBatches += 1;
+      // Auto-throttle delay between chunks
+      if (ci < chunks.length - 1 && getTranslationState() !== "cancelled" && !controller.signal.aborted) {
+        if (success) {
+          currentDelay = Math.max(500, currentDelay - 200); // Decrease on success
+        }
+        await wait(currentDelay);
+      }
+    }
 
-      updateFileScriptContent(targetFileId, targetScriptIndex, currentDocLines.join("\n"));
-      updateActiveStatus();
-      setTranslationJob((prev: any) =>
-        prev
-          ? {
-              ...prev,
-              completedBatches,
-              translatedLines: translatedLinesCount,
-              failedLines: failedLineIndices.size,
-              failedIndices: Array.from(failedLineIndices),
-              activeBatches: Array.from(activeBatchIndices),
-            }
-          : null
-      );
-    };
-
-    const tasks = Array.from({ length: totalBatches }, (_, i) => () => executeBatch(i));
-    const concurrency = isOllama ? 1 : 2;
-
-    await pLimit(concurrency, tasks);
-
+    // Final state
     if (getTranslationState() !== "cancelled" && !controller.signal.aborted) {
       const endTime = Date.now();
-      const hasFailures = failedLineIndices.size > 0;
-      setAiStatus(hasFailures ? `Translation Finished with ${failedLineIndices.size} unparsed lines.` : "Translation Completed!");
+      const hasFailures = failedChunkIndices.size > 0;
+      setAiStatus(hasFailures ? `Translation finished with ${failedChunkIndices.size} failed scene(s).` : "Translation Completed!");
       setTranslationJob((prev: any) =>
         prev
           ? {
               ...prev,
-              completedBatches: totalBatches,
+              completedScenes: totalScenes,
               translatedLines: translatedLinesCount,
-              failedLines: failedLineIndices.size,
-              failedIndices: Array.from(failedLineIndices),
+              failedScenes: failedChunkIndices.size,
+              failedSceneIndices: Array.from(failedChunkIndices),
               endTime,
               state: "completed",
+              statusMessage: hasFailures
+                ? `Translation finished — ${failedChunkIndices.size} scene(s) could not be translated`
+                : "Translation finished successfully",
             }
           : null
       );
@@ -507,18 +717,18 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       setTimeout(() => setAiStatus(null), 5000);
     } else {
       setAiStatus("Translation Cancelled.");
-      setTranslationJob((prev: any) => (prev ? { ...prev, state: "cancelled", endTime: Date.now() } : null));
+      setTranslationJob((prev: any) => (prev ? { ...prev, state: "cancelled", endTime: Date.now(), statusMessage: "Translation cancelled" } : null));
       setTimeout(() => setAiStatus(null), 3000);
     }
   } catch (err: any) {
-    if (!isAbortError(err) && !controller.signal.aborted && getTranslationState() !== "cancelled") {
+    if (!isAbortError(err, controller) && !controller.signal.aborted && getTranslationState() !== "cancelled") {
       const errMsg = err?.message || String(err);
       setAiStatus(`AI Error: ${errMsg.slice(0, 60)}`);
-      setTranslationJob((prev: any) => (prev ? { ...prev, state: "error", error: errMsg, endTime: Date.now() } : null));
+      setTranslationJob((prev: any) => (prev ? { ...prev, state: "error", error: errMsg, endTime: Date.now(), statusMessage: `Error: ${errMsg}` } : null));
       setTimeout(() => setAiStatus(null), 8000);
     } else {
       setAiStatus("Translation Cancelled.");
-      setTranslationJob((prev: any) => (prev ? { ...prev, state: "cancelled", endTime: Date.now() } : null));
+      setTranslationJob((prev: any) => (prev ? { ...prev, state: "cancelled", endTime: Date.now(), statusMessage: "Translation cancelled" } : null));
       setTimeout(() => setAiStatus(null), 3000);
     }
   } finally {

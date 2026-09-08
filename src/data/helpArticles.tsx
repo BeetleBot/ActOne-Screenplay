@@ -1429,13 +1429,15 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
 2. Configure your options in the modal:
    - **Target Language:** Choose from 18 supported languages including English, Spanish, French, German, Italian, Portuguese, Hindi, Tamil, Telugu, Kannada, Malayalam, Japanese, Chinese, Korean, Arabic (RTL), Russian, Turkish, and Thai.
    - **Elements & Tone:** Choose which screenplay elements to translate (Dialogue, Action, Scene Headings, Parentheticals, Transitions) and pick custom phrasing tones (Natural/Conversational, Literal, or Casual).
+   - **Custom Instructions:** Provide optional per-document translation guidance (e.g., dialect registers, character idioms, cultural context).
    - **Character Names:** Option to keep character names unchanged to prevent proper noun mistranslation.
-   - **AI Model:** Select your preferred local or API model.
-3. ActOne duplicates your document into a target script (e.g., \`MyScript-Tamil\`) and opens a dedicated **Translation Progress Window**.
-4. The progress window displays the active AI provider, model, real-time line-by-line counter, percentage bar, and a live streaming preview.
-5. Click **"Run in Background"** to dismiss the progress window anytime and keep writing in other scripts.
-6. The engine automatically retries any unparsed lines up to 5 times. If any lines fail to parse, the completion screen highlights them and gives you a **"Retry Failed Lines"** button to re-run them with one click.
-7. Once complete, click **"Open Translated Script"** to view your translated screenplay.`,
+   - **AI Model:** Select your preferred local (Ollama) or remote API model.
+3. ActOne duplicates your document into a target script (e.g., \`MyScript-Tamil\`) and runs a pre-flight connection check before starting.
+4. **Scene-by-Scene Engine:** ActOne translates scene by scene with complete narrative context rather than isolated line batches. Long scenes are adaptively partitioned at character boundaries to maintain context window stability.
+5. The progress window displays the active scene heading, part count for long scenes, real-time status (including provider rate-limit wait countdowns), percentage bar, time remaining estimates, and a live streaming preview.
+6. Click **"Run in Background"** to dismiss the progress window anytime and keep writing in other scripts.
+7. If any scenes fail after automatic retries, the completion screen gives you a **"Retry Failed Scenes"** button to re-run them with one click.
+8. Once complete, click **"Open Translated Script"** to view your translated screenplay.`,
   },
 ];
 

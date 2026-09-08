@@ -14,6 +14,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 import { parseScriptFileToFountain } from "../utils/text";
 import { fixFormatting, type FixFormattingReport } from "../utils/fixFormatting";
+import { toggleInlineMarker } from "../editor/formatUtils";
 import { useModalWindows } from "../hooks/useModalWindows";
 import { usePromptConfig } from "../hooks/usePromptConfig";
 import { isProseScript } from "../utils/scriptMode";
@@ -317,7 +318,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
       }
     ] : []),
 
-    // Format
+    // Format - inline formatting is universal (both prose & script)
+    { id: "format-bold", name: "Bold Text (**)", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+B", action: () => { if (editorView) toggleInlineMarker(editorView, "**"); onClose(); } },
+    { id: "format-italic", name: "Italic Text (*)", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+I", action: () => { if (editorView) toggleInlineMarker(editorView, "*"); onClose(); } },
+    { id: "format-underline", name: "Underline Text (_)", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+U", action: () => { if (editorView) toggleInlineMarker(editorView, "_"); onClose(); } },
+    { id: "format-highlight", name: "Highlight Text (==)", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+H", action: () => { if (editorView) toggleInlineMarker(editorView, "=="); onClose(); } },
     ...(!isProse ? [
       { id: "format-fix-formatting", name: "Fix Formatting", category: "Format", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => {
         if (editorView) {
@@ -351,7 +356,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "help-about", name: "About ActOne", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, action: () => { onOpenAboutModal?.(); onClose(); } },
     { id: "help-guide", name: "Help Guide", category: "Help", icon: <HelpOutlinedIcon sx={{ fontSize: 16 }} />, shortcut: "F1", action: () => { onOpenHelpModal(); onClose(); } },
     { id: "help-tutorial", name: "Interactive Tutorial...", category: "Help", icon: <AutoAwesomeIcon sx={{ fontSize: 16 }} />, action: () => { openTutorialsWindow?.(); onClose(); } },
-    ...(!isProse ? [{ id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } }] : []),
+    ...(isProse
+      ? [{ id: "help-markdown", name: "Markdown Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://www.markdownguide.org/basic-syntax/"); onClose(); } }]
+      : [{ id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } }]),
     { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { if (onOpenBugReportModal) { onOpenBugReportModal(); } else { openUrl("https://discord.gg/zpFPpdAxnW"); } onClose(); } },
   ];
 

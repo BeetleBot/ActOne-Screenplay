@@ -114,6 +114,7 @@ pub async fn ollama_chat(
     model: String,
     messages: Vec<ChatMessage>,
     temperature: Option<f64>,
+    max_tokens: Option<u64>,
 ) -> Result<String, String> {
     if let Ok(mut cancelled) = CANCELLED_SESSIONS.lock() {
         cancelled.remove(&session_id);
@@ -126,9 +127,15 @@ pub async fn ollama_chat(
         "messages": messages,
         "stream": true,
     });
+    let mut options = serde_json::json!({});
     if let Some(temp) = temperature {
-        body["options"] = serde_json::json!({ "temperature": temp });
+        options["temperature"] = serde_json::json!(temp);
     }
+    if let Some(tokens) = max_tokens {
+        options["num_predict"] = serde_json::json!(tokens);
+        options["num_ctx"] = serde_json::json!(std::cmp::max(tokens * 2, 4096));
+    }
+    body["options"] = options;
 
     let resp = reqwest::Client::new()
         .post(&target)
