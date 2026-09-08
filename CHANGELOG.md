@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.23] - 2026-09-09
+
+### Added / Improved
+- ⚡ **Quick AI Model Switcher Palette (<kbd>Alt+Shift+M</kbd>)** – Introduced a minimal, fast floating model chooser dialog to switch between custom OpenAI-compatible API models and locally running Ollama models on the fly. Includes quick options to disable AI or jump straight to provider configuration in Settings. Accessible via shortcut, Command Palette, or Muse panels.
+- 🎬 **Scene-by-Scene Screenplay Translation Architecture** – Transitioned whole-document translation from fixed line batches to narrative scene-by-scene units (`LineType.heading` boundaries) with adaptive sub-chunking for scenes exceeding 35 lines. Preserves narrative context, character speaker attributions, and emotional tone across scene progression.
+- 🛡️ **Tauri Drag-and-Drop Listener Lifecycle Guard** – Hardened window event listener cleanup in `useNativeAppBehavior` against unhandled Tauri `TypeError: Cannot read properties of undefined (reading 'handlerId')` unregistration crashes during React unmounts and hot reloads.
+- 🔄 **Synchronous Active Script State Synchronization** – Ensured `activeScriptIndexRef` and `activeFileIdRef` immediately synchronize during script duplication, deletion, creation, switching, and reordering in `FileContext`, preventing background updates from dropping or targeting outdated scripts.
+- 🏷️ **Fountain Character Prefix Guard & Body Text Cleanup** – Cleaned character name glossaries so leading `@` symbols are never passed to AI prompt instructions, and enforced strict prompt rules and post-processing filters ensuring `@` prefixes appear strictly on character cue lines and never leak into action descriptions or dialogue lines.
+- 💬 **Dialogue Quotation Stripping** – Automatically strips model-generated surrounding quotes (`"..."`, `'...'`, `“...”`) from translated dialogue lines to adhere to industry screenplay formatting standards.
+- 🎭 **Action Parentheses Cleanup** – Automatically strips model-generated enclosing parentheses `(...)` from action and description lines, preventing the Fountain parser from misinterpreting action lines as parentheticals.
+- 🌐 **Cross-Lingual Tokenizer Script Sanitizer** – Built automatic glyph sanitization to filter out cross-lingual tokenizer bleeding (e.g. accidental Japanese/CJK ideographs or neighboring Indic scripts like Telugu leaking into Tamil translations).
+- 🧹 **Production Tags Removal** – Cleaned up legacy production breakdown tag data structures and CSV export routines to reduce bundle overhead.
+- 🧪 **Comprehensive Automated Test Coverage** – Expanded translation engine unit tests to **23 tests** covering scene segmentation, adaptive chunking, rate-limit backoffs, character prefix preservation, quote removal, action parenthesis cleanup, and foreign glyph sanitization.
+
 ## [0.4.22] - 2026-09-05
 
 ### Added / Improved

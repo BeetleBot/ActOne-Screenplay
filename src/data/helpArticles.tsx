@@ -1439,6 +1439,22 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
 7. If any scenes fail after automatic retries, the completion screen gives you a **"Retry Failed Scenes"** button to re-run them with one click.
 8. Once complete, click **"Open Translated Script"** to view your translated screenplay.`,
   },
+  {
+    id: "muse-quick-model-switcher",
+    title: "Quick AI Model Switcher",
+    category: "AI & Muse",
+    tags: ["model switcher", "quick switch", "ai model", "palette", "keyboard shortcut"],
+    relatedIds: ["muse-configure", "muse-overview"],
+    content: `You can instantly switch active AI models without navigating through the full Settings window.
+
+### How to Use:
+1. Press <kbd>Alt+Shift+M</kbd> or open the Command Palette (<kbd>Ctrl+K</kbd>) and choose **"Switch AI Model"**.
+2. A streamlined, fast model chooser popup appears showing:
+   - All configured OpenAI-compatible custom API models.
+   - Locally detected Ollama models.
+   - An option to **Disable AI** or open **Configure AI Providers** in Settings.
+3. Use your mouse or keyboard arrow keys to navigate and press \`Enter\` to select your desired model immediately.`,
+  },
 ];
 
 export const categories = [

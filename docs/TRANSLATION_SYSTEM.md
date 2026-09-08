@@ -56,7 +56,12 @@ Instead of decontextualized arbitrary batches of lines, ActOne segments the scre
 ### Step 3: Natural Prompting & Character Name Preservation
 * Prompts provide the scene heading, the characters active in that scene, any user-provided custom instructions, and the clean screenplay lines.
 * **Tolerant Parsing:** Output is parsed line-by-line without demanding brittle synthetic delimiter schemes (such as `N|text`). If the model provides fewer lines, original text is preserved gracefully.
-* Character names are detected from the AST and explicitly protected from translation.
+* **Character Name Preservation:** Character names are detected from the AST and protected from translation. Leading `@` symbols are stripped when passed to prompt glossaries, and prompt rules strictly forbid models from prepending `@` to character names in action descriptions or dialogue lines.
+* **Syntax Normalization & Cleaners:** 
+  - Automatically strips model-generated enclosing quotation marks (`"..."`, `'...'`, `“...”`) from dialogue lines.
+  - Automatically strips accidental enclosing parentheses `(...)` from action lines to prevent improper Fountain parenthetical parsing.
+  - Normalizes Fountain escape prefixes (`!`, `.`, `>`, `(`, `)`) to prevent double-wrapping.
+  - **Cross-Lingual Script Sanitizer:** Detects and removes foreign script bleeding (such as CJK/Japanese glyphs or neighboring Indic scripts like Telugu leaking into Tamil translations).
 * A sanity guard ensures dialogue lines that accidentally start with scene headings are rejected.
 
 ### Step 4: Auto-Throttling, Rate-Limit Recovery & Retries

@@ -7,7 +7,6 @@ import {
   getPerScriptSettingNumber,
   migrateSettingsKey,
   removeSettingsKey,
-  migrateProductionTags,
   updatePerScriptSetting,
 } from "./perScriptSettings";
 
@@ -100,7 +99,7 @@ describe("getPerScriptSettingNumber", () => {
 });
 
 describe("migrateSettingsKey", () => {
-  it("correctly migrates keys in all 6 properties: notepad, todos, parking, genders, characterProfiles, productionTags", () => {
+  it("correctly migrates keys in all 5 properties: notepad, todos, parking, genders, characterProfiles", () => {
     const initialSettings = {
       paperSize: "A4",
       notepad: {
@@ -123,29 +122,23 @@ describe("migrateSettingsKey", () => {
         "files/old.fountain": { ALICE: { age: 30, role: "Lead" } },
         "files/other.fountain": { CHARLIE: { age: 25, role: "Supporting" } },
       },
-      productionTags: {
-        "files/old.fountain": { tags: [{ id: "tag1", name: "Prop" }], definitions: [] },
-        "files/other.fountain": { tags: [{ id: "tag2", name: "Location" }], definitions: [] },
-      },
     };
 
     const result = migrateSettingsKey(initialSettings, "files/old.fountain", "files/new.fountain");
 
-    // All 6 properties should have "files/new.fountain" with the original data
+    // All 5 properties should have "files/new.fountain" with the original data
     expect(result.notepad["files/new.fountain"]).toBe("Notes for old script");
     expect(result.todos["files/new.fountain"]).toEqual([{ id: "t1", text: "Old todo" }]);
     expect(result.parking["files/new.fountain"]).toEqual([{ id: "p1", text: "Old parking item" }]);
     expect(result.genders["files/new.fountain"]).toEqual({ ALICE: "female", BOB: "male" });
     expect(result.characterProfiles["files/new.fountain"]).toEqual({ ALICE: { age: 30, role: "Lead" } });
-    expect(result.productionTags["files/new.fountain"]).toEqual({ tags: [{ id: "tag1", name: "Prop" }], definitions: [] });
 
-    // Old key should be deleted from all 6 properties
+    // Old key should be deleted from all 5 properties
     expect("files/old.fountain" in result.notepad).toBe(false);
     expect("files/old.fountain" in result.todos).toBe(false);
     expect("files/old.fountain" in result.parking).toBe(false);
     expect("files/old.fountain" in result.genders).toBe(false);
     expect("files/old.fountain" in result.characterProfiles).toBe(false);
-    expect("files/old.fountain" in result.productionTags).toBe(false);
 
     // Other scripts should remain untouched
     expect(result.notepad["files/other.fountain"]).toBe("Notes for other script");
@@ -153,7 +146,6 @@ describe("migrateSettingsKey", () => {
     expect(result.parking["files/other.fountain"]).toEqual([{ id: "p2", text: "Other parking item" }]);
     expect(result.genders["files/other.fountain"]).toEqual({ CHARLIE: "non-binary" });
     expect(result.characterProfiles["files/other.fountain"]).toEqual({ CHARLIE: { age: 25, role: "Supporting" } });
-    expect(result.productionTags["files/other.fountain"]).toEqual({ tags: [{ id: "tag2", name: "Location" }], definitions: [] });
 
     // Top-level unrelated settings remain untouched
     expect(result.paperSize).toBe("A4");
@@ -223,7 +215,7 @@ describe("migrateSettingsKey", () => {
 });
 
 describe("removeSettingsKey", () => {
-  it("deleting a script removes keys from all 6 properties without modifying other scripts' data", () => {
+  it("deleting a script removes keys from all 5 properties without modifying other scripts' data", () => {
     const initialSettings = {
       paperSize: "US-Letter",
       notepad: {
@@ -246,21 +238,16 @@ describe("removeSettingsKey", () => {
         "files/toDelete.fountain": { ALICE: { age: 30 } },
         "files/keep.fountain": { BOB: { age: 40 } },
       },
-      productionTags: {
-        "files/toDelete.fountain": { tags: [{ id: "tag1" }], definitions: [] },
-        "files/keep.fountain": { tags: [{ id: "tag2" }], definitions: [] },
-      },
     };
 
     const result = removeSettingsKey(initialSettings, "files/toDelete.fountain");
 
-    // "files/toDelete.fountain" should be removed from all 6 properties
+    // "files/toDelete.fountain" should be removed from all 5 properties
     expect("files/toDelete.fountain" in result.notepad).toBe(false);
     expect("files/toDelete.fountain" in result.todos).toBe(false);
     expect("files/toDelete.fountain" in result.parking).toBe(false);
     expect("files/toDelete.fountain" in result.genders).toBe(false);
     expect("files/toDelete.fountain" in result.characterProfiles).toBe(false);
-    expect("files/toDelete.fountain" in result.productionTags).toBe(false);
 
     // Other scripts should remain untouched
     expect(result.notepad["files/keep.fountain"]).toBe("Notes to keep");
@@ -268,7 +255,6 @@ describe("removeSettingsKey", () => {
     expect(result.parking["files/keep.fountain"]).toEqual([{ id: "p2" }]);
     expect(result.genders["files/keep.fountain"]).toEqual({ BOB: "male" });
     expect(result.characterProfiles["files/keep.fountain"]).toEqual({ BOB: { age: 40 } });
-    expect(result.productionTags["files/keep.fountain"]).toEqual({ tags: [{ id: "tag2" }], definitions: [] });
 
     // Top-level unrelated settings remain untouched
     expect(result.paperSize).toBe("US-Letter");
@@ -308,7 +294,6 @@ describe("removeSettingsKey", () => {
       parking: null,
       genders: undefined,
       characterProfiles: 42,
-      productionTags: true,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = removeSettingsKey(settings as any, "file.fountain");
@@ -317,34 +302,6 @@ describe("removeSettingsKey", () => {
     expect(result.parking).toBeNull();
     expect(result.genders).toBeUndefined();
     expect(result.characterProfiles).toBe(42);
-    expect(result.productionTags).toBe(true);
-  });
-});
-
-describe("migrateProductionTags", () => {
-  it("handles empty or non-object raw inputs", () => {
-    expect(migrateProductionTags(null)).toEqual({});
-    expect(migrateProductionTags(undefined)).toEqual({});
-    expect(migrateProductionTags("")).toEqual({});
-  });
-
-  it("preserves pure flat format if no per-script entries exist", () => {
-    const flat = { tags: [], definitions: [] };
-    expect(migrateProductionTags(flat)).toEqual(flat);
-  });
-
-  it("migrates hybrid format by stripping top-level flat junk and keeping per-script entries", () => {
-    const hybrid = {
-      tags: [],
-      definitions: [],
-      "33.fountain": { tags: [{ id: "t1", name: "Prop" }], definitions: [] },
-      "34.fountain": { tags: [{ id: "t2", name: "Wardrobe" }], definitions: [] },
-    };
-    const result = migrateProductionTags(hybrid);
-    expect(result["33.fountain"]).toEqual({ tags: [{ id: "t1", name: "Prop" }], definitions: [] });
-    expect(result["34.fountain"]).toEqual({ tags: [{ id: "t2", name: "Wardrobe" }], definitions: [] });
-    expect("tags" in result).toBe(false);
-    expect("definitions" in result).toBe(false);
   });
 });
 

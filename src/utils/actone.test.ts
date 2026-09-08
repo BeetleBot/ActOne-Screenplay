@@ -90,42 +90,6 @@ describe("actone bundle - Core Packing & Unpacking", () => {
     const unpackedAsync = unpackActoneBundle(asyncPacked);
     expect(unpackedAsync).toEqual(unpackedSync);
   });
-
-  it("filters orphaned productionTags for deleted scripts when packing multi-script bundle", () => {
-    const scripts = makeScripts([
-      { name: "S1", content: "Scene 1" },
-      { name: "S2", content: "Scene 2" },
-    ]);
-    const settings = {
-      productionTags: {
-        "files/S1.fountain": { tags: [{ id: "t1", name: "Car" }], definitions: [] },
-        "files/DeletedScript.fountain": { tags: [{ id: "t_orphan", name: "Orphan" }], definitions: [] },
-      },
-    };
-
-    const packed = packActoneBundle(scripts, settings);
-    const unzipped = unzipSync(packed.slice(4));
-    const prodTags = JSON.parse(strFromU8(unzipped["production_tags.json"]));
-
-    expect(prodTags["files/S1.fountain"]).toEqual({ tags: [{ id: "t1", name: "Car" }], definitions: [] });
-    expect(prodTags["files/S2.fountain"]).toEqual({ tags: [], definitions: [] });
-    expect(prodTags["files/DeletedScript.fountain"]).toBeUndefined();
-  });
-
-  it("preserves productionTags structure directly when scripts.length <= 1", () => {
-    const scripts = makeScripts([
-      { name: "SingleScript", content: "Single scene" },
-    ]);
-    const settings = {
-      productionTags: { tags: [{ id: "t1", name: "Solo" }], definitions: [] },
-    };
-
-    const packed = packActoneBundle(scripts, settings);
-    const unzipped = unzipSync(packed.slice(4));
-    const prodTags = JSON.parse(strFromU8(unzipped["production_tags.json"]));
-
-    expect(prodTags).toEqual({ tags: [{ id: "t1", name: "Solo" }], definitions: [] });
-  });
 });
 
 describe("actone bundle - Reordering & Content Stability", () => {
@@ -401,10 +365,6 @@ describe("actone bundle - Per-Script Settings Isolation & Script Renaming", () =
       expect(rawNotepad["files/Script B.fountain"]).toBe("Notes for B");
       expect(rawNotepad["files/Orphaned.fountain"]).toBeUndefined();
 
-      const rawProductionTags = JSON.parse(strFromU8(rawEntries["production_tags.json"]));
-      expect(rawProductionTags["files/Script A.fountain"]).toEqual({ tags: [{ id: "tagA", name: "Prop A" }], definitions: [] });
-      expect(rawProductionTags["files/Script B.fountain"]).toEqual({ tags: [{ id: "tagB", name: "Prop B" }], definitions: [] });
-
       // Check unpacked bundle
       const unpacked = unpackActoneBundle(packed);
       expect(unpacked.scripts).toHaveLength(2);
@@ -412,12 +372,10 @@ describe("actone bundle - Per-Script Settings Isolation & Script Renaming", () =
       expect(unpacked.settings.todos["files/Orphaned.fountain"]).toBeUndefined();
       expect(unpacked.settings.parking["files/Orphaned.fountain"]).toBeUndefined();
       expect(unpacked.settings.genders["files/Orphaned.fountain"]).toBeUndefined();
-      expect(unpacked.settings.productionTags["files/Script A.fountain"]).toEqual({ tags: [{ id: "tagA", name: "Prop A" }], definitions: [] });
-      expect(unpacked.settings.productionTags["files/Script B.fountain"]).toEqual({ tags: [{ id: "tagB", name: "Prop B" }], definitions: [] });
     }
   });
 
-  it("renaming a script, saving, and unpacking preserves todos, parking, notepad, character genders, and production tags under the new filename", () => {
+  it("renaming a script, saving, and unpacking preserves todos, parking, notepad, and character genders under the new filename", () => {
     const originalScripts: ScriptInfo[] = [
       { name: "Episode 1", fileName: "files/Episode 1.fountain", type: "fountain", content: "INT. LAB - DAY", savedContent: "INT. LAB - DAY" },
       { name: "Episode 2", fileName: "files/Episode 2.fountain", type: "fountain", content: "EXT. FOREST - NIGHT", savedContent: "EXT. FOREST - NIGHT" },
@@ -439,10 +397,6 @@ describe("actone bundle - Per-Script Settings Isolation & Script Renaming", () =
       genders: {
         "files/Episode 1.fountain": { JOHN: "male", MARY: "female" },
         "files/Episode 2.fountain": { DETECTIVE: "non-binary" },
-      },
-      productionTags: {
-        "files/Episode 1.fountain": { tags: [{ id: "tag-car", name: "Vintage Car", category: "vehicles" }], definitions: [] },
-        "files/Episode 2.fountain": { tags: [{ id: "tag-gun", name: "Prop Revolver", category: "props" }], definitions: [] },
       },
     };
 
@@ -491,11 +445,6 @@ describe("actone bundle - Per-Script Settings Isolation & Script Renaming", () =
     expect(genders["files/Pilot Episode.fountain"]).toEqual({ JOHN: "male", MARY: "female" });
     expect(genders["files/Episode 1.fountain"]).toBeUndefined();
     expect(genders["files/Episode 2.fountain"]).toEqual({ DETECTIVE: "non-binary" });
-
-    const productionTags = unpacked.settings.productionTags as Record<string, unknown>;
-    expect(productionTags["files/Pilot Episode.fountain"]).toEqual({ tags: [{ id: "tag-car", name: "Vintage Car", category: "vehicles" }], definitions: [] });
-    expect(productionTags["files/Episode 1.fountain"]).toBeUndefined();
-    expect(productionTags["files/Episode 2.fountain"]).toEqual({ tags: [{ id: "tag-gun", name: "Prop Revolver", category: "props" }], definitions: [] });
   });
 });
 
