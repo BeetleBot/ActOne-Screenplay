@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@mui/material";
 import { AppProviders, useFile, useUI, useEditor, useScriptEditor, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
-import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialsWindow } from "./components";
+import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialsWindow, AiModelPalette } from "./components";
 import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
@@ -185,6 +185,7 @@ function AppInner() {
     setShowTitlePageModal, setShowShortcutsModal,
     togglePalette
   } = useModals();
+  const [isModelPaletteOpen, setIsModelPaletteOpen] = useState(false);
 
   const { editorView, updateSettings } = useEditor();
   const { scrollToScene } = useScriptEditor();
@@ -214,6 +215,7 @@ function AppInner() {
     saveFileAs,
     closeFile: useCallback(() => closeFile(activeFileId), [closeFile, activeFileId]),
     togglePalette,
+    openModelPalette: useCallback(() => setIsModelPaletteOpen(true), []),
     exportPDF: useCallback(() => {
       setShowExportModal(true);
     }, [setShowExportModal]),
@@ -814,6 +816,7 @@ function AppInner() {
             />
           </ErrorBoundary>
         )}
+      <AiModelPalette isOpen={isModelPaletteOpen} onClose={() => setIsModelPaletteOpen(false)} />
       <ModalManager
         isPaletteOpen={isPaletteOpen}
         setIsPaletteOpen={setIsPaletteOpen}

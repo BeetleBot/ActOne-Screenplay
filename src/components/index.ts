@@ -33,6 +33,7 @@ export { XrayWindow } from './XrayWindow';
 export { TutorialsWindow } from './TutorialsWindow';
 export { TranslateDocumentModal } from './TranslateDocumentModal';
 export { QuickGuideModal } from './QuickGuideModal';
+export { AiModelPalette } from './AiModelPalette';
 
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,

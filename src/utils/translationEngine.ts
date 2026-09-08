@@ -148,6 +148,52 @@ export function analyzeFountainLine(line: string, parsedLine: any): AnalyzedLine
   };
 }
 
+/**
+ * Returns an informative context label (e.g. [JOHN], [Action], [Parenthetical])
+ * so the AI model understands speaker attribution and tone requirements.
+ */
+export function getLineContextLabel(lineIdx: number, parsedLines: any[]): string {
+  const parsed = parsedLines[lineIdx];
+  const type = parsed?.type;
+
+  if (type === LineType.dialogue || type === LineType.dualDialogue) {
+    let speaker = "Dialogue";
+    for (let b = lineIdx - 1; b >= Math.max(0, lineIdx - 6); b--) {
+      const p = parsedLines[b];
+      if (p?.type === LineType.character || p?.type === LineType.dualDialogueCharacter) {
+        const cleanChar = p.text?.replace(/\([^)]*\)/g, "").replace(/[@^]/g, "").trim();
+        if (cleanChar) {
+          speaker = cleanChar;
+          break;
+        }
+      }
+    }
+    return `[Dialogue: ${speaker}]`;
+  }
+
+  if (type === LineType.parenthetical || type === LineType.dualDialogueParenthetical) {
+    return "[Parenthetical]";
+  }
+
+  if (type === LineType.action || type === LineType.centered || type === LineType.synopse) {
+    return "[Action]";
+  }
+
+  if (type === LineType.heading) {
+    return "[Scene Heading]";
+  }
+
+  if (type === LineType.transitionLine) {
+    return "[Transition]";
+  }
+
+  if (type === LineType.shot) {
+    return "[Shot]";
+  }
+
+  return "[Action]";
+}
+
 const SCENE_CHUNK_MAX_LINES = 35;
 
 /**
@@ -500,8 +546,11 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       } : null);
       setAiStatus(`Translating: ${sceneLabel}`);
 
-      // Build the prompt for this chunk
-      const chunkCleanTexts = chunk.lineIndices.map((idx) => analyzedLines[idx].cleanText);
+      // Label lines with character speaker cues and element types for context
+      const chunkLabeledTexts = chunk.lineIndices.map((idx) => {
+        const label = getLineContextLabel(idx, parsedLines);
+        return `${label} ${analyzedLines[idx].cleanText}`;
+      });
 
       // Find character names in this scene
       const sceneChars = new Set<string>();
@@ -513,12 +562,15 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       }
 
       const systemParts = [
-        `You are a professional screenplay translator. Translate the following screenplay lines into ${langInfo}.`,
+        `You are a professional screenplay translator. Translate the screenplay lines below into ${langInfo}.`,
         ld.example ? `Example phrasing in ${ld.native}: "${ld.example}"` : "",
         "",
-        "TONE & STYLE:",
-        params.dynamicToneInstructions ||
-        "• Dialogue: Natural spoken conversational tone for modern movies. Never stiff or formal.\n• Action: Punchy, vivid, cinematic.",
+        "ELEMENT TYPES & TONE:",
+        "- Lines labeled with a [CHARACTER NAME] are Dialogue: translate using natural, conversational, spoken phrasing suitable for cinema and modern film dialogue.",
+        "- Lines labeled [Action] are Action/Description: translate using punchy, vivid, cinematic present-tense prose.",
+        "- Lines labeled [Parenthetical] are Actor Directions: translate naturally as an emotional cue or action.",
+        "- Lines labeled [Scene Heading], [Transition], or [Shot]: translate using standard film terminology.",
+        params.dynamicToneInstructions ? `\nTone Preferences:\n${params.dynamicToneInstructions}` : "",
         "",
       ];
 
@@ -529,8 +581,8 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
       }
 
       systemParts.push("RULES:");
-      systemParts.push("1. Preserve the exact line-by-line structure. Output ONLY the translated lines.");
-      systemParts.push("2. Do not add numbering, explanations, notes, headings, markdown code blocks, or preamble.");
+      systemParts.push("1. Return EXACTLY 1 translated line per input line, preserving the exact line-by-line order.");
+      systemParts.push("2. Output ONLY the translated text. Do NOT include the [Label] tags, character name prefixes, numbering, or explanations in your output.");
       systemParts.push("3. Do not invent or continue scenes.");
       if (params.preserveCharacterNames !== false && sceneChars.size > 0) {
         systemParts.push(`4. Preserve these character names as-is (do not translate): ${Array.from(sceneChars).join(", ")}`);
@@ -544,9 +596,9 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
         userParts.push(`Characters: ${Array.from(sceneChars).join(", ")}`);
       }
       userParts.push("");
-      userParts.push(`Translate these ${chunkCleanTexts.length} lines:`);
+      userParts.push(`Translate each of these ${chunkLabeledTexts.length} lines:`);
       userParts.push("---");
-      userParts.push(chunkCleanTexts.join("\n"));
+      userParts.push(chunkLabeledTexts.join("\n"));
 
       const userPrompt = userParts.join("\n");
 
@@ -593,13 +645,40 @@ export const runTranslationJob = async (params: TranslationJobParams) => {
 
           let linesApplied = 0;
           chunk.lineIndices.forEach((lineIdx, i) => {
-            const translated = resLines[i]?.trim();
+            let translated = resLines[i]?.trim();
             if (translated && translated.length > 0) {
               const item = analyzedLines[lineIdx];
+
+              // Clean off any echoed [Label] prefix the model might repeat
+              translated = translated
+                .replace(/^\[(Dialogue:[^\]]*|Action|Parenthetical|Scene Heading|Transition|Shot)\]\s*:?\s*/i, "")
+                .trim();
+
+              if (!translated) return;
+
               // Safety: reject if model output a scene heading for a non-heading line
               if (/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(translated) && !/^(INT\.|EXT\.|EST\.|I\/E\.)/i.test(item.cleanText)) {
                 return; // Keep original
               }
+
+              // Fountain syntax normalization:
+              // Strip redundant outer wrappers from model output so item.prefix / item.suffix don't double-wrap
+              if (item.prefix === "(" && item.suffix === ")" && translated.startsWith("(") && translated.endsWith(")")) {
+                translated = translated.slice(1, -1).trim();
+              } else if (item.prefix === "!" && translated.startsWith("!")) {
+                translated = translated.slice(1).trim();
+              } else if (item.prefix === "." && translated.startsWith(".")) {
+                translated = translated.slice(1).trim();
+              } else if (item.prefix.startsWith(">") && translated.startsWith(">")) {
+                translated = translated.replace(/^>\s*/, "").trim();
+              } else if (item.prefix === ">" && item.suffix === "<" && translated.startsWith(">") && translated.endsWith("<")) {
+                translated = translated.slice(1, -1).trim();
+              } else if (item.prefix === "=" && translated.startsWith("=")) {
+                translated = translated.slice(1).trim();
+              } else if (item.prefix === "!!" && translated.startsWith("!!")) {
+                translated = translated.slice(2).trim();
+              }
+
               currentDocLines[lineIdx] = item.indent + item.prefix + translated + item.suffix;
               linesApplied++;
             }

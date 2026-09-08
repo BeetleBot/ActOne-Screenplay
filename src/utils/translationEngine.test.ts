@@ -4,6 +4,7 @@ import {
   analyzeFountainLine,
   segmentIntoScenes,
   runTranslationJob,
+  getLineContextLabel,
 } from "./translationEngine";
 
 vi.mock("../lib/aiProviders", () => ({
@@ -27,7 +28,7 @@ vi.mock("../lib/aiProviders", () => ({
       const markerIdx = userMsg.indexOf("---");
       const lines = markerIdx !== -1 ? userMsg.slice(markerIdx + 3).trim().split("\n") : userMsg.split("\n");
       const translated = lines
-        .map((l: string) => `[ES] ${l.trim()}`)
+        .map((l: string) => `[ES] ${l.replace(/^\[[^\]]+\]\s*/, "").trim()}`)
         .join("\n");
       if (options?.onChunk) {
         options.onChunk(translated);
@@ -114,6 +115,39 @@ describe("analyzeFountainLine", () => {
 
     const breakRes = analyzeFountainLine("===", { type: LineType.pageBreak });
     expect(breakRes.isTranslatable).toBe(false);
+  });
+});
+
+describe("getLineContextLabel", () => {
+  it("labels dialogue with the speaker character name", () => {
+    const script = `
+JOHN
+Hello there!
+`.trim();
+    const parsed = parseScreenplay(script);
+    // line 0 is JOHN (character), line 1 is "Hello there!" (dialogue)
+    const label = getLineContextLabel(1, parsed.lines);
+    expect(label).toBe("[Dialogue: JOHN]");
+  });
+
+  it("labels action lines as [Action]", () => {
+    const script = `
+He sits down slowly.
+`.trim();
+    const parsed = parseScreenplay(script);
+    const label = getLineContextLabel(0, parsed.lines);
+    expect(label).toBe("[Action]");
+  });
+
+  it("labels parentheticals as [Parenthetical]", () => {
+    const script = `
+JOHN
+(whispering)
+Don't look now.
+`.trim();
+    const parsed = parseScreenplay(script);
+    const label = getLineContextLabel(1, parsed.lines);
+    expect(label).toBe("[Parenthetical]");
   });
 });
 

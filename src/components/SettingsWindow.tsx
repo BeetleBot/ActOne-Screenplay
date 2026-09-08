@@ -36,6 +36,7 @@ import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 import { invoke } from "@tauri-apps/api/core";
 import { fetchModels, checkProviderAvailability, notifyConfigChange } from "../hooks/usePromptConfig";
+import { notifyApiListChange } from "../hooks/useApiList";
 
 function readLocal(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -130,6 +131,7 @@ export const SettingsWindow: React.FC = () => {
   const saveApiList = (entries: ApiEntry[]) => {
     localStorage.setItem(STORAGE_KEYS.PROMPT_API_LIST, JSON.stringify(entries));
     setApiList(entries);
+    notifyApiListChange();
   };
   const addApi = () => {
     const id = crypto.randomUUID();

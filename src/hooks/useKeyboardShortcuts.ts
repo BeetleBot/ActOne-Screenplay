@@ -21,6 +21,7 @@ interface ShortcutActions {
   openSettings?: () => void;
   toggleSearch: () => void;
   openMusePane?: () => void;
+  openModelPalette?: () => void;
   openHelp?: () => void;
   openShortcuts?: () => void;
   toggleSnapshotsPanel?: () => void;
@@ -65,9 +66,16 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       }
 
       if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "m") {
-        e.preventDefault();
-        actionsRef.current.openMusePane?.();
-        return;
+        if (e.shiftKey) {
+          e.preventDefault();
+          actionsRef.current.openModelPalette?.();
+          return;
+        }
+        if (!e.shiftKey) {
+          e.preventDefault();
+          actionsRef.current.openMusePane?.();
+          return;
+        }
       }
 
       if (e.key === "F1") {

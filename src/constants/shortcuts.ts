@@ -126,6 +126,7 @@ export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   { id: "toggle-sidebar", label: "Toggle Sidebar", category: "Navigation & View", keys: ["Ctrl", "\\"] },
   { id: "toggle-zen", label: "Toggle Zen Mode", category: "Navigation & View", keys: ["Ctrl", "Alt", "Enter"] },
   { id: "open-muse", label: "Open Muse AI", category: "Navigation & View", keys: ["Alt", "M"] },
+  { id: "open-model-palette", label: "Switch AI Model", category: "Navigation & View", keys: ["Alt", "Shift", "M"] },
   { id: "open-snapshots", label: "Open Snapshots", category: "Navigation & View", keys: ["Alt", "S"] },
   { id: "open-settings", label: "Settings", category: "Navigation & View", keys: ["Ctrl", ","] },
 
