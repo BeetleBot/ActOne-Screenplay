@@ -1,10 +1,10 @@
-name: Build AppImage
+name: Build Linux (AppImage & Flatpak)
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version override (e.g. 0.4.23). Leave empty to use package.json version.'
+        description: 'Version override (e.g. 0.4.24). Leave empty to use package.json version.'
         required: false
         type: string
 
@@ -12,9 +12,11 @@ permissions:
   contents: write
 
 jobs:
-  build-appimage:
-    name: Build Universal AppImage
+  build-bundle:
+    name: Build Tauri Binary
     runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
 
     steps:
       - name: Checkout repository
@@ -41,8 +43,7 @@ jobs:
             libjavascriptcoregtk-4.1-dev \
             libssl-dev \
             libfontconfig1-dev \
-            pkg-config \
-            file
+            pkg-config
 
       - name: Install npm dependencies
         run: npm ci
@@ -55,15 +56,38 @@ jobs:
             VERSION=$(node -p "require('./package.json').version" 2>/dev/null || grep -oP '"version":\s*"\K[^"]+' package.json | head -1)
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building AppImage for version: $VERSION"
+          echo "Building binary for version: $VERSION"
 
       - name: Build frontend and compile Tauri binary
         run: npm run tauri build -- --no-bundle
 
+      - name: Upload compiled binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: actone-binary
+          path: src-tauri/target/release/actone
+          retention-days: 1
+
+  package-appimage:
+    name: Package AppImage
+    needs: build-bundle
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download compiled binary
+        uses: actions/download-artifact@v4
+        with:
+          name: actone-binary
+          path: src-tauri/target/release/
+
       - name: Package AppImage
         env:
-          VERSION: ${{ steps.ver.outputs.version }}
+          VERSION: ${{ needs.build-bundle.outputs.version }}
         run: |
+          chmod +x src-tauri/target/release/actone
           BUILD_DIR="target/appimage-build"
           APPDIR="$BUILD_DIR/AppDir"
           ARTIFACTS_DIR="Release/artifacts"
@@ -256,9 +280,73 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ steps.ver.outputs.version }}"
+          VERSION="${{ needs.build-bundle.outputs.version }}"
           TAG_NAME="v$VERSION"
           APPIMAGE_FILE=$(ls Release/artifacts/ActOne-Screenplay-x86_64-*.AppImage | head -1)
 
           gh release create "$TAG_NAME" "$APPIMAGE_FILE" --title "ActOne Screenplay v$VERSION" --notes "ActOne Screenplay v$VERSION Release assets." || \
           gh release upload "$TAG_NAME" "$APPIMAGE_FILE" --clobber
+
+  package-flatpak:
+    name: Package Flatpak
+    needs: build-bundle
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
+      options: --privileged
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+
+      - name: Configure Git Safe Directory
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory /__w/ActOne-Screenplay/ActOne-Screenplay
+
+      - name: Download compiled Tauri binary
+        uses: actions/download-artifact@v4
+        with:
+          name: actone-binary
+          path: flatpak/
+
+      - name: Make binary executable and stage flatpak resources
+        run: |
+          chmod +x flatpak/actone
+          cp assets/linux/actone.xml flatpak/
+          cp src-tauri/icons/128x128.png flatpak/icon_128.png
+          cp src-tauri/icons/128x128@2x.png flatpak/icon_256.png
+
+      - name: Build Flatpak bundle
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: ink.iyal.actone.flatpak
+          manifest-path: flatpak/ink.iyal.actone.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          upload-artifact: false
+
+      - name: Prepare bundle with versioned name
+        run: |
+          VERSION="${{ needs.build-bundle.outputs.version }}"
+          cp ink.iyal.actone.flatpak "ActOne-Screenplay-x86_64-${VERSION}.flatpak"
+
+      - name: Upload Flatpak artifact (Downloadable)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ActOne-Screenplay-Flatpak-x86_64
+          path: ActOne-Screenplay-x86_64-*.flatpak
+          retention-days: 30
+
+      - name: Upload Flatpak to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.build-bundle.outputs.version }}"
+          TAG_NAME="v$VERSION"
+          FLATPAK_FILE=$(ls ActOne-Screenplay-x86_64-*.flatpak | head -1)
+
+          gh release create "$TAG_NAME" "$FLATPAK_FILE" --title "ActOne Screenplay v$VERSION" --notes "ActOne Screenplay v$VERSION Release assets." || \
+          gh release upload "$TAG_NAME" "$FLATPAK_FILE" --clobber

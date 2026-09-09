@@ -3,7 +3,7 @@
 ## [0.4.24] - 2026-09-09
 
 ### Added / Improved
-- 📦 **Flatpak Distribution Support & GitHub Actions CI** – Added complete Flatpak packaging manifest (`flatpak/ink.iyal.actone.yml`), `.desktop` launcher, and AppStream metainfo XML. Automated headless build pipelines in GitHub Actions with Flatpak artifact uploads directly to GitHub Releases.
+- 📦 **Unified Linux Distribution Pipeline (AppImage & Flatpak CI)** – Consolidated Linux packaging workflows into a single pipeline (`.github/workflows/build-linux.yml`) that compiles the core Tauri binary once, and then branches into parallel packaging jobs for both Universal AppImage and Flatpak bundles with automatic GitHub Releases publishing.
 - 🐧 **Universal Linux AppImage with System Desktop Integration** – Built custom AppImage packaging tooling with automatic desktop integration on first run (creating application menu shortcuts, MIME file associations for `.fountain` and `.actone`, and high-res icon deployment), plus explicit manual integration and removal controls directly within App Settings.
 - 🎛️ **Streamlined AI Model Switcher Palette** – Compacted the `AiModelPalette` modal into a lightweight quick-picker (`320px`), embedded "Disable AI" at the top of the list, moved "Configure Models…" to the bottom of the list, and optimized key navigation.
 - 📚 **Linux Desktop Integration Help Documentation** – Added a dedicated help article covering installation, Flatpak sandbox permissions, system font sharing, and desktop integration troubleshooting.
