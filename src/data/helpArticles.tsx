@@ -1477,8 +1477,9 @@ This removes the desktop shortcut, icons, MIME registrations, and installed bina
 2. A streamlined, fast model chooser popup appears showing:
    - All configured OpenAI-compatible custom API models.
    - Locally detected Ollama models.
-   - An option to **Disable AI** or open **Configure AI Providers** in Settings.
-3. Use your mouse or keyboard arrow keys to navigate and press \`Enter\` to select your desired model immediately.`,
+   - Quick options to **Disable AI** or open **Configure Models** in Settings.
+3. Use your keyboard arrow keys (<kbd>↑</kbd> / <kbd>↓</kbd>), <kbd>Home</kbd>, <kbd>End</kbd>, <kbd>PageUp</kbd>, or <kbd>PageDown</kbd> to navigate, and press <kbd>Enter</kbd> to select your desired model immediately.
+4. When closed with <kbd>Esc</kbd> or upon model selection, editor focus and cursor viewport position are automatically restored.`,
   },
 ];
 

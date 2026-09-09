@@ -13,6 +13,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import { EditorView } from "@codemirror/view";
 import {
   usePromptConfig,
   setPromptConfigField,
@@ -21,7 +22,7 @@ import {
 import { useApiList } from "../hooks/useApiList";
 import { STORAGE_KEYS } from "../constants";
 import { useModalWindows } from "../hooks/useModalWindows";
-import { useUI } from "../context";
+import { useUI, useEditor } from "../context";
 import {
   CheckIcon,
   SettingsIcon,
@@ -45,13 +46,15 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
   const config = usePromptConfig();
   const apiList = useApiList();
   const { openSettingsWindow } = useModalWindows();
-  const { setActiveRightPane } = useUI();
+  const { setActiveRightPane, appScale = 100 } = useUI();
+  const { editorView } = useEditor();
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
-  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const prevOpen = useRef(isOpen);
 
   const isDisabled = config.provider === "none";
 
@@ -74,6 +77,24 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
       cancelled = true;
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (prevOpen.current && !isOpen) {
+      if (editorView) {
+        window.setTimeout(() => {
+          if (!document.activeElement || document.activeElement === document.body) {
+            editorView.contentDOM.focus({ preventScroll: true });
+          }
+          try {
+            editorView.dispatch({
+              effects: EditorView.scrollIntoView(editorView.state.selection.main.head, { y: "center" }),
+            });
+          } catch {}
+        }, 50);
+      }
+    }
+    prevOpen.current = isOpen;
+  }, [isOpen, editorView]);
 
   const handleDisable = () => {
     setPromptConfigField("provider", "none");
@@ -176,11 +197,21 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
   }, [navigationItems.length, selectedIndex]);
 
   useEffect(() => {
-    const selectedItem = navigationItems[selectedIndex];
-    if (selectedItem) {
-      itemRefs.current[selectedItem.id]?.scrollIntoView({ block: "nearest" });
+    const container = containerRef.current;
+    if (!container) return;
+    const selectedElement = container.querySelector(
+      `[data-index="${selectedIndex}"]`
+    ) as HTMLElement | null;
+    if (selectedElement) {
+      const elemTop = selectedElement.offsetTop;
+      const elemBottom = elemTop + selectedElement.offsetHeight;
+      if (elemTop < container.scrollTop) {
+        container.scrollTop = elemTop;
+      } else if (elemBottom > container.scrollTop + container.clientHeight) {
+        container.scrollTop = elemBottom - container.clientHeight;
+      }
     }
-  }, [navigationItems, selectedIndex]);
+  }, [selectedIndex]);
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -209,6 +240,12 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
     } else if (e.key === "End") {
       e.preventDefault();
       setSelectedIndex(navigationItems.length - 1);
+    } else if (e.key === "PageDown") {
+      e.preventDefault();
+      setSelectedIndex((p) => Math.min(navigationItems.length - 1, p + 5));
+    } else if (e.key === "PageUp") {
+      e.preventDefault();
+      setSelectedIndex((p) => Math.max(0, p - 5));
     } else if (e.key === "Escape") {
       e.preventDefault();
       onClose();
@@ -230,25 +267,29 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
           role: "dialog",
           "aria-label": "Choose AI model",
           sx: {
-            width: 340,
+            zoom: `${appScale}%`,
+            width: 360,
             maxWidth: "90vw",
-            borderRadius: "12px",
+            borderRadius: "14px",
             overflow: "hidden",
-            bgcolor: "background.paper",
+            backgroundColor: theme.palette.background.paper + (isDark ? "e6" : "f2"),
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid",
-            borderColor: "divider",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)",
             boxShadow: isDark
-              ? "0 20px 48px -8px rgba(0, 0, 0, 0.62)"
-              : "0 20px 48px -8px rgba(0, 0, 0, 0.18)",
+              ? "0 20px 48px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08)"
+              : "0 20px 48px -8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04)",
             backgroundImage: "none",
-            p: 0.75,
+            color: theme.palette.text.primary,
+            cursor: "none",
+            p: 1.25,
+            pb: 0,
           },
         },
       }}
     >
-      <Box sx={{ display: "flex", gap: 0.5, mb: 0.75 }}>
+      <Box sx={{ display: "flex", gap: 0.75, mb: 1 }}>
         {actionItems.map((it) => {
           return (
             <ListItemButton
@@ -290,25 +331,25 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
           display: "flex",
           alignItems: "center",
           gap: 0.75,
-          px: 1,
-          minHeight: 34,
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: "6px",
-          bgcolor: alpha(theme.palette.text.primary, isDark ? 0.06 : 0.035),
+          px: 1.2,
+          minHeight: 36,
+          border: "none",
+          borderRadius: "8px",
+          bgcolor: isDark ? `${theme.palette.text.primary}12` : `${theme.palette.text.primary}08`,
           "&:focus-within": {
-            borderColor: alpha(theme.palette.primary.main, 0.7),
-            boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.12)}`,
+            boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
           },
         }}
       >
-        <SearchIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+        <Box sx={{ display: "flex", color: "var(--button-color, primary.main)" }}>
+          <SearchIcon sx={{ fontSize: 18 }} />
+        </Box>
         <InputBase
           inputRef={searchRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Filter models"
+          placeholder="Filter models..."
           inputProps={{
             "aria-label": "Filter AI models",
             "aria-controls": "ai-model-options",
@@ -317,17 +358,25 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
           sx={{
             flex: 1,
             minWidth: 0,
-            fontSize: "0.76rem",
+            fontSize: "0.84rem",
             color: "text.primary",
-            "& input::placeholder": { color: "text.secondary", opacity: 0.8 },
+            "& input::placeholder": { color: "text.secondary", opacity: 0.6 },
           }}
         />
-        <Typography sx={{ fontSize: "0.62rem", color: "text.disabled", flexShrink: 0 }}>
+        <Typography sx={{ fontSize: "0.65rem", color: "text.disabled", flexShrink: 0, fontFamily: "monospace" }}>
           ↑↓
         </Typography>
       </Box>
 
-      <DialogContent sx={{ p: 0, mt: 0.75, maxHeight: 300, overflowY: "auto" }}>
+      <DialogContent
+        ref={containerRef}
+        sx={{
+          p: 0,
+          mt: 0.75,
+          maxHeight: 300,
+          overflowY: "auto",
+        }}
+      >
         {loading && (
           <Typography
             sx={{ p: 1.5, fontSize: "0.74rem", textAlign: "center" }}
@@ -342,116 +391,114 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
           disablePadding
           role="listbox"
           aria-label="AI models and actions"
-          sx={{ py: 0.15 }}
+          sx={{ py: 0.25 }}
         >
           {filteredModelItems.map((it, modelIndex) => {
             const idx = modelIndex;
             const isSelected = idx === selectedIndex;
-            const isFirstModel = modelIndex === 0;
             return (
-              <React.Fragment key={it.id}>
-                {isFirstModel && <Divider sx={{ my: 0.5, opacity: 0.55 }} />}
-                <ListItemButton
-                  id={it.id}
-                  ref={(node: HTMLDivElement | null) => { itemRefs.current[it.id] = node; }}
-                  role="option"
-                  aria-selected={isSelected}
-                  selected={isSelected}
-                  onClick={it.action}
-                  onMouseEnter={() => setSelectedIndex(idx)}
+              <ListItemButton
+                key={it.id}
+                id={it.id}
+                data-index={idx}
+                role="option"
+                aria-selected={isSelected}
+                selected={isSelected}
+                onClick={it.action}
+                onMouseEnter={() => setSelectedIndex(idx)}
+                sx={{
+                  py: 0.6,
+                  px: 1,
+                  my: 0.15,
+                  borderRadius: "6px",
+                  gap: 1,
+                  transition: "all var(--duration-fast) ease",
+                  bgcolor: isSelected
+                    ? `${theme.palette.primary.main}20`
+                    : it.active && it.id !== "disable"
+                    ? alpha(theme.palette.primary.main, 0.1)
+                    : undefined,
+                  "&.Mui-selected": {
+                    bgcolor: `${theme.palette.primary.main}20`,
+                  },
+                  "&:hover": {
+                    bgcolor: isSelected
+                      ? `${theme.palette.primary.main}20`
+                      : `${theme.palette.primary.main}12`,
+                  },
+                }}
+              >
+                <ListItemIcon
                   sx={{
-                    py: 0.45,
-                    px: 0.9,
-                    my: 0.1,
-                    minHeight: 29,
-                    borderRadius: "6px",
-                    gap: 0.9,
-                     bgcolor: it.active && it.id !== "disable"
-                       ? alpha(theme.palette.primary.main, 0.1)
-                       : undefined,
-                     "&.Mui-selected": {
-                       bgcolor: it.active && it.id !== "disable"
-                         ? alpha(theme.palette.primary.main, 0.18)
-                         : alpha(theme.palette.primary.main, 0.1),
-                     },
-                     "&:hover": {
-                       bgcolor: it.active && it.id !== "disable"
-                         ? alpha(theme.palette.primary.main, 0.18)
-                         : alpha(theme.palette.primary.main, 0.08),
-                     },
+                    minWidth: "auto",
+                    color: isSelected
+                      ? "var(--button-color, primary.main)"
+                      : it.id === "disable" && it.active
+                      ? "error.main"
+                      : it.active
+                      ? "primary.main"
+                      : "text.secondary",
                   }}
                 >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: "auto",
-                      color:
-                        it.id === "disable" && it.active
-                          ? "error.main"
-                          : it.active
-                          ? "primary.main"
-                          : "text.secondary",
-                    }}
-                  >
-                    {it.icon}
-                  </ListItemIcon>
+                  {it.icon}
+                </ListItemIcon>
 
-                  <ListItemText
-                    disableTypography
-                    primary={
-                      <Typography
-                        sx={{
-                          fontSize: "0.76rem",
-                          fontWeight: it.active && it.id !== "disable" ? 600 : 400,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          color:
-                            it.id === "disable" && it.active
-                              ? "error.main"
-                              : it.active
-                              ? "text.primary"
-                              : "text.secondary",
-                        }}
-                        title={it.label}
-                      >
-                        {it.label}
-                      </Typography>
-                    }
-                  />
-
-                  {it.badge && (
+                <ListItemText
+                  disableTypography
+                  primary={
                     <Typography
                       sx={{
-                        fontSize: "0.6rem",
-                        fontWeight: 500,
-                        px: 0.5,
-                        py: 0.1,
-                        borderRadius: "3px",
-                         bgcolor: alpha(
-                           it.badge === "local" ? theme.palette.success.main : theme.palette.info.main,
-                           0.12,
-                         ),
-                         color: it.badge === "local" ? "success.main" : "info.main",
-                        lineHeight: 1.2,
-                        flexShrink: 0,
+                        fontSize: "0.8rem",
+                        fontWeight: isSelected || (it.active && it.id !== "disable") ? 600 : 400,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        color:
+                          it.id === "disable" && it.active
+                            ? "error.main"
+                            : it.active
+                            ? "text.primary"
+                            : "text.secondary",
                       }}
+                      title={it.label}
                     >
-                      {it.badge}
+                      {it.label}
                     </Typography>
-                  )}
+                  }
+                />
 
-                  {it.active && it.id !== "disable" && (
-                    <CheckIcon
-                      sx={{
-                        fontSize: 13,
-                        color: "primary.main",
-                        flexShrink: 0,
-                        ml: 0.2,
-                      }}
-                    />
-                  )}
-                </ListItemButton>
-              </React.Fragment>
+                {it.badge && (
+                  <Typography
+                    sx={{
+                      fontSize: "0.6rem",
+                      fontWeight: 500,
+                      px: 0.5,
+                      py: 0.1,
+                      borderRadius: "3px",
+                      bgcolor: alpha(
+                        it.badge === "local" ? theme.palette.success.main : theme.palette.info.main,
+                        0.12,
+                      ),
+                      color: it.badge === "local" ? "success.main" : "info.main",
+                      lineHeight: 1.2,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {it.badge}
+                  </Typography>
+                )}
+
+                {it.active && it.id !== "disable" && (
+                  <CheckIcon
+                    sx={{
+                      fontSize: 13,
+                      color: "primary.main",
+                      flexShrink: 0,
+                      ml: 0.2,
+                    }}
+                  />
+                )}
+              </ListItemButton>
             );
           })}
           {!loading && filteredModelItems.length === 0 && (
@@ -464,6 +511,81 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
           )}
         </List>
       </DialogContent>
+
+      <Divider sx={{ mx: -1.25, mt: 0.5 }} />
+
+      <Box
+        sx={{
+          mx: -1.25,
+          px: 1.5,
+          py: 0.8,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          bgcolor: isDark ? `${theme.palette.background.default}66` : "action.hover",
+          color: theme.palette.text.secondary,
+        }}
+      >
+        <Box sx={{ display: "flex", gap: 1.25 }}>
+          <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              component="span"
+              sx={{
+                fontFamily: "monospace",
+                fontWeight: 700,
+                bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected",
+                color: theme.palette.text.primary,
+                px: 0.5,
+                py: 0.15,
+                borderRadius: "3px",
+              }}
+            >
+              ↑↓
+            </Typography>{" "}
+            navigate
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              component="span"
+              sx={{
+                fontFamily: "monospace",
+                fontWeight: 700,
+                bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected",
+                color: theme.palette.text.primary,
+                px: 0.5,
+                py: 0.15,
+                borderRadius: "3px",
+              }}
+            >
+              Enter
+            </Typography>{" "}
+            select
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              component="span"
+              sx={{
+                fontFamily: "monospace",
+                fontWeight: 700,
+                bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected",
+                color: theme.palette.text.primary,
+                px: 0.5,
+                py: 0.15,
+                borderRadius: "3px",
+              }}
+            >
+              Esc
+            </Typography>{" "}
+            close
+          </Typography>
+        </Box>
+        <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.7, fontSize: "0.68rem" }}>
+          AI Models
+        </Typography>
+      </Box>
     </Dialog>
   );
 };

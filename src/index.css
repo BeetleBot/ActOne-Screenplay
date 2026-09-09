@@ -211,11 +211,12 @@ body {
 }
 
 .editor-paper {
+  --zoom: var(--editor-zoom, 1);
   width: 100%;
-  max-width: 8.5in;
+  max-width: calc(8.5in * var(--zoom));
   min-height: 100%;
   background: transparent;
-  padding: 60px 1.0in 60px 1.5in;
+  padding: calc(60px * var(--zoom)) calc(1.0in * var(--zoom)) calc(60px * var(--zoom)) calc(1.5in * var(--zoom));
   position: relative;
   cursor: var(--editor-mouse-cursor, text) !important;
   color-scheme: light;
@@ -227,11 +228,11 @@ body {
 }
 
 .editor-paper.paper-a4 {
-  max-width: 8.27in;
+  max-width: calc(8.27in * var(--zoom));
 }
 
 .editor-paper.paper-letter {
-  max-width: 8.5in;
+  max-width: calc(8.5in * var(--zoom));
 }
 
 /* CodeMirror Editor Styling */
@@ -239,7 +240,7 @@ body {
   height: auto !important;
   min-height: 100%;
   font-family: var(--font-editor) !important;
-  font-size: 14px !important;
+  font-size: calc(14px * var(--zoom, 1)) !important;
   line-height: 1.2 !important;
   outline: none !important;
   background: transparent !important;
@@ -388,50 +389,50 @@ body {
 }
 
 .cm-fountain-heading[data-scene-number]::before {
-  right: calc(100% + 0.75in);
+  right: calc((100% + 0.75in) * var(--zoom, 1));
 }
 
 .cm-fountain-heading[data-scene-number]::after {
-  left: calc(100% + 0.5in);
+  left: calc((100% + 0.5in) * var(--zoom, 1));
 }
 
 .cm-fountain-character {
   text-transform: uppercase !important;
   font-weight: bold !important;
-  margin-left: 2.2in !important;
+  margin-left: calc(2.2in * var(--zoom, 1)) !important;
   margin-right: 0 !important;
   color: var(--text-editor-character) !important;
 }
 
 .cm-fountain-parenthetical {
-  margin-left: 1.6in !important;
-  margin-right: 1.6in !important;
+  margin-left: calc(1.6in * var(--zoom, 1)) !important;
+  margin-right: calc(1.6in * var(--zoom, 1)) !important;
   color: var(--text-editor-parenthetical) !important;
 }
 
 .cm-fountain-dialogue {
-  margin-left: 1.0in !important;
-  margin-right: 1.0in !important;
+  margin-left: calc(1.0in * var(--zoom, 1)) !important;
+  margin-right: calc(1.0in * var(--zoom, 1)) !important;
   color: var(--text-editor-dialogue) !important;
 }
 
 .cm-fountain-dual-character {
   text-transform: uppercase !important;
   font-weight: bold !important;
-  margin-left: 3.5in !important;
+  margin-left: calc(3.5in * var(--zoom, 1)) !important;
   margin-right: 0 !important;
   color: var(--text-editor-character) !important;
 }
 
 .cm-fountain-dual-parenthetical {
-  margin-left: 2.9in !important;
-  margin-right: 0.3in !important;
+  margin-left: calc(2.9in * var(--zoom, 1)) !important;
+  margin-right: calc(0.3in * var(--zoom, 1)) !important;
   color: var(--text-editor-parenthetical) !important;
 }
 
 .cm-fountain-dual-dialogue {
-  margin-left: 2.3in !important;
-  margin-right: 0.3in !important;
+  margin-left: calc(2.3in * var(--zoom, 1)) !important;
+  margin-right: calc(0.3in * var(--zoom, 1)) !important;
   color: var(--text-editor-dialogue) !important;
 }
 

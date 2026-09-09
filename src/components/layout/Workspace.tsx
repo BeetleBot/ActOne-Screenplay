@@ -597,10 +597,9 @@ export const Workspace = React.memo<WorkspaceProps>(({
           >
             <Box
               className={`editor-paper paper-${paperSize}`}
-              sx={{
-                zoom: zoomLevel / 100,
-                transition: 'zoom var(--duration-slow) var(--easing-standard)',
-              }}
+              style={{
+                '--editor-zoom': zoomLevel / 100,
+              } as React.CSSProperties}
             >
               {isMarkdown ? (
                 <ErrorBoundary name="prose-editor"><ProseEditor /></ErrorBoundary>
