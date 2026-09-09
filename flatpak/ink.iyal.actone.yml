@@ -11,7 +11,9 @@ finish-args:
   - --share=ipc
   - --share=network
   - --device=dri
-  - --filesystem=host-fonts
+  - --filesystem=xdg-data/fonts:ro
+  - --filesystem=~/.fonts:ro
+  - --filesystem=host-etc:ro
   - --filesystem=xdg-documents
   - --talk-name=org.freedesktop.portal.FileChooser
   - --talk-name=org.freedesktop.portal.Desktop

@@ -224,6 +224,36 @@ export const SettingsWindow: React.FC = () => {
   
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const activeFilePathRef = useRef<string>("");
+  const [isAppImageEnv, setIsAppImageEnv] = useState(false);
+  const [isIntegrated, setIsIntegrated] = useState(false);
+  const [integrating, setIntegrating] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+      invoke<boolean>("is_appimage").then((res) => {
+        setIsAppImageEnv(res);
+        if (res) {
+          invoke<boolean>("is_appimage_integrated").then(setIsIntegrated).catch(() => void 0);
+        }
+      }).catch(() => void 0);
+    }
+  }, []);
+
+  const handleIntegrateAppImage = async () => {
+    setIntegrating(true);
+    try {
+      if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+        await invoke("integrate_appimage");
+        const status = await invoke<boolean>("is_appimage_integrated");
+        setIsIntegrated(status);
+      }
+    } catch {
+      void 0;
+    } finally {
+      setIntegrating(false);
+    }
+  };
+
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -727,6 +757,28 @@ interface LanguageInfoItem {
                   </Select>
                 )}
               </Box>
+              {isAppImageEnv && (
+                <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mt: 1.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 0.5, display: 'block' }}>
+                    DESKTOP INTEGRATION
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: 11, color: 'text.secondary', mb: 1.25, lineHeight: 1.4 }}>
+                    Add ActOne Screenplay to your system application menu and associate it with .fountain and .actone screenplay files.
+                  </Typography>
+                  <Button
+                    variant={isIntegrated ? "outlined" : "contained"}
+                    color={isIntegrated ? "inherit" : "primary"}
+                    fullWidth
+                    size="small"
+                    disabled={integrating || isIntegrated}
+                    onClick={handleIntegrateAppImage}
+                    startIcon={isIntegrated ? <CheckIcon sx={{ fontSize: 16 }} /> : undefined}
+                    sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
+                  >
+                    {integrating ? "Integrating..." : isIntegrated ? "Integrated System-Wide" : "Integrate into System"}
+                  </Button>
+                </Box>
+              )}
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mt: 1.5 }}>
                 <Button
                   variant="outlined"
