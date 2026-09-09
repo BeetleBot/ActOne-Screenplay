@@ -763,7 +763,7 @@ interface LanguageInfoItem {
                     DESKTOP INTEGRATION
                   </Typography>
                   <Typography variant="body2" sx={{ fontSize: 11, color: 'text.secondary', mb: 1.25, lineHeight: 1.4 }}>
-                    Add ActOne Screenplay to your system application menu and associate it with .fountain and .actone screenplay files.
+                    Install ActOne Screenplay to your application menu, enable terminal command 'actone', and set as default for .fountain and .actone screenplay files.
                   </Typography>
                   <Button
                     variant={isIntegrated ? "outlined" : "contained"}
@@ -775,7 +775,7 @@ interface LanguageInfoItem {
                     startIcon={isIntegrated ? <CheckIcon sx={{ fontSize: 16 }} /> : undefined}
                     sx={{ fontSize: '11px', textTransform: 'none', borderRadius: '6px' }}
                   >
-                    {integrating ? "Integrating..." : isIntegrated ? "Integrated System-Wide" : "Integrate into System"}
+                    {integrating ? "Installing..." : isIntegrated ? "Installed" : "Install"}
                   </Button>
                 </Box>
               )}

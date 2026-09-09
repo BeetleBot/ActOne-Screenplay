@@ -1,0 +1,253 @@
+name: Build AppImage
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version override (e.g. 0.4.23). Leave empty to use package.json version.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-appimage:
+    name: Build Universal AppImage
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libssl-dev \
+            libfontconfig1-dev \
+            pkg-config \
+            file
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Determine version
+        id: ver
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(node -p "require('./package.json').version" 2>/dev/null || grep -oP '"version":\s*"\K[^"]+' package.json | head -1)
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building AppImage for version: $VERSION"
+
+      - name: Build frontend and compile Tauri binary
+        run: npm run tauri build -- --no-bundle
+
+      - name: Package AppImage
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          BUILD_DIR="target/appimage-build"
+          APPDIR="$BUILD_DIR/AppDir"
+          ARTIFACTS_DIR="Release/artifacts"
+
+          rm -rf "$BUILD_DIR"
+          mkdir -p "$APPDIR/usr/bin"
+          mkdir -p "$APPDIR/usr/share/applications"
+          mkdir -p "$APPDIR/usr/share/mime/packages"
+          mkdir -p "$APPDIR/usr/share/icons/hicolor/128x128/apps"
+          mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+          mkdir -p "$APPDIR/usr/share/icons/hicolor/64x64/mimetypes"
+          mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/mimetypes"
+
+          cp src-tauri/target/release/actone "$APPDIR/usr/bin/actone"
+          chmod +x "$APPDIR/usr/bin/actone"
+
+          cp assets/linux/actone.desktop "$APPDIR/usr/share/applications/actone.desktop"
+          cp assets/linux/actone.desktop "$APPDIR/actone.desktop"
+          cp assets/linux/actone.xml "$APPDIR/usr/share/mime/packages/actone.xml"
+
+          if [ -f src-tauri/icons/128x128.png ]; then
+            cp src-tauri/icons/128x128.png "$APPDIR/usr/share/icons/hicolor/128x128/apps/actone.png"
+          fi
+          if [ -f src-tauri/icons/128x128@2x.png ]; then
+            cp src-tauri/icons/128x128@2x.png "$APPDIR/usr/share/icons/hicolor/256x256/apps/actone.png"
+          fi
+
+          for mime in text-vnd.fountain application-vnd.actone.bundle application-vnd.actone.theme; do
+            if [ -f "src-tauri/icons/${mime}_64x64.png" ]; then
+              cp "src-tauri/icons/${mime}_64x64.png" "$APPDIR/usr/share/icons/hicolor/64x64/mimetypes/${mime}.png"
+            fi
+            if [ -f "src-tauri/icons/${mime}_256x256.png" ]; then
+              cp "src-tauri/icons/${mime}_256x256.png" "$APPDIR/usr/share/icons/hicolor/256x256/mimetypes/${mime}.png"
+            fi
+          done
+
+          cp src-tauri/icons/128x128.png "$APPDIR/actone.png"
+          cp src-tauri/icons/128x128.png "$APPDIR/.DirIcon"
+
+          cat << 'APP_RUN' > "$APPDIR/AppRun"
+          #!/bin/sh
+          SELF=$(readlink -f "$0")
+          HERE=${SELF%/*}
+
+          DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+          BIN_DIR="${HOME}/.local/bin"
+          DESKTOP_FILE="$DATA_HOME/applications/actone.desktop"
+          CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+          PROMPT_RECORD="$CONFIG_HOME/actone/dont_ask_integration.flag"
+          INSTALLED_APPIMAGE="$BIN_DIR/ActOne-Screenplay.AppImage"
+          COMMAND_SYMLINK="$BIN_DIR/actone"
+
+          integrate_desktop() {
+              mkdir -p "$DATA_HOME/applications" "$DATA_HOME/mime/packages" "$CONFIG_HOME/actone" "$BIN_DIR"
+              mkdir -p "$DATA_HOME/icons/hicolor/128x128/apps"
+              mkdir -p "$DATA_HOME/icons/hicolor/256x256/apps"
+              mkdir -p "$DATA_HOME/icons/hicolor/64x64/mimetypes"
+              mkdir -p "$DATA_HOME/icons/hicolor/256x256/mimetypes"
+
+              SOURCE_APPIMAGE="${APPIMAGE:-$SELF}"
+              if [ "$SOURCE_APPIMAGE" != "$INSTALLED_APPIMAGE" ]; then
+                  cp -f "$SOURCE_APPIMAGE" "$INSTALLED_APPIMAGE"
+                  chmod +x "$INSTALLED_APPIMAGE"
+              fi
+
+              ln -sf "$INSTALLED_APPIMAGE" "$COMMAND_SYMLINK"
+
+              cp "${HERE}/usr/share/icons/hicolor/128x128/apps/actone.png" "$DATA_HOME/icons/hicolor/128x128/apps/actone.png" 2>/dev/null || cp "${HERE}/actone.png" "$DATA_HOME/icons/hicolor/128x128/apps/actone.png"
+              if [ -f "${HERE}/usr/share/icons/hicolor/256x256/apps/actone.png" ]; then
+                  cp "${HERE}/usr/share/icons/hicolor/256x256/apps/actone.png" "$DATA_HOME/icons/hicolor/256x256/apps/actone.png"
+              fi
+
+              for mime in text-vnd.fountain application-vnd.actone.bundle application-vnd.actone.theme; do
+                  if [ -f "${HERE}/usr/share/icons/hicolor/64x64/mimetypes/${mime}.png" ]; then
+                      cp "${HERE}/usr/share/icons/hicolor/64x64/mimetypes/${mime}.png" "$DATA_HOME/icons/hicolor/64x64/mimetypes/${mime}.png"
+                  fi
+                  if [ -f "${HERE}/usr/share/icons/hicolor/256x256/mimetypes/${mime}.png" ]; then
+                      cp "${HERE}/usr/share/icons/hicolor/256x256/mimetypes/${mime}.png" "$DATA_HOME/icons/hicolor/256x256/mimetypes/${mime}.png"
+                  fi
+              done
+
+              cp "${HERE}/usr/share/mime/packages/actone.xml" "$DATA_HOME/mime/packages/actone.xml"
+
+              sed -e "s|^Exec=.*|Exec=\"${INSTALLED_APPIMAGE}\" %f|" \
+                  -e "s|^Icon=.*|Icon=actone|" \
+                  "${HERE}/actone.desktop" > "$DESKTOP_FILE"
+              chmod +x "$DESKTOP_FILE"
+
+              if command -v update-mime-database >/dev/null 2>&1; then
+                  update-mime-database "$DATA_HOME/mime" >/dev/null 2>&1 || true
+              fi
+              if command -v update-desktop-database >/dev/null 2>&1; then
+                  update-desktop-database "$DATA_HOME/applications" >/dev/null 2>&1 || true
+              fi
+              if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+                  gtk-update-icon-cache -f -t "$DATA_HOME/icons/hicolor" >/dev/null 2>&1 || true
+              fi
+              if command -v xdg-mime >/dev/null 2>&1; then
+                  xdg-mime default actone.desktop text/vnd.fountain >/dev/null 2>&1 || true
+                  xdg-mime default actone.desktop application/vnd.actone.bundle >/dev/null 2>&1 || true
+                  xdg-mime default actone.desktop application/vnd.actone.theme >/dev/null 2>&1 || true
+              fi
+          }
+
+          uninstall_desktop() {
+              echo "Uninstalling ActOne Screenplay..."
+              rm -f "$DESKTOP_FILE"
+              rm -f "$DATA_HOME/mime/packages/actone.xml"
+              rm -f "$DATA_HOME/icons/hicolor/128x128/apps/actone.png"
+              rm -f "$DATA_HOME/icons/hicolor/256x256/apps/actone.png"
+              for mime in text-vnd.fountain application-vnd.actone.bundle application-vnd.actone.theme; do
+                  rm -f "$DATA_HOME/icons/hicolor/64x64/mimetypes/${mime}.png"
+                  rm -f "$DATA_HOME/icons/hicolor/256x256/mimetypes/${mime}.png"
+              done
+              rm -f "$COMMAND_SYMLINK"
+              rm -f "$INSTALLED_APPIMAGE"
+              rm -f "$PROMPT_RECORD"
+
+              if command -v update-mime-database >/dev/null 2>&1; then
+                  update-mime-database "$DATA_HOME/mime" >/dev/null 2>&1 || true
+              fi
+              if command -v update-desktop-database >/dev/null 2>&1; then
+                  update-desktop-database "$DATA_HOME/applications" >/dev/null 2>&1 || true
+              fi
+              if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+                  gtk-update-icon-cache -f -t "$DATA_HOME/icons/hicolor" >/dev/null 2>&1 || true
+              fi
+              echo "ActOne Screenplay has been uninstalled."
+          }
+
+          if [ "${1:-}" = "uninstall" ] || [ "${1:-}" = "--uninstall" ]; then
+              uninstall_desktop
+              exit 0
+          fi
+
+          if [ "${1:-}" = "--install-integration" ] || [ "${1:-}" = "install" ]; then
+              integrate_desktop
+              echo "ActOne Screenplay has been installed to $INSTALLED_APPIMAGE and command 'actone' is linked in $BIN_DIR."
+              exit 0
+          fi
+
+          if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+              if [ ! -f "$PROMPT_RECORD" ] && [ ! -f "$DESKTOP_FILE" ]; then
+                  if command -v zenity >/dev/null 2>&1; then
+                      OUTPUT=$(zenity --question \
+                          --title="ActOne Screenplay" \
+                          --window-icon="${HERE}/actone.png" \
+                          --text="Would you like to install ActOne Screenplay on your system?\n\nThis adds it to your application menu, enables terminal command 'actone', installs file icons, and sets it as the default app for .fountain and .actone screenplay files." \
+                          --ok-label="Install" \
+                          --cancel-label="Run Once (Ask Later)" \
+                          --extra-button="Don't Ask Again" \
+                          --width=450 2>&1) || true
+                      RET=$?
+
+                      if [ "$RET" -eq 0 ]; then
+                          integrate_desktop
+                      elif [ "$OUTPUT" = "Don't Ask Again" ]; then
+                          mkdir -p "$CONFIG_HOME/actone"
+                          touch "$PROMPT_RECORD"
+                      fi
+                  fi
+              fi
+          fi
+
+          export PATH="${HERE}/usr/bin:${PATH}"
+          export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+          exec "${HERE}/usr/bin/actone" "$@"
+          APP_RUN
+          chmod +x "$APPDIR/AppRun"
+
+          APPIMAGETOOL="$BUILD_DIR/appimagetool"
+          curl -fsSL -o "$APPIMAGETOOL" "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x "$APPIMAGETOOL"
+
+          mkdir -p "$ARTIFACTS_DIR"
+          APPIMAGE_NAME="ActOne-Screenplay-x86_64-$VERSION.AppImage"
+          OUTPUT_FILE="$ARTIFACTS_DIR/$APPIMAGE_NAME"
+
+          echo "==> Generating AppImage: $APPIMAGE_NAME"
+          ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR" "$OUTPUT_FILE"
+
+      - name: Upload AppImage artifact (Downloadable)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ActOne-Screenplay-AppImage-x86_64
+          path: Release/artifacts/ActOne-Screenplay-x86_64-*.AppImage
+          retention-days: 30
