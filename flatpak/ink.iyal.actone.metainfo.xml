@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>ink.iyal.actone</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <name>ActOne</name>
+  <summary>Modern screenplay and script writing application</summary>
+  <description>
+    <p>
+      ActOne Screenplay is a native plain-text Fountain screenplay editor for Windows and Linux. Featuring live syntax formatting, outline tree navigation, X-Ray analytics, automatic revision snapshots, and local Muse AI assistant.
+    </p>
+    <p>
+      ActOne supports standard Fountain markup, index cards, customizable visual themes, ambient focus soundscapes, and production-ready PDF, FDX, and Fade In exports.
+    </p>
+  </description>
+  <launchable type="desktop-id">ink.iyal.actone.desktop</launchable>
+  <url type="homepage">https://iyal.ink</url>
+  <url type="help">https://iyal.ink</url>
+  <developer id="ink.iyal">
+    <name>Iyal Inc</name>
+  </developer>
+  <provides>
+    <mediatype>text/vnd.fountain</mediatype>
+    <mediatype>application/vnd.actone.bundle</mediatype>
+    <mediatype>application/vnd.actone.theme</mediatype>
+  </provides>
+  <releases>
+    <release version="0.4.23" date="2026-09-09" />
+  </releases>
+  <content_rating type="oars-1.1" />
+</component>

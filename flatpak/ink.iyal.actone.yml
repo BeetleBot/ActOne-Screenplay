@@ -1,0 +1,43 @@
+app-id: ink.iyal.actone
+runtime: org.gnome.Platform
+runtime-version: '48'
+sdk: org.gnome.Sdk
+command: actone
+
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --share=ipc
+  - --share=network
+  - --device=dri
+  - --filesystem=host-fonts
+  - --filesystem=xdg-documents
+  - --talk-name=org.freedesktop.portal.FileChooser
+  - --talk-name=org.freedesktop.portal.Desktop
+
+modules:
+  - name: actone
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 actone /app/bin/actone
+      - install -Dm644 ink.iyal.actone.desktop /app/share/applications/ink.iyal.actone.desktop
+      - install -Dm644 ink.iyal.actone.metainfo.xml /app/share/metainfo/ink.iyal.actone.metainfo.xml
+      - install -Dm644 actone.xml /app/share/mime/packages/ink.iyal.actone.xml
+      - install -Dm644 icon_128.png /app/share/icons/hicolor/128x128/apps/ink.iyal.actone.png
+      - install -Dm644 icon_256.png /app/share/icons/hicolor/256x256/apps/ink.iyal.actone.png || true
+    sources:
+      - type: file
+        path: src-tauri/target/release/actone
+      - type: file
+        path: flatpak/ink.iyal.actone.desktop
+      - type: file
+        path: flatpak/ink.iyal.actone.metainfo.xml
+      - type: file
+        path: assets/linux/actone.xml
+      - type: file
+        path: src-tauri/icons/128x128.png
+        dest-filename: icon_128.png
+      - type: file
+        path: src-tauri/icons/128x128@2x.png
+        dest-filename: icon_256.png

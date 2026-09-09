@@ -1,0 +1,116 @@
+name: Build Flatpak
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version override (e.g. 0.4.23). Leave empty to use package.json version.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-source:
+    name: Build from Source (Tauri)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libssl-dev \
+            libfontconfig1-dev \
+            pkg-config
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend and compile Tauri binary from source
+        run: npm run tauri build
+
+      - name: Upload compiled binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: actone-binary
+          path: src-tauri/target/release/actone
+          retention-days: 1
+
+  package-flatpak:
+    name: Package Flatpak Bundle (.flatpak)
+    needs: build-source
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
+      options: --privileged
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+
+      - name: Configure Git Safe Directory
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory /__w/ActOne-Screenplay/ActOne-Screenplay
+
+      - name: Download compiled Tauri binary
+        uses: actions/download-artifact@v4
+        with:
+          name: actone-binary
+          path: src-tauri/target/release/
+
+      - name: Make binary executable
+        run: chmod +x src-tauri/target/release/actone
+
+      - name: Determine version
+        id: ver
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(node -p "require('./package.json').version" 2>/dev/null || grep -oP '"version":\s*"\K[^"]+' package.json | head -1)
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building Flatpak for version: $VERSION"
+
+      - name: Build Flatpak bundle
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: ink.iyal.actone.flatpak
+          manifest-path: flatpak/ink.iyal.actone.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          upload-artifact: false
+
+      - name: Prepare bundle with versioned name
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          cp ink.iyal.actone.flatpak "ActOne-x86_64-${VERSION}.flatpak"
+
+      - name: Upload Flatpak artifact (Downloadable)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ActOne-Flatpak-x86_64
+          path: ActOne-x86_64-*.flatpak
+          retention-days: 30
