@@ -41,13 +41,13 @@ describe("AiModelPalette", () => {
     localStorage.clear();
   });
 
-  it("keeps actions at the top without adding a heading", async () => {
+  it("renders disable option at top and configure models at bottom of the list", async () => {
     render(<AiModelPalette isOpen onClose={vi.fn()} />);
 
     expect(screen.queryByText("Choose model")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Disable AI" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Configure Models…" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Disable AI/i })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("llama3.2")).toBeInTheDocument());
+    expect(screen.getByRole("option", { name: /Configure Models…/i })).toBeInTheDocument();
   });
 
   it("filters models and selects the filtered result with Enter", async () => {
@@ -78,32 +78,38 @@ describe("AiModelPalette", () => {
     await user.click(input);
     await user.keyboard("{End}{Enter}");
 
-    expect(setPromptConfigField).toHaveBeenCalledWith("provider", "ollama");
-    expect(setPromptConfigField).toHaveBeenCalledWith("model", "mistral-nemo");
+    expect(openSettingsWindow).toHaveBeenCalledWith("muse");
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("closes with Escape and opens settings from the top action", async () => {
+  it("closes with Escape", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<AiModelPalette isOpen onClose={onClose} />);
 
+    const input = screen.getByRole("textbox", { name: "Filter AI models" });
+    await user.click(input);
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalled();
+  });
 
-    await user.click(screen.getByRole("button", { name: "Configure Models…" }));
+  it("opens settings when clicking configure", async () => {
+    const user = userEvent.setup();
+    render(<AiModelPalette isOpen onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole("option", { name: /Configure Models…/i }));
     expect(openSettingsWindow).toHaveBeenCalledWith("muse");
   });
 
-  it("restores editor focus and scrolls cursor into view when closing", async () => {
+  it("restores editor focus safely without jumping viewport when closing", async () => {
     vi.useFakeTimers();
     const { rerender } = render(<AiModelPalette isOpen onClose={vi.fn()} />);
 
     rerender(<AiModelPalette isOpen={false} onClose={vi.fn()} />);
     vi.advanceTimersByTime(100);
 
-    expect(mockContentDOMFocus).toHaveBeenCalled();
-    expect(mockEditorDispatch).toHaveBeenCalled();
+    expect(mockContentDOMFocus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(mockEditorDispatch).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
 });

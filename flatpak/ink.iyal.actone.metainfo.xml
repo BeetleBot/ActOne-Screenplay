@@ -25,6 +25,7 @@
     <mediatype>application/vnd.actone.theme</mediatype>
   </provides>
   <releases>
+    <release version="0.4.24" date="2026-09-09" />
     <release version="0.4.23" date="2026-09-09" />
   </releases>
   <content_rating type="oars-1.1" />

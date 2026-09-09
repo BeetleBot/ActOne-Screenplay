@@ -13,7 +13,6 @@ import {
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { EditorView } from "@codemirror/view";
 import {
   usePromptConfig,
   setPromptConfigField,
@@ -85,11 +84,6 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
           if (!document.activeElement || document.activeElement === document.body) {
             editorView.contentDOM.focus({ preventScroll: true });
           }
-          try {
-            editorView.dispatch({
-              effects: EditorView.scrollIntoView(editorView.state.selection.main.head, { y: "center" }),
-            });
-          } catch {}
         }, 50);
       }
     }
@@ -132,10 +126,20 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
     badge?: string;
     icon: React.ReactNode;
     active?: boolean;
+    isAction?: boolean;
     action: () => void;
   }
 
-  const modelItems: Item[] = [];
+  const modelItems: Item[] = [
+    {
+      id: "disable",
+      label: "Disable AI",
+      icon: <CloseIcon sx={{ fontSize: 13 }} />,
+      active: isDisabled,
+      isAction: true,
+      action: handleDisable,
+    },
+  ];
 
   for (const m of ollamaModels) {
     const isActive =
@@ -144,7 +148,7 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
       id: `ollama:${m}`,
       label: m,
       badge: "local",
-      icon: <MuseIcon sx={{ fontSize: 14 }} />,
+      icon: <MuseIcon sx={{ fontSize: 13 }} />,
       active: isActive,
       action: () => handleSelectOllama(m),
     });
@@ -160,27 +164,19 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
       id: `api:${e.id}`,
       label: e.name || e.model || "Unnamed API",
       badge: "API",
-      icon: <AutoAwesomeIcon sx={{ fontSize: 14 }} />,
+      icon: <AutoAwesomeIcon sx={{ fontSize: 13 }} />,
       active: isActive,
       action: () => handleSelectApi(e.id),
     });
   }
 
-  const actionItems: Item[] = [
-    {
-      id: "disable",
-      label: "Disable AI",
-      icon: <CloseIcon sx={{ fontSize: 13 }} />,
-      active: isDisabled,
-      action: handleDisable,
-    },
-    {
-      id: "configure",
-      label: "Configure Models…",
-      icon: <SettingsIcon sx={{ fontSize: 13 }} />,
-      action: handleConfigure,
-    },
-  ];
+  modelItems.push({
+    id: "configure",
+    label: "Configure Models…",
+    icon: <SettingsIcon sx={{ fontSize: 13 }} />,
+    isAction: true,
+    action: handleConfigure,
+  });
 
   const filteredModelItems = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
@@ -218,36 +214,49 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
   }, [search]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!navigationItems.length) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-      return;
-    }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((p) => (p + 1) % navigationItems.length);
+      e.stopPropagation();
+      if (navigationItems.length) {
+        setSelectedIndex((p) => (p + 1) % navigationItems.length);
+      }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((p) => (p - 1 + navigationItems.length) % navigationItems.length);
+      e.stopPropagation();
+      if (navigationItems.length) {
+        setSelectedIndex((p) => (p - 1 + navigationItems.length) % navigationItems.length);
+      }
     } else if (e.key === "Enter") {
       e.preventDefault();
-      navigationItems[selectedIndex]?.action();
+      e.stopPropagation();
+      if (navigationItems[selectedIndex]) {
+        navigationItems[selectedIndex].action();
+      }
     } else if (e.key === "Home") {
       e.preventDefault();
+      e.stopPropagation();
       setSelectedIndex(0);
     } else if (e.key === "End") {
       e.preventDefault();
-      setSelectedIndex(navigationItems.length - 1);
+      e.stopPropagation();
+      if (navigationItems.length) {
+        setSelectedIndex(navigationItems.length - 1);
+      }
     } else if (e.key === "PageDown") {
       e.preventDefault();
-      setSelectedIndex((p) => Math.min(navigationItems.length - 1, p + 5));
+      e.stopPropagation();
+      if (navigationItems.length) {
+        setSelectedIndex((p) => Math.min(navigationItems.length - 1, p + 5));
+      }
     } else if (e.key === "PageUp") {
       e.preventDefault();
-      setSelectedIndex((p) => Math.max(0, p - 5));
+      e.stopPropagation();
+      if (navigationItems.length) {
+        setSelectedIndex((p) => Math.max(0, p - 5));
+      }
     } else if (e.key === "Escape") {
       e.preventDefault();
+      e.stopPropagation();
       onClose();
     }
   };
@@ -260,17 +269,18 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
       onClose={onClose}
       hideBackdrop
       disableScrollLock
+      disableAutoFocus
+      disableRestoreFocus
       sx={{ zIndex: 1000001 }}
       slotProps={{
         paper: {
-          onKeyDown: handleKeyDown,
           role: "dialog",
           "aria-label": "Choose AI model",
           sx: {
             zoom: `${appScale}%`,
-            width: 360,
-            maxWidth: "90vw",
-            borderRadius: "14px",
+            width: 320,
+            maxWidth: "85vw",
+            borderRadius: "12px",
             overflow: "hidden",
             backgroundColor: theme.palette.background.paper + (isDark ? "e6" : "f2"),
             backdropFilter: "blur(20px)",
@@ -278,63 +288,26 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
             border: "1px solid",
             borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)",
             boxShadow: isDark
-              ? "0 20px 48px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08)"
-              : "0 20px 48px -8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04)",
+              ? "0 16px 40px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08)"
+              : "0 16px 40px -8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04)",
             backgroundImage: "none",
             color: theme.palette.text.primary,
             cursor: "none",
-            p: 1.25,
+            p: 1,
             pb: 0,
           },
         },
       }}
     >
-      <Box sx={{ display: "flex", gap: 0.75, mb: 1 }}>
-        {actionItems.map((it) => {
-          return (
-            <ListItemButton
-              key={it.id}
-              role="button"
-              aria-pressed={it.active}
-              onClick={it.action}
-              sx={{
-                minWidth: 0,
-                flex: 1,
-                minHeight: 30,
-                justifyContent: "center",
-                gap: 0.6,
-                px: 0.75,
-                py: 0.4,
-                borderRadius: "6px",
-                color: it.active && it.id === "disable" ? "error.main" : "text.secondary",
-                bgcolor: it.active && it.id === "disable"
-                  ? alpha(theme.palette.error.main, 0.1)
-                  : alpha(theme.palette.text.primary, 0.035),
-                "&:hover": {
-                  bgcolor: it.active && it.id === "disable"
-                    ? alpha(theme.palette.error.main, 0.16)
-                    : alpha(theme.palette.primary.main, 0.1),
-                },
-              }}
-            >
-              {it.icon}
-              <Typography sx={{ fontSize: "0.7rem", fontWeight: 600, whiteSpace: "nowrap" }}>
-                {it.label}
-              </Typography>
-            </ListItemButton>
-          );
-        })}
-      </Box>
-
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 0.75,
-          px: 1.2,
-          minHeight: 36,
+          gap: 0.6,
+          px: 1,
+          minHeight: 32,
           border: "none",
-          borderRadius: "8px",
+          borderRadius: "7px",
           bgcolor: isDark ? `${theme.palette.text.primary}12` : `${theme.palette.text.primary}08`,
           "&:focus-within": {
             boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
@@ -342,7 +315,7 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
         }}
       >
         <Box sx={{ display: "flex", color: "var(--button-color, primary.main)" }}>
-          <SearchIcon sx={{ fontSize: 18 }} />
+          <SearchIcon sx={{ fontSize: 16 }} />
         </Box>
         <InputBase
           inputRef={searchRef}
@@ -358,7 +331,7 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
           sx={{
             flex: 1,
             minWidth: 0,
-            fontSize: "0.84rem",
+            fontSize: "0.8rem",
             color: "text.primary",
             "& input::placeholder": { color: "text.secondary", opacity: 0.6 },
           }}
