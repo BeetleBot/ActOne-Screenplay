@@ -13,7 +13,6 @@ import {
   ListItemText,
 } from "@mui/material";
 import { CloseIcon, SearchIcon } from "./Icons";
-import { useUI } from "../context";
 
 interface SystemFontPickerProps {
   open: boolean;
@@ -28,7 +27,6 @@ export const SystemFontPicker: React.FC<SystemFontPickerProps> = ({
   onSelect,
   onClose,
 }) => {
-  const { appScale } = useUI();
   const [allFonts, setAllFonts] = useState<string[]>([]);
   const [search, setSearch] = useState("");
 
@@ -57,7 +55,7 @@ export const SystemFontPicker: React.FC<SystemFontPickerProps> = ({
       maxWidth="sm"
       disableScrollLock
       transitionDuration={200}
-      sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px', maxHeight: '85vh', overflow: 'hidden' } }}
+      sx={{ '& .MuiDialog-paper': { borderRadius: '12px', maxHeight: '85vh', overflow: 'hidden' } }}
     >
       <DialogTitle sx={{ m: 0, px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>

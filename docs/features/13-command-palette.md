@@ -33,7 +33,6 @@ The palette groups commands by category (defined in `src/components/CommandPalet
 - Enable / Disable Zen Mode
 - Enable / Disable Focus Mode
 - Zoom In / Zoom Out / Reset Editor Scale
-- Reset Interface Scale
 - Show / Hide Fountain Markup
 - Open X-Ray Analysis...
 - Show Snapshots

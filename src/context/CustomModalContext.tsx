@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from "react";
-import { useUI } from "./UIContext";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -42,7 +41,6 @@ export const useCustomModal = () => {
 };
 
 export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { appScale } = useUI();
   // Confirm state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmOpts, setConfirmOpts] = useState<ConfirmOptions | null>(null);
@@ -129,7 +127,6 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
               border: "1px solid",
               borderColor: "divider",
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.45)",
-              zoom: `${appScale}%`,
             },
           },
         }}
@@ -175,7 +172,6 @@ export const CustomModalProvider: React.FC<{ children: React.ReactNode }> = ({ c
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.45)",
               border: "1px solid",
               borderColor: "divider",
-              zoom: `${appScale}%`,
             },
           },
         }}

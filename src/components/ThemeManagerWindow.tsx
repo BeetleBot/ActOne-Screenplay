@@ -243,7 +243,6 @@ function validateTheme(data: any): data is Omit<CustomTheme, 'id'> {
 
 export const ThemeManagerWindow: React.FC = () => {
   const [themeId, setThemeId] = useState(() => getInitialThemeId());
-  const [appScale, setAppScale] = useState(100);
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => getInitialCustomThemes());
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
   const [showForm, setShowForm] = useState(false);
@@ -262,12 +261,10 @@ export const ThemeManagerWindow: React.FC = () => {
   useEffect(() => {
     initThemeEngine().then((state) => {
       setThemeId(state.themeId);
-      setAppScale(state.appScale);
       try { setCustomThemes(JSON.parse(state.customThemes)); } catch { setCustomThemes([]); }
     });
     return onThemeChanged((state) => {
       setThemeId(state.themeId);
-      setAppScale(state.appScale);
       try { setCustomThemes(JSON.parse(state.customThemes)); } catch { setCustomThemes([]); }
     });
   }, []);
@@ -411,7 +408,7 @@ export const ThemeManagerWindow: React.FC = () => {
   })();
 
   const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
-  const muiTheme = createActOneTheme(currentThemeConfig, appScale);
+  const muiTheme = createActOneTheme(currentThemeConfig, 100);
 
   const handleClose = async () => {
     try {

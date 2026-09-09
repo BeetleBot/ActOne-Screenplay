@@ -14,9 +14,6 @@ interface ShortcutActions {
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
-  interfaceScaleIn?: () => void;
-  interfaceScaleOut?: () => void;
-  resetInterfaceScale?: () => void;
   closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
@@ -194,31 +191,19 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
 
       if (key === "=" || key === "+" || e.code === "Equal") {
         e.preventDefault();
-        if (alt) {
-          actionsRef.current.interfaceScaleIn?.();
-        } else {
-          actionsRef.current.zoomIn();
-        }
+        actionsRef.current.zoomIn();
         return;
       }
 
       if (key === "-" || key === "_" || e.code === "Minus") {
         e.preventDefault();
-        if (alt) {
-          actionsRef.current.interfaceScaleOut?.();
-        } else {
-          actionsRef.current.zoomOut();
-        }
+        actionsRef.current.zoomOut();
         return;
       }
 
       if (key === "0" || key === ")" || e.code === "Digit0") {
         e.preventDefault();
-        if (alt) {
-          actionsRef.current.resetInterfaceScale?.();
-        } else {
-          actionsRef.current.resetZoom();
-        }
+        actionsRef.current.resetZoom();
         return;
       }
     };

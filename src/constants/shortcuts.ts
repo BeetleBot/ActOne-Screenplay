@@ -144,9 +144,6 @@ export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   { id: "zoom-in", label: "Zoom In Editor", category: "Zoom & Interface", keys: ["Ctrl", "="] },
   { id: "zoom-out", label: "Zoom Out Editor", category: "Zoom & Interface", keys: ["Ctrl", "-"] },
   { id: "reset-zoom", label: "Reset Editor Zoom", category: "Zoom & Interface", keys: ["Ctrl", "0"] },
-  { id: "scale-ui-in", label: "Scale App UI In", category: "Zoom & Interface", keys: ["Ctrl", "Alt", "="] },
-  { id: "scale-ui-out", label: "Scale App UI Out", category: "Zoom & Interface", keys: ["Ctrl", "Alt", "-"] },
-  { id: "reset-scale-ui", label: "Reset App UI Scale", category: "Zoom & Interface", keys: ["Ctrl", "Alt", "0"] },
 ];
 
 export function generateShortcutsHelpMarkdown(): string {

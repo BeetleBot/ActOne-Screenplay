@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { useFile, useUI } from "../context";
+import { useFile } from "../context";
 import { TitleBar } from "./TitleBar";
 
 import {
@@ -130,7 +130,6 @@ const inputSx = {
 
 export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onClose }) => {
   const { rawText, setRawText } = useFile();
-  const { appScale } = useUI();
 
   const initial = useMemo(() => extractTitlePage(rawText), [rawText]);
   const [activeTab, setActiveTab] = useState<number>(0);
@@ -164,7 +163,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
   const hasTitlePage = Object.values(fields).some(v => v.trim().length > 0);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px', overflow: 'hidden' } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { borderRadius: '12px', overflow: 'hidden' } }}>
       <DialogTitle sx={{ m: 0, p: 0 }}>
         <TitleBar
           title="Title Page Editor"
@@ -196,7 +195,7 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
         </ToggleButtonGroup>
       </Box>
 
-      <DialogContent dividers sx={{ px: 2, py: 1.5, maxHeight: `${(65 * 100) / appScale}vh` }}>
+      <DialogContent dividers sx={{ px: 2, py: 1.5, maxHeight: "65vh" }}>
         {activeTab === 0 && (
           <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1.25, display: 'block' }}>

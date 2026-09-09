@@ -36,7 +36,6 @@ ActOne registers custom CodeMirror keymaps in addition to the default editor key
 | `Alt+S` | Snapshots | Toggle Snapshots sidebar panel |
 | `Ctrl+,` | Settings | Open Settings window |
 | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Zoom in/out/reset | Adjust editor font scale |
-| `Ctrl+Alt+=` / `Ctrl+Alt+-` / `Ctrl+Alt+0` | Scale UI in/out/reset | Adjust overall interface scale |
 | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` | Formatting | Bold, italic, underline selection |
 
 ### Disabled State Behavior

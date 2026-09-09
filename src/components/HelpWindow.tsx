@@ -80,7 +80,6 @@ const openFountainGuide = () => {
 
 export const HelpWindow: React.FC = () => {
   const [themeId, setThemeId] = useState(() => getInitialThemeId());
-  const [appScale, setAppScale] = useState(100);
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>(() => getInitialCustomThemes());
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
 
@@ -94,12 +93,10 @@ export const HelpWindow: React.FC = () => {
   useEffect(() => {
     initThemeEngine().then((state) => {
       setThemeId(state.themeId);
-      setAppScale(state.appScale);
       try { setCustomThemes(JSON.parse(state.customThemes)); } catch { setCustomThemes([]); }
     });
     return onThemeChanged((state) => {
       setThemeId(state.themeId);
-      setAppScale(state.appScale);
       try { setCustomThemes(JSON.parse(state.customThemes)); } catch { setCustomThemes([]); }
     });
   }, []);
@@ -109,8 +106,8 @@ export const HelpWindow: React.FC = () => {
     [themeId, customThemes, systemDark]
   );
   const muiTheme = useMemo(
-    () => createActOneTheme(currentThemeConfig, appScale),
-    [currentThemeConfig, appScale]
+    () => createActOneTheme(currentThemeConfig, 100),
+    [currentThemeConfig]
   );
 
   useEffect(() => {

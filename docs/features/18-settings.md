@@ -9,7 +9,6 @@ Settings is a standalone Tauri window with five **pill-segmented tabs** (General
 | Setting | Options | Description |
 |---------|---------|-------------|
 | Paper Size | `letter` / `a4` | Default paper size used by the editor and export pipeline |
-| Interface Scale | 75%-300% in steps of 5 | Scales the application interface |
 | Icon Style | `duotone` / `fill` / `regular` | Select interface icon style (Dual Tone, Solid, Stroke) |
 | Auto-save | On or off | Automatically saves files with an existing path |
 | Auto-save interval | 30 seconds, 1 minute, 2 minutes, or 5 minutes | Interval used when auto-save is enabled |

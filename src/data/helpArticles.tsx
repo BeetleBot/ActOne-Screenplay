@@ -28,7 +28,7 @@ export const articles: HelpArticle[] = [
 **Footer actions:**
 - **Help** — Opens the Help Wiki window with searchable documentation.
 - **Discord** — Opens the ActOne Discord invite in your default browser.
-- **Quick Settings** (gear icon) — Open the settings sidebar to switch themes, adjust scale, and more.
+- **Quick Settings** (gear icon) — Open the settings sidebar to switch themes, adjust zoom, and more.
 - **App version** — Build number, useful when reporting bugs.
 
 The Welcome screen also shows a rotating random writing quote from famous screenwriters. The top bar is draggable (window drag) and hosts a subtle Update pill when an update is available.`,
@@ -94,7 +94,7 @@ Importing other screenplay formats is separate from opening an existing project.
 
 **Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, and Enable/Disable Spellcheck.
 
-**View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Reset Interface Scale, Show/Hide Fountain Markup, Open X-Ray Analysis, Show Snapshots.
+**View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Show/Hide Fountain Markup, Open X-Ray Analysis, Show Snapshots.
 
 **Format:** Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers.
 
@@ -1009,9 +1009,8 @@ The header background is transparent; window controls on the right are slim \`28
     content: `The gear icon at the bottom of the Activity Bar opens the Quick Settings popover with:
 
 **View & Scale**
-- Interface Scale slider (75%–300%, step 5).
 - Editor Zoom slider (50%–400%, step 10).
-- "Reset View" button (sets zoom + scale to 100%).
+- "Reset Zoom" button (resets editor zoom to 100%).
 
 **Editor Preferences**
 - Typewriter Mode toggle.
@@ -1238,7 +1237,7 @@ The Quick Guide is generated from the same registries used by the application, s
     relatedIds: ["theme-manager", "auto-save", "font-paper", "interface-scale", "editor-settings"],
     content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings window. It has five **pill-segmented tabs** (General / Editor / Spellcheck / Snapshots / Muse) — the tab bar is a soft inset track (\`8px\` radius) with the active tab shown as a paper pill with shadow.
 
-**General:** Paper Size (Letter / A4), Interface Scale (75%–300%), Icon Style, Auto-Save toggle and interval, and Reset Settings. Each section is a card (\`8px\` radius, subtle border).
+**General:** Paper Size (Letter / A4), Icon Style, Auto-Save toggle and interval, and Reset Settings. Each section is a card (\`8px\` radius, subtle border).
 
 **Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Auto (CONT'D), Hide Fountain Markup, Line Focus, and Syntax Colors.
 
@@ -1316,11 +1315,18 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
   },
   {
     id: "interface-scale",
-    title: "Interface Scale",
+    title: "Interface Scaling & Display DPI",
     category: "Settings & Customization",
-    tags: ["scale", "ui size", "zoom", "dpi"],
+    tags: ["scale", "ui size", "zoom", "dpi", "display"],
     relatedIds: ["settings-overview", "editor-zoom"],
-    content: `Adjust the entire UI from **75% to 300%** in 5% increments via the Quick Settings slider or Settings → General → Interface Scale. All dialogs and modals respect this scaling so they never overflow on small screens. Persisted in localStorage.`,
+    content: `Interface scaling is handled automatically by your operating system's native display scaling and DPI settings, ensuring crisp text rendering, flawless caret placement, and artifact-free UI scaling across Windows and Linux (WebKitGTK / Flatpak).
+
+To scale screenplay text inside the editor canvas independently of the UI chrome, use **Editor Zoom**:
+- Press <kbd>Ctrl+=</kbd> to zoom in
+- Press <kbd>Ctrl+-</kbd> to zoom out
+- Press <kbd>Ctrl+0</kbd> to reset zoom to 100%
+
+You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon in the Activity Bar) or under **Settings → Editor**.`,
   },
   {
     id: "auto-save",

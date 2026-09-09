@@ -5,11 +5,14 @@
 ### Added / Improved
 - 📦 **Flatpak Distribution Support & GitHub Actions CI** – Added complete Flatpak packaging manifest (`flatpak/ink.iyal.actone.yml`), `.desktop` launcher, and AppStream metainfo XML. Automated headless build pipelines in GitHub Actions with Flatpak artifact uploads directly to GitHub Releases.
 - 🐧 **Universal Linux AppImage with System Desktop Integration** – Built custom AppImage packaging tooling with automatic desktop integration on first run (creating application menu shortcuts, MIME file associations for `.fountain` and `.actone`, and high-res icon deployment), plus explicit manual integration and removal controls directly within App Settings.
-- 📐 **WebKitGTK & Flatpak Editor Selection Alignment** – Resolved selection highlight offset and caret positioning drift on WebKitGTK / Flatpak runtimes by eliminating native CSS `zoom` and switching to responsive CSS variables (`--app-scale-factor` and font-size scaling) across the editor workspace canvas.
 - 🎛️ **Streamlined AI Model Switcher Palette** – Compacted the `AiModelPalette` modal into a lightweight quick-picker (`320px`), embedded "Disable AI" at the top of the list, moved "Configure Models…" to the bottom of the list, and optimized key navigation.
 - 📚 **Linux Desktop Integration Help Documentation** – Added a dedicated help article covering installation, Flatpak sandbox permissions, system font sharing, and desktop integration troubleshooting.
 
+### Removed
+- **Removed Custom In-App Interface Scaling (`appScale`) & CSS `zoom`**: Removed custom interface scaling (`Ctrl+Alt+=`, `Ctrl+Alt+-`, `Ctrl+Alt+0` and the Settings slider) which relied on CSS `zoom`. This permanently resolves the cursor placement drift and text selection misalignment on WebKitGTK / Flatpak runtimes, eliminates texture blurriness, and relies on native OS-level display scaling (which works seamlessly across all platforms) alongside the dedicated **Editor Zoom** (`Ctrl+=` / `Ctrl+-`) for screenplay text scaling.
+
 ### Fixed
+- 📐 **WebKitGTK & Flatpak Editor Selection Alignment** – Resolved selection highlight offset and caret positioning drift on WebKitGTK / Flatpak runtimes by removing artificial interface zoom transforms and aligning editor layout dimensions cleanly with native system pixel ratios.
 - 📜 **Editor Viewport Scroll Jump on Palette Toggle** – Fixed a bug where opening or closing the AI Model Palette would forcibly scroll the editor viewport back to the top by removing aggressive `scrollIntoView` effects and configuring non-intrusive focus management.
 - ⌨️ **Palette Double-Jump Keyboard Navigation** – Fixed duplicate keydown event bubbling between the modal container and search input that caused arrow key navigation to skip list items.
 - 🔤 **Flatpak Font Access Permissions** – Configured sandbox filesystem access to user font directories (`~/.local/share/fonts:ro`, `~/.fonts:ro`, `/usr/local/share/fonts:ro`) so custom installed screenplay fonts render seamlessly in Flatpak.

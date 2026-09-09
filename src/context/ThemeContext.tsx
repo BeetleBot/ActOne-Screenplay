@@ -133,9 +133,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPrefs({ [STORAGE_KEYS.APP_ICON]: mode === "dark" ? "dark" : "light" });
   }, [mode]);
 
-  const { appScale, fountainColorsEnabled } = useUI();
+  const { fountainColorsEnabled } = useUI();
 
-  const muiTheme = useMemo(() => createActOneTheme(currentThemeConfig, appScale, fountainColorsEnabled), [currentThemeConfig, appScale, fountainColorsEnabled]);
+  const muiTheme = useMemo(() => createActOneTheme(currentThemeConfig, 100, fountainColorsEnabled), [currentThemeConfig, fountainColorsEnabled]);
 
   const addCustomTheme = useCallback((
     name: string,

@@ -81,10 +81,6 @@ All theme surfaces adhere to the warm Craft radius + shadow scale from `DESIGN.m
 
 The theme also controls per-element syntax highlighting colors. When `fountainColorsEnabled` is toggled off, all text appears in the base text color (for a distraction-free writing experience).
 
-## UI Scale
-
-**Quick Settings → Interface Scale** slider adjusts the overall UI size (75%–300%, step 5).
-
 ## Interactive Tour
 
 The Theming tour (in Tutorials) opens the Bee Detective sample in the main window

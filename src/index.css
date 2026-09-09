@@ -932,11 +932,6 @@ button:active,
 .skeleton-line.character { height: 16px; width: 35%; margin-top: 16px; margin-left: 120px; }
 .skeleton-line.parenthetical { height: 14px; width: 40%; margin-left: 100px; }
 .skeleton-line.dialogue { height: 16px; width: 70%; margin-left: 60px; }
-.MuiPopover-paper > *,
-.MuiTooltip-tooltip,
-.MuiAutocomplete-paper > * {
-  zoom: var(--app-scale, 100%);
-}
 /* Status bar animations */
 
 @keyframes spin {

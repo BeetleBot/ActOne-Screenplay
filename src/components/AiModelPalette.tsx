@@ -45,7 +45,7 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
   const config = usePromptConfig();
   const apiList = useApiList();
   const { openSettingsWindow } = useModalWindows();
-  const { setActiveRightPane, appScale = 100 } = useUI();
+  const { setActiveRightPane } = useUI();
   const { editorView } = useEditor();
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -277,7 +277,6 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
           role: "dialog",
           "aria-label": "Choose AI model",
           sx: {
-            zoom: `${appScale}%`,
             width: 320,
             maxWidth: "85vw",
             borderRadius: "12px",

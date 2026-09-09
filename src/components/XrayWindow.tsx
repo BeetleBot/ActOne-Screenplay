@@ -1273,7 +1273,7 @@ export const XrayWindow: React.FC = () => {
       <MuiThemeProvider theme={muiTheme}>
         <CssBaseline />
         <WindowResizeHandles />
-        <Box sx={{ height: "100vh", overflow: "hidden", zoom: `${appScale}%` }}>
+        <Box sx={{ height: "100vh", overflow: "hidden" }}>
           <XrayContent data={data} onClose={handleClose} timedOut={timedOut} />
         </Box>
       </MuiThemeProvider>

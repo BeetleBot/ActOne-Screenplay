@@ -21,7 +21,6 @@ describe("UIContext", () => {
     expect(result.current.typewriterMode).toBe(true);
     expect(result.current.activeTab).toBe("outline");
     expect(result.current.zoomLevel).toBe(100);
-    expect(result.current.appScale).toBe(100);
     expect(result.current.autocompleteEnabled).toBe(true);
     expect(result.current.smartQuotesEnabled).toBe(false);
     expect(result.current.matchParenthesesEnabled).toBe(true);
@@ -61,14 +60,6 @@ describe("UIContext", () => {
     expect(result.current.zoomLevel).toBe(400);
     act(() => result.current.setZoomLevel(150));
     expect(result.current.zoomLevel).toBe(150);
-  });
-
-  it("sets app scale clamped between 50-300", () => {
-    const { result } = renderHook(() => useUI(), { wrapper });
-    act(() => result.current.setAppScale(25));
-    expect(result.current.appScale).toBe(50);
-    act(() => result.current.setAppScale(350));
-    expect(result.current.appScale).toBe(300);
   });
 
   it("toggles settings and persists them", () => {

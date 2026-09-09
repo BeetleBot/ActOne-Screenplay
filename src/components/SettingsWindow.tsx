@@ -700,21 +700,6 @@ interface LanguageInfoItem {
                     <MenuItem value="a4">A4</MenuItem>
                 </Select>
                 </Box>
-                <Box sx={{ mt: 1.25 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Interface Scale</Typography>
-                    <Typography variant="body2" color="primary" sx={{ fontWeight: 600, fontSize: 12 }}>{appScale}%</Typography>
-                  </Box>
-                  <Slider
-                    size="small"
-                    min={75}
-                    max={300}
-                    step={5}
-                    value={appScale}
-                    onChange={(_, val) => { const v = val as number; setAppScale(v); localStorage.setItem(STORAGE_KEYS.APP_SCALE, String(v)); emitUpdate(STORAGE_KEYS.APP_SCALE, v); engineSetTheme({ appScale: v }); }}
-                    aria-label="Interface Scale"
-                  />
-                </Box>
               </Box>
               <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.5, mb: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: 'text.secondary', letterSpacing: 0.5, mb: 1, display: 'block' }}>
@@ -1379,7 +1364,7 @@ interface LanguageInfoItem {
                 fullWidth
                 maxWidth="sm"
                 disableScrollLock
-                sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
+                sx={{ '& .MuiDialog-paper': { borderRadius: "12px" } }}
               >
                 <DialogTitle sx={{ m: 0, p: 0 }}>
                   <TitleBar
@@ -1501,7 +1486,7 @@ interface LanguageInfoItem {
                 fullWidth
                 maxWidth="sm"
                 disableScrollLock
-                sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
+                sx={{ '& .MuiDialog-paper': { borderRadius: "12px" } }}
               >
                 <DialogTitle sx={{ m: 0, p: 0 }}>
                   <TitleBar
@@ -1807,7 +1792,7 @@ interface LanguageInfoItem {
         onClose={() => setDownloadDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
+        sx={{ '& .MuiDialog-paper': { borderRadius: "12px" } }}
       >
         <DialogTitle sx={{ m: 0, p: 0 }}>
           <TitleBar
@@ -1893,7 +1878,7 @@ interface LanguageInfoItem {
         open={clearWordsDialogOpen}
         onClose={() => setClearWordsDialogOpen(false)}
         maxWidth="xs"
-        sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}
+        sx={{ '& .MuiDialog-paper': { borderRadius: "12px" } }}
       >
         <DialogTitle sx={{ fontSize: 14, fontWeight: 600 }}>
           Clear Custom Dictionary
@@ -1913,7 +1898,7 @@ interface LanguageInfoItem {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="xs" sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: "12px" } }}>
+      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="xs" sx={{ '& .MuiDialog-paper': { borderRadius: "12px" } }}>
         <DialogTitle sx={{ fontSize: 14, fontWeight: 600 }}>
           Reset Settings
         </DialogTitle>

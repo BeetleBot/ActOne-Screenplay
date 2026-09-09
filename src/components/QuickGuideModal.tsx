@@ -18,7 +18,6 @@ import {
 } from "./Icons";
 import { TitleBar } from "./TitleBar";
 import { SHORTCUTS_REGISTRY, SYNTAX_REGISTRY, type ShortcutItem } from "../constants/shortcuts";
-import { useUI } from "../context";
 interface QuickGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -32,7 +31,6 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
 }) => {
   const muiTheme = useMuiTheme();
   const isDark = muiTheme.palette.mode === "dark";
-  const { appScale } = useUI();
   const [tab, setTab] = useState<"shortcuts" | "syntax">("shortcuts");
   const [search, setSearch] = useState("");
 
@@ -87,7 +85,6 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
       transitionDuration={200}
       sx={{
         "& .MuiDialog-paper": {
-          zoom: `${appScale}%`,
           borderRadius: '12px',
           height: 560,
           maxHeight: "90vh",

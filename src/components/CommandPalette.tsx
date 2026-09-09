@@ -139,8 +139,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     setIsZenMode,
     zoomLevel,
     setZoomLevel,
-    appScale,
-    setAppScale,
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
     lineFocusEnabled,
@@ -298,7 +296,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-zoom-in", name: "Zoom In", category: "View", icon: <ZoomInIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+=", action: () => { setZoomLevel(zoomLevel + 10); onClose(); } },
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
     { id: "view-zoom-reset", name: `Reset Editor Scale (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
-    { id: "view-interface-scale-reset", name: `Reset Interface Scale (${appScale}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, action: () => { setAppScale(100); onClose(); } },
     ...(!isProse ? [
       { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
       { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
@@ -443,7 +440,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
       slotProps={{
         paper: {
           sx: {
-            zoom: `${appScale}%`,
             borderRadius: "14px",
             overflow: "hidden",
             backgroundColor: theme.palette.background.paper + (isDark ? "e6" : "f2"),
@@ -499,7 +495,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         />
       </Box>
 
-      <DialogContent dividers sx={{ p: 0, maxHeight: `${(50 * 100) / appScale}vh` }} ref={containerRef}>
+      <DialogContent dividers sx={{ p: 0, maxHeight: "50vh" }} ref={containerRef}>
         {flatGroupedList.length === 0 ? (
           <Typography color="text.secondary" sx={{ p: 3, textAlign: "center", fontSize: 13 }}>
             No results found for "{search}"

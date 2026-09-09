@@ -31,7 +31,7 @@ The Help Guide provides **88 searchable articles across 10 categories**. The art
    - Export Overview, PDF Export, Fountain Export, FDX (Final Draft) Export
 
 9. **Settings & Customization** (7 articles)
-   - Settings Overview, Spellcheck, Theme Manager & Custom Themes, Font & Paper Settings, Interface Scale, Auto-Save, Editor Preferences
+   - Settings Overview, Spellcheck, Theme Manager & Custom Themes, Font & Paper Settings, Interface Scaling & Display DPI, Auto-Save, Editor Preferences
 
 10. **AI & Muse** (4 articles) *(new in v0.4.0)*
     - Muse AI Assistant Overview, Configuring Muse (AI Providers), Using Muse Chat, Muse Tools and Screenplay Actions

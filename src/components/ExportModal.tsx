@@ -214,7 +214,7 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   const { rawText, isBundle, activeScriptName, filePath, updateSettings, parsedDoc, scripts, activeScriptIndex } = useFile();
-  const { fontFamily, paperSize, appScale } = useUI();
+  const { fontFamily, paperSize } = useUI();
 
   const activeScript = scripts?.[activeScriptIndex ?? 0];
   const isProse = isProseScript(activeScript, filePath);
@@ -924,7 +924,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       transitionDuration={200}
       sx={{
         '& .MuiDialog-paper': {
-          zoom: `${appScale}%`,
           borderRadius: "12px",
           height: 520,
           maxHeight: '90vh',

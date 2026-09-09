@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useFile, useEditor, useUI } from "../context";
+import { useFile, useEditor } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { AddCircleIcon, RestartAltIcon, ArrowCircleDownIcon } from "./Icons";
 import { TitleBar } from "./TitleBar";
@@ -34,7 +34,6 @@ interface StructureImportModalProps {
 export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onClose }) => {
   const { rawText, setRawText, files, activeFileId, filePath, addScript } = useFile();
   const { editorView } = useEditor();
-  const { appScale } = useUI();
   const [structures, setStructures] = useState<Structure[]>([]);
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,7 +140,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { zoom: `${appScale}%`, borderRadius: '12px', overflow: 'hidden' } }}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs" disableScrollLock transitionDuration={200} sx={{ '& .MuiDialog-paper': { borderRadius: '12px', overflow: 'hidden' } }}>
       <DialogTitle sx={{ m: 0, p: 0 }}>
         <TitleBar
           title="Screenplay Structures"

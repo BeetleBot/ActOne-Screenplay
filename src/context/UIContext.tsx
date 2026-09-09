@@ -3,7 +3,6 @@ import { STORAGE_KEYS } from "../constants";
 import { DEFAULTS } from "../constants/defaults";
 import { logger } from "../utils/logger";
 import { setPrefs } from "../theme/AppPrefsEngine";
-import { setThemeState } from "../theme/ThemeEngine";
 import { getTauriWindow } from "../utils/window";
 
 export interface TranslationJob {
@@ -54,8 +53,6 @@ export interface UIContextProps {
   setActiveTab: (tab: string) => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
-  appScale: number;
-  setAppScale: (scale: number) => void;
   autocompleteEnabled: boolean;
   setAutocompleteEnabled: (enabled: boolean) => void;
   smartQuotesEnabled: boolean;
@@ -135,9 +132,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         case STORAGE_KEYS.ZOOM_LEVEL:
           setZoomLevelState(parseInt(strVal, 10) || 100);
           break;
-        case STORAGE_KEYS.APP_SCALE:
-          setAppScaleState(parseInt(strVal, 10) || 100);
-          break;
         case STORAGE_KEYS.AUTOCOMPLETE_ENABLED:
           setAutocompleteEnabledState(strVal !== "false");
           break;
@@ -199,11 +193,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const saved = localStorage.getItem(STORAGE_KEYS.ZOOM_LEVEL);
     const parsed = saved ? parseInt(saved, 10) : Number(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL]);
     return isNaN(parsed) ? Number(DEFAULTS[STORAGE_KEYS.ZOOM_LEVEL]) : parsed;
-  });
-  const [appScale, setAppScaleState] = useState<number>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.APP_SCALE);
-    const parsed = saved ? parseInt(saved, 10) : Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]);
-    return isNaN(parsed) ? Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]) : parsed;
   });
 
   const [autocompleteEnabled, setAutocompleteEnabledState] = useState<boolean>(() => {
@@ -345,11 +334,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return 360;
   });
 
-
-  useEffect(() => {
-    document.documentElement.style.setProperty("--app-scale", `${appScale}%`);
-  }, [appScale]);
-
   const [isZenMode, setIsZenModeState] = useState(false);
 
   const [lineFocusEnabled, setLineFocusEnabledState] = useState<boolean>(() => {
@@ -425,14 +409,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setZoomLevelState(newZoom);
     localStorage.setItem(STORAGE_KEYS.ZOOM_LEVEL, String(newZoom));
     broadcastSetting(STORAGE_KEYS.ZOOM_LEVEL, String(newZoom));
-  };
-
-  const setAppScale = (scale: number) => {
-    const newScale = Math.min(Math.max(scale, 50), 300);
-    setAppScaleState(newScale);
-    localStorage.setItem(STORAGE_KEYS.APP_SCALE, String(newScale));
-    broadcastSetting(STORAGE_KEYS.APP_SCALE, String(newScale));
-    setThemeState({ appScale: newScale });
   };
 
   const setIsZenMode = (enabled: boolean) => {
@@ -556,8 +532,6 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setActiveTab,
         zoomLevel,
         setZoomLevel,
-        appScale,
-        setAppScale,
         autocompleteEnabled,
         setAutocompleteEnabled,
         smartQuotesEnabled,

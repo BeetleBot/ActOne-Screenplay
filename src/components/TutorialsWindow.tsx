@@ -148,7 +148,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
   return (
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
-      <Box sx={{ height: isModal ? "100%" : "100vh", display: "flex", flexDirection: "column", zoom: `${appScale}%`, overflow: "hidden" }}>
+      <Box sx={{ height: isModal ? "100%" : "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TitleBar
           title="Tutorials"
           isModal={isModal}

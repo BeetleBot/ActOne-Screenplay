@@ -192,8 +192,6 @@ function AppInner() {
   const {
     zoomLevel,
     setZoomLevel,
-    appScale,
-    setAppScale,
     isZenMode,
     setIsZenMode,
     activeRightPane,
@@ -240,9 +238,6 @@ function AppInner() {
     zoomIn: useCallback(() => setZoomLevel(zoomLevel + 10), [zoomLevel, setZoomLevel]),
     zoomOut: useCallback(() => setZoomLevel(zoomLevel - 10), [zoomLevel, setZoomLevel]),
     resetZoom: useCallback(() => setZoomLevel(100), [setZoomLevel]),
-    interfaceScaleIn: useCallback(() => setAppScale(appScale + 10), [appScale, setAppScale]),
-    interfaceScaleOut: useCallback(() => setAppScale(appScale - 10), [appScale, setAppScale]),
-    resetInterfaceScale: useCallback(() => setAppScale(100), [setAppScale]),
     openSettings: useCallback(() => { modalWindows.openSettingsWindow(); }, [modalWindows]),
     openHelp: useCallback(() => { modalWindows.openHelpWindow(); }, [modalWindows]),
     openShortcuts: useCallback(() => setShowShortcutsModal(true), [setShowShortcutsModal]),
@@ -804,7 +799,7 @@ function AppInner() {
   return (
     <>
       <WindowResizeHandles />
-      <div style={{ height: "100%", display: "flex", flexDirection: "column", zoom: `${appScale}%` }}>
+      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
         {!isModalWindow && (
           <ErrorBoundary name="main-layout">
             <MainLayout
