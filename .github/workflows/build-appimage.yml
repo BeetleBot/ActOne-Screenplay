@@ -9,7 +9,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-appimage:
@@ -251,3 +251,14 @@ jobs:
           name: ActOne-Screenplay-AppImage-x86_64
           path: Release/artifacts/ActOne-Screenplay-x86_64-*.AppImage
           retention-days: 30
+
+      - name: Upload AppImage to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          TAG_NAME="v$VERSION"
+          APPIMAGE_FILE=$(ls Release/artifacts/ActOne-Screenplay-x86_64-*.AppImage | head -1)
+
+          gh release create "$TAG_NAME" "$APPIMAGE_FILE" --title "ActOne Screenplay v$VERSION" --notes "ActOne Screenplay v$VERSION Release assets." || \
+          gh release upload "$TAG_NAME" "$APPIMAGE_FILE" --clobber

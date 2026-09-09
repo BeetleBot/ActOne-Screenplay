@@ -9,7 +9,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-source:
@@ -118,3 +118,14 @@ jobs:
           name: ActOne-Screenplay-Flatpak-x86_64
           path: ActOne-Screenplay-x86_64-*.flatpak
           retention-days: 30
+
+      - name: Upload Flatpak to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          TAG_NAME="v$VERSION"
+          FLATPAK_FILE=$(ls ActOne-Screenplay-x86_64-*.flatpak | head -1)
+
+          gh release create "$TAG_NAME" "$FLATPAK_FILE" --title "ActOne Screenplay v$VERSION" --notes "ActOne Screenplay v$VERSION Release assets." || \
+          gh release upload "$TAG_NAME" "$FLATPAK_FILE" --clobber
