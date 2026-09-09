@@ -52,7 +52,7 @@ jobs:
           }
           $TAG_NAME = "v$VERSION"
           
-          gh release create $TAG_NAME (Get-Item Release\artifacts\*) --title "ActOne v$VERSION" --notes "ActOne v$VERSION Release assets."
+          gh release create $TAG_NAME (Get-Item Release\artifacts\*) --title "ActOne Screenplay v$VERSION" --notes "ActOne Screenplay v$VERSION Release assets."
           if ($LASTEXITCODE -ne 0) {
             gh release upload $TAG_NAME (Get-Item Release\artifacts\*) --clobber
           }

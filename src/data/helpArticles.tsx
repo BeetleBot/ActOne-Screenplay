@@ -1331,6 +1331,31 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
     content: `Toggle auto-save in Settings → General and choose an interval: 30 seconds, 1 minute, 2 minutes, or 5 minutes. Default: 1 minute. Only triggers for files that have an existing file path and have unsaved changes. Uses \`setInterval\` with refs to avoid stale closures.`,
   },
   {
+    id: "desktop-integration-linux",
+    title: "Linux Desktop Integration (AppImage)",
+    category: "Settings & Customization",
+    tags: ["linux", "appimage", "install", "uninstall", "fountain", "integration", "default app"],
+    relatedIds: ["settings-overview", "editor-settings"],
+    content: `When running ActOne Screenplay as an AppImage on Linux, you can integrate the app with your system for a native desktop experience:
+
+### Features Installed:
+- **Application Menu**: Adds ActOne Screenplay to your desktop environment's launcher with high-resolution icons.
+- **File Associations**: Automatically registers and sets ActOne Screenplay as the default application for \`.fountain\`, \`.actone\`, and \`.actheme\` files.
+- **Terminal Command**: Links the \`actone\` CLI command in \`~/.local/bin/actone\` so you can launch files directly from terminal (e.g. \`actone script.fountain\`).
+- **Permanent Location**: Saves the application binary safely to \`~/.local/bin/ActOne-Screenplay.AppImage\` so cleaning your Downloads folder won't break shortcuts.
+
+### How to Install:
+1. Double-click the AppImage on initial launch and select **"Install"**.
+2. Or open **Settings** (<kbd>Ctrl+,</kbd>) → **General** tab and click **"Install"** under Desktop Integration.
+
+### How to Uninstall:
+Open your terminal and run:
+\`\`\`bash
+actone uninstall
+\`\`\`
+This removes the desktop shortcut, icons, MIME registrations, and installed binaries cleanly.`,
+  },
+  {
     id: "editor-settings",
     title: "Editor Preferences",
     category: "Settings & Customization",

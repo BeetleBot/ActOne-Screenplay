@@ -164,14 +164,14 @@ export function sanitizeForeignGlyphs(text: string, targetLang: string): string 
   if (langLower.includes("tamil")) {
     return text
       .replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, "")
-      .replace(/[\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]/g, "");
+      .replace(/[\u0C00-\u0D7F]/gu, "");
   }
 
   // If target is Telugu, strip CJK and other non-Telugu scripts
   if (langLower.includes("telugu")) {
     return text
       .replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, "")
-      .replace(/[\u0B80-\u0BFF\u0C80-\u0CFF\u0D00-\u0D7F]/g, "");
+      .replace(/[\u0B80-\u0BFF\u0C80-\u0D7F]/gu, "");
   }
 
   // If target is not Chinese/Japanese/Korean, strip accidental CJK characters
