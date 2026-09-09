@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=ActOne
+Name=ActOne Screenplay
 GenericName=Screenplay Editor
 Comment=A modern screenwriting application
 Exec=actone %f

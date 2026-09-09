@@ -1,5 +1,5 @@
 {
-  "productName": "ActOne",
+  "productName": "ActOne Screenplay",
   "version": "0.4.23",
   "identifier": "com.writeup.actone",
   "build": {
@@ -12,7 +12,7 @@
     "windows": [
       {
         "label": "welcome",
-        "title": "ActOne",
+        "title": "ActOne Screenplay",
         "width": 800,
         "height": 620,
         "center": true,

@@ -28,16 +28,14 @@ modules:
       - install -Dm644 icon_256.png /app/share/icons/hicolor/256x256/apps/ink.iyal.actone.png || true
     sources:
       - type: file
-        path: src-tauri/target/release/actone
+        path: actone
       - type: file
-        path: flatpak/ink.iyal.actone.desktop
+        path: ink.iyal.actone.desktop
       - type: file
-        path: flatpak/ink.iyal.actone.metainfo.xml
+        path: ink.iyal.actone.metainfo.xml
       - type: file
-        path: assets/linux/actone.xml
+        path: actone.xml
       - type: file
-        path: src-tauri/icons/128x128.png
-        dest-filename: icon_128.png
+        path: icon_128.png
       - type: file
-        path: src-tauri/icons/128x128@2x.png
-        dest-filename: icon_256.png
+        path: icon_256.png

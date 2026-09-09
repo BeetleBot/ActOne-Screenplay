@@ -14,7 +14,7 @@
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>ActOne</DisplayName>
+    <DisplayName>ActOne Screenplay</DisplayName>
     <PublisherDisplayName>iyal.ink</PublisherDisplayName>
     <Description>A modern screenwriting application</Description>
     <Logo>Assets\StoreLogo.png</Logo>
@@ -33,7 +33,7 @@
       Executable="actone.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="ActOne"
+        DisplayName="ActOne Screenplay"
         Description="A modern screenwriting application"
         BackgroundColor="#1a1b26"
         Square150x150Logo="Assets\Square150x150Logo.png"

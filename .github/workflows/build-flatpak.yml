@@ -80,10 +80,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: actone-binary
-          path: src-tauri/target/release/
+          path: flatpak/
 
-      - name: Make binary executable
-        run: chmod +x src-tauri/target/release/actone
+      - name: Make binary executable and stage flatpak resources
+        run: |
+          chmod +x flatpak/actone
+          cp assets/linux/actone.xml flatpak/
+          cp src-tauri/icons/128x128.png flatpak/icon_128.png
+          cp src-tauri/icons/128x128@2x.png flatpak/icon_256.png
 
       - name: Determine version
         id: ver
@@ -106,11 +110,11 @@ jobs:
       - name: Prepare bundle with versioned name
         run: |
           VERSION="${{ steps.ver.outputs.version }}"
-          cp ink.iyal.actone.flatpak "ActOne-x86_64-${VERSION}.flatpak"
+          cp ink.iyal.actone.flatpak "ActOne-Screenplay-x86_64-${VERSION}.flatpak"
 
       - name: Upload Flatpak artifact (Downloadable)
         uses: actions/upload-artifact@v4
         with:
-          name: ActOne-Flatpak-x86_64
-          path: ActOne-x86_64-*.flatpak
+          name: ActOne-Screenplay-Flatpak-x86_64
+          path: ActOne-Screenplay-x86_64-*.flatpak
           retention-days: 30
