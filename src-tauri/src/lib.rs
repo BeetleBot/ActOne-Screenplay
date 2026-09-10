@@ -183,9 +183,12 @@ fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(
 
     fs::write(&temp_path, data).map_err(|e| e.to_string())?;
 
-    if let Err(e) = fs::rename(&temp_path, path) {
+    if let Err(rename_err) = fs::rename(&temp_path, path) {
+        if let Err(copy_err) = fs::copy(&temp_path, path) {
+            let _ = fs::remove_file(&temp_path);
+            return Err(format!("rename failed ({rename_err}), copy failed ({copy_err})"));
+        }
         let _ = fs::remove_file(&temp_path);
-        return Err(e.to_string());
     }
 
     Ok(())
@@ -1266,4 +1269,24 @@ fn reload_window(app: tauri::AppHandle, label: String) -> Result<(), String> {
 #[tauri::command]
 fn restart_app(app: tauri::AppHandle) {
     app.restart();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_write_file_atomically() {
+        let temp_dir = std::env::temp_dir();
+        let target = temp_dir.join("actone_test_write_atomic.txt");
+        let content = "atomic write content";
+
+        let result = write_file_atomically(&target, content);
+        assert!(result.is_ok());
+
+        let read_back = fs::read_to_string(&target).unwrap();
+        let _ = fs::remove_file(&target);
+
+        assert_eq!(read_back, content);
+    }
 }

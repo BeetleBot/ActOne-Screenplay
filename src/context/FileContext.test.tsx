@@ -281,6 +281,68 @@ describe("FileContext", () => {
     expect(result.current.rawText).toBe(initialProseContent);
     expect(result.current.recentFiles.some(f => f.path.includes(".snapshots"))).toBe(false);
   });
+
+  it("syncs active script edits when calling saveFileAs for an actone project", async () => {
+    let savedBytes: number[] | null = null;
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === "save_file_dialog") {
+        return "C:/scripts/renamed.actone";
+      }
+      if (cmd === "save_file_binary") {
+        const payload = args as { bytes: number[] };
+        savedBytes = payload.bytes;
+        return null;
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      result.current.newFile("Initial script content");
+    });
+
+    await act(async () => {
+      result.current.setRawText("Updated text before Save As");
+    });
+
+    await act(async () => {
+      await result.current.saveFileAs();
+    });
+
+    expect(savedBytes).not.toBeNull();
+    const unpacked = unpackActoneBundle(new Uint8Array(savedBytes!));
+    expect(unpacked.scripts[0].content).toBe("Updated text before Save As");
+  });
+
+  it("does not overwrite active tab when background parse completes for an older tab", async () => {
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      result.current.newFile("Tab 1 original");
+    });
+    const tab1Id = result.current.activeFileId;
+
+    await act(async () => {
+      result.current.setRawText("Tab 1 fast typing");
+    });
+
+    await act(async () => {
+      result.current.newFile("Tab 2 fresh");
+    });
+    const tab2Id = result.current.activeFileId;
+    expect(tab2Id).not.toBe(tab1Id);
+
+    // Wait for the 100ms debounce
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 150));
+    });
+
+    expect(result.current.activeFileId).toBe(tab2Id);
+    expect(result.current.rawText).toBe("Tab 2 fresh");
+    const tab1 = result.current.files.find(f => f.id === tab1Id);
+    expect(tab1?.rawText).toBe("Tab 1 fast typing");
+  });
 });
 
 

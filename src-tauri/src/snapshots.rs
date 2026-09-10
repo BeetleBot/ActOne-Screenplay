@@ -329,26 +329,49 @@ pub fn open_folder(path: String) -> Result<(), String> {
         let _ = fs::create_dir_all(p);
     }
 
+    let canonical = dunce::canonicalize(p).map_err(|e| e.to_string())?;
+    if !canonical.is_dir() {
+        return Err("Target path is not a directory".to_string());
+    }
+
     #[cfg(target_os = "windows")]
     {
         std::process::Command::new("explorer")
-            .arg(&path)
+            .arg(&canonical)
             .spawn()
             .map_err(|e| e.to_string())?;
     }
     #[cfg(target_os = "macos")]
     {
         std::process::Command::new("open")
-            .arg(&path)
+            .arg(&canonical)
             .spawn()
             .map_err(|e| e.to_string())?;
     }
     #[cfg(target_os = "linux")]
     {
         std::process::Command::new("xdg-open")
-            .arg(&path)
+            .arg(&canonical)
             .spawn()
             .map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_open_folder_rejects_file() {
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("actone_test_non_directory.txt");
+        let _ = fs::write(&file_path, "sample content");
+
+        let result = open_folder(file_path.to_string_lossy().to_string());
+        let _ = fs::remove_file(&file_path);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Target path is not a directory");
+    }
 }
