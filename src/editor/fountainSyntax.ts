@@ -1,6 +1,6 @@
 import { EditorState, StateField, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import { FountainDocument } from "../parser";
+import { FountainDocument, stripFormatting } from "../parser";
 
 export const updateParsedDocEffect = StateEffect.define<FountainDocument>();
 
@@ -74,40 +74,43 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
       inTitlePage = false;
     }
 
+    const clean = stripFormatting(trimmed) || trimmed;
+
     if (trimmed === "") {
       type = LINE_EMPTY;
-    } else if (/^#{1,2}(?:[^#]|$)/.test(trimmed)) {
+    } else if (/^#{1,2}(?:[^#]|$)/.test(clean)) {
       type = LINE_SECTION;
-    } else if (trimmed.startsWith("==") && !trimmed.startsWith("===") && trimmed.indexOf("==", 2) !== -1) {
-      type = LINE_ACTION;
-    } else if (trimmed.startsWith("=")) {
-      type = (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") ? LINE_PAGEBREAK : LINE_SYNOPSE;
-    } else if (trimmed.startsWith("~")) {
+    } else if (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") {
+      type = LINE_PAGEBREAK;
+    } else if (trimmed.startsWith("=") && !trimmed.startsWith("==")) {
+      type = LINE_SYNOPSE;
+    } else if (clean.startsWith("~")) {
       type = LINE_LYRICS;
-    } else if (trimmed.startsWith(".") && !trimmed.startsWith("..")) {
+    } else if (clean.startsWith(".") && !clean.startsWith("..")) {
       type = LINE_HEADING;
-    } else if (trimmed.startsWith(">") && trimmed.endsWith("<")) {
+    } else if (clean.startsWith(">") && clean.endsWith("<")) {
       type = LINE_CENTERED;
-    } else if (trimmed.startsWith(">")) {
+    } else if (clean.startsWith(">")) {
       type = LINE_TRANSITION;
-    } else if (trimmed.startsWith("!!")) {
+    } else if (clean.startsWith("!!")) {
       type = LINE_SHOT;
-    } else if (trimmed.startsWith("!")) {
+    } else if (clean.startsWith("!") && !clean.startsWith("!!")) {
       type = LINE_ACTION;
-    } else if (trimmed.startsWith("@")) {
+    } else if (clean.startsWith("@")) {
       type = LINE_CHARACTER;
     } else {
       const prevType = i > 1 ? types[i - 2] : LINE_EMPTY;
-      const isAllCaps = trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
-      const isHeadingPrefix = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(trimmed);
+      const uppercaseClean = clean.toUpperCase();
+      const isAllCaps = clean === uppercaseClean && /[A-Z]/.test(clean);
+      const isHeadingPrefix = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(clean);
 
       if (isHeadingPrefix && (prevType === LINE_EMPTY || i === 1)) {
         type = LINE_HEADING;
-      } else if (isAllCaps && trimmed.endsWith("TO:") && (prevType === LINE_EMPTY || i === 1)) {
+      } else if (isAllCaps && clean.endsWith("TO:") && (prevType === LINE_EMPTY || i === 1)) {
         type = LINE_TRANSITION;
       } else if (isAllCaps && (prevType === LINE_EMPTY || i === 1)) {
-        type = trimmed.endsWith("^") ? LINE_DUAL_CHARACTER : LINE_CHARACTER;
-      } else if (trimmed.startsWith("(") && trimmed.endsWith(")") && isDialogueType(prevType)) {
+        type = clean.endsWith("^") ? LINE_DUAL_CHARACTER : LINE_CHARACTER;
+      } else if (clean.startsWith("(") && clean.endsWith(")") && isDialogueType(prevType)) {
         type = isDualType(prevType) ? LINE_DUAL_PARENTHETICAL : LINE_PARENTHETICAL;
       } else if (isDialogueType(prevType)) {
         type = isDualType(prevType) ? LINE_DUAL_DIALOGUE : LINE_DIALOGUE;
@@ -123,41 +126,43 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
 const classifyLineAt = (doc: { line: (n: number) => { text: string }; lines: number }, lineNum: number, prevType: number): number => {
   const text = doc.line(lineNum).text;
   const trimmed = text.trim();
+  const clean = stripFormatting(trimmed) || trimmed;
   let type = LINE_ACTION;
 
   if (trimmed === "") {
     type = LINE_EMPTY;
-  } else if (/^#{1,2}(?:[^#]|$)/.test(trimmed)) {
+  } else if (/^#{1,2}(?:[^#]|$)/.test(clean)) {
     type = LINE_SECTION;
-  } else if (trimmed.startsWith("==") && !trimmed.startsWith("===") && trimmed.indexOf("==", 2) !== -1) {
-    type = LINE_ACTION;
-  } else if (trimmed.startsWith("=")) {
-    type = (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") ? LINE_PAGEBREAK : LINE_SYNOPSE;
-  } else if (trimmed.startsWith("~")) {
+  } else if (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") {
+    type = LINE_PAGEBREAK;
+  } else if (trimmed.startsWith("=") && !trimmed.startsWith("==")) {
+    type = LINE_SYNOPSE;
+  } else if (clean.startsWith("~")) {
     type = LINE_LYRICS;
-  } else if (trimmed.startsWith(".") && !trimmed.startsWith("..")) {
+  } else if (clean.startsWith(".") && !clean.startsWith("..")) {
     type = LINE_HEADING;
-  } else if (trimmed.startsWith(">") && trimmed.endsWith("<")) {
+  } else if (clean.startsWith(">") && clean.endsWith("<")) {
     type = LINE_CENTERED;
-  } else if (trimmed.startsWith(">")) {
+  } else if (clean.startsWith(">")) {
     type = LINE_TRANSITION;
-  } else if (trimmed.startsWith("!!")) {
+  } else if (clean.startsWith("!!")) {
     type = LINE_SHOT;
-  } else if (trimmed.startsWith("!")) {
+  } else if (clean.startsWith("!") && !clean.startsWith("!!")) {
     type = LINE_ACTION;
-  } else if (trimmed.startsWith("@")) {
+  } else if (clean.startsWith("@")) {
     type = LINE_CHARACTER;
   } else {
-    const isAllCaps = trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
-    const isHeadingPrefix = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(trimmed);
+    const uppercaseClean = clean.toUpperCase();
+    const isAllCaps = clean === uppercaseClean && /[A-Z]/.test(clean);
+    const isHeadingPrefix = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(clean);
 
     if (isHeadingPrefix && (prevType === LINE_EMPTY || lineNum === 1)) {
       type = LINE_HEADING;
-    } else if (isAllCaps && trimmed.endsWith("TO:") && (prevType === LINE_EMPTY || lineNum === 1)) {
+    } else if (isAllCaps && clean.endsWith("TO:") && (prevType === LINE_EMPTY || lineNum === 1)) {
       type = LINE_TRANSITION;
     } else if (isAllCaps && (prevType === LINE_EMPTY || lineNum === 1)) {
-      type = trimmed.endsWith("^") ? LINE_DUAL_CHARACTER : LINE_CHARACTER;
-    } else if (trimmed.startsWith("(") && trimmed.endsWith(")") && isDialogueType(prevType)) {
+      type = clean.endsWith("^") ? LINE_DUAL_CHARACTER : LINE_CHARACTER;
+    } else if (clean.startsWith("(") && clean.endsWith(")") && isDialogueType(prevType)) {
       type = isDualType(prevType) ? LINE_DUAL_PARENTHETICAL : LINE_PARENTHETICAL;
     } else if (isDialogueType(prevType)) {
       type = isDualType(prevType) ? LINE_DUAL_DIALOGUE : LINE_DIALOGUE;

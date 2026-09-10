@@ -1,4 +1,4 @@
-import { parseScreenplay, LineType, type ParsedLine } from "../parser/FountainParser";
+import { parseScreenplay, LineType, type ParsedLine, stripFormatting } from "../parser/FountainParser";
 
 /**
  * Fix Formatting Module
@@ -40,7 +40,7 @@ export function fixFormatting(
       if (match) {
         cleanedText = match[1] + match[2].trimStart();
       }
-    } else if (cleanedText.startsWith("=")) {
+    } else if (cleanedText.startsWith("=") && !cleanedText.startsWith("==")) {
       if (!cleanedText.startsWith("===")) {
         cleanedText = "=" + cleanedText.slice(1).trimStart();
       }
@@ -69,17 +69,18 @@ export function fixFormatting(
   while (idx < cleanedLinesText.length) {
     const line = cleanedLinesText[idx];
     const trimmed = line.trim();
+    const clean = stripFormatting(trimmed) || trimmed;
     const isPrevEmpty = idx === 0 || cleanedLinesText[idx - 1].trim() === "";
-    const isCaps = trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
-    const isForcedChar = trimmed.startsWith("@");
+    const isCaps = clean === clean.toUpperCase() && /[A-Z]/.test(clean);
+    const isForcedChar = clean.startsWith("@");
 
     let isChar = false;
     if ((isCaps || isForcedChar) && isPrevEmpty && trimmed !== "") {
       const isHeading =
-        /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(trimmed) ||
-        trimmed.startsWith(".");
-      const isTransition = trimmed.endsWith("TO:");
-      const isOutline = trimmed.startsWith("#") || trimmed.startsWith("=");
+        /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(clean) ||
+        clean.startsWith(".");
+      const isTransition = clean.endsWith("TO:");
+      const isOutline = trimmed.startsWith("#") || (trimmed.startsWith("=") && !trimmed.startsWith("=="));
       if (!isHeading && !isTransition && !isOutline) {
         let nextNonEmptyIdx = idx + 1;
         while (
@@ -90,19 +91,20 @@ export function fixFormatting(
         }
         if (nextNonEmptyIdx < cleanedLinesText.length) {
           const nextTrimmed = cleanedLinesText[nextNonEmptyIdx].trim();
+          const nextClean = stripFormatting(nextTrimmed) || nextTrimmed;
           const nextIsHeading =
-            /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextTrimmed) ||
-            nextTrimmed.startsWith(".");
+            /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextClean) ||
+            nextClean.startsWith(".");
           const nextIsTransition =
-            nextTrimmed.endsWith("TO:") &&
-            nextTrimmed === nextTrimmed.toUpperCase() &&
-            /[A-Z]/.test(nextTrimmed);
+            nextClean.endsWith("TO:") &&
+            nextClean === nextClean.toUpperCase() &&
+            /[A-Z]/.test(nextClean);
           const nextIsOutline =
-            nextTrimmed.startsWith("#") || nextTrimmed.startsWith("=");
+            nextTrimmed.startsWith("#") || (nextTrimmed.startsWith("=") && !nextTrimmed.startsWith("=="));
           const nextIsForced =
-            nextTrimmed.startsWith("@") ||
-            nextTrimmed.startsWith("!") ||
-            nextTrimmed.startsWith("~");
+            nextClean.startsWith("@") ||
+            nextClean.startsWith("!") ||
+            nextClean.startsWith("~");
 
           if (!nextIsHeading && !nextIsTransition && !nextIsOutline && !nextIsForced) {
             isChar = true;
@@ -125,30 +127,31 @@ export function fixFormatting(
           dialogueSpacesCleaned++;
           continue;
         }
+        const nextClean = stripFormatting(nextTrimmed) || nextTrimmed;
         const nextIsHeading =
-          /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextTrimmed) ||
-          nextTrimmed.startsWith(".");
+          /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextClean) ||
+          nextClean.startsWith(".");
         const nextIsTransition =
-          nextTrimmed.endsWith("TO:") &&
-          nextTrimmed === nextTrimmed.toUpperCase() &&
-          /[A-Z]/.test(nextTrimmed);
+          nextClean.endsWith("TO:") &&
+          nextClean === nextClean.toUpperCase() &&
+          /[A-Z]/.test(nextClean);
         const nextIsOutline =
-          nextTrimmed.startsWith("#") || nextTrimmed.startsWith("=");
+          nextTrimmed.startsWith("#") || (nextTrimmed.startsWith("=") && !nextTrimmed.startsWith("=="));
         const nextIsForced =
-          nextTrimmed.startsWith("@") ||
-          nextTrimmed.startsWith("!") ||
-          nextTrimmed.startsWith("~");
+          nextClean.startsWith("@") ||
+          nextClean.startsWith("!") ||
+          nextClean.startsWith("~");
 
         let isNewChar = false;
         if (
-          nextTrimmed === nextTrimmed.toUpperCase() &&
-          /[A-Z]/.test(nextTrimmed) &&
+          nextClean === nextClean.toUpperCase() &&
+          /[A-Z]/.test(nextClean) &&
           crossedEmpty
         ) {
           isNewChar = true;
         }
 
-        const nextIsParenthetical = nextTrimmed.startsWith("(");
+        const nextIsParenthetical = nextClean.startsWith("(");
         const shouldEndDialogue =
           nextIsHeading ||
           nextIsTransition ||

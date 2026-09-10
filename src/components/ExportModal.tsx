@@ -127,7 +127,7 @@ function stripFountainForExport(
       continue;
     }
 
-    if (!options.synopses && trimmed.startsWith("=") && !(trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "")) {
+    if (!options.synopses && trimmed.startsWith("=") && !trimmed.startsWith("==") && !(trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "")) {
       continue;
     }
 

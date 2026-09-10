@@ -3,5 +3,5 @@ export {
   LineType,
   parseScreenplay, getElementMaxWidth, wrapText,
   paginateScreenplay, serializeScreenplay, formatScreenplaySpaces,
-  parseSceneHeading
+  parseSceneHeading, stripFormatting
 } from './FountainParser';

@@ -1,4 +1,4 @@
-import { ParsedLine } from "../parser";
+import { ParsedLine, stripFormatting } from "../parser";
 import { parseFadeInToFountain, parseFadeInXmlToFountain } from "./fadeinParser";
 
 export const countWords = (text: string): number => {
@@ -6,10 +6,13 @@ export const countWords = (text: string): number => {
 };
 
 export function getSceneTitle(line: ParsedLine): string {
-  return line.text
-    .replace(/^[.#= ]+/, "")
+  const cleaned = line.text
     .replace(/\[\[.*?\]\]/g, "")
     .replace(/#[^#\s]+#\s*/g, "")
+    .trim();
+  const stripped = stripFormatting(cleaned);
+  return stripped
+    .replace(/^[.#= ]+/, "")
     .trim();
 }
 

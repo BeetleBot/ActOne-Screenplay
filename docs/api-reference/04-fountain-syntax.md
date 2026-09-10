@@ -175,7 +175,7 @@ DISSOLVE TO:
 - Visible in editor, excluded from export
 - Supports `[[color: ...]]` tags for colored notes
 
-### Emphasis (Bold / Italic / Underline)
+### Emphasis & Highlighting (Bold / Italic / Underline / Highlight)
 
 ```fountain
 *italic*
@@ -183,10 +183,12 @@ DISSOLVE TO:
 ***bold italic***
 _underline_
 __underline__
+==highlight==
 ```
 
 - Follows CommonMark delimiter rules
-- Asterisks for italic/bold, underscores for underline
+- Asterisks for italic/bold, underscores for underline, double equals `==...==` for highlight
+- Seamlessly supported inline across screenplay elements (dialogue, action, character cues, scene headings, transitions)
 
 ### Title Page
 

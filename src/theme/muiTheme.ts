@@ -372,12 +372,77 @@ function hexToRgbStr(hex: string): string {
   return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
 }
 
+export function getThemeHighlightColors(t: ThemeConfig): { bg: string; text: string; bgStrong: string } {
+  const isDark = t.isDark;
+  const id = t.id;
+
+  if (isDark) {
+    switch (id) {
+      case 'pitch-black':
+      case 'pitch-adaptive':
+        return { bg: '#ffd600', text: '#000000', bgStrong: '#ffea00' };
+
+      case 'catppuccin-mocha':
+      case 'catppuccin-adaptive':
+        return { bg: '#f9e2af', text: '#11111b', bgStrong: '#f5c2e7' };
+
+      case 'sunset':
+        return { bg: '#fbbf24', text: '#1a1012', bgStrong: '#f59e0b' };
+
+      case 'forest':
+        return { bg: '#facc15', text: '#101a14', bgStrong: '#eab308' };
+
+      case 'berry':
+      case 'plum':
+        return { bg: '#fde047', text: '#140c1e', bgStrong: '#facc15' };
+
+      case 'ocean':
+        return { bg: '#facc15', text: '#0b1622', bgStrong: '#eab308' };
+
+      default:
+        return { bg: '#facc15', text: '#111827', bgStrong: '#eab308' };
+    }
+  } else {
+    // Light themes
+    switch (id) {
+      case 'pitch-white':
+      case 'pitch-adaptive':
+        return { bg: '#ffe600', text: '#000000', bgStrong: '#ffd600' };
+
+      case 'sunrise':
+      case 'honey':
+        // Warm cream backgrounds where pale yellow looks shallow: rich amber gold
+        return { bg: '#f59e0b', text: '#1a1012', bgStrong: '#d97706' };
+
+      case 'mint':
+        // Pale green tint: saturated bright canary yellow to contrast against mint
+        return { bg: '#ffd600', text: '#16241c', bgStrong: '#facc15' };
+
+      case 'rose':
+        // Soft blush pink: warm marigold yellow
+        return { bg: '#fbb03b', text: '#261218', bgStrong: '#f59e0b' };
+
+      case 'sky':
+      case 'slate':
+        return { bg: '#facc15', text: '#111827', bgStrong: '#eab308' };
+
+      case 'catppuccin-latte':
+        return { bg: '#e5a50a', text: '#232634', bgStrong: '#df8e1d' };
+
+      default:
+        // Standard light (light, adaptive)
+        return { bg: '#ffd600', text: '#111827', bgStrong: '#facc15' };
+    }
+  }
+}
+
 function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainColorsEnabled: boolean = false) {
   const c = t.colors;
   const isCatppuccinLatte = t.id === 'catppuccin-latte';
   const isCatppuccinMocha = t.id === 'catppuccin-mocha';
   const cursorColor = t.isDark ? "%23FFFFFF" : "%23000000";
   const mouseCursorSvg = `url('data:image/svg+xml;utf8,<svg width="22" height="22" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill="${cursorColor}" d="M5 2a.5.5 0 0 1 .5-.5c.862 0 1.573.287 2.06.566.174.099.321.198.44.286.119-.088.266-.187.44-.286A4.165 4.165 0 0 1 10.5 1.5a.5.5 0 0 1 0 1c-.638 0-1.177.213-1.564.434a3.49 3.49 0 0 0-.436.294V7.5H9a.5.5 0 0 1 0 1h-.5v4.272c.1.08.248.187.436.294.387.221.926.434 1.564.434a.5.5 0 0 1 0 1 4.165 4.165 0 0 1-2.06-.566A4.561 4.561 0 0 1 8 13.65a4.561 4.561 0 0 1-.44.285 4.165 4.165 0 0 1-2.06.566.5.5 0 0 1 0-1c.638 0 1.177-.213 1.564-.434.188-.107.335-.214.436-.294V8.5H7a.5.5 0 0 1 0-1h.5V3.228a3.49 3.49 0 0 0-.436-.294A3.166 3.166 0 0 0 5.5 2.5.5.5 0 0 1 5 2zm3.352 1.355zm-.704 9.29z"/></svg>') 11 11, text`;
+  const highlightColors = getThemeHighlightColors(t);
   return {
     '--app-scale': '100%',
     '--bg-app': c.editor,
@@ -405,8 +470,9 @@ function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainColorsEn
     '--text-editor-shot': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.text})` : c.text,
     '--text-editor-meta': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 45%, ${c.text})` : c.textSecondary,
     '--text-editor-section': fountainColorsEnabled ? c.accent : c.text,
-    '--editor-highlight-bg': `color-mix(in srgb, ${c.accent} 26%, transparent)`,
-    '--editor-highlight-bg-strong': `color-mix(in srgb, ${c.accent} 38%, transparent)`,
+    '--editor-highlight-bg': highlightColors.bg,
+    '--editor-highlight-bg-strong': highlightColors.bgStrong,
+    '--editor-highlight-text': highlightColors.text,
     '--editor-cursor': c.text,
     '--editor-mouse-cursor': mouseCursorSvg,
 

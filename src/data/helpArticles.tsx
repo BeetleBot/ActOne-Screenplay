@@ -343,8 +343,9 @@ or
   \`***crucial plot twist***\`
 
 ### Highlight
-Wrap text with double equals to mark it with a theme-aware background highlight (Ctrl+Shift+H):
+Wrap text with double equals to mark it with a theme-adaptive solid yellow highlight box (Ctrl+Shift+H):
 \`==highlighted note==\`
+Highlighting can safely be applied across any screenplay element (character cues, scene headings, dialogue, transitions, action) without altering line classifications.
 
 ### Strikethrough
 Wrap text with double tildes to mark deleted or revised ideas:

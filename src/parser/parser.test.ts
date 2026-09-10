@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseScreenplay, serializeScreenplay, LineType, formatScreenplaySpaces, paginateScreenplay, wrapText, getElementMaxWidth, parseSceneHeading } from "./FountainParser";
+import { parseScreenplay, serializeScreenplay, LineType, formatScreenplaySpaces, paginateScreenplay, wrapText, getElementMaxWidth, parseSceneHeading, stripFormatting } from "./FountainParser";
 
 describe("Fountain Screenplay Parser", () => {
   it("should parse headings and actions correctly", () => {
@@ -398,5 +398,106 @@ describe("Fountain Screenplay Parser", () => {
       expect(result4.setting).toBe("/EXT");
       expect(result4.location).toBe("BLOOM HOUSE");
     });
+
+    it("should parse scene headings wrapped in highlight, bold, and underline", () => {
+      const h1 = parseSceneHeading("==INT. BLOOM HOUSE - DAY #42#==");
+      expect(h1.setting).toBe("INT");
+      expect(h1.location).toBe("BLOOM HOUSE");
+      expect(h1.timeOfDay).toBe("DAY");
+      expect(h1.sceneNumber).toBe("42");
+
+      const h2 = parseSceneHeading("**EXT. PARK - NIGHT**");
+      expect(h2.setting).toBe("EXT");
+      expect(h2.location).toBe("PARK");
+      expect(h2.timeOfDay).toBe("NIGHT");
+
+      const h3 = parseSceneHeading("_INT. OFFICE - SUNSET_");
+      expect(h3.setting).toBe("INT");
+      expect(h3.location).toBe("OFFICE");
+      expect(h3.timeOfDay).toBe("SUNSET");
+
+      const h4 = parseSceneHeading(".==EXT. SECRET BASE - DAWN==");
+      expect(h4.setting).toBe("EXT");
+      expect(h4.location).toBe("SECRET BASE");
+      expect(h4.timeOfDay).toBe("DAWN");
+    });
+  });
+
+  describe("stripFormatting utility", () => {
+    it("strips highlight == markers", () => {
+      expect(stripFormatting("==COOPER==")).toBe("COOPER");
+      expect(stripFormatting("He runs to the ==door==")).toBe("He runs to the door");
+    });
+
+    it("strips bold ** and *italic* and _underline_", () => {
+      expect(stripFormatting("**BOLD**")).toBe("BOLD");
+      expect(stripFormatting("*ITALIC*")).toBe("ITALIC");
+      expect(stripFormatting("_UNDERLINE_")).toBe("UNDERLINE");
+    });
+
+    it("strips nested and layered formatting", () => {
+      expect(stripFormatting("**==BOTH==**")).toBe("BOTH");
+      expect(stripFormatting("==**_ALL THREE_**==")).toBe("ALL THREE");
+    });
+
+    it("strips comments and notes", () => {
+      expect(stripFormatting("/* comment */ COOPER [[note]]")).toBe("COOPER");
+    });
+  });
+
+  describe("parseScreenplay with formatted and highlighted elements", () => {
+    it("should parse highlighted character cue and dialogue block", () => {
+      const text = "==COOPER==\nHello world.";
+      const doc = parseScreenplay(text);
+      expect(doc.lines).toHaveLength(2);
+      expect(doc.lines[0].type).toBe(LineType.character);
+      expect(doc.lines[0].text).toBe("==COOPER==");
+      expect(doc.lines[1].type).toBe(LineType.dialogue);
+      expect(doc.lines[1].text).toBe("Hello world.");
+    });
+
+    it("should parse highlighted character with extension", () => {
+      const text = "==COOPER== (V.O.)\nI'm thinking.";
+      const doc = parseScreenplay(text);
+      expect(doc.lines[0].type).toBe(LineType.character);
+      expect(doc.lines[1].type).toBe(LineType.dialogue);
+    });
+
+    it("should parse highlighted parentheticals in dialogue", () => {
+      const text = "==COOPER==\n==(whispering)==\nQuiet now.";
+      const doc = parseScreenplay(text);
+      expect(doc.lines[0].type).toBe(LineType.character);
+      expect(doc.lines[1].type).toBe(LineType.parenthetical);
+      expect(doc.lines[2].type).toBe(LineType.dialogue);
+    });
+
+    it("should parse highlighted scene heading and action", () => {
+      const text = "==INT. ROOM - DAY==\n\nJohn walks in.";
+      const doc = parseScreenplay(text);
+      expect(doc.lines[0].type).toBe(LineType.heading);
+      expect(doc.lines[0].isOutlineElement).toBe(true);
+      expect(doc.lines[1].type).toBe(LineType.empty);
+      expect(doc.lines[2].type).toBe(LineType.action);
+    });
+
+    it("should parse highlighted transitions", () => {
+      const text = "John walks out.\n\n==CUT TO:==";
+      const doc = parseScreenplay(text);
+      expect(doc.lines[2].type).toBe(LineType.transitionLine);
+    });
+
+    it("should parse synopsis containing highlights without treating as action", () => {
+      const text = "= A synopsis with ==highlighted words==";
+      const doc = parseScreenplay(text);
+      expect(doc.lines[0].type).toBe(LineType.synopse);
+      expect(doc.lines[0].isOutlineElement).toBe(true);
+    });
+
+    it("should formatScreenplaySpaces with highlighted character without mangling", () => {
+      const input = "==COOPER==\n\n(whispering)\n\nHello.";
+      const formatted = formatScreenplaySpaces(input);
+      expect(formatted).toBe("==COOPER==\n(whispering)\nHello.");
+    });
   });
 });
+

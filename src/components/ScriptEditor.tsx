@@ -87,7 +87,7 @@ export const ScriptEditor = React.memo(() => {
       if (clean.startsWith("!!")) {
         prefix = "!!";
         clean = clean.slice(2);
-      } else if (clean.startsWith("=")) {
+      } else if (clean.startsWith("=") && !clean.startsWith("==")) {
         prefix = "=";
         clean = clean.slice(1);
       } else if (clean.startsWith(".")) {
@@ -289,7 +289,7 @@ export const ScriptEditor = React.memo(() => {
           clean = clean.slice(indent.length);
         }
         if (clean.startsWith("!!")) { prefix = "!!"; clean = clean.slice(2); }
-        else if (clean.startsWith("=")) { prefix = "="; clean = clean.slice(1); }
+        else if (clean.startsWith("=") && !clean.startsWith("==")) { prefix = "="; clean = clean.slice(1); }
         else if (clean.startsWith(".")) { prefix = "."; clean = clean.slice(1); }
         else if (clean.startsWith("-")) {
           if (clean.startsWith("- ")) { prefix = "- "; clean = clean.slice(2); }

@@ -10,7 +10,7 @@ impl<'a> Parser<'a> {
             line,
             |_, s| {
                 let trimmed = s.trim_start();
-                if trimmed.starts_with("==") && !trimmed.starts_with("===") && trimmed[2..].contains("==") {
+                if trimmed.starts_with("==") {
                     return None;
                 }
                 trimmed.strip_prefix('=')

@@ -520,9 +520,10 @@ body {
 }
 
 .cm-fountain-highlight {
-  background: var(--editor-highlight-bg, rgba(255, 235, 59, 0.38)) !important;
-  border-radius: 3px !important;
-  padding: 0 1px !important;
+  background: var(--editor-highlight-bg, #ffd600) !important;
+  color: var(--editor-highlight-text, #111827) !important;
+  border-radius: 0 !important;
+  padding: 0 2px !important;
   box-decoration-break: clone !important;
   -webkit-box-decoration-break: clone !important;
 }

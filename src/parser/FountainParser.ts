@@ -62,6 +62,22 @@ function generateUUID(index?: number, text?: string): string {
   return "line-" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+export function stripFormatting(text: string): string {
+  let prev = "";
+  let curr = text;
+  while (curr !== prev) {
+    prev = curr;
+    curr = curr
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\[\[.*?\]\]/g, "")
+      .replace(/==([^=]+)==/g, "$1")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/(^|[^*])\*([^*]+)\*(?=[^*]|$)/g, "$1$2")
+      .replace(/_([^_]+)_/g, "$1");
+  }
+  return curr.trim();
+}
+
 export interface ParsedSceneHeading {
   setting: string | null;
   location: string | null;
@@ -71,6 +87,10 @@ export interface ParsedSceneHeading {
 
 export function parseSceneHeading(headingText: string): ParsedSceneHeading {
   let cleanText = headingText.trim();
+  if (cleanText.startsWith(".")) {
+    cleanText = cleanText.substring(1).trim();
+  }
+  cleanText = stripFormatting(cleanText);
   if (cleanText.startsWith(".")) {
     cleanText = cleanText.substring(1).trim();
   }
@@ -189,57 +209,57 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
     let location: string | null | undefined;
     let timeOfDay: string | null | undefined;
 
+    const clean = stripFormatting(trimmed) || trimmed;
+
     if (trimmed === "") {
       type = LineType.empty;
-    } else if (/^#{1,2}(?:[^#]|$)/.test(trimmed)) {
+    } else if (/^#{1,2}(?:[^#]|$)/.test(clean)) {
       type = LineType.section;
       isOutlineElement = true;
       let depth = 0;
-      while (depth < trimmed.length && trimmed[depth] === "#") {
+      while (depth < clean.length && clean[depth] === "#") {
         depth++;
       }
       sectionDepth = depth;
-    } else if (trimmed.startsWith("=")) {
-      if (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") {
-        type = LineType.pageBreak;
-      } else {
-        type = LineType.synopse;
-        isOutlineElement = true;
-      }
-    } else if (trimmed.startsWith("~")) {
+    } else if (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") {
+      type = LineType.pageBreak;
+    } else if (trimmed.startsWith("=") && !trimmed.startsWith("==")) {
+      type = LineType.synopse;
+      isOutlineElement = true;
+    } else if (clean.startsWith("~")) {
       type = LineType.lyrics;
-    } else if (trimmed.startsWith("!!")) {
+    } else if (clean.startsWith("!!")) {
       type = LineType.shot;
-    } else if (trimmed.startsWith("!")) {
+    } else if (clean.startsWith("!") && !clean.startsWith("!!")) {
       type = LineType.action;
-    } else if (trimmed.startsWith(".") && !trimmed.startsWith("..")) {
+    } else if (clean.startsWith(".") && !clean.startsWith("..")) {
       type = LineType.heading;
       isOutlineElement = true;
-    } else if (trimmed.startsWith(">") && trimmed.endsWith("<")) {
+    } else if (clean.startsWith(">") && clean.endsWith("<")) {
       type = LineType.centered;
-    } else if (trimmed.startsWith(">")) {
+    } else if (clean.startsWith(">")) {
       type = LineType.transitionLine;
     } else {
       const prevLine = i > 0 ? parsedLines[i - 1] : null;
 
-      const uppercaseTrimmed = trimmed.toUpperCase();
-      const isAllCaps = trimmed === uppercaseTrimmed && /[A-Z]/.test(trimmed);
-      const isForcedCharacter = trimmed.startsWith("@");
+      const uppercaseClean = clean.toUpperCase();
+      const isAllCaps = clean === uppercaseClean && /[A-Z]/.test(clean);
+      const isForcedCharacter = clean.startsWith("@");
 
-      const isHeadingPrefix = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(trimmed);
+      const isHeadingPrefix = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(clean);
 
       if (isHeadingPrefix && (!prevLine || prevLine.type === LineType.empty)) {
         type = LineType.heading;
         isOutlineElement = true;
-      } else if (isAllCaps && trimmed.endsWith("TO:") && (!prevLine || prevLine.type === LineType.empty)) {
+      } else if (isAllCaps && clean.endsWith("TO:") && (!prevLine || prevLine.type === LineType.empty)) {
         type = LineType.transitionLine;
       } else if ((isForcedCharacter || isAllCaps) && (!prevLine || prevLine.type === LineType.empty)) {
-        if (trimmed.endsWith("^")) {
+        if (clean.endsWith("^")) {
           type = LineType.dualDialogueCharacter;
         } else {
           type = LineType.character;
         }
-      } else if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
+      } else if (clean.startsWith("(") && clean.endsWith(")")) {
         const isPrevDialogue = prevLine && (
           prevLine.type === LineType.character ||
           prevLine.type === LineType.dialogue ||
@@ -559,7 +579,7 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
       if (match) {
         cleanedText = match[1] + match[2].trimStart();
       }
-    } else if (cleanedText.startsWith("=")) {
+    } else if (cleanedText.startsWith("=") && !cleanedText.startsWith("==")) {
       if (!cleanedText.startsWith("===")) {
         cleanedText = "=" + cleanedText.slice(1).trimStart();
       }
@@ -579,15 +599,16 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
   while (idx < cleanedLinesText.length) {
     const line = cleanedLinesText[idx];
     const trimmed = line.trim();
+    const clean = stripFormatting(trimmed) || trimmed;
     const isPrevEmpty = idx === 0 || cleanedLinesText[idx - 1].trim() === "";
-    const isCaps = trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
-    const isForcedChar = trimmed.startsWith("@");
+    const isCaps = clean === clean.toUpperCase() && /[A-Z]/.test(clean);
+    const isForcedChar = clean.startsWith("@");
 
     let isChar = false;
     if ((isCaps || isForcedChar) && isPrevEmpty && trimmed !== "") {
-      const isHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(trimmed) || trimmed.startsWith(".");
-      const isTransition = trimmed.endsWith("TO:");
-      const isOutline = trimmed.startsWith("#") || trimmed.startsWith("=");
+      const isHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(clean) || clean.startsWith(".");
+      const isTransition = clean.endsWith("TO:");
+      const isOutline = trimmed.startsWith("#") || (trimmed.startsWith("=") && !trimmed.startsWith("=="));
       if (!isHeading && !isTransition && !isOutline) {
         let nextNonEmptyIdx = idx + 1;
         while (nextNonEmptyIdx < cleanedLinesText.length && cleanedLinesText[nextNonEmptyIdx].trim() === "") {
@@ -595,10 +616,11 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
         }
         if (nextNonEmptyIdx < cleanedLinesText.length) {
           const nextTrimmed = cleanedLinesText[nextNonEmptyIdx].trim();
-          const nextIsHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextTrimmed) || nextTrimmed.startsWith(".");
-          const nextIsTransition = nextTrimmed.endsWith("TO:") && nextTrimmed === nextTrimmed.toUpperCase() && /[A-Z]/.test(nextTrimmed);
-          const nextIsOutline = nextTrimmed.startsWith("#") || nextTrimmed.startsWith("=");
-          const nextIsForced = nextTrimmed.startsWith("@") || nextTrimmed.startsWith("!") || nextTrimmed.startsWith("~");
+          const nextClean = stripFormatting(nextTrimmed) || nextTrimmed;
+          const nextIsHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextClean) || nextClean.startsWith(".");
+          const nextIsTransition = nextClean.endsWith("TO:") && nextClean === nextClean.toUpperCase() && /[A-Z]/.test(nextClean);
+          const nextIsOutline = nextTrimmed.startsWith("#") || (nextTrimmed.startsWith("=") && !nextTrimmed.startsWith("=="));
+          const nextIsForced = nextClean.startsWith("@") || nextClean.startsWith("!") || nextClean.startsWith("~");
 
           if (!nextIsHeading && !nextIsTransition && !nextIsOutline && !nextIsForced) {
             isChar = true;
@@ -620,17 +642,18 @@ export function formatScreenplaySpaces(rawText: string, paperSize: 'letter' | 'a
           j++;
           continue;
         }
-        const nextIsHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextTrimmed) || nextTrimmed.startsWith(".");
-        const nextIsTransition = nextTrimmed.endsWith("TO:") && nextTrimmed === nextTrimmed.toUpperCase() && /[A-Z]/.test(nextTrimmed);
-        const nextIsOutline = nextTrimmed.startsWith("#") || nextTrimmed.startsWith("=");
-        const nextIsForced = nextTrimmed.startsWith("@") || nextTrimmed.startsWith("!") || nextTrimmed.startsWith("~");
+        const nextClean = stripFormatting(nextTrimmed) || nextTrimmed;
+        const nextIsHeading = /^(INT|EXT|I\/E|I\.?\/?E\.?|E\/I|E\.?\/?I\.?)\b/i.test(nextClean) || nextClean.startsWith(".");
+        const nextIsTransition = nextClean.endsWith("TO:") && nextClean === nextClean.toUpperCase() && /[A-Z]/.test(nextClean);
+        const nextIsOutline = nextTrimmed.startsWith("#") || (nextTrimmed.startsWith("=") && !nextTrimmed.startsWith("=="));
+        const nextIsForced = nextClean.startsWith("@") || nextClean.startsWith("!") || nextClean.startsWith("~");
 
         let isNewChar = false;
-        if (nextTrimmed === nextTrimmed.toUpperCase() && /[A-Z]/.test(nextTrimmed) && crossedEmpty) {
+        if (nextClean === nextClean.toUpperCase() && /[A-Z]/.test(nextClean) && crossedEmpty) {
           isNewChar = true;
         }
 
-        const nextIsParenthetical = nextTrimmed.startsWith("(");
+        const nextIsParenthetical = nextClean.startsWith("(");
         const shouldEndDialogue = nextIsHeading || nextIsTransition || nextIsOutline || nextIsForced || isNewChar || 
                                   (crossedEmpty && lastType === 'dialogue' && !nextIsParenthetical);
 

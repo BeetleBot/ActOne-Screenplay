@@ -34,7 +34,7 @@ export function toggleInlineMarker(
     } else if (clean.startsWith("@")) {
       prefix += "@";
       clean = clean.slice(1);
-    } else if (clean.startsWith("=")) {
+    } else if (clean.startsWith("=") && !clean.startsWith("==")) {
       prefix += "=";
       clean = clean.slice(1);
     } else if (clean.startsWith(".")) {
