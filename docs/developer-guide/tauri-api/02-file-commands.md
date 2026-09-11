@@ -147,7 +147,7 @@ invoke<string | null>("pick_directory");
 
 ## `get_cli_args`
 
-Returns command-line arguments matching ActOne file extensions (`.actone`, `.fountain`, `.txt`). Only returns once per session.
+Returns command-line arguments matching ActOne supported file extensions (`.actone`, `.fountain`, `.txt`, `.pdf`, `.fdx`, `.fadein`, `.md`, `.markdown`). Only returns once per session. External formats are automatically converted into an unsaved project when opened.
 
 ```typescript
 invoke<string[]>("get_cli_args");

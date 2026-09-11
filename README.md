@@ -40,6 +40,54 @@ Download the latest Windows and Linux builds from:
 - Fountain syntax: <https://fountain.io/>
 - In-app help: press `F1` or open Help from the application
 
+## Command Line Interface (CLI)
+
+ActOne supports terminal execution on both **Linux** and **Windows**.
+
+### Opening Files from the Terminal
+
+Launch ActOne with a file path to open or import it immediately:
+
+```bash
+# Linux
+actone path/to/screenplay.fountain
+actone path/to/project.actone
+actone path/to/draft.pdf
+actone path/to/screenplay.fdx
+actone path/to/project.fadein
+actone path/to/treatment.md
+
+# Windows (PowerShell / Command Prompt)
+ActOne.exe path\to\screenplay.fountain
+ActOne.exe path\to\project.actone
+ActOne.exe path\to\draft.pdf
+```
+
+- **Native formats** (`.actone`, `.fountain`, `.txt`) open directly in the editor.
+- **Import formats** (`.pdf`, `.fdx`, `.fadein`, `.md`, `.markdown`) are automatically converted into Fountain/Markdown and opened in a ready-to-edit, unsaved project without prompting for a save dialog.
+- Running without arguments opens the Welcome screen.
+
+### Linux AppImage Integration Flags
+
+When running the universal Linux AppImage (`ActOne-Screenplay-x86_64.AppImage`):
+
+```bash
+# Install desktop integration, icons, MIME types, and symlink 'actone' into ~/.local/bin/
+./ActOne-Screenplay-x86_64.AppImage --install-integration
+
+# Cleanly remove desktop entry, icons, and symlinks
+./ActOne-Screenplay-x86_64.AppImage --uninstall
+
+# Extract AppImage contents
+./ActOne-Screenplay-x86_64.AppImage --appimage-extract
+```
+
+### Linux Flatpak Usage
+
+```bash
+flatpak run ink.iyal.actone [file_path]
+```
+
 ## Development
 
 ### Requirements

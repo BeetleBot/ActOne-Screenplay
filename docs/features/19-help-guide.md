@@ -2,12 +2,12 @@
 
 **Window:** `?modal=help` (`src/components/HelpWindow.tsx`)
 
-The Help Guide provides **88 searchable articles across 10 categories**. The article inventory is maintained in `src/data/helpArticles.tsx`.
+The Help Guide provides **89 searchable articles across 10 categories**. The article inventory is maintained in `src/data/helpArticles.tsx`.
 
 ## Categories
 
-1. **Getting Started** (10 articles)
-   - Welcome Screen, Creating a New Project, Project Landing Pad, Opening Projects, Recent Files, Keyboard Shortcuts Reference, Command Palette, Importing Screenplays, Interactive Tutorial, Quick Guide (F1)
+1. **Getting Started** (11 articles)
+   - Welcome Screen, Creating a New Project, Project Landing Pad, Opening Projects, Recent Files, Keyboard Shortcuts Reference, Command Palette, Importing Screenplays, Interactive Tutorial, Command Line Interface (CLI), Quick Guide (F1)
 
 2. **Fountain Syntax** (14 articles)
    - Scene Headings, Character Names, Dialogue, Parentheticals, Action & Scene Descriptions, Transitions, Centered Text & Lyrics, Shot Lines, Page Breaks, Dual Dialogue, Synopsis Outline Notes, Sections & Hierarchy, Inline Text Formatting, Boneyard Comments

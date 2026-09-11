@@ -58,11 +58,11 @@ The Welcome screen also shows a rotating random writing quote from famous screen
     id: "open-file",
     title: "Opening Projects",
     category: "Getting Started",
-    tags: ["open", "project", "file", "fountain", "actone", "txt"],
-    relatedIds: ["welcome-screen", "new-project", "file-tabs", "recent-files"],
+    tags: ["open", "project", "file", "fountain", "actone", "txt", "cli"],
+    relatedIds: ["welcome-screen", "new-project", "file-tabs", "recent-files", "cli-commands"],
     content: `Press <kbd>Ctrl+O</kbd> or use the Command Palette (<kbd>Ctrl+K</kbd>) → "Open Project…" to open an \`.actone\` project (or \`.fountain\` / \`.txt\` file) via the native file dialog.
 
-  When launched from the command line, ActOne accepts file paths as arguments. The app also listens for OS-level file-open events (e.g., double-clicking a .actone or .fountain file).
+When launched from the command line, ActOne accepts file paths as arguments on both Linux and Windows (see the **Command Line Interface (CLI)** article for complete details). The app also listens for OS-level file-open events (e.g., double-clicking a .actone or .fountain file).
 
 Importing other screenplay formats is separate from opening an existing project. Use **Import Screenplay...** for <code>.pdf</code>, <code>.fdx</code>, <code>.fadein</code>, <code>.fountain</code>, or <code>.txt</code> files. ActOne converts the selected screenplay file into an ActOne <code>.actone</code> project.`,
   },
@@ -141,6 +141,57 @@ You can drag and drop any supported file directly into ActOne:
 There are two tutorials available:
 - **UI Tour:** A quick guided tour showing you around the interface (Sidebar, X-Ray, Focus Mode, Zen Mode, etc.).
 - **Fountain Elements:** An interactive sandbox that teaches you how to format a screenplay using the Fountain syntax. It will live-validate your formatting as you learn.`,
+  },
+  {
+    id: "cli-commands",
+    title: "Command Line Interface (CLI)",
+    category: "Getting Started",
+    tags: ["cli", "terminal", "command line", "linux", "windows", "arguments", "appimage", "flatpak"],
+    relatedIds: ["open-file", "script-import", "welcome-screen"],
+    content: `ActOne can be launched directly from the terminal or command prompt on both **Linux** and **Windows**.
+
+### Basic Usage
+\`\`\`bash
+# Linux
+actone [file_path]
+
+# Linux (AppImage standalone)
+./ActOne-Screenplay-x86_64.AppImage [file_path]
+
+# Linux (Flatpak)
+flatpak run ink.iyal.actone [file_path]
+
+# Windows (PowerShell or Command Prompt)
+ActOne.exe [file_path]
+\`\`\`
+
+When launched without arguments, ActOne displays the Welcome screen.
+
+### Supported File Arguments
+Passing a file path opens or imports the document directly:
+
+- **Native Projects & Screenplays**:
+  - \`actone screenplay.actone\` — Opens the \`.actone\` project bundle directly into the editor.
+  - \`actone script.fountain\` — Opens the Fountain screenplay directly with live formatting.
+  - \`actone notes.txt\` — Opens a plain text file.
+
+- **Instant Imports**:
+  - \`actone draft.pdf\` — Converts the PDF screenplay via \`pdf2fountain\` and opens it as an unsaved project ready for editing.
+  - \`actone draft.fdx\` — Converts Final Draft XML into an unsaved project.
+  - \`actone draft.fadein\` — Converts Fade In project files into an unsaved project.
+  - \`actone treatment.md\` — Converts Markdown as a prose document in an unsaved project.
+
+### Linux AppImage Integration Options
+When using the universal Linux AppImage (\`ActOne-Screenplay-x86_64.AppImage\`), specialized flags manage desktop integration:
+
+- **\`--install-integration\`** (or \`install\`):
+  Installs the AppImage into \`~/.local/bin/ActOne-Screenplay.AppImage\`, symlinks the \`actone\` CLI command into \`~/.local/bin/actone\`, creates the application launcher in \`~/.local/share/applications/actone.desktop\`, installs high-resolution icons, and registers system file associations (\`.fountain\`, \`.actone\`, \`.actheme\`).
+
+- **\`--uninstall\`** (or \`uninstall\`):
+  Cleanly removes the installed AppImage, CLI symlink, desktop entry, and MIME icons.
+
+- **\`--appimage-extract\`**:
+  Extracts the inner filesystem into a \`squashfs-root\` directory.`,
   },
 
   // ===== FOUNTAIN SYNTAX =====
