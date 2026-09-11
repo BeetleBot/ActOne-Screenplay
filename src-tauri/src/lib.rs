@@ -121,9 +121,17 @@ fn import_fountain_dialog() -> Option<serde_json::Value> {
 }
 
 #[tauri::command]
+fn parse_pdf_to_fountain(path: String) -> Result<String, String> {
+    pdf2fountain::parse_pdf_file_to_fountain(&path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
     let mut dialog = rfd::FileDialog::new();
     match format.as_deref() {
+        Some("pdf") => {
+            dialog = dialog.add_filter("PDF Screenplay (.pdf)", &["pdf"]);
+        }
         Some("fdx") => {
             dialog = dialog.add_filter("Final Draft (.fdx)", &["fdx"]);
         }
@@ -131,7 +139,7 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
             dialog = dialog.add_filter("Fade In (.fadein)", &["fadein"]);
         }
         Some("fountain") => {
-            dialog = dialog.add_filter("Fountain (.fountain, .txt)", &["fountain", "txt", "spmd"]);
+            dialog = dialog.add_filter("Fountain (.fountain, .txt)", &["fountain", "txt"]);
         }
         Some("markdown") => {
             dialog = dialog.add_filter("Markdown (.md, .markdown, .txt)", &["md", "markdown", "txt"]);
@@ -140,11 +148,12 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
             dialog = dialog
                 .add_filter(
                     "All Supported Scripts",
-                    &["fdx", "fadein", "fountain", "txt", "spmd", "md", "markdown"],
+                    &["pdf", "fdx", "fadein", "fountain", "txt", "md", "markdown"],
                 )
+                .add_filter("PDF Screenplay (.pdf)", &["pdf"])
                 .add_filter("Final Draft (.fdx)", &["fdx"])
                 .add_filter("Fade In (.fadein)", &["fadein"])
-                .add_filter("Fountain (.fountain, .txt)", &["fountain", "txt", "spmd"])
+                .add_filter("Fountain (.fountain, .txt)", &["fountain", "txt"])
                 .add_filter("Markdown (.md, .markdown, .txt)", &["md", "markdown", "txt"]);
         }
     }
@@ -1079,6 +1088,7 @@ pub fn run() {
             get_cli_args,
             generate_fdx_string,
             generate_fadein_bytes,
+            parse_pdf_to_fountain,
             import_fountain_dialog,
             import_script_dialog,
             check_microsoft_store_license,
@@ -1288,5 +1298,11 @@ mod tests {
         let _ = fs::remove_file(&target);
 
         assert_eq!(read_back, content);
+    }
+
+    #[test]
+    fn test_parse_pdf_to_fountain_missing_file() {
+        let result = parse_pdf_to_fountain("non_existent_file_path.pdf".to_string());
+        assert!(result.is_err());
     }
 }

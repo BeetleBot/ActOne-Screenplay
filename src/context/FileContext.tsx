@@ -66,7 +66,7 @@ export interface FileContextProps {
   isBundle: boolean;
   setActiveScript: (index: number) => void;
   addScript: (name?: string, forceType?: "fountain" | "markdown", initialContent?: string) => Promise<string | null>;
-  importScript: (type?: "fountain" | "markdown" | "fdx" | "fadein") => Promise<string | null>;
+  importScript: (type?: "fountain" | "markdown" | "fdx" | "fadein" | "pdf") => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
   duplicateScript: (index: number, name?: string, activateNew?: boolean) => Promise<string | null>;
   deleteScript: (index: number) => Promise<boolean>;
@@ -1544,7 +1544,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [files, activeFileId, confirm, paperSize]);
 
-  const importScript = useCallback(async (type?: "fountain" | "markdown" | "fdx" | "fadein"): Promise<string | null> => {
+  const importScript = useCallback(async (type?: "fountain" | "markdown" | "fdx" | "fadein" | "pdf"): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts) return null;
 
@@ -1555,9 +1555,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const result = await invoke<{ path: string; name?: string; extension?: string } | null>("import_script_dialog", { format: type });
         if (!result || !result.path) return null;
-        fileName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|spmd|md|markdown)$/i, "") || "Imported";
+        fileName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "") || "Imported";
         
-        if (result.path.toLowerCase().endsWith(".fadein")) {
+        if (result.path.toLowerCase().endsWith(".pdf")) {
+          content = await invoke<string>("parse_pdf_to_fountain", { path: result.path });
+        } else if (result.path.toLowerCase().endsWith(".fadein")) {
           const bytes = await invoke<number[]>("read_file_binary", { path: result.path });
           content = parseScriptFileToFountain(result.path, new Uint8Array(bytes));
         } else {
@@ -1579,12 +1581,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ? ".fdx"
             : type === "fadein"
             ? ".fadein"
-            : ".fountain,.txt,.fdx,.fadein,.spmd";
+            : type === "pdf"
+            ? ".pdf"
+            : ".fountain,.txt,.fdx,.fadein,.pdf";
         input.onchange = async () => {
           const f = input.files?.[0];
           if (!f) { resolve(null); return; }
-          fileName = f.name.replace(/\.(fountain|txt|fdx|fadein|spmd|md|markdown)$/i, "");
-          if (f.name.toLowerCase().endsWith(".fadein")) {
+          fileName = f.name.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "");
+          if (f.name.toLowerCase().endsWith(".pdf")) {
+            resolve(null);
+          } else if (f.name.toLowerCase().endsWith(".fadein")) {
             const buf = await f.arrayBuffer();
             resolve(parseScriptFileToFountain(f.name, new Uint8Array(buf)));
           } else {

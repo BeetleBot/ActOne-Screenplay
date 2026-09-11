@@ -372,6 +372,16 @@ describe("ScriptsView Component", () => {
       });
       expect(mockImportScript).toHaveBeenCalledWith("fountain");
 
+      // PDF
+      act(() => {
+        fireEvent.click(importBtn);
+      });
+      const pdfOption = screen.getByText("PDF Screenplay (.pdf)");
+      await act(async () => {
+        fireEvent.click(pdfOption);
+      });
+      expect(mockImportScript).toHaveBeenCalledWith("pdf");
+
       // FDX
       act(() => {
         fireEvent.click(importBtn);

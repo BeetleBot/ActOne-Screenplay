@@ -51,7 +51,7 @@ The Welcome screen also shows a rotating random writing quote from famous screen
 
 - **New Screenplay (\`.fountain\`)**: Create and initialize an industry-standard screenplay with automatic pagination and formatting.
 - **New Prose Document (\`.md\`)**: Create a Markdown document for treatments, story beat sheets, character bibles, and notes.
-- **Import or Structure Template**: Import existing files (\`.fountain\`, \`.fdx\`, \`.fadein\`, \`.md\`) or start with a Three-Act, Hero's Journey, or Save the Cat structure template.
+- **Import or Structure Template**: Import existing files (\`.fountain\`, \`.pdf\`, \`.fdx\`, \`.fadein\`, \`.md\`) or start with a Three-Act, Hero's Journey, or Save the Cat structure template.
 - **Sidebar Integration**: The sidebar automatically switches to the **Project & Scripts** pane where you can organize, reorder, or rename all documents in your project.`,
   },
   {
@@ -64,7 +64,7 @@ The Welcome screen also shows a rotating random writing quote from famous screen
 
   When launched from the command line, ActOne accepts file paths as arguments. The app also listens for OS-level file-open events (e.g., double-clicking a .actone or .fountain file).
 
-Importing other screenplay formats is separate from opening an existing project. Use **Import Screenplay...** for <code>.fdx</code>, <code>.fadein</code>, <code>.fountain</code>, <code>.txt</code>, or <code>.spmd</code> files. ActOne converts the selected screenplay file into an ActOne <code>.actone</code> project.`,
+Importing other screenplay formats is separate from opening an existing project. Use **Import Screenplay...** for <code>.pdf</code>, <code>.fdx</code>, <code>.fadein</code>, <code>.fountain</code>, or <code>.txt</code> files. ActOne converts the selected screenplay file into an ActOne <code>.actone</code> project.`,
   },
   {
     id: "recent-files",
@@ -109,16 +109,16 @@ Each command shows its keyboard shortcut when available. Navigate with arrow key
     id: "script-import",
     title: "Importing Screenplays",
     category: "Getting Started",
-    tags: ["import", "fdx", "fadein", "fountain", "spmd", "convert"],
+    tags: ["import", "pdf", "fdx", "fadein", "fountain", "convert"],
     relatedIds: ["open-file", "new-project", "actone-bundle"],
     content: `Use **Import Screenplay...** from the Welcome screen, editor, or Command Palette (<kbd>Ctrl+K</kbd>) to convert an existing screenplay into an ActOne project.
 
 Supported formats are:
+- PDF Screenplay (<code>.pdf</code> via <code>pdf2fountain</code>)
 - Final Draft XML (<code>.fdx</code>)
 - Fade In project files (<code>.fadein</code>)
 - Fountain (<code>.fountain</code>)
 - Plain text (<code>.txt</code>)
-- Screenplay text (<code>.spmd</code>)
 
 ActOne converts the source to Fountain, creates a new project, and opens the save workflow so you can preserve the imported work as a <code>.actone</code> bundle.`,
   },

@@ -508,7 +508,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
                         Import or Structure Template...
                       </Typography>
                       <Typography sx={{ color: 'text.secondary', fontSize: '0.76rem', lineHeight: 1.3, mt: 0.25 }}>
-                        Import .fountain, .fdx, .fadein, .md, or structure template
+                        Import .fountain, .pdf, .fdx, .fadein, .md, or structure template
                       </Typography>
                     </Box>
                   </Box>
@@ -553,11 +553,11 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 <MenuItem
                   onClick={() => {
                     setImportAnchorEl(null);
-                    importScript("fountain");
+                    importScript();
                   }}
                   sx={{ fontSize: '0.8rem', py: 0.75, borderRadius: '6px' }}
                 >
-                  Import Screenplay (.fountain, .fdx, .fadein)
+                  Import Screenplay (.fountain, .pdf, .fdx, .fadein)
                 </MenuItem>
                 <MenuItem
                   onClick={() => {

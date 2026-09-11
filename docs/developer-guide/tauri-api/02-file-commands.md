@@ -26,9 +26,22 @@ invoke<ImportResult | null>("import_script_dialog", { format: null });
 
 **Returns:** `{ path: string, name: string, extension: string } | null`
 
-**Supported formats:** `.fdx`, `.fadein`, `.fountain`, `.txt`, and `.spmd`. Fade In files are read as binary data because they are packaged project files.
+**Supported formats:** `.pdf`, `.fdx`, `.fadein`, `.fountain`, and `.txt`. Fade In files are read as binary data because they are packaged project files. PDF files are parsed via `parse_pdf_to_fountain`.
 
 `import_fountain_dialog` remains registered as a compatibility alias for Fountain/text-only callers.
+
+---
+
+## `parse_pdf_to_fountain`
+
+Converts a screenplay PDF file into Fountain formatted text using `pdf2fountain`.
+
+```typescript
+invoke<string>("parse_pdf_to_fountain", { path: string });
+```
+
+**Parameters:** `{ path: string }`
+**Returns:** `string` (Fountain text) or throws on error.
 
 ---
 

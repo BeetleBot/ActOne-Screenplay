@@ -159,11 +159,11 @@ The Settings window loads installed and available dictionaries through Tauri. En
 The Welcome screen, editor, and Command Palette share the same import path:
 
 1. `import_script_dialog` opens a native picker, or the browser fallback creates a file input.
-2. `.fadein` files are read as binary data; the other supported formats are read as text.
-3. `parseScriptFileToFountain()` converts the source to Fountain.
+2. `.pdf` files are parsed natively via `parse_pdf_to_fountain`; `.fadein` files are read as binary data; the other supported formats are read as text.
+3. `parseScriptFileToFountain()` converts `.fdx`, `.fadein`, and Fountain text sources to Fountain.
 4. `FileContext.importAsActoneProject()` creates a native `.actone` project and triggers the save workflow.
 
-Supported extensions are `.fdx`, `.fadein`, `.fountain`, `.txt`, and `.spmd`.
+Supported extensions are `.pdf`, `.fdx`, `.fadein`, `.fountain`, and `.txt`.
 
 ## Window State
 

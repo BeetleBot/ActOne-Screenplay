@@ -190,7 +190,7 @@ Commands are registered in `src-tauri/src/lib.rs`. Capabilities are declared in 
 
 ### Script Import
 
-The frontend uses `import_script_dialog` for imports from the Welcome screen, editor, and Command Palette. Supported formats are `.fdx`, `.fadein`, `.fountain`, `.txt`, and `.spmd`. Imported content is normalized into Fountain text, converted into an ActOne project, and saved through the normal project workflow.
+The frontend uses `import_script_dialog` for imports from the Welcome screen, editor, and Command Palette. Supported formats are `.pdf`, `.fdx`, `.fadein`, `.fountain`, and `.txt`. PDF files are converted to Fountain via `parse_pdf_to_fountain` using `pdf2fountain`. Imported content is normalized into Fountain text, converted into an ActOne project, and saved through the normal project workflow.
 
 ### Spellcheck
 

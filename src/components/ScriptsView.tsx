@@ -101,7 +101,7 @@ export const ScriptsView = React.memo(() => {
     setImportMenuAnchor(null);
   };
 
-  const handleImportScriptType = async (type: "fountain" | "markdown" | "fdx" | "fadein") => {
+  const handleImportScriptType = async (type: "fountain" | "markdown" | "fdx" | "fadein" | "pdf") => {
     handleImportClose();
     await importScript(type);
   };
@@ -565,6 +565,9 @@ export const ScriptsView = React.memo(() => {
       >
         <MenuItem onClick={() => handleImportScriptType("fountain")} sx={{ fontSize: "0.85rem" }}>
           Fountain (.fountain, .txt)
+        </MenuItem>
+        <MenuItem onClick={() => handleImportScriptType("pdf")} sx={{ fontSize: "0.85rem" }}>
+          PDF Screenplay (.pdf)
         </MenuItem>
         <MenuItem onClick={() => handleImportScriptType("fdx")} sx={{ fontSize: "0.85rem" }}>
           Final Draft (.fdx)

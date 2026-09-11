@@ -261,7 +261,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         });
         if (result && result.path) {
           let fountainText = "";
-          if (result.path.toLowerCase().endsWith(".fadein")) {
+          if (result.path.toLowerCase().endsWith(".pdf")) {
+            fountainText = await invoke<string>("parse_pdf_to_fountain", { path: result.path });
+          } else if (result.path.toLowerCase().endsWith(".fadein")) {
             const bytes = await invoke<number[]>("read_file_binary", { path: result.path });
             fountainText = parseScriptFileToFountain(result.path, new Uint8Array(bytes));
           } else {
@@ -273,7 +275,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
             result.path
               .split(/[/\\]/)
               .pop()
-              ?.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "") ||
+              ?.replace(/\.(fountain|txt|fdx|fadein|pdf)$/i, "") ||
             "Untitled";
 
           localStorage.setItem("pending-import-name", scriptName);
@@ -300,11 +302,11 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
 
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".fdx,.fadein,.fountain,.txt,.spmd";
+    input.accept = ".fdx,.fadein,.fountain,.txt";
     input.onchange = async () => {
       const f = input.files?.[0];
       if (!f) return;
-      const name = f.name.replace(/\.(fountain|txt|fdx|fadein|spmd)$/i, "");
+      const name = f.name.replace(/\.(fountain|txt|fdx|fadein)$/i, "");
       let fountainText: string;
       if (f.name.toLowerCase().endsWith(".fadein")) {
         const buf = await f.arrayBuffer();
@@ -771,7 +773,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
                   Import Script
                 </Typography>
                 <Typography sx={{ fontSize: 11, color: theme.palette.text.secondary, mt: 0.2 }}>
-                  FDX, FadeIn, Fountain, or plain text files.
+                  PDF, FDX, FadeIn, Fountain, or plain text files.
                 </Typography>
               </Box>
               <Box

@@ -44,6 +44,7 @@ spellbook = "0.4"
 regex = "1"
 tauri-plugin-window-state = "2.4.1"
 tauri-plugin-dialog = "2"
+pdf2fountain = "0.1.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.62", features = ["Services_Store", "Foundation"] }

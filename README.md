@@ -11,7 +11,7 @@ ActOne is an open-source Fountain screenplay editor for Windows and Linux, creat
 - Multi-script `.actone` projects
 - Local snapshots stored in each project's `.snapshots/` directory
 - Optional offline spellcheck with downloadable dictionaries
-- Import from Final Draft (`.fdx`), Fade In (`.fadein`), Fountain, text, and `.spmd`
+- Import from PDF (`.pdf`), Final Draft (`.fdx`), Fade In (`.fadein`), Fountain, and text
 - Export to PDF, FDX, Fade In, Fountain, and CSV
 - Title page editor and structure templates
 - X-Ray screenplay analysis

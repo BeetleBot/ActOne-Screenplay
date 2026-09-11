@@ -49,7 +49,8 @@ Three pieces of state are managed via `tauri::State`:
 | `read_file_binary` | Reads a file as bytes |
 | `save_file_binary` | Writes bytes atomically to a file |
 | `file_exists` | Checks if a file exists |
-| `import_script_dialog` | File picker for `.fdx`/`.fadein`/`.fountain`/`.txt`/`.spmd` imports |
+| `import_script_dialog` | File picker for `.pdf`/`.fdx`/`.fadein`/`.fountain`/`.txt` imports |
+| `parse_pdf_to_fountain` | Converts screenplay PDF files to Fountain text using `pdf2fountain` |
 | `import_fountain_dialog` | Legacy-compatible alias for Fountain/text import |
 | `pick_directory` | Directory picker |
 | `get_cli_args` | Returns CLI args matching `.actone`/`.fountain`/`.txt` |
