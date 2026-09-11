@@ -22,7 +22,7 @@ flowchart TD
     Standalone --> IPC
     IPC --> Rust[Rust backend]
     Rust --> Files[File and .actone bundle I/O]
-    Rust --> Export[PDF, FDX, Fade In, Fountain, CSV export]
+    Rust --> Export[PDF, FDX, Fade In, and Fountain export]
     Rust --> Spell[Native spellcheck and dictionaries]
     Rust --> Project[Snapshots, preferences, fonts, structures]
     Rust --> Ollama[Optional Ollama proxy]
@@ -175,7 +175,7 @@ Muse context can include the screenplay index, active scene lines, todos, parkin
 The Rust backend exposes commands for:
 
 - File and bundle I/O
-- PDF, Fountain, CSV, FDX, and FadeIn export
+- PDF, Fountain, FDX, and FadeIn export
 - Font discovery and script detection
 - Theme and application preferences
 - Snapshots

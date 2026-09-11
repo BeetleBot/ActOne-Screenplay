@@ -40,7 +40,7 @@ Architecture, setup, and implementation details for developers working on ActOne
 |----------|-------------|
 | [Tauri API Overview](developer-guide/tauri-api/01-overview.md) | IPC, events, window management, capabilities |
 | [File I/O Commands](developer-guide/tauri-api/02-file-commands.md) | Open/save/read/write/CLI commands |
-| [Export Commands](developer-guide/tauri-api/03-export-commands.md) | PDF, FDX, FadeIn, CSV, Fountain export |
+| [Export Commands](developer-guide/tauri-api/03-export-commands.md) | PDF, FDX, FadeIn, and Fountain export |
 | [Theme & Prefs Commands](developer-guide/tauri-api/04-theme-prefs-commands.md) | Theme state, app preferences |
 | [Font Commands](developer-guide/tauri-api/05-font-commands.md) | System fonts, script detection, font recommendations |
 | [Snapshot Commands](developer-guide/tauri-api/06-snapshot-commands.md) | File versioning system |
@@ -96,7 +96,7 @@ End-user documentation for every feature in ActOne.
 | [Editor](features/01-editor.md) | Core editing features, syntax highlighting, smart typing |
 | [Autocomplete](features/02-autocomplete.md) | Ghost text suggestions for characters, transitions, etc. |
 | [Sidebar Panels](features/03-sidebar.md) | 8 sidebar tabs (46px grouped dock, pill active) + Header pill tabs, Search/Muse floating panes |
-| [Export](features/05-export.md) | PDF, FDX, FadeIn, Fountain, CSV export — pill nav + rounded modal |
+| [Export](features/05-export.md) | PDF, FDX, FadeIn, and Fountain export — pill nav + rounded modal |
 | [Multi-Script Bundles](features/06-scripts.md) | Managing multiple scripts in .actone bundles (rounded cards, pill search) |
 | [Parking](features/07-parking.md) | Temporary text storage (rounded cards) |
 | [Sprint Tracking](features/08-sprint.md) | Countdown timer with presets, history & leaderboard (pill controls, 12px cards) |

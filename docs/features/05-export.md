@@ -70,16 +70,6 @@ Saves the raw Fountain text as a standalone `.fountain` file (extracting from `.
 
 The app remembers the last directory you exported to. When you export again (PDF, Fountain, FDX, or FadeIn), the file dialog opens in the same directory you used last time, making repeated exports to the same location more convenient. The last-used directory is persisted across app restarts.
 
-## CSV Export (.csv)
-
-Exports a spreadsheet-compatible breakdown of all scenes:
-- Scene number
-- Scene heading
-- Page number
-- Character list
-- Word count per scene
-- Scene color
-
 ### Watermark Settings Persistence
 
 The watermark configuration (header/footer/center opacity and grayscale) is saved to the document settings whenever you close the watermark dialog — whether via X, Done, or clicking outside the panel. All three close paths persist the full configuration.

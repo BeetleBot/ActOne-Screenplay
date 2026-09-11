@@ -102,6 +102,15 @@ The standalone Settings window has a Muse tab:
 
 Small local models may not reliably follow Fountain rules or structured tool-call instructions. Larger local models or capable remote models generally perform better for multi-scene analysis and tool execution.
 
+## AI Model Palette
+
+The **AI Model Palette** (`Alt+Shift+M`) provides a fast, keyboard-driven way to switch your active AI provider and model without opening the full Settings window.
+
+- Press `Alt+Shift+M` from anywhere in the app to open the fuzzy-search palette.
+- It displays your active API entries and available Ollama models.
+- Type to filter the list, use the arrow keys to navigate, and press `Enter` to switch models.
+- At the bottom of the list, a "Configure Providers..." option quickly opens the Muse Settings tab.
+
 ## Chat Sessions
 
 `useAIChat()` manages sessions for the active file:

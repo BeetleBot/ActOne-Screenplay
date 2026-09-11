@@ -39,6 +39,13 @@ The production build splits vendor code:
    - Install/uninstall scripts
 6. Output: `ActOne-Linux-x64-<version>.tar.gz` in `Release/artifacts/`
 
+**`Release/appimage/build-appimage.sh`**:
+
+1. Prepares AppDir directory layout with desktop and MIME configuration
+2. Bundles application and document type icons (`.fountain`, `.actone`, `.actheme`)
+3. Fetches `appimagetool` and packages into a standalone portable AppImage
+4. Output: `ActOne-Screenplay-<version>-x86_64.AppImage` in `Release/artifacts/`
+
 ## Windows Build
 
 **`Release/windows/build-msix.ps1`** (180 lines):

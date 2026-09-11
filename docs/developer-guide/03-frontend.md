@@ -111,7 +111,7 @@ ErrorBoundary
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `ExportModal` | `ExportModal.tsx` | PDF/FDX/FadeIn/CSV/Fountain export with watermark settings |
+| `ExportModal` | `ExportModal.tsx` | PDF/FDX/FadeIn/Fountain export with watermark settings |
 | `CommandPalette` | `CommandPalette.tsx` | Fuzzy-search command palette (Ctrl+K) |
 | `StructureImportModal` | `StructureImportModal.tsx` | Import story structure templates |
 | `TitlePageEditorModal` | `TitlePageEditorModal.tsx` | Edit title page fields |

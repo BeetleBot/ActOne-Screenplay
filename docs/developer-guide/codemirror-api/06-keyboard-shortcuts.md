@@ -33,6 +33,7 @@ ActOne registers custom CodeMirror keymaps in addition to the default editor key
 | `Ctrl+\` | Toggle sidebar | Show/hide sidebar activity bar |
 | `Ctrl+Alt+Enter` | Toggle Zen Mode | Fullscreen distraction-free editing |
 | `Alt+M` | Open Muse AI | Open/toggle Muse AI assistant pane |
+| `Alt+Shift+M` | AI Model Palette | Open the quick model switcher |
 | `Alt+S` | Snapshots | Toggle Snapshots sidebar panel |
 | `Ctrl+,` | Settings | Open Settings window |
 | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Zoom in/out/reset | Adjust editor font scale |

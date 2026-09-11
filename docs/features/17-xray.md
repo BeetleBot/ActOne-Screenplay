@@ -30,5 +30,3 @@ The X-Ray window is a comprehensive screenplay analysis dashboard with pill-tab 
 - Prop and costume counts (tag-based)
 - Scene count by day/night, interior/exterior
 
-### Export
-All analysis data can be exported as CSV for external processing.

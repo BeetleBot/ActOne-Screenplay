@@ -12,12 +12,12 @@ ActOne is an open-source Fountain screenplay editor for Windows and Linux, creat
 - Local snapshots stored in each project's `.snapshots/` directory
 - Optional offline spellcheck with downloadable dictionaries
 - Import from PDF (`.pdf`), Final Draft (`.fdx`), Fade In (`.fadein`), Fountain, and text
-- Export to PDF, FDX, Fade In, Fountain, and CSV
+- Export to PDF, FDX, Fade In, and Fountain
 - Title page editor and structure templates
 - X-Ray screenplay analysis
 - Writing sprints, tasks, markers, parking, and notepad tools
-- Custom themes and interface scaling
-- Optional Muse AI support for Ollama and OpenAI-compatible providers
+- Custom themes
+- Optional Muse AI support with AI Model Palette (Ollama or OpenAI-compatible)
 
 ## Screenshots
 
@@ -26,7 +26,7 @@ ActOne is an open-source Fountain screenplay editor for Windows and Linux, creat
 | ![Fountain Screenplay Editor](https://iyal.ink/assets/website%20images/A1-Editor.png)<br>**Editor** – live Fountain formatting, autocomplete, and scene navigation | ![Outline Navigator](https://iyal.ink/assets/website%20images/A1-Navigator.png)<br>**Outline navigator** – sections, synopses, scene colors, and storylines |
 | ![Multi Script Projects](https://iyal.ink/assets/website%20images/A1-Multi-Scripts.png)<br>**Multi-script projects** – `.actone` bundles with notes, character lists, and progress | ![Snapshots](https://iyal.ink/assets/website%20images/A1snapshot.png)<br>**Snapshots** – automatic version history with diffs and restore |
 | ![X-Ray Analytics](https://iyal.ink/assets/website%20images/A1-Xray.png)<br>**X-Ray** – screenplay analysis and statistics | ![Muse AI Assistant](https://iyal.ink/assets/website%20images/A1-Muse.png)<br>**Muse** – optional AI writing assistant (Ollama or OpenAI-compatible) |
-| ![Export Dialog](https://iyal.ink/assets/website%20images/A1-Export.png)<br>**Export** – PDF, Final Draft (FDX), Fade In, Fountain, and CSV | |
+| ![Export Dialog](https://iyal.ink/assets/website%20images/A1-Export.png)<br>**Export** – PDF, Final Draft (FDX), Fade In, and Fountain | |
 
 ## Download
 

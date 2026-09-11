@@ -73,7 +73,6 @@ Three pieces of state are managed via `tauri::State`:
 | Command | Description |
 |---------|-------------|
 | `export_fountain` | Save dialog for `.fountain` |
-| `export_csv` | Save dialog for `.csv` |
 | `export_fdx` | Final Draft `.fdx` export |
 | `export_fadein` | FadeIn `.fadein` export (ZIP archive) |
 | `generate_fadein_bytes` | FadeIn bytes (no dialog) |

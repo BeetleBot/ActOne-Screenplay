@@ -168,16 +168,6 @@ invoke<string | null>("export_fountain", { content: string });
 
 ---
 
-## `export_csv`
-
-Save dialog for `.csv` export (scene breakdown data).
-
-```typescript
-invoke<string | null>("export_csv", { content: string });
-```
-
----
-
 ## `export_fdx`
 
 Full Final Draft XML export with save dialog.

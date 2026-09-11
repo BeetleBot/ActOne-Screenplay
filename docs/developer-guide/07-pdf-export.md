@@ -149,10 +149,6 @@ Side-by-side dialogue is rendered in two columns:
 - Packaged as ZIP via `fadein_pack.rs`
 - 17 unit tests
 
-### CSV
-
-Simple CSV export of scene data (number, heading, page, etc.).
-
 ## Watermarks
 
 Configurable watermarks with:
