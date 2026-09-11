@@ -16,7 +16,6 @@ import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
 
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SettingsUpdater = (prev: Record<string, unknown>) => Record<string, unknown>;
 
 export interface ScreenplayFile {
