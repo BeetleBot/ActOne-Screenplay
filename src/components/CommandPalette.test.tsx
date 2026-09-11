@@ -67,5 +67,14 @@ describe("CommandPalette Component", () => {
     expect(onOpenBugReportModal).toHaveBeenCalledTimes(1);
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
+
+  it("triggers onOpenSceneJump when clicking Jump to Scene", () => {
+    const onOpenSceneJump = vi.fn();
+    render(React.createElement(CommandPalette, { ...defaultProps, isOpen: true, onOpenSceneJump }));
+    const jumpItem = screen.getByText("Jump to Scene...");
+    jumpItem.click();
+    expect(onOpenSceneJump).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
 });
 

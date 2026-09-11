@@ -118,6 +118,7 @@ export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   { id: "prev-tab", label: "Previous Tab", category: "File & Document", keys: ["Ctrl", "Shift", "Tab"] },
 
   // ===== Navigation & View =====
+  { id: "scene-jump", label: "Jump to Scene", category: "Navigation & View", keys: ["Ctrl", "J"] },
   { id: "prev-scene", label: "Previous Scene", category: "Navigation & View", keys: ["Alt", "↑"] },
   { id: "next-scene", label: "Next Scene", category: "Navigation & View", keys: ["Alt", "↓"] },
   { id: "shortcuts-modal", label: "Keyboard Shortcuts Modal", category: "Navigation & View", keys: ["F1"] },

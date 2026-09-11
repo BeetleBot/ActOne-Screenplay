@@ -27,6 +27,7 @@ ActOne registers custom CodeMirror keymaps in addition to the default editor key
 | `Ctrl+Shift+Tab` | Previous tab | Switch to previous tab |
 | `Alt+↑` / `Alt+PageUp` | Previous scene | Jump to previous scene heading |
 | `Alt+↓` / `Alt+PageDown` | Next scene | Jump to next scene heading |
+| `Ctrl+J` | Scene Jump Palette | Instant fuzzy scene jump overlay |
 | `F1` | Shortcuts & Syntax Modal | Open Shortcuts & Syntax overlay |
 | `Ctrl+K` | Command Palette | Open fuzzy command palette |
 | `Ctrl+F` | Find & Replace | Toggle search panel |

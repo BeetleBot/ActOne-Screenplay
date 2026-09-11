@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 
 export interface ModalState {
   isPaletteOpen: boolean;
+  isSceneJumpOpen: boolean;
   showExportModal: boolean;
   showStructureModal: boolean;
   showTitlePageModal: boolean;
@@ -10,6 +11,7 @@ export interface ModalState {
 
 export interface ModalActions {
   setIsPaletteOpen: (v: boolean) => void;
+  setIsSceneJumpOpen: (v: boolean) => void;
   setShowExportModal: (v: boolean) => void;
   setShowStructureModal: (v: boolean) => void;
   setShowTitlePageModal: (v: boolean) => void;
@@ -18,14 +20,15 @@ export interface ModalActions {
 
 export function useModals() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [isSceneJumpOpen, setIsSceneJumpOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [showTitlePageModal, setShowTitlePageModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const isModalActive = useMemo(
-    () => isPaletteOpen || showExportModal || showStructureModal || showTitlePageModal || showShortcutsModal,
-    [isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal]
+    () => isPaletteOpen || isSceneJumpOpen || showExportModal || showStructureModal || showTitlePageModal || showShortcutsModal,
+    [isPaletteOpen, isSceneJumpOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal]
   );
 
   const savedScrollTopRef = useRef<number | null>(null);
@@ -49,14 +52,15 @@ export function useModals() {
   }, [isModalActive]);
 
   const togglePalette = useCallback(() => setIsPaletteOpen(p => !p), []);
+  const toggleSceneJump = useCallback(() => setIsSceneJumpOpen(p => !p), []);
 
   const state: ModalState = useMemo(() => ({
-    isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal
-  }), [isPaletteOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal]);
+    isPaletteOpen, isSceneJumpOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal
+  }), [isPaletteOpen, isSceneJumpOpen, showExportModal, showStructureModal, showTitlePageModal, showShortcutsModal]);
 
   const actions: ModalActions = {
-    setIsPaletteOpen, setShowExportModal, setShowStructureModal, setShowTitlePageModal, setShowShortcutsModal
+    setIsPaletteOpen, setIsSceneJumpOpen, setShowExportModal, setShowStructureModal, setShowTitlePageModal, setShowShortcutsModal
   };
 
-  return { ...state, ...actions, isModalActive, togglePalette };
+  return { ...state, ...actions, isModalActive, togglePalette, toggleSceneJump };
 }

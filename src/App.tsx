@@ -179,9 +179,9 @@ function AppInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const {
-    isModalActive, isPaletteOpen, showExportModal, showStructureModal,
+    isModalActive, isPaletteOpen, isSceneJumpOpen, showExportModal, showStructureModal,
     showTitlePageModal, showShortcutsModal,
-    setIsPaletteOpen, setShowExportModal, setShowStructureModal,
+    setIsPaletteOpen, setIsSceneJumpOpen, setShowExportModal, setShowStructureModal,
     setShowTitlePageModal, setShowShortcutsModal,
     togglePalette
   } = useModals();
@@ -213,6 +213,7 @@ function AppInner() {
     saveFileAs,
     closeFile: useCallback(() => closeFile(activeFileId), [closeFile, activeFileId]),
     togglePalette,
+    openSceneJump: useCallback(() => setIsSceneJumpOpen(true), [setIsSceneJumpOpen]),
     openModelPalette: useCallback(() => setIsModelPaletteOpen(true), []),
     exportPDF: useCallback(() => {
       setShowExportModal(true);
@@ -815,6 +816,8 @@ function AppInner() {
       <ModalManager
         isPaletteOpen={isPaletteOpen}
         setIsPaletteOpen={setIsPaletteOpen}
+        isSceneJumpOpen={isSceneJumpOpen}
+        setIsSceneJumpOpen={setIsSceneJumpOpen}
         showExportModal={showExportModal}
         setShowExportModal={setShowExportModal}
         showStructureModal={showStructureModal}

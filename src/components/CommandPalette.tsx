@@ -8,7 +8,7 @@ import {
   NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon,
   SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon,
   ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon,
-  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon, MuseIcon
+  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon, MuseIcon, ViewAgendaIcon
 } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
@@ -85,6 +85,7 @@ interface CommandPaletteProps {
   openTutorialsWindow?: () => void;
   onOpenAboutModal?: () => void;
   onOpenBugReportModal?: () => void;
+  onOpenSceneJump?: () => void;
   onFixFormattingResult?: (report: FixFormattingReport) => void;
 }
 
@@ -104,6 +105,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   openTutorialsWindow,
   onOpenAboutModal,
   onOpenBugReportModal,
+  onOpenSceneJump,
   onFixFormattingResult,
 }) => {
   const theme = useTheme();
@@ -291,6 +293,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "edit-spellcheck", name: spellcheckEnabled ? "Disable Spellcheck" : "Enable Spellcheck", category: "Edit", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setSpellcheckEnabled(!spellcheckEnabled); onClose(); } },
 
     // View
+    ...(onOpenSceneJump ? [{ id: "view-scene-jump", name: isProse ? "Jump to Heading / Chapter..." : "Jump to Scene...", category: "Navigation", icon: <ViewAgendaIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+J", action: () => { onClose(); onOpenSceneJump(); } }] : []),
     ...(toggleSidebar ? [{ id: "view-toggle-sidebar", name: isSidebarOpen ? "Hide Sidebar" : "Show Sidebar", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } }] : []),
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <FullscreenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },

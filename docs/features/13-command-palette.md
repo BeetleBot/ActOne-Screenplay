@@ -28,7 +28,8 @@ The palette groups commands by category (defined in `src/components/CommandPalet
 - Find in Screenplay
 - Enable / Disable Spellcheck
 
-### View
+### View & Navigation
+- Jump to Scene... (`Ctrl+J`)
 - Enable / Disable Typewriter Mode
 - Enable / Disable Zen Mode
 - Enable / Disable Focus Mode

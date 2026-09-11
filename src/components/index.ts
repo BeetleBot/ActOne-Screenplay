@@ -34,6 +34,7 @@ export { TutorialsWindow } from './TutorialsWindow';
 export { TranslateDocumentModal } from './TranslateDocumentModal';
 export { QuickGuideModal } from './QuickGuideModal';
 export { AiModelPalette } from './AiModelPalette';
+export { SceneJumpPalette } from './SceneJumpPalette';
 
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,

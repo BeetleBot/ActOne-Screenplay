@@ -17,6 +17,7 @@ interface ShortcutActions {
   closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
+  openSceneJump?: () => void;
   openMusePane?: () => void;
   openModelPalette?: () => void;
   openHelp?: () => void;
@@ -114,6 +115,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "k") {
         e.preventDefault();
         actionsRef.current.togglePalette();
+        return;
+      }
+
+      if (key === "j" && !shift && !alt) {
+        e.preventDefault();
+        actionsRef.current.openSceneJump?.();
         return;
       }
 

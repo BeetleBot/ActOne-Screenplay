@@ -23,6 +23,8 @@ Shows the screenplay structure as **rounded scene cards** (`6px` radius, soft sh
 - Click any card to jump to that line in the editor
 - Header menu (`⋯`) controls **Outline font size**: Small / Normal / Large
 
+Writers can also jump instantly to any scene without opening the sidebar by pressing `Ctrl+J` to open the **Instant Scene Jump Palette**.
+
 For prose documents (`.md`), the panel switches to **Table of Contents** listing Markdown headings. *Characters & Statistics* live in the X-Ray Analysis window (Status Bar bar-chart icon), not inside Outline.
 
 ## Scripts (Tab 2 — Content Group)

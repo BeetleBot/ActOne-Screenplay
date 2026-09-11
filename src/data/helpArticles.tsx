@@ -698,6 +698,30 @@ For character data, statistics, and analysis charts, open the **X-Ray Analysis**
 For prose documents (\`.md\`), the panel switches to **Table of Contents** mode listing Markdown headings.`,
   },
   {
+    id: "scene-jump-palette",
+    title: "Instant Scene Jump Palette (Ctrl+J)",
+    category: "Workspace & Views",
+    tags: ["scene jump", "jump to scene", "ctrl+j", "quick jump", "navigation", "palette", "fuzzy search"],
+    relatedIds: ["outline-navigator", "command-palette", "scene-headings"],
+    content: `Press <kbd>Ctrl+J</kbd> (or select **"Jump to Scene..."** from the Command Palette) to open the instant Scene Jump Palette.
+    
+Designed for speed and uninterrupted writing flow, it lets screenwriters and prose authors jump anywhere in their script in milliseconds.
+
+### Fast Fuzzy Search Options
+You can type any combination of search terms:
+- **Scene Number**: Type \`14\`, \`#14\`, or \`14A\` to jump directly to that specific scene.
+- **Prefix / Setting**: Type \`INT\`, \`EXT\`, or \`I/E\` to filter interior or exterior scenes.
+- **Location**: Type keywords like \`COFFEE SHOP\`, \`APARTMENT\`, \`HIGHWAY\`, or \`BEACH\`.
+- **Time of Day**: Type \`DAY\`, \`NIGHT\`, \`DAWN\`, \`EVENING\`, or \`CONTINUOUS\`.
+- **Storylines & Synopses**: Search for plot arc tags or synopsis beats (e.g. \`ChaseArc\` or \`informant\`).
+- **Prose / Markdown Headings**: When editing a Markdown document, the palette automatically indexes and searches chapters and headings (\`# Chapter 1\`, \`## Beat A\`).
+
+### Keyboard Navigation
+- <kbd>↑</kbd> and <kbd>↓</kbd>: Navigate through matched scenes.
+- <kbd>Enter</kbd>: Instantly jump to and center the selected scene in the editor.
+- <kbd>Esc</kbd>: Close the palette and return focus smoothly to the editor.`,
+  },
+  {
     id: "sidebar-panels",
     title: "Sidebar Panels Overview",
     category: "Workspace & Views",

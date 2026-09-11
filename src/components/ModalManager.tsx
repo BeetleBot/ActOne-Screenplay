@@ -9,11 +9,14 @@ import { QuickGuideModal } from './QuickGuideModal';
 import { FixFormattingModal } from './FixFormattingModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { TranslateDocumentModal } from './TranslateDocumentModal';
+import { SceneJumpPalette } from './SceneJumpPalette';
 import type { FixFormattingReport } from '../utils/fixFormatting';
 
 export interface ModalManagerProps {
   isPaletteOpen: boolean;
   setIsPaletteOpen: (open: boolean) => void;
+  isSceneJumpOpen?: boolean;
+  setIsSceneJumpOpen?: (open: boolean) => void;
   showExportModal: boolean;
   setShowExportModal: (open: boolean) => void;
   showStructureModal: boolean;
@@ -39,6 +42,8 @@ export interface ModalManagerProps {
 export const ModalManager: React.FC<ModalManagerProps> = ({
   isPaletteOpen,
   setIsPaletteOpen,
+  isSceneJumpOpen = false,
+  setIsSceneJumpOpen,
   showExportModal,
   setShowExportModal,
   showStructureModal,
@@ -92,8 +97,17 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onOpenMuseSettings={() => openSettingsWindow?.("muse")}
           onOpenAboutModal={() => setShowAbout(true)}
           onOpenBugReportModal={() => setShowBugReport(true)}
+          onOpenSceneJump={setIsSceneJumpOpen ? () => setIsSceneJumpOpen(true) : undefined}
           onFixFormattingResult={(report) => setFixFormattingReport(report)}
         />
+      </ErrorBoundary>
+      <ErrorBoundary name="scene-jump-palette">
+        {isSceneJumpOpen && setIsSceneJumpOpen && (
+          <SceneJumpPalette
+            isOpen={isSceneJumpOpen}
+            onClose={() => setIsSceneJumpOpen(false)}
+          />
+        )}
       </ErrorBoundary>
       <ErrorBoundary name="export-modal">{showExportModal && <ExportModal onClose={() => setShowExportModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
