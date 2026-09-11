@@ -6,6 +6,7 @@ import type { ScriptInfo } from "../utils/actone";
 let mockScripts: ScriptInfo[] = [];
 let mockActiveScriptIndex = 0;
 let mockIsBundle = true;
+let mockImportingScriptName: string | null = null;
 const mockSetActiveScript = vi.fn();
 const mockAddScript = vi.fn();
 const mockImportScript = vi.fn();
@@ -25,10 +26,14 @@ vi.mock("../context", () => ({
     get isBundle() {
       return mockIsBundle;
     },
+    get importingScriptName() {
+      return mockImportingScriptName;
+    },
     activeFileId: "test-file-1",
     setActiveScript: mockSetActiveScript,
     addScript: mockAddScript,
     importScript: mockImportScript,
+    importScriptFromPath: vi.fn(),
     renameScript: mockRenameScript,
     duplicateScript: mockDuplicateScript,
     deleteScript: mockDeleteScript,
@@ -51,6 +56,7 @@ beforeEach(() => {
   ];
   mockActiveScriptIndex = 0;
   mockIsBundle = true;
+  mockImportingScriptName = null;
 });
 
 describe("ScriptsView Component", () => {
@@ -58,6 +64,15 @@ describe("ScriptsView Component", () => {
     mockIsBundle = false;
     const { container } = render(<ScriptsView />);
     expect(container.firstChild).toBeNull();
+  });
+
+  it("renders animated importing card when importingScriptName is set", () => {
+    mockImportingScriptName = "Inception.pdf";
+    render(<ScriptsView />);
+    expect(screen.getByTestId("importing-card")).toBeTruthy();
+    expect(screen.getByText("Inception.pdf")).toBeTruthy();
+    expect(screen.getByText("IMPORTING")).toBeTruthy();
+    expect(screen.getByText("Importing & formatting screenplay...")).toBeTruthy();
   });
 
   it("renders scripts list with SCRIPT and PROSE tags", () => {

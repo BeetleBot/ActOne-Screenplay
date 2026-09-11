@@ -42,4 +42,39 @@ describe("useNativeAppBehavior", () => {
     window.dispatchEvent(drop);
     expect(preventSpy).toHaveBeenCalled();
   });
+
+  it("handles Tauri drag drop events for accepted extensions with position", async () => {
+    let capturedCb: ((event: { payload: any }) => void) | undefined;
+    vi.doMock("@tauri-apps/api/webview", () => ({
+      getCurrentWebview: () => ({
+        onDragDropEvent: (cb: (event: { payload: any }) => void) => {
+          capturedCb = cb;
+          return () => {};
+        },
+      }),
+    }));
+
+    const onDropFiles = vi.fn();
+    const onDragStateChange = vi.fn();
+
+    renderHook(() => useNativeAppBehavior(onDropFiles, onDragStateChange));
+
+    // Wait for dynamic import
+    await new Promise((r) => setTimeout(r, 20));
+
+    if (capturedCb) {
+      capturedCb({
+        payload: {
+          type: "drop",
+          paths: ["/path/test.pdf", "/path/test.fdx", "/path/test.fadein", "/path/test.md", "/path/ignored.exe"],
+          position: { x: 200, y: 300 },
+        },
+      });
+
+      expect(onDropFiles).toHaveBeenCalledWith(
+        ["/path/test.pdf", "/path/test.fdx", "/path/test.fadein", "/path/test.md"],
+        { clientX: 200, clientY: 300 }
+      );
+    }
+  });
 });

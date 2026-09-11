@@ -823,7 +823,14 @@ fn get_cli_args() -> Vec<String> {
     args.into_iter()
         .filter(|p| {
             let lp = p.to_ascii_lowercase();
-            lp.ends_with(".actone") || lp.ends_with(".fountain") || lp.ends_with(".txt")
+            lp.ends_with(".actone")
+                || lp.ends_with(".fountain")
+                || lp.ends_with(".txt")
+                || lp.ends_with(".pdf")
+                || lp.ends_with(".fdx")
+                || lp.ends_with(".fadein")
+                || lp.ends_with(".md")
+                || lp.ends_with(".markdown")
         })
         .collect()
 }
@@ -1031,7 +1038,14 @@ pub fn run() {
             let filtered: Vec<String> = args.into_iter()
                 .filter(|p| {
                     let lp = p.to_ascii_lowercase();
-                    lp.ends_with(".actone") || lp.ends_with(".fountain") || lp.ends_with(".txt")
+                    lp.ends_with(".actone")
+                        || lp.ends_with(".fountain")
+                        || lp.ends_with(".txt")
+                        || lp.ends_with(".pdf")
+                        || lp.ends_with(".fdx")
+                        || lp.ends_with(".fadein")
+                        || lp.ends_with(".md")
+                        || lp.ends_with(".markdown")
                 })
                 .collect();
             if !filtered.is_empty() {
@@ -1173,6 +1187,11 @@ pub fn run() {
                             lp.ends_with(".actone")
                                 || lp.ends_with(".fountain")
                                 || lp.ends_with(".txt")
+                                || lp.ends_with(".pdf")
+                                || lp.ends_with(".fdx")
+                                || lp.ends_with(".fadein")
+                                || lp.ends_with(".md")
+                                || lp.ends_with(".markdown")
                         })
                         .collect();
                     if !filtered.is_empty() {

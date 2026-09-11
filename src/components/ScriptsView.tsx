@@ -1,5 +1,6 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useFile, useUI } from "../context";
+import { alpha } from "@mui/material/styles";
 import {
   AddIcon,
   DownloadIcon,
@@ -23,6 +24,8 @@ import {
   TextField,
   Tooltip,
   Button,
+  CircularProgress,
+  LinearProgress,
 } from "@mui/material";
 
 import { OutlineTag } from "./OutlineView";
@@ -37,10 +40,12 @@ export const ScriptsView = React.memo(() => {
     setActiveScript,
     addScript,
     importScript,
+    importScriptFromPath,
     renameScript,
     duplicateScript,
     deleteScript,
     moveScript,
+    importingScriptName,
   } = useFile();
 
   const {
@@ -57,11 +62,70 @@ export const ScriptsView = React.memo(() => {
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
   const [importMenuAnchor, setImportMenuAnchor] = useState<HTMLElement | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const listRef = useRef<HTMLUListElement>(null);
   const mouseDragRef = useRef<number | null>(null);
   const mouseOverRef = useRef<number | null>(null);
   const ghostRef = useRef<HTMLDivElement | null>(null);
+  const dragCounterRef = useRef(0);
+
+  useEffect(() => {
+    const handleCustomDrag = (e: Event) => {
+      const customEvent = e as CustomEvent<{ target: string | null }>;
+      if (customEvent.detail?.target === "scripts") {
+        setIsDragOver(true);
+      } else {
+        setIsDragOver(false);
+      }
+    };
+    window.addEventListener("actone-drag-pane", handleCustomDrag);
+    return () => window.removeEventListener("actone-drag-pane", handleCustomDrag);
+  }, []);
+
+  const handlePanelDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+    setIsDragOver(true);
+  };
+
+  const handlePanelDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handlePanelDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+    }
+  };
+
+  const handlePanelDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      for (let i = 0; i < e.dataTransfer.files.length; i++) {
+        const file = e.dataTransfer.files[i];
+        const path = (file as unknown as { path?: string }).path;
+        if (path) {
+          importScriptFromPath(path);
+        }
+      }
+    }
+  };
 
   if (!isBundle) return null;
 
@@ -242,12 +306,94 @@ export const ScriptsView = React.memo(() => {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <Box
+      id="scripts-view-panel"
+      data-testid="scripts-view"
+      onDragEnter={handlePanelDragEnter}
+      onDragOver={handlePanelDragOver}
+      onDragLeave={handlePanelDragLeave}
+      onDrop={handlePanelDrop}
+      sx={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}
+    >
+      {isDragOver && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 6,
+            zIndex: 1000,
+            borderRadius: "12px",
+            border: "2px dashed",
+            borderColor: "primary.main",
+            bgcolor: (t) => alpha(t.palette.background.paper, 0.94),
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 2,
+            textAlign: "center",
+            pointerEvents: "none",
+            boxShadow: (t) => `0 8px 32px ${alpha(t.palette.primary.main, 0.25)}`,
+          }}
+        >
+          <Box
+            sx={{
+              width: 52,
+              height: 52,
+              borderRadius: "50%",
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+              color: "primary.main",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mb: 1.5,
+              border: "1.5px solid",
+              borderColor: "primary.main",
+            }}
+          >
+            <DownloadIcon sx={{ fontSize: 26 }} />
+          </Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.85rem", color: "text.primary", mb: 0.5 }}>
+            Drop files to add to project
+          </Typography>
+          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem", maxWidth: 210, lineHeight: 1.4 }}>
+            Import .fountain, .pdf, .fdx, .fadein, or .md as a new script
+          </Typography>
+        </Box>
+      )}
+
       {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, height: 40, minHeight: 40, borderBottom: "1px solid", borderColor: "divider" }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-          Project
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+            Project
+          </Typography>
+          {importingScriptName && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.6,
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+                color: "primary.main",
+                px: 0.8,
+                py: 0.2,
+                borderRadius: "10px",
+                fontSize: "0.62rem",
+                fontWeight: 600,
+                animation: "pulse 1.4s infinite ease-in-out",
+                "@keyframes pulse": {
+                  "0%": { opacity: 0.6 },
+                  "50%": { opacity: 1 },
+                  "100%": { opacity: 0.6 },
+                },
+              }}
+            >
+              <CircularProgress size={8} thickness={6} color="inherit" />
+              Importing...
+            </Box>
+          )}
+        </Box>
         <Box sx={{ display: "flex", gap: 0.25, alignItems: "center" }}>
           <Tooltip title="Project displays the list of files in the current bundle. Drag to reorder, add new files, or import files.">
             <span>
@@ -322,15 +468,58 @@ export const ScriptsView = React.memo(() => {
             },
           }}
         >
-          {scripts.length === 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 3, textAlign: "center", height: "60%", opacity: 0.6 }}>
-              <InfoOutlinedIcon sx={{ fontSize: 24, mb: 1, opacity: 0.5 }} />
-              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, fontSize: "0.75rem" }}>
+          {scripts.length === 0 && !importingScriptName ? (
+            <Box
+              onClick={handleImportClick}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 3,
+                m: 2,
+                borderRadius: "12px",
+                border: "2px dashed",
+                borderColor: "divider",
+                bgcolor: (t) => alpha(t.palette.text.primary, 0.02),
+                textAlign: "center",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.05),
+                },
+              }}
+            >
+              <Box sx={{ color: "primary.main", mb: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <DownloadIcon sx={{ fontSize: 30, opacity: 0.8 }} />
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, fontSize: "0.8rem", color: "text.primary" }}>
                 No files yet
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.72rem", maxWidth: 190, lineHeight: 1.4, mb: 0.5 }}>
                 Click + above to add a screenplay or prose document.
               </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", opacity: 0.8, mb: 1.5 }}>
+                Or drag & drop files here (.fountain, .pdf, .fdx, .fadein, .md)
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                sx={{
+                  borderRadius: "20px",
+                  fontSize: "0.7rem",
+                  textTransform: "none",
+                  py: 0.25,
+                  px: 1.5,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleImportClick(e);
+                }}
+              >
+                Browse Files
+              </Button>
             </Box>
           ) : filteredScripts.length === 0 ? (
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 3, textAlign: "center", height: "60%", opacity: 0.6 }}>
@@ -549,6 +738,117 @@ export const ScriptsView = React.memo(() => {
                   </Box>
                 );
               })}
+              {importingScriptName && (
+                <Box
+                  data-testid="importing-card"
+                  sx={{
+                    mb: 1,
+                    p: 1.2,
+                    borderRadius: "8px",
+                    border: "1.5px solid",
+                    borderColor: "primary.main",
+                    bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                    boxShadow: (t) => `0 2px 14px ${alpha(t.palette.primary.main, 0.18)}`,
+                    position: "relative",
+                    overflow: "hidden",
+                    animation: "fadeInSlide 0.25s ease-out",
+                    "@keyframes fadeInSlide": {
+                      from: { opacity: 0, transform: "translateY(-6px)" },
+                      to: { opacity: 1, transform: "translateY(0)" },
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.8 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                      <CircularProgress size={14} thickness={5} sx={{ color: "primary.main", flexShrink: 0 }} />
+                      <Typography
+                        noWrap
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: "0.8rem",
+                          color: "text.primary",
+                          letterSpacing: "-0.01em",
+                        }}
+                      >
+                        {importingScriptName}
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        px: 0.8,
+                        py: 0.2,
+                        borderRadius: "5px",
+                        bgcolor: "primary.main",
+                        color: "primary.contrastText",
+                        fontSize: "0.62rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        animation: "pulseTag 1.2s infinite ease-in-out",
+                        "@keyframes pulseTag": {
+                          "0%": { opacity: 0.7 },
+                          "50%": { opacity: 1 },
+                          "100%": { opacity: 0.7 },
+                        },
+                      }}
+                    >
+                      IMPORTING
+                    </Box>
+                  </Box>
+
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: "0.68rem",
+                      display: "block",
+                      mb: 0.8,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Importing & formatting screenplay...
+                  </Typography>
+
+                  <LinearProgress
+                    sx={{
+                      height: 3,
+                      borderRadius: "2px",
+                      bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+                      "& .MuiLinearProgress-bar": {
+                        borderRadius: "2px",
+                      },
+                    }}
+                  />
+                </Box>
+              )}
+              <Box
+                onClick={handleImportClick}
+                sx={{
+                  mt: 1,
+                  mb: 1.5,
+                  mx: 0.5,
+                  p: 1.2,
+                  borderRadius: "8px",
+                  border: "1.5px dashed",
+                  borderColor: "divider",
+                  bgcolor: (t) => alpha(t.palette.text.primary, 0.02),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 1,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    bgcolor: (t) => alpha(t.palette.primary.main, 0.05),
+                  },
+                }}
+              >
+                <DownloadIcon sx={{ fontSize: 15, color: "text.secondary", opacity: 0.7 }} />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, fontSize: "0.72rem" }}>
+                  Drop files here to add to project
+                </Typography>
+              </Box>
             </List>
           )}
         </Box>

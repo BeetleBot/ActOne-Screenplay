@@ -343,6 +343,141 @@ describe("FileContext", () => {
     const tab1 = result.current.files.find(f => f.id === tab1Id);
     expect(tab1?.rawText).toBe("Tab 1 fast typing");
   });
+
+  it("opens external .pdf file via openFilePath as untitled project without immediate save", async () => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
+      if (cmd === "parse_pdf_to_fountain" && args.path.endsWith(".pdf")) {
+        return "INT. COFFEE SHOP - DAY\n\nJOHN\nHello from PDF!";
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      await result.current.openFilePath("C:/scripts/Just_Married.pdf");
+    });
+
+    const activeFile = result.current.files.find(f => f.id === result.current.activeFileId);
+    expect(activeFile).toBeDefined();
+    // Project filePath must be null (unsaved Untitled project)
+    expect(activeFile?.filePath).toBeNull();
+    expect(activeFile?.isDirty).toBe(true);
+    // Script inside should retain the imported file name
+    expect(activeFile?.scripts?.[0].name).toBe("Just_Married");
+    expect(activeFile?.rawText).toContain("Hello from PDF!");
+  });
+
+  it("opens external .fdx file via openFilePath converting to fountain", async () => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
+      if (cmd === "read_file_content" && args.path.endsWith(".fdx")) {
+        return `<?xml version="1.0" encoding="UTF-8"?><FinalDraft DocumentType="Script" Template="No" Version="1"><Content><Paragraph Type="Scene Heading"><Text>INT. HOUSE - NIGHT</Text></Paragraph></Content></FinalDraft>`;
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      await result.current.openFilePath("C:/scripts/MyScreenplay.fdx");
+    });
+
+    const activeFile = result.current.files.find(f => f.id === result.current.activeFileId);
+    expect(activeFile).toBeDefined();
+    expect(activeFile?.filePath).toBeNull();
+    expect(activeFile?.scripts?.[0].name).toBe("MyScreenplay");
+    expect(activeFile?.rawText).toContain("INT. HOUSE - NIGHT");
+  });
+
+  it("opens external .md file via openFilePath as prose document", async () => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
+      if (cmd === "read_file_content" && args.path.endsWith(".md")) {
+        return "# My Treatment Notes\n\nSome prose content here.";
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      await result.current.openFilePath("C:/scripts/Treatment.md");
+    });
+
+    const activeFile = result.current.files.find(f => f.id === result.current.activeFileId);
+    expect(activeFile).toBeDefined();
+    expect(activeFile?.filePath).toBeNull();
+    expect(activeFile?.scripts?.[0].name).toBe("Treatment");
+    expect(activeFile?.scripts?.[0].type).toBe("markdown");
+    expect(activeFile?.rawText).toContain("My Treatment Notes");
+  });
+
+  it("imports .pdf via importScriptFromPath into the current active project", async () => {
+    const mockedBytes = Array.from(
+      packActoneBundle(
+        [{ name: "Episode 1", fileName: "files/Episode_1.fountain", content: "INT. LAB - DAY", savedContent: "INT. LAB - DAY" }],
+        {}
+      )
+    );
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
+      if (cmd === "read_file_binary" && args.path.endsWith(".actone")) {
+        return mockedBytes;
+      }
+      if (cmd === "parse_pdf_to_fountain" && args.path.endsWith(".pdf")) {
+        return "INT. OFFICE - DAY\n\nSALLY\nHey!";
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      await result.current.openFilePath("C:/scripts/series.actone");
+    });
+
+    expect(result.current.scripts.length).toBe(1);
+
+    await act(async () => {
+      await result.current.importScriptFromPath("C:/downloads/Episode_2.pdf");
+    });
+
+    expect(result.current.scripts.length).toBe(2);
+    expect(result.current.scripts[1].name).toBe("Episode_2");
+    expect(result.current.scripts[1].type).toBe("fountain");
+    expect(result.current.rawText).toContain("SALLY");
+  });
+
+  it("imports .md via importScriptFromPath as prose into the current active project", async () => {
+    const mockedBytes = Array.from(
+      packActoneBundle(
+        [{ name: "Episode 1", fileName: "files/Episode_1.fountain", content: "INT. LAB - DAY", savedContent: "INT. LAB - DAY" }],
+        {}
+      )
+    );
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
+      if (cmd === "read_file_binary" && args.path.endsWith(".actone")) {
+        return mockedBytes;
+      }
+      if (cmd === "read_file_content" && args.path.endsWith(".md")) {
+        return "# Character Bible\n\nDetails about characters.";
+      }
+      return null;
+    });
+
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      await result.current.openFilePath("C:/scripts/series.actone");
+    });
+
+    await act(async () => {
+      await result.current.importScriptFromPath("C:/downloads/Character_Bible.md");
+    });
+
+    expect(result.current.scripts.length).toBe(2);
+    expect(result.current.scripts[1].name).toBe("Character_Bible");
+    expect(result.current.scripts[1].type).toBe("markdown");
+    expect(result.current.rawText).toContain("Character Bible");
+  });
 });
 
 

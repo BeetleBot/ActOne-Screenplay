@@ -32,6 +32,7 @@ The Scripts tab (second in the activity bar — Content group) lists all documen
 - Click any card to switch; document-type tag (`SCRIPT`/`PROSE`, `5px` radius, `accent` vs `default`)
 - `[+]` menu to add a Screenplay (`.fountain`) or Prose (`.md`) document; download menu to import files into the project
 - Drag-and-drop reordering of documents; `⋮` menu (`16px` icon) per card: Rename / Duplicate / Move Up/Down / Delete
+- **Drag-and-Drop Import**: Dragging external files (`.pdf`, `.fdx`, `.fadein`, `.fountain`, `.txt`, `.md`) directly into the Scripts pane automatically imports them into the active project (.pdf/.fdx/.fadein/.fountain as scripts; .md as prose)
 
 ## Managing Documents
 

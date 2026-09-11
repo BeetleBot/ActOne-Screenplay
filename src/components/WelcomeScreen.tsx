@@ -280,6 +280,9 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
 
           localStorage.setItem("pending-import-name", scriptName);
           localStorage.setItem("pending-import-content", fountainText);
+          if (result.path.toLowerCase().endsWith(".pdf")) {
+            localStorage.setItem("pending-import-is-pdf", "true");
+          }
           localStorage.setItem("pending-action", "import");
           const created = await createEditorWindow("import");
           if (created) {
@@ -315,7 +318,7 @@ export const WelcomeScreenWindow: React.FC<WelcomeScreenWindowProps> = ({ standa
         const text = await f.text();
         fountainText = parseScriptFileToFountain(f.name, text);
       }
-      await importAsActoneProject(fountainText, name, true);
+      await importAsActoneProject(fountainText, name, false);
     };
     input.click();
   };

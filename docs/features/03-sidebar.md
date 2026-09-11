@@ -37,6 +37,7 @@ Lists all scripts in the current `.actone` project as **rounded cards** (`8px` r
 - `⋮` menu per script: Rename, Duplicate, Move Up/Down, Delete
 - **Export All** button (pill, `6px`) to export each script individually
 - Drag-and-drop reordering of scripts
+- **Drag-and-Drop File Import**: Dragging external files (`.pdf`, `.fdx`, `.fadein`, `.fountain`, `.txt`, `.md`) directly onto the Scripts pane imports them into the active project (screenplays as scripts, markdown as prose). Dropping elsewhere in the application opens them as a new project.
 - When a project has no scripts (Landing Pad state), the Scripts pane is automatically opened and active, while other feature tabs are greyed out until a script is created.
 
 ## Notepad (Tab 3 — Content Group)

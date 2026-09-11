@@ -1,10 +1,24 @@
 import { useEffect, useRef } from "react";
 
-const ACCEPTED_EXTENSIONS = new Set([".fountain", ".txt", ".actone"]);
+export interface DropPosition {
+  clientX: number;
+  clientY: number;
+}
+
+const ACCEPTED_EXTENSIONS = new Set([
+  ".fountain",
+  ".txt",
+  ".actone",
+  ".pdf",
+  ".fdx",
+  ".fadein",
+  ".md",
+  ".markdown",
+]);
 
 export function useNativeAppBehavior(
-  onDropFiles?: (paths: string[]) => void,
-  onDragStateChange?: (isDragging: boolean) => void
+  onDropFiles?: (paths: string[], position?: DropPosition) => void,
+  onDragStateChange?: (isDragging: boolean, position?: DropPosition | null) => void
 ) {
   const onDropFilesRef = useRef(onDropFiles);
   onDropFilesRef.current = onDropFiles;
@@ -86,13 +100,36 @@ export function useNativeAppBehavior(
       }
     };
 
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = "copy";
+      }
+      onDragStateChangeRef.current?.(true, { clientX: e.clientX, clientY: e.clientY });
+    };
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      onDragStateChangeRef.current?.(true, { clientX: e.clientX, clientY: e.clientY });
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      if (e.relatedTarget === null) {
+        onDragStateChangeRef.current?.(false, null);
+      }
+    };
+
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
+      onDragStateChangeRef.current?.(false, null);
     };
 
     document.addEventListener("contextmenu", handleContextMenu);
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("wheel", handleWheel, { passive: false });
+    window.addEventListener("dragenter", handleDragEnter);
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("dragleave", handleDragLeave);
     window.addEventListener("drop", handleDrop);
 
     let unmounted = false;
@@ -101,21 +138,32 @@ export function useNativeAppBehavior(
     const setupDragDrop = async () => {
       try {
         const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        const toLogicalPos = (pos?: { x: number; y: number }): DropPosition | undefined => {
+          if (!pos) return undefined;
+          return {
+            clientX: pos.x / (window.devicePixelRatio || 1),
+            clientY: pos.y / (window.devicePixelRatio || 1),
+          };
+        };
+
         const unlisten = await getCurrentWebview().onDragDropEvent((event) => {
           if (unmounted) return;
           const payload = event.payload;
           if (payload.type === "enter") {
-            onDragStateChangeRef.current?.(true);
+            onDragStateChangeRef.current?.(true, toLogicalPos(payload.position));
+          } else if (payload.type === "over") {
+            onDragStateChangeRef.current?.(true, toLogicalPos(payload.position));
           } else if (payload.type === "leave") {
-            onDragStateChangeRef.current?.(false);
+            onDragStateChangeRef.current?.(false, null);
           } else if (payload.type === "drop") {
-            onDragStateChangeRef.current?.(false);
+            onDragStateChangeRef.current?.(false, null);
             const valid = payload.paths.filter((p) => {
               const ext = p.slice(p.lastIndexOf(".")).toLowerCase();
               return ACCEPTED_EXTENSIONS.has(ext);
             });
             if (valid.length > 0) {
-              onDropFilesRef.current?.(valid);
+              const pos = toLogicalPos(payload.position);
+              onDropFilesRef.current?.(valid, pos);
             }
           }
         });
@@ -141,6 +189,9 @@ export function useNativeAppBehavior(
       document.removeEventListener("contextmenu", handleContextMenu);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("dragenter", handleDragEnter);
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("drop", handleDrop);
       if (unlistenDragDrop) {
         try {

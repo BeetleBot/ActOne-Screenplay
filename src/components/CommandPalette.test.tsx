@@ -26,6 +26,10 @@ vi.mock("../context", () => ({
     lineFocusEnabled: false,
     setLineFocusEnabled: vi.fn(),
   }),
+  useCustomModal: () => ({
+    confirm: vi.fn().mockResolvedValue("ok"),
+    prompt: vi.fn().mockResolvedValue(""),
+  }),
 }));
 
 import { CommandPalette } from "./CommandPalette";

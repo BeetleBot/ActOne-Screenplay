@@ -18,7 +18,7 @@ const modalParam = params.get("modal");
 const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "theme-manager" || modalParam === "xray" || modalParam === "tutorials";
 
 function AppInner() {
-  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName, importAsActoneProject } = useFile();
+  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName, importAsActoneProject, importScriptFromPath, isBundle } = useFile();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTutorialsModal, setShowTutorialsModal] = useState(false);
   const { confirm } = useCustomModal();
@@ -143,8 +143,80 @@ function AppInner() {
   }, [handleTutorialStart]);
 
   const isStandalone = !isEditorWindow;
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [dragTarget, setDragTarget] = useState<"scripts" | "editor" | null>(null);
 
-  const handleDropFiles = useCallback((paths: string[]) => {
+  const {
+    zoomLevel,
+    setZoomLevel,
+    isZenMode,
+    setIsZenMode,
+    activeRightPane,
+    setActiveRightPane,
+    activeTab,
+    setActiveTab,
+  } = useUI();
+
+  const handleDragStateChange = useCallback((isDragging: boolean, position?: { clientX: number; clientY: number } | null) => {
+    setIsDraggingOver(isDragging);
+    if (!isDragging) {
+      setDragTarget(null);
+      window.dispatchEvent(new CustomEvent("actone-drag-pane", { detail: { target: null } }));
+      return;
+    }
+
+    let isOverScripts = false;
+    if (position) {
+      const scriptsPanel = document.getElementById("scripts-view-panel") || document.querySelector("[data-testid='scripts-view']");
+      if (scriptsPanel) {
+        const rect = scriptsPanel.getBoundingClientRect();
+        if (
+          position.clientX >= rect.left - 10 &&
+          position.clientX <= rect.right + 10 &&
+          position.clientY >= rect.top &&
+          position.clientY <= rect.bottom
+        ) {
+          isOverScripts = true;
+        }
+      }
+
+      if (!isOverScripts) {
+        const sidebarContainer = document.getElementById("sidebar-container");
+        if (sidebarContainer && activeTab === "scripts") {
+          const rect = sidebarContainer.getBoundingClientRect();
+          if (
+            position.clientX >= rect.left &&
+            position.clientX <= rect.right &&
+            position.clientY >= rect.top &&
+            position.clientY <= rect.bottom
+          ) {
+            isOverScripts = true;
+          }
+        }
+      }
+
+      if (!isOverScripts) {
+        const activityScriptsTab = document.getElementById("activity-tab-scripts") || document.querySelector('[data-tab="scripts"]');
+        if (activityScriptsTab) {
+          const rect = activityScriptsTab.getBoundingClientRect();
+          if (
+            position.clientX >= rect.left - 6 &&
+            position.clientX <= rect.right + 6 &&
+            position.clientY >= rect.top - 6 &&
+            position.clientY <= rect.bottom + 6
+          ) {
+            isOverScripts = true;
+          }
+        }
+      }
+    }
+
+    const newTarget = isOverScripts ? "scripts" : "editor";
+    setDragTarget(newTarget);
+    window.dispatchEvent(new CustomEvent("actone-drag-pane", { detail: { target: newTarget } }));
+  }, [activeTab]);
+
+  const handleDropFiles = useCallback((paths: string[], position?: { clientX: number; clientY: number }) => {
     if (isStandalone) {
       const path = paths[0];
       if (!path) return;
@@ -170,13 +242,74 @@ function AppInner() {
         } catch { void 0; }
       })();
     } else {
-      paths.forEach((p) => openFilePath(p));
+      let isProjectPane = false;
+      const scriptsPanel = document.getElementById("scripts-view-panel") || document.querySelector("[data-testid='scripts-view']");
+      const sidebarContainer = document.getElementById("sidebar-container");
+      const activityScriptsTab = document.getElementById("activity-tab-scripts") || document.querySelector('[data-tab="scripts"]');
+
+      if (position) {
+        if (scriptsPanel) {
+          const rect = scriptsPanel.getBoundingClientRect();
+          if (
+            position.clientX >= rect.left - 10 &&
+            position.clientX <= rect.right + 10 &&
+            position.clientY >= rect.top &&
+            position.clientY <= rect.bottom
+          ) {
+            isProjectPane = true;
+          }
+        }
+
+        if (!isProjectPane && sidebarContainer && activeTab === "scripts") {
+          const rect = sidebarContainer.getBoundingClientRect();
+          if (
+            position.clientX >= rect.left &&
+            position.clientX <= rect.right &&
+            position.clientY >= rect.top &&
+            position.clientY <= rect.bottom
+          ) {
+            isProjectPane = true;
+          }
+        }
+
+        if (!isProjectPane && activityScriptsTab) {
+          const rect = activityScriptsTab.getBoundingClientRect();
+          if (
+            position.clientX >= rect.left - 6 &&
+            position.clientX <= rect.right + 6 &&
+            position.clientY >= rect.top - 6 &&
+            position.clientY <= rect.bottom + 6
+          ) {
+            isProjectPane = true;
+          }
+        }
+
+        if (!isProjectPane) {
+          const target = document.elementFromPoint(position.clientX, position.clientY);
+          if (target && target.closest("#scripts-view-panel, [data-testid='scripts-view'], #sidebar-container, #activity-tab-scripts")) {
+            isProjectPane = true;
+          }
+        }
+      }
+
+      // If on the Landing Pad (project has 0 scripts), dropping ANYWHERE into the window adds it to the current project!
+      const currentActiveFile = files.find((f) => f.id === activeFileId);
+      const isProjectEmpty = currentActiveFile?.scripts && currentActiveFile.scripts.length === 0;
+      if (isProjectEmpty) {
+        isProjectPane = true;
+      }
+
+      if (isProjectPane && isBundle) {
+        paths.forEach((p) => importScriptFromPath(p));
+        setActiveTab("scripts");
+        setIsSidebarOpen(true);
+      } else {
+        paths.forEach((p) => openFilePath(p));
+      }
     }
-  }, [isStandalone, openFilePath]);
+  }, [isStandalone, isBundle, files, activeFileId, activeTab, importScriptFromPath, openFilePath, setActiveTab, setIsSidebarOpen]);
 
-  useNativeAppBehavior(handleDropFiles, setIsDraggingOver);
-
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  useNativeAppBehavior(handleDropFiles, handleDragStateChange);
 
   const {
     isModalActive, isPaletteOpen, isSceneJumpOpen, showExportModal, showStructureModal,
@@ -189,16 +322,6 @@ function AppInner() {
 
   const { editorView, updateSettings } = useEditor();
   const { scrollToScene } = useScriptEditor();
-  const {
-    zoomLevel,
-    setZoomLevel,
-    isZenMode,
-    setIsZenMode,
-    activeRightPane,
-    setActiveRightPane,
-    activeTab,
-    setActiveTab,
-  } = useUI();
 
   const modalWindows = useModalWindows();
   const closeAllWindowsRef = useRef(modalWindows.closeAllWindows);
@@ -491,10 +614,19 @@ function AppInner() {
     } else if (action === "import") {
       const content = localStorage.getItem("pending-import-content") || "";
       const name = localStorage.getItem("pending-import-name") || "Untitled";
+      const isPdf = localStorage.getItem("pending-import-is-pdf") === "true";
       localStorage.removeItem("pending-import-content");
       localStorage.removeItem("pending-import-name");
+      localStorage.removeItem("pending-import-is-pdf");
       localStorage.removeItem("pending-action");
-      importAsActoneProject(content, name, true);
+      importAsActoneProject(content, name, false);
+      if (isPdf) {
+        confirm({
+          title: "PDF Import Note",
+          message: "Due to varying export formats across different applications, PDF imports may not always be 100% accurate.",
+          buttons: [{ value: "ok", label: "Got it", variant: "contained" }],
+        });
+      }
     } else if (action === "template") {
       newFile();
       setShowStructureModal(true);
@@ -761,7 +893,7 @@ function AppInner() {
         <ErrorBoundary name="welcome">
           <WelcomeScreenWindow standalone onOpenTutorials={() => setShowTutorialsModal(true)} />
         </ErrorBoundary>
-        {isDraggingOver && <DropOverlay />}
+        {isDraggingOver && <DropOverlay target={dragTarget} />}
         {showTutorialsModal && (
           <Dialog
             open={showTutorialsModal}
@@ -877,7 +1009,7 @@ function AppInner() {
       </Dialog>
     )}
 
-    {isDraggingOver && <DropOverlay />}
+    {isDraggingOver && <DropOverlay target={dragTarget} />}
     </>
   );
 }
@@ -894,40 +1026,62 @@ function App() {
   );
 }
 
-function DropOverlay() {
+function DropOverlay({ target }: { target?: "scripts" | "editor" | null }) {
+  // If dragging directly over the scripts pane, let ScriptsView show its targeted drop zone
+  if (target === "scripts") {
+    return null;
+  }
+
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
         zIndex: 9999,
+        pointerEvents: "none",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         gap: 12,
-        background: "rgba(0,0,0,0.55)",
-        backdropFilter: "blur(4px)",
+        background: "rgba(0,0,0,0.4)",
+        backdropFilter: "blur(2px)",
         color: "white",
+        transition: "all 0.15s ease",
       }}
     >
-      <FolderOpenIcon sx={{ fontSize: 48 }} />
+      <FolderOpenIcon sx={{ fontSize: 44 }} />
       <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "0.02em" }}>
-        Drop to open
+        Drop to open as new project
       </span>
-      <div style={{ display: "flex", gap: 8, opacity: 0.6, fontSize: 12, fontWeight: 500 }}>
+      <div style={{ display: "flex", gap: 8, opacity: 0.8, fontSize: 12, fontWeight: 500 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <DescriptionIcon sx={{ fontSize: 14 }} /> .pdf
+        </span>
+        <span style={{ opacity: 0.35 }}>|</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <DescriptionIcon sx={{ fontSize: 14 }} /> .fdx
+        </span>
+        <span style={{ opacity: 0.35 }}>|</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <DescriptionIcon sx={{ fontSize: 14 }} /> .fadein
+        </span>
+        <span style={{ opacity: 0.35 }}>|</span>
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
           <DescriptionIcon sx={{ fontSize: 14 }} /> .fountain
         </span>
         <span style={{ opacity: 0.35 }}>|</span>
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-          <DescriptionIcon sx={{ fontSize: 14 }} /> .txt
+          <DescriptionIcon sx={{ fontSize: 14 }} /> .md
         </span>
         <span style={{ opacity: 0.35 }}>|</span>
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
           <DescriptionIcon sx={{ fontSize: 14 }} /> .actone
         </span>
       </div>
+      <span style={{ fontSize: 11, opacity: 0.65, marginTop: 4 }}>
+        (Drag over the Project pane on the left to add to current project)
+      </span>
     </div>
   );
 }

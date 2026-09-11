@@ -186,6 +186,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
               )}
               <Box
                 id={"activity-tab-" + tab.id}
+                data-tab={tab.id}
                 onClick={() => !disabled && handleClick(tab.id)}
                 sx={{
                   width: 36,

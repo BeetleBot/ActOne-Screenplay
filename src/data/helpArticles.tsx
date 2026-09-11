@@ -119,8 +119,16 @@ Supported formats are:
 - Fade In project files (<code>.fadein</code>)
 - Fountain (<code>.fountain</code>)
 - Plain text (<code>.txt</code>)
+- Markdown documents (<code>.md</code>, <code>.markdown</code>)
 
-ActOne converts the source to Fountain, creates a new project, and opens the save workflow so you can preserve the imported work as a <code>.actone</code> bundle.`,
+ActOne converts the source and immediately opens it as an unsaved <code>Untitled.actone</code> project ready for editing, without interrupting you with an immediate save dialog. You can save whenever you are ready (<kbd>Ctrl+S</kbd>).
+
+### Drag-and-Drop
+You can drag and drop any supported file directly into ActOne:
+- **Dropping into the main window**: Opens the file as a new <code>Untitled.actone</code> project.
+- **Dropping into the Project & Scripts pane**: Adds the file directly into your current project as an additional script (or prose document for Markdown).
+
+*Note: For PDF imports, ActOne uses <code>pdf2fountain</code>. A brief notice will remind you to review formatting, as PDF exports vary significantly across different applications.*`,
   },
   {
     id: "interactive-tutorial",

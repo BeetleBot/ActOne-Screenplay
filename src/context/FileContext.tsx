@@ -66,12 +66,14 @@ export interface FileContextProps {
   setActiveScript: (index: number) => void;
   addScript: (name?: string, forceType?: "fountain" | "markdown", initialContent?: string) => Promise<string | null>;
   importScript: (type?: "fountain" | "markdown" | "fdx" | "fadein" | "pdf") => Promise<string | null>;
+  importScriptFromPath: (path: string) => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
   duplicateScript: (index: number, name?: string, activateNew?: boolean) => Promise<string | null>;
   deleteScript: (index: number) => Promise<boolean>;
   moveScript: (fromIndex: number, toIndex: number) => Promise<void>;
   openSnapshotAsNewProject: (snapshotPath: string) => Promise<void>;
   saveStatus: "idle" | "saving" | "saved";
+  importingScriptName: string | null;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -100,6 +102,14 @@ const getUniqueName = (base: string, existing: ScriptInfo[]): string => {
 export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { paperSize, fontFamily } = useUI();
   const { confirm, prompt } = useCustomModal();
+
+  const showPdfNotice = useCallback(() => {
+    void confirm({
+      title: "PDF Import Note",
+      message: "Due to varying export formats across different applications, PDF imports may not always be 100% accurate.",
+      buttons: [{ value: "ok", label: "Got it", variant: "contained" }],
+    });
+  }, [confirm]);
 
   const generateUUID = () => "file-" + Math.random().toString(36).substring(2, 15);
 
@@ -156,6 +166,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSaving, setIsSaving] = useState(false);
   const [scriptsState, setScriptsState] = useState<ScriptInfo[]>([]);
   const [activeScriptIndex, setActiveScriptIndexState] = useState<number>(0);
+  const [importingScriptName, setImportingScriptName] = useState<string | null>(null);
   const parseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeScriptIndexRef = useRef(activeScriptIndex);
   useEffect(() => {
@@ -653,48 +664,121 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    if (!isActone) {
+      const lower = path.toLowerCase();
+      const isPdf = lower.endsWith(".pdf");
+      const isFadeIn = lower.endsWith(".fadein");
+      const isMarkdown = lower.endsWith(".md") || lower.endsWith(".markdown");
+
+      const scriptName = path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "") || "Untitled";
+
+      try {
+        let content = "";
+        if (isTauri) {
+          if (isPdf) {
+            content = await invoke<string>("parse_pdf_to_fountain", { path });
+          } else if (isFadeIn) {
+            const bytes = await invoke<number[]>("read_file_binary", { path });
+            content = parseScriptFileToFountain(path, new Uint8Array(bytes));
+          } else {
+            const raw = await invoke<string>("read_file_content", { path });
+            content = isMarkdown ? raw : parseScriptFileToFountain(path, raw);
+          }
+        } else {
+          throw new Error("Cannot open direct path in web mode");
+        }
+
+        if (isMarkdown) {
+          const newId = generateUUID();
+          const cleanName = scriptName.trim() || "Untitled";
+          const scripts: ScriptInfo[] = [{
+            name: cleanName,
+            fileName: `files/${sanitizeFileName(cleanName)}.md`,
+            content,
+            savedContent: "",
+            type: "markdown",
+          }];
+          const doc = createProseDocument(content, {});
+          const newFileObj: ScreenplayFile = {
+            id: newId,
+            filePath: null,
+            rawText: content,
+            parsedDoc: doc,
+            isSaving: false,
+            isDirty: true,
+            savedText: "",
+            scripts,
+            activeScriptIndex: 0,
+          };
+
+          setFiles(prev => {
+            const currentActive = prev.find(f => f.id === activeFileIdRef.current);
+            if (currentActive && !currentActive.filePath && (!currentActive.rawText || !currentActive.isDirty)) {
+              return prev.map(f => f.id === currentActive.id ? newFileObj : f);
+            }
+            return [...prev, newFileObj];
+          });
+
+          filesRef.current = [...filesRef.current.filter(f => f.id !== activeFileIdRef.current || f.filePath || f.rawText), newFileObj];
+          setActiveFileIdState(newId);
+          activeFileIdRef.current = newId;
+          setRawTextState(content);
+          setFilePath(null);
+          setParsedDoc(doc);
+          setScriptsState(scripts);
+          setActiveScriptIndexState(0);
+          activeScriptIndexRef.current = 0;
+        } else {
+          await importAsActoneProject(content, scriptName, false);
+        }
+
+        if (isPdf) {
+          showPdfNotice();
+        }
+        return;
+      } catch (e) {
+        logger.error("file", "Failed to import external file path", e);
+        await confirm({
+          title: "Error Opening File",
+          message: "Could not open file: " + path,
+          buttons: [{ value: "ok", label: "OK", variant: "contained" }]
+        });
+        return;
+      }
+    }
+
     let settings = {};
     let scripts: ScriptInfo[];
     const bundleName = path.split(/[/\\]/).pop()?.replace(/\.(actone|zip|actone\.zip)$/i, "") || "Untitled";
 
     try {
       if (isTauri) {
-        if (isActone) {
-          try {
-            const bytes = await invoke<number[]>("read_file_binary", { path });
-            const bundle = unpackActoneBundle(new Uint8Array(bytes), bundleName);
-            if (bundle && bundle.scripts && bundle.scripts.length > 0) {
-              scripts = bundle.scripts;
-              settings = bundle.settings;
-              if (bundle.isLegacy) {
-                // Auto-upgrade legacy bundles on disk immediately
-                await saveActoneFile(path, scripts, settings);
-                logger.info("file", `Automatically upgraded legacy bundle to Gen 3: ${path}`);
-              }
-            } else {
-              throw new Error("No screenplay content found in archive");
+        try {
+          const bytes = await invoke<number[]>("read_file_binary", { path });
+          const bundle = unpackActoneBundle(new Uint8Array(bytes), bundleName);
+          if (bundle && bundle.scripts && bundle.scripts.length > 0) {
+            scripts = bundle.scripts;
+            settings = bundle.settings;
+            if (bundle.isLegacy) {
+              // Auto-upgrade legacy bundles on disk immediately
+              await saveActoneFile(path, scripts, settings);
+              logger.info("file", `Automatically upgraded legacy bundle to Gen 3: ${path}`);
             }
-          } catch (err) {
-            if (path.toLowerCase().endsWith(".zip")) {
-              const content = await invoke<string>("read_file_content", { path });
-              scripts = [{
-                name: bundleName,
-                fileName: `files/${sanitizeFileName(bundleName)}.fountain`,
-                content,
-                savedContent: content,
-              }];
-            } else {
-              throw err;
-            }
+          } else {
+            throw new Error("No screenplay content found in archive");
           }
-        } else {
-          const content = await invoke<string>("read_file_content", { path });
-          scripts = [{
-            name: bundleName,
-            fileName: `files/${sanitizeFileName(bundleName)}.fountain`,
-            content,
-            savedContent: content,
-          }];
+        } catch (err) {
+          if (path.toLowerCase().endsWith(".zip")) {
+            const content = await invoke<string>("read_file_content", { path });
+            scripts = [{
+              name: bundleName,
+              fileName: `files/${sanitizeFileName(bundleName)}.fountain`,
+              content,
+              savedContent: content,
+            }];
+          } else {
+            throw err;
+          }
         }
       } else {
         throw new Error("Cannot open direct path in web mode");
@@ -1213,7 +1297,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const importAsActoneProject = useCallback(async (
     initialContent: string,
     scriptName: string = "Untitled",
-    promptSaveImmediate: boolean = true
+    promptSaveImmediate: boolean = false
   ): Promise<void> => {
     const newId = generateUUID();
     const cleanName = scriptName.trim() || "Untitled";
@@ -1543,20 +1627,95 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [files, activeFileId, confirm, paperSize]);
 
+  const importScriptFromPath = useCallback(async (path: string): Promise<string | null> => {
+    const file = files.find(f => f.id === activeFileId);
+    if (!file || !file.scripts) return null;
+
+    const baseName = path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "") || "Imported";
+    setImportingScriptName(baseName);
+
+    try {
+      const lower = path.toLowerCase();
+      const isPdf = lower.endsWith(".pdf");
+      const isFadeIn = lower.endsWith(".fadein");
+      const isMarkdown = lower.endsWith(".md") || lower.endsWith(".markdown");
+
+      let content = "";
+      try {
+        if (isPdf) {
+          content = await invoke<string>("parse_pdf_to_fountain", { path });
+        } else if (isFadeIn) {
+          const bytes = await invoke<number[]>("read_file_binary", { path });
+          content = parseScriptFileToFountain(path, new Uint8Array(bytes));
+        } else {
+          const raw = await invoke<string>("read_file_content", { path });
+          content = isMarkdown ? raw : parseScriptFileToFountain(path, raw);
+        }
+      } catch (e) {
+        logger.error("file", `Failed to import script from path: ${path}`, e);
+        return null;
+      }
+
+      const uniqueName = getUniqueName(baseName.trim() || "Imported", file.scripts);
+      const ext = isMarkdown ? "md" : "fountain";
+      const safeFileName = `files/${sanitizeFileName(uniqueName)}.${ext}`;
+      const newScript: ScriptInfo = {
+        name: uniqueName,
+        fileName: safeFileName,
+        content,
+        savedContent: "",
+        type: isMarkdown ? "markdown" : "fountain",
+      };
+
+      const updatedScripts = [...file.scripts, newScript];
+      const parsed = isMarkdown
+        ? createProseDocument(content, file.parsedDoc.settings)
+        : parseScreenplay(content, paperSize);
+
+      setFiles(prev => prev.map(f => f.id === activeFileId ? {
+        ...f,
+        scripts: updatedScripts,
+        activeScriptIndex: updatedScripts.length - 1,
+        rawText: content,
+        savedText: content,
+        isDirty: true,
+        parsedDoc: parsed,
+      } : f));
+
+      setScriptsState(updatedScripts);
+      setActiveScriptIndexState(updatedScripts.length - 1);
+      activeScriptIndexRef.current = updatedScripts.length - 1;
+      setRawTextState(content);
+      setParsedDoc(parsed);
+
+      if (isPdf) {
+        showPdfNotice();
+      }
+
+      return uniqueName;
+    } finally {
+      setImportingScriptName(null);
+    }
+  }, [files, activeFileId, paperSize, showPdfNotice]);
+
   const importScript = useCallback(async (type?: "fountain" | "markdown" | "fdx" | "fadein" | "pdf"): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts) return null;
 
     let fileName = "";
     let content: string | null = "";
+    let isPdfImport = false;
 
     if (isTauri) {
       try {
         const result = await invoke<{ path: string; name?: string; extension?: string } | null>("import_script_dialog", { format: type });
         if (!result || !result.path) return null;
         fileName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "") || "Imported";
+        isPdfImport = result.path.toLowerCase().endsWith(".pdf");
         
-        if (result.path.toLowerCase().endsWith(".pdf")) {
+        setImportingScriptName(fileName);
+
+        if (isPdfImport) {
           content = await invoke<string>("parse_pdf_to_fountain", { path: result.path });
         } else if (result.path.toLowerCase().endsWith(".fadein")) {
           const bytes = await invoke<number[]>("read_file_binary", { path: result.path });
@@ -1587,6 +1746,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const f = input.files?.[0];
           if (!f) { resolve(null); return; }
           fileName = f.name.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "");
+          setImportingScriptName(fileName);
           if (f.name.toLowerCase().endsWith(".pdf")) {
             resolve(null);
           } else if (f.name.toLowerCase().endsWith(".fadein")) {
@@ -1599,44 +1759,55 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         input.click();
       });
-      if (content === null) return null;
+      if (content === null) {
+        setImportingScriptName(null);
+        return null;
+      }
     }
 
-    const uniqueName = getUniqueName(fileName.trim() || "Imported", file.scripts);
-    const ext = type === "markdown" ? "md" : "fountain";
-    const safeFileName = `files/${sanitizeFileName(uniqueName)}.${ext}`;
-    const isMarkdown = type === "markdown";
-    const newScript: ScriptInfo = {
-      name: uniqueName,
-      fileName: safeFileName,
-      content,
-      savedContent: content,
-      type: isMarkdown ? "markdown" : "fountain",
-    };
+    try {
+      const uniqueName = getUniqueName(fileName.trim() || "Imported", file.scripts);
+      const ext = type === "markdown" ? "md" : "fountain";
+      const safeFileName = `files/${sanitizeFileName(uniqueName)}.${ext}`;
+      const isMarkdown = type === "markdown";
+      const newScript: ScriptInfo = {
+        name: uniqueName,
+        fileName: safeFileName,
+        content: content || "",
+        savedContent: content,
+        type: isMarkdown ? "markdown" : "fountain",
+      };
 
-    const updatedScripts = [...file.scripts, newScript];
-    const parsed = isMarkdown
-      ? createProseDocument(content, file.parsedDoc.settings)
-      : parseScreenplay(content, paperSize);
+      const updatedScripts = [...file.scripts, newScript];
+      const parsed = isMarkdown
+        ? createProseDocument(content, file.parsedDoc.settings)
+        : parseScreenplay(content, paperSize);
 
-    setFiles(prev => prev.map(f => f.id === activeFileId ? {
-      ...f,
-      scripts: updatedScripts,
-      activeScriptIndex: updatedScripts.length - 1,
-      rawText: content,
-      savedText: content,
-      isDirty: true,
-      parsedDoc: parsed,
-    } : f));
+      setFiles(prev => prev.map(f => f.id === activeFileId ? {
+        ...f,
+        scripts: updatedScripts,
+        activeScriptIndex: updatedScripts.length - 1,
+        rawText: content,
+        savedText: content,
+        isDirty: true,
+        parsedDoc: parsed,
+      } : f));
 
-    setScriptsState(updatedScripts);
-    setActiveScriptIndexState(updatedScripts.length - 1);
-    activeScriptIndexRef.current = updatedScripts.length - 1;
-    setRawTextState(content);
-    setParsedDoc(parsed);
+      setScriptsState(updatedScripts);
+      setActiveScriptIndexState(updatedScripts.length - 1);
+      activeScriptIndexRef.current = updatedScripts.length - 1;
+      setRawTextState(content);
+      setParsedDoc(parsed);
 
-    return uniqueName;
-  }, [files, activeFileId, isTauri, paperSize]);
+      if (isPdfImport) {
+        showPdfNotice();
+      }
+
+      return uniqueName;
+    } finally {
+      setImportingScriptName(null);
+    }
+  }, [files, activeFileId, isTauri, paperSize, showPdfNotice]);
 
   const moveScript = useCallback(async (fromIndex: number, toIndex: number) => {
     const file = files.find(f => f.id === activeFileId);
@@ -1873,12 +2044,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setActiveScript,
         addScript,
         importScript,
+        importScriptFromPath,
         renameScript,
         duplicateScript,
         deleteScript,
         moveScript,
         openSnapshotAsNewProject,
         saveStatus,
+        importingScriptName,
       }}
     >
       {children}

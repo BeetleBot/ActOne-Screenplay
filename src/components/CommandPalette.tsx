@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { readFromClipboard } from "../utils";
-import { useFile, useEditor, useScriptEditor, useUI } from "../context";
+import { useFile, useEditor, useScriptEditor, useUI, useCustomModal } from "../context";
 
 
 
@@ -124,6 +124,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     files,
     importAsActoneProject,
   } = useFile();
+  const { confirm } = useCustomModal();
 
   const activeFile = files?.find(f => f.id === activeFileId);
   const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
@@ -170,7 +171,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         const result = await invoke<{ path: string; name: string; extension: string } | null>("import_script_dialog");
         if (result && result.path) {
           let fountainText = "";
-          if (result.path.toLowerCase().endsWith(".pdf")) {
+          const isPdf = result.path.toLowerCase().endsWith(".pdf");
+          if (isPdf) {
             fountainText = await invoke<string>("parse_pdf_to_fountain", { path: result.path });
           } else if (result.path.toLowerCase().endsWith(".fadein")) {
             const bytes = await invoke<number[]>("read_file_binary", { path: result.path });
@@ -180,7 +182,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
             fountainText = parseScriptFileToFountain(result.path, raw);
           }
           const scriptName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf)$/i, "") || "Untitled";
-          await importAsActoneProject(fountainText, scriptName, true);
+          await importAsActoneProject(fountainText, scriptName, false);
+          if (isPdf) {
+            await confirm({
+              title: "PDF Import Note",
+              message: "Due to varying export formats across different applications, PDF imports may not always be 100% accurate.",
+              buttons: [{ value: "ok", label: "Got it", variant: "contained" }],
+            });
+          }
         }
       } catch (e) {
         logger.error("palette", "Import script dialog failed", e);
@@ -201,7 +210,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
           const text = await f.text();
           fountainText = parseScriptFileToFountain(f.name, text);
         }
-        await importAsActoneProject(fountainText, name, true);
+        await importAsActoneProject(fountainText, name, false);
       };
       input.click();
     }
