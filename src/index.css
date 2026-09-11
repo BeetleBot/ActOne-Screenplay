@@ -37,11 +37,11 @@
   --bg-sidebar: #f8f9fa;
   --bg-editor-wrapper: #ffffff;
   --bg-editor: transparent;
-  --border-color: rgba(0,0,0,0.08);
+  --border-color: rgba(0, 0, 0, 0.08);
   --text-main: #1a1a1a;
   --text-muted: #666666;
   --accent-color: #1976d2;
-  --accent-rgb: 25,118,210;
+  --accent-rgb: 25, 118, 210;
   --titlebar-bg: #f8f9fa;
   --editor-cursor: #1a1a1a;
 
@@ -51,7 +51,7 @@
   --prose-editor-accent: var(--accent-color, #1976d2);
   --prose-editor-accent-bright: var(--accent-color, #1976d2);
   --prose-editor-accent-soft: color-mix(in srgb, var(--accent-color, #1976d2) 40%, transparent);
-  --prose-editor-border: var(--border-color, rgba(0,0,0,0.12));
+  --prose-editor-border: var(--border-color, rgba(0, 0, 0, 0.12));
   --prose-editor-bg: var(--bg-editor, transparent);
   --prose-editor-bg-surface: var(--bg-sidebar, #f8f9fa);
   --prose-editor-bg-panel: var(--bg-app, #ffffff);
@@ -158,7 +158,8 @@ textarea,
   outline: none;
 }
 
-html, body {
+html,
+body {
   scroll-behavior: auto;
   overscroll-behavior: none;
 }
@@ -389,11 +390,11 @@ body {
 }
 
 .cm-fountain-heading[data-scene-number]::before {
-  right: calc((100% + 1.5ch) * var(--zoom, 1));
+  right: calc(100% + 2ch);
 }
 
 .cm-fountain-heading[data-scene-number]::after {
-  left: calc((100% + 1.5ch) * var(--zoom, 1));
+  left: calc(100% + 2ch);
 }
 
 .cm-fountain-character {
@@ -682,7 +683,9 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.35);
 }
 
-html, body, * {
+html,
+body,
+* {
   scroll-behavior: auto !important;
   overscroll-behavior: none !important;
 }
@@ -805,70 +808,87 @@ html, body, * {
   background-color: rgba(0, 188, 212, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-prop {
   background-color: rgba(255, 152, 0, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-vfx {
   background-color: rgba(156, 39, 176, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-sfx {
   background-color: rgba(121, 85, 72, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-camera {
   background-color: rgba(0, 255, 204, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-animal {
   background-color: rgba(255, 235, 59, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-extras {
   background-color: rgba(233, 30, 99, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-vehicle {
   background-color: rgba(0, 128, 128, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-costume {
   background-color: rgba(255, 192, 203, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-makeup {
   background-color: rgba(76, 175, 80, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-music {
   background-color: rgba(128, 128, 0, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-sound {
   background-color: rgba(255, 102, 102, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-stunt {
   background-color: rgba(33, 150, 243, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-setDesign {
   background-color: rgba(218, 165, 32, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-other {
   background-color: rgba(158, 158, 158, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-location {
   background-color: rgba(38, 166, 154, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-storyline {
   background-color: rgba(126, 87, 194, 0.25);
   border-radius: 3px;
 }
+
 .cm-tag-scene_type {
   background-color: rgba(176, 190, 197, 0.25);
   border-radius: 3px;
@@ -926,21 +946,65 @@ button:active,
   background-size: 800px 100%;
 }
 
-.skeleton-line.short { width: 60%; }
-.skeleton-line.medium { width: 80%; }
-.skeleton-line.long { width: 100%; }
-.skeleton-line.heading { height: 20px; width: 70%; margin-top: 24px; }
-.skeleton-line.character { height: 16px; width: 35%; margin-top: 16px; margin-left: 120px; }
-.skeleton-line.parenthetical { height: 14px; width: 40%; margin-left: 100px; }
-.skeleton-line.dialogue { height: 16px; width: 70%; margin-left: 60px; }
+.skeleton-line.short {
+  width: 60%;
+}
+
+.skeleton-line.medium {
+  width: 80%;
+}
+
+.skeleton-line.long {
+  width: 100%;
+}
+
+.skeleton-line.heading {
+  height: 20px;
+  width: 70%;
+  margin-top: 24px;
+}
+
+.skeleton-line.character {
+  height: 16px;
+  width: 35%;
+  margin-top: 16px;
+  margin-left: 120px;
+}
+
+.skeleton-line.parenthetical {
+  height: 14px;
+  width: 40%;
+  margin-left: 100px;
+}
+
+.skeleton-line.dialogue {
+  height: 16px;
+  width: 70%;
+  margin-left: 60px;
+}
+
 /* Status bar animations */
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes actone-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.35); }
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
 }
