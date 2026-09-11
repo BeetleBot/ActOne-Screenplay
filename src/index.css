@@ -389,11 +389,11 @@ body {
 }
 
 .cm-fountain-heading[data-scene-number]::before {
-  right: calc((100% + 0.75in) * var(--zoom, 1));
+  right: calc((100% + 1.5ch) * var(--zoom, 1));
 }
 
 .cm-fountain-heading[data-scene-number]::after {
-  left: calc((100% + 0.5in) * var(--zoom, 1));
+  left: calc((100% + 1.5ch) * var(--zoom, 1));
 }
 
 .cm-fountain-character {
