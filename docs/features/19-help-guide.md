@@ -2,7 +2,7 @@
 
 **Window:** `?modal=help` (`src/components/HelpWindow.tsx`)
 
-The Help Guide provides **89 searchable articles across 10 categories**. The article inventory is maintained in `src/data/helpArticles.tsx`.
+The Help Guide provides **91 searchable articles across 10 categories**. The article inventory is maintained in `src/data/helpArticles.tsx`.
 
 ## Categories
 
@@ -12,14 +12,14 @@ The Help Guide provides **89 searchable articles across 10 categories**. The art
 2. **Fountain Syntax** (14 articles)
    - Scene Headings, Character Names, Dialogue, Parentheticals, Action & Scene Descriptions, Transitions, Centered Text & Lyrics, Shot Lines, Page Breaks, Dual Dialogue, Synopsis Outline Notes, Sections & Hierarchy, Inline Text Formatting, Boneyard Comments
 
-3. **Markdown Syntax** (7 articles) *(new — Prose documents)*
+3. **Markdown Syntax** (7 articles) *(Prose documents)*
    - Markdown & Prose Overview, Headings & Section Dividers, Text Formatting & Emphasis, Lists & Interactive Task Checkboxes, Blockquotes & Stepped Rails, Tables & Grid Formatting, Fenced Code Blocks & Preformatted Text
 
 4. **Writing Tools** (14 articles)
    - Tab-to-Cycle Line Prefixes, Smart Newline Handling, Autocomplete & Ghost Text, Smart Quotes, Auto-Match Parentheses, Typewriter Mode, Hide Fountain Markup, Focus Mode (Line Focus), Fix Formatting, Editor Zoom, Transform Case, Look Up Word, Search & Replace, Scene Numbers
 
-5. **Workspace & Views** (20 articles)
-   - Activity Bar, Outline Navigator, Sidebar Panels Overview, Document Notepad, Prose & Markdown Editing, Character Data, Script Statistics, X-Ray Screenplay Analyzer, To-Do Tasks, Writing Sprint Timer, Snapshots, Text Parking, Markers List, Scripts Manager, Zen Mode, Editor Context Menu, Status Bar, File Tabs, Quick Settings Menu, Window Size and Position
+5. **Workspace & Views** (21 articles)
+   - Activity Bar, Outline Navigator, Sidebar Panels Overview, Document Notepad, Prose & Markdown Editing, Character Data, Script Statistics, X-Ray Screenplay Analyzer, To-Do Tasks, Writing Sprint Timer, Snapshots, Text Parking, Markers List, Scripts Manager, Zen Mode, Editor Context Menu, Status Bar, File Tabs, Quick Settings Menu, Window Size and Position, Landing Pad & Project View
 
 6. **Production Features** (5 articles)
    - Scene Highlighting (Color Coding), Color Markers & Notes, Storyline Tags, Structure Templates, Scene Drag-and-Drop Reordering
@@ -33,8 +33,8 @@ The Help Guide provides **89 searchable articles across 10 categories**. The art
 9. **Settings & Customization** (7 articles)
    - Settings Overview, Spellcheck, Theme Manager & Custom Themes, Font & Paper Settings, Interface Scaling & Display DPI, Auto-Save, Editor Preferences
 
-10. **AI & Muse** (4 articles) *(new in v0.4.0)*
-    - Muse AI Assistant Overview, Configuring Muse (AI Providers), Using Muse Chat, Muse Tools and Screenplay Actions
+10. **AI & Muse** (5 articles)
+    - Muse AI Assistant Overview, Configuring Muse (AI Providers), Using Muse Chat, Whole Document Translation, Quick AI Model Switcher
 
 ## Features
 

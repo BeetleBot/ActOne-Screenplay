@@ -109,10 +109,10 @@ End-user documentation for every feature in ActOne.
 | [Title Page Editor](features/15-title-page.md) | Title page metadata editing (pill tabs, 8px cards) |
 | [X-Ray Analysis](features/17-xray.md) | Screenplay analysis dashboard (pill modes, transparent TitleBar) |
 | [Settings](features/18-settings.md) | All configuration options — pill tabs, 8px cards, ambient removal |
-| [Help Guide](features/19-help-guide.md) | 89 searchable articles across 10 categories (incl. Markdown Syntax) |
+| [Help Guide](features/19-help-guide.md) | 91 searchable articles across 10 categories (incl. Markdown Syntax) |
 | [Interactive Tutorials](features/20-onboarding-tutorials.md) | User onboarding and Fountain writing tours |
 | [Muse AI Assistant](features/21-muse.md) | AI screenwriting assistant — pill composer (v0.4.0+) |
-| [Command Line Interface (CLI)](features/23-cli.md) | Terminal execution, file opening, auto-import, and Linux AppImage/Flatpak options |
+| [Command Line Interface (CLI)](features/23-cli.md) | Linux terminal execution, file opening, and auto-import |
 
 ---
 

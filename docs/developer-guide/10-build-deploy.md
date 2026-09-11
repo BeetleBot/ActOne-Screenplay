@@ -46,6 +46,12 @@ The production build splits vendor code:
 3. Fetches `appimagetool` and packages into a standalone portable AppImage
 4. Output: `ActOne-Screenplay-<version>-x86_64.AppImage` in `Release/artifacts/`
 
+**Flatpak Bundle (`flatpak/ink.iyal.actone.yml`)**:
+
+1. Built in CI via `flatpak-builder` container (`gnome-48` platform)
+2. Packages metadata, icons, MIME database, and sandboxed binary
+3. Generates offline single-file bundle: `ActOne-Screenplay-x86_64-<version>.flatpak`
+
 ## Windows Build
 
 **`Release/windows/build-msix.ps1`** (180 lines):
@@ -61,8 +67,8 @@ Build steps:
 3. Creates MSIX layout with assets, icons, `AppxManifest.xml`
 4. Stamps version into manifest
 5. Runs `MakeAppx.exe` to create `.msix`
-6. Signs the package
-7. Copies portable `.exe` to `Release/artifacts/`
+6. Signs the package (self-signed or Store-ready)
+7. Outputs `.msix` to `Release/artifacts/` for Microsoft Store submission
 
 ## Bundle Targets
 

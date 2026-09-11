@@ -44,13 +44,16 @@ npm run tauri build
 
 **Linux:**
 ```bash
-# Build tarball
-bash Release/linux/build-tarball.sh
+# Build standalone AppImage
+bash Release/appimage/build-appimage.sh
+
+# Build Flatpak bundle (or run via CI workflow: .github/workflows/build-linux.yml)
+flatpak-builder --force-clean --repo=repo build-dir flatpak/ink.iyal.actone.yml
 ```
 
 **Windows:**
 ```cmd
-:: Build MSIX package
+:: Build MSIX package for Windows Store submission
 Release\windows\build.bat
 ```
 

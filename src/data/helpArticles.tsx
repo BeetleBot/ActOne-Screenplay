@@ -17,21 +17,21 @@ export const articles: HelpArticle[] = [
     category: "Getting Started",
     tags: ["welcome", "launch", "start"],
     relatedIds: ["new-project", "open-file", "recent-files"],
-    content: `When you launch ActOne with no files open, the Welcome screen appears (minimal floating top bar with pill window controls, not a full TitleBar). From here you can:
+    content: `When you launch ActOne with no files open, the Welcome screen appears. From here you can:
 
-- **New Project** — Create a new project. In standalone mode this opens a new editor window.
-- **Open Project** — Browse for an existing \`.actone\` project file (or legacy \`.fountain\` / \`.txt\` file) via the native file dialog.
+- **New Project** — Create a new project.
+- **Open Project** — Browse for an existing \`.actone\` project file (or legacy \`.fountain\` / \`.txt\` file) via the file dialog.
 - **Templates** — Import a screenplay structure template (Three-Act, Save the Cat, Hero's Journey, etc.).
 - **Help Guide** — Opens the Help Wiki window with searchable documentation.
-- **Recent Projects** — Quick-open recently used projects (up to 6 displayed). Click the X to remove from the list. Stored in localStorage (up to 10 entries).
+- **Recent Projects** — Quick-open recently used projects (up to 6 displayed). Click the X to remove from the list. Stored for quick access (up to 10 entries).
 
 **Footer actions:**
 - **Help** — Opens the Help Wiki window with searchable documentation.
 - **Discord** — Opens the ActOne Discord invite in your default browser.
 - **Quick Settings** (gear icon) — Open the settings sidebar to switch themes, adjust zoom, and more.
-- **App version** — Build number, useful when reporting bugs.
+- **App version** — Current build number.
 
-The Welcome screen also shows a rotating random writing quote from famous screenwriters. The top bar is draggable (window drag) and hosts a subtle Update pill when an update is available.`,
+The Welcome screen also displays an inspiring rotating writing quote from famous screenwriters, and alerts you when a new update is available.`,
   },
   {
     id: "new-project",
@@ -62,7 +62,7 @@ The Welcome screen also shows a rotating random writing quote from famous screen
     relatedIds: ["welcome-screen", "new-project", "file-tabs", "recent-files", "cli-commands"],
     content: `Press <kbd>Ctrl+O</kbd> or use the Command Palette (<kbd>Ctrl+K</kbd>) → "Open Project…" to open an \`.actone\` project (or \`.fountain\` / \`.txt\` file) via the native file dialog.
 
-When launched from the command line, ActOne accepts file paths as arguments on both Linux and Windows (see the **Command Line Interface (CLI)** article for complete details). The app also listens for OS-level file-open events (e.g., double-clicking a .actone or .fountain file).
+When launched from the command line on Linux, ActOne accepts file paths as arguments (see the **Command Line Interface (CLI)** article for complete details). The app also listens for OS-level file-open events (e.g., double-clicking a .actone or .fountain file).
 
 Importing other screenplay formats is separate from opening an existing project. Use **Import Screenplay...** for <code>.pdf</code>, <code>.fdx</code>, <code>.fadein</code>, <code>.fountain</code>, or <code>.txt</code> files. ActOne converts the selected screenplay file into an ActOne <code>.actone</code> project.`,
   },
@@ -72,7 +72,7 @@ Importing other screenplay formats is separate from opening an existing project.
     category: "Getting Started",
     tags: ["recent", "history", "quick open"],
     relatedIds: ["open-file", "welcome-screen"],
-    content: `The Welcome screen shows your most recently opened files (up to 6) as clickable chips. Click one to re-open it. Hover and click the X to remove an entry from the list. Recent files are stored in localStorage (up to 10 entries). In Tauri, stale entries are auto-validated against the filesystem on startup.`,
+    content: `The Welcome screen shows your most recently opened files (up to 6) as clickable chips. Click one to re-open it. Hover and click the X to remove an entry from the list. Recent files are remembered across sessions (up to 10 entries), and files that have been moved or deleted are automatically cleaned up on launch.`,
   },
   {
     id: "keyboard-shortcuts",
@@ -114,7 +114,7 @@ Each command shows its keyboard shortcut when available. Navigate with arrow key
     content: `Use **Import Screenplay...** from the Welcome screen, editor, or Command Palette (<kbd>Ctrl+K</kbd>) to convert an existing screenplay into an ActOne project.
 
 Supported formats are:
-- PDF Screenplay (<code>.pdf</code> via <code>pdf2fountain</code>)
+- PDF Screenplay (<code>.pdf</code>)
 - Final Draft XML (<code>.fdx</code>)
 - Fade In project files (<code>.fadein</code>)
 - Fountain (<code>.fountain</code>)
@@ -128,7 +128,7 @@ You can drag and drop any supported file directly into ActOne:
 - **Dropping into the main window**: Opens the file as a new <code>Untitled.actone</code> project.
 - **Dropping into the Project & Scripts pane**: Adds the file directly into your current project as an additional script (or prose document for Markdown).
 
-*Note: For PDF imports, ActOne uses <code>pdf2fountain</code>. A brief notice will remind you to review formatting, as PDF exports vary significantly across different applications.*`,
+*Note: When importing PDFs, a brief notice will remind you to review formatting, as PDF exports from different screenwriting programs vary widely.*`,
   },
   {
     id: "interactive-tutorial",
@@ -146,23 +146,16 @@ There are two tutorials available:
     id: "cli-commands",
     title: "Command Line Interface (CLI)",
     category: "Getting Started",
-    tags: ["cli", "terminal", "command line", "linux", "windows", "arguments", "appimage", "flatpak"],
+    tags: ["cli", "terminal", "command line", "linux", "arguments", "appimage"],
     relatedIds: ["open-file", "script-import", "welcome-screen"],
-    content: `ActOne can be launched directly from the terminal or command prompt on both **Linux** and **Windows**.
+    content: `ActOne can be launched directly from the terminal on **Linux**.
 
 ### Basic Usage
 \`\`\`bash
-# Linux
 actone [file_path]
 
 # Linux (AppImage standalone)
 ./ActOne-Screenplay-x86_64.AppImage [file_path]
-
-# Linux (Flatpak)
-flatpak run ink.iyal.actone [file_path]
-
-# Windows (PowerShell or Command Prompt)
-ActOne.exe [file_path]
 \`\`\`
 
 When launched without arguments, ActOne displays the Welcome screen.
@@ -176,22 +169,10 @@ Passing a file path opens or imports the document directly:
   - \`actone notes.txt\` — Opens a plain text file.
 
 - **Instant Imports**:
-  - \`actone draft.pdf\` — Converts the PDF screenplay via \`pdf2fountain\` and opens it as an unsaved project ready for editing.
+  - \`actone draft.pdf\` — Automatically converts the PDF screenplay and opens it as a project ready for editing.
   - \`actone draft.fdx\` — Converts Final Draft XML into an unsaved project.
   - \`actone draft.fadein\` — Converts Fade In project files into an unsaved project.
-  - \`actone treatment.md\` — Converts Markdown as a prose document in an unsaved project.
-
-### Linux AppImage Integration Options
-When using the universal Linux AppImage (\`ActOne-Screenplay-x86_64.AppImage\`), specialized flags manage desktop integration:
-
-- **\`--install-integration\`** (or \`install\`):
-  Installs the AppImage into \`~/.local/bin/ActOne-Screenplay.AppImage\`, symlinks the \`actone\` CLI command into \`~/.local/bin/actone\`, creates the application launcher in \`~/.local/share/applications/actone.desktop\`, installs high-resolution icons, and registers system file associations (\`.fountain\`, \`.actone\`, \`.actheme\`).
-
-- **\`--uninstall\`** (or \`uninstall\`):
-  Cleanly removes the installed AppImage, CLI symlink, desktop entry, and MIME icons.
-
-- **\`--appimage-extract\`**:
-  Extracts the inner filesystem into a \`squashfs-root\` directory.`,
+  - \`actone treatment.md\` — Converts Markdown as a prose document in an unsaved project.`,
   },
 
   // ===== FOUNTAIN SYNTAX =====
@@ -602,7 +583,7 @@ Press <kbd>Tab</kbd> to accept the ghost suggestion, or <kbd>ArrowDown</kbd> to 
     category: "Writing Tools",
     tags: ["typewriter", "scroll", "center cursor"],
     relatedIds: ["hide-syntax", "editor-zoom", "focus-mode"],
-    content: `Keeps your active editing line vertically centered on screen. As you type, the page scrolls around your line instead of your cursor moving down. Uses a CodeMirror ViewPlugin that measures cursor position relative to the container center on every document change. Toggle via Quick Settings in the Activity Bar, the Command Palette, or Settings → Editor.`,
+    content: `Keeps your active editing line vertically centered on screen. As you type, the page scrolls smoothly around your active line so your gaze stays comfortably in the center of the display. Toggle via Quick Settings in the Activity Bar, the Command Palette, or Settings → Editor.`,
   },
   {
     id: "hide-syntax",
@@ -643,7 +624,7 @@ Upon execution, a summary modal opens displaying the total number of lines remov
     category: "Writing Tools",
     tags: ["zoom", "font size", "ctrl+=", "ctrl+-"],
     relatedIds: ["typewriter-mode", "interface-scale"],
-    content: `Zoom the editor text from **50% to 400%** using <kbd>Ctrl+=</kbd> (zoom in), <kbd>Ctrl+-</kbd> (zoom out), and <kbd>Ctrl+0</kbd> (reset to 100%). Step size is 10%. Also adjustable via Quick Settings slider or Settings → Editor → Editor Zoom. Persisted in localStorage.`,
+    content: `Zoom the editor text from **50% to 400%** using <kbd>Ctrl+=</kbd> (zoom in), <kbd>Ctrl+-</kbd> (zoom out), and <kbd>Ctrl+0</kbd> (reset to 100%). Step size is 10%. Also adjustable via Quick Settings slider or Settings → Editor → Editor Zoom. Your preferred zoom level is saved automatically.`,
   },
   {
     id: "transform-case",
@@ -653,9 +634,9 @@ Upon execution, a summary modal opens displaying the total number of lines remov
     relatedIds: ["inline-formatting"],
     content: `Right-click a selection and choose Transform Case to convert between UPPERCASE, Title Case, or lowercase. Useful for normalizing character names and scene headings.
 
-- **UPPERCASE**: All caps via \`toUpperCase()\`
-- **Title Case**: First letter of each word capitalized
-- **lowercase**: All lowercase via \`toLowerCase()\``,
+- **UPPERCASE**: Converts all selected text to capital letters.
+- **Title Case**: Capitalizes the first letter of each word.
+- **lowercase**: Converts all selected text to lowercase.`,
   },
   {
     id: "look-up",
@@ -663,7 +644,7 @@ Upon execution, a summary modal opens displaying the total number of lines remov
     category: "Writing Tools",
     tags: ["look up", "google", "search", "research"],
     relatedIds: ["context-menu"],
-    content: `Right-click any selected word and choose "Look Up" to search it on Google in your default browser via Tauri's opener API. Quick for researching terms, names, or locations without leaving ActOne. Falls back to \`window.open\` outside Tauri.`,
+    content: `Right-click any selected word and choose "Look Up" to search it on Google in your default browser. Convenient for quickly researching terms, historical context, or locations without breaking your writing flow.`,
   },
   {
     id: "search-replace",
@@ -671,26 +652,26 @@ Upon execution, a summary modal opens displaying the total number of lines remov
     category: "Writing Tools",
     tags: ["search", "replace", "ctrl+f", "regex", "preserve case"],
     relatedIds: ["look-up"],
-    content: `Press <kbd>Ctrl+F</kbd> to open the Find & Replace pane on the right side of the editor (floating paper card: \`12px\` radius, \`8px\` shadow). Features:
+    content: `Press <kbd>Ctrl+F</kbd> to open the Find & Replace pane on the right side of the editor. Features:
 
-- **Pill Find input** (\`20px\` radius, paper background) — auto-populates from selected text when opened
-- **Pill toggles** (\`20px\` radius): **Match Case** (\`Aa\`) — case-sensitive search, **Whole Word** (\`\\b\`) — match only whole words, **Regex** (\`.*\`) — treat search as regular expression. Active toggles show a soft primary tint.
-- **Match counter** — pill chip (\`20px\`) showing \`currentMatch/totalMatches\` with prev/next arrows
-- **Results list** — rounded items (\`8px\`) with scene number pill (\`6px\`), scene context and line preview with highlighted hit (\`3px\` radius, warning background); click any result to jump to it in the editor; each row has a \`4px\` checkbox for selective replace
+- **Find input** — auto-populates from selected text when opened
+- **Toggles**: **Match Case** (\`Aa\`) for case-sensitive search, **Whole Word** (\`\\b\`) to match complete words, and **Regex** (\`.*\`) to treat search as a regular expression.
+- **Match counter** — displays \`currentMatch/totalMatches\` with previous and next navigation arrows
+- **Results list** — displays matching occurrences with scene numbers, scene context, and line previews with highlighted hits. Click any result to jump to it in the editor, or use the checkbox on each row for selective replacement.
 - **Close** — \`×\` button in the pane header or <kbd>Esc</kbd>
 - **Enter** — jump to next match; <kbd>Shift+Enter</kbd> — jump to previous match
 
-All matches are highlighted inline in the editor with a soft warning background.
+All matches are highlighted inline in the editor.
 
 **Replace** (collapsible section):
 
-- **Pill Replace input** (\`20px\` radius) — text field for replacement
-- **Preserve Case** (\`AB\`) pill toggle — intelligently adapts replacement case (ALL CAPS → ALL CAPS, Capitalized → Capitalized, lowercase → lowercase)
-- **Replace** — outlined pill button (\`20px\`) replaces the currently selected match and moves to next
-- **Replace Selected** — outlined pill button replaces only the specific match selected via checkbox
-- **Replace All** — contained pill button (\`20px\`) replaces all matches with confirmation before proceeding
+- **Replace input** — text field for replacement string
+- **Preserve Case** (\`AB\`) toggle — intelligently adapts replacement case (ALL CAPS → ALL CAPS, Capitalized → Capitalized, lowercase → lowercase)
+- **Replace** — replaces the currently selected match and moves to next
+- **Replace Selected** — replaces only the specific matches selected via checkbox
+- **Replace All** — replaces all matches with confirmation before proceeding
 
-The pane width is adjustable — drag the left edge (now a subtle rounded divider with hover glow) to resize. Press <kbd>Ctrl+F</kbd> again or click the close button to dismiss.`,
+The pane width is adjustable — drag the left edge to resize. Press <kbd>Ctrl+F</kbd> again or click the close button to dismiss.`,
   },
   {
     id: "scene-numbers",
@@ -713,9 +694,9 @@ Scene numbers display in the editor margins and as badges in the Outline Navigat
     category: "Workspace & Views",
     tags: ["activity bar", "sidebar", "tabs", "icons"],
     relatedIds: ["outline-navigator", "sidebar-panels", "zen-mode", "quick-settings", "command-palette"],
-    content: `The Activity Bar is a slim **46px** vertical dock on the left with **4px** inset padding, organized into grouped tool sections. Click an icon to open that panel; click again to close the sidebar. The active item shows a soft pill background with the theme accent — the old left-side vertical bar indicator is no longer used.
+    content: `The Activity Bar is the vertical tool strip on the left edge of the window. Click an icon to open that sidebar panel; click it again to collapse it. The active panel is highlighted with your theme's accent color.
 
-**Tabs available (two groups separated by a subtle hairline):**
+**Tabs available:**
 
 | Group | Tab | Purpose | Requires .actone bundle? |
 |-------|-----|---------|--------------------------|
@@ -728,11 +709,9 @@ Scene numbers display in the editor margins and as badges in the Outline Navigat
 | Tools | Sprint | Writing timer, history & leaderboard | No |
 | Tools | Parking | Temporary text storage | Yes |
 
-For plain \`.fountain\` files, only the **Outline** tab is shown in the Activity Bar. Other tabs are hidden (not shown with a banner).
+For plain \`.fountain\` files, only the **Outline** tab is shown in the Activity Bar. Other tabs are unlocked when working with an \`.actone\` bundle.
 
-**Bottom dock:** a **Quick Settings** button (gear icon) and a **Zen Mode** toggle. The **Command Palette** (\`Ctrl+K\`) is now triggered from the header — clicking the theme logo — or via the keyboard shortcut.
-
-**Tool item visuals:** each icon sits in a \`38×38px\` rounded square (\`8px\` radius); inactive items are muted with a soft hover pill, active items use the primary accent with high-contrast icon.
+**Bottom dock:** Access **Quick Settings** (gear icon) and toggle **Zen Mode**.
 
 For character data, statistics, and analysis charts, open the **X-Ray Analysis** window from the Status Bar bar-chart icon or Command Palette — see \`xray-analysis\`.`,
   },
@@ -742,17 +721,16 @@ For character data, statistics, and analysis charts, open the **X-Ray Analysis**
     category: "Workspace & Views",
     tags: ["outline", "navigator", "sidebar", "tree", "hierarchy"],
     relatedIds: ["sections", "synopsis", "scene-reorder", "activity-bar", "scene-highlighting", "storylines"],
-    content: `The Outline sidebar (first tab) displays a hierarchical view of your screenplay as **rounded scene cards** (not plain list rows). Features:
+    content: `The Outline sidebar displays a structured overview of your screenplay organized as scene cards. Features:
 
-- Click a card to scroll the editor to that line; the active card shows a primary-colored border, soft shadow, and subtle tint.
-- **Card anatomy:** header row with monospace scene-number badge + heading, italicized truncated synopsis, and tag badges (character pills, time-of-day, storyline chips styled as \`4px\` rounded pills). *No left-side vertical accent bars are used.*
-- Collapsible section headers — click the chevron, double-click, or use <kbd>←</kbd>/<kbd>→</kbd> to expand/collapse.
-- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>←</kbd>/<kbd>→</kbd> to collapse/expand sections, <kbd>Enter</kbd> to jump to line.
-- **Pill search filter** at the top (\`9999px\` radius) with instant filtering by text, location, or character.
-- Color filter popover (via filter/tune icon): filter by scene color with count badges, "Clear All" to reset.
-- Storyline filter popover: filter by storyline label with count badges.
-- Outline font size: Small / Normal / Large via the \`⋯\` menu in the header (persisted in localStorage).
-- Drag-and-drop scene reordering via the grab handle (six-dot icon, \`14px\`) — blue ghost + insertion indicator.
+- Click any card to scroll the editor directly to that scene.
+- **Card anatomy:** scene number badge, heading, synopsis, and active character or storyline tags.
+- Collapsible section headers let you organize acts and sequences.
+- Keyboard navigation: use <kbd>↑</kbd>/<kbd>↓</kbd> to move, <kbd>←</kbd>/<kbd>→</kbd> to collapse/expand sections, and <kbd>Enter</kbd> to jump to a scene.
+- **Search filter** at the top lets you instantly search scenes by keyword, location, or character.
+- Filter scenes by color or storyline tags to isolate specific plot threads.
+- Customize outline font size (Small, Normal, Large) from the header menu.
+- Drag-and-drop scene reordering allows you to restructure scenes visually.
 
 For prose documents (\`.md\`), the panel switches to **Table of Contents** mode listing Markdown headings.`,
   },
@@ -906,15 +884,13 @@ X-Ray data updates live as you type.`,
     category: "Workspace & Views",
     tags: ["tasks", "todo", "checklist", "revisions"],
     relatedIds: ["sidebar-panels", "sprint-timer"],
-    content: `The Tasks panel helps you track screenplay revisions and to-do items (rounded cards, \`8px\`):
+    content: `The Tasks panel helps you track screenplay revisions, polish passes, and to-do items:
 
-- **Pill input** (\`20px\` radius) — type a task and press <kbd>Enter</kbd> or click the add button.
-- Click the circle icon or press <kbd>Space</kbd>/<kbd>Enter</kbd> to toggle completion (moves to collapsible "Completed (N)" section with strikethrough text and muted cards \`6px\`).
-- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to select, <kbd>Enter</kbd>/<kbd>Space</kbd> to toggle, <kbd>Delete</kbd>/<kbd>Backspace</kbd> to remove.
-- Right-click selected text in the editor → **Create Task** to add it as a new task.
-- Each task row shows storyline-like tags as rounded \`4px\` pills and has an individual delete (X) button.
-
-Persists in .actone bundles as \`todos\` in settings.`,
+- Type a task in the input field and press <kbd>Enter</kbd> or click the add button.
+- Click the circle icon or press <kbd>Space</kbd>/<kbd>Enter</kbd> to toggle completion (moves completed items to a collapsible section).
+- Keyboard navigation: use <kbd>↑</kbd>/<kbd>↓</kbd> to select, <kbd>Enter</kbd>/<kbd>Space</kbd> to toggle, and <kbd>Delete</kbd>/<kbd>Backspace</kbd> to remove.
+- Right-click selected text in the editor → **Create Task** to add it directly as a new task.
+- Tasks are saved automatically with your project.`,
   },
   {
     id: "sprint-timer",
@@ -922,21 +898,18 @@ Persists in .actone bundles as \`todos\` in settings.`,
     category: "Workspace & Views",
     tags: ["sprint", "timer", "writing", "wpm", "countdown"],
     relatedIds: ["tasks", "sidebar-panels", "statistics-overview"],
-    content: `The Sprint panel provides a countdown writing timer with a warm, card-based layout:
+    content: `The Sprint panel provides a focused countdown timer to motivate writing sessions:
 
-- **Preset durations**: pill buttons (\`20px\` radius) for **5, 15, 25, 45, 60 minutes** — active pill shows a soft primary tint. Click a pill to set the duration.
-- **Custom duration**: text field (\`8px\` radius, 85px wide) for 1–999 minutes, labeled "Custom Minutes".
-- **Start Sprint**: pill contained button (\`20px\`, full-width) with play icon — disabled until a duration is set.
-- **Active sprint card** (rounded \`12px\` paper with ambient shadow): circular progress ring, remaining time (MM:SS), and two metric pills — words written (primary) and live WPM (success). Actions: **Finish Sprint** (error pill) and **Cancel** (outlined pill).
-- Status bar shows an amber countdown pill when a sprint is active (\`MM:SS · WPM\`).
+- **Preset durations**: Choose from **5, 15, 25, 45, or 60 minutes**, or type any custom duration in minutes.
+- **Start Sprint**: Click to begin your timed writing sprint.
+- **Live tracking**: Displays a progress ring, remaining time, words written, and live words-per-minute (WPM), with options to finish or cancel.
+- The Status Bar shows a live countdown and speed tracker while a sprint is active.
 
-**History tab:** rounded list items (\`8px\`, subtle hover) with word count, date, duration, WPM, and file name. Delete individual entries; "Clear Global History" is a pill button.
+**History tab:** Review past sprint sessions with word count, date, duration, WPM, and script name.
 
-**Leaderboard tab:** Top 10 sprints ranked by word count with Gold (#1, \`#d4af37\`), Silver (#2, \`#c0c0c0\`), Bronze (#3, \`#cd7f32\`) badges.
+**Leaderboard tab:** Top 10 sprints ranked by word count with Gold, Silver, and Bronze badges.
 
-**Stats banner:** pill container (\`10px\` radius) showing Personal Best WPM and Total Words Sprinted.
-
-Sprint data syncs to .actone bundles and localStorage.`,
+**Stats banner:** Highlights your Personal Best WPM and Total Words Sprinted across sessions.`,
   },
   {
     id: "snapshots",
@@ -944,28 +917,22 @@ Sprint data syncs to .actone bundles and localStorage.`,
     category: "Workspace & Views",
     tags: ["snapshots", "version", "backup", "history", "restore"],
     relatedIds: ["sidebar-panels", "settings-overview"],
-    content: `The Snapshots panel saves point-in-time copies of your screenplay for easy rollback (rounded card layout, \`8px\`/\`12px\` radii). Enable via Settings → Snapshots.
+    content: `The Snapshots panel saves point-in-time copies of your screenplay for easy rollback. Enable via Settings → Snapshots.
 
 **Creating Snapshots:**
-- **Manual**: Add an optional comment and tag in pill inputs (\`20px\` radius) in the panel header, then click the pill **New Snapshot** button (\`20px\`, full-width).
-- **Auto-snapshot**: Enable in Settings to take snapshots at regular intervals (1–60 min).
-- **On save**: Automatically snapshot every time you save the file.
+- **Manual**: Add an optional comment and tag in the panel header, then click **New Snapshot**.
+- **Auto-snapshot**: Enable in Settings to take automatic snapshots at regular intervals (1–60 min).
+- **On save**: Automatically snapshots your screenplay every time you save.
 
 **Managing Snapshots:**
-- Each snapshot shows the date/time, file size, comment, and a colored tag (MANUAL, SAVE, AUTO, or custom) in a two-tier card — header row (\`8px 8px 0 0\`) + sub-card (\`0 0 8px 8px\`) with tags and comment.
-- Filter by tag type using pill filters (\`20px\` radius) at the top (MANUAL / SAVE / AUTO / custom tags) — active pill uses the primary accent.
+- Each snapshot shows the date/time, file size, comment, and tag (MANUAL, SAVE, AUTO, or custom).
+- Filter by tag type using the tag buttons at the top.
 - Three-dot menu on each snapshot:
-  - **Restore** — replaces the current file with the snapshot. A fresh snapshot is taken first so you never lose your current state.
-  - **Open as File** — opens the snapshot content as a separate read-only tab.
-  - **Delete** — removes the snapshot permanently.
+  - **Restore** — Replaces the current script with the snapshot. A safety snapshot is taken first so you never lose pending work.
+  - **Open as File** — Opens the snapshot content in a separate read-only tab for comparison.
+  - **Delete** — Removes the snapshot permanently.
 
-**Storage:**
-- **Project folder** (\`.snapshots/\` subdirectory in the same folder as the \`.actone\` file) — default. When enabled, a custom path field with **Browse…** picker appears in Settings → Snapshots → Save Location (with Reset to Default).
-- **App data folder** (platform-specific application data directory).
-- **Custom folder** — choose any location via the Browse dialog.
-- Max auto-snapshots retention: 5–100 (default 20). Oldest auto-snapshots are pruned when the limit is exceeded.
-
-Snapshots are stored as separate files with metadata in \`snapshots_index.json\`. The panel also has an "Open Snapshots Folder" pill button to browse stored files directly. When snapshots are off, the panel shows a dashed rounded (\`12px\`) empty state with an **Enable Snapshots** pill CTA.`,
+Click **Open Snapshots Folder** to browse saved versions directly in your system file manager.`,
   },
   {
     id: "parking",
@@ -973,16 +940,15 @@ Snapshots are stored as separate files with metadata in \`snapshots_index.json\`
     category: "Workspace & Views",
     tags: ["parking", "clipboard", "text storage", "temporary"],
     relatedIds: ["sidebar-panels", "context-menu"],
-    content: `The Parking panel works as a temporary clipboard for storing text snippets:
+    content: `The Parking panel works as a temporary clipboard for storing dialogue snippets, cut scenes, and stray ideas:
 
 - Select text in the editor and click "Park Selection" to store it (cuts from editor).
-- Click a parked card to re-insert at cursor and auto-remove it.
-- Right-click → **Park Selection** stores text and deletes it from the editor.
-- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to select, <kbd>Enter</kbd> to insert.
-- Individual delete (X) button on each card.
-- Empty state shows instructional text.
+- Click a parked card to re-insert the text at the cursor position and remove it from parking.
+- Right-click → **Park Selection** stores text and removes it from the editor in one step.
+- Keyboard navigation: <kbd>↑</kbd>/<kbd>↓</kbd> to select, <kbd>Enter</kbd> to insert.
+- Individual delete (X) button on each parked item.
 
-Persists in .actone bundle settings.`,
+Parked text is saved automatically with your project.`,
   },
   {
     id: "markers-list",
@@ -990,14 +956,13 @@ Persists in .actone bundle settings.`,
     category: "Workspace & Views",
     tags: ["markers", "notes", "inline", "filter"],
     relatedIds: ["notes-markers", "sidebar-panels"],
-    content: `The Markers sidebar shows all \`[[marker …]]\` notes as **rounded cards** (not plain rows). Features:
+    content: `The Markers sidebar displays all inline \`[[marker …]]\` notes from your screenplay:
 
-- **Pill search field** (\`20px\` radius) — filter by text (matches description and scene context).
-- **Filter popover** (tune icon with active-count badge): lists all marker colors in use with count badges; click a chip to filter (chips are \`4px\` rounded).
-- Each card shows: line-number tag + scene-number badge (\`4px\` pills), description title, and a sub-card with scene context and storyline chips (uppercase \`4px\` pills with soft shadow).
-- Selected card has a primary-colored border and elevated shadow; hover lifts the border toward the accent.
-- Click a card to scroll the editor to its position.
-- Keyboard navigation: <kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>Enter</kbd> to jump.`,
+- **Search field** — filter notes by text across descriptions and scene context.
+- **Filter by Color** — filter notes by color category to isolate specific revision passes.
+- Each item displays the line number, scene heading, description, and scene context.
+- Click any card to jump the editor directly to that note.
+- Keyboard navigation: <kbd>↑</kbd>/<kbd>↓</kbd> to move, <kbd>Enter</kbd> to jump.`,
   },
   {
     id: "scripts-manager",
@@ -1021,7 +986,7 @@ Persists in .actone bundle settings.`,
     category: "Workspace & Views",
     tags: ["zen mode", "fullscreen", "distraction free", "focus"],
     relatedIds: ["activity-bar", "hide-syntax", "typewriter-mode", "focus-mode"],
-    content: `Press <kbd>Ctrl+Alt+Enter</kbd> to toggle Zen Mode. This hides the Header Bar, Activity Bar, Sidebar, and Status Bar with staggered collapse animations, expanding the editor into a distraction-free view. Uses Tauri fullscreen API with HTML5 Fullscreen API as fallback outside Tauri. Zoom shortcuts (<kbd>Ctrl+=</kbd>, <kbd>Ctrl+-</kbd>) and Search (<kbd>Ctrl+F</kbd>) still work in Zen Mode.`,
+    content: `Press <kbd>Ctrl+Alt+Enter</kbd> to toggle Zen Mode. This hides all toolbars, sidebars, and status indicators, expanding the editor into a completely distraction-free full-screen writing view. Zoom shortcuts (<kbd>Ctrl+=</kbd>, <kbd>Ctrl+-</kbd>) and Search (<kbd>Ctrl+F</kbd>) remain fully functional in Zen Mode.`,
   },
   {
     id: "context-menu",
@@ -1032,12 +997,12 @@ Persists in .actone bundle settings.`,
     content: `Right-click anywhere in the editor for quick access:
 
 - **Selection Stats** (if text selected): word count and character count.
-- **Cut / Copy / Paste** — standard clipboard (disabled without selection).
+- **Cut / Copy / Paste** — standard clipboard operations.
 - **Highlight Scene** → 7 colors: Red, Orange, Yellow, Green, Blue, Purple, Pink, plus Clear.
 - **Drop Marker** → submenu with 11 colors (Blue, Brown, Cyan, Green, Magenta, Orange, Pink, Purple, Red, Yellow, Default Orange). Prompts for a description.
 - **Format** → Bold, Italic, Underline, Highlight.
 - **Transform Case** → UPPERCASE, Title Case, lowercase.
-- **Look Up Word** → Google search selection.
+- **Look Up Word** → Google search selection in default browser.
 - **Create Task** → adds selected text as a to-do item.
 - **Park Selection** → cuts selected text and stores in Parking sidebar.`,
   },
@@ -1047,23 +1012,21 @@ Persists in .actone bundle settings.`,
     category: "Workspace & Views",
     tags: ["status bar", "info", "stats", "mode"],
     relatedIds: ["statistics-overview", "sprint-timer", "scripts-manager"],
-    content: `The Status Bar is a slim **30px** bottom bar with floating capsule segments.
+    content: `The Status Bar at the bottom of the window displays essential manuscript and project indicators:
 
-**Left group (Metrics capsule — pill \`9999px\`):**
-- **Words** — total word count with locale separators (hidden on small screens).
-- **Page** — "Page: currentPage of totalPages" (always visible).
-- When text is selected: \`N words selected\` appears in the capsule.
+**Left group (Metrics):**
+- **Words** — Total word count of the active document.
+- **Page** — "Page: currentPage of totalPages", updated continuously as you move your cursor.
+- When text is selected, the count of selected words appears.
 
-**Center group (Script Selector capsule):**
-- Dropdown pill showing the active screenplay/bundle chapter with a soft \`▾\` arrow.
+**Center group (Document Selector):**
+- Displays the active script name — click to quickly switch between documents in your project.
 
-**Right group (Assistant & Utilities):**
-- **Muse AI capsule** — glowing pill with a subtle purple dot indicator.
-- **Active Sprint** (when running): amber countdown pill \`MM:SS · WPM\`.
-- **Save Indicator**: green check icon (\`Saved\`) or amber dot (\`Saving…\`, auto-hides after 2s).
-- **Scenes** — scene-heading count (hidden on small screens).
-
-In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
+**Right group (Utilities & Status):**
+- **Muse AI indicator** — displays AI status and provides one-click access.
+- **Active Sprint** — displays a live countdown timer and current words-per-minute when a sprint is running.
+- **Save Indicator** — shows whether changes are saved.
+- **Scenes** — total scene heading count.`,
   },
   {
     id: "file-tabs",
@@ -1071,18 +1034,14 @@ In Zen Mode, the Status Bar collapses to height 0 with a transition.`,
     category: "Workspace & Views",
     tags: ["tabs", "files", "multi-tab", "close"],
     relatedIds: ["open-file", "new-project", "scripts-manager"],
-    content: `Open multiple projects simultaneously as **floating pill tabs** in the header bar (46px high, transparent background). Features:
+    content: `Open multiple projects simultaneously as tabs in the header bar:
 
-- **Tab capsules:** each tab is a pill (\`20px\` radius) with soft typography. The active tab has a paper background, ambient shadow (\`--shadow-sm\`), and a **primary-colored active dot** (6px) with a subtle glow; inactive tabs are transparent with a muted hover.
-- **Dirty indicator:** a small amber dot (\`#f59e0b\`, 6px) replaces/accompanies the close affordance when unsaved changes exist.
-- **Close button:** micro-circle (\`16×16px\`, 4px radius), muted until hover where it shows a soft error tint.
-- Close with <kbd>Alt+Q</kbd>, click the X circle, or middle-click the tab capsule.
-- Right-click a tab for **Close / Close Others / Close All** (dirty files prompt a Save & Close / Discard / Cancel dialog).
+- **Project Tabs:** The active project tab is clearly highlighted, with an indicator dot if there are unsaved changes.
+- **Close button:** Click the X icon on any tab, or press <kbd>Alt+Q</kbd> to close the active project.
+- Right-click a tab for **Close**, **Close Others**, or **Close All** (prompts to save any modified files).
 - Scroll horizontally through tabs using the mouse wheel on the tab bar.
-- Navigate: <kbd>Ctrl+Tab</kbd> / <kbd>Ctrl+PageDown</kbd> (next), <kbd>Ctrl+Shift+Tab</kbd> / <kbd>Ctrl+PageUp</kbd> (previous). Both wrap around.
-- **New tab button (\`+\`):** soft circular ghost pill at the end, tooltip \`New Project (Ctrl+N)\`, hover tints to primary.
-
-The header background is transparent; window controls on the right are slim \`28px\` rounded squares with soft hover states (Close tints to crimson on hover).`,
+- Keyboard navigation: press <kbd>Ctrl+Tab</kbd> / <kbd>Ctrl+PageDown</kbd> (next tab) or <kbd>Ctrl+Shift+Tab</kbd> / <kbd>Ctrl+PageUp</kbd> (previous tab).
+- **New tab button (\`+\`):** Click to create a new project (<kbd>Ctrl+N</kbd>).`,
   },
   {
     id: "quick-settings",
@@ -1090,10 +1049,10 @@ The header background is transparent; window controls on the right are slim \`28
     category: "Workspace & Views",
     tags: ["quick settings", "gear", "activity bar"],
     relatedIds: ["activity-bar", "settings-overview", "interface-scale", "editor-zoom", "theme-manager"],
-    content: `The gear icon at the bottom of the Activity Bar opens the Quick Settings popover with:
+    content: `The gear icon at the bottom of the Activity Bar opens the Quick Settings menu for immediate adjustments:
 
 **View & Scale**
-- Editor Zoom slider (50%–400%, step 10).
+- Editor Zoom slider (50%–400%).
 - "Reset Zoom" button (resets editor zoom to 100%).
 
 **Editor Preferences**
@@ -1101,15 +1060,13 @@ The header background is transparent; window controls on the right are slim \`28
 - Hide Fountain Markup toggle.
 
 **Theme**
-- Theme color swatch grid — each theme shown as a 2×2 color cube (editor, sidebar, accent, dropdown) with \`6px\` rounded tiles. Click any swatch to switch instantly. The popover and its tiles use soft shadows and rounded corners.
-- "Manage Themes…" link to open the Theme Manager modal.
+- Theme color swatches showing editor, sidebar, and accent colors. Click any swatch to switch themes instantly.
+- "Manage Themes…" link to open the Theme Manager.
 
 **Layout & Page**
 - Paper Size toggle: Letter / A4.
 
-**Full Settings** link at the bottom opens the full Settings window (five pill tabs: General / Editor / Spellcheck / Snapshots / Muse).
-
-Context menus and tooltips throughout the app use \`8px\` rounded papers and pill tooltips (\`6px\`, \`11px\` font) with ambient shadows.`,
+**Full Settings** opens the complete Settings window.`,
   },
 
   // ===== PRODUCTION FEATURES =====
@@ -1147,7 +1104,7 @@ Use the right-click menu → **Drop Marker** to insert markers without rememberi
     relatedIds: ["scene-highlighting", "outline-navigator"],
     content: `Tag scene headings with storyline labels using \`[[storyline Label]]\` syntax on a heading line. Multiple storylines are comma-separated: \`[[storyline Plot A, Romance]]\`
 
-Storyline labels appear as uppercase pill badges in the Outline Navigator per scene. The Outline Navigator's filter popover lets you filter by storyline with count badges.`,
+Storyline labels appear as tags in the Outline Navigator for each scene. The Outline Navigator lets you filter by storyline to isolate specific narrative threads.`,
   },
   {
     id: "structure-templates",
@@ -1174,7 +1131,7 @@ The import modal shows a detailed preview of each beat. Choose insertion mode: *
     category: "Production Features",
     tags: ["reorder", "drag", "drop", "scene", "outline"],
     relatedIds: ["outline-navigator", "structure-templates"],
-    content: `In the Outline Navigator, drag scenes by the six-dot grab handle to reorder them. A floating blue ghost follows your cursor and a 2px blue insertion indicator line shows where the scene will land. The editor text updates automatically to reflect the new scene order via \`reorderScenes()\` which manipulates the raw Fountain text and re-parses — all formatting is preserved.`,
+    content: `In the Outline Navigator, drag scenes by the grab handle to reorder them. A visual insertion indicator shows where the scene will land, and your screenplay text and formatting update automatically.`,
   },
 
   // ===== FILES & PROJECTS =====
@@ -1184,20 +1141,19 @@ The import modal shows a detailed preview of each beat. Choose insertion mode: *
     category: "Files & Projects",
     tags: ["actone", "bundle", "zip", "portable"],
     relatedIds: ["scripts-manager", "sidebar-panels", "save"],
-    content: `The **.actone** format is a high-performance ZIP archive (prefixed with the 4-byte header \`ACT1\`) that packages everything in your project together:
+    content: `The **.actone** format packages your entire project into a single portable file:
 
-- **Document Files (\`files/\`)**: All screenplay (\`.fountain\`) and prose (\`.md\`) text documents.
-- **Manifest (\`project.json\`)**: Maps display names, file paths inside \`files/\`, and document types.
-- **Character Profiles & Genders (\`characters.json\` & \`settings.json\`)**: Character database and gender assignments.
-- **Task Checklists (\`todos.json\`)**: Per-document task checklists.
-- **Document Notepad (\`notepad.json\`)**: Per-document research and scratchpad notes.
-- **Parked Snippets (\`parking.json\`)**: Parked screenplay blocks and ideas.
-- **Sprint History (\`sprint_data.json\`)**: Writing sprint analytics and statistics.
-- **Production Tags (\`production_tags.json\`)**: Scene breakdown and script tagging definitions.
-- **Muse AI Chat (\`muse.json\`)**: AI writing assistant conversation history.
-- **Workspace Settings (\`settings.json\`)**: Per-script and global workspace preferences.
+- **Document Files**: All screenplay (\`.fountain\`) and prose (\`.md\`) text documents.
+- **Character Profiles & Genders**: Character notes and tracking data.
+- **Task Checklists**: To-do revision items per document.
+- **Document Notepad**: Research notes and scratchpads.
+- **Parked Snippets**: Cut scenes and parked ideas.
+- **Sprint History**: Writing sprint analytics and statistics.
+- **Production Tags**: Scene breakdown tags and color coding.
+- **Muse AI Chat**: Dedicated AI conversation history per project.
+- **Workspace Settings**: Project-specific preferences.
 
-Old or legacy bundle versions are automatically recognized upon open and transparently auto-upgraded to the modern multi-document structure upon save.`,
+Older project bundle versions are automatically recognized and seamlessly updated upon save.`,
   },
   {
     id: "save",
@@ -1205,11 +1161,11 @@ Old or legacy bundle versions are automatically recognized upon open and transpa
     category: "Files & Projects",
     tags: ["save", "save as", "ctrl+s", "autosave", "project"],
     relatedIds: ["actone-bundle", "file-tabs", "auto-save"],
-    content: `<kbd>Ctrl+S</kbd> saves the active project. For .actone projects, this packs all scripts, notes, todos, and settings into the archive. For plain .fountain files, it writes the Fountain text directly.
+    content: `<kbd>Ctrl+S</kbd> saves the active project. For .actone projects, this saves all documents, notes, tasks, and settings. For plain .fountain files, it writes the Fountain text directly.
 
-<kbd>Ctrl+Shift+S</kbd> opens the native Save Project As dialog. You can save as .actone (recommended for full features) or .fountain.
+<kbd>Ctrl+Shift+S</kbd> opens Save Project As, allowing you to save as .actone (recommended for all features) or .fountain.
 
-When the Tauri window close is requested, ActOne checks all open projects for unsaved changes and prompts you to save, discard, or cancel.`,
+When closing the app, ActOne checks all open projects for unsaved changes and prompts you to save, discard, or cancel.`,
   },
   {
     id: "title-page-editor",
@@ -1219,9 +1175,9 @@ When the Tauri window close is requested, ActOne checks all open projects for un
     relatedIds: ["export-pdf", "actone-bundle"],
     content: `Open the Command Palette → "Edit Title Page" to set your screenplay's metadata. Two views:
 
-**Form View:** Fields for Title, Author, Credit, Source, Contact (multi-line, 3 rows), and Draft Date.
+**Form View:** Fields for Title, Author, Credit, Source, Contact (multi-line), and Draft Date.
 
-**Fountain View:** Raw Fountain title page syntax in a monospace text area. Changes sync bidirectionally with the Form view.
+**Fountain View:** Raw Fountain title page syntax in a text area. Changes sync bidirectionally with the Form view.
 
 Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\`, \`Credit:\`, \`Source:\`, \`Contact:\`, \`Draft date:\`). The title page appears in PDF exports. "Apply to Document" merges the edited title page back into the full screenplay text.`,
   },
@@ -1233,7 +1189,7 @@ Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\
     category: "Export",
     tags: ["export", "pdf", "fountain", "fdx", "print"],
     relatedIds: ["export-pdf", "export-fountain", "export-fdx"],
-    content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the Export dialog. ActOne supports three export formats, each with format-specific options. The export is handled by the Rust backend for native performance.`,
+    content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the Export dialog. ActOne supports three export formats (PDF, Fountain, and Final Draft FDX), each with custom options. Export is fast, high-quality, and runs completely offline on your device.`,
   },
   {
     id: "export-pdf",
@@ -1241,19 +1197,19 @@ Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\
     category: "Export",
     tags: ["pdf", "print", "export"],
     relatedIds: ["export-overview", "export-fountain", "theme-manager"],
-    content: `Export your screenplay as a professionally formatted PDF using the krilla and cosmic-text Rust engine. Options:
+    content: `Export your screenplay as an industry-standard, professionally formatted PDF. Options:
 
-- **Include Title Page** — export the title page if defined.
-- **Bold Scene Headings** — make scene headings bold.
+- **Include Title Page** — Export the title page if defined.
+- **Bold Scene Headings** — Make scene headings bold.
 - **Scene Numbers** — Off, Left Side Only, or Mirror on Both Sides.
 - **Font** — Courier Prime or Courier Prime Sans.
-- **Include Sections** — render \`#\` section headers.
-- **Include Synopsis** — render \`=\` synopsis lines.
-- **Script Fonts** — per-script language font detection with a system font picker for multi-script bundles.
-- **Element Formatting** — per-element B/I/U toggles for Scene Heading, Action, Character, Parenthetical, Dialogue, Lyrics, Transition, Shot, and Centered Text.
-- **Watermark Options** — Header watermark (text + opacity), Footer watermark (text + opacity), Center watermark (text or image type with image path browser, grayscale toggle, opacity slider; accepts PNG/JPG/BMP/GIF/WebP).
+- **Include Sections** — Render section headers.
+- **Include Synopsis** — Render synopsis lines.
+- **Script Fonts** — Language-specific font selection for international scripts.
+- **Element Formatting** — Custom bold/italic/underline toggles per element.
+- **Watermarks** — Add header, footer, or center text/image watermarks with custom opacity.
 
-Paper Size (Letter or A4) is inherited from Settings. PDF includes page numbering after the title page and proper screenplay formatting (dialogue indentation, dual dialogue columns, right-aligned transitions, smart page breaks with orphan/widow protection).`,
+Paper Size (Letter or A4) is inherited from Settings. PDF includes proper page numbering, dialogue indentation, dual dialogue columns, and smart page breaks with orphan and widow protection.`,
   },
   {
     id: "export-fountain",
@@ -1282,7 +1238,7 @@ Paper Size (Letter or A4) is inherited from Settings. PDF includes page numberin
     category: "Settings & Customization",
     tags: ["spellcheck", "dictionary", "language", "typo", "words"],
     relatedIds: ["settings-overview", "editor-context-menu", "status-bar"],
-    content: `ActOne includes an optional native Rust spellcheck engine. It is disabled by default so you can enable it when you want spelling assistance without changing screenplay-specific capitalization.
+    content: `ActOne includes an optional offline spellcheck engine. It is disabled by default so you can enable it when you want spelling assistance without changing screenplay-specific capitalization.
 
 **Enable it:** Use Settings → Spellcheck, the Command Palette (<kbd>Ctrl+K</kbd>), or the language indicator in the Status Bar.
 
@@ -1319,19 +1275,19 @@ The Quick Guide is generated from the same registries used by the application, s
     category: "Settings & Customization",
     tags: ["settings", "ctrl+,", "configuration"],
     relatedIds: ["theme-manager", "auto-save", "font-paper", "interface-scale", "editor-settings"],
-    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings window. It has five **pill-segmented tabs** (General / Editor / Spellcheck / Snapshots / Muse) — the tab bar is a soft inset track (\`8px\` radius) with the active tab shown as a paper pill with shadow.
+    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings window. It has five tabs: General, Editor, Spellcheck, Snapshots, and Muse.
 
-**General:** Paper Size (Letter / A4), Icon Style, Auto-Save toggle and interval, and Reset Settings. Each section is a card (\`8px\` radius, subtle border).
+**General:** Paper Size (Letter / A4), Icon Style, Auto-Save toggle and interval, and Reset Settings.
 
 **Editor:** Font Style (Courier Prime / Courier Prime Sans), Editor Zoom (50%–400%), Typewriter Mode, Autocomplete, Smart Quotes, Auto-Match Parentheses, Auto (CONT'D), Hide Fountain Markup, Line Focus, and Syntax Colors.
 
-**Spellcheck:** Enable spellcheck, Active Language dropdown (disabled when spellcheck is off), **Download More Languages** button, Installed Languages list (rounded \`6px\` rows; "Bundled" chip vs "Remove" for downloaded), and Personal Dictionary card with word-count chip and **Clear Custom Words**.
+**Spellcheck:** Enable spellcheck, Active Language selection, **Download More Languages**, Installed Languages list, and Personal Dictionary management with custom words.
 
-**Snapshots:** Enable Automated Snapshots, Save Location with **Browse…** folder picker (and Reset to Default), info about the project's \`.snapshots/\` folder, and **Open Snapshots Folder** action. Retention controls live in the background.
+**Snapshots:** Enable Automated Snapshots, Save Location folder picker, project snapshot management, and **Open Snapshots Folder**.
 
-**Muse:** Configure the AI provider, model, temperatures, translation languages, and custom instructions.
+**Muse:** Configure AI providers, model selection, translation languages, and custom instructions.
 
-Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full window. Title bars across all secondary windows are transparent with minimal \`28px\` rounded window controls.`,
+Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full window.`,
   },
   {
     id: "theme-manager",
@@ -1374,16 +1330,14 @@ Quick-switch between any theme from the **Quick Settings** menu (gear icon in th
 
 ---
 
-### Design System: Warm Craft Aesthetic
+### Warm Craft Aesthetic
 
-ActOne uses the **Arc / Craft** design system — a warm, tactile, literary workshop aesthetic defined in \`DESIGN.md\`:
+ActOne is crafted with a warm, tactile, literary aesthetic designed to keep you focused and inspired:
 
-- **Rounded Capsules & Cards**: All surfaces use a harmonious radius scale — \`4px\` (chips/mini badges), \`6px\` (buttons/inputs/menu items), \`8px\` (tab pills/cards), \`12px\` (floating panels/modals), \`16px\` (welcome canvas), \`9999px\` (pill search bars/status capsules). No sharp \`0px\` corners appear in user-facing UI except the simulated manuscript page edges.
-- **Dual-Layer Ambient Shadows**: Soft diffused shadows (\`--shadow-xs/sm/md/lg/floating\`) create layered paper depth — active tab pills, scene cards, and dialogs float with subtle ambient diffusion rather than harsh black drops.
-- **Floating Pill Tabs & Controls**: Header tabs are pill capsules (\`20px\` radius) with primary-dot active indicators and amber dirty dots; window controls are \`28px\` rounded squares with soft hover glows.
-- **Pill Search & Toggles**: All filter/search inputs are pill-shaped (\`9999px\` radius); toggle groups (e.g. Settings tabs) are pill segmented controls with soft paper shadows on the active segment.
-- **Minimal Pill Scrollbars**: Thin \`6px\` capsule scroll thumbs with ambient hover, not blocky 10px bars.
-- **Premium Buttons**: Primary actions use pill (\`20px\`) contained buttons; secondary actions use outlined pills — both with tactile hover lifts and spring press feedback.`,
+- **Harmonious Visuals**: Clean cards, floating panels, and modern controls keep your workspace organized and clutter-free.
+- **Comfortable Contrast**: Carefully calibrated light and dark themes reduce eye strain during long writing sessions.
+- **Adaptive Lighting**: Automatically matches your system appearance or allows instant switching to suit your writing environment.
+- **Distraction-Free Focus**: Thoughtful design elements guide your attention directly to your script and story structure.`,
   },
   {
     id: "font-paper",
@@ -1403,7 +1357,7 @@ ActOne uses the **Arc / Craft** design system — a warm, tactile, literary work
     category: "Settings & Customization",
     tags: ["scale", "ui size", "zoom", "dpi", "display"],
     relatedIds: ["settings-overview", "editor-zoom"],
-    content: `Interface scaling is handled automatically by your operating system's native display scaling and DPI settings, ensuring crisp text rendering, flawless caret placement, and artifact-free UI scaling across Windows and Linux (WebKitGTK / Flatpak).
+    content: `Interface scaling is handled automatically by your operating system's native display scaling and DPI settings, ensuring crisp text rendering, flawless caret placement, and artifact-free UI scaling across Windows and Linux.
 
 To scale screenplay text inside the editor canvas independently of the UI chrome, use **Editor Zoom**:
 - Press <kbd>Ctrl+=</kbd> to zoom in
@@ -1418,32 +1372,7 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
     category: "Settings & Customization",
     tags: ["autosave", "save", "interval"],
     relatedIds: ["save", "settings-overview"],
-    content: `Toggle auto-save in Settings → General and choose an interval: 30 seconds, 1 minute, 2 minutes, or 5 minutes. Default: 1 minute. Only triggers for files that have an existing file path and have unsaved changes. Uses \`setInterval\` with refs to avoid stale closures.`,
-  },
-  {
-    id: "desktop-integration-linux",
-    title: "Linux Desktop Integration (AppImage)",
-    category: "Settings & Customization",
-    tags: ["linux", "appimage", "install", "uninstall", "fountain", "integration", "default app"],
-    relatedIds: ["settings-overview", "editor-settings"],
-    content: `When running ActOne Screenplay as an AppImage on Linux, you can integrate the app with your system for a native desktop experience:
-
-### Features Installed:
-- **Application Menu**: Adds ActOne Screenplay to your desktop environment's launcher with high-resolution icons.
-- **File Associations**: Automatically registers and sets ActOne Screenplay as the default application for \`.fountain\`, \`.actone\`, and \`.actheme\` files.
-- **Terminal Command**: Links the \`actone\` CLI command in \`~/.local/bin/actone\` so you can launch files directly from terminal (e.g. \`actone script.fountain\`).
-- **Permanent Location**: Saves the application binary safely to \`~/.local/bin/ActOne-Screenplay.AppImage\` so cleaning your Downloads folder won't break shortcuts.
-
-### How to Install:
-1. Double-click the AppImage on initial launch and select **"Install"**.
-2. Or open **Settings** (<kbd>Ctrl+,</kbd>) → **General** tab and click **"Install"** under Desktop Integration.
-
-### How to Uninstall:
-Open your terminal and run:
-\`\`\`bash
-actone uninstall
-\`\`\`
-This removes the desktop shortcut, icons, MIME registrations, and installed binaries cleanly.`,
+    content: `Toggle auto-save in Settings → General and choose an interval: 30 seconds, 1 minute, 2 minutes, or 5 minutes. Default: 1 minute. Only triggers for files that have an existing file path and have unsaved changes.`,
   },
   {
     id: "editor-settings",
@@ -1471,7 +1400,7 @@ This removes the desktop shortcut, icons, MIME registrations, and installed bina
     category: "AI & Muse",
     tags: ["muse", "muse go", "ai", "assistant", "overview", "help"],
     relatedIds: ["muse-configure", "muse-chat"],
-    content: `**Muse** is ActOne's integrated AI feature suite. The right sidebar companion, **Muse Go!**, provides an intelligent, token-efficient conversational assistant for discussing, exploring, and analyzing your screenplay.
+    content: `**Muse** is ActOne's integrated AI feature suite. The right sidebar companion, **Muse Go!**, provides an intelligent conversational assistant for discussing, exploring, and analyzing your screenplay.
 
 **How to open Muse Go!:**
 - Press \`Alt+M\`.
@@ -1480,9 +1409,9 @@ This removes the desktop shortcut, icons, MIME registrations, and installed bina
 
 **Key features:**
 - **Conversational Screenplay Q&A**: Ask questions about your story, character arcs, scene flow, and dialogue.
-- **Token-Efficient Dynamic Slicing**: Muse Go! uses structured script compression (~50-60% fewer tokens) and only reads the scenes relevant to your question (e.g. "Summarize scenes with John").
+- **Intelligent Scene Context**: Muse Go! automatically finds and reads only the scenes relevant to your question (e.g. "Summarize scenes with John") without sending your entire manuscript every time.
 - **Look up & Synonyms**: Right-click words in the editor to look up definitions and synonyms in Muse Go!.
-- **Per-file history**: Each screenplay maintains its own conversation sessions in localStorage.
+- **Per-script history**: Each screenplay maintains its own conversation sessions across your writing workflow.
 - **Real-time streaming**: Watch responses generate smoothly in real time.`,
   },
   {

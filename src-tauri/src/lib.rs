@@ -924,50 +924,6 @@ async fn install_store_update() -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-fn is_appimage() -> bool {
-    #[cfg(target_os = "linux")]
-    {
-        std::env::var("APPIMAGE").is_ok()
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        false
-    }
-}
-
-#[tauri::command]
-fn is_appimage_integrated() -> bool {
-    #[cfg(target_os = "linux")]
-    {
-        if let Some(home) = std::env::var_os("HOME") {
-            let desktop_path = std::path::PathBuf::from(home).join(".local/share/applications/actone.desktop");
-            desktop_path.exists()
-        } else {
-            false
-        }
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        false
-    }
-}
-
-#[tauri::command]
-fn integrate_appimage() -> Result<bool, String> {
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(appimage_path) = std::env::var("APPIMAGE") {
-            let status = std::process::Command::new(&appimage_path)
-                .arg("--install-integration")
-                .status()
-                .map_err(|e| e.to_string())?;
-            return Ok(status.success());
-        }
-    }
-    Ok(false)
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -1114,9 +1070,6 @@ pub fn run() {
              get_target_os,
             check_for_store_update,
             install_store_update,
-            is_appimage,
-            is_appimage_integrated,
-            integrate_appimage,
             select_watermark_image,
             get_fonts_for_script,
             get_detected_scripts,

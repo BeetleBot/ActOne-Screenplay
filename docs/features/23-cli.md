@@ -1,35 +1,22 @@
 # Command Line Interface (CLI)
 
-ActOne Screenplay supports command-line execution on both **Linux** and **Windows**. It enables fast terminal-based workflows, automated file opening, format conversion, script piping, and native Linux desktop integration.
+ActOne Screenplay supports command-line execution on **Linux**. It enables fast terminal-based workflows, automated file opening, format conversion, script piping, and portable execution.
 
 ---
 
 ## Basic Execution
 
-Depending on your operating system and installation method, ActOne can be launched using the following commands:
+On Linux, ActOne can be launched from the terminal using either your installed command or portable AppImage:
 
-### Linux
 ```bash
-# Direct command (when installed via AppImage integration, .deb, or .rpm)
+# System PATH or installed command
 actone [file_path]
 
-# AppImage standalone binary
+# Portable AppImage standalone binary
 ./ActOne-Screenplay-x86_64.AppImage [file_path]
-
-# Flatpak
-flatpak run ink.iyal.actone [file_path]
 ```
 
-### Windows
-```powershell
-# From PowerShell, Command Prompt, or Windows Terminal
-ActOne.exe [file_path]
-
-# Portable executable
-ActOne-Portable-x64-0.4.24.exe [file_path]
-```
-
-*Note: Running `actone` or `ActOne.exe` without arguments launches the Welcome screen.*
+*Note: Running `actone` without arguments launches the Welcome screen.*
 
 ---
 
@@ -55,39 +42,6 @@ When passing an external screenplay format, ActOne parses and converts the file 
 - **`.md` / `.markdown`**: Markdown documents are converted and opened as prose documents (`type: "markdown"`).
 
 Inside the project, the primary script is named using the source file's base name (e.g. `actone draft.pdf` creates an `Untitled.actone` project with a script named `draft`). You can save the project whenever you are ready (<kbd>Ctrl+S</kbd>).
-
----
-
-## Linux AppImage Integration Flags
-
-When running the universal Linux AppImage (`ActOne-Screenplay-x86_64.AppImage`), specialized CLI flags manage desktop integration without third-party AppImage daemons:
-
-### `--install-integration` (or `install`)
-Installs ActOne into your user environment:
-1. Copies the AppImage to `~/.local/bin/ActOne-Screenplay.AppImage`.
-2. Creates a symlink `~/.local/bin/actone` pointing to the installed AppImage (enabling terminal command `actone` system-wide if `~/.local/bin` is in `$PATH`).
-3. Installs the desktop launcher to `~/.local/share/applications/actone.desktop`.
-4. Installs high-resolution application icons (`128x128` and `256x256`) and MIME type icons (`text-vnd.fountain`, `application-vnd.actone.bundle`, `application-vnd.actone.theme`).
-5. Updates system MIME and desktop databases, registering ActOne as the default handler for `.fountain`, `.actone`, and `.actheme` files.
-
-```bash
-./ActOne-Screenplay-x86_64.AppImage --install-integration
-```
-
-### `--uninstall` (or `uninstall`)
-Cleanly uninstalls the AppImage integration:
-- Removes `~/.local/bin/actone` and the installed AppImage binary.
-- Removes `~/.local/share/applications/actone.desktop` and MIME definitions.
-- Removes all installed application and MIME icons.
-- Refreshes desktop and icon caches.
-
-```bash
-./ActOne-Screenplay-x86_64.AppImage --uninstall
-```
-
-### Standard AppImage Options
-- **`--appimage-extract`**: Extracts the inner filesystem into a `squashfs-root` directory (useful for inspecting bundled assets or running without FUSE).
-- **`--appimage-help`**: Displays general AppImage runtime options.
 
 ---
 
