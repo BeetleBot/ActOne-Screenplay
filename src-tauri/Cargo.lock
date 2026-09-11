@@ -3584,9 +3584,9 @@ dependencies = [
 
 [[package]]
 name = "pdf2fountain"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42b9f1da677e56a837f81e14f181dcc19c71b4565497189dacc1736c206b42d5"
+checksum = "14fb5f11290916253f3415ef9ab8f8782af8b029d1cd89c9d98c4162da5a7769"
 dependencies = [
  "lopdf",
 ]
