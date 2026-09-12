@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.25] - 2026-09-12
+
+### Added / Improved
+- 🎬 **Scene Jump Palette (`Ctrl+J`)** – New fast scene navigation palette with fuzzy search across scene headings, scene numbers, settings, locations, and synopses. Shows scene colors, storyline tags, and metadata chips, supports prose headings/chapters, and is accessible via shortcut, Command Palette ("Jump to Scene..."), and keyboard navigation.
+- 📥 **PDF Screenplay Import via `pdf2fountain`** – Import `.pdf` screenplays directly from the Welcome Screen, Project Pane import menu, Command Palette, drag-and-drop, and CLI (`actone draft.pdf`) using the native Rust `parse_pdf_to_fountain` converter (bumped to `pdf2fountain 0.1.2`). A brief accuracy notice reminds users to review formatting since PDF exports vary across apps.
+- 🖱️ **Drag-and-Drop Import Targets** – Dropping files onto the Project & Scripts pane now adds them directly into the current `.actone` bundle (screenplays as scripts, Markdown as prose), while dropping onto the editor opens them as a new project. Empty projects (Landing Pad) accept drops anywhere, with a refreshed drop overlay listing supported types (`.pdf`, `.fdx`, `.fadein`, `.fountain`, `.md`, `.actone`) and an in-pane drop indicator plus import progress state.
+- 🖍️ **Refreshed Highlight Styling** – Solid high-contrast highlight rendering (`#ffd600` with dark text, square corners) in screenplay and prose editors, plus per-theme highlight colors for visual consistency across light/dark modes.
+- 📏 **Tighter Scene Number Spacing** – Brought scene numbers closer to scene headings in the editor for a cleaner screenplay page.
+- 💾 **Hardened Save Pipeline & State Sync** – Atomic writes now fall back to copy on cross-drive rename failures, folder-open validates canonical directory targets, editor content/dirty state syncs immediately via refs (no lost keystrokes when switching scripts mid-parse or rapid `Ctrl+S`), and bundle saves sync active script content before zipping.
+- 📚 **CLI Documentation & Help Refresh** – New dedicated CLI guide (`docs/features/23-cli.md`), README installation/usage section, and updated in-app help articles covering `actone [file]` launches, instant imports (PDF/FDX/Fade In/Markdown), expanded import/drag-and-drop docs, and Linux-focused cleanup.
+- 🧪 **Expanded Automated Test Coverage** – New unit tests for SceneJump fuzzy matching/palette, PDF/Markdown import paths, drag-and-drop behavior, `stripFormatting` classification, atomic save fallbacks, and folder validation.
+
+### Removed
+- 🗑️ **Legacy `.spmd` Import Support** – Removed `.spmd` from all import filters, file pickers, and filename handling in favor of PDF/FDX/Fade In/Fountain/Markdown.
+- 🐧 **In-App AppImage Desktop Integration Controls** – Removed the Settings "Desktop Integration" card and backend `is_appimage` / `is_appimage_integrated` / `integrate_appimage` commands, plus the first-run install/uninstall integration scripting from the Linux packaging flow and Windows-specific CLI references in docs.
+
+### Fixed
+- 🔄 **Mid-Parse Script Switch Races** – Parse completions now only update the document they started for, preventing background parsing from overwriting or dirty-flagging the wrong script.
+- 📂 **Fresh File & Snapshot State Sync** – New files and snapshot-opened projects immediately sync active file/script refs so background updates and saves target the correct document.
+
 ## [0.4.24] - 2026-09-09
 
 ### Added / Improved
