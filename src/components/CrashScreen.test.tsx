@@ -5,7 +5,6 @@ import { CRASH_REPORT_WINDOW_KEY } from "../constants/reporting";
 import type { ErrorReport } from "../utils/errorReport";
 
 vi.mock("../constants/reporting", () => ({
-  CRASH_REPORT_WEBHOOK_URL: "https://discord.example.test/webhook",
   ERROR_REPORT_QUEUE_KEY: "actone-error-report-queue",
   ERROR_REPORT_MAX_QUEUE: 50,
   CRASH_REPORT_WINDOW_KEY: "actone-crash-report-latest",

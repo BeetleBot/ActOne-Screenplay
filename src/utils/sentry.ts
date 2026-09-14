@@ -46,3 +46,18 @@ export function captureMessageToSentry(message: string, level: Sentry.SeverityLe
     Sentry.captureMessage(message);
   });
 }
+
+export async function sendBugReportFeedback(params: {
+  message: string;
+  name?: string;
+  email?: string;
+}): Promise<string> {
+  const eventId = Sentry.captureFeedback({
+    message: params.message,
+    name: params.name,
+    email: params.email,
+  });
+
+  await Sentry.flush(3000);
+  return eventId;
+}

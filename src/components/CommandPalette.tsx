@@ -370,7 +370,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     ...(isProse
       ? [{ id: "help-markdown", name: "Markdown Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://www.markdownguide.org/basic-syntax/"); onClose(); } }]
       : [{ id: "help-fountain", name: "Fountain Syntax Guide", category: "Help", icon: <MenuBookIcon sx={{ fontSize: 16 }} />, action: () => { openUrl("https://fountain.io"); onClose(); } }]),
-    { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { if (onOpenBugReportModal) { onOpenBugReportModal(); } else { openUrl("https://discord.gg/zpFPpdAxnW"); } onClose(); } },
+    { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBugReportModal?.(); onClose(); } },
   ];
 
   const filteredCommands = search.trim() === ""

@@ -11,9 +11,6 @@ use tauri::Manager;
 use tauri_plugin_prevent_default::PlatformOptions;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
-const CRASH_REPORT_WEBHOOK_URL: &str = "https://discord.com/api/webhooks/1533525613489553589/keO5NiK-ebDPYbhg3Z7Mty067drrBGTbrN16jvEeq9oTA-hX_mpyyMrl6dzoFIyihlFl";
-const BUG_REPORT_WEBHOOK_URL: &str = "https://discord.com/api/webhooks/1542602477713498123/2_ZcuppJjIukGQGKKjdoS8wHju45RZJtXSGViLb-jRIBQiWXl_IoJjL6y-fZmpbVyZPe";
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ThemeState {
     theme_id: String,
@@ -1073,7 +1070,6 @@ pub fn run() {
             import_script_dialog,
             check_microsoft_store_license,
              get_system_info,
-             send_error_report,
              flush_pending_panics,
              reload_window,
              restart_app,
@@ -1197,45 +1193,6 @@ fn get_system_info() -> SystemInfo {
         total_memory_mb: system.total_memory() / 1024 / 1024,
         available_memory_mb: system.available_memory() / 1024 / 1024,
     }
-}
-
-#[tauri::command]
-async fn send_error_report(
-    report_type: String,
-    payload: String,
-    attachment_name: Option<String>,
-    attachment_data: Option<String>,
-) -> Result<(), String> {
-    let webhook_url = match report_type.as_str() {
-        "crash" => CRASH_REPORT_WEBHOOK_URL,
-        "bug" => BUG_REPORT_WEBHOOK_URL,
-        _ => return Err("Invalid report type".to_string()),
-    };
-
-    let client = reqwest::Client::new();
-    let request = if let (Some(name), Some(data)) = (attachment_name, attachment_data) {
-        let part = reqwest::multipart::Part::bytes(data.into_bytes())
-            .file_name(name)
-            .mime_str("text/plain")
-            .map_err(|error| error.to_string())?;
-        let form = reqwest::multipart::Form::new()
-            .text("payload_json", payload)
-            .part("files[0]", part);
-        client.post(webhook_url).multipart(form)
-    } else {
-        client
-            .post(webhook_url)
-            .header("Content-Type", "application/json")
-            .body(payload)
-    };
-
-    request
-        .send()
-        .await
-        .map_err(|error| error.to_string())?
-        .error_for_status()
-        .map(|_| ())
-        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

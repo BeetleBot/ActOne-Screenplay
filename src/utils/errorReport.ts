@@ -55,12 +55,6 @@ export interface SystemDiagnostics {
   viewport: string;
 }
 
-interface DiscordEmbedField {
-  name: string;
-  value: string;
-  inline?: boolean;
-}
-
 const TRANSIENT_TAURI_ERROR_PATTERNS: RegExp[] = [
   /resource id \d+ is invalid/i,
   /resource.*\bnot found/i,
@@ -120,18 +114,6 @@ export function formatUptime(uptimeMs: number): string {
   return `${hours}h ${remMins}m`;
 }
 
-function severityColor(severity?: ErrorSeverity): number {
-  switch (severity) {
-    case "app":
-      return 0xe53935; // 🔴 Critical Red (#E53935)
-    case "window":
-      return 0xfb8c00; // 🟠 Orange (#FB8C00)
-    case "pane":
-      return 0xfdd835; // 🟡 Yellow (#FDD835)
-    default:
-      return 0xe53935;
-  }
-}
 
 export function getScriptReportContext(): ScriptReportContext {
   return { ...scriptContextState };
@@ -252,59 +234,6 @@ function d(report: ErrorReport): SystemDiagnostics {
   };
 }
 
-export function buildDiscordPayload(report: ErrorReport): string {
-  const diag = d(report);
-  const occurrenceVal = report.occurrenceText || (report.occurrence > 1 ? `${report.occurrence} times` : "1 time");
-  const fields: DiscordEmbedField[] = [
-    { name: "Crash type", value: report.type, inline: true },
-    { name: "Scope", value: report.severity, inline: true },
-    { name: "Component", value: report.component || "unknown", inline: true },
-    { name: "Occurrences", value: occurrenceVal, inline: true },
-    { name: "Session uptime", value: report.sessionUptime || "unknown", inline: true },
-    { name: "App version", value: report.appVersion, inline: true },
-    { name: "Operating system", value: `${diag.os} ${diag.osVersion}`.slice(0, 1000), inline: true },
-    { name: "Architecture", value: diag.architecture, inline: true },
-    { name: "Processor", value: diag.cpuModel !== "unknown" ? `${diag.cpuModel} (${diag.cpuCount} cores)`.slice(0, 1000) : "unknown", inline: false },
-    { name: "Memory", value: `${memoryLabel(diag.availableMemoryMb)} available of ${memoryLabel(diag.totalMemoryMb)}`, inline: true },
-    { name: "Locale · screen · network", value: `${diag.language} · ${diag.viewport} · ${diag.online ? "online" : "offline"}`, inline: true },
-    { name: "Runtime", value: `${diag.hardwareConcurrency} logical cores`, inline: true },
-  ];
-
-  if (report.scriptContext) {
-    const ctx = report.scriptContext;
-    const parts: string[] = [];
-    if (ctx.mode) parts.push(`Mode: ${ctx.mode}`);
-    if (ctx.estimatedPages) parts.push(`~${ctx.estimatedPages} pages`);
-    if (ctx.scenesCount !== undefined) parts.push(`${ctx.scenesCount} scenes`);
-    if (ctx.linesCount !== undefined) parts.push(`${ctx.linesCount} lines`);
-    if (ctx.activeView) parts.push(`View: ${ctx.activeView}`);
-    if (parts.length > 0) {
-      fields.push({ name: "Script context", value: parts.join(" · ").slice(0, 1000), inline: false });
-    }
-  }
-
-  fields.push({ name: "WebView", value: diag.userAgent.slice(0, 1000), inline: false });
-
-  if (report.stack) {
-    fields.push({ name: "Stack trace", value: `\`\`\`\n${report.stack.slice(0, 980)}\n\`\`\``, inline: false });
-  }
-  if (report.recentLogs) {
-    fields.push({ name: "Recent action trail", value: `\`\`\`text\n${report.recentLogs.slice(0, 980)}\n\`\`\``, inline: false });
-  }
-  return JSON.stringify({
-    username: "ActOne Crash Reports",
-    embeds: [
-      {
-        title: `ActOne crash ${report.code}`,
-        description: (report.message || "Unknown error").slice(0, 1000),
-        color: severityColor(report.severity),
-        timestamp: report.timestamp,
-        fields,
-        footer: { text: "Automatic crash report" },
-      },
-    ],
-  });
-}
 
 export function buildLogAttachmentText(report: ErrorReport): string {
   const diag = d(report);
@@ -344,25 +273,17 @@ export function buildLogAttachmentText(report: ErrorReport): string {
   return sections.join("\n");
 }
 
-async function sendToDiscord(report: ErrorReport): Promise<void> {
+async function dispatchReportToSentry(report: ErrorReport): Promise<void> {
   if (isDevReporting()) return;
-  const payload = buildDiscordPayload(report);
-  if (import.meta.env?.MODE === "test") {
-    // Tests are handled by mocked invoke
-  }
-  const attachmentName = `crash-${report.code}.txt`;
-  const attachmentData = buildLogAttachmentText(report);
-  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-  if (isTauri) {
-    const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("send_error_report", {
-      reportType: "crash",
-      payload,
-      attachmentName,
-      attachmentData,
-    });
-    return;
-  }
+  captureMessageToSentry(`${report.code}: ${report.message}`, report.severity === "app" ? "fatal" : "error", {
+    code: report.code,
+    type: report.type,
+    severity: report.severity,
+    component: report.component,
+    scriptContext: report.scriptContext,
+    diagnostics: report.diagnostics,
+    recentLogs: report.recentLogs,
+  });
 }
 
 function readSentKeys(): Set<string> {
@@ -463,7 +384,7 @@ export async function flushErrorReports(): Promise<void> {
       }
 
       try {
-        await sendToDiscord(current);
+        await dispatchReportToSentry(current);
         sentThisSession += 1;
         recordSentKey(current.code);
         queue = readQueue().filter((report) => report.code !== current.code);

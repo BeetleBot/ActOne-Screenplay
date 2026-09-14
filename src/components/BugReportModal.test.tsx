@@ -41,7 +41,6 @@ describe('BugReportModal Component', () => {
     expect(screen.getByText(/Send Bug Report to Developer/i)).toBeTruthy();
     expect(screen.getByLabelText(/Your Name/i)).toBeTruthy();
     expect(screen.getByLabelText(/Contact Email/i)).toBeTruthy();
-    expect(screen.getByLabelText(/Discord Username/i)).toBeTruthy();
     expect(screen.getByLabelText(/Explain the bug/i)).toBeTruthy();
     expect(screen.getByText(/No screenplay text, dialogue, character names, or story files are ever collected/i)).toBeTruthy();
   });
@@ -64,7 +63,6 @@ describe('BugReportModal Component', () => {
 
     fireEvent.change(screen.getByLabelText(/Your Name/i), { target: { value: 'Alice' } });
     fireEvent.change(screen.getByLabelText(/Contact Email/i), { target: { value: 'alice@example.com' } });
-    fireEvent.change(screen.getByLabelText(/Discord Username/i), { target: { value: '@alice' } });
     fireEvent.change(screen.getByLabelText(/Explain the bug/i), { target: { value: 'Button does not respond.' } });
 
     const submitBtn = screen.getByRole('button', { name: /Send Bug Report/i });
@@ -75,7 +73,6 @@ describe('BugReportModal Component', () => {
       expect(sendSpy).toHaveBeenCalledWith({
         name: 'Alice',
         email: 'alice@example.com',
-        discordUsername: '@alice',
         description: 'Button does not respond.',
       });
       expect(screen.getByText('Bug Report Submitted')).toBeTruthy();

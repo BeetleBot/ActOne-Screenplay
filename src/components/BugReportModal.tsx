@@ -21,11 +21,10 @@ import {
   SendIcon,
   ContentCopyIcon,
   CheckIcon,
-  OpenInNewIcon,
 } from './Icons';
 import { TitleBar } from './TitleBar';
 import { getSystemDiagnostics, getAppVersion } from '../utils/errorReport';
-import { sendBugReport, buildGitHubIssueUrl } from '../utils/bugReport';
+import { sendBugReport } from '../utils/bugReport';
 import { copyToClipboard } from '../utils';
 
 interface BugReportModalProps {
@@ -39,7 +38,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [discordUsername, setDiscordUsername] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSystemDetails, setShowSystemDetails] = useState(false);
@@ -53,7 +51,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
   const handleReset = () => {
     setName('');
     setEmail('');
-    setDiscordUsername('');
     setDescription('');
     setIsSubmitting(false);
     setSubmitError(null);
@@ -76,7 +73,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
     const result = await sendBugReport({
       name: name.trim() || undefined,
       email: email.trim() || undefined,
-      discordUsername: discordUsername.trim() || undefined,
       description: description.trim(),
     });
 
@@ -96,15 +92,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
         setTimeout(() => setCopiedCode(false), 2000);
       }
     });
-  };
-
-  const handleOpenGitHubIssue = () => {
-    const url = buildGitHubIssueUrl(description);
-    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-      import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url)).catch(() => window.open(url, "_blank"));
-    } else {
-      window.open(url, "_blank");
-    }
   };
 
   return (
@@ -192,7 +179,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
           </Box>
         ) : (
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Header intro */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box
                 sx={{
@@ -225,7 +211,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
               </Alert>
             )}
 
-            {/* Inputs */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
               <TextField
                 label="Your Name"
@@ -249,16 +234,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
             </Box>
 
             <TextField
-              label="Discord Username"
-              placeholder="@username (optional)"
-              size="small"
-              value={discordUsername}
-              onChange={(e) => setDiscordUsername(e.target.value)}
-              disabled={isSubmitting}
-              fullWidth
-            />
-
-            <TextField
               label="Explain the bug *"
               placeholder="What happened? Steps to reproduce, or unexpected behavior..."
               multiline
@@ -272,7 +247,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
               autoFocus
             />
 
-            {/* Privacy & System Info Box */}
             <Box
               sx={{
                 p: 1.5,
@@ -379,29 +353,18 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
               </Collapse>
             </Box>
 
-            <DialogActions sx={{ px: 0, pt: 1, pb: 0, justifyContent: 'space-between' }}>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleOpenGitHubIssue}
-                startIcon={<OpenInNewIcon sx={{ fontSize: 15 }} />}
-                sx={{ textTransform: 'none', borderRadius: '6px' }}
-              >
-                Open GitHub Issue
+            <DialogActions sx={{ px: 0, pt: 1, pb: 0, justifyContent: 'flex-end', gap: 1 }}>
+              <Button onClick={handleClose} disabled={isSubmitting} color="inherit">
+                Cancel
               </Button>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button onClick={handleClose} disabled={isSubmitting} color="inherit">
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={!description.trim() || isSubmitting}
-                  startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <SendIcon sx={{ fontSize: 16 }} />}
-                >
-                  {isSubmitting ? 'Sending...' : 'Send Bug Report'}
-                </Button>
-              </Box>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={!description.trim() || isSubmitting}
+                startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <SendIcon sx={{ fontSize: 16 }} />}
+              >
+                {isSubmitting ? 'Sending...' : 'Send Bug Report'}
+              </Button>
             </DialogActions>
           </Box>
         )}
