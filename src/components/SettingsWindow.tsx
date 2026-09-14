@@ -37,7 +37,6 @@ import { logger } from "../utils/logger";
 import { invoke } from "@tauri-apps/api/core";
 import { fetchModels, checkProviderAvailability, notifyConfigChange } from "../hooks/usePromptConfig";
 import { notifyApiListChange } from "../hooks/useApiList";
-import { storeSecret } from "../utils/secrets";
 
 function readLocal(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -140,8 +139,7 @@ export const SettingsWindow: React.FC = () => {
     saveApiList([...apiList, entry]);
     setEditingApiId(id);
     localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-    storeSecret("active_api_key", entry.apiKey).catch(() => void 0);
-    try { localStorage.removeItem(STORAGE_KEYS.PROMPT_API_KEY); } catch { /* ignore */ }
+    localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
     localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
     setSelectedApiId(id);
     notifyConfigChange();
@@ -168,8 +166,7 @@ export const SettingsWindow: React.FC = () => {
       if (updated.length > 0) {
         const entry = updated[0];
         localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-        storeSecret("active_api_key", entry.apiKey).catch(() => void 0);
-        try { localStorage.removeItem(STORAGE_KEYS.PROMPT_API_KEY); } catch { /* ignore */ }
+        localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
         localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
         setSelectedApiId(updated[0].id);
         notifyConfigChange();
@@ -185,8 +182,7 @@ export const SettingsWindow: React.FC = () => {
     const entry = updated.find(e => e.id === id);
     if (entry && selectedApiId === id) {
       localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-      storeSecret("active_api_key", entry.apiKey).catch(() => void 0);
-      try { localStorage.removeItem(STORAGE_KEYS.PROMPT_API_KEY); } catch { /* ignore */ }
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
       localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
     }
   };
@@ -195,8 +191,7 @@ export const SettingsWindow: React.FC = () => {
     const entry = apiList.find(e => e.id === id);
     if (entry) {
       localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-      storeSecret("active_api_key", entry.apiKey).catch(() => void 0);
-      try { localStorage.removeItem(STORAGE_KEYS.PROMPT_API_KEY); } catch { /* ignore */ }
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
       localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
     }
     notifyConfigChange();

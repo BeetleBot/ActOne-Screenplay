@@ -1073,9 +1073,6 @@ pub fn run() {
              flush_pending_panics,
              reload_window,
              restart_app,
-             store_secret,
-             get_secret,
-             delete_secret,
              get_target_os,
             check_for_store_update,
             install_store_update,
@@ -1227,32 +1224,6 @@ fn reload_window(app: tauri::AppHandle, label: String) -> Result<(), String> {
 #[tauri::command]
 fn restart_app(app: tauri::AppHandle) {
     app.restart();
-}
-
-#[tauri::command]
-fn store_secret(service: String, key: String, value: String) -> Result<(), String> {
-    let entry = keyring::Entry::new(&service, &key).map_err(|e| e.to_string())?;
-    entry.set_password(&value).map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[tauri::command]
-fn get_secret(service: String, key: String) -> Result<String, String> {
-    let entry = keyring::Entry::new(&service, &key).map_err(|e| e.to_string())?;
-    match entry.get_password() {
-        Ok(pwd) => Ok(pwd),
-        Err(keyring::Error::NoEntry) => Ok(String::new()),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-#[tauri::command]
-fn delete_secret(service: String, key: String) -> Result<(), String> {
-    let entry = keyring::Entry::new(&service, &key).map_err(|e| e.to_string())?;
-    match entry.delete_credential() {
-        Ok(_) | Err(keyring::Error::NoEntry) => Ok(()),
-        Err(e) => Err(e.to_string()),
-    }
 }
 
 #[cfg(test)]

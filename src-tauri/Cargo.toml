@@ -45,7 +45,6 @@ regex = "1"
 tauri-plugin-window-state = "2.4.1"
 tauri-plugin-dialog = "2"
 pdf2fountain = "0.1.2"
-keyring = "3"
 pollster = "0.4"
 tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
 

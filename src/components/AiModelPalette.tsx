@@ -20,7 +20,6 @@ import {
 } from "../hooks/usePromptConfig";
 import { useApiList } from "../hooks/useApiList";
 import { STORAGE_KEYS } from "../constants";
-import { storeSecret } from "../utils/secrets";
 import { useModalWindows } from "../hooks/useModalWindows";
 import { useUI, useEditor } from "../context";
 import {
@@ -107,8 +106,7 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
     const entry = apiList.find((e) => e.id === id);
     if (!entry) return;
     localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-    storeSecret("active_api_key", entry.apiKey).catch(() => void 0);
-    try { localStorage.removeItem(STORAGE_KEYS.PROMPT_API_KEY); } catch { /* ignore */ }
+    localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
     localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
     setPromptConfigField("provider", "openai-compatible");
     try {
