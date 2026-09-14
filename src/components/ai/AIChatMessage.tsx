@@ -132,7 +132,27 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
             "& ::selection": { bgcolor: "rgba(255,255,255,0.25)" },
           }}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm]}
+            components={{
+              img: ({ alt }) => (
+                <Typography component="span" sx={{ fontStyle: "italic", opacity: 0.7 }}>
+                  [Image omitted: {alt || "image"}]
+                </Typography>
+              ),
+              a: ({ href, children, title }) => (
+                <a 
+                  href={href} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  title={title || href}
+                  style={{ color: "inherit", textDecoration: "underline" }}
+                >
+                  {children}
+                </a>
+              )
+            }}
+          >
             {turn.display ?? turn.content}
           </ReactMarkdown>
         </Box>
@@ -392,7 +412,28 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
             seg.type === "fountain" ? (
               <FountainBlock key={i} fountainText={seg.text} onInsertAtCursor={onInsertAtCursor} />
             ) : (
-              <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown 
+                key={i} 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  img: ({ alt }) => (
+                    <Typography component="span" sx={{ fontStyle: "italic", opacity: 0.7 }}>
+                      [Image omitted: {alt || "image"}]
+                    </Typography>
+                  ),
+                  a: ({ href, children, title }) => (
+                    <a 
+                      href={href} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      title={title || href}
+                      style={{ color: "inherit", textDecoration: "underline" }}
+                    >
+                      {children}
+                    </a>
+                  )
+                }}
+              >
                 {seg.text}
               </ReactMarkdown>
             )

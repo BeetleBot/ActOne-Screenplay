@@ -11,6 +11,9 @@ use tauri::Manager;
 use tauri_plugin_prevent_default::PlatformOptions;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
+const CRASH_REPORT_WEBHOOK_URL: &str = "https://discord.com/api/webhooks/1533525613489553589/keO5NiK-ebDPYbhg3Z7Mty067drrBGTbrN16jvEeq9oTA-hX_mpyyMrl6dzoFIyihlFl";
+const BUG_REPORT_WEBHOOK_URL: &str = "https://discord.com/api/webhooks/1542602477713498123/2_ZcuppJjIukGQGKKjdoS8wHju45RZJtXSGViLb-jRIBQiWXl_IoJjL6y-fZmpbVyZPe";
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ThemeState {
     theme_id: String,
@@ -1074,6 +1077,9 @@ pub fn run() {
              flush_pending_panics,
              reload_window,
              restart_app,
+             store_secret,
+             get_secret,
+             delete_secret,
              get_target_os,
             check_for_store_update,
             install_store_update,
@@ -1195,11 +1201,17 @@ fn get_system_info() -> SystemInfo {
 
 #[tauri::command]
 async fn send_error_report(
-    webhook_url: String,
+    report_type: String,
     payload: String,
     attachment_name: Option<String>,
     attachment_data: Option<String>,
 ) -> Result<(), String> {
+    let webhook_url = match report_type.as_str() {
+        "crash" => CRASH_REPORT_WEBHOOK_URL,
+        "bug" => BUG_REPORT_WEBHOOK_URL,
+        _ => return Err("Invalid report type".to_string()),
+    };
+
     let client = reqwest::Client::new();
     let request = if let (Some(name), Some(data)) = (attachment_name, attachment_data) {
         let part = reqwest::multipart::Part::bytes(data.into_bytes())
@@ -1260,6 +1272,32 @@ fn restart_app(app: tauri::AppHandle) {
     app.restart();
 }
 
+#[tauri::command]
+fn store_secret(service: String, key: String, value: String) -> Result<(), String> {
+    let entry = keyring::Entry::new(&service, &key).map_err(|e| e.to_string())?;
+    entry.set_password(&value).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn get_secret(service: String, key: String) -> Result<String, String> {
+    let entry = keyring::Entry::new(&service, &key).map_err(|e| e.to_string())?;
+    match entry.get_password() {
+        Ok(pwd) => Ok(pwd),
+        Err(keyring::Error::NoEntry) => Ok(String::new()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[tauri::command]
+fn delete_secret(service: String, key: String) -> Result<(), String> {
+    let entry = keyring::Entry::new(&service, &key).map_err(|e| e.to_string())?;
+    match entry.delete_credential() {
+        Ok(_) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1310,3 +1348,4 @@ mod tests {
         assert!(result.is_err());
     }
 }
+

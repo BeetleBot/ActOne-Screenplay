@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "actone"
-version = "0.4.25"
+version = "0.4.26"
 dependencies = [
  "base64 0.22.1",
  "bitflags 2.13.1",
@@ -13,6 +13,7 @@ dependencies = [
  "font-kit",
  "futures-util",
  "image",
+ "keyring",
  "krilla",
  "pdf2fountain",
  "pollster 0.4.0",
@@ -32,6 +33,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-prevent-default",
  "tauri-plugin-window-state",
+ "tokio",
  "unicode-properties",
  "windows 0.62.2",
  "zip",
@@ -2724,6 +2726,16 @@ dependencies = [
  "bitflags 2.13.1",
  "serde",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "keyring"
+version = "3.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eebcc3aff044e5944a8fbaf69eb277d11986064cba30c468730e8b9909fb551c"
+dependencies = [
+ "log",
+ "zeroize",
 ]
 
 [[package]]
@@ -5674,9 +5686,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.52.3"
+version = "1.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fc7f01b389ac15039e4dc9531aa973a135d7a4135281b12d7c1bc79fd57fffe"
+checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
 dependencies = [
  "bytes",
  "libc",

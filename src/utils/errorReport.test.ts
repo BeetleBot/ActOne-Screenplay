@@ -14,8 +14,12 @@ import {
 
 import { ERROR_REPORT_MAX_QUEUE, ERROR_REPORT_QUEUE_KEY } from "../constants/reporting";
 
+export const mockInvoke = vi.fn().mockResolvedValue(undefined);
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: (...args: any[]) => mockInvoke(...args),
+}));
+
 vi.mock("../constants/reporting", () => ({
-  CRASH_REPORT_WEBHOOK_URL: "https://discord.example.test/webhook",
   ERROR_REPORT_QUEUE_KEY: "actone-error-report-queue",
   ERROR_REPORT_SENT_KEYS: "actone-error-report-sent-keys",
   ERROR_REPORT_IN_FLIGHT_KEY: "actone-error-report-in-flight",
@@ -28,6 +32,7 @@ function queue(): ErrorReport[] {
 
 beforeEach(() => {
   localStorage.clear();
+  mockInvoke.mockClear();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   resetErrorReportSessionForTests();
@@ -72,59 +77,67 @@ describe("captureError", () => {
 
 describe("flushErrorReports", () => {
   it("posts queued reports and clears them on success", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal("fetch", fetchMock);
+    mockInvoke.mockResolvedValue(undefined);
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+    
     const report = captureError({ type: "render", error: new Error("flush me") });
     await vi.waitFor(() => expect(queue()).toHaveLength(0));
-    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://discord.example.test/webhook");
-    const payloadStr = init.body instanceof FormData ? (init.body.get("payload_json") as string) : (init.body as string);
-    expect(JSON.parse(payloadStr).embeds[0].title).toContain(report.code);
-    if (init.body instanceof FormData) {
-      expect(init.body.get("files[0]")).toBeDefined();
-    }
+    await vi.waitFor(() => expect(mockInvoke).toHaveBeenCalledTimes(1));
+    const [command, args] = mockInvoke.mock.calls[0] as [string, any];
+    expect(command).toBe("send_error_report");
+    expect(args.reportType).toBe("crash");
+    expect(JSON.parse(args.payload).embeds[0].title).toContain(report.code);
+    expect(args.attachmentName).toBeDefined();
+    
+    vi.unstubAllGlobals();
   });
 
   it("keeps queued reports when Discord rejects", async () => {
-    const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
-    vi.stubGlobal("fetch", fetchMock);
+    mockInvoke.mockRejectedValue(new Error("offline"));
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+
     captureError({ type: "uncaught", message: "keep me" });
     await flushErrorReports();
     expect(queue().length).toBeGreaterThan(0);
+    
     vi.unstubAllGlobals();
   });
 
   it("stops after the per-session send limit", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal("fetch", fetchMock);
+    mockInvoke.mockResolvedValue(undefined);
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+
     for (let i = 0; i < 12; i += 1) {
       captureError({ type: "uncaught", message: `distinct error ${i}` });
     }
     await vi.waitFor(() => expect(queue().length).toBe(2));
-    expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(ERROR_REPORT_MAX_QUEUE);
+    expect(mockInvoke.mock.calls.length).toBeLessThanOrEqual(ERROR_REPORT_MAX_QUEUE);
+    
     vi.unstubAllGlobals();
   });
 
   it("does not send duplicate reports if already marked as sent in localStorage", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal("fetch", fetchMock);
+    mockInvoke.mockResolvedValue(undefined);
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+
     const report = captureError({ type: "render", error: new Error("dedup test") });
-    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(mockInvoke).toHaveBeenCalledTimes(1));
 
     // Manually push report back to queue to simulate a secondary window loading the queue
     localStorage.setItem("actone-error-report-queue", JSON.stringify([report]));
     await flushErrorReports();
 
-    // Fetch should NOT have been called a second time
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // Invoke should NOT have been called a second time
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
     expect(queue()).toHaveLength(0);
+    
     vi.unstubAllGlobals();
   });
 
   it("skips reports currently locked in-flight by another window", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal("fetch", fetchMock);
+    mockInvoke.mockResolvedValue(undefined);
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+
     const report: ErrorReport = {
       code: "ACT-0.4.3-LOCK-TEST",
       timestamp: new Date().toISOString(),
@@ -139,7 +152,8 @@ describe("flushErrorReports", () => {
     localStorage.setItem("actone-error-report-in-flight", JSON.stringify({ [report.code]: Date.now() }));
 
     await flushErrorReports();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockInvoke).not.toHaveBeenCalled();
+    
     vi.unstubAllGlobals();
   });
 });

@@ -4,6 +4,11 @@ import { DEFAULTS } from "../constants/defaults";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
 
+import { getSecret, storeSecret } from "../utils/secrets";
+
+let secureApiKeyCache = "";
+let secureApiKeyLoaded = false;
+
 function isTauriEnv(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
@@ -80,10 +85,32 @@ function getConfig(): PromptConfig {
         translatePrompt: localStorage.getItem(STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT]),
         translateTemp: rawTransTemp !== null ? parseFloat(rawTransTemp) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_TEMP]),
         apiEndpoint: localStorage.getItem(STORAGE_KEYS.PROMPT_API_ENDPOINT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_ENDPOINT]),
-        apiKey: localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY]),
+        apiKey: secureApiKeyLoaded
+          ? secureApiKeyCache
+          : (localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY])),
         apiModel: localStorage.getItem(STORAGE_KEYS.PROMPT_API_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_MODEL]),
         ollamaUrl: localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL]),
       };
+      if (!secureApiKeyLoaded) {
+        secureApiKeyLoaded = true;
+        getSecret("active_api_key").then((secret) => {
+          if (secret) {
+            secureApiKeyCache = secret;
+            notifyConfigChange();
+          } else {
+            const localKey = localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY);
+            if (localKey) {
+              secureApiKeyCache = localKey;
+              storeSecret("active_api_key", localKey).catch(() => void 0);
+              try {
+                localStorage.removeItem(STORAGE_KEYS.PROMPT_API_KEY);
+              } catch {
+                /* ignore */
+              }
+            }
+          }
+        }).catch(() => void 0);
+      }
   } catch {
     newConfig = {
       provider: "none",
@@ -157,8 +184,18 @@ export function setPromptConfigField(key: keyof PromptConfig, value: string | nu
     ollamaUrl: STORAGE_KEYS.PROMPT_OLLAMA_URL,
   };
   try {
-    const stored = key === "translateLanguages" || key === "rephrasePresets" ? JSON.stringify(value) : String(value);
-    localStorage.setItem(storageMap[key], stored);
+    if (key === "apiKey") {
+      secureApiKeyCache = String(value);
+      storeSecret("active_api_key", String(value)).catch(() => void 0);
+      try {
+        localStorage.removeItem(STORAGE_KEYS.PROMPT_API_KEY);
+      } catch {
+        /* ignore */
+      }
+    } else {
+      const stored = key === "translateLanguages" || key === "rephrasePresets" ? JSON.stringify(value) : String(value);
+      localStorage.setItem(storageMap[key], stored);
+    }
   } catch { /* ignore */ }
   notifyConfigChange();
 }

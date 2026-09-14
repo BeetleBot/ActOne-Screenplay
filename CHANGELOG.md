@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.26] - 2026-09-15
+
+### Added / Improved
+- ⚡ **Granular External Sync & Undo Preservation** – Integrated `diff-match-patch` into CodeMirror external text synchronization (`useCoreCodeMirror`), applying targeted changes rather than full-document replacements when external tools (such as AI modifications or translation) update document text, keeping the undo/redo history intact.
+- 🛡️ **Collision-Resistant Atomic File Saves** – Enhanced `write_file_atomically` in the Rust backend to incorporate process IDs and an atomic sequence counter (`.{filename}.{pid}-{seq}.tmp`), eliminating temporary file naming collisions during concurrent saves.
+- 💾 **Atomic Preference & Theme Persistence** – Migrated preferences (`app_prefs.rs`) and theme configuration (`lib.rs`) writes to use the atomic temp-and-rename pipeline, preventing configuration corruption during abrupt shutdowns.
+- 📦 **Manifest-Less `.actone` Script Recovery** – Added fallback recovery in `unpackActoneBundle` for legacy or corrupted archives missing `project.json`/`fountain.json`, discovering `.fountain`, `.md`, or `.markdown` scripts instead of returning empty content.
+- 🔐 **OS Credential Store for AI API Keys** – Integrated the native OS credential store (`keyring` crate across Windows Credential Manager and Linux Secret Service / GNOME Keyring) via Tauri native commands (`store_secret`, `get_secret`, `delete_secret`), removing plaintext API keys from `localStorage` and migrating existing keys seamlessly.
+- 🐞 **Direct GitHub Issue Bug Reporting** – Updated "Report a Bug" to provide an "Open GitHub Issue" workflow pre-populating system specs and diagnostic trails without screenplay text, eliminating reliance on vulnerable hardcoded Discord webhooks.
+- 📡 **Automated Crash Reporting via Sentry** – Integrated Sentry error monitoring with strict PII and privacy scrubbing (`sendDefaultPii: false`, screenplay content and local paths stripped) to capture unhandled exceptions and Rust panics reliably without webhook leaks.
+- 🛡️ **Sanitized AI Output Rendering** – Sanitized Assistant Markdown rendering in `AIChatMessage` by neutralizing `img` tags to prevent tracking pixels/network requests and enforcing safe external link attributes (`rel="noopener noreferrer"`, `target="_blank"`).
+- 🔍 **AI Tool Argument Validation** – Added strict numeric bounds checking, integer validation, and scene existence verification to AI tools (`replace_scene`, `tag_scene`, `read_scene`, `read_active_cursor_context`).
+- 📁 **Snapshot Folder Path Validation** – Hardened backend `open_folder` command to reject path traversal (`..`) and restrict automatic directory creation strictly to `.snapshots` directories.
+
+### Fixed
+- 🔄 **Async Parse Race Condition** – Implemented sequence tracking and staleness guards in `FileContext` (`setRawText` and `updateFileScriptContent`), preventing older in-flight background parse completions from overwriting newer user edits.
+- 🔒 **Discord Webhook Exposure** – Completely removed public Discord webhook URLs from the client bundle.
+
 ## [0.4.25] - 2026-09-12
 
 ### Added / Improved

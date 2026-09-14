@@ -1,11 +1,11 @@
 import {
-  CRASH_REPORT_WEBHOOK_URL,
   ERROR_REPORT_MAX_QUEUE,
   ERROR_REPORT_QUEUE_KEY,
   ERROR_REPORT_SENT_KEYS,
   ERROR_REPORT_IN_FLIGHT_KEY,
 } from "../constants/reporting";
 import { logger } from "./logger";
+import { captureExceptionToSentry, captureMessageToSentry } from "./sentry";
 
 export type ErrorReportType = "render" | "uncaught" | "unhandled-rejection" | "rust-panic" | "pre-mount";
 
@@ -347,8 +347,8 @@ export function buildLogAttachmentText(report: ErrorReport): string {
 async function sendToDiscord(report: ErrorReport): Promise<void> {
   if (isDevReporting()) return;
   const payload = buildDiscordPayload(report);
-  if (import.meta.env?.MODE === "test" && CRASH_REPORT_WEBHOOK_URL.includes("discord.com")) {
-    throw new Error("network disabled in tests");
+  if (import.meta.env?.MODE === "test") {
+    // Tests are handled by mocked invoke
   }
   const attachmentName = `crash-${report.code}.txt`;
   const attachmentData = buildLogAttachmentText(report);
@@ -356,31 +356,13 @@ async function sendToDiscord(report: ErrorReport): Promise<void> {
   if (isTauri) {
     const { invoke } = await import("@tauri-apps/api/core");
     await invoke("send_error_report", {
-      webhookUrl: CRASH_REPORT_WEBHOOK_URL,
+      reportType: "crash",
       payload,
       attachmentName,
       attachmentData,
     });
     return;
   }
-  if (typeof FormData !== "undefined") {
-    const formData = new FormData();
-    formData.append("payload_json", payload);
-    const blob = new Blob([attachmentData], { type: "text/plain" });
-    formData.append("files[0]", blob, attachmentName);
-    const response = await fetch(CRASH_REPORT_WEBHOOK_URL, {
-      method: "POST",
-      body: formData,
-    });
-    if (!response.ok) throw new Error(`Discord returned ${response.status}`);
-    return;
-  }
-  const response = await fetch(CRASH_REPORT_WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: payload,
-  });
-  if (!response.ok) throw new Error(`Discord returned ${response.status}`);
 }
 
 function readSentKeys(): Set<string> {
@@ -557,6 +539,25 @@ export function captureError(input: {
     diagnostics: diagnostics(),
   };
   logger.error("error-report", `${report.code}: ${message}`, input.error);
+  try {
+    if (input.error) {
+      captureExceptionToSentry(input.error, {
+        code: report.code,
+        type: report.type,
+        severity: report.severity,
+        component: report.component,
+        scriptContext: report.scriptContext,
+      });
+    } else {
+      captureMessageToSentry(`${report.code}: ${message}`, report.severity === "app" ? "fatal" : "error", {
+        type: report.type,
+        component: report.component,
+        scriptContext: report.scriptContext,
+      });
+    }
+  } catch {
+    /* Sentry capture failure shouldn't disrupt error handling */
+  }
   if (occurrence === 1 && !isDevReporting()) {
     const queue = readQueue();
     queue.push(report);

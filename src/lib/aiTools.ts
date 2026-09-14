@@ -279,6 +279,9 @@ export function executeToolCall(
 
   if (name === "read_scene") {
     const sceneId = Number(args.sceneNumber ?? args.scene_number ?? args.scene_id ?? args.id);
+    if (!Number.isFinite(sceneId) || sceneId <= 0 || Math.floor(sceneId) !== sceneId) {
+      return "Error: sceneNumber required and must be a positive integer.";
+    }
     const scene = index.scenes.find((s) => s.id === sceneId);
     if (!scene) {
       return `Error: Scene ${sceneId} not found. Total scenes: ${index.totalScenes}`;
@@ -414,8 +417,10 @@ export function executeToolCall(
   }
 
   if (name === "read_active_cursor_context") {
-    const activeLine = context.activeLineNumber ?? 1;
+    let activeLine = context.activeLineNumber ?? 1;
     const lines = context.doc.lines || [];
+    if (activeLine < 1) activeLine = 1;
+    if (lines.length > 0 && activeLine > lines.length) activeLine = lines.length;
     const start = Math.max(0, activeLine - 10);
     const end = Math.min(lines.length, activeLine + 10);
 
@@ -446,9 +451,19 @@ export function executeToolCall(
       const activeScene = index.scenes.find((s) => (context.activeLineNumber ?? 0) >= s.startLine && (context.activeLineNumber ?? 0) <= s.endLine);
       if (activeScene) sceneId = activeScene.id;
     }
+    
+    if (!Number.isFinite(sceneId) || sceneId <= 0 || Math.floor(sceneId) !== sceneId) {
+      return "Error: Invalid sceneNumber. Must be a positive integer.";
+    }
+    
+    if (!index.scenes.some((s) => s.id === sceneId)) {
+      return `Error: Scene ${sceneId} not found in script.`;
+    }
+
     const rawText = String(args.newFountainText ?? args.new_text ?? args.text ?? args.content ?? "");
+    if (!rawText.trim()) return "Error: newFountainText required and must not be empty.";
+    
     const newText = rawText.replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
-    if (!sceneId || !newText) return "Error: sceneNumber and newFountainText required.";
 
     return `__PENDING_APPLY__:${sceneId}:${btoa(unescape(encodeURIComponent(newText)))}`;
   }
@@ -513,10 +528,12 @@ export function executeToolCall(
 
   if (name === "tag_scene") {
     const sceneId = Number(args.sceneNumber ?? args.scene_number ?? args.scene_id ?? args.id);
+    if (!Number.isFinite(sceneId) || sceneId <= 0 || Math.floor(sceneId) !== sceneId) {
+      return "Error: sceneNumber required and must be a positive integer.";
+    }
+
     const color = args.color ? String(args.color).trim().toLowerCase() : null;
     const storyline = args.storyline ? String(args.storyline).trim() : null;
-
-    if (!sceneId) return "Error: sceneNumber required.";
     if (!color && !storyline) return "Error: Either color or storyline parameter must be provided.";
 
     const scene = index.scenes.find((s) => s.id === sceneId);

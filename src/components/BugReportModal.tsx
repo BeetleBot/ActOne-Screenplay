@@ -21,10 +21,11 @@ import {
   SendIcon,
   ContentCopyIcon,
   CheckIcon,
+  OpenInNewIcon,
 } from './Icons';
 import { TitleBar } from './TitleBar';
 import { getSystemDiagnostics, getAppVersion } from '../utils/errorReport';
-import { sendBugReport } from '../utils/bugReport';
+import { sendBugReport, buildGitHubIssueUrl } from '../utils/bugReport';
 import { copyToClipboard } from '../utils';
 
 interface BugReportModalProps {
@@ -95,6 +96,15 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
         setTimeout(() => setCopiedCode(false), 2000);
       }
     });
+  };
+
+  const handleOpenGitHubIssue = () => {
+    const url = buildGitHubIssueUrl(description);
+    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+      import("@tauri-apps/plugin-opener").then(({ openUrl }) => openUrl(url)).catch(() => window.open(url, "_blank"));
+    } else {
+      window.open(url, "_blank");
+    }
   };
 
   return (
@@ -369,18 +379,29 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
               </Collapse>
             </Box>
 
-            <DialogActions sx={{ px: 0, pt: 1, pb: 0 }}>
-              <Button onClick={handleClose} disabled={isSubmitting} color="inherit">
-                Cancel
-              </Button>
+            <DialogActions sx={{ px: 0, pt: 1, pb: 0, justifyContent: 'space-between' }}>
               <Button
-                type="submit"
-                variant="contained"
-                disabled={!description.trim() || isSubmitting}
-                startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <SendIcon sx={{ fontSize: 16 }} />}
+                variant="outlined"
+                size="small"
+                onClick={handleOpenGitHubIssue}
+                startIcon={<OpenInNewIcon sx={{ fontSize: 15 }} />}
+                sx={{ textTransform: 'none', borderRadius: '6px' }}
               >
-                {isSubmitting ? 'Sending...' : 'Send Bug Report'}
+                Open GitHub Issue
               </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button onClick={handleClose} disabled={isSubmitting} color="inherit">
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={!description.trim() || isSubmitting}
+                  startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <SendIcon sx={{ fontSize: 16 }} />}
+                >
+                  {isSubmitting ? 'Sending...' : 'Send Bug Report'}
+                </Button>
+              </Box>
             </DialogActions>
           </Box>
         )}

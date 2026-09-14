@@ -6,7 +6,14 @@ import {
   type BugReportPayload,
 } from "./bugReport";
 
+export const mockInvoke = vi.fn().mockResolvedValue(undefined);
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: (...args: any[]) => mockInvoke(...args),
+}));
+
 beforeEach(() => {
+  localStorage.clear();
+  mockInvoke.mockClear();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -108,8 +115,8 @@ describe("buildBugReportAttachmentText", () => {
 
 describe("sendBugReport", () => {
   it("submits the bug report to the webhook with multipart FormData in web environment", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal("fetch", fetchMock);
+    mockInvoke.mockResolvedValue(undefined);
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
 
     const result = await sendBugReport({
       name: "Tester",
@@ -119,22 +126,20 @@ describe("sendBugReport", () => {
 
     expect(result.success).toBe(true);
     expect(result.code).toMatch(/^BUG-/);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
 
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain("discord.com/api/webhooks/1542602477713498123");
-    expect(init.body instanceof FormData).toBe(true);
-
-    const formData = init.body as FormData;
-    const payloadStr = formData.get("payload_json") as string;
-    expect(payloadStr).toBeTruthy();
-    expect(JSON.parse(payloadStr).embeds[0].description).toBe("Found an alignment bug in toolbar");
-    expect(formData.get("files[0]")).toBeDefined();
+    const [command, args] = mockInvoke.mock.calls[0] as [string, any];
+    expect(command).toBe("send_error_report");
+    expect(args.reportType).toBe("bug");
+    expect(JSON.parse(args.payload).embeds[0].description).toBe("Found an alignment bug in toolbar");
+    expect(args.attachmentName).toBeDefined();
+    
+    vi.unstubAllGlobals();
   });
 
   it("handles fetch failure gracefully and returns error message", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500 });
-    vi.stubGlobal("fetch", fetchMock);
+    mockInvoke.mockRejectedValue(new Error("Discord returned status 500"));
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
 
     const result = await sendBugReport({
       description: "Network fail test",
@@ -142,5 +147,7 @@ describe("sendBugReport", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("Discord returned status 500");
+    
+    vi.unstubAllGlobals();
   });
 });

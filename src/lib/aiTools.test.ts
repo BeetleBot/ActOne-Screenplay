@@ -122,6 +122,18 @@ describe("aiTools (Muse AI Tools)", () => {
       it("returns error for invalid read_scene scene number", () => {
         const result = executeToolCall("read_scene", { sceneNumber: 99 }, { doc: sampleDoc });
         expect(result).toContain("Error: Scene 99 not found. Total scenes: 2");
+
+        const resultZero = executeToolCall("read_scene", { sceneNumber: 0 }, { doc: sampleDoc });
+        expect(resultZero).toContain("Error: sceneNumber required and must be a positive integer.");
+
+        const resultNeg = executeToolCall("read_scene", { sceneNumber: -1 }, { doc: sampleDoc });
+        expect(resultNeg).toContain("Error: sceneNumber required and must be a positive integer.");
+
+        const resultNaN = executeToolCall("read_scene", { sceneNumber: NaN }, { doc: sampleDoc });
+        expect(resultNaN).toContain("Error: sceneNumber required and must be a positive integer.");
+
+        const resultFloat = executeToolCall("read_scene", { sceneNumber: 1.5 }, { doc: sampleDoc });
+        expect(resultFloat).toContain("Error: sceneNumber required and must be a positive integer.");
       });
 
       it("executes search_script with matches and handles missing query", () => {
@@ -182,6 +194,12 @@ describe("aiTools (Muse AI Tools)", () => {
         const res = executeToolCall("read_active_cursor_context", {}, { doc: sampleDoc, activeLineNumber: 6 });
         expect(res).toContain("--- ACTIVE CURSOR CONTEXT (Active Scene 1: EXT. COFFEE SHOP - DAY) ---");
         expect(res).toContain(">>> Line 6: Where is he?");
+
+        const resLow = executeToolCall("read_active_cursor_context", {}, { doc: sampleDoc, activeLineNumber: -5 });
+        expect(resLow).toContain(">>> Line 1: Title: TEST SCRIPT");
+
+        const resHigh = executeToolCall("read_active_cursor_context", {}, { doc: sampleDoc, activeLineNumber: 100 });
+        expect(resHigh).toContain(">>> Line 12: We need to talk now.");
       });
 
       it("executes read_title_page", () => {
@@ -223,9 +241,21 @@ describe("aiTools (Muse AI Tools)", () => {
         expect(result.startsWith("__PENDING_APPLY__:1:")).toBe(true);
       });
 
-      it("handles replace_scene missing required params", () => {
+      it("handles replace_scene missing required params and invalid ids", () => {
         const result = executeToolCall("replace_scene", {}, { doc: sampleDoc });
-        expect(result).toBe("Error: sceneNumber and newFountainText required.");
+        expect(result).toBe("Error: Invalid sceneNumber. Must be a positive integer.");
+
+        const resZero = executeToolCall("replace_scene", { sceneNumber: 0 }, { doc: sampleDoc });
+        expect(resZero).toBe("Error: Invalid sceneNumber. Must be a positive integer.");
+
+        const resFloat = executeToolCall("replace_scene", { sceneNumber: 1.5 }, { doc: sampleDoc });
+        expect(resFloat).toBe("Error: Invalid sceneNumber. Must be a positive integer.");
+
+        const resNotFound = executeToolCall("replace_scene", { sceneNumber: 99 }, { doc: sampleDoc });
+        expect(resNotFound).toBe("Error: Scene 99 not found in script.");
+
+        const resEmptyText = executeToolCall("replace_scene", { sceneNumber: 1, newFountainText: " " }, { doc: sampleDoc });
+        expect(resEmptyText).toBe("Error: newFountainText required and must not be empty.");
       });
 
       it("executes tag_scene with color and storyline", () => {
@@ -242,7 +272,10 @@ describe("aiTools (Muse AI Tools)", () => {
 
       it("handles tag_scene error conditions", () => {
         const resNoScene = executeToolCall("tag_scene", { color: "red" }, { doc: sampleDoc });
-        expect(resNoScene).toBe("Error: sceneNumber required.");
+        expect(resNoScene).toBe("Error: sceneNumber required and must be a positive integer.");
+
+        const resZeroScene = executeToolCall("tag_scene", { sceneNumber: 0, color: "red" }, { doc: sampleDoc });
+        expect(resZeroScene).toBe("Error: sceneNumber required and must be a positive integer.");
 
         const resNoTags = executeToolCall("tag_scene", { sceneNumber: 1 }, { doc: sampleDoc });
         expect(resNoTags).toBe("Error: Either color or storyline parameter must be provided.");

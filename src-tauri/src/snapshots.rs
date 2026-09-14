@@ -325,6 +325,14 @@ pub fn get_snapshot_folder_path(
 #[tauri::command]
 pub fn open_folder(path: String) -> Result<(), String> {
     let p = Path::new(&path);
+    
+    let contains_snapshots = path.contains(".snapshots");
+    let has_traversal = p.components().any(|c| matches!(c, std::path::Component::ParentDir));
+    
+    if !contains_snapshots || has_traversal {
+        return Err("Invalid directory path: only snapshots folders can be opened or created".to_string());
+    }
+
     if !p.exists() {
         let _ = fs::create_dir_all(p);
     }
@@ -372,6 +380,32 @@ mod tests {
         let _ = fs::remove_file(&file_path);
 
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Target path is not a directory");
+        assert_eq!(result.unwrap_err(), "Invalid directory path: only snapshots folders can be opened or created");
+    }
+
+    #[test]
+    fn test_open_folder_rejects_arbitrary_path() {
+        let result = open_folder("/tmp/some_arbitrary_path".to_string());
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid directory path: only snapshots folders can be opened or created");
+    }
+
+    #[test]
+    fn test_open_folder_rejects_path_traversal() {
+        let result = open_folder("/tmp/.snapshots/../some_arbitrary_path".to_string());
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid directory path: only snapshots folders can be opened or created");
+    }
+
+    #[test]
+    fn test_open_folder_allows_snapshots_path() {
+        let temp_dir = std::env::temp_dir();
+        let snapshots_path = temp_dir.join(".snapshots").join("test_folder");
+        let result = open_folder(snapshots_path.to_string_lossy().to_string());
+        assert!(result.is_ok() || result.is_err());
+        if let Err(e) = result {
+            assert_ne!(e, "Invalid directory path: only snapshots folders can be opened or created");
+        }
+        let _ = fs::remove_dir_all(&snapshots_path);
     }
 }

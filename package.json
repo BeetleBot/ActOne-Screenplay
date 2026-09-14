@@ -2,7 +2,7 @@
   "name": "actone",
   "private": true,
   "license": "GPL-3.0-only",
-  "version": "0.4.25",
+  "version": "0.4.26",
   "type": "module",
   "scripts": {
     "predev": "node sync-version.js",
@@ -36,6 +36,7 @@
     "@mui/x-chat": "^9.0.0-alpha.14",
     "@mui/x-data-grid": "^9.7.0",
     "@phosphor-icons/react": "^2.1.10",
+    "@sentry/react": "^10.74.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-clipboard-manager": "~2.0",
     "@tauri-apps/plugin-dialog": "^2.7.2",

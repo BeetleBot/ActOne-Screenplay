@@ -1,4 +1,4 @@
-import { BUG_REPORT_WEBHOOK_URL } from "../constants/reporting";
+// Imports moved below
 import {
   getSystemDiagnostics,
   getScriptReportContext,
@@ -120,6 +120,54 @@ export function buildBugReportAttachmentText(report: BugReportPayload): string {
   ].join("\n");
 }
 
+export function buildGitHubIssueUrl(description = ""): string {
+  const version = getAppVersion();
+  const diag = getSystemDiagnostics();
+  const scriptCtx = getScriptReportContext();
+  const recentLogs = logger.formatRecentLogs(20);
+
+  const title = encodeURIComponent(
+    description.trim() ? `[Bug]: ${description.trim().slice(0, 60)}` : "[Bug]: Brief description of the issue"
+  );
+
+  const bodyParts = [
+    `### What happened?`,
+    description.trim() || "_Describe what went wrong and how to reproduce it._",
+    ``,
+    `### Expected behavior`,
+    `_Describe what you expected to happen._`,
+    ``,
+    `<details>`,
+    `<summary><b>System Diagnostics & Environment (Click to expand)</b></summary>`,
+    ``,
+    `- **App Version:** ${version}`,
+    `- **OS:** ${diag.os} ${diag.osVersion} (${diag.architecture})`,
+    `- **Processor:** ${diag.cpuModel !== "unknown" ? `${diag.cpuModel} (${diag.cpuCount} cores)` : `${diag.cpuCount} cores`}`,
+    `- **Memory:** ${diag.totalMemoryMb > 0 ? `${(diag.availableMemoryMb / 1024).toFixed(1)} GB free / ${(diag.totalMemoryMb / 1024).toFixed(1)} GB total` : "Unavailable"}`,
+    `- **Display:** ${diag.viewport}`,
+  ];
+
+  if (scriptCtx && Object.keys(scriptCtx).length > 0) {
+    const ctxParts = [];
+    if (scriptCtx.mode) ctxParts.push(`Mode: ${scriptCtx.mode}`);
+    if (scriptCtx.estimatedPages) ctxParts.push(`~${scriptCtx.estimatedPages} pages`);
+    if (scriptCtx.scenesCount !== undefined) ctxParts.push(`${scriptCtx.scenesCount} scenes`);
+    if (scriptCtx.linesCount !== undefined) ctxParts.push(`${scriptCtx.linesCount} lines`);
+    if (ctxParts.length > 0) {
+      bodyParts.push(`- **Context:** ${ctxParts.join(" · ")}`);
+    }
+  }
+
+  if (recentLogs) {
+    bodyParts.push(``, `#### Recent Action Trail:`, `\`\`\`text`, recentLogs.slice(0, 800), `\`\`\``);
+  }
+
+  bodyParts.push(`</details>`);
+
+  const body = encodeURIComponent(bodyParts.join("\n"));
+  return `https://github.com/beetlebot/actone-screenplay/issues/new?title=${title}&body=${body}`;
+}
+
 export async function sendBugReport(input: BugReportInput): Promise<{ success: boolean; code: string; error?: string }> {
   const code = generateBugReportCode();
   const timestamp = new Date().toISOString();
@@ -149,7 +197,7 @@ export async function sendBugReport(input: BugReportInput): Promise<{ success: b
     if (isTauri) {
       const { invoke } = await import("@tauri-apps/api/core");
       await invoke("send_error_report", {
-        webhookUrl: BUG_REPORT_WEBHOOK_URL,
+        reportType: "bug",
         payload,
         attachmentName,
         attachmentData,
@@ -157,30 +205,7 @@ export async function sendBugReport(input: BugReportInput): Promise<{ success: b
       return { success: true, code };
     }
 
-    if (typeof FormData !== "undefined") {
-      const formData = new FormData();
-      formData.append("payload_json", payload);
-      const blob = new Blob([attachmentData], { type: "text/plain" });
-      formData.append("files[0]", blob, attachmentName);
-      const response = await fetch(BUG_REPORT_WEBHOOK_URL, {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) {
-        throw new Error(`Discord returned status ${response.status}`);
-      }
-      return { success: true, code };
-    }
-
-    const response = await fetch(BUG_REPORT_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: payload,
-    });
-    if (!response.ok) {
-      throw new Error(`Discord returned status ${response.status}`);
-    }
-    return { success: true, code };
+    return { success: false, code, error: "Reporting unavailable in browser" };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error("bug-report", `Failed to send bug report ${code}`, err);

@@ -12,6 +12,9 @@ import { captureError, flushErrorReports, setSystemDiagnostics, wasJustCaughtByB
 import { showCrashScreen, readCrashWindowReport, CrashScreen } from "./components/CrashScreen";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider, UIProvider } from "./context";
+import { initSentry } from "./utils/sentry";
+
+initSentry();
 
 (window as Window & { __actoneErrorModuleLoaded?: boolean }).__actoneErrorModuleLoaded = true;
 
