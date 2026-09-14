@@ -76,7 +76,7 @@ pub fn set_app_prefs(
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     let json = serde_json::to_string(&merged).map_err(|e| e.to_string())?;
-    fs::write(&file_path, json).map_err(|e| e.to_string())?;
+    crate::write_file_atomically(&file_path, json)?;
 
     app.emit("app-prefs:changed", merged)
         .map_err(|e| e.to_string())?;

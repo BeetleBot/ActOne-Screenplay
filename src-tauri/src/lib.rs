@@ -68,7 +68,7 @@ fn set_theme_state(
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     let json = serde_json::to_string(&saved).map_err(|e| e.to_string())?;
-    std::fs::write(&file_path, json).map_err(|e| e.to_string())?;
+    write_file_atomically(&file_path, json)?;
 
     app.emit("theme:state-changed", saved)
         .map_err(|e| e.to_string())?;
@@ -176,17 +176,24 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
     }))
 }
 
-fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(
+pub(crate) fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(
     path: P,
     data: C,
 ) -> Result<(), String> {
     let path = path.as_ref();
     let parent = path.parent().unwrap_or_else(|| std::path::Path::new(""));
+    
+    static SAVE_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let seq = SAVE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let pid = std::process::id();
+    
     let temp_name = format!(
-        ".{}.tmp",
+        ".{}.{}-{}.tmp",
         path.file_name()
             .and_then(|n| n.to_str())
-            .unwrap_or("temp_save")
+            .unwrap_or("temp_save"),
+        pid,
+        seq
     );
     let temp_path = parent.join(temp_name);
 
@@ -1270,6 +1277,31 @@ mod tests {
         let _ = fs::remove_file(&target);
 
         assert_eq!(read_back, content);
+    }
+
+    #[test]
+    fn test_write_file_atomically_concurrent() {
+        use std::sync::Arc;
+        let temp_dir = std::env::temp_dir();
+        let target = Arc::new(temp_dir.join("actone_test_write_atomic_concurrent.txt"));
+        
+        let mut handles = vec![];
+        for i in 0..10 {
+            let target = target.clone();
+            handles.push(std::thread::spawn(move || {
+                let content = format!("content {}", i);
+                let _ = write_file_atomically(&*target, content);
+            }));
+        }
+
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        let read_back = fs::read_to_string(&*target).unwrap();
+        assert!(read_back.starts_with("content "));
+        
+        let _ = fs::remove_file(&*target);
     }
 
     #[test]

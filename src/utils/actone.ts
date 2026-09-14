@@ -95,10 +95,26 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
       scripts = [{ name, fileName: `files/${name}.fountain`, type: "fountain", content: "", savedContent: "" }];
     }
   } else {
-    const content = unzipped["document.fountain"] ? strFromU8(unzipped["document.fountain"]) : "";
-    const name = bundleName || "Untitled";
-    oldToNewPath["document.fountain"] = `files/${name}.fountain`;
-    scripts = [{ name, fileName: `files/${name}.fountain`, type: "fountain", content, savedContent: content }];
+    let candidateKey = "document.fountain";
+    if (!unzipped[candidateKey]) {
+      const found = Object.keys(unzipped).find(k => !k.endsWith(".json") && (k.endsWith(".fountain") || k.endsWith(".md") || k.endsWith(".markdown")));
+      if (found) candidateKey = found;
+    }
+    const content = unzipped[candidateKey] ? strFromU8(unzipped[candidateKey]) : "";
+    const type = (candidateKey.endsWith(".md") || candidateKey.endsWith(".markdown")) ? "markdown" : "fountain";
+    const ext = type === "markdown" ? "md" : "fountain";
+    
+    let parsedName = bundleName;
+    if (!parsedName && candidateKey !== "document.fountain") {
+      const parts = candidateKey.split("/");
+      const filePart = parts[parts.length - 1];
+      parsedName = filePart.replace(/\.(fountain|md|markdown)$/, "");
+    }
+    const name = parsedName || "Untitled";
+    const newFileName = `files/${name}.${ext}`;
+    
+    oldToNewPath[candidateKey] = newFileName;
+    scripts = [{ name, fileName: newFileName, type, content, savedContent: content }];
   }
 
   if (scripts.length > 1) {

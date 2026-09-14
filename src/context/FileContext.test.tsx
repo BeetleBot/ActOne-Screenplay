@@ -478,6 +478,50 @@ describe("FileContext", () => {
     expect(result.current.scripts[1].type).toBe("markdown");
     expect(result.current.rawText).toContain("Character Bible");
   });
+
+  it("discards stale parse results if rawText has changed while an async parse was in flight", async () => {
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      result.current.newFile("Initial");
+    });
+
+    await act(async () => {
+      result.current.setRawText("Stale Edit");
+      result.current.setRawText("Latest Edit");
+    });
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 150));
+    });
+
+    const activeF = result.current.files.find(f => f.id === result.current.activeFileId);
+    expect(activeF?.rawText).toBe("Latest Edit");
+  });
+
+  it("updates script content via updateFileScriptContent and preserves latest update", async () => {
+    const { result } = renderHook(() => useFile(), { wrapper });
+
+    await act(async () => {
+      result.current.newFile("Initial");
+    });
+
+    const fileId = result.current.activeFileId!;
+
+    await act(async () => {
+      await result.current.updateFileScriptContent(fileId, 0, "First Script Edit");
+    });
+
+    let activeF = result.current.files.find(f => f.id === fileId);
+    expect(activeF?.rawText).toBe("First Script Edit");
+
+    await act(async () => {
+      const p1 = result.current.updateFileScriptContent(fileId, 0, "Second Edit");
+      const p2 = result.current.updateFileScriptContent(fileId, 0, "Third Edit");
+      await Promise.all([p1, p2]);
+    });
+
+    activeF = result.current.files.find(f => f.id === fileId);
+    expect(activeF?.rawText).toBe("Third Edit");
+  });
 });
-
-

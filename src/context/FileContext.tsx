@@ -168,6 +168,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeScriptIndex, setActiveScriptIndexState] = useState<number>(0);
   const [importingScriptName, setImportingScriptName] = useState<string | null>(null);
   const parseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileUpdateSeqRef = useRef<Record<string, number>>({});
   const activeScriptIndexRef = useRef(activeScriptIndex);
   useEffect(() => {
     activeScriptIndexRef.current = activeScriptIndex;
@@ -393,6 +394,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const targetFileId = activeFileIdRef.current;
     const targetScriptIndex = activeFileIdRef.current === activeFileId ? (activeScriptIndexRef.current ?? 0) : (activeF?.activeScriptIndex ?? 0);
+    const seqKey = `${targetFileId}:${targetScriptIndex}`;
+    const seq = (fileUpdateSeqRef.current[seqKey] ?? 0) + 1;
+    fileUpdateSeqRef.current[seqKey] = seq;
 
     setFiles(prev => prev.map(f => {
       if (f.id === targetFileId) {
@@ -446,8 +450,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? createProseDocument(normalized, activeF?.parsedDoc.settings)
         : await parseScreenplayAsync(normalized, paperSize);
 
+      if (fileUpdateSeqRef.current[seqKey] !== seq) return;
+
       setFiles(prev => prev.map(f => {
         if (f.id === targetFileId) {
+          const isStale = (f.scripts && f.scripts.length > 0)
+            ? f.scripts[targetScriptIndex]?.content !== normalized
+            : f.rawText !== normalized;
+          if (isStale) return f;
           const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
           const existingBreaks = isTauri && f.parsedDoc?.pageBreaks ? f.parsedDoc.pageBreaks : doc.pageBreaks;
           return {
@@ -458,7 +468,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return f;
       }));
 
-      if (activeFileIdRef.current === targetFileId && (activeScriptIndexRef.current ?? 0) === targetScriptIndex) {
+      const activeFile = filesRef.current.find(f => f.id === targetFileId);
+      const isStaleDoc = activeFile ? ((activeFile.scripts && activeFile.scripts.length > 0)
+        ? activeFile.scripts[targetScriptIndex]?.content !== normalized
+        : activeFile.rawText !== normalized) : false;
+
+      if (!isStaleDoc && activeFileIdRef.current === targetFileId && (activeScriptIndexRef.current ?? 0) === targetScriptIndex) {
         setParsedDoc(prevDoc => {
           const mergedSettings = { ...(prevDoc.settings || {}), ...(doc.settings || {}) };
           const existingBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
@@ -475,9 +490,15 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const targetScr = targetFile?.scripts && targetFile.scripts[targetIdx];
     const isProse = isProseScript(targetScr, targetFile?.filePath);
 
+    const seqKey = `${fileId}:${targetIdx}`;
+    const seq = (fileUpdateSeqRef.current[seqKey] ?? 0) + 1;
+    fileUpdateSeqRef.current[seqKey] = seq;
+
     const doc = isProse
       ? createProseDocument(normalized, targetFile?.parsedDoc.settings)
       : await parseScreenplayAsync(normalized, paperSize);
+
+    if (fileUpdateSeqRef.current[seqKey] !== seq) return;
 
     setFiles(prev => prev.map(f => {
       if (f.id === fileId) {

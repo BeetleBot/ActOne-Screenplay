@@ -281,6 +281,43 @@ describe("actone bundle - Backward Compatibility & Migration", () => {
 
     expect(() => unpackActoneBundle(packed)).not.toThrow();
   });
+
+  it("recovers script from manifest-less bundle with arbitrary filename", () => {
+    const rawZip = zipSync({
+      "CustomName.fountain": strToU8("INT. ROOM - DAY"),
+      "notepad.json": strToU8(JSON.stringify("Global notes")),
+    });
+
+    const legacyBytes = new Uint8Array(rawZip.length + 4);
+    legacyBytes.set(rawZip);
+    legacyBytes.set([0x41, 0x43, 0x54, 0x31], rawZip.length);
+
+    const unpacked = unpackActoneBundle(legacyBytes, "MyBundle");
+    expect(unpacked.isLegacy).toBe(true);
+    expect(unpacked.scripts).toHaveLength(1);
+    expect(unpacked.scripts[0].name).toBe("MyBundle");
+    expect(unpacked.scripts[0].fileName).toBe("files/MyBundle.fountain");
+    expect(unpacked.scripts[0].content).toBe("INT. ROOM - DAY");
+    expect(unpacked.settings.notepad).toBe("Global notes");
+  });
+
+  it("recovers markdown script from manifest-less bundle with arbitrary filename and parses name", () => {
+    const rawZip = zipSync({
+      "files/notes.md": strToU8("# My Notes"),
+    });
+
+    const packed = new Uint8Array(4 + rawZip.length);
+    packed.set([0x41, 0x43, 0x54, 0x31]);
+    packed.set(rawZip, 4);
+
+    const unpacked = unpackActoneBundle(packed);
+    expect(unpacked.isLegacy).toBe(true);
+    expect(unpacked.scripts).toHaveLength(1);
+    expect(unpacked.scripts[0].name).toBe("notes");
+    expect(unpacked.scripts[0].fileName).toBe("files/notes.md");
+    expect(unpacked.scripts[0].content).toBe("# My Notes");
+    expect(unpacked.scripts[0].type).toBe("markdown");
+  });
 });
 
 describe("actone bundle - Robust Unicode & Special Formatting", () => {

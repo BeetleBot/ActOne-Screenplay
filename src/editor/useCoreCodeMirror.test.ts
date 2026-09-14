@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { EditorSelection, EditorState } from "@codemirror/state";
 import { EditorView, layer, RectangleMarker, type ViewUpdate } from "@codemirror/view";
+import DiffMatchPatch from "diff-match-patch";
 
 describe("parsedDoc effect early-return guard", () => {
   it("skips dispatch when screenplayText matches last dispatched text (simulating guard)", () => {
@@ -107,6 +108,71 @@ describe("parsedDoc effect early-return guard", () => {
 
     // Verify clean sync — CodeMirror doc already matches typedText, so 0 extra dispatches
     expect(dispatchSpy).not.toHaveBeenCalled();
+
+    view.destroy();
+  });
+
+  it("applies granular changes using diff-match-patch instead of full document replacement", () => {
+    const state = EditorState.create({ doc: "Hello world\nThis is a test." });
+    const parent = document.createElement("div");
+    const view = new EditorView({ state, parent });
+
+    const dispatchSpy = vi.spyOn(view, "dispatch");
+
+    const lastDispatchedText = "Hello world\nThis is a test.";
+    const reactRawText = "Hello universe\nThis is a test.";
+    const docCurrent = view.state.doc.toString();
+    const pendingRawText: string | null = null;
+
+    const syncEffect = (rawText: string) => {
+      if (rawText !== docCurrent && rawText !== lastDispatchedText && pendingRawText === null) {
+        const currentSel = view.state.selection.main;
+        const newAnchor = Math.min(currentSel.anchor, rawText.length);
+        const newHead = Math.min(currentSel.head, rawText.length);
+
+        try {
+          const dmp = new DiffMatchPatch();
+          const diffs = dmp.diff_main(docCurrent, rawText);
+          dmp.diff_cleanupEfficiency(diffs);
+
+          const changes: { from: number; to: number; insert: string }[] = [];
+          let pos = 0;
+          for (const [op, text] of diffs) {
+            if (op === 0) {
+              pos += text.length;
+            } else if (op === -1) {
+              changes.push({ from: pos, to: pos + text.length, insert: "" });
+              pos += text.length;
+            } else if (op === 1) {
+              changes.push({ from: pos, to: pos, insert: text });
+            }
+          }
+
+          if (changes.length > 0) {
+            view.dispatch({
+              changes,
+              selection: { anchor: newAnchor, head: newHead },
+              scrollIntoView: false
+            });
+          }
+        } catch {
+          view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: rawText },
+            selection: { anchor: newAnchor, head: newHead },
+            scrollIntoView: false
+          });
+        }
+      }
+    };
+
+    syncEffect(reactRawText);
+
+    expect(dispatchSpy).toHaveBeenCalled();
+    const calls = dispatchSpy.mock.calls;
+    const callArgs = calls[0][0];
+    expect(callArgs.changes).not.toEqual({ from: 0, to: view.state.doc.length, insert: reactRawText });
+    expect(Array.isArray(callArgs.changes)).toBe(true);
+    expect(view.state.doc.toString()).toBe(reactRawText);
 
     view.destroy();
   });

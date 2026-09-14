@@ -11,7 +11,7 @@ import { contextMenuHighlightField } from "./contextMenuState";
 import { pendingScrollTargetY } from "./cursorScroll";
 import { typewriterCompartment, typewriterScrollPlugin } from "./typewriter";
 import { spellcheckCompartment, spellcheckExtension, triggerSpellRecheck } from "./spellcheck";
-
+import DiffMatchPatch from "diff-match-patch";
 export const readOnlyCompartment = new Compartment();
 
 let scriptSwitchToken = 0;
@@ -489,11 +489,38 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
           const newAnchor = Math.min(currentSel.anchor, rawText.length);
           const newHead = Math.min(currentSel.head, rawText.length);
 
-          view.dispatch({
-            changes: { from: 0, to: view.state.doc.length, insert: rawText },
-            selection: { anchor: newAnchor, head: newHead },
-            scrollIntoView: false
-          });
+          try {
+            const dmp = new DiffMatchPatch();
+            const diffs = dmp.diff_main(docCurrent, rawText);
+            dmp.diff_cleanupEfficiency(diffs);
+
+            const changes: { from: number; to: number; insert: string }[] = [];
+            let pos = 0;
+            for (const [op, text] of diffs) {
+              if (op === 0) {
+                pos += text.length;
+              } else if (op === -1) {
+                changes.push({ from: pos, to: pos + text.length, insert: "" });
+                pos += text.length;
+              } else if (op === 1) {
+                changes.push({ from: pos, to: pos, insert: text });
+              }
+            }
+
+            if (changes.length > 0) {
+              view.dispatch({
+                changes,
+                selection: { anchor: newAnchor, head: newHead },
+                scrollIntoView: false
+              });
+            }
+          } catch {
+            view.dispatch({
+              changes: { from: 0, to: view.state.doc.length, insert: rawText },
+              selection: { anchor: newAnchor, head: newHead },
+              scrollIntoView: false
+            });
+          }
 
           if (savedScrollTop !== null && scrollArea) {
             const token = scriptSwitchToken;
