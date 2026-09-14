@@ -2,9 +2,11 @@ import { useSyncExternalStore } from "react";
 import { STORAGE_KEYS } from "../constants";
 import type { ApiEntry } from "../constants";
 import { notifyConfigChange } from "./usePromptConfig";
+import { decryptApiList } from "../utils/cryptoStorage";
 
 let cachedRaw: string | null = null;
 let cachedApiList: ApiEntry[] = [];
+let isDecrypting = false;
 
 function getApiList(): ApiEntry[] {
   try {
@@ -17,8 +19,25 @@ function getApiList(): ApiEntry[] {
       cachedApiList = [];
       return cachedApiList;
     }
-    const parsed = JSON.parse(raw);
-    cachedApiList = Array.isArray(parsed) ? parsed : [];
+    const parsed: ApiEntry[] = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      cachedApiList = [];
+      return cachedApiList;
+    }
+
+    cachedApiList = parsed;
+
+    if (!isDecrypting) {
+      isDecrypting = true;
+      decryptApiList(parsed).then((decrypted) => {
+        cachedApiList = decrypted;
+        isDecrypting = false;
+        notifyApiListChangeOnly();
+      }).catch(() => {
+        isDecrypting = false;
+      });
+    }
+
     return cachedApiList;
   } catch {
     cachedApiList = [];
@@ -43,7 +62,12 @@ function subscribe(cb: () => void) {
   };
 }
 
+function notifyApiListChangeOnly() {
+  listeners.forEach((cb) => cb());
+}
+
 export function notifyApiListChange() {
+  cachedRaw = null;
   listeners.forEach((cb) => cb());
   try {
     window.dispatchEvent(new Event("prompt-config-changed"));

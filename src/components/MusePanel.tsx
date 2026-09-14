@@ -2,13 +2,12 @@ import { useState, useCallback, useEffect, useRef, UIEvent, useMemo } from "reac
 import { Box, Typography, IconButton, Menu, MenuItem, ListItemText, Divider, Tooltip, Chip } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { usePromptConfig, setPromptConfigField, fetchModels } from "../hooks/usePromptConfig";
+import { useApiList } from "../hooks/useApiList";
 import { useAIChat } from "../hooks/useAIChat";
 import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
 import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon, RestartAltIcon } from "./Icons";
 import { AIChatMessage } from "./ai/AIChatMessage";
 import { AIChatComposer } from "./ai/AIChatComposer";
-import { STORAGE_KEYS } from "../constants";
-import type { ApiEntry } from "../constants";
 import { LineType } from "../parser";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
 import { copyToClipboard } from "../utils";
@@ -39,14 +38,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
   const [historyAnchorEl, setHistoryAnchorEl] = useState<null | HTMLElement>(null);
   const [modelAnchorEl, setModelAnchorEl] = useState<null | HTMLElement>(null);
 
-  const apiList = useMemo(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST);
-      return raw ? (JSON.parse(raw) as ApiEntry[]) : [];
-    } catch {
-      return [];
-    }
-  }, [promptConfig]);
+  const apiList = useApiList();
 
   const loadModels = useCallback(() => {
     fetchModels("ollama").then((models) => {

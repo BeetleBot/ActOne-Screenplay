@@ -37,6 +37,7 @@ import { logger } from "../utils/logger";
 import { invoke } from "@tauri-apps/api/core";
 import { fetchModels, checkProviderAvailability, notifyConfigChange } from "../hooks/usePromptConfig";
 import { notifyApiListChange } from "../hooks/useApiList";
+import { encryptApiKey, encryptApiList, decryptApiList } from "../utils/cryptoStorage";
 
 function readLocal(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -117,6 +118,19 @@ export const SettingsWindow: React.FC = () => {
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
   });
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST);
+      if (raw) {
+        const parsed: ApiEntry[] = JSON.parse(raw);
+        decryptApiList(parsed).then((dec) => {
+          setApiList(dec);
+        });
+      }
+    } catch {}
+  }, []);
+
   const [selectedApiId, setSelectedApiId] = useState<string | null>(() => {
     try {
       const currentModel = localStorage.getItem(STORAGE_KEYS.PROMPT_API_MODEL) || "";
@@ -128,21 +142,31 @@ export const SettingsWindow: React.FC = () => {
     } catch { return null; }
   });
   const [editingApiId, setEditingApiId] = useState<string | null>(null);
+
   const saveApiList = (entries: ApiEntry[]) => {
-    localStorage.setItem(STORAGE_KEYS.PROMPT_API_LIST, JSON.stringify(entries));
     setApiList(entries);
-    notifyApiListChange();
+    encryptApiList(entries).then((encryptedEntries) => {
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_LIST, JSON.stringify(encryptedEntries));
+      notifyApiListChange();
+    });
   };
+
+  const syncActiveApiEntry = (entry: ApiEntry) => {
+    localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
+    localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+    encryptApiKey(entry.apiKey).then((enc) => {
+      localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, enc);
+      notifyConfigChange();
+    });
+  };
+
   const addApi = () => {
     const id = crypto.randomUUID();
     const entry: ApiEntry = { id, name: `API ${apiList.length + 1}`, endpoint: "", apiKey: "", model: "" };
     saveApiList([...apiList, entry]);
     setEditingApiId(id);
-    localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-    localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
-    localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+    syncActiveApiEntry(entry);
     setSelectedApiId(id);
-    notifyConfigChange();
   };
   const duplicateApi = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -165,11 +189,8 @@ export const SettingsWindow: React.FC = () => {
     if (selectedApiId === id) {
       if (updated.length > 0) {
         const entry = updated[0];
-        localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-        localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
-        localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+        syncActiveApiEntry(entry);
         setSelectedApiId(updated[0].id);
-        notifyConfigChange();
       } else {
         setSelectedApiId(null);
       }
@@ -181,20 +202,15 @@ export const SettingsWindow: React.FC = () => {
     saveApiList(updated);
     const entry = updated.find(e => e.id === id);
     if (entry && selectedApiId === id) {
-      localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-      localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
-      localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+      syncActiveApiEntry(entry);
     }
   };
   const selectApi = (id: string) => {
     setSelectedApiId(id);
     const entry = apiList.find(e => e.id === id);
     if (entry) {
-      localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-      localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, entry.apiKey);
-      localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+      syncActiveApiEntry(entry);
     }
-    notifyConfigChange();
   };
   const [ollamaUrl, setOllamaUrl] = useState(() => readLocal(STORAGE_KEYS.PROMPT_OLLAMA_URL, String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL])));
 

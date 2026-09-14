@@ -3,6 +3,39 @@ import { STORAGE_KEYS } from "../constants";
 import { DEFAULTS } from "../constants/defaults";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
+import { encryptApiKey, decryptApiKey, isEncrypted } from "../utils/cryptoStorage";
+
+let decryptedApiKeyCache: string = "";
+let lastEncryptedKeyValue: string | null = null;
+let isDecrypting = false;
+
+function syncDecryptApiKey(stored: string) {
+  if (!stored) {
+    decryptedApiKeyCache = "";
+    lastEncryptedKeyValue = "";
+    return;
+  }
+  if (!isEncrypted(stored)) {
+    decryptedApiKeyCache = stored;
+    lastEncryptedKeyValue = stored;
+    return;
+  }
+  if (stored === lastEncryptedKeyValue) {
+    return;
+  }
+  lastEncryptedKeyValue = stored;
+  if (!isDecrypting) {
+    isDecrypting = true;
+    decryptApiKey(stored).then((plain) => {
+      decryptedApiKeyCache = plain;
+      isDecrypting = false;
+      notifyConfigChange();
+    }).catch(() => {
+      decryptedApiKeyCache = stored;
+      isDecrypting = false;
+    });
+  }
+}
 
 function isTauriEnv(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -69,7 +102,9 @@ function getConfig(): PromptConfig {
     if (!rephrasePresets.some(p => p.name === "Standard")) {
       rephrasePresets = [standardPreset, ...rephrasePresets];
     }
-      newConfig = {
+    const storedKey = localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY]);
+    syncDecryptApiKey(storedKey);
+    newConfig = {
         provider: (localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) as PromptProvider | null) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_PROVIDER]) as PromptProvider,
         model: localStorage.getItem(STORAGE_KEYS.PROMPT_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_MODEL]),
         systemPrompt: localStorage.getItem(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]),
@@ -80,7 +115,7 @@ function getConfig(): PromptConfig {
         translatePrompt: localStorage.getItem(STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT]),
         translateTemp: rawTransTemp !== null ? parseFloat(rawTransTemp) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_TEMP]),
         apiEndpoint: localStorage.getItem(STORAGE_KEYS.PROMPT_API_ENDPOINT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_ENDPOINT]),
-        apiKey: localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY]),
+        apiKey: decryptedApiKeyCache,
         apiModel: localStorage.getItem(STORAGE_KEYS.PROMPT_API_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_MODEL]),
         ollamaUrl: localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL]),
       };
@@ -156,6 +191,18 @@ export function setPromptConfigField(key: keyof PromptConfig, value: string | nu
     apiModel: STORAGE_KEYS.PROMPT_API_MODEL,
     ollamaUrl: STORAGE_KEYS.PROMPT_OLLAMA_URL,
   };
+  if (key === "apiKey") {
+    const plainStr = String(value);
+    decryptedApiKeyCache = plainStr;
+    notifyConfigChange();
+    encryptApiKey(plainStr).then((enc) => {
+      try {
+        localStorage.setItem(storageMap.apiKey, enc);
+        lastEncryptedKeyValue = enc;
+      } catch {}
+    });
+    return;
+  }
   try {
     const stored = key === "translateLanguages" || key === "rephrasePresets" ? JSON.stringify(value) : String(value);
     localStorage.setItem(storageMap[key], stored);

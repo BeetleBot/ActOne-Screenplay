@@ -25,7 +25,7 @@ import { alpha } from "@mui/material/styles";
 import { useUI, useFile } from "../context";
 import { CheckIcon, PlayArrowIcon, StopIcon, PauseIcon, AutoAwesomeIcon, OpenInNewIcon, RestartAltIcon } from "./Icons";
 import { usePromptConfig, fetchModels, getActiveModelName, PromptProvider, PromptConfig } from "../hooks/usePromptConfig";
-import { STORAGE_KEYS } from "../constants";
+import { useApiList } from "../hooks/useApiList";
 import { runTranslationJob, analyzeFountainLine } from "../utils/translationEngine";
 import { parseScreenplay, LineType } from "../parser";
 
@@ -97,6 +97,8 @@ export const TranslateDocumentModal: React.FC = () => {
     });
   }, [promptConfig.ollamaUrl]);
 
+  const apiList = useApiList();
+
   interface ModelOption {
     id: string;
     name: string;
@@ -109,22 +111,16 @@ export const TranslateDocumentModal: React.FC = () => {
   const modelOptions = useMemo<ModelOption[]>(() => {
     const options: ModelOption[] = [];
 
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST);
-      if (raw) {
-        const list = JSON.parse(raw) as { id: string; name: string; endpoint: string; apiKey: string; model: string }[];
-        list.forEach((entry) => {
-          options.push({
-            id: `api-${entry.id || entry.model}`,
-            name: `${entry.name || entry.model} (API)`,
-            provider: "openai-compatible",
-            model: entry.model,
-            endpoint: entry.endpoint,
-            apiKey: entry.apiKey,
-          });
-        });
-      }
-    } catch {}
+    apiList.forEach((entry) => {
+      options.push({
+        id: `api-${entry.id || entry.model}`,
+        name: `${entry.name || entry.model} (API)`,
+        provider: "openai-compatible",
+        model: entry.model,
+        endpoint: entry.endpoint,
+        apiKey: entry.apiKey,
+      });
+    });
 
     ollamaModels.forEach((m) => {
       options.push({
