@@ -1,6 +1,6 @@
 {
   "productName": "ActOne Screenplay",
-  "version": "0.4.26",
+  "version": "0.5.0",
   "identifier": "com.writeup.actone",
   "build": {
     "beforeDevCommand": "npm run dev",

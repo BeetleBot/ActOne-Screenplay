@@ -55,9 +55,6 @@ export default defineConfig(async () => ({
             if (id.includes("codemirror") || id.includes("@codemirror") || id.includes("@lezer")) {
               return "vendor-codemirror";
             }
-            if (id.includes("/react/") || id.includes("/scheduler/") || id.includes("/react-dom/")) {
-              return "vendor-react";
-            }
             if (id.includes("@tauri-apps")) {
               return "vendor-tauri";
             }

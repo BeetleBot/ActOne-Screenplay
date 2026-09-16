@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.26] - 2026-09-15
+## [0.5.0] - 2026-09-16
 
 ### Added / Improved
 - ⚡ **Granular External Sync & Undo Preservation** – Integrated `diff-match-patch` into CodeMirror external text synchronization (`useCoreCodeMirror`), applying targeted changes rather than full-document replacements when external tools (such as AI modifications or translation) update document text, keeping the undo/redo history intact.
