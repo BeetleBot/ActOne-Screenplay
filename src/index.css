@@ -1292,14 +1292,6 @@ body:not(.dark-theme) .timeline-segment-number {
   border-right: 3px solid transparent;
   border-top: 4px solid var(--accent-color, #2196f3);
 }
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid var(--accent-color, #2196f3);
-}
 
 /* Playhead Bottom Inverted Chevron */
 .timeline-playhead-line::after {

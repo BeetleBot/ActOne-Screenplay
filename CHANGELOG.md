@@ -1,9 +1,26 @@
 # Changelog
 
+## [0.5.1] - 2026-09-20
+
+### Added / Improved
+- 🎞️ **Screenplay Timeline View (<kbd>Alt+T</kbd>)** – Introduced a multi-track interactive visual timeline docked seamlessly into the status bar area for pacing, structure, and real-time scene navigation. Key capabilities include:
+  - **Multi-Track Visualization**: Displays acts, sequences, scenes, and custom markers proportionally mapped across script duration.
+  - **Dynamic Filtering & Highlighting**: Instantly filter scenes by character, location, or marker type via the status bar menu.
+  - **Customizable Display Options**: Persistent multi-select display toggles (Section Lines, Scene Numbers, Scene Colors) saved to `localStorage` (sections off by default).
+  - **Interactive Scrubbing & Navigation**: Click or drag the playhead across the timeline to smoothly navigate through the script, with the playhead cleanly layered behind text labels and numbers.
+  - **Smooth Status Bar Docking & Animation**: Clean floating typography without box borders, split track lines around section labels, and a smooth slide-up entrance animation emerging directly from the status bar.
+  - **Keyboard Shortcut**: Quickly toggle the timeline on or off at any time using <kbd>Alt+T</kbd> or via the Command Palette.
+- 📤 **UPPERCASE Fountain Normalization on Export** – Enhanced the Fountain export pipeline (`exportToFountain` & `transformBodyLinesUppercase`) with an optional automatic normalization toggle that transforms scene headings, shots, transitions, and character cue names into standard UPPERCASE without modifying action or dialogue formatting.
+- 📄 **Robust Title Page Parser & Editor Modal** – Upgraded `TitlePageEditorModal` with a comprehensive key dictionary recognizing all standard Fountain title page keys (e.g. `title`, `author`, `notes`, `contact`, `draft date`, `copyright`, `watermark`, `revision`). Safely differentiates title blocks from transitions or headings, accurately extracts multi-line fields, and cleanly preserves screenplay body lines starting at line 1 when clearing or modifying metadata.
+- 📦 **Updated `pdf2fountain` to `0.1.3`** – Upgraded the native Rust PDF screenplay converter to version `0.1.3` with refreshed lockfile checksums for enhanced character set mapping and parsing stability.
+
+### Fixed
+- 🛡️ **Editor Selection Bounds & Truncation Guard** – Clamped cursor and selection positions (`Math.max(0, Math.min(pos, doc.length))`) across `useCoreCodeMirror`, `activeLineAlwaysPlugin`, `computeEmptyLineDecorations`, and `computeFountainDecorations`, preventing out-of-range indexing exceptions when content is truncated or replaced.
+- 🪟 **Tauri Teardown Error Handling** – Enhanced global error handlers (`window.onerror` and `unhandledrejection`) with defensive boundary checks, suppressing transient teardown exceptions (such as Windows `tao` event loop destruction `cannot move state from Destroyed`) from triggering false-positive crash screens during application exit.
+
 ## [0.5.0] - 2026-09-16
 
-- 🎞️ **Modernized Timeline View & Status Bar Extension (`Alt+T`)** – Redesigned the interactive screenplay timeline to extend smoothly from the status bar, seamlessly sharing its theme and background aesthetic. Features multi-selectable display options (toggling Section lines, Scene numbers, and Scene colors with persistent storage), modern clean floating typography without clashing boxes or background clashes, split track lines around section labels, playhead positioned cleanly behind labels and numbers, and updated shortcut `Alt+T`.
-- 📦 **Updated `pdf2fountain` to `0.1.3`** – Bumped the native PDF screenplay converter in the Rust backend to the latest version `0.1.3` for enhanced parsing stability and font encoding extraction.
+### Added / Improved
 - ⚡ **Granular External Sync & Undo Preservation** – Integrated `diff-match-patch` into CodeMirror external text synchronization (`useCoreCodeMirror`), applying targeted changes rather than full-document replacements when external tools (such as AI modifications or translation) update document text, keeping the undo/redo history intact.
 - 🛡️ **Collision-Resistant Atomic File Saves** – Enhanced `write_file_atomically` in the Rust backend to incorporate process IDs and an atomic sequence counter (`.{filename}.{pid}-{seq}.tmp`), eliminating temporary file naming collisions during concurrent saves.
 - 💾 **Atomic Preference & Theme Persistence** – Migrated preferences (`app_prefs.rs`) and theme configuration (`lib.rs`) writes to use the atomic temp-and-rename pipeline, preventing configuration corruption during abrupt shutdowns.
@@ -18,6 +35,7 @@
 ### Fixed
 - 🔄 **Async Parse Race Condition** – Implemented sequence tracking and staleness guards in `FileContext` (`setRawText` and `updateFileScriptContent`), preventing older in-flight background parse completions from overwriting newer user edits.
 - 🔒 **Discord Webhook Exposure** – Completely removed public Discord webhook URLs from the client bundle.
+
 
 ## [0.4.25] - 2026-09-12
 
