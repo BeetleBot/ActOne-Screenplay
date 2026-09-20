@@ -19,71 +19,118 @@ interface TitlePageEditorModalProps {
   onClose: () => void;
 }
 
-function extractTitlePage(text: string): { header: string; body: string; fields: Record<string, string> } {
+const TITLE_PAGE_STANDARD_KEYS = new Set([
+  "title", "credit", "credits", "author", "authors", "source", "notes",
+  "contact", "draft date", "date", "copyright", "watermark", "revision",
+  "format", "episode", "season", "series", "status", "version",
+  "writer", "writers", "adaptation", "translator", "translation",
+  "based on", "story by", "screenplay by", "rights", "header", "footer",
+  "tl", "tr", "bl", "br", "cc"
+]);
+
+function isTransitionOrHeading(line: string): boolean {
+  const trimmed = line.trim();
+  if (/^(?:INT|EXT|INT\/EXT|I\/E|EST)\b/i.test(trimmed) || trimmed.startsWith(".")) {
+    return true;
+  }
+  if (/^(?:[A-Z\s]+ TO:|FADE IN:?|FADE OUT:?)$/i.test(trimmed)) {
+    return true;
+  }
+  return false;
+}
+
+export function extractTitlePage(text: string): { header: string; body: string; fields: Record<string, string> } {
   const lines = text.split(/\r?\n/);
-  let titlePageEnd = -1;
-  let foundContent = false;
+  let firstContentIdx = -1;
 
   for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-    if (trimmed === "") {
-      if (foundContent) {
-        titlePageEnd = i;
-        break;
-      }
-    } else if (!foundContent) {
-      foundContent = true;
+    if (lines[i].trim() !== "") {
+      firstContentIdx = i;
+      break;
     }
   }
 
-  const header = titlePageEnd >= 0 ? lines.slice(0, titlePageEnd + 1).join("\n") : "";
-  const body = titlePageEnd >= 0 ? lines.slice(titlePageEnd + 1).join("\n") : text;
+  if (firstContentIdx === -1) {
+    return { header: "", body: text, fields: {} };
+  }
 
-  const fields: Record<string, string> = {};
-  if (header) {
-    const headerLines = header.split(/\r?\n/);
-    let currentKey = "";
-    let currentValues: string[] = [];
+  let titleBlockEnd = -1;
+  let hasRecognizedKey = false;
+  let currentKey = "";
+  const candidateFields: Record<string, string[]> = {};
 
-    const flushField = () => {
-      if (currentKey && currentValues.length > 0) {
-        fields[currentKey] = currentValues.join("\n");
-      }
-      currentKey = "";
-      currentValues = [];
-    };
+  for (let i = firstContentIdx; i < lines.length; i++) {
+    const raw = lines[i];
+    const trimmed = raw.trim();
 
-    for (const raw of headerLines) {
-      const trimmed = raw.trim();
-      if (trimmed === "") {
-        flushField();
+    if (trimmed === "") {
+      titleBlockEnd = i;
+      break;
+    }
+
+    if (isTransitionOrHeading(raw)) {
+      titleBlockEnd = i;
+      break;
+    }
+
+    const colonIdx = trimmed.indexOf(":");
+    if (colonIdx !== -1) {
+      const keyCandidate = trimmed.substring(0, colonIdx).trim().toLowerCase();
+      if (/^[a-z0-9][a-z0-9 _-]*$/.test(keyCandidate)) {
+        currentKey = keyCandidate;
+        if (TITLE_PAGE_STANDARD_KEYS.has(currentKey)) {
+          hasRecognizedKey = true;
+        }
+        if (!candidateFields[currentKey]) {
+          candidateFields[currentKey] = [];
+        }
+        const val = trimmed.substring(colonIdx + 1).trim();
+        if (val) {
+          candidateFields[currentKey].push(val);
+        }
         continue;
       }
-      const colonIdx = trimmed.indexOf(":");
-      if (colonIdx !== -1) {
-        flushField();
-        currentKey = trimmed.substring(0, colonIdx).trim().toLowerCase();
-        const val = trimmed.substring(colonIdx + 1).trim();
-        if (val) currentValues.push(val);
-      } else if (currentKey && (raw.startsWith(" ") || raw.startsWith("\t"))) {
-        currentValues.push(trimmed);
-      } else {
-        flushField();
-      }
     }
-    flushField();
+
+    if (currentKey && (raw.startsWith(" ") || raw.startsWith("\t"))) {
+      candidateFields[currentKey].push(trimmed);
+      continue;
+    }
+
+    titleBlockEnd = i;
+    break;
+  }
+
+  if (!hasRecognizedKey) {
+    return { header: "", body: text, fields: {} };
+  }
+
+  const headerEndIdx = titleBlockEnd >= 0 ? titleBlockEnd : lines.length;
+  const header = lines.slice(firstContentIdx, headerEndIdx).join("\n");
+
+  let bodyStartIdx = headerEndIdx;
+  while (bodyStartIdx < lines.length && lines[bodyStartIdx].trim() === "") {
+    bodyStartIdx++;
+  }
+  const body = lines.slice(bodyStartIdx).join("\n");
+
+  const fields: Record<string, string> = {};
+  for (const [k, v] of Object.entries(candidateFields)) {
+    if (v.length > 0) {
+      fields[k] = v.join("\n");
+    }
   }
 
   return { header, body, fields };
 }
 
-function buildTitlePage(fields: Record<string, string>): string {
+export function buildTitlePage(fields: Record<string, string>): string {
   const lines: string[] = [];
   const order = ["title", "credit", "author", "source", "notes", "contact", "draft date", "date"];
 
   for (const key of order) {
     const val = fields[key];
-    if (val) {
+    if (val && val.trim()) {
       const label = key === "draft date" ? "Draft date" : key.charAt(0).toUpperCase() + key.slice(1);
       const valLines = val.split(/\r?\n/);
       lines.push(`${label}: ${valLines[0]}`);
@@ -96,7 +143,7 @@ function buildTitlePage(fields: Record<string, string>): string {
   const customKeys = Object.keys(fields).filter(k => !order.includes(k));
   for (const key of customKeys) {
     const val = fields[key];
-    if (val) {
+    if (val && val.trim()) {
       const label = key.charAt(0).toUpperCase() + key.slice(1);
       const valLines = val.split(/\r?\n/);
       lines.push(`${label}: ${valLines[0]}`);
@@ -106,6 +153,7 @@ function buildTitlePage(fields: Record<string, string>): string {
     }
   }
 
+  if (lines.length === 0) return "";
   return lines.join("\n") + "\n\n";
 }
 
@@ -148,14 +196,20 @@ export const TitlePageEditorModal: React.FC<TitlePageEditorModalProps> = ({ onCl
     setFountainText(text);
     const extracted = extractTitlePage(rawText);
     const newHeader = text;
-    const allText = newHeader + (newHeader.endsWith("\n") ? "" : "\n") + extracted.body;
+    const allText = newHeader + (newHeader.endsWith("\n") ? "" : "\n") + (extracted.body ? "\n" + extracted.body : "");
     const refields = extractTitlePage(allText).fields;
     setFields(refields);
   }, [rawText]);
 
   const handleApply = useCallback(() => {
     const extracted = extractTitlePage(rawText);
-    const newRaw = fountainText + (fountainText.endsWith("\n") ? "" : "\n") + extracted.body;
+    const trimmedHeader = fountainText.trim();
+    let newRaw: string;
+    if (!trimmedHeader) {
+      newRaw = extracted.body;
+    } else {
+      newRaw = fountainText.trimEnd() + (extracted.body ? "\n\n" + extracted.body : "\n");
+    }
     setRawText(newRaw);
     onClose();
   }, [rawText, fountainText, setRawText, onClose]);
