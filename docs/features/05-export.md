@@ -66,6 +66,14 @@ Features:
 
 Saves the raw Fountain text as a standalone `.fountain` file (extracting from `.actone` bundle if applicable).
 
+During export, ActOne automatically normalizes:
+- **Scene Headings** (standard `INT/EXT` and forced `.SLUGLINE`) to UPPERCASE.
+- **Character Names** (forced `@NAME`, dual dialogue `NAME ^`, and standard character cues) to UPPERCASE, including extensions like `(V.O.)` and `(CONT'D)`.
+- **Shots** (`!!SHOT`) to UPPERCASE.
+- **Transitions** (forced `>TRANSITION`, transitions ending in `TO:`, and standard transition phrases) to UPPERCASE.
+
+ActOne-specific tags (`[[marker …]]`, `[[color …]]`, `[[storyline …]]`) are stripped while dialogue, action, parentheticals, centered text, and lyrics retain their casing and formatting.
+
 ## Remember Last Export Directory
 
 The app remembers the last directory you exported to. When you export again (PDF, Fountain, FDX, or FadeIn), the file dialog opens in the same directory you used last time, making repeated exports to the same location more convenient. The last-used directory is persisted across app restarts.

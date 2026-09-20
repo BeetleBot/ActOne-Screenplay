@@ -28,6 +28,7 @@ import {
 } from "@mui/material";
 
 import { isProseScript } from "../utils/scriptMode";
+import { stripFountainForExport } from "../utils/fountainExport";
 
 type ExportFormat = "pdf" | "fountain" | "fdx" | "fadein" | "markdown";
 type PdfSubTab = "document" | "formatting" | "watermarks";
@@ -78,68 +79,7 @@ interface ExportModalProps {
   onClose: () => void;
 }
 
-function stripFountainForExport(
-  rawText: string,
-  options: { sections: boolean; synopses: boolean; titlePage: boolean }
-): string {
-  let text = rawText;
 
-  text = text.replace(/\[\[marker[^\]]*\]\]/gi, "");
-  text = text.replace(/\[\[(color\s[^\]]*|storyline[^\]]*|red|blue|green|pink|magenta|gray|purple|cyan|teal|yellow|orange|brown)\]\]/gi, "");
-
-  const lines = text.split(/\r?\n/);
-  const filtered: string[] = [];
-  
-  let hasTitlePage = false;
-  const firstNonEmptyLine = lines.find(l => l.trim() !== "");
-  if (firstNonEmptyLine) {
-    const colonIdx = firstNonEmptyLine.indexOf(":");
-    if (colonIdx !== -1) {
-      const key = firstNonEmptyLine.substring(0, colonIdx).trim().toLowerCase();
-      const validKeys = ["title", "credit", "author", "authors", "source", "notes", "draft date", "date", "contact", "copyright"];
-      if (validKeys.includes(key)) {
-        hasTitlePage = true;
-      }
-    }
-  }
-
-  let inTitlePage = hasTitlePage;
-
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-
-    if (inTitlePage) {
-      if (trimmed === "" && i > 0) {
-        inTitlePage = false;
-        if (!options.titlePage) {
-          continue;
-        }
-      } else if (trimmed !== "") {
-        if (!options.titlePage) {
-          continue;
-        }
-      }
-      filtered.push(lines[i]);
-      continue;
-    }
-
-    if (!options.sections && trimmed.startsWith("#") && !trimmed.startsWith("#!")) {
-      continue;
-    }
-
-    if (!options.synopses && trimmed.startsWith("=") && !trimmed.startsWith("==") && !(trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "")) {
-      continue;
-    }
-
-    filtered.push(lines[i]);
-  }
-
-  let result = filtered.join("\n");
-  result = result.replace(/\n{3,}/g, "\n\n");
-  result = result.trimEnd() + "\n";
-
-  return result;
-}
 
 /* ── Sidebar nav item ── */
 const NavItem: React.FC<{

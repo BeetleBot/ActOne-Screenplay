@@ -1217,8 +1217,11 @@ Paper Size (Letter or A4) is inherited from Settings. PDF includes proper page n
     category: "Export",
     tags: ["fountain", "export", "plain text"],
     relatedIds: ["export-overview", "actone-bundle"],
-    content: `Exports a clean .fountain file with all app-specific tags stripped (\`[[marker …]]\`, \`[[color …]]\`, \`[[storyline …]]\`, settings block, etc.). Options:
+    content: `Exports a clean .fountain file with all app-specific tags stripped (\`[[marker …]]\`, \`[[color …]]\`, \`[[storyline …]]\`, settings block, etc.).
 
+Scene headings, character names, shots, and transitions are automatically normalized to UPPERCASE during export to ensure standard formatting and compatibility across external screenplay applications, regardless of how they were typed in the script.
+
+Options:
 - Include Title Page.
 - Include Sections.
 - Include Synopsis.`,
