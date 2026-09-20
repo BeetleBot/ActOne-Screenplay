@@ -133,5 +133,46 @@ describe("UIContext", () => {
     act(() => result.current.setSidebarWidth(1200));
     expect(result.current.sidebarWidth).toBe(800);
   });
+
+  it("toggles and persists showTimeline", () => {
+    const { result } = renderHook(() => useUI(), { wrapper });
+    expect(result.current.showTimeline).toBe(true);
+
+    act(() => result.current.setShowTimeline(false));
+    expect(result.current.showTimeline).toBe(false);
+    expect(localStorage.getItem("actone-show-timeline")).toBe("false");
+
+    act(() => result.current.setShowTimeline(true));
+    expect(result.current.showTimeline).toBe(true);
+    expect(localStorage.getItem("actone-show-timeline")).toBe("true");
+  });
+
+  it("updates timelineFilter", () => {
+    const { result } = renderHook(() => useUI(), { wrapper });
+    expect(result.current.timelineFilter).toEqual({ type: "default", values: [] });
+
+    act(() => result.current.setTimelineFilter({ type: "character", values: ["JOHN"] }));
+    expect(result.current.timelineFilter).toEqual({ type: "character", values: ["JOHN"] });
+  });
+
+  it("toggles and persists timeline display options", () => {
+    const { result } = renderHook(() => useUI(), { wrapper });
+    // Section lines should be false by default
+    expect(result.current.timelineShowSections).toBe(false);
+    expect(result.current.timelineShowSceneNumbers).toBe(true);
+    expect(result.current.timelineShowSceneColors).toBe(true);
+
+    act(() => result.current.setTimelineShowSections(true));
+    expect(result.current.timelineShowSections).toBe(true);
+    expect(localStorage.getItem("actone-timeline-show-sections")).toBe("true");
+
+    act(() => result.current.setTimelineShowSceneNumbers(false));
+    expect(result.current.timelineShowSceneNumbers).toBe(false);
+    expect(localStorage.getItem("actone-timeline-show-scene-numbers")).toBe("false");
+
+    act(() => result.current.setTimelineShowSceneColors(false));
+    expect(result.current.timelineShowSceneColors).toBe(false);
+    expect(localStorage.getItem("actone-timeline-show-scene-colors")).toBe("false");
+  });
 });
 

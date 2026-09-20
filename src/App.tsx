@@ -155,6 +155,8 @@ function AppInner() {
     setActiveRightPane,
     activeTab,
     setActiveTab,
+    showTimeline,
+    setShowTimeline,
   } = useUI();
 
   const handleDragStateChange = useCallback((isDragging: boolean, position?: { clientX: number; clientY: number } | null) => {
@@ -392,6 +394,7 @@ function AppInner() {
         setIsSidebarOpen(true);
       }
     }, [isSidebarOpen, activeTab, setActiveTab, setIsSidebarOpen, setActiveRightPane]),
+    toggleTimeline: useCallback(() => setShowTimeline(!showTimeline), [showTimeline, setShowTimeline]),
 
     isDisabled: isModalActive,
   });

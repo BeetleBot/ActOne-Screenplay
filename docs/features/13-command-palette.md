@@ -30,6 +30,7 @@ The palette groups commands by category (defined in `src/components/CommandPalet
 
 ### View & Navigation
 - Jump to Scene... (`Ctrl+J`)
+- Show / Hide Timeline View (`Alt+T`)
 - Enable / Disable Typewriter Mode
 - Enable / Disable Zen Mode
 - Enable / Disable Focus Mode

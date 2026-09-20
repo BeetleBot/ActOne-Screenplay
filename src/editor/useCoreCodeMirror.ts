@@ -350,11 +350,9 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
           const idx = lineNum - 1;
           if (cursorDebounceTimerRef.current !== null) {
             clearTimeout(cursorDebounceTimerRef.current);
-          }
-          cursorDebounceTimerRef.current = setTimeout(() => {
             cursorDebounceTimerRef.current = null;
-            setActiveLineNumberRef.current(idx);
-          }, 50);
+          }
+          setActiveLineNumberRef.current(idx);
         }
       }),
     ];

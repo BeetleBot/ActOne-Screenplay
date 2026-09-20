@@ -43,8 +43,9 @@ The production build splits vendor code:
 
 1. Prepares AppDir directory layout with desktop and MIME configuration
 2. Bundles application and document type icons (`.fountain`, `.actone`, `.actheme`)
-3. Fetches `appimagetool` and packages into a standalone portable AppImage
-4. Output: `ActOne-Screenplay-<version>-x86_64.AppImage` in `Release/artifacts/`
+3. Generates a clean, portable `AppRun` launcher (no install dialogs, desktop integration prompts, or host filesystem modifications)
+4. Fetches `appimagetool` and packages into a standalone portable AppImage
+5. Output: `ActOne-Screenplay-<version>-x86_64.AppImage` in `Release/artifacts/`
 
 **Flatpak Bundle (`flatpak/ink.iyal.actone.yml`)**:
 

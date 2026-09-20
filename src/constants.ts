@@ -49,6 +49,10 @@ export const STORAGE_KEYS = {
   PROMPT_API_LIST: "actone-prompt-api-list",
   PROMPT_OLLAMA_URL: "actone-prompt-ollama-url",
   AUTO_CONTD_ENABLED: "actone-auto-contd-enabled",
+  SHOW_TIMELINE: "actone-show-timeline",
+  TIMELINE_SHOW_SECTIONS: "actone-timeline-show-sections",
+  TIMELINE_SHOW_SCENE_NUMBERS: "actone-timeline-show-scene-numbers",
+  TIMELINE_SHOW_SCENE_COLORS: "actone-timeline-show-scene-colors",
 } as const;
 
 export const FOUNTAIN_SYNTAX_RULES = [

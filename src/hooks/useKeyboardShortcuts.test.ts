@@ -175,4 +175,12 @@ describe("useKeyboardShortcuts", () => {
     fireKey("PageDown", { alt: true });
     expect(actions.nextScene).toHaveBeenCalledTimes(2);
   });
+
+  it("calls toggleTimeline on Alt+T", () => {
+    const toggleTimeline = vi.fn();
+    const actions = { ...createActions(), toggleTimeline };
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("t", { alt: true });
+    expect(toggleTimeline).toHaveBeenCalledTimes(1);
+  });
 });

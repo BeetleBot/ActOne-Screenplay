@@ -148,3 +148,12 @@ export const MuseIcon: React.FC<IconProps> = (props) => {
   );
 };
 
+/* ── Timeline Marker Pin Icon ── */
+export const PushPinIcon: React.FC<IconProps> = (props) => {
+  return (
+    <SvgIcon viewBox="0 0 256 256" {...props}>
+      <path d="M136,127.42V232a8,8,0,0,1-16,0V127.42a56,56,0,1,1,16,0Z" />
+    </SvgIcon>
+  );
+};
+

@@ -5,7 +5,9 @@ import { HeaderBar } from "./HeaderBar";
 import { ActivityBar } from "./ActivityBar";
 import { Workspace } from "./Workspace";
 import { StatusBar } from "./StatusBar";
+import { TimelineView } from "../TimelineView";
 import { ErrorBoundary } from "../ErrorBoundary";
+import { isProseScript } from "../../utils/scriptMode";
 
 export interface MainLayoutProps {
   isSidebarOpen: boolean;
@@ -19,11 +21,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
   onOpenThemeManagerModal,
 }) => {
-  const { activeTab, setActiveTab, isZenMode } = useUI();
-  const { files, activeFileId } = useFile();
+  const { activeTab, setActiveTab, isZenMode, showTimeline } = useUI();
+  const { files, activeFileId, filePath } = useFile();
 
   const activeFile = files.find(f => f.id === activeFileId);
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
+  const activeScript = activeFile && activeFile.scripts && activeFile.activeScriptIndex !== undefined ? activeFile.scripts[activeFile.activeScriptIndex] : null;
+  const isMarkdown = isProseScript(activeScript, filePath || activeFile?.filePath);
 
   React.useEffect(() => {
     if (hasNoScripts) {
@@ -68,7 +72,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             }}
           />
         </Box>
-        <ErrorBoundary name="status"><StatusBar /></ErrorBoundary>
+        <Box sx={{ display: 'flex', flexDirection: 'column', bgcolor: 'transparent', flexShrink: 0 }}>
+          {showTimeline && !isZenMode && !isMarkdown && !hasNoScripts && (
+            <ErrorBoundary name="timeline">
+              <TimelineView />
+            </ErrorBoundary>
+          )}
+          <ErrorBoundary name="status"><StatusBar /></ErrorBoundary>
+        </Box>
       </Box>
     </Box>
   );

@@ -25,6 +25,7 @@ interface ShortcutActions {
   toggleSnapshotsPanel?: () => void;
   prevScene?: () => void;
   nextScene?: () => void;
+  toggleTimeline?: () => void;
   isDisabled?: boolean;
 }
 import { toggleInlineMarker } from "../editor/formatUtils";
@@ -54,6 +55,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (e.altKey && e.key.toLowerCase() === "q") {
         e.preventDefault();
         actionsRef.current.closeFile();
+        return;
+      }
+
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "t") {
+        e.preventDefault();
+        actionsRef.current.toggleTimeline?.();
         return;
       }
 

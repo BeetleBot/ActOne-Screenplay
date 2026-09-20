@@ -2,7 +2,8 @@
 
 ## [0.5.0] - 2026-09-16
 
-### Added / Improved
+- 🎞️ **Modernized Timeline View & Status Bar Extension (`Alt+T`)** – Redesigned the interactive screenplay timeline to extend smoothly from the status bar, seamlessly sharing its theme and background aesthetic. Features multi-selectable display options (toggling Section lines, Scene numbers, and Scene colors with persistent storage), modern clean floating typography without clashing boxes or background clashes, split track lines around section labels, playhead positioned cleanly behind labels and numbers, and updated shortcut `Alt+T`.
+- 📦 **Updated `pdf2fountain` to `0.1.3`** – Bumped the native PDF screenplay converter in the Rust backend to the latest version `0.1.3` for enhanced parsing stability and font encoding extraction.
 - ⚡ **Granular External Sync & Undo Preservation** – Integrated `diff-match-patch` into CodeMirror external text synchronization (`useCoreCodeMirror`), applying targeted changes rather than full-document replacements when external tools (such as AI modifications or translation) update document text, keeping the undo/redo history intact.
 - 🛡️ **Collision-Resistant Atomic File Saves** – Enhanced `write_file_atomically` in the Rust backend to incorporate process IDs and an atomic sequence counter (`.{filename}.{pid}-{seq}.tmp`), eliminating temporary file naming collisions during concurrent saves.
 - 💾 **Atomic Preference & Theme Persistence** – Migrated preferences (`app_prefs.rs`) and theme configuration (`lib.rs`) writes to use the atomic temp-and-rename pipeline, preventing configuration corruption during abrupt shutdowns.

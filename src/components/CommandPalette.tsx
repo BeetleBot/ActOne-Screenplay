@@ -150,6 +150,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     setSpellcheckEnabled,
     activeRightPane,
     setActiveRightPane,
+    showTimeline,
+    setShowTimeline,
   } = useUI();
 
   const { provider } = usePromptConfig();
@@ -312,6 +314,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-zoom-reset", name: `Reset Editor Scale (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
     ...(!isProse ? [
       { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
+      { id: "view-timeline", name: showTimeline ? "Hide Timeline View" : "Show Timeline View", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
       { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
     ] : []),
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },

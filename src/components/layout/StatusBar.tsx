@@ -1,19 +1,26 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useFile, useUI, useSprint } from "../../context";
-import { LineType } from "../../parser";
+import { LineType, parseSceneHeading } from "../../parser";
 import { countWords } from "../../utils/text";
-import { Box, Typography, Menu, MenuItem, ListItemText } from "@mui/material";
+import { Box, Typography, Menu, MenuItem, ListItemText, InputBase, Divider } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
 import { useEditor, useCursor } from "../../context";
-import { DownloadIcon } from "../Icons";
+import { DownloadIcon, CheckIcon, ViewAgendaIcon, KeyboardArrowDownIcon } from "../Icons";
 import { useStoreUpdateCheck } from "../../hooks";
 import { useModalWindows } from "../../hooks/useModalWindows";
 import { isProseScript } from "../../utils/scriptMode";
 
 export const StatusBar = React.memo(() => {
   const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus, files } = useFile();
-  const { isZenMode, aiStatus, translationState, setTranslationState, cancelTranslation, spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage } = useUI();
+  const {
+    isZenMode, aiStatus, translationState, setTranslationState, cancelTranslation,
+    spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage,
+    showTimeline, timelineFilter, setTimelineFilter,
+    timelineShowSections, setTimelineShowSections,
+    timelineShowSceneNumbers, setTimelineShowSceneNumbers,
+    timelineShowSceneColors, setTimelineShowSceneColors,
+  } = useUI();
   const activeFile = files.find(f => f.id === activeFileId);
   const isMarkdown = isProseScript(scripts[activeScriptIndex], filePath);
   const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
@@ -25,6 +32,108 @@ export const StatusBar = React.memo(() => {
   const [spellMenuAnchorEl, setSpellMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [installedLangs, setInstalledLangs] = useState<{ code: string; name: string; native_name: string }[]>([]);
   const [tick, setTick] = useState(0);
+
+  const [timelineMenuAnchor, setTimelineMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuView, setMenuView] = useState<'main' | 'characters' | 'locations' | 'times' | 'settings'>('main');
+  const [charSearchQuery, setCharSearchQuery] = useState("");
+  const [locSearchQuery, setLocSearchQuery] = useState("");
+
+  const parsedTokens = useMemo(() => {
+    const characters = new Set<string>();
+    const locations = new Set<string>();
+    const times = new Set<string>();
+
+    if (parsedDoc?.lines) {
+      for (const line of parsedDoc.lines) {
+        if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
+          const charName = line.text
+            .replace(/\(.*\)/g, "")
+            .replace(/\[\[.*\]\]/g, "")
+            .replace(/#.*#/g, "")
+            .trim()
+            .toUpperCase();
+          if (charName) {
+            characters.add(charName);
+          }
+        } else if (line.type === LineType.heading) {
+          const parsed = parseSceneHeading(line.text);
+          const loc = (line.location || parsed.location || "").trim().toUpperCase();
+          const tod = (line.timeOfDay || parsed.timeOfDay || "").trim().toUpperCase();
+          if (loc) locations.add(loc);
+          if (tod) times.add(tod);
+        }
+      }
+    }
+
+    return {
+      characters: Array.from(characters).sort(),
+      locations: Array.from(locations).sort(),
+      times: Array.from(times).sort(),
+    };
+  }, [parsedDoc]);
+
+  const filteredCharacters = useMemo(() => {
+    const query = charSearchQuery.trim().toUpperCase();
+    if (!query) return parsedTokens.characters;
+    return parsedTokens.characters.filter(char => char.includes(query));
+  }, [parsedTokens.characters, charSearchQuery]);
+
+  const filteredLocations = useMemo(() => {
+    const query = locSearchQuery.trim().toUpperCase();
+    if (!query) return parsedTokens.locations;
+    return parsedTokens.locations.filter(loc => loc.includes(query));
+  }, [parsedTokens.locations, locSearchQuery]);
+
+  const handleTimelineMenuOpen = (event: React.MouseEvent<HTMLDivElement>) => {
+    setTimelineMenuAnchor(event.currentTarget);
+    setMenuView('main');
+  };
+
+  const handleTimelineMenuClose = () => {
+    setTimelineMenuAnchor(null);
+    setCharSearchQuery("");
+    setLocSearchQuery("");
+  };
+
+  const selectFilter = (type: 'default' | 'character' | 'location' | 'time' | 'setting' | 'marker', value?: string) => {
+    setTimelineFilter({ type, values: value ? [value] : [] });
+    handleTimelineMenuClose();
+  };
+
+  const toggleFilterValue = (type: 'character' | 'location' | 'time' | 'setting', val: string) => {
+    if (timelineFilter.type !== type) {
+      setTimelineFilter({ type, values: [val] });
+      return;
+    }
+    const exists = timelineFilter.values.includes(val);
+    const newValues = exists
+      ? timelineFilter.values.filter(v => v !== val)
+      : [...timelineFilter.values, val];
+    if (newValues.length === 0) {
+      setTimelineFilter({ type: 'default', values: [] });
+    } else {
+      setTimelineFilter({ type, values: newValues });
+    }
+  };
+
+  const getFilterLabel = () => {
+    if (timelineFilter.type === "default" || !timelineFilter.values || (timelineFilter.type !== "marker" && timelineFilter.values.length === 0)) {
+      return "Timeline Options";
+    }
+    if (timelineFilter.type === "marker") {
+      return "Timeline: MARKERS";
+    }
+    const typeLabel = timelineFilter.type === "character" ? "CHARACTER"
+                    : timelineFilter.type === "location" ? "LOCATION"
+                    : timelineFilter.type === "time" ? "TIME"
+                    : "SETTING";
+
+    if (timelineFilter.values.length > 1) {
+      return `Timeline: ${typeLabel}S (${timelineFilter.values.length})`;
+    } else {
+      return `Timeline: ${typeLabel} (${timelineFilter.values[0]})`;
+    }
+  };
 
   const loadInstalledLangs = async () => {
     try {
@@ -583,6 +692,235 @@ export const StatusBar = React.memo(() => {
                   />
                 </MenuItem>
               </Menu>
+              {showTimeline && !isMarkdown && (
+                <Box
+                  id="status-timeline-options"
+                  onClick={handleTimelineMenuOpen}
+                  sx={(t) => {
+                    const isFiltered = timelineFilter.type !== "default";
+                    return {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.6,
+                      cursor: "pointer",
+                      color: isFiltered ? "primary.main" : "text.secondary",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: "6px",
+                      bgcolor: isFiltered
+                        ? alpha(t.palette.primary.main, 0.12)
+                        : "transparent",
+                      border: "1px solid",
+                      borderColor: isFiltered
+                        ? alpha(t.palette.primary.main, 0.3)
+                        : "transparent",
+                      transition: "all var(--duration-fast, 0.12s) var(--motion-snappy, ease)",
+                      "&:hover": {
+                        color: "primary.main",
+                        bgcolor: alpha(t.palette.primary.main, 0.08),
+                        borderColor: alpha(t.palette.primary.main, 0.2),
+                      },
+                      "&:active": {
+                        transform: "scale(0.97)",
+                      },
+                    };
+                  }}
+                  title="Timeline Filter Options"
+                >
+                  <ViewAgendaIcon sx={{ fontSize: 13, opacity: 0.85 }} />
+                  <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 600, color: "inherit", lineHeight: 1 }}>
+                    {getFilterLabel()}
+                  </Typography>
+                  <KeyboardArrowDownIcon sx={{ fontSize: 12, opacity: 0.7, ml: -0.2 }} />
+                </Box>
+              )}
+              {showTimeline && !isMarkdown && (
+                <Menu
+                  anchorEl={timelineMenuAnchor}
+                  open={Boolean(timelineMenuAnchor)}
+                  onClose={handleTimelineMenuClose}
+                  anchorOrigin={{ vertical: "top", horizontal: "left" }}
+                  transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  slotProps={{
+                    paper: {
+                      sx: (theme) => ({
+                        borderRadius: "8px",
+                        boxShadow: `0px 4px 16px ${alpha(theme.palette.common.black, 0.15)}`,
+                        border: "1px solid",
+                        borderColor: "divider",
+                        minWidth: 180,
+                        py: 0.25,
+                        maxHeight: 400,
+                        width: 230,
+                      })
+                    }
+                  }}
+                >
+                  {menuView === 'main' && [
+                    <Box key="display-options-header" sx={{ px: 2, pt: 1, pb: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'text.secondary' }}>
+                        Display Options
+                      </Typography>
+                    </Box>,
+                    <MenuItem key="toggle-sections" onClick={(e) => { e.stopPropagation(); setTimelineShowSections(!timelineShowSections); }}>
+                      <ListItemText primary="Section Lines" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      {timelineShowSections && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                    </MenuItem>,
+                    <MenuItem key="toggle-scene-numbers" onClick={(e) => { e.stopPropagation(); setTimelineShowSceneNumbers(!timelineShowSceneNumbers); }}>
+                      <ListItemText primary="Scene Numbers" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      {timelineShowSceneNumbers && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                    </MenuItem>,
+                    <MenuItem key="toggle-scene-colors" onClick={(e) => { e.stopPropagation(); setTimelineShowSceneColors(!timelineShowSceneColors); }}>
+                      <ListItemText primary="Scene Colors" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      {timelineShowSceneColors && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                    </MenuItem>,
+                    <Divider key="options-divider" sx={{ my: 0.5 }} />,
+                    <Box key="filters-header" sx={{ px: 2, pt: 0.5, pb: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'text.secondary' }}>
+                        Highlight Filter
+                      </Typography>
+                    </Box>,
+                    <MenuItem key="default" onClick={() => selectFilter('default')}>
+                      <ListItemText primary="Default (All Scenes)" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      {timelineFilter.type === 'default' && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                    </MenuItem>,
+                    <MenuItem key="characters" onClick={() => setMenuView('characters')}>
+                      <ListItemText primary="Characters" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>▶</Typography>
+                    </MenuItem>,
+                    <MenuItem key="locations" onClick={() => setMenuView('locations')}>
+                      <ListItemText primary="Locations" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>▶</Typography>
+                    </MenuItem>,
+                    <MenuItem key="times" onClick={() => setMenuView('times')}>
+                      <ListItemText primary="Time of Day" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>▶</Typography>
+                    </MenuItem>,
+                    <MenuItem key="settings" onClick={() => setMenuView('settings')}>
+                      <ListItemText primary="Setting (INT/EXT)" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>▶</Typography>
+                    </MenuItem>,
+                    <MenuItem key="markers" onClick={() => selectFilter('marker')}>
+                      <ListItemText primary="Markers" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      {timelineFilter.type === 'marker' && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                    </MenuItem>
+                  ]}
+
+                  {menuView === 'characters' && [
+                    <MenuItem key="back" onClick={() => { setMenuView('main'); setCharSearchQuery(""); }} sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
+                      <ListItemText primary="◀ Back" slotProps={{ primary: { sx: { fontWeight: 600, fontSize: 12 } } }} />
+                    </MenuItem>,
+                    <Box key="search-char-box" sx={{ px: 1.5, py: 1, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center" }}>
+                      <InputBase
+                        autoFocus
+                        placeholder="Search characters..."
+                        value={charSearchQuery}
+                        onChange={(e) => setCharSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        sx={{
+                          fontSize: 12,
+                          width: "100%",
+                          bgcolor: "action.hover",
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: "4px",
+                          border: "1px solid",
+                          borderColor: "divider",
+                          "& input": { p: 0 }
+                        }}
+                      />
+                    </Box>,
+                    filteredCharacters.length === 0 ? (
+                      <MenuItem key="empty" disabled><ListItemText primary="No characters found" slotProps={{ primary: { sx: { fontSize: 12 } } }} /></MenuItem>
+                    ) : (
+                      filteredCharacters.map(char => {
+                        const isSel = timelineFilter.type === 'character' && timelineFilter.values.includes(char);
+                        return (
+                          <MenuItem key={char} onClick={() => toggleFilterValue('character', char)} selected={isSel}>
+                            <ListItemText primary={char} slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                            {isSel && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                          </MenuItem>
+                        );
+                      })
+                    )
+                  ]}
+
+                  {menuView === 'locations' && [
+                    <MenuItem key="back" onClick={() => { setMenuView('main'); setLocSearchQuery(""); }} sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
+                      <ListItemText primary="◀ Back" slotProps={{ primary: { sx: { fontWeight: 600, fontSize: 12 } } }} />
+                    </MenuItem>,
+                    <Box key="search-loc-box" sx={{ px: 1.5, py: 1, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center" }}>
+                      <InputBase
+                        autoFocus
+                        placeholder="Search locations..."
+                        value={locSearchQuery}
+                        onChange={(e) => setLocSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        sx={{
+                          fontSize: 12,
+                          width: "100%",
+                          bgcolor: "action.hover",
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: "4px",
+                          border: "1px solid",
+                          borderColor: "divider",
+                          "& input": { p: 0 }
+                        }}
+                      />
+                    </Box>,
+                    filteredLocations.length === 0 ? (
+                      <MenuItem key="empty" disabled><ListItemText primary="No locations found" slotProps={{ primary: { sx: { fontSize: 12 } } }} /></MenuItem>
+                    ) : (
+                      filteredLocations.map(loc => {
+                        const isSel = timelineFilter.type === 'location' && timelineFilter.values.includes(loc);
+                        return (
+                          <MenuItem key={loc} onClick={() => toggleFilterValue('location', loc)} selected={isSel}>
+                            <ListItemText primary={loc} slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                            {isSel && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                          </MenuItem>
+                        );
+                      })
+                    )
+                  ]}
+
+                  {menuView === 'times' && [
+                    <MenuItem key="back" onClick={() => setMenuView('main')} sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
+                      <ListItemText primary="◀ Back" slotProps={{ primary: { sx: { fontWeight: 600, fontSize: 12 } } }} />
+                    </MenuItem>,
+                    parsedTokens.times.length === 0 ? (
+                      <MenuItem key="empty" disabled><ListItemText primary="No times found" slotProps={{ primary: { sx: { fontSize: 12 } } }} /></MenuItem>
+                    ) : (
+                      parsedTokens.times.map(t => {
+                        const isSel = timelineFilter.type === 'time' && timelineFilter.values.includes(t);
+                        return (
+                          <MenuItem key={t} onClick={() => toggleFilterValue('time', t)} selected={isSel}>
+                            <ListItemText primary={t} slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                            {isSel && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                          </MenuItem>
+                        );
+                      })
+                    )
+                  ]}
+
+                  {menuView === 'settings' && [
+                    <MenuItem key="back" onClick={() => setMenuView('main')} sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
+                      <ListItemText primary="◀ Back" slotProps={{ primary: { sx: { fontWeight: 600, fontSize: 12 } } }} />
+                    </MenuItem>,
+                    <MenuItem key="int" onClick={() => toggleFilterValue('setting', 'INT')} selected={timelineFilter.type === 'setting' && timelineFilter.values.includes('INT')}>
+                      <ListItemText primary="INT (Interior)" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      {timelineFilter.type === 'setting' && timelineFilter.values.includes('INT') && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                    </MenuItem>,
+                    <MenuItem key="ext" onClick={() => toggleFilterValue('setting', 'EXT')} selected={timelineFilter.type === 'setting' && timelineFilter.values.includes('EXT')}>
+                      <ListItemText primary="EXT (Exterior)" slotProps={{ primary: { sx: { fontSize: 12 } } }} />
+                      {timelineFilter.type === 'setting' && timelineFilter.values.includes('EXT') && <CheckIcon sx={{ fontSize: 14, ml: 'auto', color: 'primary.main' }} />}
+                    </MenuItem>
+                  ]}
+                </Menu>
+              )}
               {hasNoScripts ? (
                 <Typography id="status-no-script" variant="caption" sx={{ fontSize: 11, color: "text.disabled", fontStyle: "italic", whiteSpace: "nowrap" }}>
                   No active script

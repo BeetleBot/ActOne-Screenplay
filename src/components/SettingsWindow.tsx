@@ -81,6 +81,7 @@ export const SettingsWindow: React.FC = () => {
   const [snapshotOnSave, setSnapshotOnSave] = useState(() => readLocalBool(STORAGE_KEYS.SNAPSHOT_ON_SAVE, Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_ON_SAVE])));
   const [snapshotMaxRetention, setSnapshotMaxRetention] = useState(() => readLocalNum(STORAGE_KEYS.SNAPSHOT_MAX_RETENTION, Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION])));
   const [fountainColorsEnabled, setFountainColorsEnabled] = useState(() => readLocalBool(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED])));
+  const [showTimeline, setShowTimeline] = useState(() => readLocalBool(STORAGE_KEYS.SHOW_TIMELINE, Boolean(DEFAULTS[STORAGE_KEYS.SHOW_TIMELINE])));
   const [iconStyle, setIconStyle] = useState(() => readLocal(STORAGE_KEYS.ICON_STYLE, String(DEFAULTS[STORAGE_KEYS.ICON_STYLE])) as string);
   const [promptModel, setPromptModel] = useState(() => readLocal(STORAGE_KEYS.PROMPT_MODEL, String(DEFAULTS[STORAGE_KEYS.PROMPT_MODEL])));
   const [promptProvider, setPromptProvider] = useState(() => readLocal(STORAGE_KEYS.PROMPT_PROVIDER, String(DEFAULTS[STORAGE_KEYS.PROMPT_PROVIDER])));
@@ -402,6 +403,7 @@ interface LanguageInfoItem {
     setSnapshotOnSave(Boolean(DEFAULTS[STORAGE_KEYS.SNAPSHOT_ON_SAVE]));
     setSnapshotMaxRetention(Number(DEFAULTS[STORAGE_KEYS.SNAPSHOT_MAX_RETENTION]));
     setFountainColorsEnabled(Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]));
+    setShowTimeline(Boolean(DEFAULTS[STORAGE_KEYS.SHOW_TIMELINE]));
     setIconStyle(String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]));
 
     emitUpdate(STORAGE_KEYS.THEME_ID, String(DEFAULTS[STORAGE_KEYS.THEME_ID]));
@@ -479,6 +481,7 @@ interface LanguageInfoItem {
           setSnapshotOnSave(d.snapshotOnSave);
           setSnapshotMaxRetention(d.snapshotMaxRetention || 20);
           setFountainColorsEnabled(d.fountainColorsEnabled !== false);
+          if (d.showTimeline !== undefined) setShowTimeline(d.showTimeline);
           setIconStyle(d.iconStyle ?? "fill");
           activeFilePathRef.current = d.activeFilePath || "";
         });
@@ -589,6 +592,9 @@ interface LanguageInfoItem {
     }
     if (prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] !== undefined && prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] !== String(fountainColorsEnabled)) {
       setFountainColorsEnabled(prefs[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED] === "true");
+    }
+    if (prefs[STORAGE_KEYS.SHOW_TIMELINE] !== undefined && prefs[STORAGE_KEYS.SHOW_TIMELINE] !== String(showTimeline)) {
+      setShowTimeline(prefs[STORAGE_KEYS.SHOW_TIMELINE] !== "false");
     }
     if (prefs[STORAGE_KEYS.ICON_STYLE] !== undefined && prefs[STORAGE_KEYS.ICON_STYLE] !== iconStyle) {
       setIconStyle(prefs[STORAGE_KEYS.ICON_STYLE]);
@@ -852,7 +858,13 @@ interface LanguageInfoItem {
                     label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Syntax Colors</Typography>}
                     sx={{ mx: 0, flex: 1 }}
                   />
-                  <Box sx={{ flex: 1 }} />
+                  <FormControlLabel
+                    control={<Switch size="small" checked={showTimeline}
+                      onChange={(e) => { const v = e.target.checked; setShowTimeline(v); localStorage.setItem(STORAGE_KEYS.SHOW_TIMELINE, String(v)); emitUpdate(STORAGE_KEYS.SHOW_TIMELINE, v); }}
+                    />}
+                    label={<Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>Timeline View</Typography>}
+                    sx={{ mx: 0, flex: 1 }}
+                  />
                 </Box>
               </Box>
             </Box>
@@ -1911,6 +1923,7 @@ interface SettingsInitData {
   snapshotOnSave: boolean;
   snapshotMaxRetention: number;
   fountainColorsEnabled: boolean;
+  showTimeline?: boolean;
   iconStyle?: string;
   activeFilePath?: string;
 }

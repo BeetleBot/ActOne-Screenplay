@@ -94,7 +94,7 @@ Importing other screenplay formats is separate from opening an existing project.
 
 **Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, and Enable/Disable Spellcheck.
 
-**View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Show/Hide Fountain Markup, Open X-Ray Analysis, Show Snapshots.
+**View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Toggle Timeline View (Alt+T), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Show/Hide Fountain Markup, Open X-Ray Analysis, Show Snapshots.
 
 **Format:** Edit Title Page, Import Structure Template, Renumber Scene Headings, Clear Scene Numbers.
 
@@ -757,6 +757,36 @@ You can type any combination of search terms:
 - <kbd>↑</kbd> and <kbd>↓</kbd>: Navigate through matched scenes.
 - <kbd>Enter</kbd>: Instantly jump to and center the selected scene in the editor.
 - <kbd>Esc</kbd>: Close the palette and return focus smoothly to the editor.`,
+  },
+  {
+    id: "timeline-view",
+    title: "Timeline View & Track Navigation",
+    category: "Workspace & Views",
+    tags: ["timeline", "tracks", "acts", "sequences", "scenes", "scrubbing", "filter", "zoom"],
+    relatedIds: ["outline-navigator", "scene-jump-palette", "command-palette"],
+    content: `The **Timeline View** is an interactive, multi-track visual overview extending smoothly from the status bar. Toggle it via <kbd>Alt+T</kbd>, the Command Palette, or in Settings → Display.
+ 
+### Synchronized Tracks & Display Options
+- Customize visible tracks anytime via **Timeline Options** in the status bar:
+  - **Section Lines**: Displays top-level section headers (\`# Act I\`, \`# Act II\`, etc.) and second-level sequence headers (\`## Sequence 1\`, etc.). Hidden by default; turn on via Timeline Options.
+  - **Scene Numbers**: Shows or hides scene number indicators across scene blocks.
+  - **Scene Colors**: Toggles color-tinted scene blocks matching scene colors.
+- **Scenes Track**: Displays every scene sized proportionally to its line length, highlighting the active scene in real-time.
+
+### Interactive Scrubbing & Zooming
+- **Click or Drag to Scrub**: Click or drag across the timeline to scroll the screenplay smoothly to that scene or position.
+- **Playhead**: A vertical playhead line tracks your current cursor position in real time.
+- **Mouse Wheel Zoom**: Hold <kbd>Ctrl</kbd> (or <kbd>Alt</kbd>) and scroll the mouse wheel over the timeline to zoom horizontally from 1x to 15x.
+
+### Powerful Multi-Track Filtering
+From the **Status Bar** (click "Timeline Options" / active filter label), you can filter the scene track by:
+- **Markers**: Display colored marker pins on the timeline at the exact lines where \`[[marker ...]]\` notes exist. Hovering over any marker pin displays a tooltip with its line number and description, and clicking jumps directly to that line.
+- **Characters**: Highlight only scenes featuring specific characters (with instant search).
+- **Locations**: Highlight scenes set in specific locations (e.g., \`CAFE\`, \`PARK\`).
+- **Time of Day**: Highlight scenes by time (\`DAY\`, \`NIGHT\`, etc.).
+- **Setting**: Highlight Interior (\`INT.\`) or Exterior (\`EXT.\`) scenes.
+
+Scenes matching your filter remain highlighted while non-matching scenes are subtly dimmed.`,
   },
   {
     id: "sidebar-panels",

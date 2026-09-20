@@ -40,6 +40,8 @@ export interface TranslationJob {
   waitingSeconds?: number;
 }
 
+export type TimelineFilter = { type: 'default' | 'character' | 'location' | 'time' | 'setting' | 'marker'; values: string[] };
+
 export interface UIContextProps {
   fontFamily: 'courier-prime' | 'courier-prime-sans';
   paperSize: 'letter' | 'a4';
@@ -51,6 +53,16 @@ export interface UIContextProps {
   setTypewriterMode: (enabled: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  showTimeline: boolean;
+  setShowTimeline: (show: boolean) => void;
+  timelineFilter: TimelineFilter;
+  setTimelineFilter: (filter: TimelineFilter) => void;
+  timelineShowSections: boolean;
+  setTimelineShowSections: (show: boolean) => void;
+  timelineShowSceneNumbers: boolean;
+  setTimelineShowSceneNumbers: (show: boolean) => void;
+  timelineShowSceneColors: boolean;
+  setTimelineShowSceneColors: (show: boolean) => void;
   zoomLevel: number;
   setZoomLevel: (zoom: number) => void;
   autocompleteEnabled: boolean;
@@ -165,6 +177,18 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           break;
         case STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED:
           setFountainColorsEnabledState(strVal === "true");
+          break;
+        case STORAGE_KEYS.SHOW_TIMELINE:
+          setShowTimelineState(strVal !== "false");
+          break;
+        case STORAGE_KEYS.TIMELINE_SHOW_SECTIONS:
+          setTimelineShowSectionsState(strVal === "true");
+          break;
+        case STORAGE_KEYS.TIMELINE_SHOW_SCENE_NUMBERS:
+          setTimelineShowSceneNumbersState(strVal !== "false");
+          break;
+        case STORAGE_KEYS.TIMELINE_SHOW_SCENE_COLORS:
+          setTimelineShowSceneColorsState(strVal !== "false");
           break;
 
         case STORAGE_KEYS.ICON_STYLE:
@@ -350,6 +374,24 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED]);
   });
 
+  const [showTimeline, setShowTimelineState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.SHOW_TIMELINE);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.SHOW_TIMELINE]);
+  });
+  const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>({ type: 'default', values: [] });
+  const [timelineShowSections, setTimelineShowSectionsState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.TIMELINE_SHOW_SECTIONS);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.TIMELINE_SHOW_SECTIONS]);
+  });
+  const [timelineShowSceneNumbers, setTimelineShowSceneNumbersState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.TIMELINE_SHOW_SCENE_NUMBERS);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.TIMELINE_SHOW_SCENE_NUMBERS]);
+  });
+  const [timelineShowSceneColors, setTimelineShowSceneColorsState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.TIMELINE_SHOW_SCENE_COLORS);
+    return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.TIMELINE_SHOW_SCENE_COLORS]);
+  });
+
   const [iconStyle, setIconStyleState] = useState<string>(() => {
     return localStorage.getItem(STORAGE_KEYS.ICON_STYLE) || String(DEFAULTS[STORAGE_KEYS.ICON_STYLE]);
   });
@@ -499,6 +541,30 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     broadcastSetting(STORAGE_KEYS.FOUNTAIN_COLORS_ENABLED, enabled ? "true" : "false");
   };
 
+  const setShowTimeline = (enabled: boolean) => {
+    setShowTimelineState(enabled);
+    localStorage.setItem(STORAGE_KEYS.SHOW_TIMELINE, enabled ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.SHOW_TIMELINE, enabled ? "true" : "false");
+  };
+
+  const setTimelineShowSections = (show: boolean) => {
+    setTimelineShowSectionsState(show);
+    localStorage.setItem(STORAGE_KEYS.TIMELINE_SHOW_SECTIONS, show ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.TIMELINE_SHOW_SECTIONS, show ? "true" : "false");
+  };
+
+  const setTimelineShowSceneNumbers = (show: boolean) => {
+    setTimelineShowSceneNumbersState(show);
+    localStorage.setItem(STORAGE_KEYS.TIMELINE_SHOW_SCENE_NUMBERS, show ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.TIMELINE_SHOW_SCENE_NUMBERS, show ? "true" : "false");
+  };
+
+  const setTimelineShowSceneColors = (show: boolean) => {
+    setTimelineShowSceneColorsState(show);
+    localStorage.setItem(STORAGE_KEYS.TIMELINE_SHOW_SCENE_COLORS, show ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.TIMELINE_SHOW_SCENE_COLORS, show ? "true" : "false");
+  };
+
   const setIconStyle = (style: string) => {
     setIconStyleState(style);
     localStorage.setItem(STORAGE_KEYS.ICON_STYLE, style);
@@ -562,6 +628,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAutoContdEnabled,
         fountainColorsEnabled,
         setFountainColorsEnabled,
+        showTimeline,
+        setShowTimeline,
+        timelineFilter,
+        setTimelineFilter,
+        timelineShowSections,
+        setTimelineShowSections,
+        timelineShowSceneNumbers,
+        setTimelineShowSceneNumbers,
+        timelineShowSceneColors,
+        setTimelineShowSceneColors,
         iconStyle,
         setIconStyle,
         aiStatus,

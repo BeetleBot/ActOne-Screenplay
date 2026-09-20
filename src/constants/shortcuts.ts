@@ -129,6 +129,7 @@ export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   { id: "open-muse", label: "Open Muse AI", category: "Navigation & View", keys: ["Alt", "M"] },
   { id: "open-model-palette", label: "Switch AI Model", category: "Navigation & View", keys: ["Alt", "Shift", "M"] },
   { id: "open-snapshots", label: "Open Snapshots", category: "Navigation & View", keys: ["Alt", "S"] },
+  { id: "toggle-timeline", label: "Toggle Timeline View", category: "Navigation & View", keys: ["Ctrl", "Shift", "P"] },
   { id: "open-settings", label: "Settings", category: "Navigation & View", keys: ["Ctrl", ","] },
 
   // ===== Editor & Formatting =====
