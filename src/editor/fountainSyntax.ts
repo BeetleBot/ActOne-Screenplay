@@ -253,7 +253,8 @@ export const computeFountainDecorations = (
   const builder = new RangeSetBuilder<Decoration>();
   const allDecos: { from: number; to: number; dec: Decoration }[] = [];
   const doc = state.doc;
-  const activeLineNum = state.selection ? state.doc.lineAt(state.selection.main.head).number : -1;
+  const head = state.selection ? state.selection.main.head : -1;
+  const activeLineNum = head >= 0 && head <= doc.length ? state.doc.lineAt(head).number : -1;
 
   const ranges = (visibleRanges && visibleRanges.length > 0)
     ? visibleRanges
@@ -525,7 +526,11 @@ export const fountainHighlightField = StateField.define<{
       hideSyntaxChanged ||
       rightPaneChanged;
 
-    const currentLineNum = tr.state.selection ? tr.state.doc.lineAt(tr.state.selection.main.head).number : -1;
+    const curHead = tr.state.selection ? tr.state.selection.main.head : -1;
+    const currentLineNum =
+      curHead >= 0 && curHead <= tr.state.doc.length
+        ? tr.state.doc.lineAt(curHead).number
+        : -1;
     const selectionMoved = tr.selection && currentLineNum !== value.prevActiveLineNum;
 
     if (needsRebuild || (selectionMoved && hideSyntaxEnabled)) {

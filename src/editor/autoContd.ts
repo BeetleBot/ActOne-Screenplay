@@ -49,7 +49,8 @@ function buildAutoContdDecorations(state: import("@codemirror/state").EditorStat
 
   const lineTypes = state.field(lineTypesField);
   const doc = state.doc;
-  const activeLineNum = state.selection ? doc.lineAt(state.selection.main.head).number : -1;
+  const head = state.selection ? state.selection.main.head : -1;
+  const activeLineNum = head >= 0 && head <= doc.length ? doc.lineAt(head).number : -1;
   const builder = new RangeSetBuilder<Decoration>();
   let lastSpeakingCharacter = "";
 
@@ -93,8 +94,16 @@ export const autoContdField = StateField.define<{ decorations: DecorationSet; en
       }
     }
 
-    const currentLineNum = tr.state.selection ? tr.state.doc.lineAt(tr.state.selection.main.head).number : -1;
-    const prevLineNum = tr.startState.selection ? tr.startState.doc.lineAt(tr.startState.selection.main.head).number : -1;
+    const curHead = tr.state.selection ? tr.state.selection.main.head : -1;
+    const prevHead = tr.startState.selection ? tr.startState.selection.main.head : -1;
+    const currentLineNum =
+      curHead >= 0 && curHead <= tr.state.doc.length
+        ? tr.state.doc.lineAt(curHead).number
+        : -1;
+    const prevLineNum =
+      prevHead >= 0 && prevHead <= tr.startState.doc.length
+        ? tr.startState.doc.lineAt(prevHead).number
+        : -1;
     const selectionMoved = Boolean(tr.selection) && currentLineNum !== prevLineNum;
 
     if (tr.docChanged || effectFired || selectionMoved) {

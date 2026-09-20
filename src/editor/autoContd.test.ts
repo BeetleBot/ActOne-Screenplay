@@ -118,4 +118,33 @@ describe("autoContdField", () => {
     state = tr.state;
     expect(getDecorationPositions(state)).toEqual([]);
   });
+
+  it("handles document truncation safely when cursor position was at the end", () => {
+    const longText = "JOHN\nHello.\n\nJOHN\nAgain.\n".repeat(20);
+    let state = createEditor(longText, longText.length - 2);
+
+    // Truncate document completely to 2 characters
+    expect(() => {
+      const tr = state.update({
+        changes: { from: 0, to: state.doc.length, insert: "HI" },
+        selection: { anchor: 1 },
+      });
+      state = tr.state;
+    }).not.toThrow();
+
+    expect(state.doc.toString()).toBe("HI");
+  });
+
+  it("does not throw lineInner out-of-bounds error when selection exceeds doc bounds during transaction", () => {
+    const text = "JOHN\nHello.\n\nJOHN\nSpeaking again.";
+    let state = createEditor(text, text.length);
+
+    // Replace entire text with shorter text
+    expect(() => {
+      const tr = state.update({
+        changes: { from: 0, to: text.length, insert: "A" },
+      });
+      state = tr.state;
+    }).not.toThrow();
+  });
 });

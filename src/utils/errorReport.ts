@@ -61,6 +61,7 @@ const TRANSIENT_TAURI_ERROR_PATTERNS: RegExp[] = [
   /resource.*\b(dropped|destroyed|closed|invalid)\b/i,
   /operation is already in progress/i,
   /app quit requested/i,
+  /cannot move state from Destroyed/i,
 ];
 
 export function isTransientTauriTeardownError(message: string): boolean {

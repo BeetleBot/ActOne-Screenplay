@@ -122,13 +122,15 @@ export const activeLineAlwaysPlugin = ViewPlugin.fromClass(
     lastLineNumber: number;
 
     constructor(view: EditorView) {
-      this.lastLineNumber = view.state.doc.lineAt(view.state.selection.main.head).number;
+      const head = Math.max(0, Math.min(view.state.selection.main.head, view.state.doc.length));
+      this.lastLineNumber = view.state.doc.lineAt(head).number;
       this.decorations = this.getDecos(view);
     }
 
     update(update: ViewUpdate) {
       if (update.selectionSet || update.docChanged) {
-        const newLineNum = update.state.doc.lineAt(update.state.selection.main.head).number;
+        const head = Math.max(0, Math.min(update.state.selection.main.head, update.state.doc.length));
+        const newLineNum = update.state.doc.lineAt(head).number;
         if (newLineNum !== this.lastLineNumber || update.docChanged) {
           this.lastLineNumber = newLineNum;
           this.decorations = this.getDecos(update.view);
@@ -137,7 +139,7 @@ export const activeLineAlwaysPlugin = ViewPlugin.fromClass(
     }
 
     getDecos(view: EditorView): DecorationSet {
-      const pos = view.state.selection.main.head;
+      const pos = Math.max(0, Math.min(view.state.selection.main.head, view.state.doc.length));
       const activeLine = view.state.doc.lineAt(pos);
       const focusEnabled = localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED) === "true";
       const builder = new RangeSetBuilder<Decoration>();
@@ -343,7 +345,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
         }
 
         if (update.selectionSet || update.docChanged) {
-          const pos = update.state.selection.main.head;
+          const pos = Math.max(0, Math.min(update.state.selection.main.head, update.state.doc.length));
           const lineNum = update.state.doc.lineAt(pos).number;
           const idx = lineNum - 1;
           if (cursorDebounceTimerRef.current !== null) {

@@ -81,6 +81,10 @@ static PANIC_LOG_PATH: OnceLock<PathBuf> = OnceLock::new();
 fn install_panic_hook(path: PathBuf) {
     let _ = PANIC_LOG_PATH.set(path);
     std::panic::set_hook(Box::new(|panic| {
+        let panic_str = format!("{panic}");
+        if panic_str.contains("cannot move state from Destroyed") {
+            return;
+        }
         let path = PANIC_LOG_PATH
             .get()
             .cloned()
@@ -89,7 +93,7 @@ fn install_panic_hook(path: PathBuf) {
             let _ = fs::create_dir_all(parent);
         }
         if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(path) {
-            let _ = writeln!(file, "{panic}\n");
+            let _ = writeln!(file, "{panic_str}\n");
         }
     }));
 }

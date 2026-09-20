@@ -108,6 +108,10 @@ describe("isTransientTauriTeardownError", () => {
     expect(isTransientTauriTeardownError("The resource is dropped")).toBe(true);
   });
 
+  it("classifies tao windows Destroyed event loop panic as transient", () => {
+    expect(isTransientTauriTeardownError("panicked at tao-0.35.2\\runner.rs:371:25: cannot move state from Destroyed")).toBe(true);
+  });
+
   it("does not classify real application errors as transient", () => {
     expect(isTransientTauriTeardownError("Cannot read properties of undefined (reading 'map')")).toBe(false);
   });

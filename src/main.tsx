@@ -19,14 +19,26 @@ initSentry();
 (window as Window & { __actoneErrorModuleLoaded?: boolean }).__actoneErrorModuleLoaded = true;
 
 window.onerror = (message, source, _line, _col, error) => {
-  const report = captureError({ type: "uncaught", error: error ?? message, filename: source || undefined, message: error ? undefined : String(message), severity: "window" });
-  if (!wasJustCaughtByBoundary() && !isTransientTauriTeardownError(report.message)) showCrashScreen(report);
+  try {
+    const report = captureError({ type: "uncaught", error: error ?? message, filename: source || undefined, message: error ? undefined : String(message), severity: "window" });
+    if (typeof wasJustCaughtByBoundary === "function" && !wasJustCaughtByBoundary() && typeof isTransientTauriTeardownError === "function" && !isTransientTauriTeardownError(report.message)) {
+      showCrashScreen(report);
+    }
+  } catch (err) {
+    logger.warn("error-report", "Window onerror handling failed", err);
+  }
   return true;
 };
 
 window.addEventListener("unhandledrejection", (event) => {
-  const report = captureError({ type: "unhandled-rejection", error: event.reason, severity: "window" });
-  if (!wasJustCaughtByBoundary() && !isTransientTauriTeardownError(report.message)) showCrashScreen(report);
+  try {
+    const report = captureError({ type: "unhandled-rejection", error: event.reason, severity: "window" });
+    if (typeof wasJustCaughtByBoundary === "function" && !wasJustCaughtByBoundary() && typeof isTransientTauriTeardownError === "function" && !isTransientTauriTeardownError(report.message)) {
+      showCrashScreen(report);
+    }
+  } catch (err) {
+    logger.warn("error-report", "Unhandled rejection handling failed", err);
+  }
 });
 
 const params = new URLSearchParams(window.location.search);
