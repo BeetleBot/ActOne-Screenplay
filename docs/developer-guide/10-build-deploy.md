@@ -43,7 +43,7 @@ The production build splits vendor code:
 
 1. Prepares AppDir directory layout with desktop and MIME configuration
 2. Bundles application and document type icons (`.fountain`, `.actone`, `.actheme`)
-3. Generates a clean, portable `AppRun` launcher (no install dialogs, desktop integration prompts, or host filesystem modifications)
+3. Uses `linuxdeploy` with `linuxdeploy-plugin-gtk` to bundle all shared library dependencies (including `libwebkit2gtk-4.1.so.0`, schemas, and loaders) into `usr/lib`
 4. Fetches `appimagetool` and packages into a standalone portable AppImage
 5. Output: `ActOne-Screenplay-<version>-x86_64.AppImage` in `Release/artifacts/`
 

@@ -70,16 +70,34 @@ done
 cp "$PROJECT_ROOT/src-tauri/icons/128x128.png" "$APPDIR/actone.png"
 cp "$PROJECT_ROOT/src-tauri/icons/128x128.png" "$APPDIR/.DirIcon"
 
-cat << 'APP_RUN' > "$APPDIR/AppRun"
-#!/bin/sh
-SELF=$(readlink -f "$0")
-HERE=${SELF%/*}
+echo "==> Bundling dependencies with linuxdeploy & GTK plugin"
+LINUXDEPLOY="$BUILD_DIR/linuxdeploy"
+if ! command -v linuxdeploy &>/dev/null; then
+    curl -fsSL -o "$LINUXDEPLOY" "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+    chmod +x "$LINUXDEPLOY"
+else
+    LINUXDEPLOY=$(command -v linuxdeploy)
+fi
 
-export PATH="${HERE}/usr/bin:${PATH}"
-export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
-exec "${HERE}/usr/bin/actone" "$@"
-APP_RUN
-chmod +x "$APPDIR/AppRun"
+GTK_PLUGIN="$BUILD_DIR/linuxdeploy-plugin-gtk.sh"
+curl -fsSL -o "$GTK_PLUGIN" "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
+chmod +x "$GTK_PLUGIN"
+
+# Extract linuxdeploy if needed for container / sandbox environments
+if [ -f "$LINUXDEPLOY" ] && [ "$LINUXDEPLOY" = "$BUILD_DIR/linuxdeploy" ]; then
+    (cd "$BUILD_DIR" && ./linuxdeploy --appimage-extract >/dev/null 2>&1 && mv squashfs-root linuxdeploy-extracted)
+    LINUXDEPLOY_BIN="$BUILD_DIR/linuxdeploy-extracted/AppRun"
+else
+    LINUXDEPLOY_BIN="$LINUXDEPLOY"
+fi
+
+export NO_STRIP=true
+PATH="$BUILD_DIR:$PATH" "$LINUXDEPLOY_BIN" \
+    --appdir "$APPDIR" \
+    --executable "$APPDIR/usr/bin/actone" \
+    --desktop-file "$APPDIR/actone.desktop" \
+    --icon-file "$APPDIR/actone.png" \
+    --plugin gtk
 
 APPIMAGETOOL="$BUILD_DIR/appimagetool"
 if ! command -v appimagetool &>/dev/null; then

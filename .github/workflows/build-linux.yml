@@ -77,6 +77,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            patchelf \
+            file \
+            libwebkit2gtk-4.1-0 \
+            libgtk-3-0 \
+            libayatana-appindicator3-1 \
+            librsvg2-common \
+            libsoup-3.0-0 \
+            libjavascriptcoregtk-4.1-0
+
       - name: Download compiled binary
         uses: actions/download-artifact@v4
         with:
@@ -86,6 +99,7 @@ jobs:
       - name: Package AppImage
         env:
           VERSION: ${{ needs.build-bundle.outputs.version }}
+          NO_STRIP: "true"
         run: |
           chmod +x src-tauri/target/release/actone
           BUILD_DIR="target/appimage-build"
@@ -127,16 +141,25 @@ jobs:
           cp src-tauri/icons/128x128.png "$APPDIR/actone.png"
           cp src-tauri/icons/128x128.png "$APPDIR/.DirIcon"
 
-          cat << 'APP_RUN' > "$APPDIR/AppRun"
-          #!/bin/sh
-          SELF=$(readlink -f "$0")
-          HERE=${SELF%/*}
+          # Download linuxdeploy and GTK plugin to bundle shared libraries (including WebKitGTK 4.1)
+          LINUXDEPLOY="$BUILD_DIR/linuxdeploy"
+          curl -fsSL -o "$LINUXDEPLOY" "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+          chmod +x "$LINUXDEPLOY"
 
-          export PATH="${HERE}/usr/bin:${PATH}"
-          export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
-          exec "${HERE}/usr/bin/actone" "$@"
-          APP_RUN
-          chmod +x "$APPDIR/AppRun"
+          GTK_PLUGIN="$BUILD_DIR/linuxdeploy-plugin-gtk.sh"
+          curl -fsSL -o "$GTK_PLUGIN" "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
+          chmod +x "$GTK_PLUGIN"
+
+          # Extract linuxdeploy if running inside Docker/unprivileged container environment
+          (cd "$BUILD_DIR" && ./linuxdeploy --appimage-extract && mv squashfs-root linuxdeploy-extracted)
+          LINUXDEPLOY_BIN="$BUILD_DIR/linuxdeploy-extracted/AppRun"
+
+          PATH="$BUILD_DIR:$PATH" "$LINUXDEPLOY_BIN" \
+            --appdir "$APPDIR" \
+            --executable "$APPDIR/usr/bin/actone" \
+            --desktop-file "$APPDIR/actone.desktop" \
+            --icon-file "$APPDIR/actone.png" \
+            --plugin gtk
 
           APPIMAGETOOL="$BUILD_DIR/appimagetool"
           curl -fsSL -o "$APPIMAGETOOL" "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
