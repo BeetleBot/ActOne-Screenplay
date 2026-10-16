@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
-import { EditorState, RangeSetBuilder, StateField, Extension, Compartment } from "@codemirror/state";
+import { EditorState, RangeSetBuilder, StateField, Extension, Compartment, type Text } from "@codemirror/state";
 import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, layer, RectangleMarker, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { search, setSearchQuery, getSearchQuery } from "@codemirror/search";
-import { useFile, useUI, useEditor, useCursor } from "../context";
+import { useDocumentText, useFileActions, useWorkspaceMetadata, useParsedScreenplay, useUI, useEditor, useCursor } from "../context";
 import { STORAGE_KEYS } from "../constants";
 import { emptyLineSelectionPlugin } from "./emptyLineSelection";
 import { rephraseHighlightField } from "./rephraseState";
@@ -12,6 +12,8 @@ import { pendingScrollTargetY } from "./cursorScroll";
 import { typewriterCompartment, typewriterScrollPlugin } from "./typewriter";
 import { spellcheckCompartment, spellcheckExtension, triggerSpellRecheck } from "./spellcheck";
 import DiffMatchPatch from "diff-match-patch";
+import { registerPendingEditor } from "./pendingEdits";
+import type { DocumentTarget } from "../context/FileContext";
 export const readOnlyCompartment = new Compartment();
 
 let scriptSwitchToken = 0;
@@ -203,7 +205,10 @@ export interface CoreCodeMirrorProps {
 
 export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScriptSwitch, onInit }: CoreCodeMirrorProps) {
   const viewRef = useRef<EditorView | null>(null);
-  const { rawText, setRawText, activeScriptIndex, activeFileId, parsedDoc, scripts, scriptFileName } = useFile();
+  const rawText = useDocumentText();
+  const { setRawText } = useFileActions();
+  const { activeScriptIndex, activeFileId, scriptFileName } = useWorkspaceMetadata();
+  const parsedDoc = useParsedScreenplay();
   const { typewriterMode, lineFocusEnabled, isZenMode, spellcheckEnabled, translationState, translatingTarget } = useUI();
   const { setEditorView } = useEditor();
   const { setActiveLineNumber } = useCursor();
@@ -211,8 +216,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
   const isScriptTranslating = translationState === "running" && translatingTarget?.fileId === activeFileId && translatingTarget?.scriptIndex === activeScriptIndex;
   
   const lastScriptKeyRef = useRef("");
-  const activeScript = scripts && scripts.length > 0 ? scripts[activeScriptIndex] : undefined;
-  const currentScriptKey = `${activeFileId}::${activeScript?.fileName || scriptFileName || activeScriptIndex}`;
+  const currentScriptKey = `${activeFileId}::${scriptFileName || activeScriptIndex}`;
   const statesRef = useRef<Record<string, EditorState>>({});
   const extensionsRef = useRef<any[]>([]);
 
@@ -222,7 +226,22 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
   }, [setRawText]);
 
   const rawTextDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingRawTextRef = useRef<string | null>(null);
+  const pendingRawTextRef = useRef<{ doc: Text; target: DocumentTarget } | null>(null);
+  const documentTargetRef = useRef<DocumentTarget>({ fileId: activeFileId, scriptIndex: activeScriptIndex });
+  const flushPendingRef = useRef(() => {});
+  flushPendingRef.current = () => {
+    if (rawTextDebounceTimerRef.current !== null) {
+      clearTimeout(rawTextDebounceTimerRef.current);
+      rawTextDebounceTimerRef.current = null;
+    }
+    const pending = pendingRawTextRef.current;
+    if (!pending) return;
+    pendingRawTextRef.current = null;
+    const text = pending.doc.toString();
+    lastDispatchedTextRef.current = text;
+    setRawTextRef.current(text, pending.target);
+  };
+  useEffect(() => registerPendingEditor(activeFileId, () => flushPendingRef.current()), [activeFileId]);
   const cursorDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setActiveLineNumberRef = useRef(setActiveLineNumber);
@@ -329,18 +348,13 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
       typewriterCompartment.of(typewriterMode ? typewriterScrollPlugin : []),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
-          const docStr = update.state.doc.toString();
-          lastDispatchedTextRef.current = docStr;
-          pendingRawTextRef.current = docStr;
+          pendingRawTextRef.current = { doc: update.state.doc, target: { ...documentTargetRef.current } };
           if (rawTextDebounceTimerRef.current !== null) {
             clearTimeout(rawTextDebounceTimerRef.current);
           }
           rawTextDebounceTimerRef.current = setTimeout(() => {
             rawTextDebounceTimerRef.current = null;
-            if (pendingRawTextRef.current !== null) {
-              setRawTextRef.current(pendingRawTextRef.current);
-              pendingRawTextRef.current = null;
-            }
+            flushPendingRef.current();
           }, 50);
         }
 
@@ -394,9 +408,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
       if (rawTextDebounceTimerRef.current !== null) {
         clearTimeout(rawTextDebounceTimerRef.current);
       }
-      if (pendingRawTextRef.current !== null) {
-        setRawTextRef.current(pendingRawTextRef.current);
-      }
+      flushPendingRef.current();
       view.destroy();
       setEditorView(null);
     };
@@ -412,10 +424,8 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
           clearTimeout(rawTextDebounceTimerRef.current);
           rawTextDebounceTimerRef.current = null;
         }
-        if (pendingRawTextRef.current !== null) {
-          setRawTextRef.current(pendingRawTextRef.current);
-          pendingRawTextRef.current = null;
-        }
+        flushPendingRef.current();
+        documentTargetRef.current = { fileId: activeFileId, scriptIndex: activeScriptIndex };
 
         const scrollArea = getScrollArea(view);
 
@@ -480,8 +490,9 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
           });
         });
       } else {
+        if (pendingRawTextRef.current !== null || rawText === lastDispatchedTextRef.current) return;
         const docCurrent = view.state.doc.toString();
-        if (rawText !== docCurrent && rawText !== lastDispatchedTextRef.current && pendingRawTextRef.current === null) {
+        if (rawText !== docCurrent) {
           const scrollArea = getScrollArea(view);
           const savedScrollTop = scrollArea ? scrollArea.scrollTop : null;
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useUI, useEditor, useFile } from "../../context";
+import React, { lazy, Suspense, useState, useEffect, useCallback } from "react";
+import { useUI, useEditor, useFileActions, useWorkspaceMetadata } from "../../context";
 import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -14,11 +14,10 @@ import { ProseEditor } from "../ProseEditor";
 import { MusePanel } from "../MusePanel";
 import Typography from "@mui/material/Typography";
 import { DescriptionIcon, MenuBookIcon, UploadIcon } from "../Icons";
-import { StructureImportModal } from "../StructureImportModal";
+const StructureImportModal = lazy(() => import("../StructureImportModal").then(module => ({ default: module.StructureImportModal })));
 import { ThemeLogo } from "../ThemeLogo";
 
 import { ErrorBoundary } from "../ErrorBoundary";
-import { isProseScript } from "../../utils/scriptMode";
 
 interface WorkspaceProps {
   isSidebarOpen: boolean;
@@ -33,12 +32,8 @@ export const Workspace = React.memo<WorkspaceProps>(({
   const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane, sidebarWidth, setSidebarWidth } = useUI();
 
   const { editorView } = useEditor();
-  const { activeFileId, files, addScript, importScript } = useFile();
-
-  const activeFile = files.find(f => f.id === activeFileId);
-  const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
-  const activeScript = activeFile && activeFile.scripts && activeFile.activeScriptIndex !== undefined ? activeFile.scripts[activeFile.activeScriptIndex] : null;
-  const isMarkdown = isProseScript(activeScript, activeFile?.filePath);
+  const { addScript, importScript } = useFileActions();
+  const { hasNoScripts, isProse: isMarkdown } = useWorkspaceMetadata();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -580,7 +575,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 </MenuItem>
               </Menu>
             </Box>
-            {showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}
+            {showStructureModal && <Suspense fallback={<div role="status" style={{ padding: 16 }}>Loading…</div>}><StructureImportModal onClose={() => setShowStructureModal(false)} /></Suspense>}
           </Box>
         ) : (
           <Box

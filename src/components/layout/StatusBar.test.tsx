@@ -34,6 +34,23 @@ vi.mock("../../context", () => ({
     saveStatus: "idle",
     files: [{ id: "f1", scripts: mockHasNoScripts ? [] : [{ name: "Script 1", fileName: "script.fountain" }] }],
   }),
+  useDocumentText: () => "INT. CAFE - DAY\nJOHN\nHello!",
+  useParsedScreenplay: () => ({
+    lines: [
+      { id: "1", text: "INT. CAFE - DAY", type: LineType.heading, location: "CAFE", timeOfDay: "DAY", setting: "INT.", isOutlineElement: true },
+      { id: "2", text: "JOHN", type: LineType.character, isOutlineElement: false },
+      { id: "3", text: "Hello!", type: LineType.dialogue, isOutlineElement: false },
+      { id: "4", text: "EXT. PARK - NIGHT", type: LineType.heading, location: "PARK", timeOfDay: "NIGHT", setting: "EXT.", isOutlineElement: true },
+    ], settings: {}, screenplayText: "",
+  }),
+  usePageBreaks: () => [0],
+  useFileSaveStatus: () => "idle",
+  useFileActions: () => ({ setActiveScript: vi.fn() }),
+  useWorkspaceMetadata: () => ({
+    isBundle: false, scripts: [{ name: "Script 1", fileName: "script.fountain" }], activeScriptIndex: 0,
+    filePath: "script.fountain", activeScriptName: "Script 1", activeFileId: "f1",
+    hasNoScripts: mockHasNoScripts, isProse: mockIsMarkdown,
+  }),
   useUI: () => ({
     isZenMode: false,
     aiStatus: null,

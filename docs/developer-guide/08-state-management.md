@@ -217,6 +217,10 @@ Writing sprint tracker:
 | `stopSprint(fileId)` | Stop and save sprint |
 | `getHistory()` | Return sprint history |
 
+## Subscription boundaries
+
+`FileContext` remains the compatibility API for file workflows. Components that need one frequently changing slice should use the narrower subscriptions from `FileSubscriptions.tsx`: `useDocumentText`, `useParsedScreenplay`, `usePageBreaks`, `useWorkspaceMetadata`, `useFileActions`, or `useFileSaveStatus`. Keep screenplay contents out of tab metadata so typing does not refresh navigation and action-only consumers. `EditorContext` and `ScriptEditorContext` keep stable action references while reading the latest document data.
+
 ## Data Persistence
 
 | Data | Storage | Mechanism |

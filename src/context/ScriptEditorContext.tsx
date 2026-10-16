@@ -1,6 +1,6 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useMemo, useRef } from "react";
 import { useEditor } from "./EditorContext";
-import { useFile } from "./FileContext";
+import { useFileActions, useParsedScreenplay } from "./FileSubscriptions";
 import { ParsedLine, LineType } from "../parser";
 import { logger } from "../utils/logger";
 
@@ -22,7 +22,8 @@ export const useScriptEditor = () => {
 
 export const ScriptEditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { editorView, scrollToLine } = useEditor();
-  const { parsedDoc, setRawText } = useFile();
+  const parsedDoc = useParsedScreenplay();
+  const { setRawText } = useFileActions();
 
   const updateDocumentText = (newFullText: string) => {
     if (editorView) {
@@ -173,16 +174,18 @@ export const ScriptEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     updateDocumentText(serialized);
   };
 
+  const actionsRef = useRef({ scrollToScene, reorderScenes, autoAddSceneNumbers, clearSceneNumbers, replaceSceneText });
+  actionsRef.current = { scrollToScene, reorderScenes, autoAddSceneNumbers, clearSceneNumbers, replaceSceneText };
+  const value = useMemo<ScriptEditorContextProps>(() => ({
+    scrollToScene: direction => actionsRef.current.scrollToScene(direction),
+    reorderScenes: (start, end) => actionsRef.current.reorderScenes(start, end),
+    autoAddSceneNumbers: () => actionsRef.current.autoAddSceneNumbers(),
+    clearSceneNumbers: () => actionsRef.current.clearSceneNumbers(),
+    replaceSceneText: (sceneNumber, text) => actionsRef.current.replaceSceneText(sceneNumber, text),
+  }), []);
+
   return (
-    <ScriptEditorContext.Provider
-      value={{
-        scrollToScene,
-        reorderScenes,
-        autoAddSceneNumbers,
-        clearSceneNumbers,
-        replaceSceneText,
-      }}
-    >
+    <ScriptEditorContext.Provider value={value}>
       {children}
     </ScriptEditorContext.Provider>
   );

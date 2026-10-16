@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { useUI, useFile, useTheme } from "../../context";
+import { useUI, useWorkspaceMetadata, useTheme } from "../../context";
 import { PILL_RADIUS } from "../../constants";
 import { themes, THEME_CATEGORIES, ADAPTIVE_THEME_META } from "../../theme";
 import Box from "@mui/material/Box";
@@ -19,7 +19,6 @@ import {
   GarageIcon, MoreHorizIcon,
 } from "../Icons";
 import { ThemeLogo } from "../ThemeLogo";
-import { isProseScript } from "../../utils/scriptMode";
 
 interface ActivityBarProps {
   activeTab: string;
@@ -44,10 +43,8 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     setActiveRightPane,
   } = useUI();
   const { theme, setTheme, customThemes } = useTheme();
-  const { filePath, files, activeFileId } = useFile();
+  const { filePath, hasNoScripts, isProse } = useWorkspaceMetadata();
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
-  const activeFile = files.find(f => f.id === activeFileId);
-  const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const toggleSection = useCallback((key: string) => {
@@ -70,8 +67,6 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   };
 
 
-  const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
-  const isProse = isProseScript(activeScript, activeFile?.filePath);
 
   const allTabs = [
     { id: "outline", icon: <ViewAgendaIcon sx={{ fontSize: 20 }} />, title: "Outline" },

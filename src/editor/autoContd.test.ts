@@ -147,4 +147,29 @@ describe("autoContdField", () => {
       state = tr.state;
     }).not.toThrow();
   });
+
+  it("keeps incremental cue decorations in sync with a full rebuild after edits", () => {
+    const original = ["JOHN", "Hello.", "", "JOHN", "Again.", "", "MARY", "Hi.", "", "JOHN", "More."].join("\n");
+    let state = createEditor(original);
+    const edits = [
+      { from: 0, to: 4, insert: "MARY" },
+      { from: state.doc.length, insert: "\n\nJOHN\nLast line." },
+      { from: 0, to: state.doc.length, insert: "JOHN\nOne.\n\nJOHN\nTwo." },
+    ];
+    for (const edit of edits) {
+      state = state.update({ changes: edit }).state;
+      const rebuilt = createEditor(state.doc.toString(), state.selection.main.head);
+      expect(getDecorationPositions(state)).toEqual(getDecorationPositions(rebuilt));
+    }
+  });
+
+  it("updates only the active-line decoration when moving the cursor", () => {
+    const text = "JOHN\nHello.\n\nJOHN\nAgain.\n\nMARY\nHi.";
+    let state = createEditor(text);
+    expect(getDecorationPositions(state)).toEqual([state.doc.line(4).to]);
+    state = state.update({ selection: { anchor: state.doc.line(4).from } }).state;
+    expect(getDecorationPositions(state)).toEqual([]);
+    state = state.update({ selection: { anchor: state.doc.line(7).from } }).state;
+    expect(getDecorationPositions(state)).toEqual([state.doc.line(4).to]);
+  });
 });

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@mui/material";
-import { AppProviders, useFile, useUI, useEditor, useScriptEditor, SprintProvider, useCustomModal } from "./context";
+import { AppProviders, useFileActions, useWorkspaceMetadata, useParsedScreenplay, useUI, useEditor, useScriptEditor, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
 import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialsWindow, AiModelPalette } from "./components";
 import { logger } from "./utils/logger";
@@ -18,7 +18,9 @@ const modalParam = params.get("modal");
 const isModalWindow = modalParam === "settings" || modalParam === "help" || modalParam === "theme-manager" || modalParam === "xray" || modalParam === "tutorials";
 
 function AppInner() {
-  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, activeFileId, files, openFilePath, parsedDoc, scriptFileName, importAsActoneProject, importScriptFromPath, isBundle } = useFile();
+  const { newFile, openFile, saveFile, saveFileAs, closeFile, selectFile, openFilePath, importAsActoneProject, importScriptFromPath, updateSettings } = useFileActions();
+  const { activeFileId, files, scriptFileName, isBundle, hasNoScripts } = useWorkspaceMetadata();
+  const parsedDoc = useParsedScreenplay();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTutorialsModal, setShowTutorialsModal] = useState(false);
   const { confirm } = useCustomModal();
@@ -295,9 +297,7 @@ function AppInner() {
       }
 
       // If on the Landing Pad (project has 0 scripts), dropping ANYWHERE into the window adds it to the current project!
-      const currentActiveFile = files.find((f) => f.id === activeFileId);
-      const isProjectEmpty = currentActiveFile?.scripts && currentActiveFile.scripts.length === 0;
-      if (isProjectEmpty) {
+      if (hasNoScripts) {
         isProjectPane = true;
       }
 
@@ -309,7 +309,7 @@ function AppInner() {
         paths.forEach((p) => openFilePath(p));
       }
     }
-  }, [isStandalone, isBundle, files, activeFileId, activeTab, importScriptFromPath, openFilePath, setActiveTab, setIsSidebarOpen]);
+  }, [isStandalone, isBundle, hasNoScripts, files, activeFileId, activeTab, importScriptFromPath, openFilePath, setActiveTab, setIsSidebarOpen]);
 
   useNativeAppBehavior(handleDropFiles, handleDragStateChange);
 
@@ -322,7 +322,7 @@ function AppInner() {
   } = useModals();
   const [isModelPaletteOpen, setIsModelPaletteOpen] = useState(false);
 
-  const { editorView, updateSettings } = useEditor();
+  const { editorView } = useEditor();
   const { scrollToScene } = useScriptEditor();
 
   const modalWindows = useModalWindows();

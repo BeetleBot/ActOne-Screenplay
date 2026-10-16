@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
-import { ExportModal } from './ExportModal';
-import { StructureImportModal } from './StructureImportModal';
+import React, { lazy, Suspense, useState } from 'react';
+const ExportModal = lazy(() => import('./ExportModal').then(module => ({ default: module.ExportModal })));
+const StructureImportModal = lazy(() => import('./StructureImportModal').then(module => ({ default: module.StructureImportModal })));
 import { CommandPalette } from './CommandPalette';
-import { TitlePageEditorModal } from './TitlePageEditorModal';
-import { AboutModal } from './AboutModal';
-import { BugReportModal } from './BugReportModal';
-import { QuickGuideModal } from './QuickGuideModal';
-import { FixFormattingModal } from './FixFormattingModal';
+const TitlePageEditorModal = lazy(() => import('./TitlePageEditorModal').then(module => ({ default: module.TitlePageEditorModal })));
+const AboutModal = lazy(() => import('./AboutModal').then(module => ({ default: module.AboutModal })));
+const BugReportModal = lazy(() => import('./BugReportModal').then(module => ({ default: module.BugReportModal })));
+const QuickGuideModal = lazy(() => import('./QuickGuideModal').then(module => ({ default: module.QuickGuideModal })));
+const FixFormattingModal = lazy(() => import('./FixFormattingModal').then(module => ({ default: module.FixFormattingModal })));
 import { ErrorBoundary } from './ErrorBoundary';
 import { TranslateDocumentModal } from './TranslateDocumentModal';
 import { SceneJumpPalette } from './SceneJumpPalette';
+import { flushPendingEditorEdits } from '../editor/pendingEdits';
 import type { FixFormattingReport } from '../utils/fixFormatting';
 
 export interface ModalManagerProps {
@@ -76,12 +77,13 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   const [fixFormattingReport, setFixFormattingReport] = useState<FixFormattingReport | null>(null);
 
   return (
-    <>
+    <Suspense fallback={<div role="status" style={{ padding: 16 }}>Loading…</div>}>
       <ErrorBoundary name="command-palette">
         <CommandPalette
           isOpen={isPaletteOpen}
           onClose={() => setIsPaletteOpen(false)}
           onExportPDF={() => {
+            flushPendingEditorEdits();
             setShowExportModal(true);
           }}
           toggleSidebar={toggleSidebar}
@@ -135,6 +137,6 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       <ErrorBoundary name="translation-progress-modal">
         <TranslateDocumentModal />
       </ErrorBoundary>
-    </>
+    </Suspense>
   );
 };

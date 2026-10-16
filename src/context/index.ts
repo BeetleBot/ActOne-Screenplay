@@ -24,3 +24,5 @@ export type { ExportFormat, PaperSize, ElementFormat, ElementFormats, ExportSett
 export { SearchProvider, useSearch } from './SearchContext';
 export type { SearchMatch, SearchOptions, SearchContextProps } from './SearchContext';
 
+
+export { useFileActions, useWorkspaceMetadata, useDocumentText, useParsedScreenplay, usePageBreaks, useFileSaveStatus } from './FileSubscriptions';

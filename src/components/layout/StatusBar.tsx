@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useFile, useUI, useSprint } from "../../context";
+import { useWorkspaceMetadata, useParsedScreenplay, useDocumentText, usePageBreaks, useFileSaveStatus, useFileActions, useUI, useSprint } from "../../context";
 import { LineType, parseSceneHeading } from "../../parser";
 import { countWords } from "../../utils/text";
 import { Box, Typography, Menu, MenuItem, ListItemText, InputBase, Divider } from "@mui/material";
@@ -9,10 +9,15 @@ import { useEditor, useCursor } from "../../context";
 import { DownloadIcon, CheckIcon, ViewAgendaIcon, KeyboardArrowDownIcon } from "../Icons";
 import { useStoreUpdateCheck } from "../../hooks";
 import { useModalWindows } from "../../hooks/useModalWindows";
-import { isProseScript } from "../../utils/scriptMode";
 
 export const StatusBar = React.memo(() => {
-  const { rawText, parsedDoc, isBundle, scripts, activeScriptIndex, filePath, activeScriptName, setActiveScript, activeFileId, saveStatus, files } = useFile();
+  const rawText = useDocumentText();
+  const parsedScreenplay = useParsedScreenplay();
+  const pageBreaks = usePageBreaks();
+  const parsedDoc = useMemo(() => ({ ...parsedScreenplay, pageBreaks }), [parsedScreenplay, pageBreaks]);
+  const { isBundle, scripts, activeScriptIndex, filePath, activeScriptName, activeFileId, hasNoScripts, isProse: isMarkdown } = useWorkspaceMetadata();
+  const { setActiveScript } = useFileActions();
+  const saveStatus = useFileSaveStatus();
   const {
     isZenMode, aiStatus, translationState, setTranslationState, cancelTranslation,
     spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage,
@@ -21,9 +26,6 @@ export const StatusBar = React.memo(() => {
     timelineShowSceneNumbers, setTimelineShowSceneNumbers,
     timelineShowSceneColors, setTimelineShowSceneColors,
   } = useUI();
-  const activeFile = files.find(f => f.id === activeFileId);
-  const isMarkdown = isProseScript(scripts[activeScriptIndex], filePath);
-  const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
   const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
@@ -520,7 +522,7 @@ export const StatusBar = React.memo(() => {
             slotProps={{ paper: { sx: { maxHeight: 200, width: 220 } } }}
           >
             {scripts.map((script, idx) => {
-              const ext = isProseScript(script) ? "md" : "fountain";
+              const ext = script.type === "markdown" || script.fileName.toLowerCase().endsWith(".md") ? "md" : "fountain";
               const displayName = script.fileName?.split("/").pop() || `${script.name}.${ext}`;
               return (
                 <MenuItem 

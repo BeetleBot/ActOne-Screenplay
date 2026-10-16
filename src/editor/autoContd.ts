@@ -1,4 +1,4 @@
-import { StateField, StateEffect, RangeSetBuilder } from "@codemirror/state";
+import { StateField, StateEffect, RangeSetBuilder, type EditorState, type Transaction } from "@codemirror/state";
 import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/view";
 import { lineTypesField, LINE_CHARACTER, LINE_DUAL_CHARACTER } from "./fountainSyntax";
 
@@ -44,76 +44,124 @@ function hasContdExtension(lineText: string): boolean {
   return lineText.toUpperCase().includes(CONTD_EXTENSION);
 }
 
-function buildAutoContdDecorations(state: import("@codemirror/state").EditorState, enabled: boolean): DecorationSet {
-  if (!enabled) return Decoration.none;
-
-  const lineTypes = state.field(lineTypesField);
-  const doc = state.doc;
-  const head = state.selection ? state.selection.main.head : -1;
-  const activeLineNum = head >= 0 && head <= doc.length ? doc.lineAt(head).number : -1;
-  const builder = new RangeSetBuilder<Decoration>();
-  let lastSpeakingCharacter = "";
-
-  for (let i = 1; i <= doc.lines; i++) {
-    const type = lineTypes[i - 1];
-    if (type !== LINE_CHARACTER && type !== LINE_DUAL_CHARACTER) continue;
-
-    const line = doc.line(i);
-    const baseName = extractBaseName(line.text, type);
-
-    if (
-      baseName === lastSpeakingCharacter &&
-      baseName !== "" &&
-      i !== activeLineNum &&
-      !hasContdExtension(line.text)
-    ) {
-      builder.add(line.to, line.to, contdWidget);
-    }
-
-    lastSpeakingCharacter = baseName;
-  }
-
-  return builder.finish();
+interface CharacterCue {
+  from: number;
+  to: number;
+  name: string;
+  explicit: boolean;
 }
 
-export const autoContdField = StateField.define<{ decorations: DecorationSet; enabled: boolean }>({
+interface AutoContdState {
+  cues: CharacterCue[];
+  candidates: DecorationSet;
+  decorations: DecorationSet;
+  enabled: boolean;
+  activeLine: number;
+}
+
+function collectCues(state: EditorState, first: number, last: number): CharacterCue[] {
+  const types = state.field(lineTypesField);
+  const cues: CharacterCue[] = [];
+  for (let number = first; number <= last; number++) {
+    const type = types[number - 1];
+    if (type !== LINE_CHARACTER && type !== LINE_DUAL_CHARACTER) continue;
+    const line = state.doc.line(number);
+    cues.push({ from: line.from, to: line.to, name: extractBaseName(line.text, type), explicit: hasContdExtension(line.text) });
+  }
+  return cues;
+}
+
+function eligible(cues: CharacterCue[], index: number): boolean {
+  const cue = cues[index];
+  return index > 0 && cue.name !== "" && cue.name === cues[index - 1].name && !cue.explicit;
+}
+
+function lowerBound(cues: CharacterCue[], position: number): number {
+  let low = 0;
+  let high = cues.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (cues[middle].from < position) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+function visibleCandidates(candidates: DecorationSet, state: EditorState, enabled: boolean): DecorationSet {
+  if (!enabled) return Decoration.none;
+  const line = state.doc.lineAt(state.selection.main.head);
+  return candidates.update({ filterFrom: line.from, filterTo: line.to, filter: from => from !== line.to });
+}
+
+function updateCues(value: AutoContdState, tr: Transaction): Pick<AutoContdState, "cues" | "candidates"> {
+  const doc = tr.state.doc;
+  let first = doc.lines;
+  let last = 1;
+  let changedRanges = 0;
+  tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
+    changedRanges++;
+    first = Math.min(first, doc.lineAt(fromB).number);
+    last = Math.max(last, doc.lineAt(toB).number);
+  });
+  if (changedRanges > 1 || doc.lines < 3) {
+    const cues = collectCues(tr.state, 1, doc.lines);
+    const builder = new RangeSetBuilder<Decoration>();
+    cues.forEach((cue, index) => { if (eligible(cues, index)) builder.add(cue.to, cue.to, contdWidget); });
+    return { cues, candidates: builder.finish() };
+  }
+  first = Math.max(1, first - 1);
+  const delta = doc.lines - tr.startState.doc.lines;
+  const types = tr.state.field(lineTypesField);
+  const oldTypes = tr.startState.field(lineTypesField);
+  // Match the classifier's forward propagation, including a stable following line.
+  last = Math.min(doc.lines, last + 1);
+  while (last < doc.lines && types[last - 1] !== oldTypes[last - 1 - delta]) last++;
+  const from = doc.line(first).from;
+  const to = doc.line(last).to;
+  const mapped = value.cues.map(cue => ({ ...cue,
+    from: tr.changes.mapPos(cue.from, 1), to: tr.changes.mapPos(cue.to, 1),
+  }));
+  const start = lowerBound(mapped, from);
+  const end = lowerBound(mapped, to + 1);
+  const replacement = collectCues(tr.state, first, last);
+  const cues = [...mapped.slice(0, start), ...replacement, ...mapped.slice(end)];
+  // Only changed cues and their immediate successor can change speaker continuity.
+  const successor = start + replacement.length;
+  const filterTo = cues[successor]?.to ?? to;
+  const additions = [];
+  for (let index = start; index <= successor && index < cues.length; index++) {
+    if (eligible(cues, index)) additions.push(contdWidget.range(cues[index].to));
+  }
+  const candidates = value.candidates.map(tr.changes).update({
+    filterFrom: from, filterTo,
+    filter: position => position < from || position > filterTo,
+    add: additions,
+    sort: true,
+  });
+  return { cues, candidates };
+}
+
+export const autoContdField = StateField.define<AutoContdState>({
   create(state) {
+    const cues = collectCues(state, 1, state.doc.lines);
+    const builder = new RangeSetBuilder<Decoration>();
+    cues.forEach((cue, index) => { if (eligible(cues, index)) builder.add(cue.to, cue.to, contdWidget); });
+    const candidates = builder.finish();
     return {
-      decorations: buildAutoContdDecorations(state, true),
-      enabled: true,
+      cues, candidates, enabled: true,
+      activeLine: state.doc.lineAt(state.selection.main.head).number,
+      decorations: visibleCandidates(candidates, state, true),
     };
   },
   update(value, tr) {
     let enabled = value.enabled;
-    let effectFired = false;
-
     for (const effect of tr.effects) {
-      if (effect.is(updateAutoContdEffect)) {
-        enabled = effect.value;
-        effectFired = true;
-      }
+      if (effect.is(updateAutoContdEffect)) enabled = effect.value;
     }
-
-    const curHead = tr.state.selection ? tr.state.selection.main.head : -1;
-    const prevHead = tr.startState.selection ? tr.startState.selection.main.head : -1;
-    const currentLineNum =
-      curHead >= 0 && curHead <= tr.state.doc.length
-        ? tr.state.doc.lineAt(curHead).number
-        : -1;
-    const prevLineNum =
-      prevHead >= 0 && prevHead <= tr.startState.doc.length
-        ? tr.startState.doc.lineAt(prevHead).number
-        : -1;
-    const selectionMoved = Boolean(tr.selection) && currentLineNum !== prevLineNum;
-
-    if (tr.docChanged || effectFired || selectionMoved) {
-      return {
-        decorations: buildAutoContdDecorations(tr.state, enabled),
-        enabled,
-      };
-    }
-
-    return value;
+    const activeLine = tr.state.doc.lineAt(tr.state.selection.main.head).number;
+    if (!tr.docChanged && enabled === value.enabled && activeLine === value.activeLine) return value;
+    const { cues, candidates } = tr.docChanged ? updateCues(value, tr) : value;
+    return { cues, candidates, enabled, activeLine, decorations: visibleCandidates(candidates, tr.state, enabled) };
   },
-  provide: (f) => EditorView.decorations.from(f, (val) => val.decorations),
+  provide: field => EditorView.decorations.from(field, value => value.decorations),
 });

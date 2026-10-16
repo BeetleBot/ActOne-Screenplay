@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useRef, useCallback, useMemo } from "react";
 import { EditorView } from "@codemirror/view";
-import { useFile, type SettingsUpdater } from "./FileContext";
+import type { SettingsUpdater } from "./FileContext";
+import { useFileActions, useParsedScreenplay } from "./FileSubscriptions";
 import { logger } from "../utils/logger";
 
 export interface EditorContextProps {
@@ -20,52 +21,57 @@ export const useEditor = () => {
 };
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { parsedDoc, setRawText, updateSettings } = useFile();
+  const parsedDoc = useParsedScreenplay();
+  const { setRawText, updateSettings } = useFileActions();
   const [editorView, setEditorViewState] = useState<EditorView | null>(null);
+  const editorViewRef = useRef(editorView);
+  editorViewRef.current = editorView;
+  const parsedDocRef = useRef(parsedDoc);
+  parsedDocRef.current = parsedDoc;
+  const setRawTextRef = useRef(setRawText);
+  setRawTextRef.current = setRawText;
 
-  const setEditorView = (view: EditorView | null) => {
+  const setEditorView = useCallback((view: EditorView | null) => {
     setEditorViewState(view);
-  };
+  }, []);
 
-  const scrollToLine = (lineIndex: number, noFocus?: boolean) => {
-    if (!editorView) return;
+  const scrollToLine = useCallback((lineIndex: number, noFocus?: boolean) => {
+    const view = editorViewRef.current;
+    if (!view) return;
     try {
-      const line = editorView.state.doc.line(lineIndex + 1);
-      editorView.dispatch({
+      const line = view.state.doc.line(lineIndex + 1);
+      view.dispatch({
         selection: { anchor: line.from },
         effects: EditorView.scrollIntoView(line.from, { y: "center" }),
       });
-      if (!noFocus) editorView.focus();
+      if (!noFocus) view.focus();
     } catch (e) {
       logger.warn("editor", `scrollToLine(${lineIndex}) failed`, e);
     }
-  };
+  }, []);
 
-  const updateLineText = (lineIndex: number, newText: string) => {
-    if (lineIndex < 0 || lineIndex >= parsedDoc.lines.length) return;
-    if (editorView) {
-      const line = editorView.state.doc.line(lineIndex + 1);
-      editorView.dispatch({
+  const updateLineText = useCallback((lineIndex: number, newText: string) => {
+    const view = editorViewRef.current;
+    if (lineIndex < 0 || lineIndex >= parsedDocRef.current.lines.length) return;
+    if (view) {
+      const line = view.state.doc.line(lineIndex + 1);
+      view.dispatch({
         changes: { from: line.from, to: line.to, insert: newText },
       });
     } else {
-      const updatedLines = parsedDoc.lines.map((line, i) =>
+      const updatedLines = parsedDocRef.current.lines.map((line, i) =>
         i === lineIndex ? { ...line, text: newText } : line
       );
-      setRawText(updatedLines.map((l) => l.text).join("\n"));
+      setRawTextRef.current(updatedLines.map((l) => l.text).join("\n"));
     }
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    editorView, updateLineText, updateSettings, setEditorView, scrollToLine,
+  }), [editorView, updateLineText, updateSettings, setEditorView, scrollToLine]);
 
   return (
-    <EditorContext.Provider
-      value={{
-        editorView,
-        updateLineText,
-        updateSettings,
-        setEditorView,
-        scrollToLine,
-      }}
-    >
+    <EditorContext.Provider value={value}>
       {children}
     </EditorContext.Provider>
   );

@@ -14,9 +14,18 @@ import { logger } from "../utils/logger";
 import { setScriptReportContext } from "../utils/errorReport";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
+import { FileSubscriptions } from "./FileSubscriptions";
+import { acknowledgeSavedFile } from "../utils/savedFile";
+import { flushPendingEditorEdits } from "../editor/pendingEdits";
+import { useDocumentPagination, equalPageBreaks } from "../hooks/useDocumentPagination";
 
 
 export type SettingsUpdater = (prev: Record<string, unknown>) => Record<string, unknown>;
+
+export interface DocumentTarget {
+  fileId: string;
+  scriptIndex: number;
+}
 
 export interface ScreenplayFile {
   id: string;
@@ -43,7 +52,7 @@ export interface FileContextProps {
   isSaving: boolean;
   rawText: string;
   parsedDoc: FountainDocument;
-  setRawText: (text: string) => void;
+  setRawText: (text: string, target?: DocumentTarget) => void;
   openFile: () => Promise<void>;
   saveFile: () => Promise<void>;
   saveFileAs: (targetFileId?: string, suggestedName?: string) => Promise<string | null>;
@@ -100,7 +109,7 @@ const getUniqueName = (base: string, existing: ScriptInfo[]): string => {
 };
 
 export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { paperSize, fontFamily } = useUI();
+  const { paperSize, fontFamily, autoContdEnabled } = useUI();
   const { confirm, prompt } = useCustomModal();
 
   const showPdfNotice = useCallback(() => {
@@ -233,7 +242,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   const selectFile = (id: string) => {
-    const file = files.find(f => f.id === id);
+    flushPendingEditorEdits();
+    const file = filesRef.current.find(f => f.id === id);
     if (!file) return;
     if (parseTimeoutRef.current !== null) {
       clearTimeout(parseTimeoutRef.current);
@@ -249,9 +259,24 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const scrIdx = file.activeScriptIndex ?? 0;
     setActiveScriptIndexState(scrIdx);
     activeScriptIndexRef.current = scrIdx;
+    if (file.parsedDoc.screenplayText !== file.rawText) {
+      const seqKey = `${file.id}:${scrIdx}`;
+      const seq = (fileUpdateSeqRef.current[seqKey] ?? 0) + 1;
+      fileUpdateSeqRef.current[seqKey] = seq;
+      void parseScreenplayAsync(file.rawText, paperSize, seqKey).then(doc => {
+        if (!doc || fileUpdateSeqRef.current[seqKey] !== seq) return;
+        setFiles(prev => prev.map(current => current.id === file.id && current.rawText === file.rawText
+          ? { ...current, parsedDoc: { ...doc, settings: current.parsedDoc.settings } }
+          : current));
+        if (activeFileIdRef.current === file.id && activeScriptIndexRef.current === scrIdx) {
+          setParsedDoc(prev => prev.screenplayText === file.rawText ? prev : { ...doc, settings: prev.settings });
+        }
+      });
+    }
   };
 
   const newFile = (initialContent: string = "") => {
+    flushPendingEditorEdits();
     const newId = generateUUID();
     const scriptName = "Untitled";
     const scripts: ScriptInfo[] = initialContent ? [{
@@ -284,7 +309,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const closeFile = async (id: string, force?: boolean) => {
-    const fileToClose = files.find(f => f.id === id);
+    flushPendingEditorEdits();
+    const fileToClose = filesRef.current.find(f => f.id === id);
     if (!fileToClose) return;
 
     if (fileToClose.isDirty && !force) {
@@ -304,7 +330,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const index = files.findIndex(f => f.id === id);
-    const newFiles = files.filter(f => f.id !== id);
+    const newFiles = filesRef.current.filter(f => f.id !== id);
 
     if (newFiles.length === 0) {
       setFiles([]);
@@ -325,7 +351,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const closeOthers = async (id: string) => {
-    const dirtyOthers = files.filter(f => f.id !== id && f.isDirty);
+    flushPendingEditorEdits();
+    const dirtyOthers = filesRef.current.filter(f => f.id !== id && f.isDirty);
     for (const f of dirtyOthers) {
       const confirmClose = await confirm({
         title: "Unsaved Changes",
@@ -341,7 +368,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await saveFile(f.id);
       }
     }
-    const fileToKeep = files.find(f => f.id === id);
+    const fileToKeep = filesRef.current.find(f => f.id === id);
     if (fileToKeep) {
       setFiles([fileToKeep]);
       selectFile(id);
@@ -349,7 +376,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const closeAll = async () => {
-    const dirtyFiles = files.filter(f => f.isDirty);
+    flushPendingEditorEdits();
+    const dirtyFiles = filesRef.current.filter(f => f.isDirty);
     for (const f of dirtyFiles) {
       const confirmClose = await confirm({
         title: "Unsaved Changes",
@@ -384,16 +412,17 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
-  const setRawText = (text: string) => {
+  const setRawText = (text: string, target?: DocumentTarget) => {
     const normalized = text.replace(/\r\n/g, "\n");
-    setRawTextState(normalized);
-
-    const activeF = filesRef.current.find(f => f.id === activeFileIdRef.current);
-    const activeScr = activeF?.scripts && activeF.activeScriptIndex !== undefined ? activeF.scripts[activeF.activeScriptIndex] : undefined;
+    const targetFileId = target?.fileId ?? activeFileIdRef.current;
+    const activeF = filesRef.current.find(f => f.id === targetFileId);
+    if (!activeF) return;
+    const targetScriptIndex = target?.scriptIndex ?? activeScriptIndexRef.current;
+    const isActive = targetFileId === activeFileIdRef.current && targetScriptIndex === activeScriptIndexRef.current;
+    if (isActive) setRawTextState(normalized);
+    const activeScr = activeF.scripts?.[targetScriptIndex];
     const isProse = isProseScript(activeScr, activeF?.filePath);
 
-    const targetFileId = activeFileIdRef.current;
-    const targetScriptIndex = activeFileIdRef.current === activeFileId ? (activeScriptIndexRef.current ?? 0) : (activeF?.activeScriptIndex ?? 0);
     const seqKey = `${targetFileId}:${targetScriptIndex}`;
     const seq = (fileUpdateSeqRef.current[seqKey] ?? 0) + 1;
     fileUpdateSeqRef.current[seqKey] = seq;
@@ -412,7 +441,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         return {
           ...f,
-          rawText: normalized,
+          rawText: (f.activeScriptIndex ?? 0) === targetScriptIndex ? normalized : f.rawText,
           isDirty,
           scripts: updatedScripts,
         };
@@ -433,7 +462,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         return {
           ...f,
-          rawText: normalized,
+          rawText: (f.activeScriptIndex ?? 0) === targetScriptIndex ? normalized : f.rawText,
           isDirty,
           scripts: updatedScripts,
         };
@@ -448,12 +477,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       parseTimeoutRef.current = null;
       const doc = isProse 
         ? createProseDocument(normalized, activeF?.parsedDoc.settings)
-        : await parseScreenplayAsync(normalized, paperSize);
+        : await parseScreenplayAsync(normalized, paperSize, seqKey);
 
-      if (fileUpdateSeqRef.current[seqKey] !== seq) return;
+      if (!doc || fileUpdateSeqRef.current[seqKey] !== seq) return;
 
       setFiles(prev => prev.map(f => {
-        if (f.id === targetFileId) {
+        if (f.id === targetFileId && (f.activeScriptIndex ?? 0) === targetScriptIndex) {
           const isStale = (f.scripts && f.scripts.length > 0)
             ? f.scripts[targetScriptIndex]?.content !== normalized
             : f.rawText !== normalized;
@@ -496,9 +525,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const doc = isProse
       ? createProseDocument(normalized, targetFile?.parsedDoc.settings)
-      : await parseScreenplayAsync(normalized, paperSize);
+      : await parseScreenplayAsync(normalized, paperSize, seqKey);
 
-    if (fileUpdateSeqRef.current[seqKey] !== seq) return;
+    if (!doc || fileUpdateSeqRef.current[seqKey] !== seq) return;
 
     setFiles(prev => prev.map(f => {
       if (f.id === fileId) {
@@ -602,81 +631,33 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }, []); // run once on mount
 
-  useEffect(() => {
-    if (!isTauri) return;
-    const curFile = files.find(f => f.id === activeFileId);
-    const curScript = curFile?.scripts && curFile.activeScriptIndex !== undefined ? curFile.scripts[curFile.activeScriptIndex] : undefined;
-    if (isProseScript(curScript, curFile?.filePath)) return;
-
-    const handler = setTimeout(async () => {
-      try {
-        const revisedLines: boolean[] = [];
-
-        const breaks = await invoke<number[]>("get_page_breaks", {
-          fountainText: rawText,
-          paperSize,
-          fontFamily,
-          elementFormats: JSON.stringify(parsedDoc.settings?.elementFormats || {}),
-          mirrorSceneNumbers: "off",
-          exportSections: false,
-          exportSynopses: false,
-          exportTitlePage: true,
-          autoContd: localStorage.getItem(STORAGE_KEYS.AUTO_CONTD_ENABLED) !== "false",
-          revisedLines,
-          scriptFonts: JSON.stringify(parsedDoc.settings?.scriptFonts || {}),
+  const paginationScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
+  useDocumentPagination({
+    fileId: activeFileId,
+    scriptIndex: activeScriptIndex,
+    text: rawText,
+    enabled: isTauri && !isProseScript(paginationScript, activeFile?.filePath),
+    paperSize, fontFamily, autoContd: autoContdEnabled,
+    elementFormats: JSON.stringify(parsedDoc.settings?.elementFormats || {}),
+    scriptFonts: JSON.stringify(parsedDoc.settings?.scriptFonts || {}),
+    onResult: (breaks) => {
+      setParsedDoc(prev => prev.screenplayText === rawText && !equalPageBreaks(prev.pageBreaks, breaks)
+        ? { ...prev, pageBreaks: breaks } : prev);
+      setFiles(prev => {
+        let changed = false;
+        const next = prev.map(f => {
+          if (f.id !== activeFileId || (f.activeScriptIndex ?? 0) !== activeScriptIndex ||
+              f.rawText !== rawText || equalPageBreaks(f.parsedDoc.pageBreaks, breaks)) return f;
+          changed = true;
+          return { ...f, parsedDoc: { ...f.parsedDoc, pageBreaks: breaks } };
         });
-
-        if (breaks) {
-          setParsedDoc(prev => {
-            if (prev.screenplayText === rawText) {
-              return { ...prev, pageBreaks: breaks };
-            }
-            return prev;
-          });
-          setFiles(prev => prev.map(f => {
-            if (f.id === activeFileId && f.rawText === rawText) {
-              return { ...f, parsedDoc: { ...f.parsedDoc, pageBreaks: breaks } };
-            }
-            return f;
-          }));
-        }
-      } catch (err) {
-        logger.error("file", "Page break calculation failed", err);
-      }
-    }, 200);
-
-    return () => clearTimeout(handler);
-  }, [rawText, paperSize, fontFamily, activeFileId, isTauri, parsedDoc.settings?.elementFormats, parsedDoc.settings?.scriptFonts, files]);
-
-  useEffect(() => {
-    if (isTauri) return;
-    const curFile = files.find(f => f.id === activeFileId);
-    const curScript = curFile?.scripts && curFile.activeScriptIndex !== undefined ? curFile.scripts[curFile.activeScriptIndex] : undefined;
-    if (isProseScript(curScript, curFile?.filePath)) return;
-
-    const handler = setTimeout(() => {
-      const parsed = parseScreenplay(rawText, paperSize);
-      if (parsed.pageBreaks) {
-        setParsedDoc(prev => {
-          if (prev.screenplayText === rawText) {
-            return { ...prev, pageBreaks: parsed.pageBreaks };
-          }
-          return prev;
-        });
-        setFiles(prev => prev.map(f => {
-          if (f.id === activeFileId && f.rawText === rawText) {
-            return { ...f, parsedDoc: { ...f.parsedDoc, pageBreaks: parsed.pageBreaks } };
-          }
-          return f;
-        }));
-      }
-    }, 250);
-
-    return () => clearTimeout(handler);
-  }, [rawText, paperSize, activeFileId, isTauri, files]);
-
+        return changed ? next : prev;
+      });
+    },
+  });
 
   const openFilePath = async (path: string) => {
+    flushPendingEditorEdits();
     const isActone = isActonePath(path);
     const normalizedPath = isActone && path.toLowerCase().endsWith(".actone") ? path.replace(/\.actone$/i, ".actone") : path;
     const existing = files.find(f => f.filePath?.toLowerCase() === normalizedPath.toLowerCase());
@@ -1028,6 +1009,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveFile = async (targetFileId?: string) => {
+    flushPendingEditorEdits();
     const currentId = targetFileId || activeFileIdRef.current || activeFileId;
     const currentActive = filesRef.current.find(f => f.id === currentId) || files.find(f => f.id === currentId);
     if (!currentActive) return;
@@ -1065,10 +1047,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           await saveActoneFile(normalizedPath, updatedScripts, currentActive.parsedDoc.settings);
           setFiles(prev => prev.map(f => f.id === currentId ? {
-            ...f,
-            isDirty: false,
-            savedText: f.rawText,
-            scripts: updatedScripts,
+            ...acknowledgeSavedFile(f, currentActive, updatedScripts),
             filePath: normalizedPath,
           } : f));
           if (isCurrentActiveTab) {
@@ -1098,10 +1077,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link.click();
           URL.revokeObjectURL(url);
           setFiles(prev => prev.map(f => f.id === currentId ? {
-            ...f,
-            isDirty: false,
-            savedText: f.rawText,
-            scripts: updatedScripts,
+            ...acknowledgeSavedFile(f, currentActive, updatedScripts),
             filePath: normalizedPath,
           } : f));
           if (isCurrentActiveTab) triggerSaveStatusSaved();
@@ -1121,7 +1097,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: true } : f));
         try {
           await invoke("save_file_content", { path: currentActive.filePath, content: cleanTextToSave });
-          setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isDirty: false, savedText: f.rawText } : f));
+          setFiles(prev => prev.map(f => f.id === currentId ? acknowledgeSavedFile(f, currentActive) : f));
           if (isCurrentActiveTab) triggerSaveStatusSaved();
         } catch (e) {
           logger.error("file", "Save file content failed", e);
@@ -1145,7 +1121,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link.download = normalizedPlainPath;
           link.click();
           URL.revokeObjectURL(url);
-          setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isDirty: false, savedText: f.rawText } : f));
+          setFiles(prev => prev.map(f => f.id === currentId ? acknowledgeSavedFile(f, currentActive) : f));
           if (isCurrentActiveTab) triggerSaveStatusSaved();
         } catch (e) {
           logger.error("file", "Save file failed (browser)", e);
@@ -1161,6 +1137,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveFileAs = useCallback(async (targetFileId?: string, suggestedName?: string): Promise<string | null> => {
+    flushPendingEditorEdits();
     const currentId = targetFileId || activeFileIdRef.current || activeFileId;
     const currentActive = filesRef.current.find(f => f.id === currentId) || files.find(f => f.id === currentId);
     if (!currentActive) {
@@ -1197,16 +1174,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await saveActoneFile(normalizedPath, finalScripts, currentActive.parsedDoc.settings);
           }
           setFiles(prev => prev.map(f => f.id === currentId ? {
-            ...f,
+            ...acknowledgeSavedFile(f, currentActive, isActone ? finalScripts : undefined),
             filePath: normalizedPath,
-            isDirty: false,
-            savedText: currentActive.rawText,
-            scripts: isActone ? finalScripts : undefined,
             activeScriptIndex: isActone ? (f.activeScriptIndex ?? 0) : undefined,
           } : f));
-          setFilePath(normalizedPath);
-          setScriptsState(isActone && finalScripts ? finalScripts : []);
-          setActiveScriptIndexState(isActone ? (currentActive.activeScriptIndex ?? 0) : 0);
+          if (activeFileIdRef.current === currentId) {
+            setFilePath(normalizedPath);
+            const latest = filesRef.current.find(f => f.id === currentId) ?? currentActive;
+            setScriptsState(isActone ? acknowledgeSavedFile(latest, currentActive, finalScripts).scripts ?? [] : []);
+            setActiveScriptIndexState(isActone ? (latest.activeScriptIndex ?? 0) : 0);
+          }
           addToRecent(normalizedPath);
           triggerSaveStatusSaved();
           return normalizedPath;
@@ -1266,11 +1243,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             link.click();
             URL.revokeObjectURL(url);
             setFiles(prev => prev.map(f => f.id === currentId ? {
-              ...f,
+              ...acknowledgeSavedFile(f, currentActive, finalScripts),
               filePath: finalName,
-              isDirty: false,
-              savedText: currentActive.rawText,
-              scripts: finalScripts,
               activeScriptIndex: f.activeScriptIndex ?? 0,
             } : f));
             setScriptsState(finalScripts);
@@ -1285,11 +1259,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             link.click();
             URL.revokeObjectURL(url);
             setFiles(prev => prev.map(f => f.id === currentId ? {
-              ...f,
+              ...acknowledgeSavedFile(f, currentActive),
               filePath: finalName,
-              isDirty: false,
-              savedText: currentActive.rawText,
-              scripts: undefined,
               activeScriptIndex: undefined,
             } : f));
             setScriptsState([]);
@@ -1367,11 +1338,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [paperSize, saveFileAs]);
 
   const setActiveScript = useCallback((index: number) => {
-    const file = files.find(f => f.id === activeFileId);
+    flushPendingEditorEdits();
+    const file = filesRef.current.find(f => f.id === activeFileIdRef.current);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return;
 
     const updatedScripts = file.scripts.map((s, i) =>
-      i === (file.activeScriptIndex ?? 0) ? { ...s, content: rawText } : s
+      i === (file.activeScriptIndex ?? 0) ? { ...s, content: file.rawText } : s
     );
     const newScript = updatedScripts[index];
     const isProse = isProseScript(newScript, file.filePath);
@@ -1400,7 +1372,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [files, activeFileId, rawText, paperSize]);
 
   const addScript = useCallback(async (name?: string, forceType?: "fountain" | "markdown", initialContent: string = ""): Promise<string | null> => {
-    const file = files.find(f => f.id === activeFileId);
+    flushPendingEditorEdits();
+    const file = filesRef.current.find(f => f.id === activeFileIdRef.current);
     if (!file || !file.scripts) return null;
 
     const isMarkdown = forceType === "markdown" || (forceType !== "fountain" && (name?.trim().toLowerCase().endsWith(".md") ?? false));
@@ -1418,8 +1391,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const uniqueName = getUniqueName(rawName, file.scripts);
     const fileName = isMarkdown ? `files/${sanitizeFileName(uniqueName)}.md` : `files/${sanitizeFileName(uniqueName)}.fountain`;
     
+    const latestFile = filesRef.current.find(f => f.id === activeFileIdRef.current) ?? file;
     const parsed = isMarkdown
-      ? createProseDocument(initialContent, file.parsedDoc.settings)
+      ? createProseDocument(initialContent, latestFile.parsedDoc.settings)
       : parseScreenplay(initialContent, paperSize);
 
     const newScript: ScriptInfo = {
@@ -1430,8 +1404,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       savedContent: "",
     };
 
-    const updatedScripts = [...file.scripts, newScript];
-    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+    const updatedScripts = [...(latestFile.scripts ?? file.scripts), newScript];
+    setFiles(prev => prev.map(f => f.id === activeFileIdRef.current ? {
       ...f,
       scripts: updatedScripts,
       activeScriptIndex: updatedScripts.length - 1,
@@ -1441,7 +1415,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       parsedDoc: { ...parsed, settings: f.parsedDoc.settings },
     } : f));
 
-    filesRef.current = filesRef.current.map(f => f.id === activeFileId ? {
+    filesRef.current = filesRef.current.map(f => f.id === activeFileIdRef.current ? {
       ...f,
       scripts: updatedScripts,
       activeScriptIndex: updatedScripts.length - 1,
@@ -1458,7 +1432,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setParsedDoc(prev => ({ ...parsed, settings: prev.settings }));
 
     return uniqueName;
-  }, [files, activeFileId, prompt, paperSize]);
+  }, [prompt, paperSize]);
 
   const renameScript = useCallback(async (index: number, newName: string): Promise<boolean> => {
     const file = files.find(f => f.id === activeFileId);
@@ -2033,9 +2007,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const activeScriptName = scriptsState[activeScriptIndex]?.name || "";
   const scriptFileName = scriptsState[activeScriptIndex]?.fileName || "";
 
-  return (
-    <FileContext.Provider
-      value={{
+  const value: FileContextProps = {
         files,
         activeFileId,
         filePath,
@@ -2073,9 +2045,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openSnapshotAsNewProject,
         saveStatus,
         importingScriptName,
-      }}
-    >
-      {children}
+
+  };
+  return (
+    <FileContext.Provider value={value}>
+      <FileSubscriptions value={value}>{children}</FileSubscriptions>
     </FileContext.Provider>
   );
 };

@@ -1,17 +1,18 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
-import { SettingsWindow } from "./components/SettingsWindow";
-import { HelpWindow } from "./components/HelpWindow";
-import { ThemeManagerWindow } from "./components/ThemeManagerWindow";
-import { XrayWindow } from "./components/XrayWindow";
-import { TutorialsWindow } from "./components/TutorialsWindow";
+const App = lazy(() => import("./App"));
+const SettingsWindow = lazy(() => import("./components/SettingsWindow").then(module => ({ default: module.SettingsWindow })));
+const HelpWindow = lazy(() => import("./components/HelpWindow").then(module => ({ default: module.HelpWindow })));
+const ThemeManagerWindow = lazy(() => import("./components/ThemeManagerWindow").then(module => ({ default: module.ThemeManagerWindow })));
+const XrayWindow = lazy(() => import("./components/XrayWindow").then(module => ({ default: module.XrayWindow })));
+const TutorialsWindow = lazy(() => import("./components/TutorialsWindow").then(module => ({ default: module.TutorialsWindow })));
 import "./index.css";
 import { logger } from "./utils/logger";
 import { captureError, flushErrorReports, setSystemDiagnostics, wasJustCaughtByBoundary, isTransientTauriTeardownError } from "./utils/errorReport";
 import { showCrashScreen, readCrashWindowReport, CrashScreen } from "./components/CrashScreen";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { ThemeProvider, UIProvider } from "./context";
+import { ThemeProvider } from "./context/ThemeContext";
+import { UIProvider } from "./context/UIContext";
 import { initSentry } from "./utils/sentry";
 
 initSentry();
@@ -91,6 +92,10 @@ if (modalParam === "crash") {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    {rootElement}
+    <ErrorBoundary fullScreen name="window-loader">
+      <Suspense fallback={<div role="status" style={{ padding: 24 }}>Loading…</div>}>
+        {rootElement}
+      </Suspense>
+    </ErrorBoundary>
   </React.StrictMode>,
 );

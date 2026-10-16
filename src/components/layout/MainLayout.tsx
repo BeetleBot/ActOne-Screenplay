@@ -1,13 +1,12 @@
 import React from "react";
 import Box from "@mui/material/Box";
-import { useUI, useFile } from "../../context";
+import { useUI, useWorkspaceMetadata } from "../../context";
 import { HeaderBar } from "./HeaderBar";
 import { ActivityBar } from "./ActivityBar";
 import { Workspace } from "./Workspace";
 import { StatusBar } from "./StatusBar";
 import { TimelineView } from "../TimelineView";
 import { ErrorBoundary } from "../ErrorBoundary";
-import { isProseScript } from "../../utils/scriptMode";
 
 export interface MainLayoutProps {
   isSidebarOpen: boolean;
@@ -22,12 +21,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onOpenThemeManagerModal,
 }) => {
   const { activeTab, setActiveTab, isZenMode, showTimeline } = useUI();
-  const { files, activeFileId, filePath } = useFile();
-
-  const activeFile = files.find(f => f.id === activeFileId);
-  const hasNoScripts = activeFile?.scripts && activeFile.scripts.length === 0;
-  const activeScript = activeFile && activeFile.scripts && activeFile.activeScriptIndex !== undefined ? activeFile.scripts[activeFile.activeScriptIndex] : null;
-  const isMarkdown = isProseScript(activeScript, filePath || activeFile?.filePath);
+  const { hasNoScripts, isProse: isMarkdown } = useWorkspaceMetadata();
 
   React.useEffect(() => {
     if (hasNoScripts) {

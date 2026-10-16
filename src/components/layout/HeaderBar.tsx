@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useFile, useUI } from "../../context";
+import { useFileActions, useWorkspaceMetadata, useUI } from "../../context";
 import { getTauriWindow } from "../../utils";
 import { alpha } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
@@ -10,7 +10,8 @@ import { logger } from "../../utils/logger";
 import { ContextMenu, type ContextMenuItem } from "../ContextMenu";
 
 export const HeaderBar = React.memo(() => {
-  const { files, activeFileId, selectFile, newFile, closeFile, closeOthers, closeAll } = useFile();
+  const { files, activeFileId } = useWorkspaceMetadata();
+  const { selectFile, newFile, closeFile, closeOthers, closeAll } = useFileActions();
   const { isZenMode } = useUI();
   const [isMaximized, setIsMaximized] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; fileId: string } | null>(null);

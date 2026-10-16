@@ -23,6 +23,8 @@ Located at `src/editor/useCodeMirror.ts` (~720 lines). Returns a `ViewRef` (via 
 - Configures all extensions (static + dynamic via compartments)
 - Links editor state to React contexts (`EditorContext`, `FileContext`)
 - Syncs text changes back to `FileContext.rawText`
+- Keeps the current CodeMirror document pending during the short sync debounce and serializes it once when publishing the change
+- Flushes pending editor changes before saving, switching documents, or closing a document
 - Manages selection tracking
 - Implements smart quotes
 - Handles Tab key for cycling line prefixes

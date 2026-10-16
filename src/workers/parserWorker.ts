@@ -7,17 +7,28 @@ export interface ParseRequestMessage {
   paperSize?: "a4" | "letter";
 }
 
-export interface ParseResponseMessage {
+export interface ParseSuccessMessage {
   id: number;
   type: "parsed";
   doc: FountainDocument;
 }
 
+export interface ParseErrorMessage {
+  id: number;
+  type: "error";
+}
+
+export type ParseResponseMessage = ParseSuccessMessage | ParseErrorMessage;
+
 self.onmessage = (e: MessageEvent<ParseRequestMessage>) => {
   const { id, type, text, paperSize } = e.data;
   if (type === "parse") {
-    const doc = parseScreenplay(text, paperSize);
-    const response: ParseResponseMessage = { id, type: "parsed", doc };
-    self.postMessage(response);
+    try {
+      const doc = parseScreenplay(text, paperSize);
+      const response: ParseResponseMessage = { id, type: "parsed", doc };
+      self.postMessage(response);
+    } catch {
+      self.postMessage({ id, type: "error" } satisfies ParseResponseMessage);
+    }
   }
 };
