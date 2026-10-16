@@ -1,15 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { LineType } from "../parser/FountainParser";
 import type { ParsedLine, FountainDocument } from "../parser/FountainParser";
+import { EditorState } from "@codemirror/state";
+import { lineTypesField } from "../editor/fountainSyntax";
 
 const mockScrollToLine = vi.fn();
 const mockSetSelectedSceneId = vi.fn();
 const mockReorderScenes = vi.fn();
+const { mockCopyToClipboard } = vi.hoisted(() => ({
+  mockCopyToClipboard: vi.fn().mockResolvedValue(true),
+}));
 let mockLines: ParsedLine[] = [];
 let mockRawText = "";
-let mockFiles: any[] = [];
+let mockFiles: unknown[] = [];
+let mockEditorView: { state: EditorState } | null = null;
 
 vi.mock("../context", () => ({
   useFile: () => ({
@@ -20,6 +26,7 @@ vi.mock("../context", () => ({
   }),
   useEditor: () => ({
     scrollToLine: mockScrollToLine,
+    editorView: mockEditorView,
   }),
   useScriptEditor: () => ({
     reorderScenes: mockReorderScenes,
@@ -31,6 +38,8 @@ vi.mock("../context", () => ({
   }),
 }));
 
+vi.mock("../utils", () => ({ copyToClipboard: mockCopyToClipboard }));
+
 import { OutlineView } from "./OutlineView";
 
 beforeEach(() => {
@@ -38,12 +47,31 @@ beforeEach(() => {
   mockLines = [];
   mockRawText = "";
   mockFiles = [];
+  mockEditorView = null;
 });
 
 describe("OutlineView Component", () => {
   it("renders without crashing when empty", () => {
     const { container } = render(React.createElement(OutlineView));
     expect(container).toBeTruthy();
+  });
+
+  it("copies the right-clicked scene from the Scene Navigator", () => {
+    const fountain = "INT. HOUSE - DAY\n\nBOB\nHello.\n\nEXT. STREET - NIGHT\n\nALICE\nHi.";
+    mockRawText = fountain;
+    mockLines = [
+      { id: "sc1", text: "INT. HOUSE - DAY", type: LineType.heading, isOutlineElement: true } as ParsedLine,
+      { id: "sc2", text: "EXT. STREET - NIGHT", type: LineType.heading, isOutlineElement: true } as ParsedLine,
+    ];
+    mockEditorView = {
+      state: EditorState.create({ doc: fountain, extensions: [lineTypesField] }),
+    };
+
+    render(React.createElement(OutlineView));
+    fireEvent.contextMenu(screen.getByText("INT. HOUSE - DAY"), { clientX: 20, clientY: 30 });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Copy Scene" }));
+
+    expect(mockCopyToClipboard).toHaveBeenCalledWith("INT. HOUSE - DAY\n\nBOB\nHello.\n\n");
   });
 
   it("renders sections and scenes in the tree", () => {

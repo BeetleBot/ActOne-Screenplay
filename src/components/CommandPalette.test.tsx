@@ -2,9 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 
+const { editorViewRef, copySceneMock } = vi.hoisted(() => ({
+  editorViewRef: { current: null as { state: import("@codemirror/state").EditorState } | null },
+  copySceneMock: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock("../context", () => ({
   useFile: () => ({ rawText: "", scripts: [], scriptFileName: "test.fountain", saveFile: vi.fn(), updateSettings: vi.fn() }),
-  useEditor: () => ({ editorView: null }),
+  useEditor: () => ({ editorView: editorViewRef.current }),
   useScriptEditor: () => ({ autoAddSceneNumbers: vi.fn(), clearSceneNumbers: vi.fn() }),
   useUI: () => ({
     typewriterMode: false,
@@ -32,7 +37,14 @@ vi.mock("../context", () => ({
   }),
 }));
 
+vi.mock("../utils", () => ({
+  copyToClipboard: copySceneMock,
+  readFromClipboard: vi.fn().mockResolvedValue(""),
+}));
+
 import { CommandPalette } from "./CommandPalette";
+import { EditorState } from "@codemirror/state";
+import { lineTypesField } from "../editor/fountainSyntax";
 
 const defaultProps = {
   isOpen: false,
@@ -50,6 +62,7 @@ const defaultProps = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  editorViewRef.current = null;
 });
 
 describe("CommandPalette Component", () => {
@@ -78,6 +91,22 @@ describe("CommandPalette Component", () => {
     const jumpItem = screen.getByText("Jump to Scene...");
     jumpItem.click();
     expect(onOpenSceneJump).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
+
+  it("copies the scene under the cursor from the command palette", () => {
+    const text = "INT. HOUSE - NIGHT\n\nBOB\nHello.\n\nEXT. STREET - DAY\n\nALICE\nHi.";
+    const state = EditorState.create({
+      doc: text,
+      selection: { anchor: text.indexOf("Hello") },
+      extensions: [lineTypesField],
+    });
+    editorViewRef.current = { state };
+
+    render(React.createElement(CommandPalette, { ...defaultProps, isOpen: true }));
+    screen.getByText("Copy Current Scene").click();
+
+    expect(copySceneMock).toHaveBeenCalledWith("INT. HOUSE - NIGHT\n\nBOB\nHello.\n\n");
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
 });

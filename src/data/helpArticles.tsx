@@ -92,7 +92,7 @@ Importing other screenplay formats is separate from opening an existing project.
 
 **File:** New Project, Open Project, Import Screenplay, Save Project, Save Project As, Close Active Project, Export.
 
-**Edit:** Undo, Redo, Cut, Copy, Paste, Find/Search, and Enable/Disable Spellcheck.
+**Edit:** Undo, Redo, Cut, Copy, Paste, **Copy Current Scene**, Find/Search, and Enable/Disable Spellcheck. Copy Current Scene copies the Fountain text for the scene where the editor cursor is located.
 
 **View:** Toggle Sidebar, Switch Sidebar Tab (Outline / Notepad), Toggle Timeline View (Alt+T), Typewriter Mode, Zen Mode, Focus Mode, Zoom In / Zoom Out / Reset Editor Scale, Show/Hide Fountain Markup, Open X-Ray Analysis, Show Snapshots.
 
@@ -724,6 +724,7 @@ For character data, statistics, and analysis charts, open the **X-Ray Analysis**
     content: `The Outline sidebar displays a structured overview of your screenplay organized as scene cards. Features:
 
 - Click any card to scroll the editor directly to that scene.
+- Right-click a scene card and choose **Copy Scene** to copy its original Fountain text.
 - **Card anatomy:** scene number badge, heading, synopsis, and active character or storyline tags.
 - Collapsible section headers let you organize acts and sequences.
 - Keyboard navigation: use <kbd>↑</kbd>/<kbd>↓</kbd> to move, <kbd>←</kbd>/<kbd>→</kbd> to collapse/expand sections, and <kbd>Enter</kbd> to jump to a scene.
@@ -1421,7 +1422,7 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
 - **Character/Scene Autocomplete**: Inline ghost text suggestions.
 - **Smart Quotes**: Auto-convert to curly quotes.
 - **Auto-Match Parentheses**: Auto-insert closing \`)\`.
-- **Auto (CONT'D)**: Automatically append virtual \`(CONT'D)\` tags when characters speak consecutively.
+- **Auto (CONT'D)**: Automatically append virtual \`(CONT'D)\` tags when a character speaks again within the same scene. A new scene heading resets the continuation.
 - **Hide Fountain Markup**: Clean reading view (hide prefixes on non-active lines).
 - **Focus Mode**: Dim all lines except the active cursor line.`,
   },

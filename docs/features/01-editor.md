@@ -54,6 +54,10 @@ When no text is selected, **Muse** provides **Translate Whole Script**.
 **Clipboard Actions:**
 - **Cut** / **Copy** / **Paste** — uses Tauri clipboard plugin (`@tauri-apps/plugin-clipboard-manager`)
 
+**Copy Current Scene:**
+- Available from the Command Palette and the Scene Navigator scene card's right-click menu.
+- Copies the scene heading and its original Fountain text, stopping before the next scene or section/subsection heading and preserving formatting markup.
+
 
 **Scene:**
 - **Highlight Scene** → submenu with 8 scene colors (Red, Orange, Yellow, Green, Blue, Purple, Pink, Clear)

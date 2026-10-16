@@ -36,6 +36,34 @@ describe("getSceneBlockAtLine", () => {
     });
   });
 
+  it("ends the copied scene before a section or subsection", () => {
+    const state = createState([
+      "INT. HOUSE - NIGHT",
+      "",
+      "BOB",
+      "Hello.",
+      "",
+      "# ACT II",
+      "",
+      "## SEQUENCE TWO",
+      "",
+      "EXT. STREET - DAY",
+      "",
+      "ALICE",
+      "Hi.",
+    ].join("\n"));
+
+    expect(getSceneBlockAtLine(state, 4)).toEqual({
+      headingLine: 1,
+      text: "INT. HOUSE - NIGHT\n\nBOB\nHello.\n\n",
+    });
+    expect(getSceneBlockAtLine(state, 6)).toBeNull();
+    expect(getSceneBlockAtLine(state, 10)).toEqual({
+      headingLine: 10,
+      text: "EXT. STREET - DAY\n\nALICE\nHi.",
+    });
+  });
+
   it("returns null when there is no scene heading before the requested line", () => {
     const state = createState("A title\n\nAn opening note.");
     expect(getSceneBlockAtLine(state, 3)).toBeNull();

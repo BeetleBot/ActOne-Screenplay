@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
+import { copyToClipboard } from "../utils";
+import { getSceneBlockAtLine } from "../editor/sceneBlock";
+import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { MoreHorizIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon, InfoOutlinedIcon } from "./Icons";
 
 import { isProseScript } from "../utils/scriptMode";
@@ -186,7 +189,7 @@ export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
 
 export const OutlineView = React.memo(() => {
   const { parsedDoc, rawText, files, activeFileId, activeScriptIndex, filePath } = useFile();
-  const { scrollToLine } = useEditor();
+  const { scrollToLine, editorView } = useEditor();
   const { reorderScenes } = useScriptEditor();
   const { activeLineNumber, setSelectedSceneId } = useCursor();
 
@@ -205,6 +208,7 @@ export const OutlineView = React.memo(() => {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedStoryline, setSelectedStoryline] = useState<string | null>(null);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const [sceneContextMenu, setSceneContextMenu] = useState<{ x: number; y: number; lineNumber: number } | null>(null);
   const activeFilterCount = (selectedColor ? 1 : 0) + (selectedStoryline ? 1 : 0);
   const [outlineFontSize, setOutlineFontSizeState] = useState<"small" | "normal" | "large">(
     () => (localStorage.getItem("actone-outline-font-size") as 'small' | 'normal' | 'large' | null) ?? "normal"
@@ -828,6 +832,11 @@ export const OutlineView = React.memo(() => {
           ref={isActive ? activeItemRef : null}
           selected={isActive}
           onClick={(e) => handleItemClick(item, true, e)}
+          onContextMenu={isScene ? (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setSceneContextMenu({ x: e.clientX, y: e.clientY, lineNumber: item.index + 1 });
+          } : undefined}
           sx={{
             ml: `${sceneIndent}px`,
             py: 0.4,
@@ -1503,6 +1512,23 @@ export const OutlineView = React.memo(() => {
           </List>
         )}
       </Box>
+      <ContextMenu
+        open={Boolean(sceneContextMenu)}
+        x={sceneContextMenu?.x ?? 0}
+        y={sceneContextMenu?.y ?? 0}
+        items={[
+          {
+            label: "Copy Scene",
+            enabled: Boolean(editorView && sceneContextMenu),
+            action: () => {
+              if (!editorView || !sceneContextMenu) return;
+              const scene = getSceneBlockAtLine(editorView.state, sceneContextMenu.lineNumber);
+              if (scene) void copyToClipboard(scene.text);
+            },
+          },
+        ] satisfies ContextMenuItem[]}
+        onClose={() => setSceneContextMenu(null)}
+      />
       </Box>
     </Box>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { readFromClipboard } from "../utils";
+import { copyToClipboard, readFromClipboard } from "../utils";
 import { useFile, useEditor, useScriptEditor, useUI, useCustomModal } from "../context";
 
 
@@ -15,6 +15,7 @@ import { logger } from "../utils/logger";
 import { parseScriptFileToFountain } from "../utils/text";
 import { fixFormatting, type FixFormattingReport } from "../utils/fixFormatting";
 import { toggleInlineMarker } from "../editor/formatUtils";
+import { getSceneBlockAtLine } from "../editor/sceneBlock";
 import { useModalWindows } from "../hooks/useModalWindows";
 import { usePromptConfig } from "../hooks/usePromptConfig";
 import { isProseScript } from "../utils/scriptMode";
@@ -299,6 +300,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "edit-redo", name: "Redo", category: "Edit", icon: <ContentCutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Y", action: handleRedo },
     { id: "edit-cut", name: "Cut Selected", category: "Edit", icon: <ContentCutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+X", action: () => handleEditorAction("cut") },
     { id: "edit-copy", name: "Copy Selected", category: "Edit", icon: <ContentCopyIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+C", action: () => handleEditorAction("copy") },
+    ...(!isProse && editorView ? [{
+      id: "edit-copy-current-scene",
+      name: "Copy Current Scene",
+      category: "Edit",
+      icon: <ContentCopyIcon sx={{ fontSize: 16 }} />,
+      action: () => {
+        const lineNumber = editorView.state.doc.lineAt(editorView.state.selection.main.head).number;
+        const scene = getSceneBlockAtLine(editorView.state, lineNumber);
+        if (scene) void copyToClipboard(scene.text);
+        onClose();
+      },
+    }] : []),
     { id: "edit-paste", name: "Paste Clipboard", category: "Edit", icon: <AssignmentIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+V", action: () => handleEditorAction("paste") },
     { id: "edit-find", name: isProse ? "Find in Document" : "Find in Screenplay", category: "Edit", icon: <SearchIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+F", action: () => handleEditorAction("find") },
     { id: "edit-spellcheck", name: spellcheckEnabled ? "Disable Spellcheck" : "Enable Spellcheck", category: "Edit", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setSpellcheckEnabled(!spellcheckEnabled); onClose(); } },
