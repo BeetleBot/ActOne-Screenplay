@@ -1,6 +1,6 @@
 import { StateField, StateEffect, RangeSetBuilder, type EditorState, type Transaction } from "@codemirror/state";
 import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/view";
-import { lineTypesField, LINE_CHARACTER, LINE_DUAL_CHARACTER } from "./fountainSyntax";
+import { lineTypesField, LINE_CHARACTER, LINE_DUAL_CHARACTER, LINE_HEADING } from "./fountainSyntax";
 
 export const updateAutoContdEffect = StateEffect.define<boolean>();
 
@@ -71,9 +71,19 @@ function collectCues(state: EditorState, first: number, last: number): Character
   return cues;
 }
 
-function eligible(cues: CharacterCue[], index: number): boolean {
+function eligible(cues: CharacterCue[], index: number, state: EditorState): boolean {
   const cue = cues[index];
-  return index > 0 && cue.name !== "" && cue.name === cues[index - 1].name && !cue.explicit;
+  if (index === 0 || cue.name === "" || cue.name !== cues[index - 1].name || cue.explicit) return false;
+
+  // A scene heading breaks character continuity even when the same character
+  // speaks at the end of one scene and the beginning of the next.
+  const types = state.field(lineTypesField);
+  const previousCueLine = state.doc.lineAt(cues[index - 1].to).number;
+  const currentCueLine = state.doc.lineAt(cue.from).number;
+  for (let line = previousCueLine + 1; line < currentCueLine; line++) {
+    if (types[line - 1] === LINE_HEADING) return false;
+  }
+  return true;
 }
 
 function lowerBound(cues: CharacterCue[], position: number): number {
@@ -106,7 +116,7 @@ function updateCues(value: AutoContdState, tr: Transaction): Pick<AutoContdState
   if (changedRanges > 1 || doc.lines < 3) {
     const cues = collectCues(tr.state, 1, doc.lines);
     const builder = new RangeSetBuilder<Decoration>();
-    cues.forEach((cue, index) => { if (eligible(cues, index)) builder.add(cue.to, cue.to, contdWidget); });
+    cues.forEach((cue, index) => { if (eligible(cues, index, tr.state)) builder.add(cue.to, cue.to, contdWidget); });
     return { cues, candidates: builder.finish() };
   }
   first = Math.max(1, first - 1);
@@ -130,7 +140,7 @@ function updateCues(value: AutoContdState, tr: Transaction): Pick<AutoContdState
   const filterTo = cues[successor]?.to ?? to;
   const additions = [];
   for (let index = start; index <= successor && index < cues.length; index++) {
-    if (eligible(cues, index)) additions.push(contdWidget.range(cues[index].to));
+    if (eligible(cues, index, tr.state)) additions.push(contdWidget.range(cues[index].to));
   }
   const candidates = value.candidates.map(tr.changes).update({
     filterFrom: from, filterTo,
@@ -145,7 +155,7 @@ export const autoContdField = StateField.define<AutoContdState>({
   create(state) {
     const cues = collectCues(state, 1, state.doc.lines);
     const builder = new RangeSetBuilder<Decoration>();
-    cues.forEach((cue, index) => { if (eligible(cues, index)) builder.add(cue.to, cue.to, contdWidget); });
+    cues.forEach((cue, index) => { if (eligible(cues, index, state)) builder.add(cue.to, cue.to, contdWidget); });
     const candidates = builder.finish();
     return {
       cues, candidates, enabled: true,

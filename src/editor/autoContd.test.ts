@@ -55,6 +55,21 @@ describe("autoContdField", () => {
     expect(positions).toEqual([]);
   });
 
+  it("does not append CONT'D across a scene heading", () => {
+    const text = [
+      "JOHN",
+      "Hello there.",
+      "",
+      ".INT. OFFICE - DAY",
+      "",
+      "JOHN",
+      "Anyone home?",
+    ].join("\n");
+
+    const state = createEditor(text);
+    expect(getDecorationPositions(state)).toEqual([]);
+  });
+
   it("does not duplicate CONT'D if already present in character line", () => {
     const text = [
       "JOHN",
@@ -161,6 +176,26 @@ describe("autoContdField", () => {
       const rebuilt = createEditor(state.doc.toString(), state.selection.main.head);
       expect(getDecorationPositions(state)).toEqual(getDecorationPositions(rebuilt));
     }
+  });
+
+  it("updates scene continuity when a scene heading is inserted or removed", () => {
+    let state = createEditor("JOHN\nHello.\n\nJOHN\nAgain.");
+    expect(getDecorationPositions(state)).toEqual([state.doc.line(4).to]);
+
+    const cueLine = state.doc.line(4);
+    state = state.update({
+      changes: { from: cueLine.from, insert: ".INT. OFFICE - DAY\n\n" },
+    }).state;
+    expect(getDecorationPositions(state)).toEqual([]);
+
+    const headingLine = state.doc.line(4);
+    const nextCueLine = state.doc.line(6);
+    state = state.update({
+      changes: { from: headingLine.from, to: nextCueLine.from },
+    }).state;
+    const rebuilt = createEditor(state.doc.toString(), state.selection.main.head);
+    expect(getDecorationPositions(state)).toEqual(getDecorationPositions(rebuilt));
+    expect(getDecorationPositions(state)).toEqual([state.doc.line(4).to]);
   });
 
   it("updates only the active-line decoration when moving the cursor", () => {
