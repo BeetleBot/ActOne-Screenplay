@@ -78,7 +78,7 @@ export const classifyLines = (doc: { line: (n: number) => { text: string }; line
 
     if (trimmed === "") {
       type = LINE_EMPTY;
-    } else if (/^#{1,2}(?:[^#]|$)/.test(clean)) {
+    } else if (/^#+(?:[^#]|$)/.test(clean)) {
       type = LINE_SECTION;
     } else if (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") {
       type = LINE_PAGEBREAK;
@@ -131,7 +131,7 @@ const classifyLineAt = (doc: { line: (n: number) => { text: string }; lines: num
 
   if (trimmed === "") {
     type = LINE_EMPTY;
-  } else if (/^#{1,2}(?:[^#]|$)/.test(clean)) {
+  } else if (/^#+(?:[^#]|$)/.test(clean)) {
     type = LINE_SECTION;
   } else if (trimmed.startsWith("===") && trimmed.replace(/=/g, "").trim() === "") {
     type = LINE_PAGEBREAK;
@@ -304,7 +304,7 @@ export const computeFountainDecorations = (
       ? Decoration.mark({ class: "cm-fountain-syntax-hidden" })
       : Decoration.mark({ class: "cm-fountain-syntax" });
 
-    if (/^#{1,2}(?:[^#]|$)/.test(trimmed) && type === LINE_SECTION) {
+    if (/^#+(?:[^#]|$)/.test(trimmed) && type === LINE_SECTION) {
       const match = trimmed.match(/^#+/);
       if (match) {
         const startIdx = line.text.indexOf("#");

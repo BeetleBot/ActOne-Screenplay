@@ -5,7 +5,6 @@ import { HeaderBar } from "./HeaderBar";
 import { ActivityBar } from "./ActivityBar";
 import { Workspace } from "./Workspace";
 import { StatusBar } from "./StatusBar";
-import { TimelineView } from "../TimelineView";
 import { ErrorBoundary } from "../ErrorBoundary";
 
 export interface MainLayoutProps {
@@ -20,8 +19,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   isSidebarOpen, setIsSidebarOpen, onOpenSettingsModal, onOpenPalette,
   onOpenThemeManagerModal,
 }) => {
-  const { activeTab, setActiveTab, isZenMode, showTimeline } = useUI();
-  const { hasNoScripts, isProse: isMarkdown } = useWorkspaceMetadata();
+  const { activeTab, setActiveTab, isZenMode } = useUI();
+  const { hasNoScripts } = useWorkspaceMetadata();
 
   React.useEffect(() => {
     if (hasNoScripts) {
@@ -67,11 +66,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', bgcolor: 'transparent', flexShrink: 0 }}>
-          {showTimeline && !isZenMode && !isMarkdown && !hasNoScripts && (
-            <ErrorBoundary name="timeline">
-              <TimelineView />
-            </ErrorBoundary>
-          )}
           <ErrorBoundary name="status"><StatusBar /></ErrorBoundary>
         </Box>
       </Box>

@@ -217,6 +217,12 @@ describe("Fountain Screenplay Parser", () => {
       expect(doc.lines[0].type).toBe(LineType.synopse);
     });
 
+    it("retains deeper section levels after moving groups inside subsections", () => {
+      const doc = parseScreenplay("### Sequence\n#### Detail");
+      expect(doc.lines.map((line) => line.type)).toEqual([LineType.section, LineType.section]);
+      expect(doc.lines.map((line) => line.sectionDepth)).toEqual([3, 4]);
+    });
+
     it("should parse page breaks (===)", () => {
       const doc = parseScreenplay("===");
       expect(doc.lines[0].type).toBe(LineType.pageBreak);

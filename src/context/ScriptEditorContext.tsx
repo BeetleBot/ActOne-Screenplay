@@ -3,11 +3,13 @@ import { useEditor } from "./EditorContext";
 import { useFileActions, useParsedScreenplay } from "./FileSubscriptions";
 import { ParsedLine, LineType, parseScreenplay } from "../parser";
 import { logger } from "../utils/logger";
-import { EditorSelection, Text, Transaction } from "@codemirror/state";
+import { EditorSelection, EditorState, Text, Transaction } from "@codemirror/state";
+import { moveOutlineBlock, type OutlineDropTarget } from "../editor/moveOutlineBlock";
 
 export interface ScriptEditorContextProps {
   scrollToScene: (direction: "next" | "prev") => void;
   reorderScenes: (startIndex: number, endIndex: number) => void;
+  moveOutline: (sourceLine: number, target: OutlineDropTarget) => void;
   autoAddSceneNumbers: () => void;
   clearSceneNumbers: () => void;
   replaceSceneText: (sceneNumber: number, newFountainText: string) => boolean;
@@ -202,12 +204,21 @@ export const ScriptEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     updateDocumentText(serialized);
   };
 
-  const actionsRef = useRef({ scrollToScene, reorderScenes, autoAddSceneNumbers, clearSceneNumbers, replaceSceneText });
-  actionsRef.current = { scrollToScene, reorderScenes, autoAddSceneNumbers, clearSceneNumbers, replaceSceneText };
+  const moveOutline = (sourceLine: number, target: OutlineDropTarget) => {
+    const state = editorView?.state ?? EditorState.create({ doc: parsedDoc.screenplayText });
+    const spec = moveOutlineBlock(state, sourceLine, target);
+    if (!spec) return;
+    const transaction = state.update(spec);
+    editorView?.dispatch(transaction);
+    setRawText(transaction.newDoc.toString());
+  };
+  const actionsRef = useRef({ scrollToScene, reorderScenes, moveOutline, autoAddSceneNumbers, clearSceneNumbers, replaceSceneText });
+  actionsRef.current = { scrollToScene, reorderScenes, moveOutline, autoAddSceneNumbers, clearSceneNumbers, replaceSceneText };
   const value = useMemo<ScriptEditorContextProps>(
     () => ({
       scrollToScene: (direction) => actionsRef.current.scrollToScene(direction),
       reorderScenes: (start, end) => actionsRef.current.reorderScenes(start, end),
+      moveOutline: (source, target) => actionsRef.current.moveOutline(source, target),
       autoAddSceneNumbers: () => actionsRef.current.autoAddSceneNumbers(),
       clearSceneNumbers: () => actionsRef.current.clearSceneNumbers(),
       replaceSceneText: (sceneNumber, text) => actionsRef.current.replaceSceneText(sceneNumber, text),

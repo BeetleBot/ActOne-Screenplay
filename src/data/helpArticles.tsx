@@ -284,7 +284,7 @@ Transitions render right-aligned in PDF exports.`,
     category: "Fountain Syntax",
     tags: ["section", "#", "act", "sequence", "header"],
     relatedIds: ["synopsis", "outline-navigator", "structure-templates"],
-    content: `Organize your script with Fountain section headers. Use \`#\` for major blocks (e.g., \`# Act I\`) and \`##\` for sub-sequences. These structure the Outline Navigator hierarchy with collapsible sections. At most two levels of depth are supported.`,
+    content: `Organize your script with Fountain section headers. Use \`#\` for major blocks (e.g., \`# Act I\`), \`##\` for sub-sequences, and additional hashes for deeper nesting. Closing a section hides its complete subtree. Closing a subsection hides only its own contents, and its collapsed state is retained when the parent is reopened.`,
   },
   {
     id: "inline-formatting",
@@ -721,17 +721,20 @@ For character data, statistics, and analysis charts, open the **X-Ray Analysis**
     category: "Workspace & Views",
     tags: ["outline", "navigator", "sidebar", "tree", "hierarchy"],
     relatedIds: ["sections", "synopsis", "scene-reorder", "activity-bar", "scene-highlighting", "storylines"],
-    content: `The Outline sidebar displays a structured overview of your screenplay organized as scene cards. Features:
+    content: `The Outline sidebar displays your screenplay as a continuous outline tree, with indented sections, readable synopsis text, and scene colours on number badges. Features:
 
 - Click any card to scroll the editor directly to that scene.
 - Right-click a scene card and choose **Copy Scene** to copy its original Fountain text.
-- **Card anatomy:** scene number badge, heading, synopsis, and active character or storyline tags.
+- **Row anatomy:** scene number badge, heading, synopsis, and compact rectangular storyline tags.
 - Collapsible section headers let you organize acts and sequences.
 - Keyboard navigation: use <kbd>↑</kbd>/<kbd>↓</kbd> to move, <kbd>←</kbd>/<kbd>→</kbd> to collapse/expand sections, and <kbd>Enter</kbd> to jump to a scene.
 - **Search filter** at the top lets you instantly search scenes by keyword, location, or character.
 - Filter scenes by color or storyline tags to isolate specific plot threads.
 - Customize outline font size (Small, Normal, Large) from the header menu.
-- Drag-and-drop scene reordering allows you to restructure scenes visually.
+- Drag a scene or section using its grip. A line indicates placement before/after an item; a highlighted section means **Move inside**. Moving a section carries all its scenes and subsections.
+- Hover over a collapsed section to open it during a drag. Move scenes or groups into or out of sections/subsections. The **Move outside all sections** target appears while dragging. Press <kbd>Escape</kbd> to cancel; scroll near the list edges to reach offscreen destinations.
+- Fountain has no closing section marker: direct scenes appear before a section's subsections, and scenes outside all sections appear before the first section. Moving groups updates their hash depth automatically. Undo restores a move in one step.
+- The timeline remains under the editor; no scene-number strip sits beneath the Navigator.
 - Reordering keeps the Navigator at your current scroll position and preserves the editor selection with its scene. Changing outline filters does not scroll back to the editor's active scene.
 
 For prose documents (\`.md\`), the panel switches to **Table of Contents** mode listing Markdown headings.`,

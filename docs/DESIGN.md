@@ -82,6 +82,15 @@ Transparent `40px` bar, controls right `28x28 6px`, hover `alpha(text,0.08)` and
 
 ## 5. Component Language (MUI overrides `src/theme/muiTheme.ts:509`)
 
+### Scene Navigator
+
+- Continuous, borderless outline rows on the sidebar surface; no coloured header banners, attached sub-cards, vertical accent bars, or divider lines above sections.
+- Scene colours are confined to number badges. Headings use semibold UI text; synopses use regular secondary text. Storylines appear as compact rectangular tags with a 4px radius, subtle theme border/fill and text at 11px or above.
+- Sections and nested subsections use indentation and disclosure controls. Closing a parent hides its complete subtree and retains each child's disclosure state.
+- Search and filter controls use the standard 6px input/button radius. Selection uses the theme's full-row selection surface.
+- Drag grips work on scenes and section groups. Horizontal insertion lines indicate before/after placement; a highlighted section indicates nesting. A temporary root drop target moves items outside all sections. No scene-number strip appears beneath this panel; the existing timeline is within the editor column.
+- Keep virtual row measurement caching and cursor-follow suppression during structure moves. Animate colour only; do not animate row heights or offsets.
+
 - **Buttons:** `borderRadius 6`, `contained` gradient `accent 100%→85% black` + inset `rgba(white,0.12)`, `outlined` `1px solid border`, `hover color-mix(accent 8%, transparent)`. Disable ripple (`MuiButtonBase:518`).
 - **Dialogs:** `12px` `1px solid border` `0 16px 40px -8px rgba(0,0,0,0.25)` (`muiTheme.ts:609`).
 - **Paper/Popover/Menu:** `8px` `1px solid border` `0 8px 24px rgba(0,0,0,0.12)`; MenuItem `12px/5-7px 10px margin 2px 6px 6px`.

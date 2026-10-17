@@ -10,6 +10,7 @@ import { lineTypesField } from "../editor/fountainSyntax";
 const mockScrollToLine = vi.fn();
 const mockSetSelectedSceneId = vi.fn();
 const mockReorderScenes = vi.fn();
+const mockMoveOutline = vi.fn();
 const { mockCopyToClipboard, mockRevealVirtualRow } = vi.hoisted(() => ({
   mockCopyToClipboard: vi.fn().mockResolvedValue(true),
   mockRevealVirtualRow: vi.fn(() => vi.fn()),
@@ -39,10 +40,13 @@ vi.mock("../context", () => ({
   }),
   useDocumentText: () => mockFiles[0]?.scripts?.[0]?.content ?? mockRawText,
   useParsedScreenplay: () => {
-    const lines = React.useSyncExternalStore((listener) => {
-      mockParseListeners.add(listener);
-      return () => mockParseListeners.delete(listener);
-    }, () => mockLines);
+    const lines = React.useSyncExternalStore(
+      (listener) => {
+        mockParseListeners.add(listener);
+        return () => mockParseListeners.delete(listener);
+      },
+      () => mockLines,
+    );
     return { lines, screenplayText: mockRawText };
   },
   useEditor: () => ({
@@ -51,12 +55,16 @@ vi.mock("../context", () => ({
   }),
   useScriptEditor: () => ({
     reorderScenes: mockReorderScenes,
+    moveOutline: mockMoveOutline,
   }),
   useCursor: () => ({
-    activeLineNumber: React.useSyncExternalStore((listener) => {
-      mockCursorListeners.add(listener);
-      return () => mockCursorListeners.delete(listener);
-    }, () => mockActiveLineNumber),
+    activeLineNumber: React.useSyncExternalStore(
+      (listener) => {
+        mockCursorListeners.add(listener);
+        return () => mockCursorListeners.delete(listener);
+      },
+      () => mockActiveLineNumber,
+    ),
     selectedSceneId: null,
     setSelectedSceneId: mockSetSelectedSceneId,
   }),
@@ -171,6 +179,48 @@ describe("OutlineView Component", () => {
 });
 
 describe("Navigator drag indices", () => {
+  it("distinguishes nesting, root moves and invalid descendant drops", () => {
+    mockLines = [
+      { id: "act", text: "# ACT ONE", type: LineType.section, sectionDepth: 1, isOutlineElement: true },
+      { id: "source", text: "INT. SOURCE - DAY", type: LineType.heading, isOutlineElement: true },
+      { id: "sub", text: "## SEQUENCE", type: LineType.section, sectionDepth: 2, isOutlineElement: true },
+      { id: "child", text: "INT. CHILD - DAY", type: LineType.heading, isOutlineElement: true },
+      { id: "act2", text: "# ACT TWO", type: LineType.section, sectionDepth: 1, isOutlineElement: true },
+    ] as ParsedLine[];
+    render(<OutlineView />);
+    const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const index = this.getAttribute("data-outline-index");
+      const top = this.hasAttribute("data-outline-root") ? 520 : index === null ? 0 : Number(index) * 40;
+      const height = index === null && !this.hasAttribute("data-outline-root") ? 500 : 36;
+      return { top, bottom: top + height, left: 0, right: 260, width: 260, height, x: 0, y: top, toJSON: () => ({}) };
+    });
+    try {
+      fireEvent.mouseDown(screen.getByLabelText("Drag INT. SOURCE - DAY"), { clientX: 20, clientY: 60 });
+      fireEvent.mouseMove(document, { clientX: 20, clientY: 100 });
+      expect(screen.getByText("Move inside")).toBeInTheDocument();
+      fireEvent.mouseUp(document);
+      expect(mockMoveOutline).toHaveBeenLastCalledWith(1, { line: 2, placement: "inside" });
+      mockMoveOutline.mockClear();
+      fireEvent.mouseDown(screen.getByLabelText("Drag SEQUENCE"), { clientX: 20, clientY: 100 });
+      fireEvent.mouseMove(document, { clientX: 20, clientY: 140 });
+      fireEvent.mouseUp(document);
+      expect(mockMoveOutline).not.toHaveBeenCalled();
+      fireEvent.mouseDown(screen.getByLabelText("Drag SEQUENCE"), { clientX: 20, clientY: 100 });
+      fireEvent.mouseMove(document, { clientX: 20, clientY: 180 });
+      fireEvent.mouseUp(document);
+      expect(mockMoveOutline).toHaveBeenLastCalledWith(2, { line: 4, placement: "inside" });
+      fireEvent.mouseDown(screen.getByLabelText("Drag INT. CHILD - DAY"), { clientX: 20, clientY: 140 });
+      fireEvent.mouseMove(document, { clientX: 20, clientY: 200 });
+      fireEvent.mouseMove(document, { clientX: 20, clientY: 530 });
+      fireEvent.mouseUp(document);
+      expect(mockMoveOutline).toHaveBeenLastCalledWith(3, { line: null, placement: "root" });
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
   it("reorders a scene using full-list indices", () => {
     mockLines = [0, 1, 2].map((index) => ({
       id: `scene-${index}`,
@@ -201,7 +251,7 @@ describe("Navigator drag indices", () => {
       fireEvent.mouseDown(handle, { clientX: 10, clientY: 50 });
       fireEvent.mouseMove(document, { clientX: 10, clientY: 4 });
       fireEvent.mouseUp(document);
-      expect(mockReorderScenes).toHaveBeenCalledWith(1, 0);
+      expect(mockMoveOutline).toHaveBeenCalledWith(1, { line: 0, placement: "before" });
     } finally {
       rect.mockRestore();
     }
@@ -209,6 +259,98 @@ describe("Navigator drag indices", () => {
 });
 
 describe("Navigator cursor following", () => {
+  it("shows storyline tags as boxes and preserves the visibility toggle", () => {
+    mockLines = [
+      {
+        id: "tagged",
+        text: "INT. ROOM - DAY",
+        type: LineType.heading,
+        isOutlineElement: true,
+        storylines: ["Main investigation", "Pollen trail"],
+      } as ParsedLine,
+    ];
+    render(<OutlineView />);
+    expect(screen.getByText("Main investigation")).toHaveStyle({ display: "inline-flex", borderRadius: "4px" });
+    expect(screen.getByText("Pollen trail")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button")[0]);
+    fireEvent.click(screen.getByText("Storylines"));
+    expect(screen.queryByText("Main investigation")).not.toBeInTheDocument();
+    expect(screen.getByText("INT. ROOM - DAY")).toBeInTheDocument();
+  });
+
+  it("opens a collapsed destination after hovering during a drag", () => {
+    vi.useFakeTimers();
+    mockLines = [
+      { id: "source", text: "INT. SOURCE - DAY", type: LineType.heading, isOutlineElement: true },
+      { id: "act", text: "# ACT", type: LineType.section, sectionDepth: 1, isOutlineElement: true },
+      { id: "child", text: "INT. CHILD - DAY", type: LineType.heading, isOutlineElement: true },
+    ] as ParsedLine[];
+    const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const index = this.getAttribute("data-outline-index");
+      const top = this.hasAttribute("data-outline-root") ? 520 : Number(index ?? 0) * 40;
+      const height = index === null ? 500 : 36;
+      return { top, bottom: top + height, left: 0, right: 260, width: 260, height, x: 0, y: top, toJSON: () => ({}) };
+    });
+    try {
+      render(<OutlineView />);
+      fireEvent.click(screen.getByLabelText("Collapse ACT"));
+      expect(screen.queryByText("INT. CHILD - DAY")).not.toBeInTheDocument();
+      fireEvent.mouseDown(screen.getByLabelText("Drag INT. SOURCE - DAY"), { clientX: 20, clientY: 10 });
+      fireEvent.mouseMove(document, { clientX: 20, clientY: 58 });
+      act(() => vi.advanceTimersByTime(500));
+      expect(screen.getByText("INT. CHILD - DAY")).toBeInTheDocument();
+      fireEvent.keyDown(document, { key: "Escape" });
+    } finally {
+      rect.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps subsection collapse state when its parent section is closed and reopened", () => {
+    mockLines = [
+      { id: "act", text: "# ACT ONE", type: LineType.section, sectionDepth: 1, isOutlineElement: true },
+      { id: "direct", text: "INT. DIRECT - DAY", type: LineType.heading, isOutlineElement: true },
+      { id: "sub", text: "## SEQUENCE", type: LineType.section, sectionDepth: 2, isOutlineElement: true },
+      { id: "nested", text: "INT. NESTED - DAY", type: LineType.heading, isOutlineElement: true },
+      { id: "next", text: "# ACT TWO", type: LineType.section, sectionDepth: 1, isOutlineElement: true },
+    ] as ParsedLine[];
+    render(<OutlineView />);
+    expect(getComputedStyle(screen.getByText("ACT ONE").closest("[data-scene-id]")!).borderTopStyle).not.toBe("solid");
+    fireEvent.click(screen.getByLabelText("Collapse SEQUENCE"));
+    expect(screen.queryByText("INT. NESTED - DAY")).not.toBeInTheDocument();
+    expect(screen.getByText("INT. DIRECT - DAY")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Collapse ACT ONE"));
+    expect(screen.queryByText("SEQUENCE")).not.toBeInTheDocument();
+    expect(screen.queryByText("INT. DIRECT - DAY")).not.toBeInTheDocument();
+    expect(screen.getByText("ACT TWO")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Expand ACT ONE"));
+    expect(screen.getByLabelText("Expand SEQUENCE")).toBeInTheDocument();
+    expect(screen.queryByText("INT. NESTED - DAY")).not.toBeInTheDocument();
+  });
+
+  it("cancels a drag with Escape and does not move on a simple handle click", () => {
+    mockLines = [0, 1].map((index) => ({
+      id: `s${index}`,
+      text: `INT. ROOM ${index} - DAY`,
+      type: LineType.heading,
+      isOutlineElement: true,
+    }));
+    render(<OutlineView />);
+    const handle = screen.getByLabelText("Drag INT. ROOM 1 - DAY");
+    fireEvent.mouseDown(handle, { clientX: 20, clientY: 50 });
+    fireEvent.mouseUp(document);
+    expect(mockMoveOutline).not.toHaveBeenCalled();
+    fireEvent.mouseDown(handle, { clientX: 20, clientY: 50 });
+    fireEvent.mouseMove(document, { clientX: 30, clientY: 10 });
+    expect(screen.getByText("Move outside all sections")).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.mouseUp(document);
+    expect(mockMoveOutline).not.toHaveBeenCalled();
+    expect(screen.queryByText("Move outside all sections")).not.toBeInTheDocument();
+  });
+
   it("does not scroll back to the editor scene when changing synopsis visibility or searching", () => {
     mockLines = [
       { id: "first", text: "INT. FIRST - DAY", type: LineType.heading, isOutlineElement: true } as ParsedLine,
@@ -230,7 +372,10 @@ describe("Navigator cursor following", () => {
 
   it("still reveals an offscreen scene when the editor cursor moves", () => {
     mockLines = Array.from({ length: 200 }, (_, index) => ({
-      id: `scene-${index}`, text: `INT. ROOM ${index} - DAY`, type: LineType.heading, isOutlineElement: true,
+      id: `scene-${index}`,
+      text: `INT. ROOM ${index} - DAY`,
+      type: LineType.heading,
+      isOutlineElement: true,
     }));
     mockActiveLineNumber = 0;
     render(<OutlineView />);
@@ -244,7 +389,10 @@ describe("Navigator cursor following", () => {
 
   it("does not initiate cursor-follow scrolling when reordered rows are published", () => {
     mockLines = [0, 1, 2].map((index) => ({
-      id: `scene-${index}`, text: `INT. ROOM ${index} - DAY`, type: LineType.heading, isOutlineElement: true,
+      id: `scene-${index}`,
+      text: `INT. ROOM ${index} - DAY`,
+      type: LineType.heading,
+      isOutlineElement: true,
     }));
     mockActiveLineNumber = 0;
     render(<OutlineView />);
@@ -260,11 +408,15 @@ describe("Navigator cursor following", () => {
     const text = "INT. FIRST - DAY\n\nFirst action.\n\nINT. SECOND - DAY\n\nSecond action.";
     mockRawText = text;
     mockLines = text.split("\n").map((line, index) => ({
-      id: `line-${index}`, text: line, type: line.startsWith("INT.") ? LineType.heading : LineType.action,
+      id: `line-${index}`,
+      text: line,
+      type: line.startsWith("INT.") ? LineType.heading : LineType.action,
       isOutlineElement: line.startsWith("INT."),
     }));
     mockActiveLineNumber = 6;
-    const view = new EditorView({ state: EditorState.create({ doc: text, selection: { anchor: text.indexOf("Second action.") } }) });
+    const view = new EditorView({
+      state: EditorState.create({ doc: text, selection: { anchor: text.indexOf("Second action.") } }),
+    });
     mockEditorView = view;
     const { container, unmount } = render(<OutlineView />);
     const scroller = container.querySelector('[role="list"]') as HTMLElement;
@@ -284,7 +436,9 @@ describe("Navigator cursor following", () => {
       act(() => {
         mockRawText = reordered;
         mockLines = reordered.split("\n").map((line, index) => ({
-          id: `updated-${index}`, text: line, type: line.startsWith("INT.") ? LineType.heading : LineType.action,
+          id: `updated-${index}`,
+          text: line,
+          type: line.startsWith("INT.") ? LineType.heading : LineType.action,
           isOutlineElement: line.startsWith("INT."),
         }));
         mockParseListeners.forEach((listener) => listener());

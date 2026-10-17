@@ -213,7 +213,7 @@ export function parseScreenplay(rawText: string, paperSize: 'letter' | 'a4' = 'l
 
     if (trimmed === "") {
       type = LineType.empty;
-    } else if (/^#{1,2}(?:[^#]|$)/.test(clean)) {
+    } else if (/^#+(?:[^#]|$)/.test(clean)) {
       type = LineType.section;
       isOutlineElement = true;
       let depth = 0;

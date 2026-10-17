@@ -2,6 +2,7 @@ import { revealVirtualRow } from "./revealVirtualRow";
 import { Compartment, StateEffect } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { DocumentPositions } from "../editor/documentPositions";
+import { outlineMoveMapping, type OutlineDropTarget } from "../editor/moveOutlineBlock";
 import React, { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from "react";
 import {
   useDocumentText,
@@ -157,9 +158,7 @@ export function buildTree(items: OutlineItem[], collapsed: { [id: string]: boole
       } else {
         root.push(node);
       }
-      if (!collapsed[item.key ?? item.line.id]) {
-        stack.push({ node, sectionDepth: sDepth });
-      }
+      stack.push({ node, sectionDepth: sDepth });
       lastNonSynopsisNode = node;
     } else if (item.line.type === LineType.synopse) {
       if (lastNonSynopsisNode) {
@@ -182,6 +181,13 @@ export function buildTree(items: OutlineItem[], collapsed: { [id: string]: boole
       lastNonSynopsisNode = node;
     }
   }
+  const hideChildren = (nodes: TreeNode[]) => {
+    for (const node of nodes) {
+      if (collapsed[node.item.key ?? node.item.line.id]) node.children = [];
+      else hideChildren(node.children);
+    }
+  };
+  hideChildren(root);
   return root;
 }
 
@@ -215,7 +221,8 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
   const parsedDoc = useParsedScreenplay();
   const { isProse } = useWorkspaceMetadata();
   const { scrollToLine, editorView } = useEditor();
-  const { reorderScenes } = useScriptEditor();
+  const { moveOutline } = useScriptEditor();
+  const pendingMove = useRef<{ before: string; after: string; mapping: Map<number, number> } | null>(null);
   const lastFollowedLine = useRef<number | null>(null);
   const cancelReveal = useRef<(() => void) | undefined>(undefined);
   const positions = useMemo(() => (editorView ? new DocumentPositions(editorView.state.doc) : null), [editorView]);
@@ -227,6 +234,20 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
         compartment.of(
           EditorView.updateListener.of((update) => {
             if (update.docChanged) positions.record(update.startState.doc, update.state.doc, update.changes);
+            const mapping =
+              update.transactions.length === 1 ? update.transactions[0].annotation(outlineMoveMapping) : undefined;
+            if (mapping) {
+              const before = update.startState.doc.toString();
+              const pending = pendingMove.current;
+              pendingMove.current = {
+                before: pending?.after === before ? pending.before : before,
+                after: update.state.doc.toString(),
+                mapping:
+                  pending?.after === before
+                    ? new Map([...pending.mapping].map(([from, to]) => [from, mapping.get(to) ?? to]))
+                    : mapping,
+              };
+            }
             if (update.transactions.some((transaction) => transaction.isUserEvent("move.scene"))) {
               // A scene move changes cursor coordinates without requesting navigation.
               lastFollowedLine.current = update.state.doc.lineAt(update.state.selection.main.head).number - 1;
@@ -270,12 +291,12 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
     () => (localStorage.getItem("actone-outline-font-size") as "small" | "normal" | "large" | null) ?? "normal",
   );
   const [draggedItemIdx, setDraggedItemIdx] = useState<number | null>(null);
-  const [dragOverItemIdx, setDragOverItemIdx] = useState<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<OutlineDropTarget | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
   const virtualListRef = useRef<ListImperativeAPI | null>(null);
   const mouseDragRef = useRef<number | null>(null);
-  const mouseOverRef = useRef<number | null>(null);
+  const mouseOverRef = useRef<OutlineDropTarget | null>(null);
   const ghostRef = useRef<HTMLDivElement | null>(null);
 
   const proseHeadings = useMemo(() => {
@@ -316,23 +337,20 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
   const previousText = useRef(parsedDoc.screenplayText);
   const rawOutlineItems = useMemo(() => {
     const mapping =
-      positions && previousText.current !== undefined && parsedDoc.screenplayText !== undefined
-        ? positions.mapper(previousText.current, parsedDoc.screenplayText)
-        : undefined;
+      pendingMove.current?.before === previousText.current && pendingMove.current?.after === parsedDoc.screenplayText
+        ? (index: number) => pendingMove.current!.mapping.get(index) ?? index
+        : positions && previousText.current !== undefined && parsedDoc.screenplayText !== undefined
+          ? positions.mapper(previousText.current, parsedDoc.screenplayText)
+          : undefined;
     const next = reconcileOutline(previousOutline.current, parsedDoc.lines, mapping);
     previousText.current = parsedDoc.screenplayText;
     previousOutline.current = next;
     return next;
   }, [parsedDoc.lines, parsedDoc.screenplayText, positions]);
 
-  // Scenes-only list for drag-and-drop indexing
+  // Include sections so groups can move with their complete subtree.
   const scenesItems = useMemo(
-    () =>
-      rawOutlineItems.filter(
-        (item) =>
-          item.line.type === LineType.heading ||
-          (item.line.isOutlineElement && item.line.type !== LineType.section && item.line.type !== LineType.synopse),
-      ),
+    () => rawOutlineItems.filter((item) => item.line.isOutlineElement && item.line.type !== LineType.synopse),
     [rawOutlineItems],
   );
 
@@ -364,11 +382,18 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
   // Filter + collapse
   const visibleItems: OutlineItem[] = useMemo(() => {
     let parentScene: ParsedLine | null = null;
+    let hiddenDepth: number | null = null;
     const query = outlineQuery.toLowerCase();
     const filtered = rawOutlineItems.filter((item) => {
       const isSection = item.line.type === LineType.section;
       const isSynopsis = item.line.type === LineType.synopse;
       const isScene = !isSection && !isSynopsis;
+      if (hiddenDepth !== null) {
+        if (isSection && (item.line.sectionDepth ?? 1) <= hiddenDepth) hiddenDepth = null;
+        else return false;
+      }
+      if (showSections && isSection && collapsedSections[item.key ?? item.line.id])
+        hiddenDepth = item.line.sectionDepth ?? 1;
       if (isSection) parentScene = null;
       else if (item.line.type === LineType.heading) parentScene = item.line;
       if (!showSections && isSection) return false;
@@ -407,26 +432,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
       return true;
     });
 
-    const result: OutlineItem[] = [];
-    let isCollapsed = false;
-    let collapseDepth = 0;
-    for (const item of filtered) {
-      const isSection = item.line.type === LineType.section;
-      const depth = item.line.sectionDepth || 0;
-      if (isCollapsed) {
-        if (isSection && depth <= collapseDepth) {
-          isCollapsed = false;
-        } else {
-          continue;
-        }
-      }
-      result.push(item);
-      if (isSection && collapsedSections[item.key ?? item.line.id]) {
-        isCollapsed = true;
-        collapseDepth = depth;
-      }
-    }
-    return result;
+    return filtered;
   }, [
     rawOutlineItems,
     showSections,
@@ -587,104 +593,168 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
   const handleHandleMouseDown = useCallback(
     (e: React.MouseEvent, index: number) => {
       e.preventDefault();
-      if (!listRef.current) return;
+      const source = scenesItems[index];
+      if (!listRef.current || !source) return;
       cancelReveal.current?.();
-
       mouseDragRef.current = index;
-      setDraggedItemIdx(index);
-
+      const dragDoc = editorView?.state.doc;
+      const sourceText = parsedTextRef.current;
+      const sourceEnd =
+        source.line.type === LineType.section
+          ? (scenesItems.find(
+              (item) =>
+                item.index > source.index &&
+                item.line.type === LineType.section &&
+                (item.line.sectionDepth ?? 1) <= (source.line.sectionDepth ?? 1),
+            )?.index ?? parsedDoc.lines.length)
+          : source.index + 1;
       const ghost = document.createElement("div");
-      ghost.textContent = scenesItems[index] ? getSceneTitle(scenesItems[index].line) : "";
+      ghost.textContent = getSceneTitle(source.line);
       Object.assign(ghost.style, {
         position: "fixed",
         pointerEvents: "none",
         zIndex: "10000",
-        opacity: "0.85",
-        padding: "4px 10px",
-        background: "rgb(25, 118, 210)",
-        color: "white",
-        borderRadius: "0",
-        fontSize: "13px",
-        left: e.clientX + "px",
-        top: e.clientY + "px",
-        transform: "translate(-50%, -50%)",
+        display: "none",
+        opacity: "0.95",
+        padding: "6px 10px",
+        background: "var(--bg-sidebar)",
+        color: "var(--text-main)",
+        border: "1px solid var(--border-color)",
+        borderRadius: "6px",
+        font: "12px var(--font-ui)",
+        maxWidth: "300px",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
         whiteSpace: "nowrap",
-        textTransform: "uppercase",
       });
       document.body.appendChild(ghost);
       ghostRef.current = ghost;
-
-      const getTargetIndex = (clientY: number): number | null => {
-        if (!listRef.current) return null;
-        const items = listRef.current.querySelectorAll("[data-scene-index]");
-        let lastIndex: number | null = null;
-        for (const item of items) {
-          const rect = item.getBoundingClientRect();
-          const idx = parseInt(item.getAttribute("data-scene-index") || "", 10);
-          lastIndex = idx;
-          if (idx === mouseDragRef.current) continue;
-          if (clientY <= rect.bottom) return clientY < rect.top + rect.height / 2 ? idx : idx + 1;
-        }
-        return lastIndex === null ? null : Math.min(lastIndex + 1, scenesItems.length);
-      };
-
       let dragY = e.clientY;
-      let animation: number;
+      let dragX = e.clientX;
+      let activated = false;
+      let animation = 0;
+      let expandTimer: ReturnType<typeof setTimeout> | undefined;
+      const getTarget = (): OutlineDropTarget | null => {
+        const root = listRef.current?.parentElement?.querySelector("[data-outline-root]");
+        if (root) {
+          const bounds = root.getBoundingClientRect();
+          if (dragY >= bounds.top && dragY <= bounds.bottom) return { line: null, placement: "root" };
+        }
+        const scroller = virtualListRef.current?.element;
+        if (!scroller) return null;
+        const bounds = scroller.getBoundingClientRect();
+        if (dragX < bounds.left || dragX > bounds.right || dragY < bounds.top || dragY > bounds.bottom) return null;
+        const rows = listRef.current?.querySelectorAll<HTMLElement>("[data-outline-index]") ?? [];
+        let last: HTMLElement | undefined;
+        for (const row of rows) {
+          const rect = row.getBoundingClientRect();
+          last = row;
+          if (dragY > rect.bottom) continue;
+          const line = Number(row.dataset.outlineLine);
+          if (line >= source.index && line < sourceEnd) return null;
+          const section = row.dataset.outlineSection === "true";
+          const fraction = rect.height ? (dragY - rect.top) / rect.height : 0;
+          return {
+            line,
+            placement: section && fraction >= 0.25 && fraction <= 0.8 ? "inside" : fraction < 0.5 ? "before" : "after",
+          };
+        }
+        if (last) {
+          const line = Number(last.dataset.outlineLine);
+          if (line < source.index || line >= sourceEnd) return { line, placement: "after" };
+        }
+        return null;
+      };
       const updateTarget = () => {
-        const target = getTargetIndex(dragY);
-        if (target !== mouseOverRef.current) {
-          mouseOverRef.current = target;
-          setDragOverItemIdx(target);
+        const next = getTarget();
+        if (next?.line !== mouseOverRef.current?.line || next?.placement !== mouseOverRef.current?.placement) {
+          clearTimeout(expandTimer);
+          mouseOverRef.current = next;
+          setDropTarget(next);
+          if (next?.placement === "inside") {
+            const section = rawOutlineItems.find((item) => item.index === next.line);
+            if (section)
+              expandTimer = setTimeout(() => {
+                setCollapsedSections((previous) => ({ ...previous, [section.key ?? section.line.id]: false }));
+              }, 500);
+          }
         }
       };
       const autoscroll = () => {
         const scroller = virtualListRef.current?.element;
-        if (scroller) {
+        if (activated && scroller) {
           const bounds = scroller.getBoundingClientRect();
-          const delta = dragY < bounds.top + 32 ? -12 : dragY > bounds.bottom - 32 ? 12 : 0;
-          if (delta) {
-            scroller.scrollTop += delta;
+          const distance =
+            dragY < bounds.top + 36
+              ? dragY - bounds.top - 36
+              : dragY > bounds.bottom - 36
+                ? dragY - bounds.bottom + 36
+                : 0;
+          if (distance && dragX >= bounds.left && dragX <= bounds.right) {
+            scroller.scrollTop += Math.sign(distance) * Math.min(18, Math.abs(distance) / 3);
             updateTarget();
           }
         }
         animation = requestAnimationFrame(autoscroll);
       };
       animation = requestAnimationFrame(autoscroll);
-      const onMove = (ev: MouseEvent) => {
-        dragY = ev.clientY;
-        if (ghostRef.current) {
-          ghostRef.current.style.left = ev.clientX + "px";
-          ghostRef.current.style.top = ev.clientY + "px";
+      const onMove = (event: MouseEvent) => {
+        dragX = event.clientX;
+        dragY = event.clientY;
+        if (!activated && Math.hypot(dragX - e.clientX, dragY - e.clientY) < 5) return;
+        if (!activated) {
+          activated = true;
+          setDraggedItemIdx(index);
+          ghost.style.display = "block";
         }
+        ghost.style.left = `${dragX + 12}px`;
+        ghost.style.top = `${dragY + 12}px`;
         updateTarget();
       };
-
-      const onUp = () => {
+      const finish = (commit: boolean) => {
+        clearTimeout(expandTimer);
         cancelAnimationFrame(animation);
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
-        dragCleanupRef.current = {};
-        if (ghostRef.current) {
-          document.body.removeChild(ghostRef.current);
-          ghostRef.current = null;
-        }
-        const fromIdx = mouseDragRef.current;
-        const toIdx = mouseOverRef.current;
+        document.removeEventListener("keydown", onKey);
+        ghost.remove();
+        ghostRef.current = null;
+        const target = mouseOverRef.current;
         mouseDragRef.current = null;
         mouseOverRef.current = null;
+        dragCleanupRef.current = {};
         setDraggedItemIdx(null);
-        setDragOverItemIdx(null);
-        if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
-          const clampedTo = Math.min(toIdx > fromIdx ? toIdx - 1 : toIdx, scenesItems.length - 1);
-          reorderScenes(fromIdx, clampedTo);
+        setDropTarget(null);
+        if (!commit || !activated || !target || editorView?.state.doc !== dragDoc) return;
+        const map = positions ? positions.mapper(sourceText) : (line: number) => line;
+        moveOutline(map(source.index), { ...target, line: target.line === null ? null : map(target.line) });
+        if (target.placement === "inside") {
+          const section = rawOutlineItems.find((item) => item.index === target.line);
+          if (section) setCollapsedSections((previous) => ({ ...previous, [section.key ?? section.line.id]: false }));
         }
       };
-
-      dragCleanupRef.current = { onMove, onUp, cancel: () => cancelAnimationFrame(animation) };
+      const onUp = () => finish(true);
+      const onKey = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          finish(false);
+        }
+      };
+      dragCleanupRef.current = {
+        onMove,
+        onUp,
+        cancel: () => {
+          cancelAnimationFrame(animation);
+          clearTimeout(expandTimer);
+          document.removeEventListener("keydown", onKey);
+        },
+      };
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
+      document.addEventListener("keydown", onKey);
     },
-    [scenesItems, reorderScenes],
+    [scenesItems, moveOutline, editorView, positions, parsedDoc.lines.length, rawOutlineItems],
   );
 
   const handleItemClick = useCallback(
@@ -705,25 +775,25 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
   const fontSizes = useMemo(() => {
     return {
       small: {
-        section: "0.68rem",
-        scene: "0.65rem",
+        section: "0.6875rem",
+        scene: "0.6875rem",
         synopsis: "0.7rem",
-        number: "0.65rem",
-        chip: "6.5px",
+        number: "0.6875rem",
+        chip: "0.6875rem",
       },
       normal: {
-        section: "0.74rem",
-        scene: "0.72rem",
+        section: "0.75rem",
+        scene: "0.75rem",
         synopsis: "0.75rem",
         number: "0.7rem",
-        chip: "7px",
+        chip: "0.6875rem",
       },
       large: {
         section: "0.8rem",
         scene: "0.78rem",
         synopsis: "0.825rem",
         number: "0.75rem",
-        chip: "7.5px",
+        chip: "0.75rem",
       },
     }[outlineFontSize];
   }, [outlineFontSize]);
@@ -737,12 +807,20 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
   const sceneIndexMap = useMemo(() => new Map(scenesItems.map((item, index) => [item.line.id, index])), [scenesItems]);
   const [listWidth, setListWidth] = useState(0);
   const rowHeightKeys = useMemo(
-    () => flatNodes.map((node) => JSON.stringify([
-      listWidth, outlineFontSize, node.depth, node.item.line.type,
-      node.item.line.sectionDepth, node.item.line.text, node.item.line.sceneNumber,
-      showStorylines ? node.item.line.storylines : undefined,
-      showSynopses ? node.synopses.map((synopsis) => synopsis.line.text) : [],
-    ])),
+    () =>
+      flatNodes.map((node) =>
+        JSON.stringify([
+          listWidth,
+          outlineFontSize,
+          node.depth,
+          node.item.line.type,
+          node.item.line.sectionDepth,
+          node.item.line.text,
+          node.item.line.sceneNumber,
+          showStorylines ? node.item.line.storylines : undefined,
+          showSynopses ? node.synopses.map((synopsis) => synopsis.line.text) : [],
+        ]),
+      ),
     [flatNodes, listWidth, outlineFontSize, showSynopses, showStorylines],
   );
   const rowHeight = useKeyedRowHeights(rowHeightKeys);
@@ -760,7 +838,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
       activeId: selectable[activeSelectableIdx]?.item.line.id,
       collapsedSections,
       draggedItemIdx,
-      dragOverItemIdx,
+      dropTarget,
       showStorylines,
       showSynopses,
       sceneIndexMap,
@@ -777,7 +855,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
       activeSelectableIdx,
       collapsedSections,
       draggedItemIdx,
-      dragOverItemIdx,
+      dropTarget,
       showStorylines,
       showSynopses,
       sceneIndexMap,
@@ -863,7 +941,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
                   sx: {
                     bgcolor: "background.paper",
                     fontSize: "0.75rem",
-                    borderRadius: "20px",
+                    borderRadius: "6px",
                     "& fieldset": { border: "none" },
                   },
                   startAdornment: (
@@ -1033,7 +1111,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
           color="text.secondary"
           sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}
         >
-          Outline
+          Scene Navigator
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <Tooltip title="Outline font size">
@@ -1110,7 +1188,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
                 sx: {
                   bgcolor: "background.paper",
                   fontSize: "0.75rem",
-                  borderRadius: "20px",
+                  borderRadius: "6px",
                   "& fieldset": { border: "none" },
                 },
                 startAdornment: (
@@ -1133,7 +1211,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
               border: "1px solid",
               borderColor: activeFilterCount > 0 ? "primary.main" : "divider",
               bgcolor: activeFilterCount > 0 ? "action.selected" : "action.hover",
-              borderRadius: "20px",
+              borderRadius: "6px",
               height: "auto",
               minHeight: 0,
               minWidth: 0,
@@ -1298,6 +1376,24 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
             />
           )}
         </Box>
+        {draggedItemIdx !== null && (
+          <Box
+            data-outline-root="true"
+            role="status"
+            sx={{
+              mx: 1.5,
+              my: 0.75,
+              p: 1,
+              fontSize: "0.75rem",
+              textAlign: "center",
+              borderRadius: "6px",
+              border: "1px dashed var(--border-color)",
+              bgcolor: dropTarget?.placement === "root" ? "action.selected" : "transparent",
+            }}
+          >
+            Move outside all sections
+          </Box>
+        )}
         <ContextMenu
           open={Boolean(sceneContextMenu)}
           x={sceneContextMenu?.x ?? 0}
@@ -1332,7 +1428,7 @@ interface NavigatorRows {
   activeId?: string;
   collapsedSections: Record<string, boolean>;
   draggedItemIdx: number | null;
-  dragOverItemIdx: number | null;
+  dropTarget: OutlineDropTarget | null;
   showStorylines: boolean;
   showSynopses: boolean;
   sceneIndexMap: Map<string, number>;
@@ -1351,7 +1447,7 @@ function NavigatorVirtualRow({
   activeId,
   collapsedSections,
   draggedItemIdx,
-  dragOverItemIdx,
+  dropTarget,
   sceneIndexMap,
   ...props
 }: RowComponentProps<NavigatorRows>) {
@@ -1365,7 +1461,7 @@ function NavigatorVirtualRow({
         isActive={node.item.line.id === activeId}
         isCollapsed={Boolean(collapsedSections[node.item.key ?? node.item.line.id])}
         isDragging={sceneIndex >= 0 && draggedItemIdx === sceneIndex}
-        isDragOver={sceneIndex >= 0 && dragOverItemIdx === sceneIndex}
+        dropPlacement={dropTarget?.line === node.item.index ? dropTarget.placement : undefined}
         sceneIndex={sceneIndex}
         {...props}
       />

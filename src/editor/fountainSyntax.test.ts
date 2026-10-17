@@ -40,6 +40,10 @@ describe("classifyLines", () => {
     expect(types[0]).toBe(LINE_SYNOPSE);
   });
 
+  it("classifies deeper sections created by nested outline moves", () => {
+    expect(classify("### Sequence\n#### Nested sequence")).toEqual([LINE_SECTION, LINE_SECTION]);
+  });
+
   it("classifies page breaks (===)", () => {
     const types = classify("===");
     expect(types[0]).toBe(LINE_PAGEBREAK);

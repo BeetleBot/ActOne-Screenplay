@@ -104,10 +104,9 @@ describe("OutlineView Helpers", () => {
       const scene: ParsedLine = { id: "sc1", text: "INT. ROOM", type: LineType.heading, isOutlineElement: true };
       const items = [{ line: s1, index: 0 }, { line: scene, index: 1 }];
       const tree = buildTree(items, { s1: true });
-      expect(tree).toHaveLength(2);
+      expect(tree).toHaveLength(1);
       expect(tree[0].item.line.id).toBe("s1");
       expect(tree[0].children).toHaveLength(0);
-      expect(tree[1].item.line.id).toBe("sc1");
     });
 
     it("handles synopses at root level when no parent", () => {
