@@ -779,8 +779,9 @@ You can type any combination of search terms:
 - **Scenes Track**: Displays every scene sized proportionally to its line length, highlighting the active scene in real-time.
 
 ### Interactive Scrubbing & Zooming
-- **Click or Drag to Scrub**: Click or drag across the timeline to scroll the screenplay smoothly to that scene or position.
-- **Playhead**: A vertical playhead line tracks your current cursor position in real time.
+- **Click a Scene**: Click a scene block or its number to jump exactly to that scene's heading. Clicking an act or sequence jumps to its header.
+- **Drag to Scrub**: Drag across the timeline to navigate to the corresponding script line. Clicks and scrubbing stay aligned when zoomed or horizontally scrolled.
+- **Playhead**: A vertical playhead tracks the current script line immediately. All tracks share a line-based coordinate scale; decorative spacing does not change scene positions, even in long scripts.
 - **Mouse Wheel Zoom**: Hold <kbd>Ctrl</kbd> (or <kbd>Alt</kbd>) and scroll the mouse wheel over the timeline to zoom horizontally from 1x to 15x.
 
 ### Powerful Multi-Track Filtering

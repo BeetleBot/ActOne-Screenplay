@@ -1057,7 +1057,7 @@ button:active,
 }
 
 .timeline-track {
-  display: flex;
+  display: block;
   width: 100%;
   height: 12px;
   position: relative;
@@ -1076,10 +1076,10 @@ button:active,
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  position: relative;
-  overflow: visible;
+  position: absolute;
+  min-width: 0;
+  overflow: hidden;
   container-type: inline-size;
-  flex-shrink: 1;
   background: transparent;
 }
 
@@ -1137,31 +1137,46 @@ body:not(.dark-theme) .timeline-segment.dummy .timeline-track-line {
 
 .timeline-segment.scene-segment {
   border-radius: var(--radius-xs, 4px);
-  background: var(--seg-bg, rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  margin: 0 1px;
+  background: transparent;
+  border: 0;
+  margin: 0;
+  --scene-outline: rgba(255, 255, 255, 0.06);
   transition: box-shadow var(--duration-fast, 0.12s) ease,
               border-color var(--duration-fast, 0.12s) ease,
               opacity var(--duration-normal, 0.20s) ease;
 }
 
+.timeline-segment.scene-segment::before {
+  content: "";
+  position: absolute;
+  /* Decorative spacing never changes the segment's hit area or coordinates. */
+  inset: 0 min(1px, 10%);
+  border-radius: inherit;
+  background: var(--seg-bg, rgba(255, 255, 255, 0.04));
+  box-shadow: inset 0 0 0 1px var(--scene-outline);
+  pointer-events: none;
+}
+
 body:not(.dark-theme) .timeline-segment.scene-segment {
+  --scene-outline: rgba(0, 0, 0, 0.07);
+}
+
+body:not(.dark-theme) .timeline-segment.scene-segment::before {
   background: var(--seg-bg, rgba(0, 0, 0, 0.04));
-  border-color: rgba(0, 0, 0, 0.07);
 }
 
 .timeline-segment.scene-segment:hover {
-  border-color: var(--accent-color, #2196f3);
+  --scene-outline: var(--accent-color, #2196f3);
 }
 
 .timeline-segment.scene-segment.active {
   box-shadow: none;
-  border-color: var(--accent-color, #2196f3);
+  --scene-outline: var(--accent-color, #2196f3);
 }
 
 .timeline-segment.scene-segment.colored.active {
   box-shadow: none;
-  border-color: var(--seg-color);
+  --scene-outline: var(--seg-color);
 }
 
 /* Modern Clean Floating Labels (In front of playhead, no line behind text) */
@@ -1274,7 +1289,7 @@ body:not(.dark-theme) .timeline-segment-number {
   z-index: 5;
   pointer-events: none;
   transform: translateX(-50%);
-  transition: left 0.12s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: none;
 }
 
 .timeline-playhead-line.scrubbing {

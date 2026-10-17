@@ -3,6 +3,10 @@ import { useFile, useEditor, useUI, useCursor } from "../context";
 import { LineType, parseSceneHeading } from "../parser";
 import { PushPinIcon } from "./Icons";
 import { Tooltip } from "@mui/material";
+import { Compartment, StateEffect } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { DocumentPositions } from "../editor/documentPositions";
+import { timelineLineAtX, timelinePercentAtLine, timelineSpan } from "./timelineGeometry";
 
 const getPageNumber = (lineIndex: number, pageBreaks: number[] = []) => {
   let page = 1;
@@ -18,11 +22,43 @@ const getPageNumber = (lineIndex: number, pageBreaks: number[] = []) => {
 
 export const TimelineView: React.FC = () => {
   const { parsedDoc } = useFile();
-  const { scrollToLine } = useEditor();
+  const { scrollToLine, editorView } = useEditor();
   const { activeLineId, activeLineNumber, selectedSceneId } = useCursor();
   const { timelineFilter, timelineShowSections, timelineShowSceneNumbers, timelineShowSceneColors } = useUI();
 
   const totalDocLines = Math.max(1, parsedDoc?.lines?.length || 0);
+  const positions = useMemo(() => (editorView ? new DocumentPositions(editorView.state.doc) : null), [editorView]);
+  useEffect(() => {
+    if (!editorView || !positions) return;
+    const compartment = new Compartment();
+    editorView.dispatch({
+      effects: StateEffect.appendConfig.of(
+        compartment.of(
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) positions.record(update.startState.doc, update.state.doc, update.changes);
+          }),
+        ),
+      ),
+    });
+    return () => {
+      editorView.dispatch({ effects: compartment.reconfigure([]) });
+    };
+  }, [editorView, positions]);
+  const liveDoc = editorView?.state.doc;
+  const liveText = useMemo(() => liveDoc?.toString(), [liveDoc]);
+  const snapshot = parsedDoc?.screenplayText ?? "";
+  const toLive = useMemo(
+    () => (positions && liveText !== undefined ? positions.mapper(snapshot, liveText) : (line: number) => line),
+    [positions, snapshot, liveText],
+  );
+  const toSnapshot = useMemo(
+    () => (positions && liveText !== undefined ? positions.mapper(liveText, snapshot) : (line: number) => line),
+    [positions, liveText, snapshot],
+  );
+  const navigate = useCallback(
+    (line: number, noFocus: boolean) => scrollToLine(toLive(line), noFocus),
+    [scrollToLine, toLive],
+  );
 
   // 1. Build Section Segments (depth 1, e.g. "# Act I")
   const sectionSegments = useMemo(() => {
@@ -106,9 +142,7 @@ export const TimelineView: React.FC = () => {
         const next = boundaries[i + 1];
         const end = next ? next.index : totalDocLines;
 
-        const title = current.line.sectionDepth === 2
-          ? current.line.text.replace(/^#+\s*/, "").trim()
-          : "";
+        const title = current.line.sectionDepth === 2 ? current.line.text.replace(/^#+\s*/, "").trim() : "";
 
         segments.push({
           id: `${current.line.id}-subsec`,
@@ -204,29 +238,30 @@ export const TimelineView: React.FC = () => {
   }, [parsedDoc?.lines]);
 
   const hasSections = useMemo(() => {
-    return parsedDoc?.lines?.some(l => l.type === LineType.section && l.sectionDepth === 1) ?? false;
+    return parsedDoc?.lines?.some((l) => l.type === LineType.section && l.sectionDepth === 1) ?? false;
   }, [parsedDoc?.lines]);
 
   const hasSubsections = useMemo(() => {
-    return parsedDoc?.lines?.some(l => l.type === LineType.section && l.sectionDepth === 2) ?? false;
+    return parsedDoc?.lines?.some((l) => l.type === LineType.section && l.sectionDepth === 2) ?? false;
   }, [parsedDoc?.lines]);
 
   const activeLineIndex = useMemo(() => {
     if (!parsedDoc?.lines) return -1;
-    if (activeLineNumber >= 0 && activeLineNumber < parsedDoc.lines.length) {
-      return activeLineNumber;
+    const lineInSnapshot = activeLineNumber >= 0 ? toSnapshot(activeLineNumber) : -1;
+    if (lineInSnapshot >= 0 && lineInSnapshot < parsedDoc.lines.length) {
+      return lineInSnapshot;
     }
     if (activeLineId) {
-      const idx = parsedDoc.lines.findIndex(l => l.id === activeLineId);
+      const idx = parsedDoc.lines.findIndex((l) => l.id === activeLineId);
       if (idx !== -1) return idx;
     }
     return -1;
-  }, [parsedDoc?.lines, activeLineNumber, activeLineId]);
+  }, [parsedDoc?.lines, activeLineNumber, activeLineId, toSnapshot]);
 
   const activeSectionId = useMemo(() => {
     if (activeLineIndex === -1) return null;
     const activeSeg = sectionSegments.find(
-      seg => activeLineIndex >= seg.startIndex && activeLineIndex < seg.endIndex
+      (seg) => activeLineIndex >= seg.startIndex && activeLineIndex < seg.endIndex,
     );
     return activeSeg ? activeSeg.id : null;
   }, [sectionSegments, activeLineIndex]);
@@ -234,21 +269,19 @@ export const TimelineView: React.FC = () => {
   const activeSubsectionId = useMemo(() => {
     if (activeLineIndex === -1) return null;
     const activeSeg = subsectionSegments.find(
-      seg => activeLineIndex >= seg.startIndex && activeLineIndex < seg.endIndex
+      (seg) => activeLineIndex >= seg.startIndex && activeLineIndex < seg.endIndex,
     );
     return activeSeg ? activeSeg.id : null;
   }, [subsectionSegments, activeLineIndex]);
 
   const activeSceneId = useMemo(() => {
     if (activeLineIndex === -1) return null;
-    const activeSeg = sceneSegments.find(
-      seg => activeLineIndex >= seg.startIndex && activeLineIndex < seg.endIndex
-    );
+    const activeSeg = sceneSegments.find((seg) => activeLineIndex >= seg.startIndex && activeLineIndex < seg.endIndex);
     return activeSeg ? activeSeg.id : null;
   }, [sceneSegments, activeLineIndex]);
 
   const matchingFilterIds = useMemo(() => {
-    if (timelineFilter.type === 'default' || !parsedDoc?.lines) {
+    if (timelineFilter.type === "default" || !parsedDoc?.lines) {
       return new Set<string>();
     }
 
@@ -256,16 +289,16 @@ export const TimelineView: React.FC = () => {
 
     for (const segment of sceneSegments) {
       if (segment.isDummy) continue;
-      if (timelineFilter.type === 'marker') {
+      if (timelineFilter.type === "marker") {
         for (let i = segment.startIndex; i < segment.endIndex && i < parsedDoc.lines.length; i++) {
           if (parsedDoc.lines[i].marker) {
             matchingIds.add(segment.id);
             break;
           }
         }
-      } else if (timelineFilter.type === 'character') {
+      } else if (timelineFilter.type === "character") {
         if (!timelineFilter.values || timelineFilter.values.length === 0) continue;
-        const cleanVals = timelineFilter.values.map(v => v.toUpperCase());
+        const cleanVals = timelineFilter.values.map((v) => v.toUpperCase());
         for (let i = segment.startIndex; i < segment.endIndex && i < parsedDoc.lines.length; i++) {
           const line = parsedDoc.lines[i];
           if (line.type === LineType.character || line.type === LineType.dualDialogueCharacter) {
@@ -281,20 +314,20 @@ export const TimelineView: React.FC = () => {
             }
           }
         }
-      } else if (timelineFilter.type === 'location') {
+      } else if (timelineFilter.type === "location") {
         if (!timelineFilter.values || timelineFilter.values.length === 0) continue;
-        const cleanVals = timelineFilter.values.map(v => v.toUpperCase());
+        const cleanVals = timelineFilter.values.map((v) => v.toUpperCase());
         const headingLine = parsedDoc.lines[segment.startIndex];
         if (headingLine) {
           const parsed = parseSceneHeading(headingLine.text);
           const loc = (headingLine.location || parsed.location || "").toUpperCase();
-          if (loc && cleanVals.some(val => loc.includes(val))) {
+          if (loc && cleanVals.some((val) => loc.includes(val))) {
             matchingIds.add(segment.id);
           }
         }
-      } else if (timelineFilter.type === 'time') {
+      } else if (timelineFilter.type === "time") {
         if (!timelineFilter.values || timelineFilter.values.length === 0) continue;
-        const cleanVals = timelineFilter.values.map(v => v.toUpperCase());
+        const cleanVals = timelineFilter.values.map((v) => v.toUpperCase());
         const headingLine = parsedDoc.lines[segment.startIndex];
         if (headingLine) {
           const parsed = parseSceneHeading(headingLine.text);
@@ -303,9 +336,9 @@ export const TimelineView: React.FC = () => {
             matchingIds.add(segment.id);
           }
         }
-      } else if (timelineFilter.type === 'setting') {
+      } else if (timelineFilter.type === "setting") {
         if (!timelineFilter.values || timelineFilter.values.length === 0) continue;
-        const cleanVals = timelineFilter.values.map(v => v.toUpperCase());
+        const cleanVals = timelineFilter.values.map((v) => v.toUpperCase());
         const headingLine = parsedDoc.lines[segment.startIndex];
         if (headingLine) {
           const parsed = parseSceneHeading(headingLine.text);
@@ -314,8 +347,8 @@ export const TimelineView: React.FC = () => {
           const isInt = setStr.includes("INT") || setStr === "I/E";
           const isExt = setStr.includes("EXT") || setStr === "I/E";
 
-          const matchesInt = cleanVals.includes('INT') && isInt;
-          const matchesExt = cleanVals.includes('EXT') && isExt;
+          const matchesInt = cleanVals.includes("INT") && isInt;
+          const matchesExt = cleanVals.includes("EXT") && isExt;
 
           if (matchesInt || matchesExt) {
             matchingIds.add(segment.id);
@@ -328,6 +361,7 @@ export const TimelineView: React.FC = () => {
   }, [timelineFilter, sceneSegments, parsedDoc?.lines]);
 
   const scrubbingRef = useRef(false);
+  const gestureRef = useRef<{ x: number; line: number | null; moved: boolean } | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -343,13 +377,13 @@ export const TimelineView: React.FC = () => {
       const trackWrapper = trackWrapperRef.current;
       if (!trackWrapper) return;
 
-      if (e.ctrlKey || e.altKey) {
+      if (e.ctrlKey || e.metaKey || e.altKey) {
         const factor = Math.exp(-e.deltaY * 0.003);
         const rect = trackWrapper.getBoundingClientRect();
         const cursorRelX = e.clientX - rect.left;
         const currentScroll = trackWrapper.scrollLeft;
 
-        setZoomScale(prev => {
+        setZoomScale((prev) => {
           const next = Math.max(1, Math.min(15, prev * factor));
           if (Math.abs(next - prev) < 0.001) return prev;
 
@@ -377,15 +411,25 @@ export const TimelineView: React.FC = () => {
     };
   }, []);
 
-  const handleScrub = useCallback((clientX: number, trackElement: HTMLDivElement, noFocus: boolean = true) => {
-    const rect = trackElement.getBoundingClientRect();
-    const clickPercent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const targetLine = Math.min(totalDocLines - 1, Math.floor(clickPercent * totalDocLines));
-    scrollToLine(targetLine, noFocus);
-  }, [totalDocLines, scrollToLine]);
+  const handleScrub = useCallback(
+    (clientX: number, trackElement: HTMLDivElement, noFocus: boolean = true) => {
+      const targetLine = timelineLineAtX(clientX, trackElement.getBoundingClientRect(), totalDocLines);
+      if (targetLine !== null) navigate(targetLine, noFocus);
+    },
+    [totalDocLines, navigate],
+  );
+
+  const cancelScrub = useCallback(() => {
+    gestureRef.current = null;
+    scrubbingRef.current = false;
+    setIsScrubbing(false);
+  }, []);
+  useEffect(() => {
+    cancelScrub();
+  }, [snapshot, cancelScrub]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.ctrlKey || e.altKey) && e.button === 1) {
+    if ((e.ctrlKey || e.metaKey || e.altKey) && e.button === 1) {
       e.preventDefault();
       setZoomScale(1);
       if (trackWrapperRef.current) {
@@ -394,50 +438,62 @@ export const TimelineView: React.FC = () => {
       return;
     }
     if (e.button !== 0) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
     scrubbingRef.current = true;
     setIsScrubbing(true);
-    handleScrub(e.clientX, e.currentTarget, true);
+    const segment = e.target instanceof Element ? e.target.closest<HTMLElement>("[data-timeline-line]") : null;
+    const line = segment ? Number(segment.dataset.timelineLine) : null;
+    gestureRef.current = { x: e.clientX, line, moved: false };
+    if (line !== null) navigate(line, true);
+    else handleScrub(e.clientX, e.currentTarget, true);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (scrubbingRef.current) {
+    const gesture = gestureRef.current;
+    if (scrubbingRef.current && gesture && Math.abs(e.clientX - gesture.x) >= 3) {
+      gesture.moved = true;
       handleScrub(e.clientX, e.currentTarget, true);
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (scrubbingRef.current) {
+      const gesture = gestureRef.current;
+      cancelScrub();
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch { void 0; }
-      scrubbingRef.current = false;
-      setIsScrubbing(false);
-      handleScrub(e.clientX, e.currentTarget, false);
+      } catch {
+        void 0;
+      }
+      if (gesture && !gesture.moved && gesture.line !== null) navigate(gesture.line, false);
+      else handleScrub(e.clientX, e.currentTarget, false);
     }
   };
 
   const playheadProgress = useMemo(() => {
     if (activeLineIndex === -1 || totalDocLines <= 0) return 0;
-    return (activeLineIndex / totalDocLines) * 100;
+    return timelinePercentAtLine(activeLineIndex, totalDocLines);
   }, [activeLineIndex, totalDocLines]);
 
   if (!parsedDoc?.lines) return null;
 
   return (
     <div ref={containerRef} className="timeline-container" id="timeline-view">
-      <div 
-        ref={trackWrapperRef} 
+      <div
+        ref={trackWrapperRef}
         className="timeline-track-wrapper"
         style={{ overflowX: zoomScale > 1 ? "auto" : "hidden" }}
       >
-        <div 
+        <div
           className="timeline-tracks-container"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          style={{ 
-            cursor: isScrubbing ? "grabbing" : "col-resize", 
+          onPointerCancel={cancelScrub}
+          onLostPointerCapture={cancelScrub}
+          style={{
+            cursor: isScrubbing ? "grabbing" : "col-resize",
             touchAction: "none",
             width: `${zoomScale * 100}%`,
           }}
@@ -446,34 +502,33 @@ export const TimelineView: React.FC = () => {
           {timelineShowSections && hasSections && (
             <div className="timeline-track sections-track">
               {sectionSegments.map((segment) => {
-                const widthPercent = totalDocLines > 0 ? (segment.lineCount / totalDocLines) * 100 : 0;
                 const isActive = segment.id === activeSectionId;
                 const isDummy = segment.id === "sec-prefix" || segment.id === "sec-default";
                 const showLabel = segment.id !== "sec-prefix" && Boolean(segment.title);
                 const tooltip = isDummy ? "Setup / Intro" : `Section: ${segment.title}`;
-                const bg = timelineShowSceneColors && segment.color
-                  ? segment.color.startsWith("#")
-                    ? segment.color
-                    : `var(--scene-color-${segment.color})`
-                  : "";
+                const bg =
+                  timelineShowSceneColors && segment.color
+                    ? segment.color.startsWith("#")
+                      ? segment.color
+                      : `var(--scene-color-${segment.color})`
+                    : "";
 
                 return (
                   <div
                     key={segment.id}
+                    data-timeline-line={segment.startIndex}
                     className={`timeline-segment section-segment ${isActive ? "active" : ""} ${isDummy ? "dummy" : ""} ${bg ? "colored" : ""}`}
-                    style={{
-                      width: `${widthPercent}%`,
-                      cursor: "inherit",
-                      "--seg-color": bg || undefined,
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        ...timelineSpan(segment.startIndex, segment.endIndex, totalDocLines),
+                        cursor: "inherit",
+                        "--seg-color": bg || undefined,
+                      } as React.CSSProperties
+                    }
                     title={tooltip}
                   >
                     <div className="timeline-track-line" />
-                    {showLabel && (
-                      <span className="timeline-segment-label section-label">
-                        {segment.title}
-                      </span>
-                    )}
+                    {showLabel && <span className="timeline-segment-label section-label">{segment.title}</span>}
                     {showLabel && <div className="timeline-track-line" />}
                   </div>
                 );
@@ -485,35 +540,34 @@ export const TimelineView: React.FC = () => {
           {timelineShowSections && hasSubsections && (
             <div className="timeline-track subsections-track">
               {subsectionSegments.map((segment) => {
-                const widthPercent = totalDocLines > 0 ? (segment.lineCount / totalDocLines) * 100 : 0;
                 const isActive = segment.id === activeSubsectionId;
                 const isDummy = segment.isDummy;
                 const tooltip = isDummy ? "" : `Sequence: ${segment.title}`;
-                const bg = timelineShowSceneColors && segment.color
-                  ? segment.color.startsWith("#")
-                    ? segment.color
-                    : `var(--scene-color-${segment.color})`
-                  : "";
+                const bg =
+                  timelineShowSceneColors && segment.color
+                    ? segment.color.startsWith("#")
+                      ? segment.color
+                      : `var(--scene-color-${segment.color})`
+                    : "";
 
                 const showLabel = !isDummy && Boolean(segment.title);
 
                 return (
                   <div
                     key={segment.id}
+                    data-timeline-line={segment.startIndex}
                     className={`timeline-segment subsection-segment ${isActive ? "active" : ""} ${isDummy ? "dummy" : ""} ${bg ? "colored" : ""}`}
-                    style={{
-                      width: `${widthPercent}%`,
-                      cursor: "inherit",
-                      "--seg-color": bg || undefined,
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        ...timelineSpan(segment.startIndex, segment.endIndex, totalDocLines),
+                        cursor: "inherit",
+                        "--seg-color": bg || undefined,
+                      } as React.CSSProperties
+                    }
                     title={tooltip}
                   >
                     <div className="timeline-track-line" />
-                    {showLabel && (
-                      <span className="timeline-segment-label subsection-label">
-                        {segment.title}
-                      </span>
-                    )}
+                    {showLabel && <span className="timeline-segment-label subsection-label">{segment.title}</span>}
                     {showLabel && <div className="timeline-track-line" />}
                   </div>
                 );
@@ -524,30 +578,25 @@ export const TimelineView: React.FC = () => {
           {/* Scenes Track (Bottom) */}
           <div className="timeline-track scenes-track">
             {sceneSegments.map((segment) => {
-              const widthPercent = totalDocLines > 0 ? (segment.lineCount / totalDocLines) * 100 : 0;
-              const isActive = segment.id === activeSceneId || segment.id === selectedSceneId;
-              
-              const isFilterActive = timelineFilter.type !== 'default';
+              const isActive = segment.id === (activeSceneId ?? selectedSceneId);
+
+              const isFilterActive = timelineFilter.type !== "default";
               const isMatch = !isFilterActive || matchingFilterIds.has(segment.id);
               const isDummy = segment.isDummy;
-              
+
               let bg = "";
               if (timelineShowSceneColors && segment.color) {
-                bg = segment.color.startsWith("#")
-                  ? segment.color
-                  : `var(--scene-color-${segment.color})`;
+                bg = segment.color.startsWith("#") ? segment.color : `var(--scene-color-${segment.color})`;
               }
 
               if (!bg && (!isFilterActive || isMatch)) {
                 bg = "var(--accent-color, #2196f3)";
               }
 
-              const sceneBg = bg
-                ? `color-mix(in srgb, ${bg} 18%, transparent)`
-                : undefined;
+              const sceneBg = bg ? `color-mix(in srgb, ${bg} 18%, transparent)` : undefined;
 
-              const tooltip = isDummy 
-                ? "Setup" 
+              const tooltip = isDummy
+                ? "Setup"
                 : `Scene ${segment.sceneNumber}: ${segment.title}\nPage ${segment.pageNumber} • ${segment.lineCount} lines`;
 
               const isColored = Boolean(timelineShowSceneColors && segment.color);
@@ -555,15 +604,18 @@ export const TimelineView: React.FC = () => {
               return (
                 <div
                   key={segment.id}
+                  data-timeline-line={segment.startIndex}
                   className={`timeline-segment scene-segment ${isActive ? "active" : ""} ${isColored ? "colored" : ""} ${isDummy ? "dummy" : ""}`}
-                  style={{
-                    width: `${widthPercent}%`,
-                    "--seg-color": bg || undefined,
-                    "--seg-bg": sceneBg,
-                    opacity: isMatch ? 1 : 0.12,
-                    transition: "opacity 0.25s ease",
-                    cursor: "inherit",
-                  } as React.CSSProperties}
+                  style={
+                    {
+                      ...timelineSpan(segment.startIndex, segment.endIndex, totalDocLines),
+                      "--seg-color": bg || undefined,
+                      "--seg-bg": sceneBg,
+                      opacity: isMatch ? 1 : 0.12,
+                      transition: "opacity 0.25s ease",
+                      cursor: "inherit",
+                    } as React.CSSProperties
+                  }
                   title={tooltip}
                 >
                   {!isDummy && timelineShowSceneNumbers && (
@@ -577,41 +629,44 @@ export const TimelineView: React.FC = () => {
           </div>
 
           {/* Marker Pins across Timeline */}
-          {timelineFilter.type === "marker" && markerItems.map((marker) => {
-            const markerPos = (marker.lineIndex / totalDocLines) * 100;
-            const markerBg = marker.color.startsWith("#")
-              ? marker.color
-              : `var(--marker-color-${marker.color}, var(--scene-color-${marker.color}, #ff9800))`;
+          {timelineFilter.type === "marker" &&
+            markerItems.map((marker) => {
+              const markerPos = timelinePercentAtLine(marker.lineIndex, totalDocLines);
+              const markerBg = marker.color.startsWith("#")
+                ? marker.color
+                : `var(--marker-color-${marker.color}, var(--scene-color-${marker.color}, #ff9800))`;
 
-            return (
-              <Tooltip
-                key={marker.id}
-                title={`Marker (Line ${marker.lineIndex + 1}): ${marker.description}`}
-                arrow
-                placement="top"
-              >
-                <div
-                  className="timeline-marker-pin"
-                  style={{
-                    left: `${markerPos}%`,
-                    "--marker-color": markerBg,
-                  } as React.CSSProperties}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    scrollToLine(marker.lineIndex, false);
-                  }}
-                  onPointerDown={(e) => e.stopPropagation()}
+              return (
+                <Tooltip
+                  key={marker.id}
+                  title={`Marker (Line ${marker.lineIndex + 1}): ${marker.description}`}
+                  arrow
+                  placement="top"
                 >
-                  <PushPinIcon />
-                </div>
-              </Tooltip>
-            );
-          })}
+                  <div
+                    className="timeline-marker-pin"
+                    style={
+                      {
+                        left: `${markerPos}%`,
+                        "--marker-color": markerBg,
+                      } as React.CSSProperties
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(marker.lineIndex, false);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <PushPinIcon />
+                  </div>
+                </Tooltip>
+              );
+            })}
 
           {/* Unified Vertical Playhead Line */}
           {activeLineIndex !== -1 && (
-            <div 
-              className={`timeline-playhead-line ${isScrubbing ? "scrubbing" : ""}`} 
+            <div
+              className={`timeline-playhead-line ${isScrubbing ? "scrubbing" : ""}`}
               style={{ left: `${playheadProgress}%` }}
             />
           )}

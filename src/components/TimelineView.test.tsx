@@ -4,6 +4,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { TimelineView } from "./TimelineView";
 import { LineType } from "../parser";
 import type { FountainDocument } from "../parser";
+import { EditorState } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 
 // Mock contexts
 const mockScrollToLine = vi.fn();
@@ -15,6 +17,7 @@ let mockTimelineFilter = { type: "default" as const, values: [] as string[] };
 let mockTimelineShowSections = true;
 let mockTimelineShowSceneNumbers = true;
 let mockTimelineShowSceneColors = true;
+let mockEditorView: EditorView | null = null;
 
 vi.mock("../context", () => ({
   useFile: () => ({
@@ -22,6 +25,7 @@ vi.mock("../context", () => ({
   }),
   useEditor: () => ({
     scrollToLine: mockScrollToLine,
+    editorView: mockEditorView,
   }),
   useCursor: () => ({
     activeLineId: mockActiveLineId,
@@ -47,6 +51,7 @@ describe("TimelineView", () => {
     mockTimelineShowSections = true;
     mockTimelineShowSceneNumbers = true;
     mockTimelineShowSceneColors = true;
+    mockEditorView = null;
   });
 
   it("renders nothing if parsedDoc is null or has no lines", () => {
@@ -73,6 +78,69 @@ describe("TimelineView", () => {
     expect(document.querySelector(".subsections-track")).not.toBeInTheDocument();
     expect(document.querySelector(".scenes-track")).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument();
+  });
+
+  it("clicks scene 127 of 302 directly and aligns the playhead with its exact start", () => {
+    const lines: FountainDocument["lines"] = [];
+    const starts: number[] = [];
+    for (let i = 0; i < 302; i++) {
+      starts.push(lines.length);
+      lines.push({ id: `s${i}`, text: `INT. SCENE ${i + 1} - DAY`, type: LineType.heading, isOutlineElement: true });
+      for (let j = 0; j < (i * 17) % 83; j++)
+        lines.push({ id: `a${i}-${j}`, text: "Action.", type: LineType.action, isOutlineElement: false });
+    }
+    mockParsedDoc = { lines, screenplayText: lines.map((line) => line.text).join("\n"), settings: {} };
+    mockActiveLineNumber = starts[126];
+    mockSelectedSceneId = "s100"; // A stale Navigator selection must not mark a second scene active.
+    const { container } = render(<TimelineView />);
+    const segment = screen.getByText("127").closest<HTMLElement>(".scene-segment")!;
+    const track = container.querySelector<HTMLElement>(".timeline-tracks-container")!;
+    track.setPointerCapture = vi.fn();
+    track.releasePointerCapture = vi.fn();
+    vi.spyOn(track, "getBoundingClientRect").mockReturnValue({ left: -450, width: 1800 } as DOMRect);
+    // Deliberately use coordinates whose linear estimate falls elsewhere: the
+    // clicked scene's identity, rather than a rounded pixel estimate, must win.
+    fireEvent.pointerDown(screen.getByText("127"), { clientX: 100, button: 0, pointerId: 1 });
+    fireEvent.pointerUp(track, { clientX: 100, button: 0, pointerId: 1 });
+    expect(mockScrollToLine).toHaveBeenLastCalledWith(starts[126], false);
+    expect(segment.style.left).toBe(`${(starts[126] / lines.length) * 100}%`);
+    expect(container.querySelector<HTMLElement>(".timeline-playhead-line")!.style.left).toBe(segment.style.left);
+    expect(container.querySelectorAll(".scene-segment.active")).toHaveLength(1);
+    expect(screen.getByText("101").closest(".scene-segment")).not.toHaveClass("active");
+  });
+
+  it("maps clicks and the playhead through edits waiting for the parser", () => {
+    const text = "INT. FIRST - DAY\n\nAction.\n\nINT. SECOND - DAY\n\nAction.";
+    const lines = text
+      .split("\n")
+      .map((line, i) => ({
+        id: `l${i}`,
+        text: line,
+        type: line.startsWith("INT.") ? LineType.heading : LineType.action,
+        isOutlineElement: line.startsWith("INT."),
+      }));
+    mockParsedDoc = { lines, screenplayText: text, settings: {} };
+    const view = new EditorView({ state: EditorState.create({ doc: text }) });
+    mockEditorView = view;
+    const { container, rerender, unmount } = render(<TimelineView />);
+    try {
+      view.dispatch({ changes: { from: 0, insert: "\n\n" } });
+      mockActiveLineNumber = 6;
+      rerender(<TimelineView />);
+      const track = container.querySelector<HTMLElement>(".timeline-tracks-container")!;
+      track.setPointerCapture = vi.fn();
+      track.releasePointerCapture = vi.fn();
+      fireEvent.pointerDown(screen.getByText("2"), { clientX: 200, button: 0, pointerId: 1 });
+      fireEvent.pointerUp(track, { clientX: 200, button: 0, pointerId: 1 });
+      expect(mockScrollToLine).toHaveBeenLastCalledWith(6, false);
+      expect(parseFloat(container.querySelector<HTMLElement>(".timeline-playhead-line")!.style.left)).toBeCloseTo(
+        (4 / lines.length) * 100,
+        12,
+      );
+    } finally {
+      unmount();
+      view.destroy();
+    }
   });
 
   it("renders acts and sequences correctly with section depths", () => {
@@ -211,7 +279,13 @@ describe("TimelineView", () => {
   it("filters scenes by location correctly", () => {
     mockParsedDoc = {
       lines: [
-        { id: "l1", text: "INT. COFFEE SHOP - DAY", type: LineType.heading, location: "COFFEE SHOP", isOutlineElement: true },
+        {
+          id: "l1",
+          text: "INT. COFFEE SHOP - DAY",
+          type: LineType.heading,
+          location: "COFFEE SHOP",
+          isOutlineElement: true,
+        },
         { id: "l2", text: "EXT. HIGHWAY - NIGHT", type: LineType.heading, location: "HIGHWAY", isOutlineElement: true },
       ],
       settings: {},
@@ -252,7 +326,13 @@ describe("TimelineView", () => {
     mockParsedDoc = {
       lines: [
         { id: "l1", text: "INT. APARTMENT - DAY", type: LineType.heading, isOutlineElement: true },
-        { id: "l2", text: "Action with marker", type: LineType.action, marker: { color: "blue", description: "Fix dialogue" }, isOutlineElement: false },
+        {
+          id: "l2",
+          text: "Action with marker",
+          type: LineType.action,
+          marker: { color: "blue", description: "Fix dialogue" },
+          isOutlineElement: false,
+        },
         { id: "l3", text: "EXT. ROOFTOP - NIGHT", type: LineType.heading, isOutlineElement: true },
         { id: "l4", text: "Night action", type: LineType.action, isOutlineElement: false },
       ],
@@ -296,9 +376,7 @@ describe("TimelineView", () => {
 
   it("hides scene numbers when mockTimelineShowSceneNumbers is false", () => {
     mockParsedDoc = {
-      lines: [
-        { id: "l1", text: "INT. ROOM - DAY", type: LineType.heading, isOutlineElement: true },
-      ],
+      lines: [{ id: "l1", text: "INT. ROOM - DAY", type: LineType.heading, isOutlineElement: true }],
       settings: {},
       screenplayText: "",
     };
@@ -310,9 +388,7 @@ describe("TimelineView", () => {
 
   it("omits scene colors when mockTimelineShowSceneColors is false", () => {
     mockParsedDoc = {
-      lines: [
-        { id: "l1", text: "INT. ROOM - DAY", type: LineType.heading, color: "blue", isOutlineElement: true },
-      ],
+      lines: [{ id: "l1", text: "INT. ROOM - DAY", type: LineType.heading, color: "blue", isOutlineElement: true }],
       settings: {},
       screenplayText: "",
     };
