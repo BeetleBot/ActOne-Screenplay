@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useMemo, useRef } from "react";
 import { useEditor } from "./EditorContext";
 import { useFileActions, useParsedScreenplay } from "./FileSubscriptions";
-import { ParsedLine, LineType } from "../parser";
+import { ParsedLine, LineType, parseScreenplay } from "../parser";
 import { logger } from "../utils/logger";
+import { EditorSelection, Text, Transaction } from "@codemirror/state";
 
 export interface ScriptEditorContextProps {
   scrollToScene: (direction: "next" | "prev") => void;
@@ -25,10 +26,11 @@ export const ScriptEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const parsedDoc = useParsedScreenplay();
   const { setRawText } = useFileActions();
 
-  const updateDocumentText = (newFullText: string) => {
+  const updateDocumentText = (newFullText: string, selection?: EditorSelection) => {
     if (editorView) {
       editorView.dispatch({
         changes: { from: 0, to: editorView.state.doc.length, insert: newFullText },
+        ...(selection ? { selection, annotations: Transaction.userEvent.of("move.scene") } : {}),
       });
     }
     setRawText(newFullText);
@@ -109,16 +111,18 @@ export const ScriptEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const reorderScenes = (startIndex: number, endIndex: number) => {
+    const lines = editorView ? parseScreenplay(editorView.state.doc.toString()).lines : parsedDoc.lines;
     const scenes: { lineIndex: number; lines: ParsedLine[] }[] = [];
     const beforeFirstScene: ParsedLine[] = [];
     let currentScene: ParsedLine[] = [];
     let currentStart = -1;
 
     const isSceneStart = (line: ParsedLine) =>
-      line.type === LineType.heading || (line.isOutlineElement && line.type !== LineType.section && line.type !== LineType.synopse);
+      line.type === LineType.heading ||
+      (line.isOutlineElement && line.type !== LineType.section && line.type !== LineType.synopse);
 
-    for (let i = 0; i < parsedDoc.lines.length; i++) {
-      const line = parsedDoc.lines[i];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       if (isSceneStart(line)) {
         if (currentScene.length > 0) {
           scenes.push({ lineIndex: currentStart, lines: currentScene });
@@ -136,17 +140,41 @@ export const ScriptEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     if (startIndex < 0 || startIndex >= scenes.length || endIndex < 0 || endIndex >= scenes.length) return;
+    if (startIndex === endIndex) return;
 
     const [moved] = scenes.splice(startIndex, 1);
     scenes.splice(endIndex, 0, moved);
 
-    const newLines: ParsedLine[] = [...beforeFirstScene];
+    const newLineTexts = beforeFirstScene.map((line) => line.text);
+    const starts = new Map<(typeof scenes)[number], number>();
     for (const scene of scenes) {
-      newLines.push(...scene.lines);
+      // The former final scene may have no trailing blank line. Its new neighbour
+      // still needs a Fountain separator to remain a scene heading after parsing.
+      if (newLineTexts.length > 0 && newLineTexts[newLineTexts.length - 1].trim()) newLineTexts.push("");
+      starts.set(scene, newLineTexts.length);
+      newLineTexts.push(...scene.lines.map((line) => line.text));
     }
 
-    const serialized = newLines.map((l) => l.text).join("\n");
-    updateDocumentText(serialized);
+    const serialized = newLineTexts.join("\n");
+    let selection: EditorSelection | undefined;
+    if (editorView) {
+      const doc = editorView.state.doc;
+      const reorderedDoc = Text.of(newLineTexts);
+      const mapPosition = (position: number) => {
+        const line = doc.lineAt(position);
+        const scene = scenes.find((candidate) =>
+          line.number - 1 >= candidate.lineIndex && line.number - 1 < candidate.lineIndex + candidate.lines.length,
+        );
+        if (!scene) return position; // Title page / preamble stays in place.
+        const targetLine = reorderedDoc.line(starts.get(scene)! + line.number - scene.lineIndex);
+        return targetLine.from + Math.min(position - line.from, targetLine.length);
+      };
+      selection = EditorSelection.create(
+        editorView.state.selection.ranges.map((range) => EditorSelection.range(mapPosition(range.anchor), mapPosition(range.head))),
+        editorView.state.selection.mainIndex,
+      );
+    }
+    updateDocumentText(serialized, selection);
   };
 
   const autoAddSceneNumbers = () => {
@@ -176,17 +204,16 @@ export const ScriptEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const actionsRef = useRef({ scrollToScene, reorderScenes, autoAddSceneNumbers, clearSceneNumbers, replaceSceneText });
   actionsRef.current = { scrollToScene, reorderScenes, autoAddSceneNumbers, clearSceneNumbers, replaceSceneText };
-  const value = useMemo<ScriptEditorContextProps>(() => ({
-    scrollToScene: direction => actionsRef.current.scrollToScene(direction),
-    reorderScenes: (start, end) => actionsRef.current.reorderScenes(start, end),
-    autoAddSceneNumbers: () => actionsRef.current.autoAddSceneNumbers(),
-    clearSceneNumbers: () => actionsRef.current.clearSceneNumbers(),
-    replaceSceneText: (sceneNumber, text) => actionsRef.current.replaceSceneText(sceneNumber, text),
-  }), []);
-
-  return (
-    <ScriptEditorContext.Provider value={value}>
-      {children}
-    </ScriptEditorContext.Provider>
+  const value = useMemo<ScriptEditorContextProps>(
+    () => ({
+      scrollToScene: (direction) => actionsRef.current.scrollToScene(direction),
+      reorderScenes: (start, end) => actionsRef.current.reorderScenes(start, end),
+      autoAddSceneNumbers: () => actionsRef.current.autoAddSceneNumbers(),
+      clearSceneNumbers: () => actionsRef.current.clearSceneNumbers(),
+      replaceSceneText: (sceneNumber, text) => actionsRef.current.replaceSceneText(sceneNumber, text),
+    }),
+    [],
   );
+
+  return <ScriptEditorContext.Provider value={value}>{children}</ScriptEditorContext.Provider>;
 };

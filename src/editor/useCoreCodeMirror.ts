@@ -1,8 +1,9 @@
+import { searchHighlightPlugin } from "./searchHighlights";
 import { useEffect, useRef } from "react";
-import { EditorState, RangeSetBuilder, StateField, Extension, Compartment, type Text } from "@codemirror/state";
+import { EditorState, RangeSetBuilder, Extension, Compartment, type Text } from "@codemirror/state";
 import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, layer, RectangleMarker, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
-import { search, setSearchQuery, getSearchQuery } from "@codemirror/search";
+import { search } from "@codemirror/search";
 import { useDocumentText, useFileActions, useWorkspaceMetadata, useParsedScreenplay, useUI, useEditor, useCursor } from "../context";
 import { STORAGE_KEYS } from "../constants";
 import { emptyLineSelectionPlugin } from "./emptyLineSelection";
@@ -165,36 +166,7 @@ export const activeLineAlwaysPlugin = ViewPlugin.fromClass(
   }
 );
 
-const searchMatchDeco = Decoration.mark({ class: "cm-searchMatch" });
-const activeSearchMatchDeco = Decoration.mark({ class: "cm-searchMatch cm-searchMatch-selected" });
-
-export const searchHighlightField = StateField.define<DecorationSet>({
-  create() {
-    return Decoration.none;
-  },
-  update(decorations, tr) {
-    const query = getSearchQuery(tr.state);
-    if (!query || !query.valid || !query.search) {
-      return Decoration.none;
-    }
-    if (tr.docChanged || tr.selection || tr.effects.some(e => e.is(setSearchQuery))) {
-      const builder = new RangeSetBuilder<Decoration>();
-      const cursor = query.getCursor(tr.state);
-      const { from: selFrom, to: selTo } = tr.state.selection.main;
-
-      let match = cursor.next();
-      while (!match.done) {
-        const { from, to } = match.value;
-        const isActive = (from === selFrom && to === selTo);
-        builder.add(from, to, isActive ? activeSearchMatchDeco : searchMatchDeco);
-        match = cursor.next();
-      }
-      return builder.finish();
-    }
-    return decorations.map(tr.changes);
-  },
-  provide: (f) => EditorView.decorations.from(f),
-});
+export { searchHighlightPlugin } from "./searchHighlights";
 
 export interface CoreCodeMirrorProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -340,7 +312,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
       editorTheme,
       placeholder("Start writing here"),
       search(),
-      searchHighlightField,
+      searchHighlightPlugin,
       rephraseHighlightField,
       contextMenuHighlightField,
       readOnlyCompartment.of(isScriptTranslating ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),

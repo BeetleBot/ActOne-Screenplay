@@ -5,6 +5,9 @@
   "version": "0.5.1",
   "type": "module",
   "scripts": {
+    "benchmark:editor": "node benchmarks/editor/run.mjs",
+    "benchmark:app": "node benchmarks/editor/run.mjs --mode=app",
+    "benchmark:editor:check": "tsc --noEmit --project benchmarks/editor/tsconfig.json",
     "predev": "node sync-version.js",
     "prebuild": "node sync-version.js",
     "dev": "vite",

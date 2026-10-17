@@ -1,13 +1,27 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
+import { revealVirtualRow } from "./revealVirtualRow";
+import { Compartment, StateEffect } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { DocumentPositions } from "../editor/documentPositions";
+import React, { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from "react";
+import {
+  useDocumentText,
+  useParsedScreenplay,
+  useWorkspaceMetadata,
+  useEditor,
+  useScriptEditor,
+  useCursor,
+} from "../context";
 import { LineType, ParsedLine } from "../parser";
 import { getSceneTitle } from "../utils/text";
 import { copyToClipboard } from "../utils";
 import { getSceneBlockAtLine } from "../editor/sceneBlock";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
-import { MoreHorizIcon, SearchIcon, CloseIcon, KeyboardArrowDownIcon, DragHandleIcon, TuneIcon, InfoOutlinedIcon } from "./Icons";
+import { MoreHorizIcon, SearchIcon, CloseIcon, TuneIcon, InfoOutlinedIcon } from "./Icons";
 
-import { isProseScript } from "../utils/scriptMode";
+import { OutlineRow } from "./OutlineRow";
+import { reconcileOutline } from "./outlineModel";
+import { List as VirtualList, type ListImperativeAPI, type RowComponentProps } from "react-window";
+import { useKeyedRowHeights } from "./useKeyedRowHeights";
 
 import {
   Box,
@@ -34,12 +48,7 @@ export interface OutlineTagProps {
   sx?: SxProps<Theme>;
 }
 
-export const OutlineTag: React.FC<OutlineTagProps> = ({
-  label,
-  variant = "default",
-  size = "0.7rem",
-  sx,
-}) => {
+export const OutlineTag: React.FC<OutlineTagProps> = ({ label, variant = "default", size = "0.7rem", sx }) => {
   const isAccent = variant === "accent";
   return (
     <Typography
@@ -102,7 +111,7 @@ export function parseProseHeadings(text: string): ProseHeadingItem[] {
   return headings;
 }
 
-export function getSceneColor(line: ParsedLine): string | undefined {
+export function getSceneColor(line: Pick<ParsedLine, "color">): string | undefined {
   if (line.color) {
     return line.color.startsWith("#") ? line.color : `var(--scene-color-${line.color})`;
   }
@@ -114,6 +123,7 @@ export { getSceneTitle };
 export interface OutlineItem {
   line: ParsedLine;
   index: number;
+  key?: string;
 }
 
 export interface TreeNode {
@@ -147,7 +157,7 @@ export function buildTree(items: OutlineItem[], collapsed: { [id: string]: boole
       } else {
         root.push(node);
       }
-      if (!collapsed[item.line.id]) {
+      if (!collapsed[item.key ?? item.line.id]) {
         stack.push({ node, sectionDepth: sDepth });
       }
       lastNonSynopsisNode = node;
@@ -188,18 +198,59 @@ export function flattenSelectable(tree: TreeNode[]): TreeNode[] {
 }
 
 export const OutlineView = React.memo(() => {
-  const { parsedDoc, rawText, files, activeFileId, activeScriptIndex, filePath } = useFile();
+  const metadata = useWorkspaceMetadata();
+  return metadata.isProse ? (
+    <ProseOutlineView />
+  ) : (
+    <OutlineContent key={`${metadata.activeFileId}:${metadata.activeScriptIndex}`} />
+  );
+});
+
+function ProseOutlineView() {
+  const rawText = useDocumentText();
+  return <OutlineContent proseText={rawText} />;
+}
+
+const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { proseText?: string }) {
+  const parsedDoc = useParsedScreenplay();
+  const { isProse } = useWorkspaceMetadata();
   const { scrollToLine, editorView } = useEditor();
   const { reorderScenes } = useScriptEditor();
+  const lastFollowedLine = useRef<number | null>(null);
+  const cancelReveal = useRef<(() => void) | undefined>(undefined);
+  const positions = useMemo(() => (editorView ? new DocumentPositions(editorView.state.doc) : null), [editorView]);
+  useEffect(() => {
+    if (!editorView || !positions) return;
+    const compartment = new Compartment();
+    editorView.dispatch({
+      effects: StateEffect.appendConfig.of(
+        compartment.of(
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) positions.record(update.startState.doc, update.state.doc, update.changes);
+            if (update.transactions.some((transaction) => transaction.isUserEvent("move.scene"))) {
+              // A scene move changes cursor coordinates without requesting navigation.
+              lastFollowedLine.current = update.state.doc.lineAt(update.state.selection.main.head).number - 1;
+              cancelReveal.current?.();
+            }
+          }),
+        ),
+      ),
+    });
+    return () => {
+      editorView.dispatch({ effects: compartment.reconfigure([]) });
+    };
+  }, [editorView, positions]);
+  const parsedTextRef = useRef(parsedDoc.screenplayText ?? "");
+  parsedTextRef.current = parsedDoc.screenplayText ?? "";
+  const resolveIndex = useCallback(
+    (index: number) => (positions ? positions.mapper(parsedTextRef.current)(index) : index),
+    [positions],
+  );
   const { activeLineNumber, setSelectedSceneId } = useCursor();
-
-  const activeFile = files?.find((f) => f.id === activeFileId);
-  const activeScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? activeScriptIndex ?? 0];
-  const isProse = isProseScript(activeScript, filePath || activeFile?.filePath);
-  const proseText = activeScript?.content ?? rawText ?? "";
 
   const [collapsedSections, setCollapsedSections] = useState<{ [id: string]: boolean }>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const outlineQuery = useDeferredValue(searchQuery);
   const [showSections, setShowSections] = useState(true);
   const [showScenes, setShowScenes] = useState(true);
   const [showSynopses, setShowSynopses] = useState(false);
@@ -208,16 +259,21 @@ export const OutlineView = React.memo(() => {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedStoryline, setSelectedStoryline] = useState<string | null>(null);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const [sceneContextMenu, setSceneContextMenu] = useState<{ x: number; y: number; lineNumber: number } | null>(null);
+  const [sceneContextMenu, setSceneContextMenu] = useState<{
+    x: number;
+    y: number;
+    lineNumber: number;
+    source: string;
+  } | null>(null);
   const activeFilterCount = (selectedColor ? 1 : 0) + (selectedStoryline ? 1 : 0);
   const [outlineFontSize, setOutlineFontSizeState] = useState<"small" | "normal" | "large">(
-    () => (localStorage.getItem("actone-outline-font-size") as 'small' | 'normal' | 'large' | null) ?? "normal"
+    () => (localStorage.getItem("actone-outline-font-size") as "small" | "normal" | "large" | null) ?? "normal",
   );
   const [draggedItemIdx, setDraggedItemIdx] = useState<number | null>(null);
   const [dragOverItemIdx, setDragOverItemIdx] = useState<number | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
-  const activeItemRef = useRef<HTMLDivElement>(null);
+  const virtualListRef = useRef<ListImperativeAPI | null>(null);
   const mouseDragRef = useRef<number | null>(null);
   const mouseOverRef = useRef<number | null>(null);
   const ghostRef = useRef<HTMLDivElement | null>(null);
@@ -228,10 +284,10 @@ export const OutlineView = React.memo(() => {
   }, [isProse, proseText]);
 
   const filteredProseHeadings = useMemo(() => {
-    if (!searchQuery.trim()) return proseHeadings;
-    const q = searchQuery.toLowerCase();
+    if (!outlineQuery.trim()) return proseHeadings;
+    const q = outlineQuery.toLowerCase();
     return proseHeadings.filter((h) => h.title.toLowerCase().includes(q));
-  }, [proseHeadings, searchQuery]);
+  }, [proseHeadings, outlineQuery]);
 
   const activeProseHeadingIdx = useMemo(() => {
     if (filteredProseHeadings.length === 0) return -1;
@@ -251,40 +307,33 @@ export const OutlineView = React.memo(() => {
     localStorage.setItem("actone-outline-font-size", size);
   };
 
-  const toggleSection = (id: string, e: React.MouseEvent) => {
+  const toggleSection = useCallback((id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCollapsedSections((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  }, []);
 
-  // Signature key that only changes when structural outline elements (Headings, Sections, Synopses, Storylines, Colors) change
-  const outlineSignature = useMemo(() => {
-    if (isProse) return "";
-    let sig = "";
-    const lines = parsedDoc.lines;
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i];
-      if (l.isOutlineElement || l.type === LineType.synopse) {
-        sig += `${i}:${l.id}:${l.type}:${l.sectionDepth || 0}:${l.color || ""}:${l.storylines ? l.storylines.join(",") : ""}:${l.text};`;
-      }
-    }
-    return sig;
-  }, [isProse, parsedDoc.lines]);
-
-  // Build raw items based on outlineSignature so standard dialogue/action typing does not recreate this array
-  const rawOutlineItems: OutlineItem[] = useMemo(
-    () => parsedDoc.lines
-      .map((line, index) => ({ line, index }))
-      .filter(({ line }) => line.isOutlineElement || line.type === LineType.synopse),
-    [outlineSignature, parsedDoc.lines]
-  );
+  const previousOutline = useRef<OutlineItem[]>([]);
+  const previousText = useRef(parsedDoc.screenplayText);
+  const rawOutlineItems = useMemo(() => {
+    const mapping =
+      positions && previousText.current !== undefined && parsedDoc.screenplayText !== undefined
+        ? positions.mapper(previousText.current, parsedDoc.screenplayText)
+        : undefined;
+    const next = reconcileOutline(previousOutline.current, parsedDoc.lines, mapping);
+    previousText.current = parsedDoc.screenplayText;
+    previousOutline.current = next;
+    return next;
+  }, [parsedDoc.lines, parsedDoc.screenplayText, positions]);
 
   // Scenes-only list for drag-and-drop indexing
   const scenesItems = useMemo(
-    () => rawOutlineItems.filter(
-      (item) => item.line.type === LineType.heading ||
-        (item.line.isOutlineElement && item.line.type !== LineType.section && item.line.type !== LineType.synopse)
-    ),
-    [rawOutlineItems]
+    () =>
+      rawOutlineItems.filter(
+        (item) =>
+          item.line.type === LineType.heading ||
+          (item.line.isOutlineElement && item.line.type !== LineType.section && item.line.type !== LineType.synopse),
+      ),
+    [rawOutlineItems],
   );
 
   const colorStats = useMemo(() => {
@@ -314,19 +363,14 @@ export const OutlineView = React.memo(() => {
 
   // Filter + collapse
   const visibleItems: OutlineItem[] = useMemo(() => {
-    const getSynopsisPrecedingScene = (rawIdx: number) => {
-      for (let j = rawIdx - 1; j >= 0; j--) {
-        const l = rawOutlineItems[j].line;
-        if (l.type === LineType.heading) return l;
-        if (l.type === LineType.section) return null;
-      }
-      return null;
-    };
-
-    const filtered = rawOutlineItems.filter((item, rawIdx) => {
+    let parentScene: ParsedLine | null = null;
+    const query = outlineQuery.toLowerCase();
+    const filtered = rawOutlineItems.filter((item) => {
       const isSection = item.line.type === LineType.section;
       const isSynopsis = item.line.type === LineType.synopse;
       const isScene = !isSection && !isSynopsis;
+      if (isSection) parentScene = null;
+      else if (item.line.type === LineType.heading) parentScene = item.line;
       if (!showSections && isSection) return false;
       if (!showScenes && isScene) return false;
       if (!showSynopses && isSynopsis) return false;
@@ -335,7 +379,6 @@ export const OutlineView = React.memo(() => {
       let itemStorylines = isScene ? item.line.storylines : undefined;
 
       if (isSynopsis) {
-        const parentScene = getSynopsisPrecedingScene(rawIdx);
         if (parentScene) {
           itemColor = parentScene.color;
           itemStorylines = parentScene.storylines;
@@ -346,13 +389,20 @@ export const OutlineView = React.memo(() => {
         return false;
       }
 
-      if (selectedStoryline && (isScene || isSynopsis) && (!itemStorylines || !itemStorylines.includes(selectedStoryline))) {
+      if (
+        selectedStoryline &&
+        (isScene || isSynopsis) &&
+        (!itemStorylines || !itemStorylines.includes(selectedStoryline))
+      ) {
         return false;
       }
 
-      if (searchQuery) {
-        const textToSearch = item.line.text.replace(/^[.#= ]+/, "").trim().toLowerCase();
-        if (!textToSearch.includes(searchQuery.toLowerCase())) return false;
+      if (query) {
+        const textToSearch = item.line.text
+          .replace(/^[.#= ]+/, "")
+          .trim()
+          .toLowerCase();
+        if (!textToSearch.includes(query)) return false;
       }
       return true;
     });
@@ -371,13 +421,22 @@ export const OutlineView = React.memo(() => {
         }
       }
       result.push(item);
-      if (isSection && collapsedSections[item.line.id]) {
+      if (isSection && collapsedSections[item.key ?? item.line.id]) {
         isCollapsed = true;
         collapseDepth = depth;
       }
     }
     return result;
-  }, [rawOutlineItems, showSections, showScenes, showSynopses, searchQuery, collapsedSections, selectedColor, selectedStoryline]);
+  }, [
+    rawOutlineItems,
+    showSections,
+    showScenes,
+    showSynopses,
+    outlineQuery,
+    collapsedSections,
+    selectedColor,
+    selectedStoryline,
+  ]);
 
   const tree = useMemo(() => buildTree(visibleItems, collapsedSections), [visibleItems, collapsedSections]);
   const selectable = useMemo(() => flattenSelectable(tree), [tree]);
@@ -406,19 +465,30 @@ export const OutlineView = React.memo(() => {
         const line = parsedDoc.lines[i];
         if (line.isOutlineElement && line.type !== LineType.synopse) {
           const found = selectableMap.get(line.id);
-          if (found !== undefined) { activeSelectableIdx = found; break; }
+          if (found !== undefined) {
+            activeSelectableIdx = found;
+            break;
+          }
         }
       }
     }
   }
   if (activeSelectableIdx === -1 && selectable.length > 0) activeSelectableIdx = 0;
 
-  // Scroll active into view
+  // Virtual rows must be mounted before DOM focus/selection is attempted.
   useEffect(() => {
-    if (activeItemRef.current) {
-      activeItemRef.current.scrollIntoView({ behavior: "auto", block: "nearest" });
-    }
-  }, [activeSelectableIdx]);
+    // Filtering, resizing and reparsing must not initiate cursor-follow scrolling.
+    if (lastFollowedLine.current === activeLineNumber) return;
+    lastFollowedLine.current = activeLineNumber;
+    if (activeSelectableIdx < 0) return;
+    const id = selectable[activeSelectableIdx]?.item.line.id;
+    cancelReveal.current = revealVirtualRow(
+      () => virtualListRef.current,
+      activeSelectableIdx,
+      (element) => element.querySelector(`[data-scene-id="${id}"]`),
+    );
+    return () => cancelReveal.current?.();
+  }, [activeLineNumber, activeSelectableIdx, selectable]);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -427,7 +497,7 @@ export const OutlineView = React.memo(() => {
     }
   }, []);
 
-  const dragCleanupRef = useRef<{ onMove?: (e: MouseEvent) => void; onUp?: () => void }>({});
+  const dragCleanupRef = useRef<{ onMove?: (e: MouseEvent) => void; onUp?: () => void; cancel?: () => void }>({});
 
   // Cleanup drag listeners on unmount
   useEffect(() => {
@@ -438,6 +508,7 @@ export const OutlineView = React.memo(() => {
       if (dragCleanupRef.current.onUp) {
         document.removeEventListener("mouseup", dragCleanupRef.current.onUp);
       }
+      dragCleanupRef.current.cancel?.();
       if (ghostRef.current) {
         document.body.removeChild(ghostRef.current);
         ghostRef.current = null;
@@ -481,12 +552,12 @@ export const OutlineView = React.memo(() => {
 
     const move = (dir: -1 | 1) => {
       e.preventDefault();
-      const nextIdx = dir === 1
-        ? Math.min(selectable.length - 1, activeSelectableIdx + 1)
-        : Math.max(0, activeSelectableIdx - 1);
+      const nextIdx =
+        dir === 1 ? Math.min(selectable.length - 1, activeSelectableIdx + 1) : Math.max(0, activeSelectableIdx - 1);
       const target = selectable[nextIdx].item;
       if (setSelectedSceneId) setSelectedSceneId(target.line.id);
-      scrollToLine(target.index, true);
+      scrollToLine(resolveIndex(target.index), true);
+      virtualListRef.current?.scrollToRow({ index: nextIdx, align: "auto" });
       requestAnimationFrame(() => {
         const el = listRef.current?.querySelector(`[data-scene-id="${target.line.id}"]`) as HTMLElement;
         el?.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -499,7 +570,7 @@ export const OutlineView = React.memo(() => {
       const active = selectable[activeSelectableIdx];
       if (active && active.item.line.type === LineType.section) {
         e.preventDefault();
-        const id = active.item.line.id;
+        const id = active.item.key ?? active.item.line.id;
         const isCollapsed = collapsedSections[id];
         if ((e.key === "ArrowRight" && isCollapsed) || (e.key === "ArrowLeft" && !isCollapsed)) {
           setCollapsedSections((prev) => ({ ...prev, [id]: !isCollapsed }));
@@ -508,94 +579,128 @@ export const OutlineView = React.memo(() => {
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (activeSelectableIdx >= 0 && activeSelectableIdx < selectable.length) {
-        scrollToLine(selectable[activeSelectableIdx].item.index);
+        scrollToLine(resolveIndex(selectable[activeSelectableIdx].item.index));
       }
     }
   };
 
-  const handleHandleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
-    e.preventDefault();
-    if (!listRef.current) return;
+  const handleHandleMouseDown = useCallback(
+    (e: React.MouseEvent, index: number) => {
+      e.preventDefault();
+      if (!listRef.current) return;
+      cancelReveal.current?.();
 
-    mouseDragRef.current = index;
-    setDraggedItemIdx(index);
+      mouseDragRef.current = index;
+      setDraggedItemIdx(index);
 
-    const ghost = document.createElement("div");
-    ghost.textContent = scenesItems[index] ? getSceneTitle(scenesItems[index].line) : "";
-    Object.assign(ghost.style, {
-      position: "fixed",
-      pointerEvents: "none",
-      zIndex: "10000",
-      opacity: "0.85",
-      padding: "4px 10px",
-      background: "rgb(25, 118, 210)",
-      color: "white",
-      borderRadius: "0",
-      fontSize: "13px",
-      left: e.clientX + "px",
-      top: e.clientY + "px",
-      transform: "translate(-50%, -50%)",
-      whiteSpace: "nowrap",
-      textTransform: "uppercase",
-    });
-    document.body.appendChild(ghost);
-    ghostRef.current = ghost;
+      const ghost = document.createElement("div");
+      ghost.textContent = scenesItems[index] ? getSceneTitle(scenesItems[index].line) : "";
+      Object.assign(ghost.style, {
+        position: "fixed",
+        pointerEvents: "none",
+        zIndex: "10000",
+        opacity: "0.85",
+        padding: "4px 10px",
+        background: "rgb(25, 118, 210)",
+        color: "white",
+        borderRadius: "0",
+        fontSize: "13px",
+        left: e.clientX + "px",
+        top: e.clientY + "px",
+        transform: "translate(-50%, -50%)",
+        whiteSpace: "nowrap",
+        textTransform: "uppercase",
+      });
+      document.body.appendChild(ghost);
+      ghostRef.current = ghost;
 
-    const getTargetIndex = (clientY: number): number | null => {
-      if (!listRef.current) return null;
-      const items = listRef.current.querySelectorAll("[data-scene-index]");
-      for (const item of items) {
-        const rect = item.getBoundingClientRect();
-        const idx = parseInt(item.getAttribute("data-scene-index") || "", 10);
-        if (idx === mouseDragRef.current) continue;
-        if (clientY <= rect.bottom) return clientY < rect.top + rect.height / 2 ? idx : idx + 1;
-      }
-      return scenesItems.length;
-    };
+      const getTargetIndex = (clientY: number): number | null => {
+        if (!listRef.current) return null;
+        const items = listRef.current.querySelectorAll("[data-scene-index]");
+        let lastIndex: number | null = null;
+        for (const item of items) {
+          const rect = item.getBoundingClientRect();
+          const idx = parseInt(item.getAttribute("data-scene-index") || "", 10);
+          lastIndex = idx;
+          if (idx === mouseDragRef.current) continue;
+          if (clientY <= rect.bottom) return clientY < rect.top + rect.height / 2 ? idx : idx + 1;
+        }
+        return lastIndex === null ? null : Math.min(lastIndex + 1, scenesItems.length);
+      };
 
-    const onMove = (ev: MouseEvent) => {
-      if (ghostRef.current) {
-        ghostRef.current.style.left = ev.clientX + "px";
-        ghostRef.current.style.top = ev.clientY + "px";
-      }
-      const target = getTargetIndex(ev.clientY);
-      if (target !== mouseOverRef.current) {
-        mouseOverRef.current = target;
-        setDragOverItemIdx(target);
-      }
-    };
+      let dragY = e.clientY;
+      let animation: number;
+      const updateTarget = () => {
+        const target = getTargetIndex(dragY);
+        if (target !== mouseOverRef.current) {
+          mouseOverRef.current = target;
+          setDragOverItemIdx(target);
+        }
+      };
+      const autoscroll = () => {
+        const scroller = virtualListRef.current?.element;
+        if (scroller) {
+          const bounds = scroller.getBoundingClientRect();
+          const delta = dragY < bounds.top + 32 ? -12 : dragY > bounds.bottom - 32 ? 12 : 0;
+          if (delta) {
+            scroller.scrollTop += delta;
+            updateTarget();
+          }
+        }
+        animation = requestAnimationFrame(autoscroll);
+      };
+      animation = requestAnimationFrame(autoscroll);
+      const onMove = (ev: MouseEvent) => {
+        dragY = ev.clientY;
+        if (ghostRef.current) {
+          ghostRef.current.style.left = ev.clientX + "px";
+          ghostRef.current.style.top = ev.clientY + "px";
+        }
+        updateTarget();
+      };
 
-    const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-      dragCleanupRef.current = {};
-      if (ghostRef.current) {
-        document.body.removeChild(ghostRef.current);
-        ghostRef.current = null;
-      }
-      const fromIdx = mouseDragRef.current;
-      const toIdx = mouseOverRef.current;
-      mouseDragRef.current = null;
-      mouseOverRef.current = null;
-      setDraggedItemIdx(null);
-      setDragOverItemIdx(null);
-      if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
-        const clampedTo = Math.min(toIdx, scenesItems.length - 1);
-        reorderScenes(fromIdx, clampedTo);
-      }
-    };
+      const onUp = () => {
+        cancelAnimationFrame(animation);
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        dragCleanupRef.current = {};
+        if (ghostRef.current) {
+          document.body.removeChild(ghostRef.current);
+          ghostRef.current = null;
+        }
+        const fromIdx = mouseDragRef.current;
+        const toIdx = mouseOverRef.current;
+        mouseDragRef.current = null;
+        mouseOverRef.current = null;
+        setDraggedItemIdx(null);
+        setDragOverItemIdx(null);
+        if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
+          const clampedTo = Math.min(toIdx > fromIdx ? toIdx - 1 : toIdx, scenesItems.length - 1);
+          reorderScenes(fromIdx, clampedTo);
+        }
+      };
 
-    dragCleanupRef.current = { onMove, onUp };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  }, [scenesItems, reorderScenes]);
+      dragCleanupRef.current = { onMove, onUp, cancel: () => cancelAnimationFrame(animation) };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    },
+    [scenesItems, reorderScenes],
+  );
 
-  const handleItemClick = (item: OutlineItem, isSelectable: boolean, e: React.MouseEvent) => {
-    scrollToLine(item.index, true);
-    if (setSelectedSceneId && isSelectable) setSelectedSceneId(item.line.id);
-    const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
-    if (container) container.focus();
-  };
+  const handleItemClick = useCallback(
+    (item: OutlineItem, isSelectable: boolean, e: React.MouseEvent) => {
+      scrollToLine(resolveIndex(item.index), true);
+      if (setSelectedSceneId && isSelectable) setSelectedSceneId(item.line.id);
+      const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
+      if (container) container.focus();
+    },
+    [scrollToLine, setSelectedSceneId, resolveIndex],
+  );
+
+  const scrollOutlineToLine = useCallback(
+    (index: number, noFocus?: boolean) => scrollToLine(resolveIndex(index), noFocus),
+    [scrollToLine, resolveIndex],
+  );
 
   const fontSizes = useMemo(() => {
     return {
@@ -623,416 +728,67 @@ export const OutlineView = React.memo(() => {
     }[outlineFontSize];
   }, [outlineFontSize]);
 
-  const renderOutlineSynopses = (synopses: OutlineItem[]) => {
-    if (synopses.length === 0) return null;
-
-    if (synopses.length === 1) {
-      const syn = synopses[0];
-      return (
-        <Box
-          sx={{
-            mt: 0.5,
-            mb: 0.3,
-            px: 1,
-            py: 0.4,
-            borderRadius: "2px",
-            bgcolor: "transparent",
-          }}
-        >
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              scrollToLine(syn.index, true);
-              const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
-              if (container) container.focus();
-            }}
-            sx={{
-              display: "block",
-              cursor: "pointer",
-              fontStyle: "italic",
-              fontSize: fontSizes.synopsis,
-              fontFamily: "var(--font-ui)",
-              lineHeight: 1.4,
-              letterSpacing: "0.01em",
-              "&:hover": { color: "text.primary" },
-            }}
-          >
-            {syn.line.text.replace(/^=[ ]*/, "").trim()}
-          </Typography>
-        </Box>
-      );
-    }
-
-    return (
-      <Box
-        sx={{
-          mt: 0.5,
-          mb: 0.3,
-          px: 1,
-          py: 0.4,
-          borderRadius: "2px",
-          bgcolor: "transparent",
-          display: "flex",
-          flexDirection: "column",
-          gap: 0.3,
-        }}
-      >
-        {synopses.map((syn) => (
-          <Typography
-            key={syn.line.id}
-            variant="body2"
-            color="text.secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              scrollToLine(syn.index, true);
-              const container = e.currentTarget.closest('[tabIndex="0"]') as HTMLElement;
-              if (container) container.focus();
-            }}
-            sx={{
-              cursor: "pointer",
-              fontStyle: "italic",
-              fontSize: fontSizes.synopsis,
-              fontFamily: "var(--font-ui)",
-              lineHeight: 1.4,
-              letterSpacing: "0.01em",
-              "&:hover": { color: "text.primary" },
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 0.5,
-            }}
-          >
-            • {syn.line.text.replace(/^=[ ]*/, "").trim()}
-          </Typography>
-        ))}
-      </Box>
-    );
-  };
-
-  const renderTreeNode = (node: TreeNode, renderChildren = true) => {
-    const { item, children, synopses } = node;
-    const { line } = item;
-    const isSection = line.type === LineType.section;
-    const isSynopsis = line.type === LineType.synopse;
-    const isScene = line.type === LineType.heading;
-    const isCollapsed = collapsedSections[line.id];
-    const isDragging = draggedItemIdx === item.index;
-    const isDragOver = dragOverItemIdx === item.index;
-    const isActive = line.id === selectable[activeSelectableIdx]?.item.line.id;
-    const sceneColor = getSceneColor(line);
-    const sceneIndex = isScene ? scenesItems.findIndex((s) => s.line.id === line.id) : -1;
-    const depth = node.depth || 0;
-
-    if (isSection) {
-      const sDepth = line.sectionDepth || 1;
-      const isLevel1 = sDepth === 1;
-
-      return (
-        <Box key={line.id} sx={{ display: "flex", flexDirection: "column" }}>
-          <ListItemButton
-            data-scene-id={line.id}
-            ref={isActive ? activeItemRef : null}
-            onClick={(e) => handleItemClick(item, true, e)}
-            onDoubleClick={(e) => toggleSection(line.id, e)}
-            selected={isActive}
-            sx={{
-              pl: `${Math.min(depth * 8, 16)}px`,
-              py: isLevel1 ? 0.4 : 0.25,
-              mt: isLevel1 ? 1.2 : 0.4,
-              mb: 0.2,
-              borderRadius: "6px",
-              borderTop: isLevel1 ? "1px solid" : "none",
-              borderColor: "color-mix(in srgb, var(--button-color) 25%, transparent)",
-              bgcolor: "transparent",
-              transition: "background-color var(--duration-fast) ease",
-              "&:hover": {
-                bgcolor: "action.hover",
-              },
-            }}
-          >
-            <IconButton
-              size="small"
-              onClick={(e) => toggleSection(line.id, e)}
-              sx={{
-                p: 0.1,
-                mr: 0.3,
-                transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
-                transition: "transform var(--duration-normal) ease",
-              }}
-            >
-              <KeyboardArrowDownIcon sx={{ fontSize: 13 }} />
-            </IconButton>
-            <ListItemText
-              slotProps={{ secondary: { component: 'span' as const } }}
-              primary={
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: isLevel1 ? 700 : 600,
-                    color: isLevel1 ? "var(--button-color)" : "text.primary",
-                    fontSize: fontSizes.section,
-                    fontFamily: "var(--font-ui)",
-                    letterSpacing: isLevel1 ? "0.04em" : "0.01em",
-                    textTransform: isLevel1 ? "uppercase" : "none",
-                  }}
-                >
-                  {line.text.replace(/^[.#= ]+/, "").trim()}
-                </Typography>
-              }
-              secondary={showSynopses && renderOutlineSynopses(synopses)}
-            />
-          </ListItemButton>
-          {!isCollapsed && renderChildren && children.length > 0 && (
-            <Box sx={{
-              display: "flex",
-              flexDirection: "column",
-              ml: 1.1,
-              pl: 0,
-            }}>
-              {children.map((c) => renderTreeNode(c))}
-            </Box>
-          )}
-        </Box>
-      );
-    }
-
-    if (isSynopsis) {
-      const isActive = line.id === selectable[activeSelectableIdx]?.item.line.id;
-      return (
-        <ListItemButton
-          key={line.id}
-          data-scene-id={line.id}
-          ref={isActive ? activeItemRef : null}
-          selected={isActive}
-          onClick={(e) => { handleItemClick(item, true, e); }}
-          sx={{ pl: `${12 + Math.min(depth * 8, 16)}px`, py: 0.15, borderRadius: "4px", mb: 0.1 }}
-        >
-          <Box component="span" sx={{ mr: 0.8, fontSize: 10, color: "text.secondary" }}>•</Box>
-          <ListItemText
-            primary={
-              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", fontSize: fontSizes.synopsis, fontFamily: "var(--font-ui)", letterSpacing: "0.01em" }}>
-                {line.text.replace(/^=[ ]*/, "").trim()}
-              </Typography>
-            }
-          />
-        </ListItemButton>
-      );
-    }
-
-    const showDragOver = isDragOver && !isDragging;
-    const sceneIndent = Math.min(depth * 8, 16);
-    const hasSubCardContent = (showStorylines && line.storylines && line.storylines.length > 0) || (showSynopses && synopses.length > 0);
-
-    return (
-      <Box key={line.id} sx={{ display: "flex", flexDirection: "column" }}>
-        <ListItemButton
-          data-scene-id={line.id}
-          data-scene-index={isScene ? sceneIndex : undefined}
-          ref={isActive ? activeItemRef : null}
-          selected={isActive}
-          onClick={(e) => handleItemClick(item, true, e)}
-          onContextMenu={isScene ? (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setSceneContextMenu({ x: e.clientX, y: e.clientY, lineNumber: item.index + 1 });
-          } : undefined}
-          sx={{
-            ml: `${sceneIndent}px`,
-            py: 0.4,
-            px: 0.8,
-            borderRadius: hasSubCardContent ? "6px 6px 0 0" : "6px",
-            mb: hasSubCardContent ? 0 : 0.4,
-            opacity: isDragging ? 0.4 : 1,
-            border: "1px solid",
-            borderColor: isActive
-              ? "var(--button-color, primary.main)"
-              : "color-mix(in srgb, var(--text-main) 10%, transparent)",
-            boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.06)" : "0 1px 2px rgba(0,0,0,0.02)",
-            transition: "all var(--duration-fast) ease",
-            bgcolor: showDragOver
-              ? "action.hover"
-              : isActive
-                ? (sceneColor
-                    ? (sceneColor.startsWith("var")
-                        ? `color-mix(in srgb, ${sceneColor} 22%, transparent)`
-                        : `${sceneColor}30`)
-                    : "action.selected")
-                : (sceneColor
-                    ? (sceneColor.startsWith("var")
-                        ? `color-mix(in srgb, ${sceneColor} 12%, transparent)`
-                        : `${sceneColor}1A`)
-                    : "background.paper"),
-            position: "relative",
-            "&:hover": {
-              borderColor: "color-mix(in srgb, var(--button-color) 40%, transparent)",
-              bgcolor: sceneColor
-                ? (sceneColor.startsWith("var")
-                    ? `color-mix(in srgb, ${sceneColor} 20%, transparent)`
-                    : `${sceneColor}28`)
-                : "action.hover",
-            },
-            "&.Mui-selected": {
-              bgcolor: sceneColor
-                ? (sceneColor.startsWith("var")
-                    ? `color-mix(in srgb, ${sceneColor} 24%, transparent)`
-                    : `${sceneColor}35`)
-                : "action.selected",
-              "&:hover": {
-                bgcolor: sceneColor
-                  ? (sceneColor.startsWith("var")
-                      ? `color-mix(in srgb, ${sceneColor} 28%, transparent)`
-                      : `${sceneColor}40`)
-                  : "action.selected",
-              }
-            },
-            "&::after": showDragOver ? {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: "2px",
-              bgcolor: "primary.main",
-            } : undefined,
-          }}
-        >
-          {isScene && (
-            <Box
-              onMouseDown={(e) => handleHandleMouseDown(e, sceneIndex)}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                cursor: "grab",
-                color: "text.disabled",
-                mr: 0.4,
-                flexShrink: 0,
-                "&:hover": { color: "text.secondary" },
-                "&:active": { cursor: "grabbing" },
-              }}
-            >
-              <DragHandleIcon sx={{ fontSize: 13 }} />
-            </Box>
-          )}
-          {!isScene && <Box sx={{ width: 18, flexShrink: 0 }} />}
-          <ListItemText
-            primary={
-              <Box sx={{ display: "flex", gap: 0.6, alignItems: "center", width: "100%" }}>
-                {line.sceneNumber && (
-                  <OutlineTag label={line.sceneNumber} size={fontSizes.number} />
-                )}
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 700,
-                    color: "text.primary",
-                    fontSize: fontSizes.scene,
-                    fontFamily: "var(--font-ui)",
-                    letterSpacing: "0.01em",
-                    textTransform: "uppercase",
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {getSceneTitle(line)}
-                </Typography>
-              </Box>
-            }
-          />
-        </ListItemButton>
-
-        {/* Separate Attached Sub-Card for Storylines & Synopsis */}
-        {hasSubCardContent && (
-          <Box
-            sx={{
-              ml: `${sceneIndent}px`,
-              mb: 0.4,
-              p: "6px 8px",
-              borderRadius: "0 0 6px 6px",
-              border: "1px solid",
-              borderColor: "color-mix(in srgb, var(--text-main) 10%, transparent)",
-              borderTop: "none",
-              bgcolor: "color-mix(in srgb, var(--text-main) 3%, transparent)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 0.4,
-            }}
-          >
-            {showStorylines && line.storylines && line.storylines.length > 0 && (
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6 }}>
-                {line.storylines.map((sl) => (
-                  <Box
-                    key={sl}
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      px: 0.8,
-                      py: 0.25,
-                      borderRadius: "4px",
-                      border: "1px solid",
-                      borderColor: "divider",
-                      bgcolor: "background.paper",
-                      color: "text.secondary",
-                      fontSize: "9.5px",
-                      fontWeight: 600,
-                      letterSpacing: "0.03em",
-                      textTransform: "uppercase",
-                      fontFamily: "var(--font-ui)",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-                    }}
-                  >
-                    {sl}
-                  </Box>
-                ))}
-              </Box>
-            )}
-            {showSynopses && renderOutlineSynopses(synopses)}
-          </Box>
-        )}
-      </Box>
-    );
-  };
-
   const fontSizeMap = {
     small: "11px",
     normal: "12.5px",
     large: "14px",
   };
-  const [scrollTop, setScrollTop] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(500);
-
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
-  }, []);
-
-  useEffect(() => {
-    if (!listRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerHeight(entry.contentRect.height);
-      }
+  const flatNodes = selectable;
+  const sceneIndexMap = useMemo(() => new Map(scenesItems.map((item, index) => [item.line.id, index])), [scenesItems]);
+  const [listWidth, setListWidth] = useState(0);
+  const rowHeightKeys = useMemo(
+    () => flatNodes.map((node) => JSON.stringify([
+      listWidth, outlineFontSize, node.depth, node.item.line.type,
+      node.item.line.sectionDepth, node.item.line.text, node.item.line.sceneNumber,
+      showStorylines ? node.item.line.storylines : undefined,
+      showSynopses ? node.synopses.map((synopsis) => synopsis.line.text) : [],
+    ])),
+    [flatNodes, listWidth, outlineFontSize, showSynopses, showStorylines],
+  );
+  const rowHeight = useKeyedRowHeights(rowHeightKeys);
+  const handleContextMenu = useCallback((event: React.MouseEvent, item: OutlineItem) => {
+    setSceneContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      lineNumber: item.index + 1,
+      source: parsedTextRef.current,
     });
-    observer.observe(listRef.current);
-    return () => observer.disconnect();
   }, []);
-
-  const flatNodes = useMemo(() => flattenSelectable(tree), [tree]);
-
-  // For screenplays with up to 500 outline items (99.9% of screenplays), render DOM nodes directly
-  // to give 100% accurate heights for sections, synopses, and storylines, eliminating scroll jumping & rubber-banding.
-  const useVirtualization = flatNodes.length > 500;
-  const defaultItemHeight = outlineFontSize === "small" ? 28 : outlineFontSize === "large" ? 38 : 32;
-  const overscan = 20;
-
-  const startIndex = useVirtualization ? Math.max(0, Math.floor(scrollTop / defaultItemHeight) - overscan) : 0;
-  const endIndex = useVirtualization ? Math.min(flatNodes.length, Math.ceil((scrollTop + containerHeight) / defaultItemHeight) + overscan) : flatNodes.length;
-
-  const visibleNodes = useVirtualization ? flatNodes.slice(startIndex, endIndex) : flatNodes;
-  const paddingTop = useVirtualization ? startIndex * defaultItemHeight : 0;
-  const paddingBottom = useVirtualization ? Math.max(0, (flatNodes.length - endIndex) * defaultItemHeight) : 0;
+  const rowProps = useMemo(
+    () => ({
+      nodes: flatNodes,
+      activeId: selectable[activeSelectableIdx]?.item.line.id,
+      collapsedSections,
+      draggedItemIdx,
+      dragOverItemIdx,
+      showStorylines,
+      showSynopses,
+      sceneIndexMap,
+      fontSizes,
+      scrollToLine: scrollOutlineToLine,
+      handleItemClick,
+      toggleSection,
+      handleHandleMouseDown,
+      onContextMenu: handleContextMenu,
+    }),
+    [
+      flatNodes,
+      selectable,
+      activeSelectableIdx,
+      collapsedSections,
+      draggedItemIdx,
+      dragOverItemIdx,
+      showStorylines,
+      showSynopses,
+      sceneIndexMap,
+      fontSizes,
+      scrollOutlineToLine,
+      handleItemClick,
+      toggleSection,
+      handleHandleMouseDown,
+      handleContextMenu,
+    ],
+  );
 
   if (isProse) {
     return (
@@ -1047,35 +803,32 @@ export const OutlineView = React.memo(() => {
           userSelect: "none",
         }}
       >
-
-        <Box sx={{
-          p: 1.5,
-          pb: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: 1,
-          borderColor: "divider",
-        }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <Box
+          sx={{
+            p: 1.5,
+            pb: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: 1,
+            borderColor: "divider",
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}
+          >
             Table of Contents
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <Tooltip title="Outline font size">
-              <IconButton
-                size="small"
-                onClick={(e) => setMenuAnchor(e.currentTarget)}
-                sx={{ p: 0.4 }}
-              >
+              <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ p: 0.4 }}>
                 <MoreHorizIcon sx={{ fontSize: 16 }} />
               </IconButton>
             </Tooltip>
           </Box>
-          <Menu
-            anchorEl={menuAnchor}
-            open={Boolean(menuAnchor)}
-            onClose={() => setMenuAnchor(null)}
-          >
+          <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
             <Box sx={{ px: 1.5, py: 0.5 }}>
               <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
                 Outline Size
@@ -1086,7 +839,7 @@ export const OutlineView = React.memo(() => {
                 key={size}
                 selected={outlineFontSize === size}
                 onClick={() => {
-                  setOutlineFontSize(size as 'small' | 'normal' | 'large');
+                  setOutlineFontSize(size as "small" | "normal" | "large");
                   setMenuAnchor(null);
                 }}
                 sx={{ textTransform: "capitalize" }}
@@ -1122,8 +875,8 @@ export const OutlineView = React.memo(() => {
                     <IconButton size="small" onClick={() => setSearchQuery("")}>
                       <CloseIcon />
                     </IconButton>
-                  )
-                }
+                  ),
+                },
               }}
             />
           </Box>
@@ -1157,13 +910,26 @@ export const OutlineView = React.memo(() => {
             }}
           >
             {filteredProseHeadings.length === 0 ? (
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 3, textAlign: "center", height: "60%", opacity: 0.6 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  p: 3,
+                  textAlign: "center",
+                  height: "60%",
+                  opacity: 0.6,
+                }}
+              >
                 <InfoOutlinedIcon sx={{ fontSize: 24, mb: 1, opacity: 0.5 }} />
                 <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, fontSize: "0.75rem" }}>
                   {searchQuery ? "No matching headings" : "No headings found"}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
-                  {searchQuery ? "Try a different search query." : "Add headings using #, ##, or ### to structure your document."}
+                  {searchQuery
+                    ? "Try a different search query."
+                    : "Add headings using #, ##, or ### to structure your document."}
                 </Typography>
               </Box>
             ) : (
@@ -1175,7 +941,6 @@ export const OutlineView = React.memo(() => {
                     <ListItemButton
                       key={heading.id}
                       data-prose-heading-id={heading.id}
-                      ref={isActive ? activeItemRef : null}
                       selected={isActive}
                       onClick={() => {
                         scrollToLine(heading.lineNumber, true);
@@ -1212,7 +977,12 @@ export const OutlineView = React.memo(() => {
                             sx={{
                               fontWeight: heading.level === 1 ? 700 : heading.level === 2 ? 600 : 500,
                               color: heading.level === 1 && !isActive ? "var(--button-color)" : "text.primary",
-                              fontSize: heading.level === 1 ? fontSizes.section : heading.level === 2 ? fontSizes.scene : fontSizes.synopsis,
+                              fontSize:
+                                heading.level === 1
+                                  ? fontSizes.section
+                                  : heading.level === 2
+                                    ? fontSizes.scene
+                                    : fontSizes.synopsis,
                               fontFamily: "var(--font-ui)",
                               letterSpacing: "0.01em",
                               overflow: "hidden",
@@ -1247,35 +1017,32 @@ export const OutlineView = React.memo(() => {
         userSelect: "none",
       }}
     >
-
-      <Box sx={{
-        p: 1.5,
-        pb: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderBottom: 1,
-        borderColor: "divider",
-      }}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+      <Box
+        sx={{
+          p: 1.5,
+          pb: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
+      >
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}
+        >
           Outline
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <Tooltip title="Outline font size">
-            <IconButton
-              size="small"
-              onClick={(e) => setMenuAnchor(e.currentTarget)}
-              sx={{ p: 0.4 }}
-            >
+            <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ p: 0.4 }}>
               <MoreHorizIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
         </Box>
-        <Menu
-          anchorEl={menuAnchor}
-          open={Boolean(menuAnchor)}
-          onClose={() => setMenuAnchor(null)}
-        >
+        <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
           <Box sx={{ px: 1.5, py: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700 }}>
               Show
@@ -1300,7 +1067,10 @@ export const OutlineView = React.memo(() => {
             Synopses
           </MenuItem>
           <MenuItem onClick={() => setShowStorylines((p) => !p)}>
-            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showStorylines ? "primary.main" : "text.disabled" }}>
+            <Box
+              component="span"
+              sx={{ mr: 1, fontSize: 10, color: showStorylines ? "primary.main" : "text.disabled" }}
+            >
               {showStorylines ? "✓" : "○"}
             </Box>
             Storylines
@@ -1316,7 +1086,7 @@ export const OutlineView = React.memo(() => {
               key={size}
               selected={outlineFontSize === size}
               onClick={() => {
-                setOutlineFontSize(size as 'small' | 'normal' | 'large');
+                setOutlineFontSize(size as "small" | "normal" | "large");
                 setMenuAnchor(null);
               }}
               sx={{ textTransform: "capitalize" }}
@@ -1352,8 +1122,8 @@ export const OutlineView = React.memo(() => {
                   <IconButton size="small" onClick={() => setSearchQuery("")}>
                     <CloseIcon />
                   </IconButton>
-                )
-              }
+                ),
+              },
             }}
           />
           <IconButton
@@ -1372,96 +1142,69 @@ export const OutlineView = React.memo(() => {
               p: 0.3,
             }}
           >
-            <Badge badgeContent={activeFilterCount} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}>
+            <Badge
+              badgeContent={activeFilterCount}
+              color="primary"
+              sx={{ "& .MuiBadge-badge": { fontSize: 8, height: 14, minWidth: 14, top: -2, right: -2 } }}
+            >
               <TuneIcon sx={{ fontSize: 14 }} />
             </Badge>
           </IconButton>
         </Box>
         <Popover
-        open={Boolean(filterAnchorEl)}
-        anchorEl={filterAnchorEl}
-        onClose={() => setFilterAnchorEl(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { p: 1.5, width: 260, borderRadius: "8px" } } }}
-      >
-        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 1 }}>
-          Filter Outline
-        </Typography>
-
-        <Box sx={{ mb: 1.5 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
-            Scene Color
+          open={Boolean(filterAnchorEl)}
+          anchorEl={filterAnchorEl}
+          onClose={() => setFilterAnchorEl(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          slotProps={{ paper: { sx: { p: 1.5, width: 260, borderRadius: "8px" } } }}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 1 }}
+          >
+            Filter Outline
           </Typography>
-          <Grid container spacing={0.5}>
-            {[
-              { id: null, label: "All Colors" },
-              { id: "orange", label: "Orange" },
-              { id: "blue", label: "Blue" },
-              { id: "green", label: "Green" },
-              { id: "yellow", label: "Yellow" },
-              { id: "purple", label: "Purple" },
-              { id: "pink", label: "Pink" },
-              { id: "brown", label: "Brown" },
-              { id: "red", label: "Red" },
-            ].map(({ id, label }) => {
-              const count = id === null ? Object.values(colorStats).reduce((a, b) => a + b, 0) : (colorStats[id] || 0);
-              if (id !== null && count === 0) return null;
-              const isSelected = selectedColor === id;
-              const hex = id ? getSceneColor({ color: id } as any) : undefined;
-              return (
-                <Grid key={id ?? "all"}>
-                  <Chip
-                    label={`${label} (${count})`}
-                    size="small"
-                    onClick={() => setSelectedColor(isSelected ? null : id)}
-                    sx={{
-                      fontSize: 9.5,
-                      height: 20,
-                      borderRadius: "4px",
-                      fontWeight: isSelected ? 700 : 500,
-                      border: "1px solid",
-                      borderColor: isSelected ? (hex || "primary.main") : "divider",
-                      bgcolor: isSelected ? (hex || "primary.main") : "transparent",
-                      color: isSelected ? "#fff" : "text.secondary",
-                      cursor: "pointer",
-                      "&:hover": {
-                        bgcolor: isSelected ? (hex || "primary.main") : "action.hover",
-                      },
-                    }}
-                  />
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Box>
 
-        {Object.keys(storylineStats).length > 0 && (
-          <Box>
+          <Box sx={{ mb: 1.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
-              Storyline
+              Scene Color
             </Typography>
             <Grid container spacing={0.5}>
-              {Object.entries(storylineStats).map(([sl, count]) => {
-                const isSelected = selectedStoryline === sl;
+              {[
+                { id: null, label: "All Colors" },
+                { id: "orange", label: "Orange" },
+                { id: "blue", label: "Blue" },
+                { id: "green", label: "Green" },
+                { id: "yellow", label: "Yellow" },
+                { id: "purple", label: "Purple" },
+                { id: "pink", label: "Pink" },
+                { id: "brown", label: "Brown" },
+                { id: "red", label: "Red" },
+              ].map(({ id, label }) => {
+                const count = id === null ? Object.values(colorStats).reduce((a, b) => a + b, 0) : colorStats[id] || 0;
+                if (id !== null && count === 0) return null;
+                const isSelected = selectedColor === id;
+                const hex = id ? getSceneColor({ color: id }) : undefined;
                 return (
-                  <Grid key={sl}>
+                  <Grid key={id ?? "all"}>
                     <Chip
-                      label={`${sl} (${count})`}
+                      label={`${label} (${count})`}
                       size="small"
-                      onClick={() => setSelectedStoryline(isSelected ? null : sl)}
+                      onClick={() => setSelectedColor(isSelected ? null : id)}
                       sx={{
                         fontSize: 9.5,
                         height: 20,
                         borderRadius: "4px",
                         fontWeight: isSelected ? 700 : 500,
                         border: "1px solid",
-                        borderColor: isSelected ? "primary.main" : "divider",
-                        bgcolor: isSelected ? "primary.main" : "transparent",
-                        color: isSelected ? "primary.contrastText" : "text.secondary",
+                        borderColor: isSelected ? hex || "primary.main" : "divider",
+                        bgcolor: isSelected ? hex || "primary.main" : "transparent",
+                        color: isSelected ? "#fff" : "text.secondary",
                         cursor: "pointer",
                         "&:hover": {
-                          bgcolor: isSelected ? "primary.main" : "action.hover",
+                          bgcolor: isSelected ? hex || "primary.main" : "action.hover",
                         },
                       }}
                     />
@@ -1470,66 +1213,162 @@ export const OutlineView = React.memo(() => {
               })}
             </Grid>
           </Box>
-        )}
-      </Popover>
 
-      <Box
-        ref={listRef}
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        onScroll={handleScroll}
-        role="listbox"
-        aria-label="Scene navigator"
-        sx={{
-          flex: 1,
-          overflowY: "auto",
-          outline: "none",
-          fontSize: fontSizeMap[outlineFontSize],
-          fontFamily: "var(--font-ui)",
-          "&::-webkit-scrollbar": {
-            width: 6,
-          },
-          "&::-webkit-scrollbar-track": {
-            bgcolor: "transparent",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            bgcolor: "var(--button-color, rgba(120, 120, 120, 0.25))",
-            borderRadius: "9999px",
-            border: "none",
-            "&:hover": {
-              bgcolor: "primary.main",
+          {Object.keys(storylineStats).length > 0 && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.8 }}>
+                Storyline
+              </Typography>
+              <Grid container spacing={0.5}>
+                {Object.entries(storylineStats).map(([sl, count]) => {
+                  const isSelected = selectedStoryline === sl;
+                  return (
+                    <Grid key={sl}>
+                      <Chip
+                        label={`${sl} (${count})`}
+                        size="small"
+                        onClick={() => setSelectedStoryline(isSelected ? null : sl)}
+                        sx={{
+                          fontSize: 9.5,
+                          height: 20,
+                          borderRadius: "4px",
+                          fontWeight: isSelected ? 700 : 500,
+                          border: "1px solid",
+                          borderColor: isSelected ? "primary.main" : "divider",
+                          bgcolor: isSelected ? "primary.main" : "transparent",
+                          color: isSelected ? "primary.contrastText" : "text.secondary",
+                          cursor: "pointer",
+                          "&:hover": {
+                            bgcolor: isSelected ? "primary.main" : "action.hover",
+                          },
+                        }}
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Box>
+          )}
+        </Popover>
+
+        <Box
+          ref={listRef}
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          role="listbox"
+          aria-label="Scene navigator"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: "hidden",
+            outline: "none",
+            fontSize: fontSizeMap[outlineFontSize],
+            fontFamily: "var(--font-ui)",
+            "&::-webkit-scrollbar": {
+              width: 6,
             },
-          },
-        }}
-      >
-        {flatNodes.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center", fontStyle: "italic" }}>
-            No outline elements match your criteria.
-          </Typography>
-        ) : (
-          <List disablePadding sx={{ display: "flex", flexDirection: "column", pl: 1.2, pr: 1.2, pt: `${paddingTop}px`, pb: `${paddingBottom}px` }}>
-            {visibleNodes.map((node) => renderTreeNode(node, false))}
-          </List>
-        )}
-      </Box>
-      <ContextMenu
-        open={Boolean(sceneContextMenu)}
-        x={sceneContextMenu?.x ?? 0}
-        y={sceneContextMenu?.y ?? 0}
-        items={[
-          {
-            label: "Copy Scene",
-            enabled: Boolean(editorView && sceneContextMenu),
-            action: () => {
-              if (!editorView || !sceneContextMenu) return;
-              const scene = getSceneBlockAtLine(editorView.state, sceneContextMenu.lineNumber);
-              if (scene) void copyToClipboard(scene.text);
+            "&::-webkit-scrollbar-track": {
+              bgcolor: "transparent",
             },
-          },
-        ] satisfies ContextMenuItem[]}
-        onClose={() => setSceneContextMenu(null)}
-      />
+            "&::-webkit-scrollbar-thumb": {
+              bgcolor: "var(--button-color, rgba(120, 120, 120, 0.25))",
+              borderRadius: "9999px",
+              border: "none",
+              "&:hover": {
+                bgcolor: "primary.main",
+              },
+            },
+          }}
+        >
+          {flatNodes.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center", fontStyle: "italic" }}>
+              No outline elements match your criteria.
+            </Typography>
+          ) : (
+            <VirtualList
+              listRef={virtualListRef}
+              rowCount={flatNodes.length}
+              rowHeight={rowHeight}
+              rowComponent={NavigatorVirtualRow}
+              rowProps={rowProps}
+              overscanCount={6}
+              defaultHeight={500}
+              onResize={({ width }) => setListWidth(width)}
+              style={{ height: "100%", width: "100%", outline: "none" }}
+            />
+          )}
+        </Box>
+        <ContextMenu
+          open={Boolean(sceneContextMenu)}
+          x={sceneContextMenu?.x ?? 0}
+          y={sceneContextMenu?.y ?? 0}
+          items={
+            [
+              {
+                label: "Copy Scene",
+                enabled: Boolean(editorView && sceneContextMenu),
+                action: () => {
+                  if (!editorView || !sceneContextMenu) return;
+                  const scene = getSceneBlockAtLine(
+                    editorView.state,
+                    (positions
+                      ? positions.mapper(sceneContextMenu.source)(sceneContextMenu.lineNumber - 1)
+                      : sceneContextMenu.lineNumber - 1) + 1,
+                  );
+                  if (scene) void copyToClipboard(scene.text);
+                },
+              },
+            ] satisfies ContextMenuItem[]
+          }
+          onClose={() => setSceneContextMenu(null)}
+        />
       </Box>
     </Box>
   );
 });
+
+interface NavigatorRows {
+  nodes: TreeNode[];
+  activeId?: string;
+  collapsedSections: Record<string, boolean>;
+  draggedItemIdx: number | null;
+  dragOverItemIdx: number | null;
+  showStorylines: boolean;
+  showSynopses: boolean;
+  sceneIndexMap: Map<string, number>;
+  fontSizes: React.ComponentProps<typeof OutlineRow>["fontSizes"];
+  scrollToLine: React.ComponentProps<typeof OutlineRow>["scrollToLine"];
+  handleItemClick: React.ComponentProps<typeof OutlineRow>["handleItemClick"];
+  toggleSection: React.ComponentProps<typeof OutlineRow>["toggleSection"];
+  handleHandleMouseDown: React.ComponentProps<typeof OutlineRow>["handleHandleMouseDown"];
+  onContextMenu: React.ComponentProps<typeof OutlineRow>["onContextMenu"];
+}
+function NavigatorVirtualRow({
+  index,
+  style,
+  ariaAttributes,
+  nodes,
+  activeId,
+  collapsedSections,
+  draggedItemIdx,
+  dragOverItemIdx,
+  sceneIndexMap,
+  ...props
+}: RowComponentProps<NavigatorRows>) {
+  const node = nodes[index];
+  const sceneIndex = sceneIndexMap.get(node.item.line.id) ?? -1;
+  return (
+    <div {...ariaAttributes} style={{ ...style, padding: "0 9.6px", boxSizing: "border-box", display: "flow-root" }}>
+      <OutlineRow
+        key={node.item.key ?? node.item.line.id}
+        node={node}
+        isActive={node.item.line.id === activeId}
+        isCollapsed={Boolean(collapsedSections[node.item.key ?? node.item.line.id])}
+        isDragging={sceneIndex >= 0 && draggedItemIdx === sceneIndex}
+        isDragOver={sceneIndex >= 0 && dragOverItemIdx === sceneIndex}
+        sceneIndex={sceneIndex}
+        {...props}
+      />
+    </div>
+  );
+}

@@ -661,7 +661,7 @@ Upon execution, a summary modal opens displaying the total number of lines remov
 - **Close** — \`×\` button in the pane header or <kbd>Esc</kbd>
 - **Enter** — jump to next match; <kbd>Shift+Enter</kbd> — jump to previous match
 
-All matches are highlighted inline in the editor.
+Matches are highlighted inline as you scroll. The full results list updates in the background; **Updating results...** appears while it catches up with edits.
 
 **Replace** (collapsible section):
 
@@ -669,7 +669,7 @@ All matches are highlighted inline in the editor.
 - **Preserve Case** (\`AB\`) toggle — intelligently adapts replacement case (ALL CAPS → ALL CAPS, Capitalized → Capitalized, lowercase → lowercase)
 - **Replace** — replaces the currently selected match and moves to next
 - **Replace Selected** — replaces only the specific matches selected via checkbox
-- **Replace All** — replaces all matches with confirmation before proceeding
+- **Replace All** — replaces all matches with confirmation before proceeding. If the document or search changes while confirmation is open, review the refreshed results and choose Replace All again.
 
 The pane width is adjustable — drag the left edge to resize. Press <kbd>Ctrl+F</kbd> again or click the close button to dismiss.`,
   },
@@ -732,6 +732,7 @@ For character data, statistics, and analysis charts, open the **X-Ray Analysis**
 - Filter scenes by color or storyline tags to isolate specific plot threads.
 - Customize outline font size (Small, Normal, Large) from the header menu.
 - Drag-and-drop scene reordering allows you to restructure scenes visually.
+- Reordering keeps the Navigator at your current scroll position and preserves the editor selection with its scene. Changing outline filters does not scroll back to the editor's active scene.
 
 For prose documents (\`.md\`), the panel switches to **Table of Contents** mode listing Markdown headings.`,
   },

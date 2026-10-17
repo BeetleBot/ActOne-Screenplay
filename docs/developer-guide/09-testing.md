@@ -15,6 +15,18 @@ npx vitest
 npx vitest --coverage
 ```
 
+## Performance benchmarks
+
+`npm run benchmark:editor` runs repeatable 50-, 100-, 200- and 300-page screenplay benchmarks in a real Chromium browser, including isolated editor-extension comparisons and the real application update pipeline. `npm run benchmark:app` runs only the application phase. Reports are saved under `benchmarks/results/`; reviewed reference results live under `benchmarks/baselines/`.
+
+See [benchmarks/README.md](../../benchmarks/README.md) for baseline comparisons, slower-CPU simulation, workload definitions and limitations. Benchmarks use production source and CSS; jsdom unit-test timings are not used to claim browser performance.
+
+### Navigator and Search regression coverage
+
+The Navigator uses memoized outline projections and measured virtual rows. Tests cover stable identities, duplicate headings and mapping parsed positions through live edits. Search tests compare bounded/incremental scans against complete CodeMirror scans and verify replacement undo and stale-confirmation handling. The real-browser application benchmark additionally checks offscreen scene reveal and collapsed sections across newline insertion, outside the timed workloads.
+
+See [implementation plan](../../benchmarks/PERFORMANCE-PLAN.md) for the performance targets and desktop validation scope.
+
 ## Test Configuration
 
 **`vitest.config.ts`**: jsdom environment, global test APIs, CSS disabled. Setup file `src/test-setup.ts` mocks `__TAURI_INTERNALS__` for Tauri API stubs.
