@@ -395,7 +395,7 @@
   left: 0;
   right: 0;
   top: 50%;
-  border-top: 1px solid var(--prose-editor-border, #3d3d3d);
+  border-top: 1px solid var(--prose-editor-border, var(--border-color, rgba(0, 0, 0, 0.12)));
   pointer-events: none;
 }
 
@@ -489,15 +489,8 @@
 }
 
 .cm-prose-table th,
-.cm-line.cm-prose-hr {
-  border-top: 1px solid var(--prose-editor-border, var(--border-color, rgba(0, 0, 0, 0.12)));
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-}
-
-.cm-prose-table th,
 .cm-prose-table td {
-  border: 1px solid var(--prose-editor-border, #3d3d3d);
+  border: 1px solid var(--prose-editor-border, var(--border-color, rgba(0, 0, 0, 0.12)));
   padding: 0.35em 0.6em;
   text-align: left;
   vertical-align: top;
