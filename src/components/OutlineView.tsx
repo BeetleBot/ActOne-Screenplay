@@ -1342,20 +1342,6 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
             outline: "none",
             fontSize: fontSizeMap[outlineFontSize],
             fontFamily: "var(--font-ui)",
-            "&::-webkit-scrollbar": {
-              width: 6,
-            },
-            "&::-webkit-scrollbar-track": {
-              bgcolor: "transparent",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              bgcolor: "var(--button-color, rgba(120, 120, 120, 0.25))",
-              borderRadius: "9999px",
-              border: "none",
-              "&:hover": {
-                bgcolor: "primary.main",
-              },
-            },
           }}
         >
           {flatNodes.length === 0 ? (
@@ -1372,7 +1358,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
               overscanCount={6}
               defaultHeight={500}
               onResize={({ width }) => setListWidth(width)}
-              style={{ height: "100%", width: "100%", outline: "none" }}
+              style={{ height: "100%", width: "100%", outline: "none", scrollbarGutter: "stable" }}
             />
           )}
         </Box>

@@ -638,13 +638,13 @@ body.dark-theme {
 
 /* Custom Scrollbars — Minimal floating capsule pill */
 * {
-  scrollbar-width: thin;
+  scrollbar-width: auto;
   scrollbar-color: rgba(140, 140, 140, 0.28) transparent;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
@@ -656,8 +656,7 @@ body.dark-theme {
   border-radius: 9999px;
   border: 1px solid transparent;
   background-clip: padding-box;
-  min-height: 36px;
-  transition: background 0.2s ease, opacity 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -701,7 +700,7 @@ body,
   overscroll-behavior-y: none !important;
   overscroll-behavior-x: none !important;
   -webkit-overflow-scrolling: auto !important;
-  scrollbar-gutter: auto;
+  scrollbar-gutter: stable;
 }
 
 .editor-scroll-area {
