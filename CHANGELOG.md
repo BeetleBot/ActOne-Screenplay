@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.2] - 2026-10-17
+
+### Added / Improved
+- 📋 **Copy Current Scene** – Copy the scene around the editor cursor from the Command Palette, or copy a scene directly from the Outline context menu.
+- 🧭 **More Reliable Outline Navigation** – The navigator keeps scene and section identity in sync while editing, reveals the active row in the virtualized list, preserves measured row sizes through filtering and reordering, and supports deeper section nesting and outline moves.
+- 🔎 **Faster Search Updates** – Search results and editor highlights update incrementally as the screenplay changes, with more reliable navigation between matches.
+- 🎞️ **More Precise Timeline Navigation** – Timeline scene positions now align to screenplay lines, and scrubbing follows edits more accurately while keeping the playhead aligned with the editor.
+- ⚙️ **More Reliable Editing and Parsing** – Refined file state updates, background parsing, and editor synchronization to handle rapid edits and saves more safely. Added pagination and performance tracking support.
+- 🐧 **Linux Build Workflows** – Added separate manual AppImage and Flatpak build workflows. AppImages now bundle WebKitGTK and other runtime dependencies for more reliable launches.
+- 📝 **Markdown and Scrollbar Polish** – Refined horizontal-rule styling in the Markdown preview and made scrollbars more visible and consistent.
+
+### Fixed
+- 🎭 **Automatic `(CONT'D)` Placement** – Continuation cues now update correctly around edits and do not carry across a new scene.
+- 🧩 **Scene and Section Boundaries** – Scene copying stops at the next scene or section, and screenplay parsing and outline moves handle deeper section levels correctly.
+
 ## [0.5.1] - 2026-09-20
 
 ### Added / Improved
