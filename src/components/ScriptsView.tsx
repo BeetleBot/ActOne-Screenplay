@@ -127,8 +127,6 @@ export const ScriptsView = React.memo(() => {
     }
   };
 
-  if (!isBundle) return null;
-
   const filteredScripts = useMemo(() => {
     if (!searchQuery.trim()) {
       return scripts.map((s, index) => ({ script: s, originalIndex: index }));
@@ -138,6 +136,8 @@ export const ScriptsView = React.memo(() => {
       .map((s, index) => ({ script: s, originalIndex: index }))
       .filter(({ script }) => script.name.toLowerCase().includes(q));
   }, [scripts, searchQuery]);
+
+  if (!isBundle) return null;
 
   const handleAddClick = (e: React.MouseEvent<HTMLElement>) => {
     setAddMenuAnchor(e.currentTarget);
