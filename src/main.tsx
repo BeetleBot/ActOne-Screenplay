@@ -53,7 +53,9 @@ void (async () => {
       setSystemDiagnostics({ os: info.os, osVersion: info.os_version, architecture: info.architecture, cpuModel: info.cpu_model, cpuCount: info.cpu_count, totalMemoryMb: info.total_memory_mb, availableMemoryMb: info.available_memory_mb });
       if (!modalParam) {
         const pendingPanic = await invoke<string>("flush_pending_panics");
-        if (pendingPanic) captureError({ type: "rust-panic", message: pendingPanic.slice(0, 5000), severity: "app" });
+        if (pendingPanic && !isTransientTauriTeardownError(pendingPanic)) {
+          captureError({ type: "rust-panic", message: pendingPanic.slice(0, 5000), severity: "app" });
+        }
       }
     } catch (error) { logger.warn("error-report", "Unable to collect system diagnostics", error); }
   }
@@ -93,7 +95,7 @@ if (modalParam === "crash") {
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ErrorBoundary fullScreen name="window-loader">
-      <Suspense fallback={<div role="status" style={{ padding: 24 }}>Loading…</div>}>
+      <Suspense fallback={<div role="status" style={{ padding: 24 }}>Loading...</div>}>
         {rootElement}
       </Suspense>
     </ErrorBoundary>
