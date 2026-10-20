@@ -10,7 +10,7 @@ export function initSentry(): void {
     environment: import.meta.env?.MODE || "production",
     sendDefaultPii: false,
     beforeSend(event) {
-      if (import.meta.env?.DEV && import.meta.env?.MODE === "test") {
+      if (import.meta.env?.DEV) {
         return null;
       }
       if (event.request) {
