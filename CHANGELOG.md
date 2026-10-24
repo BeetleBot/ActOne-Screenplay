@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.3] - 2026-10-24
+
+### Added / Improved
+- 💾 **Remember Last Document & Editor Position** – Saved projects now remember the last open document, caret selection, and scroll position across sessions. Restores editor offsets accurately when reopening scripts without altering screenplay content or project files.
+- 💬 **Smart Character Alternation & Contextual Suggestions** – Character autocomplete and suggestion dropdowns now detect dialogue patterns within the current scene, prioritizing alternating speakers and recent speakers when typing character cues or "@".
+- 🚀 **Export Completion Dialog & File Actions** – Desktop exports now display an Export Complete dialog with direct "Open file" and "Show in folder" actions using associated system viewers and native file managers.
+- 📄 **Jump to Page Navigation** – Clicking the page count indicator in the status bar opens a quick keyboard-accessible page jump popover (<kbd>Enter</kbd> to jump, <kbd>Esc</kbd> to dismiss).
+- ⚡ **Optimized Loading & Suspense Fallbacks** – Refined window loading fallbacks across secondary windows and workspaces, providing smoother initial render and eliminating UI flicker.
+
+### Fixed
+- 🛡️ **Sentry Development Event Filtering** – Filtered all development and debug environment events from inadvertently transmitting to Sentry.
+- 🪟 **Tauri Teardown Panic Filtering** – Safely ignore transient teardown panics during application launch and exit in Sentry reporting.
+- ⚛️ **Hook Call Order in Scripts View** – Resolved React hook order violation in `ScriptsView` by ensuring all hooks execute before early returns.
+
 ## [0.5.2] - 2026-10-17
 
 ### Added / Improved
