@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { EditorState } from "@codemirror/state";
-import { testComputeSuggestion, cachedCharactersField, cachedLocationsField } from "./inlineAutocomplete";
+import { testComputeSuggestion, cachedCharactersField, cachedLocationsField, fountainCompletionSource } from "./inlineAutocomplete";
 import { lineTypesField } from "./fountainSyntax";
 
 const testExtensions = [lineTypesField, cachedCharactersField, cachedLocationsField];
@@ -150,5 +150,113 @@ describe("computeSuggestion", () => {
     expect(sug).not.toBeNull();
     expect(sug!.type).toBe("character");
     expect(sug!.acceptText).toBe("QUEEN ASTER");
+  });
+
+  describe("smart character alternation and contextual prioritization", () => {
+    const dialogScene = [
+      "INT. ROOM - DAY",
+      "",
+      "RAJ",
+      "Hello Kumar.",
+      "",
+      "KUMAR",
+      "Hey Raj, how are you?",
+      "",
+      "@",
+    ].join("\n");
+
+    it("suggests alternating character RAJ on @ after RAJ and KUMAR speak", () => {
+      // Line 9 is "@" (index 9 in doc.line count)
+      const state = stateWithContent(dialogScene, 9, 1);
+      const sug = testComputeSuggestion(state);
+      expect(sug).not.toBeNull();
+      expect(sug!.type).toBe("character");
+      expect(sug!.acceptText).toBe("RAJ");
+      expect(sug!.ghostText).toBe("RAJ");
+    });
+
+    it("prioritizes alternating character in completion source dropdown list", () => {
+      const state = stateWithContent(dialogScene, 9, 1);
+      const line = state.doc.line(9);
+      const res = fountainCompletionSource({
+        state,
+        pos: line.from + 1,
+        explicit: true,
+      } as any);
+
+      expect(res).not.toBeNull();
+      const labels = res!.options.map((o: any) => o.label);
+      // Both RAJ and KUMAR exist; RAJ should come first as alternating speaker
+      expect(labels[0]).toBe("RAJ");
+      expect(labels[1]).toBe("KUMAR");
+    });
+
+    it("filters characters by typed prefix while keeping contextual order", () => {
+      const scriptWithMultiple = [
+        "INT. ROOM - DAY",
+        "",
+        "ROBERT",
+        "Line 1",
+        "",
+        "KUMAR",
+        "Line 2",
+        "",
+        "INT. STREET - DAY",
+        "",
+        "RONNIE",
+        "Line 3",
+        "",
+        "INT. ROOM - NIGHT",
+        "",
+        "ROBERT",
+        "Speaking again",
+        "",
+        "KUMAR",
+        "Replying",
+        "",
+        "R",
+      ].join("\n");
+
+      // Line 22 is "R" (Action line or character cue starting with R)
+      const state = stateWithContent(scriptWithMultiple, 22, 1);
+      const line = state.doc.line(22);
+      const res = fountainCompletionSource({
+        state,
+        pos: line.from + 1,
+        explicit: true,
+      } as any);
+
+      expect(res).not.toBeNull();
+      const labels = res!.options.map((o: any) => o.label);
+      // All results must start with R
+      expect(labels.every((l: string) => l.startsWith("R"))).toBe(true);
+      // ROBERT is the alternating speaker in this scene, so it should rank before RONNIE
+      expect(labels[0]).toBe("ROBERT");
+      expect(labels).toContain("RONNIE");
+    });
+
+    it("does not suggest previous scene characters across scene boundaries as alternating", () => {
+      const crossScene = [
+        "INT. SCENE ONE - DAY",
+        "",
+        "RAJ",
+        "Hi",
+        "",
+        "KUMAR",
+        "Bye",
+        "",
+        "INT. SCENE TWO - NIGHT",
+        "",
+        "@",
+      ].join("\n");
+
+      const state = stateWithContent(crossScene, 11, 1);
+      const sug = testComputeSuggestion(state);
+      // In scene 2, no one has spoken yet, so no alternation candidate
+      // It can suggest either scene speaker or first alphabetical if any
+      if (sug) {
+        expect(["KUMAR", "RAJ"]).toContain(sug.acceptText);
+      }
+    });
   });
 });

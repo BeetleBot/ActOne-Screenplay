@@ -91,6 +91,85 @@ function extractCharacters(state: EditorState, types: number[], excludeLine?: nu
   return chars;
 }
 
+/**
+ * Returns character conversation context for the current scene up to line `currentLine`:
+ * - `alternatingSpeaker`: The speaker before the most recent speaker in this scene (if they are alternating), or null.
+ * - `recentSpeakers`: All speakers in this scene in reverse-chronological order (most recent first).
+ */
+export function getSceneSpeakerContext(state: EditorState, types: number[], currentLine: number): {
+  alternatingSpeaker: string | null;
+  recentSpeakers: string[];
+} {
+  const recentSpeakers: string[] = [];
+  const speakerSequence: string[] = [];
+
+  for (let i = currentLine - 1; i >= 1; i--) {
+    const t = types[i - 1];
+    // Stop at scene boundary
+    if (t === LINE_HEADING) break;
+
+    if (t === LINE_CHARACTER || t === LINE_DUAL_CHARACTER) {
+      const text = state.doc.line(i).text.trim();
+      const name = text.replace(/^@/, "").replace(/\s*\^$/, "").replace(/\s*\(.*\)$/, "").trim().toUpperCase();
+      if (name.length > 1) {
+        speakerSequence.push(name);
+        if (!recentSpeakers.includes(name)) {
+          recentSpeakers.push(name);
+        }
+      }
+    }
+  }
+
+  // speakerSequence[0] is the most recent speaker (C1).
+  // speakerSequence[1] (or first different speaker) is the dialogue partner (C2).
+  // In A -> B dialogue, the natural next speaker is A.
+  let alternatingSpeaker: string | null = null;
+  if (speakerSequence.length >= 2) {
+    const lastSpeaker = speakerSequence[0];
+    const prevSpeaker = speakerSequence.find(s => s !== lastSpeaker);
+    if (prevSpeaker) {
+      alternatingSpeaker = prevSpeaker;
+    }
+  }
+
+  return { alternatingSpeaker, recentSpeakers };
+}
+
+/**
+ * Sorts/prioritizes character candidates:
+ * 1. Alternating speaker (if matching prefix)
+ * 2. Recent speakers in current scene (in recency order)
+ * 3. All other characters in script (alphabetical)
+ */
+export function prioritizeCharacters(
+  candidates: string[],
+  alternatingSpeaker: string | null,
+  recentSpeakers: string[]
+): string[] {
+  const result: string[] = [];
+  const remaining = new Set(candidates);
+
+  // 1. Alternating speaker first
+  if (alternatingSpeaker && remaining.has(alternatingSpeaker)) {
+    result.push(alternatingSpeaker);
+    remaining.delete(alternatingSpeaker);
+  }
+
+  // 2. Recent scene speakers
+  for (const s of recentSpeakers) {
+    if (remaining.has(s)) {
+      result.push(s);
+      remaining.delete(s);
+    }
+  }
+
+  // 3. Remaining characters sorted alphabetically
+  const otherSorted = Array.from(remaining).sort();
+  result.push(...otherSorted);
+
+  return result;
+}
+
 function extractLocations(state: EditorState, types: number[], excludeLine?: number): Set<string> {
   const locs = new Set<string>();
   for (let i = 1; i <= state.doc.lines; i++) {
@@ -208,20 +287,25 @@ function computeSuggestion(state: EditorState): SuggestionData | null {
     }
 
     const prefix = trimmed.startsWith("@") ? trimmed.substring(1).trimStart() : trimmed;
-    if (!prefix) return null;
     const upperPrefix = prefix.toUpperCase();
     const chars = state.field(cachedCharactersField, false) || new Set<string>();
-    let best: string | null = null;
-    for (const c of chars) {
-      if (c.startsWith(upperPrefix) && c.length > upperPrefix.length) {
-        if (!best || c.length < best.length) {
-          best = c;
-        }
-      }
-    }
-    if (best) {
-      const suffix = best.substring(upperPrefix.length);
-      return { ghostText: suffix, pos: head, type: "character", acceptText: best };
+
+    const matching = [...chars].filter(c => c.startsWith(upperPrefix));
+    if (matching.length === 0) return null;
+
+    const { alternatingSpeaker, recentSpeakers } = getSceneSpeakerContext(state, types, line.number);
+    const prioritized = prioritizeCharacters(matching, alternatingSpeaker, recentSpeakers);
+
+    // Pick top suggestion:
+    // If prefix is empty (e.g. just `@`), suggest the prioritized character (e.g. alternating speaker).
+    // If prefix is not empty, only suggest candidates longer than prefix.
+    const candidate = prefix === "" 
+      ? prioritized[0]
+      : prioritized.find(c => c.length > upperPrefix.length);
+
+    if (candidate) {
+      const suffix = candidate.substring(upperPrefix.length);
+      return { ghostText: suffix, pos: head, type: "character", acceptText: candidate };
     }
     return null;
   }
@@ -259,17 +343,20 @@ function computeSuggestion(state: EditorState): SuggestionData | null {
     if (!hasForceMarker && (!/^[A-Z][A-Z\s.'-]*$/.test(prefix) || prefix.length < 2)) return null;
     const upperPrefix = prefix.toUpperCase();
     const chars = state.field(cachedCharactersField, false) || new Set<string>();
-    let best: string | null = null;
-    for (const c of chars) {
-      if (c.startsWith(upperPrefix) && c.length > upperPrefix.length) {
-        if (!best || c.length < best.length) {
-          best = c;
-        }
-      }
-    }
-    if (best) {
-      const suffix = best.substring(upperPrefix.length);
-      return { ghostText: suffix, pos: head, type: "character", acceptText: best };
+
+    const matching = [...chars].filter(c => c.startsWith(upperPrefix));
+    if (matching.length === 0) return null;
+
+    const { alternatingSpeaker, recentSpeakers } = getSceneSpeakerContext(state, types, line.number);
+    const prioritized = prioritizeCharacters(matching, alternatingSpeaker, recentSpeakers);
+
+    const candidate = prefix === "" 
+      ? prioritized[0]
+      : prioritized.find(c => c.length > upperPrefix.length);
+
+    if (candidate) {
+      const suffix = candidate.substring(upperPrefix.length);
+      return { ghostText: suffix, pos: head, type: "character", acceptText: candidate };
     }
     return null;
   }
@@ -359,24 +446,27 @@ export function fountainCompletionSource(context: CompletionContext): Completion
     }
 
     const prefix = trimmed.startsWith("@") ? trimmed.substring(1).trimStart() : trimmed;
-    if (!prefix) return null;
     const upperPrefix = prefix.toUpperCase();
     const chars = state.field(cachedCharactersField, false) || new Set<string>();
-    const options = [...chars]
-      .filter(c => c.startsWith(upperPrefix))
-      .sort()
-      .map(c => ({
-        label: c,
-        apply: (view: EditorView) => {
-          const l = view.state.doc.lineAt(view.state.selection.main.head);
-          const startsWithAt = l.text.trim().startsWith("@");
-          const insert = startsWithAt ? "@" + c : c;
-          view.dispatch({
-            changes: { from: l.from, to: l.to, insert },
-            selection: { anchor: l.from + insert.length },
-          });
-        },
-      }));
+
+    const matching = [...chars].filter(c => c.startsWith(upperPrefix));
+    if (matching.length === 0) return null;
+
+    const { alternatingSpeaker, recentSpeakers } = getSceneSpeakerContext(state, types, line.number);
+    const prioritized = prioritizeCharacters(matching, alternatingSpeaker, recentSpeakers);
+
+    const options = prioritized.map(c => ({
+      label: c,
+      apply: (view: EditorView) => {
+        const l = view.state.doc.lineAt(view.state.selection.main.head);
+        const startsWithAt = l.text.trim().startsWith("@");
+        const insert = startsWithAt ? "@" + c : c;
+        view.dispatch({
+          changes: { from: l.from, to: l.to, insert },
+          selection: { anchor: l.from + insert.length },
+        });
+      },
+    }));
     return options.length > 0 ? { from: pos, options } : null;
   }
 
@@ -413,25 +503,28 @@ export function fountainCompletionSource(context: CompletionContext): Completion
   if (type === LINE_ACTION) {
     const hasForceMarker = trimmed.startsWith("@");
     const prefix = hasForceMarker ? trimmed.substring(1).trimStart() : trimmed;
-    if (!prefix) return null;
     if (!hasForceMarker && (!/^[A-Z][A-Z\s.'-]*$/.test(prefix) || prefix.length < 2)) return null;
     const upperPrefix = prefix.toUpperCase();
     const chars = state.field(cachedCharactersField, false) || new Set<string>();
-    const options = [...chars]
-      .filter(c => c.startsWith(upperPrefix))
-      .sort()
-      .map(c => ({
-        label: c,
-        apply: (view: EditorView) => {
-          const l = view.state.doc.lineAt(view.state.selection.main.head);
-          const startsWithAt = l.text.trim().startsWith("@");
-          const insert = startsWithAt ? "@" + c : c;
-          view.dispatch({
-            changes: { from: l.from, to: l.to, insert },
-            selection: { anchor: l.from + insert.length },
-          });
-        },
-      }));
+
+    const matching = [...chars].filter(c => c.startsWith(upperPrefix));
+    if (matching.length === 0) return null;
+
+    const { alternatingSpeaker, recentSpeakers } = getSceneSpeakerContext(state, types, line.number);
+    const prioritized = prioritizeCharacters(matching, alternatingSpeaker, recentSpeakers);
+
+    const options = prioritized.map(c => ({
+      label: c,
+      apply: (view: EditorView) => {
+        const l = view.state.doc.lineAt(view.state.selection.main.head);
+        const startsWithAt = l.text.trim().startsWith("@");
+        const insert = startsWithAt ? "@" + c : c;
+        view.dispatch({
+          changes: { from: l.from, to: l.to, insert },
+          selection: { anchor: l.from + insert.length },
+        });
+      },
+    }));
     return options.length > 0 ? { from: pos, options } : null;
   }
 
