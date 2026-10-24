@@ -1054,7 +1054,7 @@ Parked text is saved automatically with your project.`,
 
 **Left group (Metrics):**
 - **Words** — Total word count of the active document.
-- **Page** — "Page: currentPage of totalPages", updated continuously as you move your cursor.
+- **Page** — "Page: currentPage of totalPages", updated continuously as you move your cursor. Click the counter to open a page-number box, type a page number, and press <kbd>Enter</kbd> to jump there. Press <kbd>Escape</kbd> to dismiss it. Prose pages follow the estimated page count shown in the status bar.
 - When text is selected, the count of selected words appears.
 
 **Center group (Document Selector):**
@@ -1227,7 +1227,9 @@ Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\
     category: "Export",
     tags: ["export", "pdf", "fountain", "fdx", "print"],
     relatedIds: ["export-pdf", "export-fountain", "export-fdx"],
-    content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the Export dialog. ActOne supports three export formats (PDF, Fountain, and Final Draft FDX), each with custom options. Export is fast, high-quality, and runs completely offline on your device.`,
+    content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the Export dialog. Screenplays support PDF, Fountain, Final Draft FDX, and Fade In exports. Prose documents support PDF and Markdown exports. Export is fast, high-quality, and runs completely offline on your device.
+
+After a successful desktop export, choose **Open file** to open the exported document in its default application, **Show in folder** to reveal it in your file manager, or **Done** to return to writing. These actions appear only after a file has been saved. Canceling the save dialog leaves your export options open.`,
   },
   {
     id: "export-pdf",

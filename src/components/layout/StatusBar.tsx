@@ -1,8 +1,9 @@
+import { EditorView } from "@codemirror/view";
 import React, { useMemo, useState, useEffect } from "react";
 import { useWorkspaceMetadata, useParsedScreenplay, useDocumentText, usePageBreaks, useFileSaveStatus, useFileActions, useUI, useSprint } from "../../context";
 import { LineType, parseSceneHeading } from "../../parser";
 import { countWords } from "../../utils/text";
-import { Box, Typography, Menu, MenuItem, ListItemText, InputBase, Divider } from "@mui/material";
+import { Box, Typography, Menu, MenuItem, ListItemText, InputBase, Divider, Popover } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
 import { useEditor, useCursor } from "../../context";
@@ -30,6 +31,10 @@ export const StatusBar = React.memo(() => {
   const { activeSprints } = useSprint();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
   const { openSettingsWindow } = useModalWindows();
+  const pageHintId = React.useId();
+  const [pageAnchor, setPageAnchor] = useState<HTMLElement | null>(null);
+  const [pageInput, setPageInput] = useState("");
+  const [pageError, setPageError] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [spellMenuAnchorEl, setSpellMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [installedLangs, setInstalledLangs] = useState<{ code: string; name: string; native_name: string }[]>([]);
@@ -241,6 +246,27 @@ export const StatusBar = React.memo(() => {
     currentPage: currentPage.toLocaleString(),
     sceneCount: docStats.sceneCount
   }), [docStats, currentPage]);
+
+  const jumpToPage = (event: React.FormEvent) => {
+    event.preventDefault();
+    const page = Number(pageInput);
+    if (!/^\d+$/.test(pageInput.trim()) || !Number.isInteger(page) || page < 1 || page > docStats.rawPages) {
+      setPageError(true);
+      return;
+    }
+    if (!editorView) return;
+    const lineIndex = isMarkdown ? (page - 1) * 40
+      : docStats.hasBreaks
+        ? (docStats.hasTitlePage ? docStats.breaks[page - 1] - 1 : page === 1 ? 0 : docStats.breaks[page - 2] - 1)
+        : (page - 1) * 54;
+    const line = editorView.state.doc.line(Math.max(1, Math.min(editorView.state.doc.lines, lineIndex + 1)));
+    setPageAnchor(null);
+    editorView.dispatch({
+      selection: { anchor: line.from },
+      effects: EditorView.scrollIntoView(line.from, { y: "start" }),
+    });
+    editorView.focus();
+  };
 
   const sprintDetails = useMemo(() => {
     if (!currentSprint) return null;
@@ -940,9 +966,43 @@ export const StatusBar = React.memo(() => {
                   <Typography id="status-words" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
                     Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
                   </Typography>
-                  <Typography id="status-page" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap" }}>
+                  <Typography
+                    id="status-page" component="button" type="button" variant="caption"
+                    title="Jump to page" aria-label={`Jump to page, current page ${stats.currentPage} of ${stats.pages}`}
+                    disabled={!editorView}
+                    onClick={event => { setPageInput(String(currentPage)); setPageError(false); setPageAnchor(event.currentTarget); }}
+                    sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", background: "none", border: 0, p: 0,
+                      cursor: "pointer", "&:hover": { color: "text.primary" }, "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" } }}
+                  >
                     Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
                   </Typography>
+                  <Popover open={Boolean(pageAnchor)} anchorEl={pageAnchor} onClose={() => setPageAnchor(null)}
+                    disableRestoreFocus anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                    transformOrigin={{ vertical: "bottom", horizontal: "right" }}
+                    slotProps={{ paper: { sx: { mt: -1, borderRadius: "8px", border: "1px solid", borderColor: "divider" } } }}>
+                    <Box component="form" onSubmit={jumpToPage} sx={{ p: 1.25, width: 190 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                        <Typography component="label" htmlFor={pageHintId + "-input"} sx={{ fontSize: 12, fontWeight: 600 }}>Go to page</Typography>
+                        <Typography sx={{ fontSize: 11, color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>1–{docStats.rawPages}</Typography>
+                      </Box>
+                      <InputBase autoFocus id={pageHintId + "-input"} value={pageInput}
+                        onFocus={event => event.target.select()}
+                        onChange={event => { setPageInput(event.target.value); setPageError(false); }}
+                        onKeyDown={event => { if (event.key === "Enter") jumpToPage(event); }}
+                        slotProps={{ input: { inputMode: "numeric", 'aria-label': "Page number", 'aria-invalid': pageError,
+                          'aria-describedby': pageError || isMarkdown ? pageHintId : undefined } }}
+                        endAdornment={<Typography component="kbd" aria-hidden="true" sx={{ fontFamily: "inherit", fontSize: 10,
+                          color: "text.secondary", border: "1px solid", borderColor: "divider", borderRadius: "4px", px: 0.6, lineHeight: "18px", whiteSpace: "nowrap" }}>Enter ↵</Typography>}
+                        sx={{ width: "100%", height: 34, px: 1, fontSize: 13, fontVariantNumeric: "tabular-nums", bgcolor: "background.default",
+                          border: "1px solid", borderColor: pageError ? "error.main" : "divider", borderRadius: "6px",
+                          '&.Mui-focused': { borderColor: pageError ? "error.main" : "primary.main" },
+                          '& input': { minWidth: 0, py: 0.75 } }} />
+                      {(pageError || isMarkdown) && <Typography id={pageHintId} role={pageError ? "alert" : undefined}
+                        sx={{ mt: 0.75, fontSize: 11, color: pageError ? "error.main" : "text.secondary" }}>
+                        {pageError ? `Enter a whole number from 1 to ${docStats.rawPages}` : "Estimated pages"}
+                      </Typography>}
+                    </Box>
+                  </Popover>
                 </>
               )}
             </Box>

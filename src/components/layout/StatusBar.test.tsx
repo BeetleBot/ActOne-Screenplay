@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { EditorState } from "@codemirror/state";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { StatusBar } from "./StatusBar";
 import { LineType } from "../../parser";
 
+let mockRawText = "INT. CAFE - DAY\nJOHN\nHello!";
+let mockPageBreaks = [0];
+let mockTitlePage = false;
+let mockEditorView: { state: EditorState; dispatch: ReturnType<typeof vi.fn>; focus: ReturnType<typeof vi.fn> } | null = null;
 const mockSetTimelineFilter = vi.fn();
 let mockShowTimeline = true;
 let mockTimelineFilter = { type: "default" as const, values: [] as string[] };
@@ -34,16 +40,17 @@ vi.mock("../../context", () => ({
     saveStatus: "idle",
     files: [{ id: "f1", scripts: mockHasNoScripts ? [] : [{ name: "Script 1", fileName: "script.fountain" }] }],
   }),
-  useDocumentText: () => "INT. CAFE - DAY\nJOHN\nHello!",
+  useDocumentText: () => mockRawText,
   useParsedScreenplay: () => ({
     lines: [
+      ...(mockTitlePage ? [{ id: "title", text: "Title: Script", type: LineType.titlePageTitle }] : []),
       { id: "1", text: "INT. CAFE - DAY", type: LineType.heading, location: "CAFE", timeOfDay: "DAY", setting: "INT.", isOutlineElement: true },
       { id: "2", text: "JOHN", type: LineType.character, isOutlineElement: false },
       { id: "3", text: "Hello!", type: LineType.dialogue, isOutlineElement: false },
       { id: "4", text: "EXT. PARK - NIGHT", type: LineType.heading, location: "PARK", timeOfDay: "NIGHT", setting: "EXT.", isOutlineElement: true },
     ], settings: {}, screenplayText: "",
   }),
-  usePageBreaks: () => [0],
+  usePageBreaks: () => mockPageBreaks,
   useFileSaveStatus: () => "idle",
   useFileActions: () => ({ setActiveScript: vi.fn() }),
   useWorkspaceMetadata: () => ({
@@ -75,7 +82,7 @@ vi.mock("../../context", () => ({
     activeSprints: {},
   }),
   useEditor: () => ({
-    editorView: null,
+    editorView: mockEditorView,
   }),
   useCursor: () => ({
     activeLineNumber: 0,
@@ -182,5 +189,76 @@ describe("StatusBar Timeline Filter Integration", () => {
     expect(screen.getByText("Section Lines")).toBeInTheDocument();
     expect(screen.getByText("Scene Numbers")).toBeInTheDocument();
     expect(screen.getByText("Scene Colors")).toBeInTheDocument();
+  });
+});
+
+
+describe("page counter navigation", () => {
+  beforeEach(() => {
+    mockHasNoScripts = false;
+    mockIsMarkdown = false;
+    mockTitlePage = false;
+    mockRawText = Array.from({ length: 160 }, (_, index) => `Line ${index + 1}`).join("\n");
+    mockPageBreaks = [55, 109];
+    mockEditorView = { state: EditorState.create({ doc: mockRawText }), dispatch: vi.fn(), focus: vi.fn() };
+  });
+
+  it.each([
+    { prose: false, title: false, breaks: [55, 109], page: "1", line: 1 },
+    { prose: false, title: false, breaks: [55, 109], page: "3", line: 109 },
+    { prose: false, title: true, breaks: [5, 55, 109], page: "1", line: 5 },
+    { prose: false, title: true, breaks: [5, 55, 109], page: "3", line: 109 },
+    { prose: false, title: false, breaks: [], page: "2", line: 55 },
+    { prose: true, title: false, breaks: [], page: "3", line: 81 },
+  ])("jumps page $page to line $line with prose=$prose title=$title", ({ prose, title, breaks, page, line }) => {
+    mockIsMarkdown = prose;
+    mockTitlePage = title;
+    mockPageBreaks = breaks;
+    render(<StatusBar />);
+    fireEvent.click(screen.getByRole("button", { name: /Jump to page/ }));
+    const input = screen.getByRole("textbox", { name: "Page number" });
+    fireEvent.change(input, { target: { value: page } });
+    fireEvent.submit(input.closest("form")!);
+    expect(mockEditorView!.dispatch).toHaveBeenCalledWith({
+      selection: { anchor: mockEditorView!.state.doc.line(line).from }, effects: expect.anything(),
+    });
+    expect(mockEditorView!.focus).toHaveBeenCalled();
+  });
+
+  it.each(["0", "4", "-1", "1.5", "", "text", "1e1"])("rejects invalid page %s", page => {
+    render(<StatusBar />);
+    fireEvent.click(screen.getByRole("button", { name: /Jump to page/ }));
+    const input = screen.getByRole("textbox", { name: "Page number" });
+    fireEvent.change(input, { target: { value: page } });
+    fireEvent.submit(input.closest("form")!);
+    expect(screen.getByText("Enter a whole number from 1 to 3")).toBeInTheDocument();
+    expect(mockEditorView!.dispatch).not.toHaveBeenCalled();
+  });
+
+  it("accepts typing a page number and pressing Enter, and dismisses with Escape", async () => {
+    const user = userEvent.setup();
+    render(<StatusBar />);
+    await user.click(screen.getByRole("button", { name: /Jump to page/ }));
+    const input = screen.getByRole("textbox", { name: "Page number" });
+    expect(screen.getByText("Go to page")).toBeInTheDocument();
+    expect(screen.getByText("Enter ↵")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Go" })).not.toBeInTheDocument();
+    await user.clear(input);
+    await user.type(input, "2{Enter}");
+    expect(mockEditorView!.dispatch).toHaveBeenCalledWith({
+      selection: { anchor: mockEditorView!.state.doc.line(55).from }, effects: expect.anything(),
+    });
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Page number" })).not.toBeInTheDocument());
+    mockEditorView!.dispatch.mockClear();
+    await user.click(screen.getByRole("button", { name: /Jump to page/ }));
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Page number" })).not.toBeInTheDocument());
+    expect(mockEditorView!.dispatch).not.toHaveBeenCalled();
+  });
+
+  it("disables jumping until an editor is ready", () => {
+    mockEditorView = null;
+    render(<StatusBar />);
+    expect(screen.getByRole("button", { name: /Jump to page/ })).toBeDisabled();
   });
 });

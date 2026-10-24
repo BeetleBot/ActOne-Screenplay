@@ -3,12 +3,14 @@ import { useFile, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { alpha } from "@mui/material/styles";
 import { DownloadIcon, DescriptionIcon } from "./Icons";
+import { ExportCompleteDialog } from "./ExportCompleteDialog";
 import { TitleBar } from "./TitleBar";
 import { SystemFontPicker } from "./SystemFontPicker";
 import { logger } from "../utils/logger";
 import { STORAGE_KEYS } from "../constants";
 
 import {
+  Alert,
   Checkbox,
   Dialog,
   DialogTitle,
@@ -161,6 +163,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [pdfSubTab, setPdfSubTab] = useState<PdfSubTab>("document");
+  const [exportedPath, setExportedPath] = useState<string | null>(null);
+  const [exportError, setExportError] = useState("");
   const [isExporting, setIsExporting] = useState(false);
 
   const savedFormats = parsedDoc?.settings?.elementFormats as ElementFormats | undefined;
@@ -272,6 +276,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
   };
 
   const saveLastExportDir = (filePath: string) => {
+    setExportedPath(filePath);
     const sepIdx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
     if (sepIdx > 0) {
       localStorage.setItem(STORAGE_KEYS.LAST_EXPORT_DIR, filePath.substring(0, sepIdx));
@@ -318,6 +323,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       }
     } catch (e) {
       logger.error("export", "handleExportPDF failed", e);
+      setExportError("Export failed. Please try again or choose another location.");
     }
   };
 
@@ -354,6 +360,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       }
     } catch (e) {
       logger.error("export", "handleExportProsePDF failed", e);
+      setExportError("Export failed. Please try again or choose another location.");
     }
   };
 
@@ -379,9 +386,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         a.download = downloadName;
         a.click();
         URL.revokeObjectURL(url);
+        onClose();
       }
     } catch (e) {
       logger.error("export", "handleExportMarkdown failed", e);
+      setExportError("Export failed. Please try again or choose another location.");
     }
   };
 
@@ -413,9 +422,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         a.download = downloadName;
         a.click();
         URL.revokeObjectURL(url);
+        onClose();
       }
     } catch (e) {
       logger.error("export", "handleExportFountain failed", e);
+      setExportError("Export failed. Please try again or choose another location.");
     }
   };
 
@@ -445,9 +456,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         a.download = `${bundleName}${scriptSuffix}.fdx`;
         a.click();
         URL.revokeObjectURL(url);
+        onClose();
       }
     } catch (e) {
       logger.error("export", "handleExportFDX failed", e);
+      setExportError("Export failed. Please try again or choose another location.");
     }
   };
 
@@ -477,15 +490,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         a.download = `${bundleName}${scriptSuffix}.fadein`;
         a.click();
         URL.revokeObjectURL(url);
+        onClose();
       }
     } catch (e) {
       logger.error("export", "handleExportFadeIn failed", e);
+      setExportError("Export failed. Please try again or choose another location.");
     }
   };
 
   const handleExport = async () => {
     if (isExporting) return;
     setIsExporting(true);
+    setExportError("");
     try {
       if (isProse) {
         if (format === "markdown") {
@@ -506,7 +522,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
       }
     } finally {
       setIsExporting(false);
-      onClose();
     }
   };
 
@@ -854,6 +869,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     return null;
   };
 
+  if (exportedPath) return <ExportCompleteDialog path={exportedPath} onClose={onClose} />;
+
   return (
     <Dialog
       open
@@ -959,6 +976,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
           </Box>
 
           {/* ── Footer ── */}
+          {exportError && <Alert severity="error" sx={{ mx: 2, my: 1 }}>{exportError}</Alert>}
           <DialogActions sx={{ px: 2, py: 1.25, justifyContent: "space-between", borderTop: "1px solid", borderColor: "divider" }}>
             <Button
               onClick={onClose}
