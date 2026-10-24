@@ -1,8 +1,17 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@mui/material";
 import { AppProviders, useFileActions, useWorkspaceMetadata, useParsedScreenplay, useUI, useEditor, useScriptEditor, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
-import { MainLayout, ModalManager, WelcomeScreenWindow, WindowResizeHandles, ErrorBoundary, OnboardingTour, TutorialsWindow, AiModelPalette } from "./components";
+import { WelcomeScreenWindow } from "./components/WelcomeScreen";
+import { WindowResizeHandles } from "./components/WindowResizeHandles";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+
+// Keep editor-only screens out of the welcome window's initial module graph.
+const MainLayout = lazy(() => import("./components/layout/MainLayout").then(module => ({ default: module.MainLayout })));
+const ModalManager = lazy(() => import("./components/ModalManager").then(module => ({ default: module.ModalManager })));
+const OnboardingTour = lazy(() => import("./components/OnboardingTour").then(module => ({ default: module.OnboardingTour })));
+const TutorialsWindow = lazy(() => import("./components/TutorialsWindow").then(module => ({ default: module.TutorialsWindow })));
+const AiModelPalette = lazy(() => import("./components/AiModelPalette").then(module => ({ default: module.AiModelPalette })));
 import { logger } from "./utils/logger";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
@@ -920,7 +929,9 @@ function AppInner() {
               }
             }}
           >
-            <TutorialsWindow isModal onClose={() => setShowTutorialsModal(false)} />
+            <Suspense fallback={null}>
+              <TutorialsWindow isModal onClose={() => setShowTutorialsModal(false)} />
+            </Suspense>
           </Dialog>
         )}
       </>
@@ -978,7 +989,7 @@ function AppInner() {
         openTutorialsWindow={isModalWindow ? undefined : () => setShowTutorialsModal(true)}
       />
     </div>
-    {activeTour !== "theming" && (
+    {activeTour && activeTour !== "theming" && (
     <OnboardingTour
       activeTour={activeTour}
       onCloseTour={() => setActiveTour(null)}
@@ -1008,7 +1019,9 @@ function AppInner() {
           }
         }}
       >
-        <TutorialsWindow isModal onClose={() => setShowTutorialsModal(false)} />
+        <Suspense fallback={null}>
+              <TutorialsWindow isModal onClose={() => setShowTutorialsModal(false)} />
+            </Suspense>
       </Dialog>
     )}
 
@@ -1022,7 +1035,7 @@ function App() {
     <ErrorBoundary fullScreen name="app-root">
       <AppProviders>
         <SprintProvider>
-          <AppInner />
+          <Suspense fallback={null}><AppInner /></Suspense>
         </SprintProvider>
       </AppProviders>
     </ErrorBoundary>

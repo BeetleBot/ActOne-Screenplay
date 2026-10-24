@@ -576,7 +576,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 </MenuItem>
               </Menu>
             </Box>
-            {showStructureModal && <Suspense fallback={<div role="status" style={{ padding: 16 }}>Loading…</div>}><StructureImportModal onClose={() => setShowStructureModal(false)} /></Suspense>}
+            {showStructureModal && <Suspense fallback={null}><StructureImportModal onClose={() => setShowStructureModal(false)} /></Suspense>}
           </Box>
         ) : (
           <Box

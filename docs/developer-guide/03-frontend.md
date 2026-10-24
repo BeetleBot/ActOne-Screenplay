@@ -196,3 +196,7 @@ FileContext supports multiple open files simultaneously, each tracked by a uniqu
 ## Clipboards & Selection Core Fixes
 
 To achieve a seamless native app writing experience, several core adjustments were made to CodeMirror event interceptors and layout coordinates. These fixes are documented in `05-editor.md`.
+
+### Window startup
+
+Window routes load on demand with an empty Suspense fallback, so opening a window does not flash unstyled loading text. The welcome route imports its visible components directly; editor layout, palettes, tours, and dialogs load only when rendered. Keep editor-only components out of the welcome route static imports. This reduces initial module work; it does not guarantee instant native WebView startup.

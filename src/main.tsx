@@ -95,7 +95,7 @@ if (modalParam === "crash") {
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ErrorBoundary fullScreen name="window-loader">
-      <Suspense fallback={<div role="status" style={{ padding: 24 }}>Loading...</div>}>
+      <Suspense fallback={null}>
         {rootElement}
       </Suspense>
     </ErrorBoundary>

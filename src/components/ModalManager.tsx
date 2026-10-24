@@ -77,7 +77,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   const [fixFormattingReport, setFixFormattingReport] = useState<FixFormattingReport | null>(null);
 
   return (
-    <Suspense fallback={<div role="status" style={{ padding: 16 }}>Loading…</div>}>
+    <Suspense fallback={null}>
       <ErrorBoundary name="command-palette">
         <CommandPalette
           isOpen={isPaletteOpen}
