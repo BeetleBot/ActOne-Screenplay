@@ -13,6 +13,7 @@ const OnboardingTour = lazy(() => import("./components/OnboardingTour").then(mod
 const TutorialsWindow = lazy(() => import("./components/TutorialsWindow").then(module => ({ default: module.TutorialsWindow })));
 const AiModelPalette = lazy(() => import("./components/AiModelPalette").then(module => ({ default: module.AiModelPalette })));
 import { logger } from "./utils/logger";
+import { flushPendingEditorEdits } from "./editor/pendingEdits";
 import { FolderOpenIcon, DescriptionIcon } from "./components/Icons";
 import { STORAGE_KEYS } from "./constants";
 import { clearResetSettings, DEFAULTS } from "./constants/defaults";
@@ -778,6 +779,7 @@ function AppInner() {
     
     const handleCloseRequest = async () => {
       try {
+        flushPendingEditorEdits();
         const { getCurrentWindow } = await import("@tauri-apps/api/window");
         const win = getCurrentWindow();
         const dirtyFiles = filesRef.current.filter(f => f.isDirty);

@@ -16,6 +16,7 @@ import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
 import { FileSubscriptions } from "./FileSubscriptions";
 import { acknowledgeSavedFile } from "../utils/savedFile";
+import { rememberActiveDocument, rememberedDocumentIndex } from "../utils/editorPosition";
 import { flushPendingEditorEdits } from "../editor/pendingEdits";
 import { useDocumentPagination, equalPageBreaks } from "../hooks/useDocumentPagination";
 
@@ -796,7 +797,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const activeScript = scripts[0] || { name: "Untitled", fileName: "Untitled.fountain", content: "", savedContent: "" };
+    const restoredScriptIndex = rememberedDocumentIndex(normalizedPath, scripts);
+    const activeScript = scripts[restoredScriptIndex] || { name: "Untitled", fileName: "Untitled.fountain", content: "", savedContent: "" };
     const content = activeScript.content;
     const isProse = isProseScript(activeScript, normalizedPath);
     const parsed = isProse
@@ -820,7 +822,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isDirty: false,
         parsedDoc: parsed,
         scripts,
-        activeScriptIndex: 0,
+        activeScriptIndex: restoredScriptIndex,
       };
       setFiles(prev => prev.map(f => f.id === activeFileId ? updatedFile : f));
       filesRef.current = filesRef.current.map(f => f.id === activeFileId ? updatedFile : f);
@@ -828,7 +830,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRawTextState(cleanText);
       setParsedDoc(parsed);
       setScriptsState(scripts);
-      setActiveScriptIndexState(0);
+      setActiveScriptIndexState(restoredScriptIndex);
+      activeScriptIndexRef.current = restoredScriptIndex;
       addToRecent(normalizedPath);
     } else {
       const newId = generateUUID();
@@ -841,7 +844,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         parsedDoc: parsed,
         isSaving: false,
         scripts: isActone ? scripts : undefined,
-        activeScriptIndex: 0,
+        activeScriptIndex: restoredScriptIndex,
       };
       setFiles(prev => [...prev, newFileObj]);
       filesRef.current = [...filesRef.current, newFileObj];
@@ -851,7 +854,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRawTextState(cleanText);
       setParsedDoc(parsed);
       setScriptsState(isActone ? scripts : []);
-      setActiveScriptIndexState(0);
+      setActiveScriptIndexState(restoredScriptIndex);
+      activeScriptIndexRef.current = restoredScriptIndex;
       addToRecent(normalizedPath);
     }
   };
@@ -947,7 +951,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }];
       }
 
-      const activeScript = scripts[0] || { name: "Untitled", fileName: "files/Untitled.fountain", content: "", savedContent: "" };
+      const restoredScriptIndex = rememberedDocumentIndex(normalizedPath, scripts);
+      const activeScript = scripts[restoredScriptIndex] || { name: "Untitled", fileName: "files/Untitled.fountain", content: "", savedContent: "" };
+      content = activeScript.content;
       const isProse = isProseScript(activeScript, normalizedPath);
       const parsed = isProse
         ? createProseDocument(content, settings)
@@ -966,7 +972,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isDirty: false,
           parsedDoc: parsed,
           scripts: isActone ? scripts : undefined,
-          activeScriptIndex: 0,
+          activeScriptIndex: restoredScriptIndex,
         } : f);
         setFiles(updatedFiles);
         filesRef.current = updatedFiles;
@@ -974,7 +980,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRawTextState(cleanText);
         setParsedDoc(parsed);
         setScriptsState(isActone ? scripts : []);
-        setActiveScriptIndexState(0);
+        setActiveScriptIndexState(restoredScriptIndex);
+        activeScriptIndexRef.current = restoredScriptIndex;
       } else {
         const newId = generateUUID();
         const newFileObj: ScreenplayFile = {
@@ -986,7 +993,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsedDoc: parsed,
           isSaving: false,
           scripts: isActone ? scripts : undefined,
-          activeScriptIndex: 0,
+          activeScriptIndex: restoredScriptIndex,
         };
         setFiles(prev => [...prev, newFileObj]);
         filesRef.current = [...filesRef.current, newFileObj];
@@ -996,7 +1003,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRawTextState(cleanText);
         setParsedDoc(parsed);
         setScriptsState(isActone ? scripts : []);
-        setActiveScriptIndexState(0);
+        setActiveScriptIndexState(restoredScriptIndex);
+        activeScriptIndexRef.current = restoredScriptIndex;
       }
     }
   };
@@ -2006,6 +2014,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const activeScriptName = scriptsState[activeScriptIndex]?.name || "";
   const scriptFileName = scriptsState[activeScriptIndex]?.fileName || "";
+  useEffect(() => {
+    rememberActiveDocument(filePath, scriptFileName);
+  }, [filePath, scriptFileName]);
 
   const value: FileContextProps = {
         files,

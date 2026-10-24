@@ -525,3 +525,50 @@ describe("FileContext", () => {
     expect(activeF?.rawText).toBe("Third Edit");
   });
 });
+
+
+describe("remembered project document", () => {
+  it.each([
+    { method: "path", index: 1 }, { method: "dialog", index: 1 },
+    { method: "path", index: 2 }, { method: "dialog", index: 2 },
+  ].flatMap(test => [ { ...test, blank: false }, { ...test, blank: true } ]))(
+    "reopens document $index through $method with blank=$blank after other projects and a new app session", async ({ method, index, blank }) => {
+    localStorage.clear();
+    vi.clearAllMocks();
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    const prose = Array.from({ length: 80 }, (_, index) => `Line ${index + 1}`).join("\n");
+    const bytes = Array.from(packActoneBundle([
+      { name: "Screenplay", fileName: "files/script.fountain", content: "INT. ROOM - DAY\n\nHello.", savedContent: "INT. ROOM - DAY\n\nHello." },
+      { name: "Test", fileName: "files/test.md", content: prose, savedContent: prose, type: "markdown" },
+      { name: "Second Script", fileName: "files/second.fountain", content: "EXT. PARK - DAY\n\nA second script.", savedContent: "EXT. PARK - DAY\n\nA second script." },
+    ], {}));
+    vi.mocked(invoke).mockImplementation(async (command) => {
+      if (command === "read_file_binary") return bytes;
+      if (command === "open_file_dialog") return { path: "C:/projects/file1.actone", content: "" };
+      return null;
+    });
+    const first = renderHook(() => useFile(), { wrapper });
+    await act(async () => { await first.result.current.openFilePath("C:/projects/file1.actone"); });
+    act(() => first.result.current.setActiveScript(index));
+    const originalText = first.result.current.rawText;
+    const originalSettings = structuredClone(first.result.current.parsedDoc.settings);
+    await act(async () => { await first.result.current.closeFile(first.result.current.activeFileId); });
+    await act(async () => { await first.result.current.openFilePath("C:/projects/file2.actone"); });
+    first.unmount();
+    const reopened = renderHook(() => useFile(), { wrapper });
+    if (blank) act(() => reopened.result.current.newFile());
+    await act(async () => {
+      if (method === "path") await reopened.result.current.openFilePath("C:/projects/file1.actone");
+      else await reopened.result.current.openFile();
+    });
+    expect(reopened.result.current.activeScriptIndex).toBe(index);
+    expect(reopened.result.current.scriptFileName).toBe(index === 1 ? "files/test.md" : "files/second.fountain");
+    expect(reopened.result.current.rawText).toBe(originalText);
+    expect(reopened.result.current.parsedDoc.screenplayText).toBe(originalText);
+    const file = reopened.result.current.files.find(file => file.id === reopened.result.current.activeFileId);
+    expect(file?.isDirty).toBe(false);
+    expect(file?.parsedDoc.settings).toEqual(originalSettings);
+    expect(vi.mocked(invoke).mock.calls.some(([command]) => command === "save_file_binary")).toBe(false);
+    reopened.unmount();
+  });
+});

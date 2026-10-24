@@ -72,7 +72,9 @@ Importing other screenplay formats is separate from opening an existing project.
     category: "Getting Started",
     tags: ["recent", "history", "quick open"],
     relatedIds: ["open-file", "welcome-screen"],
-    content: `The Welcome screen shows your most recently opened files (up to 6) as clickable chips. Click one to re-open it. Hover and click the X to remove an entry from the list. Recent files are remembered across sessions (up to 10 entries), and files that have been moved or deleted are automatically cleaned up on launch.`,
+    content: `The Welcome screen shows your most recently opened files (up to 6) as clickable chips. Click one to re-open it. Hover and click the X to remove an entry from the list. Recent files are remembered across sessions (up to 10 entries), and files that have been moved or deleted are automatically cleaned up on launch.
+
+When you reopen a saved project, ActOne returns to the document you last used, including prose documents, and restores its cursor, selection, and scroll position. Each document keeps its own position, even after working on other projects or restarting the app. This memory stays in local app storage on this computer; it is never added to the .actone bundle and does not mark your project as edited. Moving or renaming a project outside ActOne gives it a new location, so its previous position is not restored.`,
   },
   {
     id: "keyboard-shortcuts",

@@ -200,3 +200,11 @@ To achieve a seamless native app writing experience, several core adjustments we
 ### Window startup
 
 Window routes load on demand with an empty Suspense fallback, so opening a window does not flash unstyled loading text. The welcome route imports its visible components directly; editor layout, palettes, tours, and dialogs load only when rendered. Keep editor-only components out of the welcome route static imports. This reduces initial module work; it does not guarantee instant native WebView startup.
+
+### Remembered document and editor position
+
+Saved projects remember the last active document by its internal file name. Both file-dialog and direct-path opening select that document before parsing, including Markdown prose. Missing documents fall back to the first document.
+
+`src/utils/editorPosition.ts` stores the active document and each document's selection and scroll offsets in localStorage under versioned, project-path-specific keys. Windows drive/UNC paths normalize separators and case; Linux paths retain case. Nothing is written to bundle settings or screenplay content, and navigation does not dirty the project. Position writes are throttled while editing/scrolling and synchronously flushed through pending-editor actions, document switches, unmount, page hide and window unload. Restored selections are clamped to the current document length. Unsaved projects have no persistent identity; a moved or externally renamed project starts fresh.
+
+Viewport restoration runs through CodeMirror measurements during a bounded initial layout phase, rather than assuming two animation frames are sufficient. It reapplies saved offsets while font/pagination layout settles, preserves the requested offsets if the initial scroll range is too short, and suppresses parser viewport compensation during restoration. Wheel, pointer, touch, and keyboard navigation cancel restoration immediately; document cleanup cancels all pending restoration work.

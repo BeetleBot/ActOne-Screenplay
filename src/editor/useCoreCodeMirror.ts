@@ -1,5 +1,5 @@
 import { searchHighlightPlugin } from "./searchHighlights";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { EditorState, RangeSetBuilder, Extension, Compartment, type Text } from "@codemirror/state";
 import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, layer, RectangleMarker, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
@@ -13,6 +13,7 @@ import { pendingScrollTargetY } from "./cursorScroll";
 import { typewriterCompartment, typewriterScrollPlugin } from "./typewriter";
 import { spellcheckCompartment, spellcheckExtension, triggerSpellRecheck } from "./spellcheck";
 import DiffMatchPatch from "diff-match-patch";
+import { readEditorPosition, trackEditorPosition, type EditorPositionSession } from "../utils/editorPosition";
 import { registerPendingEditor } from "./pendingEdits";
 import type { DocumentTarget } from "../context/FileContext";
 export const readOnlyCompartment = new Compartment();
@@ -179,7 +180,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
   const viewRef = useRef<EditorView | null>(null);
   const rawText = useDocumentText();
   const { setRawText } = useFileActions();
-  const { activeScriptIndex, activeFileId, scriptFileName } = useWorkspaceMetadata();
+  const { activeScriptIndex, activeFileId, scriptFileName, filePath } = useWorkspaceMetadata();
   const parsedDoc = useParsedScreenplay();
   const { typewriterMode, lineFocusEnabled, isZenMode, spellcheckEnabled, translationState, translatingTarget } = useUI();
   const { setEditorView } = useEditor();
@@ -189,6 +190,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
   
   const lastScriptKeyRef = useRef("");
   const currentScriptKey = `${activeFileId}::${scriptFileName || activeScriptIndex}`;
+  const positionSessionRef = useRef<EditorPositionSession | null>(null);
   const statesRef = useRef<Record<string, EditorState>>({});
   const extensionsRef = useRef<any[]>([]);
 
@@ -202,6 +204,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
   const documentTargetRef = useRef<DocumentTarget>({ fileId: activeFileId, scriptIndex: activeScriptIndex });
   const flushPendingRef = useRef(() => {});
   flushPendingRef.current = () => {
+    positionSessionRef.current?.flush();
     if (rawTextDebounceTimerRef.current !== null) {
       clearTimeout(rawTextDebounceTimerRef.current);
       rawTextDebounceTimerRef.current = null;
@@ -239,7 +242,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
       if (typewriterMode) {
         const token = scriptSwitchToken;
         setTimeout(() => {
-          if (scriptSwitchToken !== token) return;
+          if (scriptSwitchToken !== token || !viewRef.current) return;
           if (viewRef.current) {
             viewRef.current.dispatch({
               effects: EditorView.scrollIntoView(viewRef.current.state.selection.main.head, { y: "center" })
@@ -331,6 +334,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
         }
 
         if (update.selectionSet || update.docChanged) {
+          positionSessionRef.current?.schedule();
           const pos = Math.max(0, Math.min(update.state.selection.main.head, update.state.doc.length));
           const lineNum = update.state.doc.lineAt(pos).number;
           const idx = lineNum - 1;
@@ -363,10 +367,10 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
     }
 
     requestAnimationFrame(() => {
-      view.focus();
+      if (viewRef.current === view) view.focus();
     });
 
-    if (typewriterMode) {
+    if (typewriterMode && !readEditorPosition(filePath, scriptFileName)) {
       setTimeout(() => {
         if (viewRef.current) {
           viewRef.current.dispatch({
@@ -381,7 +385,11 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
         clearTimeout(rawTextDebounceTimerRef.current);
       }
       flushPendingRef.current();
+      positionSessionRef.current?.destroy();
+      positionSessionRef.current = null;
       view.destroy();
+      viewRef.current = null;
+      lastScriptKeyRef.current = "";
       setEditorView(null);
     };
   }, []);
@@ -412,15 +420,26 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
         scriptSwitchToken += 1;
         const token = scriptSwitchToken;
 
+        const savedPosition = readEditorPosition(filePath, scriptFileName);
+        if (savedPosition) {
+          scrollPositionsRef.current[currentScriptKey] = savedPosition.scrollTop;
+        }
+
         if (statesRef.current[currentScriptKey]) {
           view.setState(statesRef.current[currentScriptKey]);
         } else {
           const newState = EditorState.create({
             doc: rawText,
+            selection: savedPosition ? {
+              anchor: Math.min(savedPosition.anchor, rawText.length),
+              head: Math.min(savedPosition.head, rawText.length),
+            } : undefined,
             extensions: extensionsRef.current
           });
           view.setState(newState);
         }
+
+        setActiveLineNumberRef.current(view.state.doc.lineAt(view.state.selection.main.head).number - 1);
 
         const effects: any[] = [
           spellcheckCompartment.reconfigure(
@@ -440,25 +459,20 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
         pendingScrollToRef.current = null;
 
         requestAnimationFrame(() => {
-          if (scriptSwitchToken !== token) return;
+          if (scriptSwitchToken !== token || !viewRef.current) return;
           view.focus();
         });
 
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            if (scriptSwitchToken !== token) return;
-            const area = getScrollArea(view);
-            if (area) {
-              const savedScrollTop = scrollPositionsRef.current[currentScriptKey];
-              if (savedScrollTop !== undefined) {
-                area.scrollTop = savedScrollTop;
-              }
+            if (scriptSwitchToken !== token || !viewRef.current) return;
+            if (scrollPositionsRef.current[currentScriptKey] === undefined) {
+              view.dispatch({
+                effects: EditorView.scrollIntoView(view.state.selection.main.head, {
+                  y: typewriterModeRef.current ? "center" : "nearest"
+                })
+              });
             }
-            view.dispatch({
-              effects: EditorView.scrollIntoView(view.state.selection.main.head, {
-                y: typewriterModeRef.current ? "center" : "nearest"
-              })
-            });
           });
         });
       } else {
@@ -519,9 +533,36 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
     }
   }, [rawText, currentScriptKey]);
 
+  // Passive cleanup runs after React removes the editor DOM, when the browser
+  // may already have clamped the shared scroll area to zero. Save before removal.
+  useLayoutEffect(() => () => {
+    positionSessionRef.current?.destroy();
+  }, [filePath, currentScriptKey, scriptFileName]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    const session = trackEditorPosition(
+      view, getScrollArea(view), filePath, scriptFileName,
+      readEditorPosition(filePath, scriptFileName) ?? (
+        scrollPositionsRef.current[currentScriptKey] !== undefined
+          ? { scrollTop: scrollPositionsRef.current[currentScriptKey], scrollLeft: 0 }
+          : null
+      ),
+    );
+    positionSessionRef.current = session;
+    return () => {
+      session.destroy();
+      if (positionSessionRef.current === session) positionSessionRef.current = null;
+    };
+  }, [filePath, currentScriptKey, scriptFileName]);
+
   useEffect(() => {
     if (viewRef.current) {
       const view = viewRef.current;
+      // During reopening, parser/layout updates must not preserve a temporary
+      // top-of-document viewport over the saved viewport restoration.
+      if (positionSessionRef.current?.isRestoring()) return;
       const screenText = parsedDoc.screenplayText;
       const pendingTarget = pendingScrollToRef.current;
 

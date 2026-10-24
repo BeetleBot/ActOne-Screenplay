@@ -25,3 +25,4 @@ Test-Files/.snapshots/
 .agents/
 .opencode/
 todo/
+/.tmp-test/
