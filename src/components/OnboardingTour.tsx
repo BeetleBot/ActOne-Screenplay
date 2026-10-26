@@ -114,7 +114,7 @@ export const UI_STEPS: TourStep[] = [
   {
     targetId: "status-xray",
     title: "Status Bar - X-Ray Deep Analysis",
-    description: "The bar chart icon opens the X-Ray analysis window. It provides deep script pacing reports: character speech balance, scene length distribution, and page count breakdowns.",
+    description: "The bar chart icon opens the X-Ray analysis window. Explore your story through scene rhythm, character voices, shared scenes and optional revision prompts. Export the complete analysis as a PDF.",
   },
   {
     title: "Where Did the Menu Go?",

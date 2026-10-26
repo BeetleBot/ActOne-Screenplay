@@ -105,6 +105,7 @@ pub mod pdf;
 mod snapshots;
 mod spellcheck;
 mod structures;
+mod xray_pdf;
 
 #[tauri::command]
 fn open_file_dialog() -> Option<serde_json::Value> {
@@ -1047,6 +1048,7 @@ pub fn run() {
             save_file_content,
             save_file_dialog,
             save_pdf_dialog,
+            xray_pdf::export_xray_pdf,
             export_pdf,
             export_prose_pdf,
             generate_prose_pdf_bytes,

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.4] - 2026-10-26
+
+### Added / Improved
+
+- 📊 **Rebuilt X-Ray Story Atlas** – Replaced the previous analysis views with a compact visual dashboard: stacked scene-rhythm bars, dialogue/action rings, character dialogue rankings, a speaking-presence heatmap, a shared-scene matrix, and location, setting, and time-of-day charts.
+- 🔎 **Interactive Scene & Cast Exploration** – Select chart marks to inspect scene details, navigate to the screenplay, or edit character profiles. Added scene search and sorting, compact eight-item scene and cast pages, and adjustable reading estimates with measurement notes.
+- 📄 **Visual Analysis PDF Export** – Export a paginated atlas containing the charts, scene and cast breakdowns, locations, and shared-scene connections. Reports include all results regardless of active search filters, with a light print palette, high-resolution visuals, and native save dialogs.
+
+### Fixed
+- 📄 **PDF Export Crash on Orphan Combining Marks** – Resolved a PDF export subsetter failure (`failed to subset font: malformed font`) caused by unattached or floating Indic combining marks (such as vowel signs typed after English punctuation or whitespace). Added an automated Unicode Indic sanitizer across screenplay and prose parsers that strips orphan marks before text shaping while preserving all valid Indic text.
+- 💱 **Rupee Symbol (`₹`) PDF Font Fallback** – Routed the Indian Rupee symbol (`₹` / `U+20B9`) directly to the bundled symbol fallback font (`NotoSansSymbols2-Regular.ttf`), preventing accidental fallback to complex OS system fonts that fail during PDF subsetting.
+
 ## [0.5.3] - 2026-10-24
 
 ### Added / Improved

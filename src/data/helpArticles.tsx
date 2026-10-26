@@ -867,14 +867,7 @@ Image embeds (\`![alt](url)\`) are not supported in ActOne Screenplay — there 
     category: "Workspace & Views",
     tags: ["characters", "gender", "tracker", "dialogue counts", "xray"],
     relatedIds: ["xray-analysis", "character-names", "statistics-overview"],
-    content: `Character tracking and gender data live inside the **X-Ray Analysis** window:
-
-1. Open X-Ray (Status Bar bar-chart icon, or Command Palette → "Open X-Ray Analysis…").
-2. Switch to the **Characters** mode at the top of the X-Ray window.
-3. The list shows every character in the script with their dialogue line count, gender, and role, sorted by frequency.
-4. Click a row to edit gender and role inline; changes are persisted to the \`.actone\` bundle's \`characters.json\`.
-
-Gender data also feeds the **Dialogue by Gender** chart in X-Ray's Statistics mode (4 rows: male, female, non-binary, unknown).`,
+    content: `Open **X-Ray Analysis** from the Status Bar or Command Palette, then choose **Cast**. Select a dialogue bar to see speeches, speaking scenes and the profile editor. The presence heatmap opens scene details; shared-scene matrix cells reveal scene links. **Edit profile** opens the character's description, role, gender, age, backstory, arc, color and relationships. Profiles remain saved with your project. Speaking presence is based on character cues; silent appearances are not inferred.`,
   },
   {
     id: "statistics-overview",
@@ -889,13 +882,8 @@ Gender data also feeds the **Dialogue by Gender** chart in X-Ray's Statistics mo
 - **Words** — total word count, formatted with locale separators (hidden on small screens).
 - **Page** — "Page: currentPage of totalPages" (always visible), updated as you move your cursor.
 
-**2. X-Ray Analysis window (Status Bar bar-chart icon or Command Palette → "Open X-Ray Analysis…"):**
-
-- **Statistics mode:** Dialogue vs Action ratio, day vs night pie charts, top locations, and scene length distribution.
-- **Timing Report mode:** Estimated screen durations per scene, with cumulative runtimes.
-- **Pacing Chart mode:** Line/area chart of Dialogue vs Action per scene. Hold <kbd>Ctrl</kbd> + scroll to zoom; pan horizontally when zoomed in.
-
-X-Ray data updates live as you type.`,
+**2. X-Ray Analysis window:**
+The compact **Overview** shows scene rhythm, dialogue balance and leading voices. **Scenes** compares stacked word-count bars. **Cast** shows dialogue bars, a presence heatmap and a shared-scene matrix. **World** charts locations, settings and time of day. Select chart marks for details. The information button contains reading-rate settings. **Export PDF** saves the visual atlas.`,
   },
   {
     id: "xray-analysis",
@@ -903,18 +891,16 @@ X-Ray data updates live as you type.`,
     category: "Workspace & Views",
     tags: ["xray", "x-ray", "analysis", "timing", "connections", "pacing"],
     relatedIds: ["statistics-overview", "xray-character-data", "character-names"],
-    content: `The X-Ray window is a comprehensive screenplay analysis tool. Open it via the bar-chart icon on the right side of the **Status Bar** (bottom of the editor) or Command Palette → "Open X-Ray Analysis…". It is a live-updating window with several analysis modes:
+    content: `Open X-Ray from the Status Bar or Command Palette.
 
-- **Statistics:** View dialogue vs action ratios, day vs night pie charts, top locations, and scene length distribution counts.
-- **Timing Report:** See estimated screen durations per scene (calculated by word count and pacing), along with cumulative runtimes. Scene headings are sanitized to display only clear, capitalized locations.
-- **Characters:** View and edit character details (gender and role) in a data-dense list, outside of the secondary details modal.
-- **Connections:** Analyze character interactions via two analytical modes:
-  - **Network Graph:** A circular node diagram linking characters who speak in the same scenes. Click a node to view single character co-occurrences.
-  - **Ctrl+Click Double Selection:** Hold <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd>) and click a second character node to show connection data and shared scenes between both characters.
-  - **Matrix Heatmap:** A grid map of characters where cell colors reflect interaction frequency. Set column headers style to fit the window with proportional sizing.
-- **Pacing Chart:** A line/area chart showing Dialogue vs Action pacing per scene. 
-  - **Fit-to-Window:** Reacts to window resizing by default to fit the space.
-  - **Scroll and Zoom:** Hold <kbd>Ctrl</kbd> + scroll your mouse wheel on the chart to zoom in (up to 500%) or zoom out. Zooming in lets you pan the pacing chart horizontally.`,
+- **Overview:** Compact stacked scene bars, a dialogue/action ring and leading-voice bars. Blue means dialogue; green means action. Select a scene and choose **Open scene**.
+- **Scenes:** Search and sort scene bars. Select one for counts, cast and optional revision prompts.
+- **Cast:** Select a dialogue bar to edit its profile. Heatmap cells show speaking presence; brighter cells mean more dialogue. Matrix numbers show shared speaking scenes. Use page controls for large casts and scripts.
+- **World:** Interior/exterior and day/night rings, plus location bars that filter the scene list.
+- **Information button:** Adjust reading rates and view measurement notes.
+- **Export PDF:** A light-background visual atlas using the same charts. Scene, cast, presence, location and connection charts are paginated independently of current search filters. The PDF uses high-resolution chart images. Native saving reports errors and supports cancellation.
+
+Counts exclude headings, cues, parentheticals, notes and title pages. Reading estimates are not screen runtime. Speaking presence includes voiceovers and does not infer silent appearances. Shared scenes do not prove direct interaction.`,
   },
   {
     id: "tasks",
