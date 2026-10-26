@@ -619,7 +619,9 @@ pub fn get_krilla_font(
     if user_override.is_none() && !(is_neutral_run && is_indic_para) {
         for c in text.chars() {
             let val = c as u32;
-            if (0x0B80..=0x0BFF).contains(&val) {
+            if c == '₹' {
+                return all_fonts.symbols.regular.clone();
+            } else if (0x0B80..=0x0BFF).contains(&val) {
                 return if is_bold {
                     all_fonts.indic.mukta_malar_bold.clone()
                 } else {

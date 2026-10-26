@@ -66,8 +66,9 @@ pub fn parse(src: &str) -> ProseDoc {
     options.insert(Options::ENABLE_TASKLISTS);
     options.insert(Options::ENABLE_FOOTNOTES);
 
+    let cleaned = crate::pdf::sanitizer::sanitize_text(src);
     let events: Vec<(Event, std::ops::Range<usize>)> =
-        Parser::new_ext(src, options).into_offset_iter().collect();
+        Parser::new_ext(&cleaned, options).into_offset_iter().collect();
     let mut index = 0;
     let blocks = parse_blocks(src, &events, &mut index);
     ProseDoc { blocks }

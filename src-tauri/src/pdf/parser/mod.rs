@@ -45,7 +45,7 @@ use preprocessor::{Line, Preprocessor};
 /// ```
 #[must_use]
 pub fn parse(src: &str) -> Screenplay {
-    let cleaned = src.replace('\r', "");
+    let cleaned = crate::pdf::sanitizer::sanitize_text(&src.replace('\r', ""));
     let preprocessor = Preprocessor::new(&cleaned);
     Parser::new(&preprocessor.process()).parse()
 }
