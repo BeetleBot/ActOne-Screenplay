@@ -2,7 +2,7 @@
   "name": "actone",
   "private": true,
   "license": "GPL-3.0-only",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "type": "module",
   "scripts": {
     "benchmark:editor": "node benchmarks/editor/run.mjs",
