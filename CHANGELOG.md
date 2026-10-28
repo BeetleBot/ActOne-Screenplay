@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.7] - 2026-10-29
+
+### Added / Improved
+
+- 🎨 **Canvas Documents & Visual Story Planning** – Added full support for .excalidraw Canvas documents inside .actone project bundles, complete with asset packaging/unpacking, offline bundled fonts, and non-screenplay document handling.
+- 📜 **Open Source Credits & Dependencies Viewer** – Added an expandable Credits section to the About modal highlighting major dependencies (CodeMirror 6, Excalidraw, Material UI, Tauri v2, React 19, Krilla, Phosphor Icons, and backend crates) with direct project links and descriptions.
+- 🎨 **Enhanced Color Management & Contrast** – Refined theme color utilities and high-contrast styling across UI views and editor highlights.
+
 ## [0.5.6] - 2026-10-28
 
 ### Added / Improved
