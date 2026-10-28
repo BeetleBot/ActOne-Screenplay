@@ -2,12 +2,16 @@
 
 **Implementation:** `src/utils/actone.ts`
 
-The `.actone` format is ActOne's native multi-document project bundle — a ZIP archive containing one or more Screenplay (`.fountain`) and Prose (`.md`) documents plus per-document metadata files, prefixed with a 4-byte magic header.
+The `.actone` format is ActOne's native multi-document project bundle — a ZIP archive containing Screenplay (`.fountain`), Prose (`.md`), and Canvas (`.excalidraw`) documents plus per-document metadata and binary assets, prefixed with a 4-byte magic header.
 
 ## File Structure
 
+Current format version is 4, recorded as `{"version":4}` in `format.json`. The manifest remains an array and adds the `canvas` document type. Canvas documents use `files/<name>.excalidraw`. Their images are binary entries under `assets/<encoded-document-path>/<encoded-image-id>`; internal Canvas JSON uses `actoneAsset` references instead of data URLs. Unpacking restores data URLs for the embedded editor and standalone export. Screenplay and prose storage is unchanged. Both packers emit the current format; existing legacy loading and upgrade paths recognize archives without `format.json`.
+
 ```
 MyProject.actone
+├── format.json                    # Current storage version: 4
+├── assets/                        # Canvas image binaries, grouped by document
 ├── project.json                   # Document manifest (screenplays & prose)
 ├── files/                         # Document files directory
 │   ├── Act One.fountain           # Screenplay document

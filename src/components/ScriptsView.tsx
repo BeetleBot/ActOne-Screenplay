@@ -29,7 +29,7 @@ import {
 } from "@mui/material";
 
 import { OutlineTag } from "./OutlineView";
-import { isProseScript } from "../utils/scriptMode";
+import { isCanvasScript, isProseScript } from "../utils/scriptMode";
 
 export const ScriptsView = React.memo(() => {
   const {
@@ -147,7 +147,7 @@ export const ScriptsView = React.memo(() => {
     setAddMenuAnchor(null);
   };
 
-  const handleAddScriptType = async (type: "fountain" | "markdown") => {
+  const handleAddScriptType = async (type: "fountain" | "markdown" | "canvas") => {
     handleAddClose();
     const newIndex = scripts.length;
     const newName = await addScript(undefined, type);
@@ -165,7 +165,7 @@ export const ScriptsView = React.memo(() => {
     setImportMenuAnchor(null);
   };
 
-  const handleImportScriptType = async (type: "fountain" | "markdown" | "fdx" | "fadein" | "pdf") => {
+  const handleImportScriptType = async (type: "fountain" | "markdown" | "canvas" | "fdx" | "fadein" | "pdf") => {
     handleImportClose();
     await importScript(type);
   };
@@ -678,7 +678,7 @@ export const ScriptsView = React.memo(() => {
 
                       {/* 3. Document Type Badge on Right */}
                       <OutlineTag
-                        label={isMarkdown ? "PROSE" : "SCRIPT"}
+                        label={isCanvasScript(script) ? "CANVAS" : isMarkdown ? "PROSE" : "SCRIPT"}
                         variant={isMarkdown ? "accent" : "default"}
                         size="0.72rem"
                         sx={{ ml: 1, mr: isTranslating ? 0 : 0.5, py: 0.2, px: 0.8, borderRadius: "5px" }}
@@ -898,7 +898,7 @@ export const ScriptsView = React.memo(() => {
         <MenuItem onClick={handleMoveUp} dense disabled={!menuState || menuState.index <= 0}>Move Up</MenuItem>
         <MenuItem onClick={handleMoveDown} dense disabled={!menuState || menuState.index >= scripts.length - 1}>Move Down</MenuItem>
         <MenuItem onClick={handleDuplicate} dense>Duplicate</MenuItem>
-        {menuState && !isProseScript(scripts[menuState.index]) && (
+        {menuState && !isCanvasScript(scripts[menuState.index]) && !isProseScript(scripts[menuState.index]) && (
           <>
             <Divider />
             <MenuItem
@@ -929,6 +929,9 @@ export const ScriptsView = React.memo(() => {
       >
         <MenuItem onClick={() => handleAddScriptType("fountain")} dense>
           <Typography variant="body2">Screenplay (.fountain)</Typography>
+        </MenuItem>
+        <MenuItem onClick={() => handleAddScriptType("canvas")} dense>
+          <Typography variant="body2">Canvas</Typography>
         </MenuItem>
         <MenuItem onClick={() => handleAddScriptType("markdown")} dense>
           <Typography variant="body2">Prose (.md)</Typography>

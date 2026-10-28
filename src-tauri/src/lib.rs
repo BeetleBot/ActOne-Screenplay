@@ -146,6 +146,7 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
         Some("fountain") => {
             dialog = dialog.add_filter("Fountain (.fountain, .txt)", &["fountain", "txt"]);
         }
+        Some("canvas") => { dialog = dialog.add_filter("Canvas", &["excalidraw"]); }
         Some("markdown") => {
             dialog = dialog.add_filter("Markdown (.md, .markdown, .txt)", &["md", "markdown", "txt"]);
         }

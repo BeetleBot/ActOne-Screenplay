@@ -352,8 +352,12 @@ function AppInner() {
     openSceneJump: useCallback(() => setIsSceneJumpOpen(true), [setIsSceneJumpOpen]),
     openModelPalette: useCallback(() => setIsModelPaletteOpen(true), []),
     exportPDF: useCallback(() => {
+      if (/\.excalidraw$/i.test(scriptFileName)) {
+        window.dispatchEvent(new Event("actone:canvas-export-image"));
+        return;
+      }
       setShowExportWindow(true);
-    }, [setShowExportWindow]),
+    }, [setShowExportWindow, scriptFileName]),
     toggleSidebar: useCallback(() => {
       if (activeRightPane) {
         setActiveRightPane(null);

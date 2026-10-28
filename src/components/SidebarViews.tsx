@@ -35,6 +35,10 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
     setActiveItemIdx(-1);
   }, [activeTab]);
 
+  if (/\.excalidraw$/i.test(scriptFileName) && ["markers", "sprint", "parking", "snapshots"].includes(activeTab)) {
+    return <ScriptsView />;
+  }
+
   if (activeTab === "scripts") {
     return <ScriptsView />;
   }

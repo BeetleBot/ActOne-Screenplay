@@ -1,5 +1,13 @@
 import type { ScriptInfo } from "./actone";
 
+export function isCanvasScript(script?: ScriptInfo | null, filePath?: string | null): boolean {
+  return script?.type === "canvas" || /\.excalidraw$/i.test(script?.fileName || filePath || "");
+}
+
+export function isNonScreenplay(script?: ScriptInfo | null, filePath?: string | null): boolean {
+  return isProseScript(script, filePath) || isCanvasScript(script, filePath);
+}
+
 export function isProseScript(script?: ScriptInfo | null, filePath?: string | null): boolean {
   return script?.type === "markdown" ||
     /\.(md|markdown)$/i.test(script?.fileName || "") ||

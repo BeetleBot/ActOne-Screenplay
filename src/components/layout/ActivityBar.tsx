@@ -43,7 +43,8 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     setActiveRightPane,
   } = useUI();
   const { theme, setTheme, customThemes } = useTheme();
-  const { filePath, hasNoScripts, isProse } = useWorkspaceMetadata();
+  const { filePath, hasNoScripts, isProse, scripts, activeScriptIndex } = useWorkspaceMetadata();
+  const isCanvas = scripts?.[activeScriptIndex]?.type === "canvas";
   const supportsExtended = filePath === null || filePath.toLowerCase().endsWith(".actone");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
@@ -79,7 +80,8 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
     { id: "parking", icon: <GarageIcon sx={{ fontSize: 20 }} />, title: "Parking", scriptOnly: true },
   ];
 
-  const availableTabs = allTabs.filter(t => !isProse || !t.scriptOnly);
+  const availableTabs = allTabs.filter(t => (!isProse || !t.scriptOnly) &&
+    (!isCanvas || !["markers", "sprint", "parking", "snapshots"].includes(t.id)));
   const tabs = supportsExtended ? availableTabs : availableTabs.filter(t => t.id !== "scripts");
 
   React.useEffect(() => {
@@ -89,10 +91,11 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
   }, [supportsExtended, activeTab, setActiveTab]);
 
   React.useEffect(() => {
-    if (isProse && (activeTab === "markers" || activeTab === "sprint" || activeTab === "parking")) {
+    if ((isProse && (activeTab === "markers" || activeTab === "sprint" || activeTab === "parking")) ||
+      (isCanvas && ["markers", "sprint", "parking", "snapshots"].includes(activeTab))) {
       setActiveTab(supportsExtended ? "scripts" : "outline");
     }
-  }, [isProse, supportsExtended, activeTab, setActiveTab]);
+  }, [isProse, isCanvas, supportsExtended, activeTab, setActiveTab]);
 
   return (
     <Box

@@ -297,6 +297,7 @@ export const StatusBar = React.memo(() => {
     setAnchorEl(null);
   };
 
+  if (scripts[activeScriptIndex]?.type === "canvas") return <Box id="status-bar" sx={{ height: isZenMode ? 0 : 30, px: 2, display: "flex", alignItems: "center", gap: 2, fontSize: 11, color: "text.secondary" }}><span>{activeScriptName} / Canvas</span><span>{saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : ""}</span></Box>;
   const fileName = filePath ? filePath.split(/[/\\]/).pop() || "Untitled" : "Untitled";
 
   return (

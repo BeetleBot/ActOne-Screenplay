@@ -21,7 +21,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onOpenThemeManagerModal,
 }) => {
   const { activeTab, setActiveTab, isZenMode, showTimeline } = useUI();
-  const { hasNoScripts, isProse } = useWorkspaceMetadata();
+  const { hasNoScripts, isProse, scripts, activeScriptIndex } = useWorkspaceMetadata();
 
   React.useEffect(() => {
     if (hasNoScripts) {
@@ -67,7 +67,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           />
         </Box>
         <Box component="footer" sx={{ display: 'flex', flexDirection: 'column', bgcolor: 'background.paper', flexShrink: 0 }}>
-          {showTimeline && !isZenMode && !isProse && !hasNoScripts && (
+          {showTimeline && !isZenMode && !isProse && scripts[activeScriptIndex]?.type !== "canvas" && !hasNoScripts && (
             <ErrorBoundary name="timeline"><TimelineView /></ErrorBoundary>
           )}
           <ErrorBoundary name="status"><StatusBar /></ErrorBoundary>

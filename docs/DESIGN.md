@@ -1,5 +1,7 @@
 # ActOne Screenplay — Design System
 
+Canvas documents embed the upstream hand-drawn editor in the existing workspace, using the product name Canvas. Keep its editing controls and drawing appearance; ActOne provides project save, import/export, offline fonts, and surrounding app chrome. AI generation tools are hidden. Canvas uses its own pan/zoom and omits screenplay timeline and page statistics.
+
 > **For agents:** this is the canonical design reference. `src/theme/muiTheme.ts` + `src/index.css` are the runtime sources of truth; this doc is their human-readable synthesis. Keep them in sync.
 
 ## 1. Principles

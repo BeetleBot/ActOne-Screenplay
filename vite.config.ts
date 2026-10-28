@@ -61,7 +61,8 @@ export default defineConfig(async () => ({
             if (id.includes("@tauri-apps")) {
               return "vendor-tauri";
             }
-            return "vendor-core";
+            // Let Rollup keep dependencies used only by Canvas behind its lazy import.
+            return undefined;
           }
         },
       },

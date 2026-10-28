@@ -32,6 +32,7 @@
     "@codemirror/view": "^6.43.8",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@excalidraw/excalidraw": "^0.18.1",
     "@lezer/common": "^1.5.2",
     "@lezer/highlight": "^1.2.3",
     "@material/material-color-utilities": "^0.4.0",

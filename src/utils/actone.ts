@@ -1,11 +1,12 @@
-import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
+import { zip, zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { logger } from "./logger";
+import { packCanvasAssets, restoreCanvasAssets } from "./canvasAssets";
 
 const ACTONE_MAGIC = new Uint8Array([0x41, 0x43, 0x54, 0x31]); // "ACT1"
 const MAGIC_LENGTH = 4;
 
 export interface ScriptInfo {
-  type?: "fountain" | "markdown";
+  type?: "fountain" | "markdown" | "canvas";
   name: string;
   fileName: string;
   content: string;
@@ -71,11 +72,11 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const oldToNewPath: Record<string, string> = {};
 
   if (unzipped["project.json"]) {
-    const manifest: { name: string; file: string; type?: "fountain" | "markdown" }[] = JSON.parse(strFromU8(unzipped["project.json"]));
+    const manifest: { name: string; file: string; type?: "fountain" | "markdown" | "canvas" }[] = JSON.parse(strFromU8(unzipped["project.json"]));
     scripts = manifest.map((entry) => {
       const newFile = entry.file.startsWith("files/") ? entry.file : `files/${entry.file}`;
       if (entry.file !== newFile) oldToNewPath[entry.file] = newFile;
-      const content = unzipped[entry.file] ? strFromU8(unzipped[entry.file]) : (unzipped[newFile] ? strFromU8(unzipped[newFile]) : "");
+      const content = restoreCanvasAssets(unzipped[entry.file] ? strFromU8(unzipped[entry.file]) : (unzipped[newFile] ? strFromU8(unzipped[newFile]) : ""), unzipped);
       return { name: entry.name, fileName: newFile, type: entry.type || "fountain", content, savedContent: content };
     });
     if (scripts.length === 0) {
@@ -169,7 +170,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
     if (settings.parking && typeof settings.parking === 'object' && !Array.isArray(settings.parking)) settings.parking = migrateKeyed(settings.parking);
   }
 
-  const isLegacy = Object.keys(oldToNewPath).length > 0;
+  const isLegacy = Object.keys(oldToNewPath).length > 0 || !unzipped["format.json"];
 
   return { scripts, settings, promptChats: promptChatsData as ActoneBundle["promptChats"], isLegacy };
 
@@ -206,6 +207,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
   const manifest = scripts.map((s) => ({ name: s.name, file: s.fileName, type: s.type || "fountain" }));
 
   const entries: Record<string, Uint8Array> = {
+    "format.json": strToU8(JSON.stringify({ version: 4 })),
     "project.json": strToU8(JSON.stringify(manifest, null, 2)),
     "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
     "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
@@ -228,7 +230,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
   }
 
   for (const script of scripts) {
-    entries[script.fileName] = strToU8(script.content);
+    entries[script.fileName] = strToU8(packCanvasAssets(script, entries));
   }
 
   const zipped = zipSync(entries);
@@ -240,7 +242,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<string, any>): Promise<Uint8Array> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const {
       genders, todos, parking, notepad, sprintHistory: sprintData, promptChats, ...restSettings
     } = settings || {};
@@ -270,6 +272,7 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
     const manifest = scripts.map((s) => ({ name: s.name, file: s.fileName, type: s.type || "fountain" }));
 
     const entries: Record<string, Uint8Array> = {
+      "format.json": strToU8(JSON.stringify({ version: 4 })),
       "project.json": strToU8(JSON.stringify(manifest, null, 2)),
       "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
       "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
@@ -292,13 +295,15 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
     }
 
     for (const script of scripts) {
-      entries[script.fileName] = strToU8(script.content);
+      entries[script.fileName] = strToU8(packCanvasAssets(script, entries));
     }
 
-    const zipped = zipSync(entries);
-    const result = new Uint8Array(MAGIC_LENGTH + zipped.length);
-    result.set(ACTONE_MAGIC);
-    result.set(zipped, MAGIC_LENGTH);
-    resolve(result);
+    zip(entries, (error, zipped) => {
+      if (error) { reject(error); return; }
+      const result = new Uint8Array(MAGIC_LENGTH + zipped.length);
+      result.set(ACTONE_MAGIC);
+      result.set(zipped, MAGIC_LENGTH);
+      resolve(result);
+    });
   });
 }

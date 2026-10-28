@@ -11,6 +11,7 @@ import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
 import { ScriptEditor } from "../ScriptEditor";
+const CanvasEditor = lazy(() => import("../CanvasEditor").then(module => ({ default: module.CanvasEditor })));
 import { ProseEditor } from "../ProseEditor";
 import { MusePanel } from "../MusePanel";
 import Typography from "@mui/material/Typography";
@@ -34,7 +35,8 @@ export const Workspace = React.memo<WorkspaceProps>(({
 
   const { editorView } = useEditor();
   const { addScript, importScript } = useFileActions();
-  const { hasNoScripts, isProse: isMarkdown } = useWorkspaceMetadata();
+  const { hasNoScripts, isProse: isMarkdown, scripts, activeScriptIndex, activeFileId } = useWorkspaceMetadata();
+  const isCanvas = scripts[activeScriptIndex]?.type === "canvas";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -465,7 +467,24 @@ export const Workspace = React.memo<WorkspaceProps>(({
                   </Box>
                 </Box>
 
-                {/* Row 3: Import / Template */}
+                <Box component="button" type="button" onClick={() => void addScript(undefined, "canvas")}
+                  sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5,
+                    border: '1px solid', borderColor: 'transparent', borderRadius: '8px', bgcolor: 'transparent',
+                    color: 'text.primary', cursor: 'pointer', textAlign: 'left', font: 'inherit', transition: 'all 0.15s ease',
+                    '&:hover': { bgcolor: 'action.hover', borderColor: 'divider', transform: 'translateY(-1px)' },
+                    '&:active': { transform: 'scale(0.99)' } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', p: 1, borderRadius: '8px', bgcolor: (t) => alpha(t.palette.primary.main, 0.1) }}>
+                      <DescriptionIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontWeight: 600, fontSize: '0.88rem', color: 'text.primary', lineHeight: 1.3 }}>New Canvas File</Typography>
+                      <Typography sx={{ color: 'text.secondary', fontSize: '0.76rem', lineHeight: 1.3, mt: 0.25 }}>Plan your story with notes, shapes, and pictures</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ px: 1, py: 0.35, borderRadius: '6px', fontSize: '0.72rem', fontWeight: 600, color: 'text.secondary', bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}>Canvas</Box>
+                </Box>
+                {/* Import / Template */}
                 <Box
                   component="button"
                   type="button"
@@ -592,12 +611,12 @@ export const Workspace = React.memo<WorkspaceProps>(({
             }}
           >
             <Box
-              className={`editor-paper paper-${paperSize}`}
+              className={isCanvas ? "canvas-paper" : `editor-paper paper-${paperSize}`}
               style={{
                 '--editor-zoom': zoomLevel / 100,
               } as React.CSSProperties}
             >
-              {isMarkdown ? (
+              {isCanvas ? <ErrorBoundary name="canvas"><Suspense fallback={<WindowLoading />}><CanvasEditor key={`${activeFileId}:${scripts[activeScriptIndex]?.fileName}`} /></Suspense></ErrorBoundary> : isMarkdown ? (
                 <ErrorBoundary name="prose-editor"><ProseEditor /></ErrorBoundary>
               ) : (
                 <ErrorBoundary name="editor"><ScriptEditor /></ErrorBoundary>

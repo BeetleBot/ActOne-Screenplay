@@ -1,6 +1,7 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+const mock = vi.hoisted(() => ({ empty: false, addScript: vi.fn() }));
 
 vi.mock("../../context", () => ({
   useUI: () => ({
@@ -16,8 +17,8 @@ vi.mock("../../context", () => ({
     setSidebarWidth: vi.fn(),
   }),
   useEditor: () => ({ editorView: null }),
-  useFileActions: () => ({}),
-  useWorkspaceMetadata: () => ({ hasNoScripts: false, isProse: false }),
+  useFileActions: () => ({ addScript: mock.addScript }),
+  useWorkspaceMetadata: () => ({ hasNoScripts: mock.empty, isProse: false, scripts: [], activeScriptIndex: 0 }),
 }));
 vi.mock("../SidebarViews", () => ({ SidebarViews: () => <div data-testid="navigator">Navigator</div> }));
 vi.mock("../ScriptEditor", () => ({ ScriptEditor: () => <div>Editor</div> }));
@@ -29,6 +30,14 @@ vi.mock("../TimelineView", () => ({ TimelineView: () => <div data-testid="timeli
 import { Workspace } from "./Workspace";
 
 describe("editor timeline placement", () => {
+  it("opens the empty-project landing page and creates Canvas without menu context", () => {
+    mock.empty = true;
+    const view = render(<Workspace isSidebarOpen />);
+    fireEvent.click(screen.getByRole("button", { name: /New Canvas File/ }));
+    expect(mock.addScript).toHaveBeenCalledWith(undefined, "canvas");
+    view.unmount();
+    mock.empty = false;
+  });
   it("keeps the timeline out of the rounded editor container", () => {
     render(<Workspace isSidebarOpen />);
     expect(screen.queryByTestId("timeline")).toBeNull();

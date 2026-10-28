@@ -8,7 +8,7 @@ import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundleAsync } from "../utils";
 import type { ScriptInfo } from "../utils";
 import { parseScriptFileToFountain } from "../utils/text";
-import { isProseScript, isActonePath } from "../utils/scriptMode";
+import { isNonScreenplay, isProseScript, isCanvasScript, isActonePath } from "../utils/scriptMode";
 import { migrateSettingsKey, removeSettingsKey } from "../utils/perScriptSettings";
 import { logger } from "../utils/logger";
 import { setScriptReportContext } from "../utils/errorReport";
@@ -75,8 +75,8 @@ export interface FileContextProps {
   scriptFileName: string;
   isBundle: boolean;
   setActiveScript: (index: number) => void;
-  addScript: (name?: string, forceType?: "fountain" | "markdown", initialContent?: string) => Promise<string | null>;
-  importScript: (type?: "fountain" | "markdown" | "fdx" | "fadein" | "pdf") => Promise<string | null>;
+  addScript: (name?: string, forceType?: "fountain" | "markdown" | "canvas", initialContent?: string) => Promise<string | null>;
+  importScript: (type?: "fountain" | "markdown" | "canvas" | "fdx" | "fadein" | "pdf") => Promise<string | null>;
   importScriptFromPath: (path: string) => Promise<string | null>;
   renameScript: (index: number, newName: string) => Promise<boolean>;
   duplicateScript: (index: number, name?: string, activateNew?: boolean) => Promise<string | null>;
@@ -207,7 +207,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updateAll = () => {
       setFiles(prev => prev.map(f => {
         const activeScr = f.scripts && f.activeScriptIndex !== undefined ? f.scripts[f.activeScriptIndex] : undefined;
-        const isProse = isProseScript(activeScr, f.filePath);
+        const isProse = isNonScreenplay(activeScr, f.filePath);
         const doc = isProse
           ? createProseDocument(f.rawText, f.parsedDoc.settings)
           : parseScreenplay(f.rawText, paperSize);
@@ -218,7 +218,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setParsedDoc(prevDoc => {
         const currentActive = filesRef.current.find(f => f.id === activeFileIdRef.current);
         const activeScr = currentActive?.scripts && currentActive.activeScriptIndex !== undefined ? currentActive.scripts[currentActive.activeScriptIndex] : undefined;
-        const isProse = isProseScript(activeScr, currentActive?.filePath);
+        const isProse = isNonScreenplay(activeScr, currentActive?.filePath);
         const doc = isProse
           ? createProseDocument(rawText, prevDoc.settings)
           : parseScreenplay(rawText, paperSize);
@@ -232,7 +232,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const activeScr = activeFile?.scripts && activeFile.activeScriptIndex !== undefined ? activeFile.scripts[activeFile.activeScriptIndex] : undefined;
-    const isProse = isProseScript(activeScr, activeFile?.filePath);
+    const isProse = isNonScreenplay(activeScr, activeFile?.filePath);
     setScriptReportContext({
       mode: isProse ? "Prose" : "Screenplay",
       scenesCount: parsedDoc?.lines?.filter(l => l.type === LineType.heading).length || 0,
@@ -423,7 +423,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isActive = targetFileId === activeFileIdRef.current && targetScriptIndex === activeScriptIndexRef.current;
     if (isActive) setRawTextState(normalized);
     const activeScr = activeF.scripts?.[targetScriptIndex];
-    const isProse = isProseScript(activeScr, activeF?.filePath);
+    const isProse = isNonScreenplay(activeScr, activeF?.filePath);
 
     const seqKey = `${targetFileId}:${targetScriptIndex}`;
     const seq = (fileUpdateSeqRef.current[seqKey] ?? 0) + 1;
@@ -519,7 +519,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const targetFile = filesRef.current.find(f => f.id === fileId);
     const targetIdx = scriptIndex ?? targetFile?.activeScriptIndex ?? 0;
     const targetScr = targetFile?.scripts && targetFile.scripts[targetIdx];
-    const isProse = isProseScript(targetScr, targetFile?.filePath);
+    const isProse = isNonScreenplay(targetScr, targetFile?.filePath);
 
     const seqKey = `${fileId}:${targetIdx}`;
     const seq = (fileUpdateSeqRef.current[seqKey] ?? 0) + 1;
@@ -638,7 +638,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fileId: activeFileId,
     scriptIndex: activeScriptIndex,
     text: rawText,
-    enabled: isTauri && !isProseScript(paginationScript, activeFile?.filePath),
+    enabled: isTauri && !isNonScreenplay(paginationScript, activeFile?.filePath),
     paperSize, fontFamily, autoContd: autoContdEnabled,
     elementFormats: JSON.stringify(parsedDoc.settings?.elementFormats || {}),
     scriptFonts: JSON.stringify(parsedDoc.settings?.scriptFonts || {}),
@@ -680,9 +680,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const lower = path.toLowerCase();
       const isPdf = lower.endsWith(".pdf");
       const isFadeIn = lower.endsWith(".fadein");
+      const isCanvas = lower.endsWith(".excalidraw");
       const isMarkdown = lower.endsWith(".md") || lower.endsWith(".markdown");
 
-      const scriptName = path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "") || "Untitled";
+      const scriptName = path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown|excalidraw)$/i, "") || "Untitled";
 
       try {
         let content = "";
@@ -694,21 +695,21 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             content = parseScriptFileToFountain(path, new Uint8Array(bytes));
           } else {
             const raw = await invoke<string>("read_file_content", { path });
-            content = isMarkdown ? raw : parseScriptFileToFountain(path, raw);
+            content = (isMarkdown || isCanvas) ? raw : parseScriptFileToFountain(path, raw);
           }
         } else {
           throw new Error("Cannot open direct path in web mode");
         }
 
-        if (isMarkdown) {
+        if (isMarkdown || isCanvas) {
           const newId = generateUUID();
           const cleanName = scriptName.trim() || "Untitled";
           const scripts: ScriptInfo[] = [{
             name: cleanName,
-            fileName: `files/${sanitizeFileName(cleanName)}.md`,
+            fileName: `files/${sanitizeFileName(cleanName)}.${isCanvas ? "excalidraw" : "md"}`,
             content,
             savedContent: "",
-            type: "markdown",
+            type: isCanvas ? "canvas" : "markdown",
           }];
           const doc = createProseDocument(content, {});
           const newFileObj: ScreenplayFile = {
@@ -809,7 +810,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const restoredScriptIndex = rememberedDocumentIndex(normalizedPath, scripts);
     const activeScript = scripts[restoredScriptIndex] || { name: "Untitled", fileName: "Untitled.fountain", content: "", savedContent: "" };
     const content = activeScript.content;
-    const isProse = isProseScript(activeScript, normalizedPath);
+    const isProse = isNonScreenplay(activeScript, normalizedPath);
     const parsed = isProse
       ? createProseDocument(content, settings)
       : parseScreenplay(content, paperSize);
@@ -971,7 +972,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const restoredScriptIndex = rememberedDocumentIndex(normalizedPath, scripts);
       const activeScript = scripts[restoredScriptIndex] || { name: "Untitled", fileName: "files/Untitled.fountain", content: "", savedContent: "" };
       content = activeScript.content;
-      const isProse = isProseScript(activeScript, normalizedPath);
+      const isProse = isNonScreenplay(activeScript, normalizedPath);
       const parsed = isProse
         ? createProseDocument(content, settings)
         : parseScreenplay(content, paperSize);
@@ -1370,7 +1371,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       i === (file.activeScriptIndex ?? 0) ? { ...s, content: file.rawText } : s
     );
     const newScript = updatedScripts[index];
-    const isProse = isProseScript(newScript, file.filePath);
+    const isProse = isNonScreenplay(newScript, file.filePath);
     const doc = isProse
       ? createProseDocument(newScript.content, file.parsedDoc.settings)
       : parseScreenplay(newScript.content, paperSize);
@@ -1395,14 +1396,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     activeScriptIndexRef.current = index;
   }, [files, activeFileId, rawText, paperSize]);
 
-  const addScript = useCallback(async (name?: string, forceType?: "fountain" | "markdown", initialContent: string = ""): Promise<string | null> => {
+  const addScript = useCallback(async (name?: string, forceType?: "fountain" | "markdown" | "canvas", initialContent: string = ""): Promise<string | null> => {
     flushPendingEditorEdits();
     const file = filesRef.current.find(f => f.id === activeFileIdRef.current);
     if (!file || !file.scripts) return null;
 
+    const isCanvas = forceType === "canvas";
+    if (isCanvas && !initialContent) initialContent = '{"type":"excalidraw","version":2,"source":"ActOne","elements":[],"appState":{},"files":{}}';
     const isMarkdown = forceType === "markdown" || (forceType !== "fountain" && (name?.trim().toLowerCase().endsWith(".md") ?? false));
-    const title = isMarkdown ? "New Prose" : "New Script";
-    const message = isMarkdown ? "Enter a name for the prose file:" : "Enter a name for the script:";
+    const title = isCanvas ? "New Canvas" : isMarkdown ? "New Prose" : "New Script";
+    const message = isCanvas ? "Enter a name for the canvas:" : isMarkdown ? "Enter a name for the prose file:" : "Enter a name for the script:";
 
     const baseName = name || (await prompt({
       title,
@@ -1413,17 +1416,17 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const rawName = baseName.trim().toLowerCase().endsWith(".md") ? baseName.trim().slice(0, -3) : baseName.trim();
     const uniqueName = getUniqueName(rawName, file.scripts);
-    const fileName = isMarkdown ? `files/${sanitizeFileName(uniqueName)}.md` : `files/${sanitizeFileName(uniqueName)}.fountain`;
+    const fileName = isCanvas ? `files/${sanitizeFileName(uniqueName)}.excalidraw` : isMarkdown ? `files/${sanitizeFileName(uniqueName)}.md` : `files/${sanitizeFileName(uniqueName)}.fountain`;
     
     const latestFile = filesRef.current.find(f => f.id === activeFileIdRef.current) ?? file;
-    const parsed = isMarkdown
+    const parsed = (isMarkdown || isCanvas)
       ? createProseDocument(initialContent, latestFile.parsedDoc.settings)
       : parseScreenplay(initialContent, paperSize);
 
     const newScript: ScriptInfo = {
       name: uniqueName,
       fileName,
-      type: isMarkdown ? "markdown" : "fountain",
+      type: isCanvas ? "canvas" : isMarkdown ? "markdown" : "fountain",
       content: initialContent,
       savedContent: "",
     };
@@ -1477,7 +1480,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const oldFileName = file.scripts[index].fileName;
     const updatedScripts = file.scripts.map((s, i) =>
-      i === index ? { ...s, name: trimmed, fileName: isProseScript(s) ? `files/${sanitizeFileName(trimmed)}.md` : `files/${sanitizeFileName(trimmed)}.fountain` } : s
+      i === index ? { ...s, name: trimmed, fileName: isCanvasScript(s) ? `files/${sanitizeFileName(trimmed)}.excalidraw` : isProseScript(s) ? `files/${sanitizeFileName(trimmed)}.md` : `files/${sanitizeFileName(trimmed)}.fountain` } : s
     );
     const newFileName = updatedScripts[index].fileName;
     const migratedSettings = migrateSettingsKey(file.parsedDoc.settings, oldFileName, newFileName);
@@ -1499,8 +1502,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const source = file.scripts[index];
     const newName = getUniqueName(name?.trim() || source.name, file.scripts);
+    const isCanvas = isCanvasScript(source);
     const isMarkdown = isProseScript(source);
-    const newFileName = isMarkdown ? `files/${sanitizeFileName(newName)}.md` : `files/${sanitizeFileName(newName)}.fountain`;
+    const newFileName = isCanvas ? `files/${sanitizeFileName(newName)}.excalidraw` : isMarkdown ? `files/${sanitizeFileName(newName)}.md` : `files/${sanitizeFileName(newName)}.fountain`;
     const newScript: ScriptInfo = {
       name: newName,
       fileName: newFileName,
@@ -1514,7 +1518,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (activateNew) {
       const newActiveIndex = insertAt;
-      const parsed = isMarkdown
+      const parsed = (isMarkdown || isCanvas)
         ? createProseDocument(newScript.content, file.parsedDoc.settings)
         : parseScreenplay(newScript.content, paperSize);
 
@@ -1619,7 +1623,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const newActiveScript = updatedScripts[newActiveIndex];
-    const isProse = isProseScript(newActiveScript, file.filePath);
+    const isProse = isNonScreenplay(newActiveScript, file.filePath);
     const doc = isProse
       ? createProseDocument(newActiveScript.content, cleanedSettings)
       : parseScreenplay(newActiveScript.content, paperSize);
@@ -1650,13 +1654,14 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts) return null;
 
-    const baseName = path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "") || "Imported";
+    const baseName = path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown|excalidraw)$/i, "") || "Imported";
     setImportingScriptName(baseName);
 
     try {
       const lower = path.toLowerCase();
       const isPdf = lower.endsWith(".pdf");
       const isFadeIn = lower.endsWith(".fadein");
+      const isCanvas = lower.endsWith(".excalidraw");
       const isMarkdown = lower.endsWith(".md") || lower.endsWith(".markdown");
 
       let content = "";
@@ -1668,7 +1673,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           content = parseScriptFileToFountain(path, new Uint8Array(bytes));
         } else {
           const raw = await invoke<string>("read_file_content", { path });
-          content = isMarkdown ? raw : parseScriptFileToFountain(path, raw);
+          content = (isMarkdown || isCanvas) ? raw : parseScriptFileToFountain(path, raw);
         }
       } catch (e) {
         logger.error("file", `Failed to import script from path: ${path}`, e);
@@ -1676,18 +1681,18 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const uniqueName = getUniqueName(baseName.trim() || "Imported", file.scripts);
-      const ext = isMarkdown ? "md" : "fountain";
+      const ext = isCanvas ? "excalidraw" : isMarkdown ? "md" : "fountain";
       const safeFileName = `files/${sanitizeFileName(uniqueName)}.${ext}`;
       const newScript: ScriptInfo = {
         name: uniqueName,
         fileName: safeFileName,
         content,
         savedContent: "",
-        type: isMarkdown ? "markdown" : "fountain",
+        type: isCanvas ? "canvas" : isMarkdown ? "markdown" : "fountain",
       };
 
       const updatedScripts = [...file.scripts, newScript];
-      const parsed = isMarkdown
+      const parsed = (isMarkdown || isCanvas)
         ? createProseDocument(content, file.parsedDoc.settings)
         : parseScreenplay(content, paperSize);
 
@@ -1717,7 +1722,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [files, activeFileId, paperSize, showPdfNotice]);
 
-  const importScript = useCallback(async (type?: "fountain" | "markdown" | "fdx" | "fadein" | "pdf"): Promise<string | null> => {
+  const importScript = useCallback(async (type?: "fountain" | "markdown" | "canvas" | "fdx" | "fadein" | "pdf"): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
     if (!file || !file.scripts) return null;
 
@@ -1729,7 +1734,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const result = await invoke<{ path: string; name?: string; extension?: string } | null>("import_script_dialog", { format: type });
         if (!result || !result.path) return null;
-        fileName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "") || "Imported";
+        fileName = result.name || result.path.split(/[/\\]/).pop()?.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown|excalidraw)$/i, "") || "Imported";
         isPdfImport = result.path.toLowerCase().endsWith(".pdf");
         
         setImportingScriptName(fileName);
@@ -1741,7 +1746,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           content = parseScriptFileToFountain(result.path, new Uint8Array(bytes));
         } else {
           const raw = await invoke<string>("read_file_content", { path: result.path });
-          content = type === "markdown" ? raw : parseScriptFileToFountain(result.path, raw);
+          content = (type === "markdown" || type === "canvas") ? raw : parseScriptFileToFountain(result.path, raw);
         }
       } catch (e) {
         logger.error("file", "Import script dialog failed", e);
@@ -1751,7 +1756,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       content = await new Promise<string | null>((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept =
+        input.accept = type === "canvas" ? ".excalidraw" :
           type === "markdown"
             ? ".md,.markdown,.txt"
             : type === "fdx"
@@ -1764,7 +1769,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         input.onchange = async () => {
           const f = input.files?.[0];
           if (!f) { resolve(null); return; }
-          fileName = f.name.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown)$/i, "");
+          fileName = f.name.replace(/\.(fountain|txt|fdx|fadein|pdf|md|markdown|excalidraw)$/i, "");
           setImportingScriptName(fileName);
           if (f.name.toLowerCase().endsWith(".pdf")) {
             resolve(null);
@@ -1773,7 +1778,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             resolve(parseScriptFileToFountain(f.name, new Uint8Array(buf)));
           } else {
             const text = await f.text();
-            resolve(type === "markdown" ? text : parseScriptFileToFountain(f.name, text));
+            resolve((type === "markdown" || type === "canvas") ? text : parseScriptFileToFountain(f.name, text));
           }
         };
         input.click();
@@ -1786,7 +1791,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const uniqueName = getUniqueName(fileName.trim() || "Imported", file.scripts);
-      const ext = type === "markdown" ? "md" : "fountain";
+      const isCanvas = type === "canvas";
+      const ext = isCanvas ? "excalidraw" : type === "markdown" ? "md" : "fountain";
       const safeFileName = `files/${sanitizeFileName(uniqueName)}.${ext}`;
       const isMarkdown = type === "markdown";
       const newScript: ScriptInfo = {
@@ -1794,11 +1800,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fileName: safeFileName,
         content: content || "",
         savedContent: content,
-        type: isMarkdown ? "markdown" : "fountain",
+        type: isCanvas ? "canvas" : isMarkdown ? "markdown" : "fountain",
       };
 
       const updatedScripts = [...file.scripts, newScript];
-      const parsed = isMarkdown
+      const parsed = (isMarkdown || isCanvas)
         ? createProseDocument(content, file.parsedDoc.settings)
         : parseScreenplay(content, paperSize);
 
@@ -1854,7 +1860,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const targetScript = updatedScripts[newActiveIndex];
-    const isProse = isProseScript(targetScript, file.filePath);
+    const isProse = isNonScreenplay(targetScript, file.filePath);
     const doc = isProse
       ? createProseDocument(targetScript.content, file.parsedDoc.settings)
       : parseScreenplay(targetScript.content, paperSize);
@@ -1906,7 +1912,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const activeScr = scripts.length > 0 ? scripts[0] : undefined;
-      const isProse = isProseScript(activeScr);
+      const isProse = isNonScreenplay(activeScr);
       const parsed = isProse
         ? createProseDocument(rawTextContent, settings)
         : parseScreenplay(rawTextContent, paperSize);

@@ -10,6 +10,21 @@ export interface HelpArticle {
 }
 
 export const articles: HelpArticle[] = [
+  {
+    id: "canvas", title: "Canvas", category: "Writing",
+    tags: ["canvas", "images", "planning", "drawing"], relatedIds: [],
+    content: `Canvas is a hand-drawn space for planning your story with text, shapes, arrows, and pictures.
+
+In the project document list, choose **Add → Canvas**, or choose **New Canvas File** in an empty project's main action list.
+
+Use the editor toolbar to select, draw, add text and images, and connect ideas with arrows. Select an item to change its colors, line appearance, and other styles. Drag selection handles to resize or rotate items. Undo and redo work inside Canvas.
+
+Save your project normally, or press Ctrl/Command+S. Canvas documents and their pictures are stored inside your project, so they travel together. When autosave is enabled, Canvas edits are saved with the project.
+
+Use **Save as image**, or press Ctrl/Command+P while Canvas is active, to export a picture of your board. Canvas documents and their pictures are saved with your project.
+
+Existing screenplay and prose projects continue to open. Saving an older project upgrades its storage format. Use the current app version for projects containing Canvas documents.`,
+  },
   // ===== GETTING STARTED =====
   {
     id: "welcome-screen",
