@@ -136,15 +136,7 @@ impl Default for PdfExporter {
 }
 
 fn build_font_system() -> FontSystem {
-    let mut db = cosmic_text::fontdb::Database::new();
-    for data in FONTS {
-        db.load_font_data(data.to_vec());
-    }
-    for data in NOTO_FONTS {
-        db.load_font_data(data.to_vec());
-    }
-    db.load_system_fonts();
-    FontSystem::new_with_locale_and_db("en-US".to_string(), db)
+    super::shared::build_font_system()
 }
 
 fn load_courier_fonts() -> std::io::Result<CourierFonts> {

@@ -2,6 +2,10 @@
 
 The PDF engine is the most complex part of ActOne, written in Rust using **krilla 0.7** for PDF generation and **cosmic-text 0.12** for text shaping and layout.
 
+## Live export preview
+
+The export dialog fills the application window and keeps native window resize and maximize controls available. Navigation and settings occupy the left 40%; the scrollable PDF preview occupies the right 60%. PDF.js renders bytes from the existing `generate_pdf_bytes` / `generate_prose_pdf_bytes` commands, using the same arguments as the final export. Settings changes refresh automatically after a 80 ms debounce. PDF.js uses one worker for the export session, warmed in parallel with native generation. A session cache retains up to three recent PDF byte buffers (16 MiB total); image watermarks bypass it so edits to the source image are reflected. The Rust exporters share a cached font catalog with independent shaping state; newly installed system fonts become available after restarting the app. Native requests are serialized and superseded results are ignored. Pages render near the viewport and fit the available width by default. Preview zoom ranges from 50% to 200% in 25% steps; Fit width resets to 100%. Zoom redraws existing pages without calling the native generator and enables horizontal scrolling when needed. Preview generation does not open a save dialog or write a file.
+
 ## Pipeline
 
 ```
@@ -155,3 +159,5 @@ Configurable watermarks with:
 - **Header text** — centered at top, configurable opacity
 - **Footer text** — centered at bottom, configurable opacity
 - **Center image or text** — scaled to max 300×300 or rotated 45 degrees, configurable opacity
+
+Scene headings are recognized even when action follows immediately without a blank line. Trailing scene numbers (`#1#`, `#1A#`) and scene color tags are extracted as metadata in either order; the syntax is not printed in the heading.

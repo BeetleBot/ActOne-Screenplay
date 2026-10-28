@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 
+vi.mock("pdfjs-dist", () => ({
+  GlobalWorkerOptions: {},
+  PDFWorker: class { promise = Promise.resolve(); destroy() {} },
+}));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openPath: vi.fn(), revealItemInDir: vi.fn() }));
 import { invoke } from "@tauri-apps/api/core";

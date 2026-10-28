@@ -99,15 +99,20 @@ impl Default for WatermarkSettings {
 }
 
 pub fn build_font_system() -> FontSystem {
-    let mut db = cosmic_text::fontdb::Database::new();
-    for data in FONTS {
-        db.load_font_data(data.to_vec());
-    }
-    for data in NOTO_FONTS {
-        db.load_font_data(data.to_vec());
-    }
-    db.load_system_fonts();
-    FontSystem::new_with_locale_and_db("en-US".to_string(), db)
+    // Font sources are shared by database clones; shaping state remains per export.
+    static DATABASE: std::sync::OnceLock<cosmic_text::fontdb::Database> = std::sync::OnceLock::new();
+    let db = DATABASE.get_or_init(|| {
+        let mut db = cosmic_text::fontdb::Database::new();
+        for data in FONTS {
+            db.load_font_data(data.to_vec());
+        }
+        for data in NOTO_FONTS {
+            db.load_font_data(data.to_vec());
+        }
+        db.load_system_fonts();
+        db
+    });
+    FontSystem::new_with_locale_and_db("en-US".to_string(), db.clone())
 }
 
 pub fn load_courier_fonts() -> std::io::Result<CourierFonts> {
@@ -369,5 +374,23 @@ pub fn draw_watermarks(
 
             surface.pop(); // Pop opacity
         }
+    }
+}
+
+#[cfg(test)]
+mod font_catalog_tests {
+    use super::build_font_system;
+
+    #[test]
+    fn cached_font_catalog_has_independent_export_databases() {
+        let mut first = build_font_system();
+        let second = build_font_system();
+        let count = second.db().faces().count();
+        assert!(count >= 41);
+        let id = first.db().faces().next().unwrap().id;
+        first.db_mut().remove_face(id);
+        assert_eq!(first.db().faces().count(), count - 1);
+        assert_eq!(second.db().faces().count(), count);
+        assert_eq!(build_font_system().db().faces().count(), count);
     }
 }

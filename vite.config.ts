@@ -49,6 +49,9 @@ export default defineConfig(async () => ({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
+            if (id.includes("pdfjs-dist")) {
+              return "vendor-pdf";
+            }
             if (id.includes("@mui") || id.includes("@emotion")) {
               return "vendor-mui";
             }

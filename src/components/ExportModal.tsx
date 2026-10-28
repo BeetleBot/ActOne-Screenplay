@@ -4,7 +4,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { alpha } from "@mui/material/styles";
 import { DownloadIcon, DescriptionIcon } from "./Icons";
 import { ExportCompleteDialog } from "./ExportCompleteDialog";
+import { WindowResizeHandles } from "./WindowResizeHandles";
 import { TitleBar } from "./TitleBar";
+import { PdfExportPreview } from "./PdfExportPreview";
 import { SystemFontPicker } from "./SystemFontPicker";
 import { logger } from "../utils/logger";
 import { STORAGE_KEYS } from "../constants";
@@ -283,38 +285,42 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     }
   };
 
+  const pdfArguments = {
+    fountainText: rawText,
+    paperSize,
+    fontFamily: selectedFont,
+    elementFormats: JSON.stringify(elementFormats),
+    mirrorSceneNumbers: sceneNumberMode,
+    exportSections,
+    exportSynopses,
+    exportTitlePage,
+    exportSceneColors,
+    scenePageBreaks,
+    autoContd: localStorage.getItem(STORAGE_KEYS.AUTO_CONTD_ENABLED) !== "false",
+    revisedLines: [] as boolean[],
+    watermarkHeaderEnabled,
+    watermarkHeaderText,
+    watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
+    watermarkFooterEnabled,
+    watermarkFooterText,
+    watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
+    watermarkCenterEnabled,
+    watermarkCenterType,
+    watermarkCenterText,
+    watermarkCenterImagePath,
+    watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
+    watermarkCenterGrayscale,
+    scriptFonts: JSON.stringify(scriptFonts),
+  };
+  const previewArguments = JSON.stringify(isProse ? { ...pdfArguments, markdownText: rawText } : pdfArguments);
+
   const handleExportPDF = async () => {
     try {
       updateWatermarkSettings(currentWatermarkSettings());
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
-        const revisedLines: boolean[] = [];
         const result = await invoke<string | null>("export_pdf", {
-          fountainText: rawText,
-          paperSize,
-          fontFamily: selectedFont,
-          elementFormats: JSON.stringify(elementFormats),
-          mirrorSceneNumbers: sceneNumberMode,
-          exportSections,
-          exportSynopses,
-          exportTitlePage,
-          exportSceneColors,
-          scenePageBreaks,
-          autoContd: localStorage.getItem(STORAGE_KEYS.AUTO_CONTD_ENABLED) !== "false",
-          revisedLines,
-          watermarkHeaderEnabled,
-          watermarkHeaderText,
-          watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
-          watermarkFooterEnabled,
-          watermarkFooterText,
-          watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
-          watermarkCenterEnabled,
-          watermarkCenterType,
-          watermarkCenterText,
-          watermarkCenterImagePath,
-          watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
-          watermarkCenterGrayscale,
-          scriptFonts: JSON.stringify(scriptFonts),
+          ...pdfArguments,
           defaultDirectory: getLastExportDir(),
         });
         if (result) saveLastExportDir(result);
@@ -336,22 +342,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         const defaultDir = documentDir || getLastExportDir();
 
         const result = await invoke<string | null>("export_prose_pdf", {
+          ...pdfArguments,
           markdownText: rawText,
-          paperSize,
-          fontFamily: selectedFont,
-          watermarkHeaderEnabled,
-          watermarkHeaderText,
-          watermarkHeaderOpacity: watermarkHeaderOpacity / 100.0,
-          watermarkFooterEnabled,
-          watermarkFooterText,
-          watermarkFooterOpacity: watermarkFooterOpacity / 100.0,
-          watermarkCenterEnabled,
-          watermarkCenterType,
-          watermarkCenterText,
-          watermarkCenterImagePath,
-          watermarkCenterOpacity: watermarkCenterOpacity / 100.0,
-          watermarkCenterGrayscale,
-          scriptFonts: JSON.stringify(scriptFonts),
           defaultDirectory: defaultDir,
         });
         if (result) saveLastExportDir(result);
@@ -875,15 +867,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
     <Dialog
       open
       onClose={onClose}
-      fullWidth
-      maxWidth="sm"
+      fullScreen
+      maxWidth={false}
       disableScrollLock
       transitionDuration={200}
       sx={{
         '& .MuiDialog-paper': {
-          borderRadius: "12px",
-          height: 520,
-          maxHeight: '90vh',
+          borderRadius: 0,
+          height: "100%",
+          maxHeight: "100%",
           bgcolor: 'background.paper',
           backgroundImage: 'none',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25)',
@@ -893,21 +885,24 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
         }
       }}
     >
+      {typeof window !== "undefined" && "__TAURI_INTERNALS__" in window && <WindowResizeHandles />}
       <DialogTitle sx={{ m: 0, p: 0 }}>
         <TitleBar
           title={isProse ? "Export Prose" : "Export Script"}
-          isModal
           onClose={onClose}
         />
       </DialogTitle>
 
       {/* Body */}
         <>
-          <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
+          <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0 }}>
+            <Box sx={{ display: "flex", width: format === "pdf" ? "40%" : "100%", minWidth: 0 }}>
             {/* ── Left Sidebar ── */}
             <Box
               sx={{
-                width: 190,
+                width: "35%",
+                maxWidth: 190,
+                minWidth: 120,
                 flexShrink: 0,
                 borderRight: "1px solid",
                 borderColor: "divider",
@@ -970,9 +965,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
             </Box>
 
             {/* ── Right Panel ── */}
-            <Box sx={{ flex: 1, overflowY: "auto", p: 2.5 }}>
+            <Box sx={{ flex: 1, minWidth: 0, overflowY: "auto", p: 2.5 }}>
               {renderContent()}
             </Box>
+            </Box>
+            {format === "pdf" && <PdfExportPreview argumentsJson={previewArguments} isProse={isProse} />}
           </Box>
 
           {/* ── Footer ── */}

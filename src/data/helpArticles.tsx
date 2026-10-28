@@ -686,7 +686,7 @@ The pane width is adjustable — drag the left edge to resize. Press <kbd>Ctrl+F
 - **Renumber Scene Headings** — Appends sequential \`#1#\`, \`#2#\`, etc. to every scene heading (removes existing numbers first). Prompts for confirmation.
 - **Clear Scene Numbers** — Removes all \`#...#\` markers from scene headings. Prompts for confirmation.
 
-Scene numbers display in the editor margins and as badges in the Outline Navigator. PDF export can include them on the left side or mirrored on both sides.`,
+Scene numbers display in the editor margins and as badges in the Outline Navigator. PDF export can include them on the left side or mirrored on both sides. Scene number markers such as \`#1#\` are rendered as numbers, including when a scene color tag follows or action starts on the next line.`,
   },
 
   // ===== WORKSPACE & VIEWS =====
@@ -1223,7 +1223,7 @@ After a successful desktop export, choose **Open file** to open the exported doc
     category: "Export",
     tags: ["pdf", "print", "export"],
     relatedIds: ["export-overview", "export-fountain", "theme-manager"],
-    content: `Export your screenplay as an industry-standard, professionally formatted PDF. Options:
+    content: `Export your screenplay as an industry-standard, professionally formatted PDF. The export workspace fills the window and supports resizing and maximizing. The right 60% shows a scrollable preview of the final PDF. Changes to fonts, layout, element formatting, and watermarks update the preview automatically after a brief pause. Recent settings are cached to make switching back faster. Use the preview’s zoom buttons (50–200%) to inspect pages, or **Fit width** to reset. Zoom does not regenerate the PDF. Preview is available in the desktop app for screenplays and prose. Options:
 
 - **Include Title Page** — Export the title page if defined.
 - **Bold Scene Headings** — Make scene headings bold.

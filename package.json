@@ -49,6 +49,7 @@
     "diff-match-patch": "^1.0.5",
     "fflate": "^0.8.3",
     "fuse.js": "^7.4.2",
+    "pdfjs-dist": "^6.4.299",
     "pretty-format": "^27.5.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
