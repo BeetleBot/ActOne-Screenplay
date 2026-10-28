@@ -79,7 +79,10 @@ const DEFAULT_ELEMENT_FORMATS: ElementFormats = {
   centered_text:   { bold: false, italic: false, underline: false },
 };
 
-interface ExportModalProps {
+import type { ExportWindowData } from "../utils/exportWindow";
+
+interface ExportWindowProps {
+  data?: ExportWindowData;
   onClose: () => void;
 }
 
@@ -156,9 +159,12 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </Typography>
 );
 
-export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
-  const { rawText, isBundle, activeScriptName, filePath, updateSettings, parsedDoc, scripts, activeScriptIndex } = useFile();
-  const { fontFamily, paperSize } = useUI();
+export const ExportWindow: React.FC<ExportWindowProps> = ({ onClose, data }) => {
+  const fileContext = useFile();
+  const { rawText, isBundle, activeScriptName, filePath, parsedDoc, scripts, activeScriptIndex } = data?.file ?? fileContext;
+  const updateSettings = fileContext.updateSettings;
+  const ui = useUI();
+  const { fontFamily, paperSize } = data?.ui ?? ui;
 
   const activeScript = scripts?.[activeScriptIndex ?? 0];
   const isProse = isProseScript(activeScript, filePath);

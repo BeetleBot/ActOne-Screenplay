@@ -5,7 +5,7 @@ export { BugReportModal } from './BugReportModal';
 
 export { ErrorBoundary } from './ErrorBoundary';
 export { CrashScreen } from './CrashScreen';
-export { ExportModal } from './ExportModal';
+export { ExportWindow } from './ExportWindow';
 export { ScriptEditor } from './ScriptEditor';
 export { CoreEditor } from './editor/CoreEditor';
 export { MarkerView } from './MarkerView';

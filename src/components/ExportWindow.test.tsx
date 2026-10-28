@@ -31,7 +31,7 @@ vi.mock("../context", () => ({
   }),
 }));
 
-import { ExportModal } from "./ExportModal";
+import { ExportWindow } from "./ExportWindow";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -51,14 +51,14 @@ beforeEach(() => {
   };
 });
 
-describe("ExportModal Component", () => {
+describe("ExportWindow Component", () => {
   it("renders without crashing", () => {
-    const { container } = render(React.createElement(ExportModal, { onClose: vi.fn() }));
+    const { container } = render(React.createElement(ExportWindow, { onClose: vi.fn() }));
     expect(container).toBeTruthy();
   });
 
   it("renders script mode export options", () => {
-    render(React.createElement(ExportModal, { onClose: vi.fn() }));
+    render(React.createElement(ExportWindow, { onClose: vi.fn() }));
     expect(screen.getByText(/export script/i)).toBeTruthy();
     expect(screen.getByText(/start each scene on new page/i)).toBeTruthy();
     expect(screen.getByText(/^fountain$/i)).toBeTruthy();
@@ -69,7 +69,7 @@ describe("ExportModal Component", () => {
       ...mockFileState,
       scripts: [{ id: "s1", name: "Chapter 1", type: "markdown", content: "# Chapter 1\n\nSome prose text." }],
     };
-    render(React.createElement(ExportModal, { onClose: vi.fn() }));
+    render(React.createElement(ExportWindow, { onClose: vi.fn() }));
     expect(screen.getByText(/export prose/i)).toBeTruthy();
     expect(screen.getByText(/markdown \(\.md\)/i)).toBeTruthy();
     expect(screen.queryByText(/^fountain$/i)).toBeNull();
@@ -86,7 +86,7 @@ describe("desktop export completion", () => {
     if (prose) mockFileState.scripts[0].type = "markdown";
     vi.mocked(invoke).mockImplementation(async command => command === (prose ? "export_prose_pdf" : "export_pdf") ? path : []);
     const onClose = vi.fn();
-    render(<ExportModal onClose={onClose} />);
+    render(<ExportWindow onClose={onClose} />);
     fireEvent.click(screen.getByRole("button", { name: "Export to PDF" }));
     expect(await screen.findByText(/export complete/i)).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
@@ -109,7 +109,7 @@ describe("desktop export completion", () => {
     const exported = `/home/writer/Exports/Draft.${extension}`;
     vi.mocked(invoke).mockImplementation(async name => name === command ? exported : []);
     const onClose = vi.fn();
-    render(<ExportModal onClose={onClose} />);
+    render(<ExportWindow onClose={onClose} />);
     fireEvent.click(screen.getByText(nav));
     fireEvent.click(screen.getByRole("button", { name: button }));
     fireEvent.click(await screen.findByRole("button", { name: "Open file" }));
@@ -120,7 +120,7 @@ describe("desktop export completion", () => {
   it("keeps export options open when the save dialog is canceled", async () => {
     vi.mocked(invoke).mockImplementation(async command => command === "export_pdf" ? null : []);
     const onClose = vi.fn();
-    render(<ExportModal onClose={onClose} />);
+    render(<ExportWindow onClose={onClose} />);
     fireEvent.click(screen.getByRole("button", { name: "Export to PDF" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Export to PDF" })).not.toBeDisabled());
     expect(screen.queryByText(/export complete/i)).not.toBeInTheDocument();
@@ -129,7 +129,7 @@ describe("desktop export completion", () => {
 
   it("shows export errors without offering success actions", async () => {
     vi.mocked(invoke).mockImplementation(async command => { if (command === "export_pdf") throw new Error("disk full"); return []; });
-    render(<ExportModal onClose={vi.fn()} />);
+    render(<ExportWindow onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Export to PDF" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Export failed");
     expect(screen.queryByRole("button", { name: "Open file" })).not.toBeInTheDocument();
@@ -138,7 +138,7 @@ describe("desktop export completion", () => {
   it("keeps the exported file available when opening it fails", async () => {
     vi.mocked(invoke).mockImplementation(async command => command === "export_pdf" ? path : []);
     vi.mocked(openPath).mockRejectedValue(new Error("no associated application"));
-    render(<ExportModal onClose={vi.fn()} />);
+    render(<ExportWindow onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Export to PDF" }));
     fireEvent.click(await screen.findByRole("button", { name: "Open file" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not open the exported file");
@@ -147,7 +147,7 @@ describe("desktop export completion", () => {
   it("allows retrying when revealing the exported file fails", async () => {
     vi.mocked(invoke).mockImplementation(async command => command === "export_pdf" ? path : []);
     vi.mocked(revealItemInDir).mockRejectedValueOnce(new Error("file manager failed"));
-    render(<ExportModal onClose={vi.fn()} />);
+    render(<ExportWindow onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Export to PDF" }));
     fireEvent.click(await screen.findByRole("button", { name: "Show in folder" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not show the exported file");

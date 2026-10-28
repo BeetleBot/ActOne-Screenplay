@@ -3,6 +3,7 @@ import { Dialog } from "@mui/material";
 import { AppProviders, useFileActions, useWorkspaceMetadata, useParsedScreenplay, useUI, useEditor, useScriptEditor, SprintProvider, useCustomModal } from "./context";
 import { useKeyboardShortcuts, useNativeAppBehavior, useModals, useModalWindows } from "./hooks";
 import { WelcomeScreenWindow } from "./components/WelcomeScreen";
+import { WindowLoading } from "./components/WindowLoading";
 import { WindowResizeHandles } from "./components/WindowResizeHandles";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -324,9 +325,9 @@ function AppInner() {
   useNativeAppBehavior(handleDropFiles, handleDragStateChange);
 
   const {
-    isModalActive, isPaletteOpen, isSceneJumpOpen, showExportModal, showStructureModal,
+    isModalActive, isPaletteOpen, isSceneJumpOpen, showExportWindow, showStructureModal,
     showTitlePageModal, showShortcutsModal,
-    setIsPaletteOpen, setIsSceneJumpOpen, setShowExportModal, setShowStructureModal,
+    setIsPaletteOpen, setIsSceneJumpOpen, setShowExportWindow, setShowStructureModal,
     setShowTitlePageModal, setShowShortcutsModal,
     togglePalette
   } = useModals();
@@ -351,8 +352,8 @@ function AppInner() {
     openSceneJump: useCallback(() => setIsSceneJumpOpen(true), [setIsSceneJumpOpen]),
     openModelPalette: useCallback(() => setIsModelPaletteOpen(true), []),
     exportPDF: useCallback(() => {
-      setShowExportModal(true);
-    }, [setShowExportModal]),
+      setShowExportWindow(true);
+    }, [setShowExportWindow]),
     toggleSidebar: useCallback(() => {
       if (activeRightPane) {
         setActiveRightPane(null);
@@ -931,7 +932,7 @@ function AppInner() {
               }
             }}
           >
-            <Suspense fallback={null}>
+            <Suspense fallback={<WindowLoading />}>
               <TutorialsWindow isModal onClose={() => setShowTutorialsModal(false)} />
             </Suspense>
           </Dialog>
@@ -942,7 +943,7 @@ function AppInner() {
 
   // Editor window — will close and reopen welcome via useEffect when files hit 0
   if (!isModalWindow && files.length === 0) {
-    return null;
+    return <WindowLoading />;
   }
 
   return (
@@ -966,8 +967,8 @@ function AppInner() {
         setIsPaletteOpen={setIsPaletteOpen}
         isSceneJumpOpen={isSceneJumpOpen}
         setIsSceneJumpOpen={setIsSceneJumpOpen}
-        showExportModal={showExportModal}
-        setShowExportModal={setShowExportModal}
+        showExportWindow={showExportWindow}
+        setShowExportWindow={setShowExportWindow}
         showStructureModal={showStructureModal}
         setShowStructureModal={setShowStructureModal}
         showTitlePageModal={showTitlePageModal}
@@ -1021,7 +1022,7 @@ function AppInner() {
           }
         }}
       >
-        <Suspense fallback={null}>
+        <Suspense fallback={<WindowLoading />}>
               <TutorialsWindow isModal onClose={() => setShowTutorialsModal(false)} />
             </Suspense>
       </Dialog>
@@ -1037,7 +1038,7 @@ function App() {
     <ErrorBoundary fullScreen name="app-root">
       <AppProviders>
         <SprintProvider>
-          <Suspense fallback={null}><AppInner /></Suspense>
+          <Suspense fallback={<WindowLoading />}><AppInner /></Suspense>
         </SprintProvider>
       </AppProviders>
     </ErrorBoundary>

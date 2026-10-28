@@ -9,6 +9,7 @@
     "help",
     "theme-manager",
     "xray",
+    "export",
     "index-cards"
   ],
   "permissions": [

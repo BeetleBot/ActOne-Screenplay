@@ -215,6 +215,43 @@ pub(crate) fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(
     Ok(())
 }
 
+// A portal grant for one file does not grant access to sibling temp files or snapshots.
+#[tauri::command]
+fn prepare_project_path(path: String) -> Result<String, String> {
+    #[cfg(target_os = "linux")]
+    if std::env::var_os("FLATPAK_ID").is_some() {
+        use std::os::unix::fs::MetadataExt;
+        let original = std::path::Path::new(&path);
+        let parent = original.parent().ok_or("Project has no parent folder")?;
+        let filename = original.file_name().ok_or("Project has no filename")?;
+        // Verify sibling creation rather than relying on read-only permission flags.
+        let probe = parent.join(format!(".actone-access-{}-{}", std::process::id(),
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos()));
+        if let Ok(file) = fs::OpenOptions::new().write(true).create_new(true).open(&probe) {
+            drop(file);
+            fs::remove_file(&probe).map_err(|e| e.to_string())?;
+            return Ok(path);
+        }
+        let folder = rfd::FileDialog::new()
+            .set_title("Select the project folder to allow saving and snapshots")
+            .set_directory(parent)
+            .pick_folder()
+            .ok_or("Folder access cancelled. Project was not saved or changed.")?;
+        let candidate = folder.join(filename);
+        if original.exists() {
+            let source = fs::metadata(original).map_err(|e| e.to_string())?;
+            let target = fs::metadata(&candidate).map_err(|_| "Select the folder containing this project")?;
+            if source.dev() != target.dev() || source.ino() != target.ino() {
+                return Err("The selected folder contains a different project. No files were changed.".into());
+            }
+        } else if candidate.exists() {
+            return Err("A file with this name already exists in the selected folder. Use Save As to choose it explicitly.".into());
+        }
+        return Ok(candidate.to_string_lossy().into_owned());
+    }
+    Ok(path)
+}
+
 #[tauri::command]
 fn save_file_content(path: String, content: String) -> Result<(), String> {
     write_file_atomically(path, content)
@@ -243,11 +280,8 @@ fn save_file_dialog(content: String, default_name: Option<String>) -> Option<Str
     let file = dialog.save_file()?;
 
     let mut file_path = file;
-    if let Some(ext) = file_path.extension() {
-        if ext.to_string_lossy().to_ascii_lowercase() == "actone" {
-            file_path.set_extension("actone");
-        }
-    } else {
+    // Preserve the spelling selected by the user, including extension case.
+    if file_path.extension().is_none() {
         file_path.set_extension("actone");
     }
 
@@ -1045,6 +1079,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             open_file_dialog,
+            prepare_project_path,
             save_file_content,
             save_file_dialog,
             save_pdf_dialog,

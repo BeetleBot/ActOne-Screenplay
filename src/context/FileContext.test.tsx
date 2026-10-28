@@ -26,7 +26,7 @@ describe("FileContext", () => {
     (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
   });
 
-  it("normalizes .actOne path to .actone when opening a file via openFilePath", async () => {
+  it("preserves the selected .actOne path when opening a file via openFilePath", async () => {
     const mockedBytes = Array.from(
       packActoneBundle(
         [{ name: "Test Script", fileName: "document.fountain", content: "hello", savedContent: "hello" }],
@@ -48,11 +48,11 @@ describe("FileContext", () => {
 
     const activeFile = result.current.files.find((f) => f.id === result.current.activeFileId);
     expect(activeFile).toBeDefined();
-    expect(activeFile?.filePath).toBe("C:/scripts/my_movie.actone");
-    expect(result.current.filePath).toBe("C:/scripts/my_movie.actone");
+    expect(activeFile?.filePath).toBe("C:/scripts/my_movie.actOne");
+    expect(result.current.filePath).toBe("C:/scripts/my_movie.actOne");
   });
 
-  it("normalizes .actOne path to .actone when saving a file via saveFileAs", async () => {
+  it("preserves the selected .actOne path when saving a file via saveFileAs", async () => {
     vi.mocked(invoke).mockImplementation(async (cmd: string) => {
       if (cmd === "save_file_dialog") {
         return "C:/scripts/new_movie.actOne";
@@ -71,18 +71,49 @@ describe("FileContext", () => {
 
     await act(async () => {
       const savedPath = await result.current.saveFileAs();
-      expect(savedPath).toBe("C:/scripts/new_movie.actone");
+      expect(savedPath).toBe("C:/scripts/new_movie.actOne");
     });
 
     const activeFile = result.current.files.find((f) => f.id === result.current.activeFileId);
-    expect(activeFile?.filePath).toBe("C:/scripts/new_movie.actone");
-    expect(result.current.filePath).toBe("C:/scripts/new_movie.actone");
+    expect(activeFile?.filePath).toBe("C:/scripts/new_movie.actOne");
+    expect(result.current.filePath).toBe("C:/scripts/new_movie.actOne");
+  });
+
+  it("opens case-distinct Linux projects separately and saves to the original path", async () => {
+    const bytes = Array.from(packActoneBundle(
+      [{ name: "Script", fileName: "files/script.fountain", content: "hello", savedContent: "hello" }], {}
+    ));
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => cmd === "read_file_binary" ? bytes : null);
+    const { result } = renderHook(() => useFile(), { wrapper });
+    await act(async () => { await result.current.openFilePath("/home/me/Movie.ACTONE"); });
+    await act(async () => { await result.current.openFilePath("/home/me/movie.actone"); });
+    expect(result.current.files.map(file => file.filePath)).toEqual(
+      expect.arrayContaining(["/home/me/Movie.ACTONE", "/home/me/movie.actone"])
+    );
+    await act(async () => { await result.current.openFilePath("/home/me/Movie.ACTONE"); });
+    vi.mocked(invoke).mockClear();
+    await act(async () => { await result.current.saveFile(); });
+    expect(invoke).toHaveBeenCalledWith("save_file_binary", expect.objectContaining({ path: "/home/me/Movie.ACTONE" }));
+  });
+
+  it("uses the granted folder path for Save As", async () => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === "save_file_dialog") return "/run/user/1000/doc/file/Movie.ACTONE";
+      if (cmd === "prepare_project_path") return "/run/user/1000/doc/folder/Movie.ACTONE";
+      return null;
+    });
+    const { result } = renderHook(() => useFile(), { wrapper });
+    await act(async () => { result.current.newFile(); });
+    await act(async () => {
+      expect(await result.current.saveFileAs()).toBe("/run/user/1000/doc/folder/Movie.ACTONE");
+    });
+    expect(invoke).toHaveBeenCalledWith("save_file_binary", expect.objectContaining({ path: "/run/user/1000/doc/folder/Movie.ACTONE" }));
   });
 
   it("manages saveStatus transition during file saving", async () => {
     vi.mocked(invoke).mockImplementation(async (cmd, _args) => {
       if (cmd === "save_file_dialog") {
-        return "C:/scripts/new_movie.actone";
+        return "C:/scripts/new_movie.actOne";
       }
       if (cmd === "save_file_binary") {
         return null;

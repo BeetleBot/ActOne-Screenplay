@@ -1,3 +1,4 @@
+import { WindowLoading } from "../WindowLoading";
 import React, { lazy, Suspense, useState, useEffect, useCallback } from "react";
 import { useUI, useEditor, useFileActions, useWorkspaceMetadata } from "../../context";
 import { alpha } from "@mui/material/styles";
@@ -576,7 +577,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 </MenuItem>
               </Menu>
             </Box>
-            {showStructureModal && <Suspense fallback={null}><StructureImportModal onClose={() => setShowStructureModal(false)} /></Suspense>}
+            {showStructureModal && <Suspense fallback={<WindowLoading />}><StructureImportModal onClose={() => setShowStructureModal(false)} /></Suspense>}
           </Box>
         ) : (
           <Box

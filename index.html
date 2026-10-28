@@ -37,10 +37,15 @@
         }, true);
       }());
     </script>
+    <link rel="stylesheet" href="/window-loading.css" />
   </head>
 
   <body style="background-color: var(--bg-app, #ffffff)">
-    <div id="root" style="background-color: var(--bg-app, #ffffff)"></div>
+    <div id="root" style="background-color: var(--bg-app, #ffffff)">
+      <div role="status" aria-label="Loading window" class="actone-window-loading">
+        <div aria-hidden="true" class="actone-window-loading-logo"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

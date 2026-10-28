@@ -121,3 +121,11 @@ Transparent `40px` bar, controls right `28x28 6px`, hover `alpha(text,0.08)` and
 
 - Runtime: `src/theme/muiTheme.ts` (theme factory, MUI theme creation), `src/index.css` (tokens + editor styles), `src/components/WelcomeScreen.tsx`, `src/components/TitleBar.tsx`, `src/components/layout/MainLayout.tsx`, `src/components/layout/Workspace.tsx`, `src/fonts.css`, `src/prose-editor.css`.
 
+
+### Window loading
+
+All window startup and screen-loading states use `WindowLoading`, a centered transparent ActOne mark with no visible loading text. `public/window-loading.css` supplies the shared breathing animation (96px mark, 0.85–1.15 scale, 0.3–1 opacity) and theme colors. The same markup appears in `index.html` before React starts, in Suspense fallbacks, and in document handoffs such as Export and X-Ray. Reduced-motion preferences disable the pulse. Embedded loading regions use the same mark without covering their window chrome.
+
+### Yellow scene and marker colors
+
+Named yellow uses contrast-adjusted gold ink on light themes, with at least 4.5:1 contrast against the editor and sidebar surfaces. The shared `--scene-color-yellow` token covers editor marker text, navigator badges, and timeline outlines; existing translucent badge/segment fills remain subtle. Dark themes retain their luminous yellow. Highlight fills use separate tokens.

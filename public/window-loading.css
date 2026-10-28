@@ -1,0 +1,32 @@
+.actone-window-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  background: var(--bg-app, #eee);
+  color: var(--text-main, #101010);
+}
+.actone-window-loading-embedded {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  flex: 1;
+  min-height: 240px;
+}
+.actone-window-loading-logo {
+  width: 96px;
+  height: 96px;
+  background: currentColor;
+  -webkit-mask: url('/favicon.svg') center / contain no-repeat;
+  mask: url('/favicon.svg') center / contain no-repeat;
+  animation: actone-window-breathe 1.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes actone-window-breathe {
+  0%, 100% { opacity: .3; transform: scale(.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .actone-window-loading-logo { animation: none; will-change: auto; }
+}

@@ -1,4 +1,4 @@
-import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { getContrastRatio, createTheme, type ThemeOptions } from '@mui/material/styles';
 
 export type ThemeId = 'adaptive' | 'catppuccin-adaptive' | 'pitch-adaptive' | 'catppuccin-latte' | 'catppuccin-mocha' | 'light' | 'dark' | 'pitch-white' | 'pitch-black' | 'sunrise' | 'sunset' | 'mint' | 'forest' | 'rose' | 'berry' | 'ocean' | 'honey' | 'plum' | 'sky' | 'slate';
 
@@ -436,6 +436,17 @@ export function getThemeHighlightColors(t: ThemeConfig): { bg: string; text: str
   }
 }
 
+// Yellow used as ink needs a deeper gold on light surfaces; highlights keep their own fill tokens.
+export function getSceneYellow(t: ThemeConfig): string {
+  if (t.isDark) return t.id === 'catppuccin-mocha' ? '#f9e2af' : '#ffeb3b';
+  let gold = '#946800';
+  for (let step = 0; step < 12; step++) {
+    if (Math.min(getContrastRatio(gold, t.colors.editor), getContrastRatio(gold, t.colors.sidebar)) >= 4.5) break;
+    gold = mixHex(gold, '#302000', 0.85);
+  }
+  return gold;
+}
+
 function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainColorsEnabled: boolean = false) {
   const c = t.colors;
   const isCatppuccinLatte = t.id === 'catppuccin-latte';
@@ -500,7 +511,7 @@ function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainColorsEn
     '--scene-color-pink': isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#e91e63',
     '--scene-color-purple': isCatppuccinLatte ? '#8839ef' : isCatppuccinMocha ? '#cba6f7' : '#9c27b0',
     '--scene-color-red': isCatppuccinLatte ? '#d20f39' : isCatppuccinMocha ? '#f38ba8' : '#f44336',
-    '--scene-color-yellow': isCatppuccinLatte ? '#df8e1d' : isCatppuccinMocha ? '#f9e2af' : '#ffeb3b',
+    '--scene-color-yellow': getSceneYellow(t),
 
     '--cat-cast': isCatppuccinLatte ? '#04a5e5' : isCatppuccinMocha ? '#89dceb' : '#00bcd4',
     '--cat-prop': isCatppuccinLatte ? '#fe640b' : isCatppuccinMocha ? '#fab387' : '#ff9800',

@@ -116,7 +116,7 @@ export function useModalWindows(): ModalWindowsHook {
   }, []);
 
   const closeAllWindows = useCallback(async () => {
-    const labels = ["settings", "help", "theme-manager", "xray", "tutorials"];
+    const labels = ["settings", "help", "theme-manager", "xray", "tutorials", "export"];
     const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
     for (const label of labels) {
       windowsRef.current.delete(label);

@@ -1,12 +1,14 @@
 import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 const App = lazy(() => import("./App"));
+const NativeExportWindow = lazy(() => import("./components/NativeExportWindow").then(module => ({ default: module.NativeExportWindow })));
 const SettingsWindow = lazy(() => import("./components/SettingsWindow").then(module => ({ default: module.SettingsWindow })));
 const HelpWindow = lazy(() => import("./components/HelpWindow").then(module => ({ default: module.HelpWindow })));
 const ThemeManagerWindow = lazy(() => import("./components/ThemeManagerWindow").then(module => ({ default: module.ThemeManagerWindow })));
 const XrayWindow = lazy(() => import("./components/XrayWindow").then(module => ({ default: module.XrayWindow })));
 const TutorialsWindow = lazy(() => import("./components/TutorialsWindow").then(module => ({ default: module.TutorialsWindow })));
 import "./index.css";
+import { WindowLoading } from "./components/WindowLoading";
 import { logger } from "./utils/logger";
 import { captureError, flushErrorReports, setSystemDiagnostics, wasJustCaughtByBoundary, isTransientTauriTeardownError } from "./utils/errorReport";
 import { showCrashScreen, readCrashWindowReport, CrashScreen } from "./components/CrashScreen";
@@ -78,6 +80,8 @@ if (modalParam === "crash") {
   rootElement = report
     ? modalWrapper(<ErrorBoundary name="crash-window"><CrashScreen report={report} /></ErrorBoundary>)
     : modalWrapper(<div style={{ fontFamily: "sans-serif", padding: 24 }}>No crash report found.</div>);
+} else if (modalParam === "export") {
+  rootElement = <NativeExportWindow />;
 } else if (modalParam === "settings") {
   rootElement = modalWrapper(<ErrorBoundary fullScreen name="settings-window"><SettingsWindow /></ErrorBoundary>);
 } else if (modalParam === "help") {
@@ -95,7 +99,7 @@ if (modalParam === "crash") {
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ErrorBoundary fullScreen name="window-loader">
-      <Suspense fallback={null}>
+      <Suspense fallback={modalWrapper(<WindowLoading />)}>
         {rootElement}
       </Suspense>
     </ErrorBoundary>

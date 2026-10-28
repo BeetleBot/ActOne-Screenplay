@@ -17,6 +17,7 @@ import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
 import { FileSubscriptions } from "./FileSubscriptions";
 import { acknowledgeSavedFile } from "../utils/savedFile";
 import { rememberActiveDocument, rememberedDocumentIndex } from "../utils/editorPosition";
+import { sameFilePath } from "../utils/filePath";
 import { flushPendingEditorEdits } from "../editor/pendingEdits";
 import { useDocumentPagination, equalPageBreaks } from "../hooks/useDocumentPagination";
 
@@ -659,9 +660,17 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const openFilePath = async (path: string) => {
     flushPendingEditorEdits();
+    if (isTauri && isActonePath(path)) {
+      try {
+        path = await invoke<string | null>("prepare_project_path", { path }) ?? path;
+      } catch (error) {
+        await confirm({ title: "Project Folder Access", message: String(error), buttons: [{ value: "ok", label: "OK", variant: "contained" }] });
+        return;
+      }
+    }
     const isActone = isActonePath(path);
-    const normalizedPath = isActone && path.toLowerCase().endsWith(".actone") ? path.replace(/\.actone$/i, ".actone") : path;
-    const existing = files.find(f => f.filePath?.toLowerCase() === normalizedPath.toLowerCase());
+    const normalizedPath = path;
+    const existing = files.find(f => sameFilePath(f.filePath, normalizedPath));
     if (existing) {
       selectFile(existing.id);
       return;
@@ -895,10 +904,18 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (res) {
+      if (isTauri && isActonePath(res.path)) {
+        try {
+          res.path = await invoke<string | null>("prepare_project_path", { path: res.path }) ?? res.path;
+        } catch (error) {
+          await confirm({ title: "Project Folder Access", message: String(error), buttons: [{ value: "ok", label: "OK", variant: "contained" }] });
+          return;
+        }
+      }
       const isActone = isActonePath(res.path);
-      const normalizedPath = isActone && res.path.toLowerCase().endsWith(".actone") ? res.path.replace(/\.actone$/i, ".actone") : res.path;
+      const normalizedPath = res.path;
       if (isTauri) addToRecent(normalizedPath);
-      const existing = files.find(f => f.filePath?.toLowerCase() === normalizedPath.toLowerCase());
+      const existing = files.find(f => sameFilePath(f.filePath, normalizedPath));
       if (existing) {
         selectFile(existing.id);
         return;
@@ -1010,8 +1027,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveActoneFile = async (path: string, scripts: ScriptInfo[], settings: Record<string, unknown>) => {
-    const isActone = path.toLowerCase().endsWith(".actone");
-    const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
+    const normalizedPath = path;
     const zipped = await packActoneBundleAsync(scripts, settings);
     await invoke("save_file_binary", { path: normalizedPath, bytes: Array.from(zipped) });
   };
@@ -1029,7 +1045,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const cleanTextToSave = currentActive.rawText;
     const isActone = currentActive.filePath.toLowerCase().endsWith(".actone");
-    const normalizedPath = isActone ? currentActive.filePath.replace(/\.actone$/i, ".actone") : currentActive.filePath;
+    const normalizedPath = currentActive.filePath;
     const isCurrentActiveTab = currentId === (activeFileIdRef.current || activeFileId);
 
     setSaveStatus("saving");
@@ -1164,7 +1180,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (path) {
           const isActone = path.toLowerCase().endsWith(".actone");
-          const normalizedPath = isActone ? path.replace(/\.actone$/i, ".actone") : path;
+          const normalizedPath = await invoke<string | null>("prepare_project_path", { path }) ?? path;
           let finalScripts = currentActive.scripts ? [...currentActive.scripts] : undefined;
           if (isActone) {
             if (finalScripts && finalScripts.length > 0) {

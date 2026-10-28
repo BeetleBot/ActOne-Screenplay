@@ -49,3 +49,9 @@ describe("X-Ray workspace", () => {
     expect(screen.getByText(/Reopen X-Ray/)).toBeInTheDocument();
   });
 });
+
+it("shows the shared logo while receiving the screenplay", () => {
+  render(<XrayContent data={null} />);
+  expect(screen.getByRole("status", { name: "Loading X-Ray" })).toBeInTheDocument();
+  expect(screen.queryByText(/Waiting for your screenplay/)).not.toBeInTheDocument();
+});

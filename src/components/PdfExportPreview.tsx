@@ -74,13 +74,13 @@ export function PdfExportPreview({ argumentsJson, isProse }: PdfExportPreviewPro
   const generationRef = useRef(0);
   // Serialize native generation: rapid changes replace the queued request.
   const queueRef = useRef<Promise<unknown>>(Promise.resolve());
-  const rendererRef = useRef<Promise<{ pdfjs: typeof import("pdfjs-dist"); worker: PDFWorker }> | null>(null);
+  const rendererRef = useRef<Promise<{ pdfjs: typeof import("pdfjs-dist/legacy/build/pdf.mjs"); worker: PDFWorker }> | null>(null);
   const cacheRef = useRef(new Map<string, Uint8Array>());
   const desktop = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
   useEffect(() => {
     if (!desktop) return;
-    const renderer = Promise.all([import("pdfjs-dist"), import("pdfjs-dist/build/pdf.worker.min.mjs?url")]).then(
+    const renderer = Promise.all([import("pdfjs-dist/legacy/build/pdf.mjs"), import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url")]).then(
       async ([pdfjs, { default: workerUrl }]) => {
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
         const worker = new pdfjs.PDFWorker();

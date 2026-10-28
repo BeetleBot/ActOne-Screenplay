@@ -1,3 +1,4 @@
+import { WindowLoading } from "./WindowLoading";
 import React, { useState, useEffect } from "react";
 import { useFile, useEditor } from "../context";
 import { invoke } from "@tauri-apps/api/core";
@@ -169,7 +170,7 @@ export const StructureImportModal: React.FC<StructureImportModalProps> = ({ onCl
           }}
         >
           {loading ? (
-            <Typography sx={{ p: 2, textAlign: "center", color: "text.secondary", fontSize: 12 }}>Loading...</Typography>
+            <WindowLoading label="Loading import" embedded />
           ) : (
             structures.map((s) => {
               const isSelected = selectedStructure?.name === s.name;

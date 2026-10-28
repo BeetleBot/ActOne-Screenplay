@@ -62,6 +62,8 @@ The Welcome screen also displays an inspiring rotating writing quote from famous
     relatedIds: ["welcome-screen", "new-project", "file-tabs", "recent-files", "cli-commands"],
     content: `Press <kbd>Ctrl+O</kbd> or use the Command Palette (<kbd>Ctrl+K</kbd>) → "Open Project…" to open an \`.actone\` project (or \`.fountain\` / \`.txt\` file) via the native file dialog.
 
+Existing project paths retain their original filename and extension case. Linux filenames differing only by case identify separate projects. Flatpak may ask you to select the project folder to grant access for reliable saving and snapshots. Canceling leaves the project unchanged.
+
 When launched from the command line on Linux, ActOne accepts file paths as arguments (see the **Command Line Interface (CLI)** article for complete details). The app also listens for OS-level file-open events (e.g., double-clicking a .actone or .fountain file).
 
 Importing other screenplay formats is separate from opening an existing project. Use **Import Screenplay...** for <code>.pdf</code>, <code>.fdx</code>, <code>.fadein</code>, <code>.fountain</code>, or <code>.txt</code> files. ActOne converts the selected screenplay file into an ActOne <code>.actone</code> project.`,
@@ -1213,7 +1215,7 @@ Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\
     category: "Export",
     tags: ["export", "pdf", "fountain", "fdx", "print"],
     relatedIds: ["export-pdf", "export-fountain", "export-fdx"],
-    content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the Export dialog. Screenplays support PDF, Fountain, Final Draft FDX, and Fade In exports. Prose documents support PDF and Markdown exports. Export is fast, high-quality, and runs completely offline on your device.
+    content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the separate Export window. Screenplays support PDF, Fountain, Final Draft FDX, and Fade In exports. Prose documents support PDF and Markdown exports. Export is fast, high-quality, and runs completely offline on your device.
 
 After a successful desktop export, choose **Open file** to open the exported document in its default application, **Show in folder** to reveal it in your file manager, or **Done** to return to writing. These actions appear only after a file has been saved. Canceling the save dialog leaves your export options open.`,
   },
@@ -1223,7 +1225,7 @@ After a successful desktop export, choose **Open file** to open the exported doc
     category: "Export",
     tags: ["pdf", "print", "export"],
     relatedIds: ["export-overview", "export-fountain", "theme-manager"],
-    content: `Export your screenplay as an industry-standard, professionally formatted PDF. The export workspace fills the window and supports resizing and maximizing. The right 60% shows a scrollable preview of the final PDF. Changes to fonts, layout, element formatting, and watermarks update the preview automatically after a brief pause. Recent settings are cached to make switching back faster. Use the preview’s zoom buttons (50–200%) to inspect pages, or **Fit width** to reset. Zoom does not regenerate the PDF. Preview is available in the desktop app for screenplays and prose. Options:
+    content: `Export your screenplay as an industry-standard, professionally formatted PDF. Export opens in its own native window on Windows and Linux, starting maximized and supporting resizing. The editor remains available while you export. The right 60% shows a scrollable preview of the final PDF. Changes to fonts, layout, element formatting, and watermarks update the preview automatically after a brief pause. Recent settings are cached to make switching back faster. Use the preview’s zoom buttons (50–200%) to inspect pages, or **Fit width** to reset. Zoom does not regenerate the PDF. Preview is available in the desktop app for screenplays and prose. Options:
 
 - **Include Title Page** — Export the title page if defined.
 - **Bold Scene Headings** — Make scene headings bold.

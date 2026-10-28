@@ -18,6 +18,7 @@ import {
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { type FountainDocument } from "../parser";
+import { WindowLoading } from "./WindowLoading";
 import { TitleBar } from "./TitleBar";
 import { WindowResizeHandles } from "./WindowResizeHandles";
 import { AddIcon, DeleteIcon } from "./Icons";
@@ -174,7 +175,7 @@ export function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
             </>
           }
         />
-      ) : (
+      ) : !timedOut ? <WindowLoading label="Loading X-Ray" embedded /> : (
         <Box sx={{ p: 3 }}>
           <Button disabled>Export PDF</Button>
           <Alert severity="info">

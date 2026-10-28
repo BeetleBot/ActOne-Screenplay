@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { PdfExportPreview } from "./PdfExportPreview";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
-vi.mock("pdfjs-dist", () => ({
+vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({
   GlobalWorkerOptions: {},
   PDFWorker: vi.fn(
     class {
@@ -80,7 +80,7 @@ it("ignores stale native results and coalesces rapid settings changes", async ()
 });
 
 it("reuses the PDF worker and cached bytes when returning to recent settings", async () => {
-  const pdfjs = await import("pdfjs-dist");
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const { rerender } = render(<PdfExportPreview argumentsJson='{"fontFamily":"first"}' isProse={false} />);
   await waitFor(() => expect(pdfjs.getDocument).toHaveBeenCalledTimes(1));
   rerender(<PdfExportPreview argumentsJson='{"fontFamily":"second"}' isProse={false} />);
@@ -94,7 +94,7 @@ it("reuses the PDF worker and cached bytes when returning to recent settings", a
 });
 
 it("regenerates image watermarks because their file contents may have changed", async () => {
-  const pdfjs = await import("pdfjs-dist");
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const image = JSON.stringify({
     watermarkCenterEnabled: true,
     watermarkCenterType: "image",
@@ -109,7 +109,7 @@ it("regenerates image watermarks because their file contents may have changed", 
 });
 
 it("zooms without regenerating the PDF and resets to fit width", async () => {
-  const pdfjs = await import("pdfjs-dist");
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   render(<PdfExportPreview argumentsJson="{}" isProse={false} />);
   await waitFor(() => expect(pdfjs.getDocument).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole("button", { name: "Zoom in PDF" }));
