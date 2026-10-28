@@ -1,6 +1,9 @@
 name: Build Linux (AppImage & Flatpak)
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -52,6 +55,9 @@ jobs:
         id: ver
         run: |
           VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ] && [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
           if [ -z "$VERSION" ]; then
             VERSION=$(node -p "require('./package.json').version" 2>/dev/null || grep -oP '"version":\s*"\K[^"]+' package.json | head -1)
           fi
@@ -179,6 +185,22 @@ jobs:
           path: Release/artifacts/ActOne-Screenplay-x86_64-*.AppImage
           retention-days: 30
 
+      - name: Extract Release Notes from Changelog
+        id: notes
+        run: |
+          VERSION="${{ needs.build-bundle.outputs.version }}"
+          node -e '
+            const fs = require("fs");
+            const version = process.argv[1].replace(/^v/, "");
+            const escaped = version.replace(/\./g, "\\.");
+            let changelog = "";
+            try { changelog = fs.readFileSync("CHANGELOG.md", "utf8"); } catch (e) {}
+            const regex = new RegExp(`^## \\\\[${escaped}\\\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\\\[|$)`, "m");
+            const match = changelog.match(regex);
+            const notes = match ? match[1].trim() : `ActOne Screenplay v${version} release assets.`;
+            fs.writeFileSync("RELEASE_NOTES.md", notes + "\n");
+          ' "$VERSION"
+
       - name: Upload AppImage to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -187,8 +209,12 @@ jobs:
           TAG_NAME="v$VERSION"
           APPIMAGE_FILE=$(ls Release/artifacts/ActOne-Screenplay-x86_64-*.AppImage | head -1)
 
-          gh release create "$TAG_NAME" "$APPIMAGE_FILE" --title "ActOne Screenplay v$VERSION" --notes "ActOne Screenplay v$VERSION Release assets." || \
-          gh release upload "$TAG_NAME" "$APPIMAGE_FILE" --clobber
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release edit "$TAG_NAME" --title "ActOne Screenplay v$VERSION" --notes-file RELEASE_NOTES.md
+            gh release upload "$TAG_NAME" "$APPIMAGE_FILE" --clobber
+          else
+            gh release create "$TAG_NAME" "$APPIMAGE_FILE" --title "ActOne Screenplay v$VERSION" --notes-file RELEASE_NOTES.md
+          fi
 
   package-flatpak:
     name: Package Flatpak
@@ -243,6 +269,22 @@ jobs:
           path: ActOne-Screenplay-x86_64-*.flatpak
           retention-days: 30
 
+      - name: Extract Release Notes from Changelog
+        id: notes
+        run: |
+          VERSION="${{ needs.build-bundle.outputs.version }}"
+          node -e '
+            const fs = require("fs");
+            const version = process.argv[1].replace(/^v/, "");
+            const escaped = version.replace(/\./g, "\\.");
+            let changelog = "";
+            try { changelog = fs.readFileSync("CHANGELOG.md", "utf8"); } catch (e) {}
+            const regex = new RegExp(`^## \\\\[${escaped}\\\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\\\[|$)`, "m");
+            const match = changelog.match(regex);
+            const notes = match ? match[1].trim() : `ActOne Screenplay v${version} release assets.`;
+            fs.writeFileSync("RELEASE_NOTES.md", notes + "\n");
+          ' "$VERSION"
+
       - name: Upload Flatpak to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -251,5 +293,9 @@ jobs:
           TAG_NAME="v$VERSION"
           FLATPAK_FILE=$(ls ActOne-Screenplay-x86_64-*.flatpak | head -1)
 
-          gh release create "$TAG_NAME" "$FLATPAK_FILE" --title "ActOne Screenplay v$VERSION" --notes "ActOne Screenplay v$VERSION Release assets." || \
-          gh release upload "$TAG_NAME" "$FLATPAK_FILE" --clobber
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release edit "$TAG_NAME" --title "ActOne Screenplay v$VERSION" --notes-file RELEASE_NOTES.md
+            gh release upload "$TAG_NAME" "$FLATPAK_FILE" --clobber
+          else
+            gh release create "$TAG_NAME" "$FLATPAK_FILE" --title "ActOne Screenplay v$VERSION" --notes-file RELEASE_NOTES.md
+          fi
