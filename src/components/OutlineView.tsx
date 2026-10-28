@@ -1,3 +1,4 @@
+import { automaticInk } from "../theme/paletteEngine";
 import { revealVirtualRow } from "./revealVirtualRow";
 import { Compartment, StateEffect } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
@@ -1127,19 +1128,19 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
             </Typography>
           </Box>
           <MenuItem onClick={() => setShowSections((p) => !p)}>
-            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSections ? "primary.main" : "text.disabled" }}>
+            <Box component="span" sx={{ mr: 1, fontSize: 13, fontWeight: 700, color: "inherit" }}>
               {showSections ? "✓" : "○"}
             </Box>
             Sections
           </MenuItem>
           <MenuItem onClick={() => setShowScenes((p) => !p)}>
-            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showScenes ? "primary.main" : "text.disabled" }}>
+            <Box component="span" sx={{ mr: 1, fontSize: 13, fontWeight: 700, color: "inherit" }}>
               {showScenes ? "✓" : "○"}
             </Box>
             Scenes
           </MenuItem>
           <MenuItem onClick={() => setShowSynopses((p) => !p)}>
-            <Box component="span" sx={{ mr: 1, fontSize: 10, color: showSynopses ? "primary.main" : "text.disabled" }}>
+            <Box component="span" sx={{ mr: 1, fontSize: 13, fontWeight: 700, color: "inherit" }}>
               {showSynopses ? "✓" : "○"}
             </Box>
             Synopses
@@ -1147,7 +1148,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
           <MenuItem onClick={() => setShowStorylines((p) => !p)}>
             <Box
               component="span"
-              sx={{ mr: 1, fontSize: 10, color: showStorylines ? "primary.main" : "text.disabled" }}
+              sx={{ mr: 1, fontSize: 13, fontWeight: 700, color: "inherit" }}
             >
               {showStorylines ? "✓" : "○"}
             </Box>
@@ -1279,7 +1280,7 @@ const OutlineContent = React.memo(function OutlineContent({ proseText = "" }: { 
                         border: "1px solid",
                         borderColor: isSelected ? hex || "primary.main" : "divider",
                         bgcolor: isSelected ? hex || "primary.main" : "transparent",
-                        color: isSelected ? "#fff" : "text.secondary",
+                        color: isSelected ? (hex ? automaticInk(hex) : "primary.contrastText") : "text.secondary",
                         cursor: "pointer",
                         "&:hover": {
                           bgcolor: isSelected ? hex || "primary.main" : "action.hover",

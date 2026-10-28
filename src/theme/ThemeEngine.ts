@@ -1,142 +1,79 @@
+import type { CustomTheme } from "./themeUtils";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { DEFAULTS } from "../constants/defaults";
 import { STORAGE_KEYS } from "../constants";
 
-export interface ThemeState {
-  themeId: string;
-  appScale: number;
-  customThemes: string;
-}
-
+export interface ThemeState { themeId: string; appScale: number; customThemes: string }
+interface NativeThemeState { theme_id: string; app_scale: number; custom_themes: string }
 type ThemeChangeCallback = (state: ThemeState) => void;
-
 let currentState: ThemeState | null = null;
+let initializing: Promise<ThemeState> | null = null;
 let unlisten: (() => void) | null = null;
+let revision = 0;
 const listeners = new Set<ThemeChangeCallback>();
-
-function getFallbackState(): ThemeState {
-  return { themeId: String(DEFAULTS[STORAGE_KEYS.THEME_ID]), appScale: Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]), customThemes: "[]" };
-}
-
-export async function initThemeEngine(): Promise<ThemeState> {
-  if (currentState) return currentState;
-
-  // Read local cache immediately to prevent async startup blocking
+const isNative = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+function fallback(): ThemeState { return { themeId: String(DEFAULTS[STORAGE_KEYS.THEME_ID]), appScale: Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]), customThemes: "[]" }; }
+function cached(): ThemeState {
+  const state = fallback();
   try {
-    const cachedThemeId = localStorage.getItem("actone-theme-id");
-    const cachedAppScale = localStorage.getItem("actone-app-scale");
-    const cachedCustom = localStorage.getItem("actone-custom-themes");
-    if (cachedThemeId) {
-      currentState = {
-        themeId: cachedThemeId,
-        appScale: cachedAppScale ? Number(cachedAppScale) : Number(DEFAULTS[STORAGE_KEYS.APP_SCALE]),
-        customThemes: cachedCustom || "[]",
-      };
-    }
-  } catch {}
-
+    state.themeId = localStorage.getItem("actone-theme-id") || state.themeId;
+    const scale = Number(localStorage.getItem("actone-app-scale"));
+    if (Number.isFinite(scale) && scale > 0) state.appScale = scale;
+    state.customThemes = localStorage.getItem("actone-custom-themes") || "[]";
+  } catch { /* Storage may be disabled. */ }
+  return state;
+}
+function publish(state: ThemeState): void {
+  const changed = !currentState || JSON.stringify(currentState) !== JSON.stringify(state);
+  currentState = state;
   try {
-    const result = await invoke<{ theme_id: string; app_scale: number; custom_themes: string }>("get_theme_state");
-    currentState = {
-      themeId: result.theme_id,
-      appScale: result.app_scale,
-      customThemes: result.custom_themes,
-    };
-    try {
-      localStorage.setItem("actone-theme-id", result.theme_id);
-      localStorage.setItem("actone-custom-themes", result.custom_themes);
-      localStorage.setItem("actone-app-scale", String(result.app_scale));
-    } catch {}
-  } catch {
-    if (!currentState) {
-      currentState = getFallbackState();
+    localStorage.setItem("actone-theme-id", state.themeId);
+    localStorage.setItem("actone-app-scale", String(state.appScale));
+    localStorage.setItem("actone-custom-themes", state.customThemes);
+  } catch { /* The in-memory theme remains usable. */ }
+  if (changed) listeners.forEach(callback => callback(state));
+}
+function fromNative(state: NativeThemeState): ThemeState { return { themeId: state.theme_id, appScale: state.app_scale, customThemes: state.custom_themes }; }
+
+export function initThemeEngine(): Promise<ThemeState> {
+  if (initializing) return initializing;
+  if (currentState) return Promise.resolve(currentState);
+  currentState = cached();
+  const startedAt = revision;
+  initializing = (async () => {
+    if (isNative()) {
+      try {
+        unlisten = await listen<NativeThemeState>("theme:state-changed", event => { revision++; publish(fromNative(event.payload)); });
+        const native = await invoke<NativeThemeState>("get_theme_state");
+        // A theme chosen while startup is in flight always wins over stale startup data.
+        if (startedAt === revision) publish(fromNative(native));
+      } catch { /* Cached theme supports offline/browser startup. */ }
     }
-  }
-
-  listeners.forEach((cb) => cb(currentState!));
-
-  if (!unlisten) {
-    try {
-      unlisten = await listen<{ theme_id: string; app_scale: number; custom_themes: string }>("theme:state-changed", (event) => {
-        currentState = {
-          themeId: event.payload.theme_id,
-          appScale: event.payload.app_scale,
-          customThemes: event.payload.custom_themes,
-        };
-        try {
-          localStorage.setItem("actone-theme-id", event.payload.theme_id);
-          localStorage.setItem("actone-custom-themes", event.payload.custom_themes);
-          localStorage.setItem("actone-app-scale", String(event.payload.app_scale));
-        } catch {}
-        listeners.forEach((cb) => cb(currentState!));
-      });
-    } catch {
-      // not in Tauri
-    }
-  }
-
-  return currentState;
+    listeners.forEach(callback => callback(currentState!));
+    return currentState!;
+  })().finally(() => { initializing = null; });
+  return initializing;
 }
+export function getThemeState(): ThemeState { return currentState ?? fallback(); }
+export function resetThemeEngine(): void { unlisten?.(); unlisten = null; currentState = null; initializing = null; revision++; }
 
-export function getThemeState(): ThemeState {
-  return currentState ?? getFallbackState();
-}
-
-/** Reset cached state — used in tests to avoid cross-test leakage */
-export function resetThemeEngine(): void {
-  if (unlisten) {
-    try { unlisten(); } catch {}
-    unlisten = null;
-  }
-  currentState = null;
-}
-
-export async function setThemeState(partial: { themeId?: string; appScale?: number; customThemes?: string }): Promise<void> {
+export async function setThemeState(partial: Partial<ThemeState>): Promise<void> {
+  revision++;
+  publish({ ...(currentState ?? cached()), ...partial });
+  if (!isNative()) return;
   const payload: Record<string, unknown> = {};
-  if (partial.themeId !== undefined) {
-    payload.themeId = partial.themeId;
-    try { localStorage.setItem("actone-theme-id", partial.themeId); } catch {}
-  }
-  if (partial.appScale !== undefined) {
-    payload.appScale = partial.appScale;
-    try { localStorage.setItem("actone-app-scale", String(partial.appScale)); } catch {}
-  }
-  if (partial.customThemes !== undefined) {
-    payload.customThemes = partial.customThemes;
-    try { localStorage.setItem("actone-custom-themes", partial.customThemes); } catch {}
-  }
-  try {
-    await invoke("set_theme_state", payload);
-  } catch {
-    // not in Tauri — update local state directly
-    if (currentState) {
-      if (partial.themeId !== undefined) currentState.themeId = partial.themeId;
-      if (partial.appScale !== undefined) currentState.appScale = partial.appScale;
-      if (partial.customThemes !== undefined) currentState.customThemes = partial.customThemes;
-    }
-  }
+  if (partial.themeId !== undefined) payload.themeId = partial.themeId;
+  if (partial.appScale !== undefined) payload.appScale = partial.appScale;
+  if (partial.customThemes !== undefined) payload.customThemes = partial.customThemes;
+  try { await invoke("set_theme_state", payload); } catch { /* Keep the local selection available. */ }
 }
-
 export function onThemeChanged(callback: ThemeChangeCallback): () => void {
   listeners.add(callback);
   if (currentState) callback(currentState);
   return () => { listeners.delete(callback); };
 }
-
-export function getInitialThemeId(): string {
-  try {
-    return localStorage.getItem("actone-theme-id") || "adaptive";
-  } catch {
-    return "adaptive";
-  }
-}
-
-export function getInitialCustomThemes(): any[] {
-  try {
-    const raw = localStorage.getItem("actone-custom-themes");
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+export function getInitialThemeId(): string { return cached().themeId; }
+export function getInitialCustomThemes(): CustomTheme[] {
+  try { const parsed: unknown = JSON.parse(cached().customThemes); return Array.isArray(parsed) ? parsed as CustomTheme[] : []; } catch { return []; }
 }

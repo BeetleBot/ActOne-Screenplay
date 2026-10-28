@@ -6,6 +6,7 @@ import { Tooltip } from "@mui/material";
 import { Compartment, StateEffect } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { DocumentPositions } from "../editor/documentPositions";
+import { automaticInk } from "../theme/paletteEngine";
 import { timelineLineAtX, timelinePercentAtLine, timelineSpan } from "./timelineGeometry";
 
 const getPageNumber = (lineIndex: number, pageBreaks: number[] = []) => {
@@ -479,7 +480,7 @@ export const TimelineView: React.FC = () => {
   if (!parsedDoc?.lines) return null;
 
   return (
-    <div ref={containerRef} className="timeline-container" id="timeline-view">
+    <div ref={containerRef} className="timeline-container" id="timeline-view" style={{ backgroundColor: "var(--bg-timeline, var(--bg-sidebar))", color: "var(--timeline-ink, var(--text-main))" }}>
       <div
         ref={trackWrapperRef}
         className="timeline-track-wrapper"
@@ -585,7 +586,7 @@ export const TimelineView: React.FC = () => {
               const isDummy = segment.isDummy;
 
               let bg = "";
-              if (timelineShowSceneColors && segment.color) {
+              if (isMatch && timelineShowSceneColors && segment.color) {
                 bg = segment.color.startsWith("#") ? segment.color : `var(--scene-color-${segment.color})`;
               }
 
@@ -593,7 +594,10 @@ export const TimelineView: React.FC = () => {
                 bg = "var(--accent-color, #2196f3)";
               }
 
-              const sceneBg = bg ? `color-mix(in srgb, ${bg} 18%, transparent)` : undefined;
+              const sceneBg = bg || "var(--timeline-pill)";
+              const sceneInk = isMatch && timelineShowSceneColors && segment.color
+                ? segment.color.startsWith("#") ? automaticInk(segment.color) : `var(--scene-ink-${segment.color}, var(--timeline-pill-ink))`
+                : bg ? "var(--accent-ink)" : "var(--timeline-pill-ink)";
 
               const tooltip = isDummy
                 ? "Setup"
@@ -611,7 +615,8 @@ export const TimelineView: React.FC = () => {
                       ...timelineSpan(segment.startIndex, segment.endIndex, totalDocLines),
                       "--seg-color": bg || undefined,
                       "--seg-bg": sceneBg,
-                      opacity: isMatch ? 1 : 0.12,
+                      "--seg-text": sceneInk,
+                      opacity: 1,
                       transition: "opacity 0.25s ease",
                       cursor: "inherit",
                     } as React.CSSProperties
@@ -619,7 +624,7 @@ export const TimelineView: React.FC = () => {
                   title={tooltip}
                 >
                   {!isDummy && timelineShowSceneNumbers && (
-                    <span className="timeline-segment-number" style={{ opacity: isMatch ? 1 : 0.35 }}>
+                    <span className="timeline-segment-number" style={{ color: sceneInk }}>
                       {segment.sceneNumber}
                     </span>
                   )}

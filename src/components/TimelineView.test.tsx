@@ -93,6 +93,7 @@ describe("TimelineView", () => {
     mockActiveLineNumber = starts[126];
     mockSelectedSceneId = "s100"; // A stale Navigator selection must not mark a second scene active.
     const { container } = render(<TimelineView />);
+    expect(container.querySelector("#timeline-view")).toHaveStyle({ backgroundColor: "var(--bg-timeline, var(--bg-sidebar))", color: "var(--timeline-ink, var(--text-main))" });
     const segment = screen.getByText("127").closest<HTMLElement>(".scene-segment")!;
     const track = container.querySelector<HTMLElement>(".timeline-tracks-container")!;
     track.setPointerCapture = vi.fn();
@@ -273,7 +274,7 @@ describe("TimelineView", () => {
     const scene2 = screen.getByText("2").closest(".timeline-segment");
 
     expect(scene1).toHaveStyle({ opacity: "1" });
-    expect(scene2).toHaveStyle({ opacity: "0.12" });
+    expect(scene2).toHaveStyle({ opacity: "1", "--seg-bg": "var(--timeline-pill)" });
   });
 
   it("filters scenes by location correctly", () => {
@@ -299,7 +300,7 @@ describe("TimelineView", () => {
     const scene2 = screen.getByText("2").closest(".timeline-segment");
 
     expect(scene1).toHaveStyle({ opacity: "1" });
-    expect(scene2).toHaveStyle({ opacity: "0.12" });
+    expect(scene2).toHaveStyle({ opacity: "1", "--seg-bg": "var(--timeline-pill)" });
   });
 
   it("filters scenes by setting (INT/EXT) correctly", () => {
@@ -319,7 +320,7 @@ describe("TimelineView", () => {
     const scene2 = screen.getByText("2").closest(".timeline-segment");
 
     expect(scene1).toHaveStyle({ opacity: "1" });
-    expect(scene2).toHaveStyle({ opacity: "0.12" });
+    expect(scene2).toHaveStyle({ opacity: "1", "--seg-bg": "var(--timeline-pill)" });
   });
 
   it("renders marker pins and filters scenes by marker", () => {
@@ -347,7 +348,7 @@ describe("TimelineView", () => {
     const scene1 = screen.getByText("1").closest(".timeline-segment");
     const scene2 = screen.getByText("2").closest(".timeline-segment");
     expect(scene1).toHaveStyle({ opacity: "1" });
-    expect(scene2).toHaveStyle({ opacity: "0.12" });
+    expect(scene2).toHaveStyle({ opacity: "1", "--seg-bg": "var(--timeline-pill)" });
 
     // Check marker pin rendering
     const pin = document.querySelector(".timeline-marker-pin");

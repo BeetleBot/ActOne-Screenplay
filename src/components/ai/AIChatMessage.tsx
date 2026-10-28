@@ -156,7 +156,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
             {turn.display ?? turn.content}
           </ReactMarkdown>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, opacity: 0.55, fontSize: "0.62rem", color: "text.secondary", px: 0.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, opacity: 1, fontSize: "0.62rem", color: "text.secondary", px: 0.5 }}>
           <span>{meta.fullDate}</span>
           <span>•</span>
           <span style={{ fontWeight: 600 }}>{meta.model}</span>
@@ -456,7 +456,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
       )}
 
       {/* Metadata footer for Assistant turn */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, opacity: 0.55, fontSize: "0.62rem", color: "text.secondary", pl: 0.5, pt: 0.25 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, opacity: 1, fontSize: "0.62rem", color: "text.secondary", pl: 0.5, pt: 0.25 }}>
         <span>{meta.fullDate}</span>
         <span>•</span>
         <span style={{ fontWeight: 600 }}>{meta.model}</span>

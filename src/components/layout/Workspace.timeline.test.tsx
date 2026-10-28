@@ -29,10 +29,9 @@ vi.mock("../TimelineView", () => ({ TimelineView: () => <div data-testid="timeli
 import { Workspace } from "./Workspace";
 
 describe("editor timeline placement", () => {
-  it("keeps the timeline inside the editor column and outside the navigator", () => {
+  it("keeps the timeline out of the rounded editor container", () => {
     render(<Workspace isSidebarOpen />);
-    expect(screen.getByTestId("timeline").closest(".editor-container")).not.toBeNull();
-    expect(screen.getByTestId("timeline").closest("#sidebar-container")).toBeNull();
+    expect(screen.queryByTestId("timeline")).toBeNull();
     expect(screen.getByTestId("navigator").closest("#sidebar-container")).not.toBeNull();
   });
 });

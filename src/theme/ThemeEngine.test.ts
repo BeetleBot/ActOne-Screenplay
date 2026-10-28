@@ -21,6 +21,7 @@ vi.mock("@tauri-apps/api/event", () => ({
 
 describe("ThemeEngine", () => {
   beforeEach(() => {
+    Object.defineProperty(window, "__TAURI_INTERNALS__", { configurable: true, value: {} });
     localStorage.clear();
     resetThemeEngine();
     vi.clearAllMocks();
@@ -210,4 +211,31 @@ describe("ThemeEngine", () => {
       expect(cb).not.toHaveBeenCalled();
     });
   });
+});
+
+it("publishes browser changes immediately without calling native APIs", async () => {
+  delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+  resetThemeEngine();
+  vi.clearAllMocks();
+  const callback = vi.fn();
+  const unsubscribe = onThemeChanged(callback);
+  await setThemeState({ themeId: "forest" });
+  expect(callback).toHaveBeenCalledWith(expect.objectContaining({ themeId: "forest" }));
+  expect(tauriCore.invoke).not.toHaveBeenCalled();
+  unsubscribe();
+});
+
+it("does not let a delayed startup read overwrite a newer selection", async () => {
+  Object.defineProperty(window, "__TAURI_INTERNALS__", { configurable: true, value: {} });
+  resetThemeEngine();
+  vi.clearAllMocks();
+  let resolveRead!: (value: { theme_id: string; app_scale: number; custom_themes: string }) => void;
+  vi.mocked(tauriEvent.listen).mockResolvedValue(() => {});
+  vi.mocked(tauriCore.invoke).mockImplementation(command => command === "get_theme_state" ? new Promise(resolve => { resolveRead = resolve; }) : Promise.resolve(undefined));
+  const initialization = initThemeEngine();
+  await Promise.resolve();
+  await setThemeState({ themeId: "mint" });
+  resolveRead({ theme_id: "dark", app_scale: 100, custom_themes: "[]" });
+  await initialization;
+  expect(getThemeState().themeId).toBe("mint");
 });

@@ -1,4 +1,4 @@
-import { themes, deriveAllColors, type ThemeConfig, type ThemeColors } from "./muiTheme";
+import { themes, deriveAllColors, type ThemeConfig, type ThemeColors, getEditorVars } from "./muiTheme";
 
 export interface CustomTheme {
   id: string;
@@ -83,7 +83,16 @@ export function completeCustomColors(colors: Partial<ThemeColors>, isDark: boole
     sidebar: colors.sidebar ?? def.sidebar,
     button: colors.button ?? colors.accent ?? def.accent,
   };
-  return deriveAllColors(core, isDark);
+  const completed = deriveAllColors(core, isDark);
+  if (typeof colors.app === "string" && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(colors.app)) completed.app = colors.app;
+  if (typeof colors.editorText === "string" && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(colors.editorText)) completed.editorText = colors.editorText;
+  if (completed.editorText) completed.selectionText = completed.editorText;
+  // Keep explicit supporting roles when opening or sharing an existing theme.
+  for (const key of ["buttonText", "selectionText", "selectionBg", "dropdown", "dropdownText", "border", "textSecondary"] as const) {
+    const value = colors[key];
+    if (typeof value === "string" && (/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value) || /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0?\.\d+|0|1))?\s*\)$/.test(value))) completed[key] = value;
+  }
+  return completed;
 }
 
 export function validateTheme(data: unknown): data is Omit<CustomTheme, "id"> & { id?: string } {
@@ -104,6 +113,9 @@ export function validateTheme(data: unknown): data is Omit<CustomTheme, "id"> & 
       return false;
     }
   }
+  for (const key of ["app", "editorText", "buttonText"]) {
+    if (colorObj[key] !== undefined && (typeof colorObj[key] !== "string" || !hexColorRegex.test(colorObj[key] as string))) return false;
+  }
   return true;
 }
 
@@ -111,13 +123,7 @@ export function exportTheme(theme: CustomTheme | ThemeConfig): string {
   const payload = {
     name: theme.name,
     isDark: theme.isDark,
-    colors: {
-      editor: theme.colors.editor,
-      text: theme.colors.text,
-      accent: theme.colors.accent,
-      sidebar: theme.colors.sidebar,
-      button: theme.colors.button,
-    },
+    colors: completeCustomColors(theme.colors, theme.isDark),
   };
   return JSON.stringify(payload, null, 2);
 }
@@ -206,22 +212,7 @@ export function injectThemeCssVariables(
   theme: ThemeConfig | CustomTheme,
   targetElement?: HTMLElement
 ): Record<string, string> {
-  const c = theme.colors;
-  const vars: Record<string, string> = {
-    "--bg-app": c.editor,
-    "--bg-sidebar": c.sidebar,
-    "--bg-editor-wrapper": c.editor,
-    "--bg-dropdown": c.dropdown,
-    "--border-color": c.border,
-    "--button-color": c.button,
-    "--text-main": c.text,
-    "--text-muted": c.textSecondary,
-    "--text-secondary": c.textSecondary,
-    "--accent-color": c.accent,
-    "--selection-bg": c.selectionBg,
-    "--selection-text": c.selectionText,
-    "--dropdown-text": c.dropdownText,
-  };
+  const vars: Record<string, string> = getEditorVars({ ...theme, desc: "", category: "custom", colors: completeCustomColors(theme.colors, theme.isDark) });
 
   const target = targetElement || (typeof document !== "undefined" ? document.documentElement : undefined);
   if (target) {

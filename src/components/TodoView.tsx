@@ -206,7 +206,8 @@ export const TodoView = React.memo<TodoViewProps>(({ disabled, saveFileAs }) => 
                   <Box
                     component="span"
                     sx={{
-                      opacity: 0.4,
+                      opacity: 1,
+                      color: "text.secondary",
                       transition: "opacity var(--duration-normal)",
                       ".MuiListItemButton-root:hover &": { opacity: 1 }
                     }}

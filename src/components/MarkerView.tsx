@@ -1,3 +1,4 @@
+import { automaticInk, isHexColor } from "../theme/paletteEngine";
 import React, { useState, useMemo } from "react";
 import { useFile, useEditor } from "../context";
 import { PILL_RADIUS } from "../constants";
@@ -238,7 +239,7 @@ export const MarkerView = React.memo(() => {
                     border: "1px solid",
                     borderColor: selectedColor === null ? "primary.main" : "divider",
                     bgcolor: selectedColor === null ? "primary.main" : "transparent",
-                    color: selectedColor === null ? "#fff" : "text.secondary",
+                    color: selectedColor === null ? "primary.contrastText" : "text.secondary",
                     cursor: "pointer",
                     "&:hover": {
                       bgcolor: selectedColor === null ? "primary.main" : "action.hover",
@@ -263,7 +264,7 @@ export const MarkerView = React.memo(() => {
                         border: "1px solid",
                         borderColor: isSelected ? colorVal : "divider",
                         bgcolor: isSelected ? colorVal : "transparent",
-                        color: isSelected ? "#fff" : "text.secondary",
+                        color: isSelected ? (isHexColor(colorVal) ? automaticInk(colorVal) : `var(--scene-ink-${color}, var(--text-main))`) : "text.secondary",
                         cursor: "pointer",
                         "&:hover": {
                           bgcolor: isSelected ? colorVal : "action.hover",

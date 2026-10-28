@@ -403,7 +403,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
 
           {/* Single Model Pill */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 2, pt: 0.25, pb: 0.75 }}>
-            <AddIcon sx={{ fontSize: 12, color: "text.secondary", opacity: 0.5 }} />
+            <AddIcon sx={{ fontSize: 12, color: "text.secondary", opacity: 1 }} />
             <Typography
               onClick={(e) => { loadModels(); setModelAnchorEl(e.currentTarget); }}
               variant="caption"

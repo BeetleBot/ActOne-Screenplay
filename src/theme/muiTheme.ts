@@ -1,3 +1,4 @@
+import { automaticInk, blend, contrastingLine, readableOn, resolveUiColors } from "./paletteEngine";
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 
 export type ThemeId = 'adaptive' | 'catppuccin-adaptive' | 'pitch-adaptive' | 'catppuccin-latte' | 'catppuccin-mocha' | 'light' | 'dark' | 'pitch-white' | 'pitch-black' | 'sunrise' | 'sunset' | 'mint' | 'forest' | 'rose' | 'berry' | 'ocean' | 'honey' | 'plum' | 'sky' | 'slate';
@@ -5,6 +6,9 @@ export type ThemeId = 'adaptive' | 'catppuccin-adaptive' | 'pitch-adaptive' | 'c
 export type ThemeMode = 'light' | 'dark';
 
 export interface ThemeColors {
+  buttonText?: string;
+  app?: string;
+  editorText?: string;
   editor: string;
   text: string;
   accent: string;
@@ -441,71 +445,92 @@ export function getSceneYellow(t: ThemeConfig): string {
   return t.isDark ? (t.id === 'catppuccin-mocha' ? '#f9e2af' : '#ffeb3b') : '#DBD600';
 }
 
-function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainColorsEnabled: boolean = false) {
+export function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainColorsEnabled: boolean = false) {
   const c = t.colors;
+  const timelineBackground = c.sidebar;
+  const timelineInk = automaticInk(timelineBackground);
+  const ui = resolveUiColors(c);
+  const editorMuted = c.editorText ? mixHex(c.editorText, c.editor, 0.65) : c.textSecondary;
   const isCatppuccinLatte = t.id === 'catppuccin-latte';
   const isCatppuccinMocha = t.id === 'catppuccin-mocha';
   const cursorColor = t.isDark ? "%23FFFFFF" : "%23000000";
   const mouseCursorSvg = `url('data:image/svg+xml;utf8,<svg width="22" height="22" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill="${cursorColor}" d="M5 2a.5.5 0 0 1 .5-.5c.862 0 1.573.287 2.06.566.174.099.321.198.44.286.119-.088.266-.187.44-.286A4.165 4.165 0 0 1 10.5 1.5a.5.5 0 0 1 0 1c-.638 0-1.177.213-1.564.434a3.49 3.49 0 0 0-.436.294V7.5H9a.5.5 0 0 1 0 1h-.5v4.272c.1.08.248.187.436.294.387.221.926.434 1.564.434a.5.5 0 0 1 0 1 4.165 4.165 0 0 1-2.06-.566A4.561 4.561 0 0 1 8 13.65a4.561 4.561 0 0 1-.44.285 4.165 4.165 0 0 1-2.06.566.5.5 0 0 1 0-1c.638 0 1.177-.213 1.564-.434.188-.107.335-.214.436-.294V8.5H7a.5.5 0 0 1 0-1h.5V3.228a3.49 3.49 0 0 0-.436-.294A3.166 3.166 0 0 0 5.5 2.5.5.5 0 0 1 5 2zm3.352 1.355zm-.704 9.29z"/></svg>') 11 11, text`;
   const highlightColors = getThemeHighlightColors(t);
+  const scenePalette: Record<string, string> = {
+    blue: isCatppuccinLatte ? '#1e66f5' : isCatppuccinMocha ? '#89b4fa' : '#2196f3',
+    brown: isCatppuccinLatte ? '#dd7878' : isCatppuccinMocha ? '#f2cdcd' : '#795548',
+    cyan: isCatppuccinLatte ? '#04a5e5' : isCatppuccinMocha ? '#89dceb' : '#00bcd4',
+    green: isCatppuccinLatte ? '#40a02b' : isCatppuccinMocha ? '#a6e3a1' : '#4caf50',
+    magenta: isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#e91e63',
+    orange: isCatppuccinLatte ? '#fe640b' : isCatppuccinMocha ? '#fab387' : '#ff9800',
+    pink: isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#e91e63',
+    purple: isCatppuccinLatte ? '#8839ef' : isCatppuccinMocha ? '#cba6f7' : '#9c27b0',
+    red: isCatppuccinLatte ? '#d20f39' : isCatppuccinMocha ? '#f38ba8' : '#f44336',
+    yellow: getSceneYellow(t),
+  };
+  const sceneVars = Object.fromEntries(Object.entries(scenePalette).flatMap(([name, color]) => [[`--scene-color-${name}`, color], [`--scene-ink-${name}`, automaticInk(color)]]));
   return {
     '--app-scale': '100%',
-    '--bg-app': c.editor,
+    '--bg-app': c.app ?? c.editor,
     '--bg-sidebar': c.sidebar,
+    '--bg-timeline': timelineBackground,
+    '--timeline-ink': timelineInk,
+    '--status-ink': timelineInk,
+    '--status-accent': readableOn(c.accent, timelineBackground),
+    '--status-success': readableOn('#4caf50', timelineBackground),
+    '--status-error': readableOn('#d32f2f', timelineBackground),
+    '--timeline-pill': blend(timelineInk, timelineBackground, 0.18),
+    '--timeline-pill-ink': automaticInk(blend(timelineInk, timelineBackground, 0.18)),
+    '--accent-ink': automaticInk(c.accent),
+    '--timeline-line': contrastingLine(timelineBackground),
+    '--timeline-line-active': blend(timelineInk, timelineBackground, 0.90),
     '--bg-editor-wrapper': c.editor,
     '--bg-editor': 'transparent',
     '--bg-dropdown': c.dropdown,
     '--border-color': c.border,
     '--button-color': c.button,
     '--text-main': c.text,
-    '--text-muted': c.textSecondary,
-    '--text-secondary': c.textSecondary,
+    '--text-muted': ui.secondary,
+    '--text-secondary': ui.secondary,
     '--accent-color': c.accent,
     '--accent-rgb': hexToRgbStr(c.accent),
     '--selection-bg': c.selectionBg,
     '--selection-text': c.selectionText,
-    '--dropdown-text': c.dropdownText,
+    '--dropdown-text': ui.menuText,
     '--titlebar-bg': c.sidebar,
-    '--text-editor-heading': fountainColorsEnabled ? c.accent : c.text,
-    '--text-editor-character': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 80%, ${c.text})` : c.text,
-    '--text-editor-dialogue': c.text,
-    '--text-editor-parenthetical': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 55%, ${c.text})` : c.textSecondary,
-    '--text-editor-action': c.text,
-    '--text-editor-transition': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.text})` : c.text,
-    '--text-editor-shot': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.text})` : c.text,
-    '--text-editor-meta': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 45%, ${c.text})` : c.textSecondary,
-    '--text-editor-section': fountainColorsEnabled ? c.accent : c.text,
+    '--text-editor-heading': fountainColorsEnabled ? c.accent : (c.editorText ?? c.text),
+    '--text-editor-character': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 80%, ${c.editorText ?? c.text})` : (c.editorText ?? c.text),
+    '--text-editor-dialogue': (c.editorText ?? c.text),
+    '--text-editor-parenthetical': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 55%, ${c.editorText ?? c.text})` : editorMuted,
+    '--text-editor-action': (c.editorText ?? c.text),
+    '--text-editor-transition': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.editorText ?? c.text})` : (c.editorText ?? c.text),
+    '--text-editor-shot': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.editorText ?? c.text})` : (c.editorText ?? c.text),
+    '--text-editor-meta': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 45%, ${c.editorText ?? c.text})` : editorMuted,
+    '--text-editor-section': fountainColorsEnabled ? c.accent : (c.editorText ?? c.text),
     '--editor-highlight-bg': highlightColors.bg,
     '--editor-highlight-bg-strong': highlightColors.bgStrong,
     '--editor-highlight-text': highlightColors.text,
-    '--editor-cursor': c.text,
+    '--editor-muted': editorMuted,
+    '--editor-text': c.editorText ?? c.text,
+    '--editor-cursor': (c.editorText ?? c.text),
     '--editor-mouse-cursor': mouseCursorSvg,
 
-    '--prose-editor-fg': c.text,
-    '--prose-editor-fg-muted': c.textSecondary,
-    '--prose-editor-fg-faint': `color-mix(in srgb, ${c.text} 40%, transparent)`,
+    '--prose-editor-fg': (c.editorText ?? c.text),
+    '--prose-editor-fg-muted': editorMuted,
+    '--prose-editor-fg-faint': `color-mix(in srgb, ${c.editorText ?? c.text} 40%, transparent)`,
     '--prose-editor-border': c.border,
     '--prose-editor-accent': c.accent,
     '--prose-editor-accent-bright': c.accent,
     '--prose-editor-accent-soft': `color-mix(in srgb, ${c.accent} 40%, transparent)`,
     '--prose-editor-link': c.accent,
-    '--prose-editor-link-hover': `color-mix(in srgb, ${c.accent} 80%, ${c.text})`,
-    '--prose-editor-code-bg': `color-mix(in srgb, ${c.text} 6%, transparent)`,
+    '--prose-editor-link-hover': `color-mix(in srgb, ${c.accent} 80%, ${c.editorText ?? c.text})`,
+    '--prose-editor-code-bg': `color-mix(in srgb, ${c.editorText ?? c.text} 6%, transparent)`,
     '--prose-editor-bg': 'transparent',
     '--prose-editor-bg-panel': c.editor,
     '--prose-editor-bg-surface': c.sidebar,
     '--prose-editor-selection-bg': c.selectionBg,
 
-    '--scene-color-blue': isCatppuccinLatte ? '#1e66f5' : isCatppuccinMocha ? '#89b4fa' : '#2196f3',
-    '--scene-color-brown': isCatppuccinLatte ? '#dd7878' : isCatppuccinMocha ? '#f2cdcd' : '#795548',
-    '--scene-color-cyan': isCatppuccinLatte ? '#04a5e5' : isCatppuccinMocha ? '#89dceb' : '#00bcd4',
-    '--scene-color-green': isCatppuccinLatte ? '#40a02b' : isCatppuccinMocha ? '#a6e3a1' : '#4caf50',
-    '--scene-color-magenta': isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#e91e63',
-    '--scene-color-orange': isCatppuccinLatte ? '#fe640b' : isCatppuccinMocha ? '#fab387' : '#ff9800',
-    '--scene-color-pink': isCatppuccinLatte ? '#ea76cb' : isCatppuccinMocha ? '#f5c2e7' : '#e91e63',
-    '--scene-color-purple': isCatppuccinLatte ? '#8839ef' : isCatppuccinMocha ? '#cba6f7' : '#9c27b0',
-    '--scene-color-red': isCatppuccinLatte ? '#d20f39' : isCatppuccinMocha ? '#f38ba8' : '#f44336',
-    '--scene-color-yellow': getSceneYellow(t),
+    ...sceneVars,
 
     '--cat-cast': isCatppuccinLatte ? '#04a5e5' : isCatppuccinMocha ? '#89dceb' : '#00bcd4',
     '--cat-prop': isCatppuccinLatte ? '#fe640b' : isCatppuccinMocha ? '#fab387' : '#ff9800',
@@ -564,19 +589,21 @@ export function deriveThemeBg(accent: string, isDark: boolean): string {
 export function createActOneTheme(t: ThemeConfig, appScale: number = 100, fountainColorsEnabled: boolean = false) {
   const c = t.colors;
   const editorVars = getEditorVars(t, appScale, fountainColorsEnabled);
+  const { accent: uiAccent, ink: uiInk, secondary: uiMuted, menuText: menuInk, fieldAccent } = resolveUiColors(c);
+  const tooltipBackground = uiInk;
 
   return createTheme({
     ...shared,
     palette: {
       mode: t.isDark ? 'dark' : 'light',
-      primary: { main: c.accent },
+      primary: { main: uiAccent, contrastText: automaticInk(uiAccent) },
       background: {
-        default: c.editor,
+        default: c.app ?? c.editor,
         paper: c.sidebar,
       },
       text: {
         primary: c.text,
-        secondary: c.textSecondary,
+        secondary: uiMuted,
       },
       divider: c.border,
     },
@@ -589,6 +616,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
         `,
       },
       MuiButtonBase: {
+        styleOverrides: { root: { "&.Mui-focusVisible": { outline: `2px solid ${uiAccent}`, outlineOffset: 2 } } },
         defaultProps: {
           disableRipple: true,
           disableTouchRipple: true,
@@ -608,27 +636,27 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
             transition: 'all 0.15s ease-in-out',
           },
           contained: {
-            background: `linear-gradient(180deg, ${c.accent} 0%, color-mix(in srgb, ${c.accent} 85%, #000) 100%)`,
+            background: c.accent,
             border: '1px solid',
             borderColor: `color-mix(in srgb, ${c.accent} 75%, #000)`,
             boxShadow: 'inset 0 1.5px 0px rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.15)',
-            color: '#fff',
+            color: automaticInk(c.accent),
             '&:hover': {
-              background: `linear-gradient(180deg, color-mix(in srgb, ${c.accent} 93%, #fff) 0%, color-mix(in srgb, ${c.accent} 93%, #000) 100%)`,
+              background: c.accent,
               borderColor: `color-mix(in srgb, ${c.accent} 85%, #000)`,
               boxShadow: 'inset 0 1.5px 0px rgba(255, 255, 255, 0.18), 0 2px 4px rgba(0, 0, 0, 0.2)',
             },
             '&:active': {
-              background: `color-mix(in srgb, ${c.accent} 85%, #000)`,
+              background: c.accent,
               boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.3)',
             },
             '&.MuiButton-colorInherit': {
-              background: `linear-gradient(180deg, ${c.button} 0%, color-mix(in srgb, ${c.button} 85%, #000) 100%)`,
+              background: c.button,
               borderColor: `color-mix(in srgb, ${c.button} 80%, #000)`,
-              color: c.text,
+              color: automaticInk(c.button),
               boxShadow: 'inset 0 1.5px 0px rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.15)',
               '&:hover': {
-                background: `linear-gradient(180deg, color-mix(in srgb, ${c.button} 93%, #fff) 0%, color-mix(in srgb, ${c.button} 93%, #000) 100%)`,
+                background: c.button,
                 borderColor: `color-mix(in srgb, ${c.button} 80%, #000)`,
               },
             },
@@ -646,7 +674,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
             },
           },
           text: {
-            color: c.textSecondary,
+            color: uiMuted,
             '&:hover': {
               backgroundColor: 'action.hover',
               color: c.text,
@@ -706,7 +734,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                 backgroundImage: 'none',
                 backgroundColor: c.dropdown,
-                color: c.dropdownText,
+                color: menuInk,
               },
             },
           },
@@ -714,6 +742,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
       },
       MuiTooltip: {
         defaultProps: { arrow: true, enterDelay: 0, leaveDelay: 0 },
+        styleOverrides: { tooltip: { backgroundColor: tooltipBackground, color: automaticInk(tooltipBackground) }, arrow: { color: tooltipBackground } },
       },
       MuiMenu: {
         defaultProps: {
@@ -732,7 +761,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
           paper: {
             borderRadius: 8,
             backgroundColor: c.dropdown,
-            color: c.dropdownText,
+            color: menuInk,
             padding: '4px 0',
           },
           list: {
@@ -796,6 +825,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
           root: {
             borderRadius: 6,
             backgroundColor: c.dropdown,
+            color: menuInk,
             border: '1px solid',
             borderColor: c.border,
             transition: 'border-color 0.15s, background-color 0.15s, box-shadow 0.15s',
@@ -806,8 +836,8 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
             },
             '&.Mui-focused': {
               backgroundColor: c.dropdown,
-              borderColor: c.accent,
-              boxShadow: `0 0 0 1px ${c.accent} inset`,
+              borderColor: fieldAccent,
+              boxShadow: `0 0 0 1px ${fieldAccent} inset`,
             },
           },
           notchedOutline: {
@@ -846,7 +876,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
             '&:hover': { backgroundColor: 'action.hover' },
             '&.Mui-focused': {
               backgroundColor: c.dropdown,
-              boxShadow: `0 0 0 1px ${c.accent} inset`,
+              boxShadow: `0 0 0 1px ${fieldAccent} inset`,
             },
           },
           select: {
@@ -861,7 +891,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
         styleOverrides: {
           paper: {
             backgroundColor: c.dropdown,
-            color: c.dropdownText,
+            color: menuInk,
             borderRadius: 8,
           },
         },
@@ -921,7 +951,14 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
       MuiSwitch: {
         styleOverrides: {
           root: {
-            padding: 6,
+            width: 40,
+            height: 24,
+            padding: 0,
+            flexShrink: 0,
+            margin: '4px 8px',
+            '&.MuiSwitch-sizeSmall': { width: 40, height: 24, padding: 0 },
+            '& .MuiSwitch-switchBase': { padding: 5 },
+            '& .MuiSwitch-switchBase.Mui-checked': { transform: 'translateX(16px)' },
           },
           track: {
             borderRadius: 10,
@@ -935,17 +972,18 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
             width: 14,
             height: 14,
             borderRadius: 8,
-            backgroundColor: c.textSecondary,
+            backgroundColor: uiMuted,
             transition: 'transform 0.18s, background-color 0.18s',
           },
           switchBase: {
-            padding: 9,
+            padding: 5,
             '&.Mui-checked': {
               transform: 'translateX(16px)',
-              color: '#fff',
+              color: automaticInk(uiAccent),
+              '& .MuiSwitch-thumb': { backgroundColor: automaticInk(uiAccent) },
               '& + .MuiSwitch-track': {
-                backgroundColor: c.accent,
-                borderColor: c.accent,
+                backgroundColor: uiAccent,
+                borderColor: uiAccent,
                 opacity: 1,
               },
               '&.Mui-disabled + .MuiSwitch-track': {

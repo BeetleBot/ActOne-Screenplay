@@ -66,7 +66,7 @@ export const editorTheme = EditorView.theme({
     caretColor: "transparent",
   },
   ".cm-cursor, .cm-dropCursor": {
-    borderLeftColor: "var(--text-main, #000000) !important",
+    borderLeftColor: "var(--editor-cursor, #000000) !important",
     borderLeftWidth: "2.5px !important",
   },
   "&.cm-focused": {

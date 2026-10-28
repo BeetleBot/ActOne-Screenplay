@@ -361,6 +361,8 @@ describe("Navigator cursor following", () => {
     render(<OutlineView />);
     const initialReveals = mockRevealVirtualRow.mock.calls.length;
     fireEvent.click(screen.getAllByRole("button")[0]);
+    const sectionsItem = screen.getByText("Sections");
+    expect(getComputedStyle(sectionsItem.querySelector("span")!).color).toBe(getComputedStyle(sectionsItem).color);
     fireEvent.click(screen.getByText("Synopses"));
     const input = screen.getByPlaceholderText("Search outline...");
     fireEvent.change(input, { target: { value: "FIRST" } });

@@ -262,3 +262,10 @@ describe("page counter navigation", () => {
     expect(screen.getByRole("button", { name: /Jump to page/ })).toBeDisabled();
   });
 });
+
+it("keeps footer language and mode indicators readable without dimming their parents", () => {
+  render(<StatusBar />);
+  const language = document.querySelector("#status-spellcheck");
+  expect(language).toHaveStyle({ opacity: "1", color: "var(--status-ink)" });
+  expect(document.querySelector("#status-mode")).toHaveStyle({ color: "var(--status-accent)" });
+});

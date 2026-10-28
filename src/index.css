@@ -285,8 +285,8 @@ body {
 .cm-cursor,
 .cm-cursor-primary,
 .cm-dropCursor {
-  border-left: 2.5px solid var(--text-main, #000000) !important;
-  border-left-color: var(--text-main, #000000) !important;
+  border-left: 2.5px solid var(--editor-cursor, #000000) !important;
+  border-left-color: var(--editor-cursor, #000000) !important;
   opacity: 1 !important;
 }
 
@@ -1011,14 +1011,10 @@ button:active,
 /* Timeline View Styles — Integrated seamlessly as part of Status Bar aesthetic */
 @keyframes timelineSlideUp {
   from {
-    max-height: 0;
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
-    max-height: 120px;
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -1033,11 +1029,14 @@ button:active,
   width: 100%;
   border-top: none;
   animation: timelineSlideUp var(--duration-normal, 0.24s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: max-height, opacity, transform;
+  will-change: opacity;
 }
 
 .timeline-track-wrapper {
   width: 100%;
+  box-sizing: border-box;
+  padding-block: 3px;
+  flex-shrink: 0;
   position: relative;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1058,7 +1057,8 @@ button:active,
 .timeline-track {
   display: block;
   width: 100%;
-  height: 12px;
+  height: 16px;
+  flex-shrink: 0;
   position: relative;
   box-sizing: border-box;
   align-items: center;
@@ -1082,51 +1082,29 @@ button:active,
   background: transparent;
 }
 
-/* Track Lines for Sections & Sequences (split around label so no line is behind text) */
+/* Timeline lines follow their own surface, independently of global light/dark mode. */
 .timeline-track-line {
   flex: 1;
   height: 2px;
   border-radius: var(--radius-xs, 4px);
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--timeline-line);
   margin: 0 4px;
   transition: background-color var(--duration-fast, 0.12s);
 }
-
-body:not(.dark-theme) .timeline-track-line {
-  background: rgba(0, 0, 0, 0.14);
-}
-
-.timeline-segment:hover .timeline-track-line {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-body:not(.dark-theme) .timeline-segment:hover .timeline-track-line {
-  background: rgba(0, 0, 0, 0.3);
-}
-
+.timeline-segment:hover .timeline-track-line,
 .timeline-segment.active .timeline-track-line {
-  background: var(--accent-color, #2196f3);
+  background: var(--timeline-line-active);
 }
-
 .timeline-segment.colored .timeline-track-line {
-  background: var(--seg-color);
+  background: color-mix(in srgb, var(--seg-color) 15%, var(--timeline-ink));
 }
-
-.timeline-segment.colored:hover .timeline-track-line {
-  background: var(--seg-color);
-  filter: brightness(1.2);
-}
-
+.timeline-segment.colored:hover .timeline-track-line,
 .timeline-segment.colored.active .timeline-track-line {
-  background: var(--seg-color);
+  background: color-mix(in srgb, var(--seg-color) 10%, var(--timeline-ink));
 }
-
 .timeline-segment.dummy .timeline-track-line {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-body:not(.dark-theme) .timeline-segment.dummy .timeline-track-line {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--timeline-line);
+  opacity: 0.45;
 }
 
 /* Scene segments: Rounded micro-cards (NO left vertical accent ticks) */
@@ -1151,7 +1129,7 @@ body:not(.dark-theme) .timeline-segment.dummy .timeline-track-line {
   /* Decorative spacing never changes the segment's hit area or coordinates. */
   inset: 0 min(1px, 10%);
   border-radius: inherit;
-  background: var(--seg-bg, rgba(255, 255, 255, 0.04));
+  background: var(--seg-bg, var(--timeline-pill));
   box-shadow: inset 0 0 0 1px var(--scene-outline);
   pointer-events: none;
 }
@@ -1161,21 +1139,21 @@ body:not(.dark-theme) .timeline-segment.scene-segment {
 }
 
 body:not(.dark-theme) .timeline-segment.scene-segment::before {
-  background: var(--seg-bg, rgba(0, 0, 0, 0.04));
+  background: var(--seg-bg, var(--timeline-pill));
 }
 
 .timeline-segment.scene-segment:hover {
-  --scene-outline: var(--accent-color, #2196f3);
+  --scene-outline: var(--seg-text, var(--timeline-ink));
 }
 
 .timeline-segment.scene-segment.active {
   box-shadow: none;
-  --scene-outline: var(--accent-color, #2196f3);
+  --scene-outline: var(--seg-text, var(--timeline-ink));
 }
 
 .timeline-segment.scene-segment.colored.active {
   box-shadow: none;
-  --scene-outline: var(--seg-color);
+  --scene-outline: var(--seg-text, var(--timeline-ink));
 }
 
 /* Modern Clean Floating Labels (In front of playhead, no line behind text) */
@@ -1187,8 +1165,9 @@ body:not(.dark-theme) .timeline-segment.scene-segment::before {
   z-index: 15;
   font-family: var(--font-ui, 'Inter', sans-serif);
   font-size: 8.5px;
+  line-height: 1.2;
   font-weight: 700;
-  color: var(--text-muted, rgba(255, 255, 255, 0.7));
+  color: var(--timeline-ink);
   user-select: none;
   pointer-events: none;
   white-space: nowrap;
@@ -1200,26 +1179,21 @@ body:not(.dark-theme) .timeline-segment.scene-segment::before {
   text-align: center;
   flex-shrink: 0;
   transition: color var(--duration-fast, 0.12s) ease;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  text-shadow: none;
 }
 
-body:not(.dark-theme) .timeline-segment-label {
-  background: transparent !important;
-  color: rgba(0, 0, 0, 0.7);
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
-}
 
 .timeline-segment:hover .timeline-segment-label {
-  color: var(--accent-color, #2196f3);
+  color: var(--timeline-ink);
 }
 
 .timeline-segment.active .timeline-segment-label {
-  color: var(--accent-color, #2196f3) !important;
+  color: var(--timeline-ink) !important;
   font-weight: 800;
 }
 
 .timeline-segment.colored.active .timeline-segment-label {
-  color: var(--seg-color) !important;
+  color: var(--timeline-ink) !important;
   font-weight: 800;
 }
 
@@ -1351,3 +1325,6 @@ body:not(.dark-theme) .timeline-segment-number {
   fill: var(--marker-color, #ff9800);
   color: var(--marker-color, #ff9800);
 }
+
+/* Screenplay foreground is independent of interface labels. */
+.cm-editor .cm-content { color: var(--editor-text, var(--text-main)); }

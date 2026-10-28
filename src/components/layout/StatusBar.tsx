@@ -304,7 +304,8 @@ export const StatusBar = React.memo(() => {
       id="status-bar"
       sx={{ 
         height: isZenMode ? 0 : 30, 
-        bgcolor: 'transparent', 
+        bgcolor: 'transparent',
+        color: 'var(--status-ink)',
         borderTop: 'none',
         display: "flex", 
         alignItems: "center", 
@@ -325,7 +326,7 @@ export const StatusBar = React.memo(() => {
           onClick={handleScriptClick}
           sx={{ 
             fontSize: 11, 
-            color: "text.secondary",
+            color: "var(--status-ink)",
             cursor: !hasNoScripts && isBundle && scripts.length > 0 ? "pointer" : "default",
             display: "inline-flex",
             alignItems: "center",
@@ -336,7 +337,7 @@ export const StatusBar = React.memo(() => {
             borderRadius: "20px",
             '&:hover': !hasNoScripts && isBundle && scripts.length > 0 ? { 
               bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
-              color: "primary.main" 
+              color: "var(--status-accent)"
             } : {},
             whiteSpace: "nowrap",
             overflow: "hidden",
@@ -349,11 +350,11 @@ export const StatusBar = React.memo(() => {
           <Typography variant="caption" sx={{ fontSize: 11, color: "inherit", fontWeight: 500 }}>
             {hasNoScripts ? "Project: " : "File: "}
           </Typography>
-          <strong style={{ color: "var(--text-main)", marginLeft: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }}>
+          <strong style={{ color: "var(--status-ink)", marginLeft: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }}>
             {hasNoScripts ? fileName : (isBundle ? `${activeScriptName} (${fileName})` : fileName)}
           </strong>
           {hasNoScripts ? (
-            <span style={{ marginLeft: 6, color: "text.disabled", fontStyle: "italic", fontSize: 10 }}>
+            <span style={{ marginLeft: 6, color: "var(--status-ink)", fontStyle: "italic", fontSize: 10 }}>
               (No script)
             </span>
           ) : (
@@ -380,7 +381,7 @@ export const StatusBar = React.memo(() => {
                   width: 10, 
                   height: 10, 
                   border: "1.5px solid",
-                  borderColor: "primary.main",
+                  borderColor: "var(--status-accent)",
                   borderTopColor: "transparent",
                   borderRadius: "50%",
                   animation: "spin 0.8s linear infinite",
@@ -389,10 +390,10 @@ export const StatusBar = React.memo(() => {
             )}
             {saveStatus === "saved" && (
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M2 5L4.5 7.5L8.5 2.5" stroke="#4caf50" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 5L4.5 7.5L8.5 2.5" stroke="var(--status-success)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
-            <Typography variant="caption" sx={{ fontSize: 10, color: saveStatus === "saved" ? "#4caf50" : "text.secondary", fontWeight: 500 }}>
+            <Typography variant="caption" sx={{ fontSize: 10, color: saveStatus === "saved" ? "var(--status-success)" : "var(--status-ink)", fontWeight: 500 }}>
               {saveStatus === "saving" ? "Saving..." : "Saved"}
             </Typography>
           </Box>
@@ -432,10 +433,7 @@ export const StatusBar = React.memo(() => {
                 sx={{
                   fontSize: 10,
                   fontWeight: 600,
-                  color: (t) =>
-                    /error|fail|credits/i.test(aiStatus)
-                      ? t.palette.error.main
-                      : t.palette.primary.main,
+                  color: /error|fail|credits/i.test(aiStatus) ? "var(--status-error)" : "var(--status-accent)",
                 }}
               >
                 {aiStatus}
@@ -462,7 +460,7 @@ export const StatusBar = React.memo(() => {
                             border: "none",
                             borderRadius: "3px",
                             bgcolor: "primary.main",
-                            color: "#fff",
+                            color: "primary.contrastText",
                             lineHeight: 1.4,
                             "&:hover": { opacity: 0.85 }
                           }}
@@ -485,8 +483,8 @@ export const StatusBar = React.memo(() => {
                             py: 0.1,
                             border: "none",
                             borderRadius: "3px",
-                            bgcolor: "#2e7d32",
-                            color: "#fff",
+                            bgcolor: "success.main",
+                            color: "success.contrastText",
                             lineHeight: 1.4,
                             "&:hover": { opacity: 0.85 }
                           }}
@@ -513,8 +511,8 @@ export const StatusBar = React.memo(() => {
                       py: 0.1,
                       border: "none",
                       borderRadius: "3px",
-                      bgcolor: "#d32f2f",
-                      color: "#fff",
+                      bgcolor: "error.main",
+                      color: "error.contrastText",
                       lineHeight: 1.4,
                       display: "flex",
                       alignItems: "center",
@@ -577,7 +575,7 @@ export const StatusBar = React.memo(() => {
                 variant="caption" 
                 sx={{ 
                   fontSize: 11, 
-                  color: "primary.main", 
+                  color: "var(--status-accent)",
                   fontWeight: 500, 
                   display: "flex", 
                   alignItems: "center",
@@ -591,11 +589,11 @@ export const StatusBar = React.memo(() => {
                   width: 6, 
                   height: 6, 
                   borderRadius: "50%", 
-                  backgroundColor: "var(--accent-color)", 
+                  backgroundColor: "var(--status-accent)",
                   marginRight: 6,
                   flexShrink: 0
                 }}></span>
-                Sprint: <strong style={{ color: "var(--text-main)", marginLeft: 3 }}>{sprintDetails.timeStr} / {sprintDetails.total}m</strong>&nbsp;({sprintDetails.wpm} WPM)
+                Sprint: <strong style={{ color: "var(--status-ink)", marginLeft: 3 }}>{sprintDetails.timeStr} / {sprintDetails.total}m</strong>&nbsp;({sprintDetails.wpm} WPM)
               </Typography>
             )}
 
@@ -612,7 +610,7 @@ export const StatusBar = React.memo(() => {
                     pr: 1.5,
                     pl: 0.5,
                     cursor: 'pointer',
-                    color: 'primary.main',
+                    color: "var(--status-accent)",
                     fontSize: 11,
                     fontWeight: 700,
                     whiteSpace: 'nowrap',
@@ -620,7 +618,7 @@ export const StatusBar = React.memo(() => {
                     borderColor: 'divider',
                     flexShrink: 0,
                     transition: 'opacity 0.2s ease',
-                    '&:hover': { opacity: 0.7 }
+                    '&:hover': { opacity: 1 }
                   }}
                 >
                   <DownloadIcon sx={{ fontSize: 14 }} />
@@ -628,8 +626,8 @@ export const StatusBar = React.memo(() => {
                 </Box>
               )}
               {selectionStats && (
-                <Typography id="status-selection" variant="caption" sx={{ fontSize: 11, color: "primary.main", fontWeight: 600, whiteSpace: "nowrap" }}>
-                  Selection: <strong style={{ color: "var(--text-main)" }}>{selectionStats.words.toLocaleString()} words ({selectionStats.chars.toLocaleString()} chars)</strong>
+                <Typography id="status-selection" variant="caption" sx={{ fontSize: 11, color: "var(--status-accent)", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  Selection: <strong style={{ color: "var(--status-ink)" }}>{selectionStats.words.toLocaleString()} words ({selectionStats.chars.toLocaleString()} chars)</strong>
                 </Typography>
               )}
               <Typography
@@ -638,22 +636,22 @@ export const StatusBar = React.memo(() => {
                 onClick={(e) => setSpellMenuAnchorEl(e.currentTarget)}
                 sx={{
                   fontSize: 11,
-                  color: spellcheckEnabled ? "text.secondary" : "text.disabled",
-                  opacity: spellcheckEnabled ? 1 : 0.45,
+                  color: spellcheckEnabled ? "var(--status-ink)" : "var(--status-ink)",
+                  opacity: 1,
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   gap: 0.4,
                   whiteSpace: "nowrap",
                   transition: "opacity 0.15s ease, color 0.15s ease",
-                  "&:hover": { color: "primary.main", opacity: 1 },
+                  "&:hover": { color: "var(--status-accent)", opacity: 1 },
                 }}
                 title={spellcheckEnabled ? `Spellcheck: ${installedLangs.find(l => l.code === spellcheckLanguage)?.name || spellcheckLanguage.toUpperCase()} (On)` : `Spellcheck: ${installedLangs.find(l => l.code === spellcheckLanguage)?.name || spellcheckLanguage.toUpperCase()} (Off)`}
               >
-                <strong style={{ color: spellcheckEnabled ? "var(--text-main)" : "inherit" }}>
+                <strong style={{ color: spellcheckEnabled ? "var(--status-ink)" : "inherit" }}>
                   {installedLangs.find(l => l.code === spellcheckLanguage)?.name || spellcheckLanguage.toUpperCase()}
                 </strong>
-                <span style={{ fontSize: 7, opacity: 0.7 }}>▲</span>
+                <span style={{ fontSize: 7, opacity: 1 }}>▲</span>
               </Typography>
               <Menu
                 anchorEl={spellMenuAnchorEl}
@@ -731,7 +729,7 @@ export const StatusBar = React.memo(() => {
                       alignItems: "center",
                       gap: 0.6,
                       cursor: "pointer",
-                      color: isFiltered ? "primary.main" : "text.secondary",
+                      color: isFiltered ? "var(--status-accent)" : "var(--status-ink)",
                       fontSize: 11,
                       fontWeight: 600,
                       whiteSpace: "nowrap",
@@ -747,7 +745,7 @@ export const StatusBar = React.memo(() => {
                         : "transparent",
                       transition: "all var(--duration-fast, 0.12s) var(--motion-snappy, ease)",
                       "&:hover": {
-                        color: "primary.main",
+                        color: "var(--status-accent)",
                         bgcolor: alpha(t.palette.primary.main, 0.08),
                         borderColor: alpha(t.palette.primary.main, 0.2),
                       },
@@ -758,11 +756,11 @@ export const StatusBar = React.memo(() => {
                   }}
                   title="Timeline Filter Options"
                 >
-                  <ViewAgendaIcon sx={{ fontSize: 13, opacity: 0.85 }} />
+                  <ViewAgendaIcon sx={{ fontSize: 13, opacity: 1 }} />
                   <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 600, color: "inherit", lineHeight: 1 }}>
                     {getFilterLabel()}
                   </Typography>
-                  <KeyboardArrowDownIcon sx={{ fontSize: 12, opacity: 0.7, ml: -0.2 }} />
+                  <KeyboardArrowDownIcon sx={{ fontSize: 12, opacity: 1, ml: -0.2 }} />
                 </Box>
               )}
               {showTimeline && !isMarkdown && (
@@ -950,31 +948,31 @@ export const StatusBar = React.memo(() => {
                 </Menu>
               )}
               {hasNoScripts ? (
-                <Typography id="status-no-script" variant="caption" sx={{ fontSize: 11, color: "text.disabled", fontStyle: "italic", whiteSpace: "nowrap" }}>
+                <Typography id="status-no-script" variant="caption" sx={{ fontSize: 11, color: "var(--status-ink)", fontStyle: "italic", whiteSpace: "nowrap" }}>
                   No active script
                 </Typography>
               ) : (
                 <>
-                  <Typography id="status-mode" variant="caption" sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'primary.main', bgcolor: 'action.hover', px: 0.8, py: 0.2, borderRadius: 0.5, whiteSpace: "nowrap" }}>
+                  <Typography id="status-mode" variant="caption" sx={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: "var(--status-accent)", bgcolor: 'action.hover', px: 0.8, py: 0.2, borderRadius: 0.5, whiteSpace: "nowrap" }}>
                     {isMarkdown ? "Prose" : "Script"}
                   </Typography>
                   {!isMarkdown && (
-                    <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
-                      Scenes: <strong style={{ color: "var(--text-main)" }}>{stats.sceneCount}</strong>
+                    <Typography id="status-scenes" variant="caption" sx={{ fontSize: 11, color: "var(--status-ink)", whiteSpace: "nowrap", display: { xs: "none", md: "inline" } }}>
+                      Scenes: <strong style={{ color: "var(--status-ink)" }}>{stats.sceneCount}</strong>
                     </Typography>
                   )}
-                  <Typography id="status-words" variant="caption" sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
-                    Words: <strong style={{ color: "var(--text-main)" }}>{stats.words}</strong>
+                  <Typography id="status-words" variant="caption" sx={{ fontSize: 11, color: "var(--status-ink)", whiteSpace: "nowrap", display: { xs: "none", sm: "inline" } }}>
+                    Words: <strong style={{ color: "var(--status-ink)" }}>{stats.words}</strong>
                   </Typography>
                   <Typography
                     id="status-page" component="button" type="button" variant="caption"
                     title="Jump to page" aria-label={`Jump to page, current page ${stats.currentPage} of ${stats.pages}`}
                     disabled={!editorView}
                     onClick={event => { setPageInput(String(currentPage)); setPageError(false); setPageAnchor(event.currentTarget); }}
-                    sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", background: "none", border: 0, p: 0,
-                      cursor: "pointer", "&:hover": { color: "text.primary" }, "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" } }}
+                    sx={{ fontSize: 11, color: "var(--status-ink)", whiteSpace: "nowrap", background: "none", border: 0, p: 0,
+                      cursor: "pointer", "&:hover": { color: "text.primary" }, "&:focus-visible": { outline: "2px solid", outlineColor: "var(--status-accent)" } }}
                   >
-                    Page: <strong style={{ color: "var(--text-main)" }}>{stats.currentPage} of {stats.pages}</strong>
+                    Page: <strong style={{ color: "var(--status-ink)" }}>{stats.currentPage} of {stats.pages}</strong>
                   </Typography>
                   <Popover open={Boolean(pageAnchor)} anchorEl={pageAnchor} onClose={() => setPageAnchor(null)}
                     disableRestoreFocus anchorOrigin={{ vertical: "top", horizontal: "right" }}

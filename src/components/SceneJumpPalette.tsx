@@ -296,7 +296,7 @@ export const SceneJumpPalette: React.FC<SceneJumpPaletteProps> = ({
         paper: {
           sx: {
             borderRadius: "12px",
-            bgcolor: isDark ? "background.paper" : "#ffffff",
+            bgcolor: "background.paper",
             boxShadow: isDark
               ? "0 20px 40px rgba(0,0,0,0.6)"
               : "0 20px 40px rgba(0,0,0,0.15)",

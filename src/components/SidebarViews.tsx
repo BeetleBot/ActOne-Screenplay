@@ -274,7 +274,7 @@ export const SidebarViews = React.memo<SidebarViewProps>(({ activeTab }) => {
                         position: "absolute",
                         top: 4,
                         right: 4,
-                        opacity: 0.5,
+                        opacity: 1,
                         "&:hover": { opacity: 1 },
                         zIndex: 2,
                       }}

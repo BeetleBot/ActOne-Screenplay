@@ -485,7 +485,7 @@ export const SearchPanel: React.FC = React.memo(() => {
               <Box
                 component="svg"
                 viewBox="0 0 12 12"
-                sx={{ width: 10, height: 10, fill: "none", stroke: "#fff", strokeWidth: 2 }}
+                sx={{ width: 10, height: 10, fill: "none", stroke: "primary.contrastText", strokeWidth: 2 }}
               >
                 <path d="M2 6 L5 9 L10 3" />
               </Box>
@@ -896,7 +896,7 @@ function SearchVirtualRow({
 function renderHighlightedLine(r: SearchResult) {
   const text = r.lineText || "";
   if (!r.text || text.length === 0) {
-    return <span style={{ opacity: 0.5, fontStyle: "italic" }}>(empty line)</span>;
+    return <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>(empty line)</span>;
   }
   const start = r.column;
   if (start < 0) {

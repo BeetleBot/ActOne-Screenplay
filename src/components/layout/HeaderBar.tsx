@@ -168,7 +168,7 @@ export const HeaderBar = React.memo(() => {
                   bgcolor: (theme) => isActive ? alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.12 : 0.08) : 'transparent',
                   color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
                   border: 'none',
-                  boxShadow: (theme) => isActive ? (theme.palette.mode === 'dark' ? '0 2px 8px rgba(0, 0, 0, 0.35)' : '0 2px 8px rgba(0, 0, 0, 0.06)') : 'none',
+                  boxShadow: 'none',
                   backdropFilter: isActive ? 'blur(8px)' : 'none',
                   '&:hover': {
                     bgcolor: (theme) => isActive ? alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.16 : 0.11) : alpha(theme.palette.text.primary, 0.06),

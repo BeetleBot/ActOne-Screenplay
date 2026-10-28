@@ -17,7 +17,6 @@ import Typography from "@mui/material/Typography";
 import { DescriptionIcon, MenuBookIcon, UploadIcon } from "../Icons";
 const StructureImportModal = lazy(() => import("../StructureImportModal").then(module => ({ default: module.StructureImportModal })));
 import { ThemeLogo } from "../ThemeLogo";
-import { TimelineView } from "../TimelineView";
 
 import { ErrorBoundary } from "../ErrorBoundary";
 
@@ -31,7 +30,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [importAnchorEl, setImportAnchorEl] = useState<null | HTMLElement>(null);
   const [showStructureModal, setShowStructureModal] = useState(false);
-  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane, sidebarWidth, setSidebarWidth, showTimeline } = useUI();
+  const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane, sidebarWidth, setSidebarWidth } = useUI();
 
   const { editorView } = useEditor();
   const { addScript, importScript } = useFileActions();
@@ -252,7 +251,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
-          bgcolor: 'background.default',
+          bgcolor: 'var(--bg-editor-wrapper)',
           borderTopLeftRadius: isZenMode ? 0 : '12px',
           borderBottomLeftRadius: isZenMode ? 0 : '12px',
           borderTopRightRadius: isZenMode ? 0 : '12px',
@@ -605,9 +604,6 @@ export const Workspace = React.memo<WorkspaceProps>(({
               )}
             </Box>
           </Box>
-        )}
-        {showTimeline && !isZenMode && !isMarkdown && !hasNoScripts && (
-          <ErrorBoundary name="timeline"><TimelineView /></ErrorBoundary>
         )}
       </Box>
 

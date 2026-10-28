@@ -694,7 +694,7 @@ export const ScriptsView = React.memo(() => {
                           }}
                           sx={{
                             p: 0.3,
-                            opacity: 0.5,
+                            opacity: 1,
                             "&:hover": { opacity: 1 },
                             flexShrink: 0,
                           }}

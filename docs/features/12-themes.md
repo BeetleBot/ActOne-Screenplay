@@ -56,22 +56,23 @@ Each theme family (Classic, Catppuccin, Pitch) has its own adaptive variant that
 
 ## Custom Themes
 
-The **Theme Manager** window (`?modal=theme-manager`, transparent TitleBar with `28px` rounded window controls) allows creating custom themes. Both panes are `10px` rounded, theme rows and swatches are `6px`–`8px` rounded with soft shadows:
+Theme Manager opens at 1000 × 700, resizable and not maximized, with a 40/60 library/editor and preview split.
 
-### Theme Properties
-- **5 core colors**: Accent, Button, Text, Sidebar, Editor (shown as color fields with `6px` pickers)
-- All other colors are derived automatically from these 5 using Material color science (HCT color space)
-- Preset color cubes (5 options) are `6px` rounded with hover accent border
+### Palette compiler
 
-### Creating a Custom Theme
-1. Open Theme Manager (Quick Settings → "Manage Themes…" or via Command Palette)
-2. Click "Create" (pill button `6px`) or "Import" for `.actheme` files
-3. Set the 5 core colors (or pick a preset)
-4. Choose Dark or Light mode
-5. Give it a name
-6. Save (pill buttons `6px`)
+`src/theme/paletteEngine.ts` is a pure, deterministic compiler. Three validated hexadecimal seeds (`interface`, `accent`, `paper`) generate a complete `ThemeColors` palette. UI and writing ink are calculated independently. Automatic text, button text and selection text choose a foreground with at least 4.5:1 contrast against their generated background. Muted text, borders, field surfaces and selections are derived rather than user-configurable. Manual UI/writing foreground overrides are optional and intentionally take precedence over automatic contrast. Mode follows interface luminance; the page can independently be light or dark. Compilation performs no DOM or MUI work.
 
-Custom themes appear under a **CUSTOM** section with per-theme actions: **Export** (download `.actheme`), **Edit**, **Delete** — all with `6px` rounded icon buttons. The right pane shows a live **Theme Preview** (`8px` rounded, bordered, with app mock).
+### Creation and preview
+
+Create offers named palette presets rendered by `ThemePresetTile` as explicitly sized 40px mini workspaces (interface, paper, accent and sample lines), with a selected state, three colour controls, per-field resets and optional custom UI/writing text. Supporting colours are automatic. No scene-colour, breakdown or feedback settings, generators, shuffle controls or lock groups are exposed. Preview changes remain local until Save/Update; selecting a library theme applies it immediately. The preview retains Workspace, Prose & notes and UI elements tabs, real shared controls and app icons, and sample content without loading a project editor. Active and draft MUI themes are memoized; draft variables are scoped to the preview.
+
+### Compatibility and rendering
+
+Existing theme IDs, adaptive families and unversioned `.actheme` files remain supported. `completeCustomColors` completes legacy palettes while preserving validated known supporting roles. Exports retain all supported roles including generated selection colours, button text and independent editor ink. Legacy missing `app`/`editorText` roles retain their editor/text fallbacks. `getEditorVars` is the single CSS-variable mapping for MUI and explicit injection. MUI uses generated button foregrounds; generated primary buttons keep a flat background so gradients do not reduce text contrast. Print styles remain separate.
+
+### Runtime synchronization
+
+`ThemeEngine.ts` caches startup data, shares an initialization promise, subscribes before reading native state, and uses a revision counter to prevent delayed startup reads overriding newer changes. Changes publish immediately to local subscribers before native persistence. Identical native echoes do not notify again. Tauri calls are guarded; browser-only use works with local storage and memory. The existing native `theme:state-changed` protocol is retained.
 
 ## Design System — Rounded Craft
 
@@ -89,3 +90,8 @@ and the Theme Manager window with an embedded tour card. The tour covers:
 1. **Pick a Theme** — browse and select a different built-in theme (rounded `6px` rows)
 2. **Create a Custom Theme** — click the Create button to open the color editor
 3. **Export & Import** — learn about .actheme files
+
+
+## Shared control readability
+
+`resolveUiColors` derives panel accent, secondary ink, menu ink and input focus colours from their actual surfaces. `opaqueColor` composites supported alpha literals before contrast checks. MUI primary controls (checkboxes, radios, selected chips and navigation indicators) pair the adapted accent with its own contrast foreground. Solid primary buttons preserve the chosen accent and choose readable ink separately. Tooltip backgrounds and text are paired explicitly. `getEditorVars` uses the same resolved muted/menu roles as MUI. Footer roles are calculated separately for footer chrome. Tests cover saturated-blue, grey, yellow, white and dark surfaces, alpha imports, menu toggles and selected chip/search states.

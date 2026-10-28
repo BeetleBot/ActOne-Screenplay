@@ -1355,7 +1355,9 @@ Quick Settings are also available from the Activity Bar gear icon for common adj
 
 Quick-switch between any theme from the **Quick Settings** menu (gear icon in the Activity Bar) — a theme grid with 2×2 color cubes organized by section. The active theme is highlighted with a primary-colored border.
 
-**Create your own themes** via Quick Settings → "Manage Themes…". Pick 5 core colors (Accent, Button, Text, Sidebar, Editor), choose Dark/Light mode, name it, and see a live preview.
+**Create your own themes** via Quick Settings → "Manage Themes…". Each named preset shows a small palette preview of its interface, paper and accent colours. Choose one, then adjust just **Interface**, **Accent**, and **Writing paper**. Labels and writing text automatically adapt to their own background, so you can pair a dark interface with light paper. Buttons, fields, borders and selections follow your palette. Checkmarks, selected controls and secondary labels automatically adapt for readability, even with a vivid interface colour. The timeline sits above the status bar and shares its background, with contrasting lines and labels. Scene pills have solid fills and readable numbers. Status-bar text and icons adapt to the same background to stay readable. Use **Choose my own text colours** if you want to override UI or writing text; **Use automatic text colours** restores automatic choices. Reset buttons sit beside each colour field. Name your theme and Save.
+
+The window opens at a comfortable size and can be resized. The preview has **Workspace**, **Prose & notes**, and **UI elements** tabs with sample content and real controls. Draft edits stay in the preview until saved. Select a saved theme to apply it across windows. Existing themes and .actheme files still work.
 
 **17 built-in themes** are available as clickable starting points in the creation form. Custom themes appear under a "CUSTOM" section in the Theme Manager.
 

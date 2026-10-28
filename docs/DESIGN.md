@@ -38,7 +38,7 @@
 
 ### Engine
 `src/theme/muiTheme.ts:77` `deriveAllColors({editor, text, accent, sidebar, button}, isDark, overrides)` produces:
-`editor/text/accent/sidebar/button/selectionText/selectionBg/dropdown/dropdownText/border/textSecondary`.
+`editor/text/accent/sidebar/button/selectionText/selectionBg/dropdown/dropdownText/border/textSecondary`. Optional `app` separates UI background from `editor`; optional `editorText` separates writing foreground from UI `text`. Legacy themes fall back to the shared colours. Theme Manager uses three palette seeds (Interface, Accent, Writing paper), optional manual text overrides and a large interactive preview in a resizable 1000 × 700 window with a 40/60 split. The pure palette compiler derives supporting roles and independently readable UI/writing foregrounds; legacy palettes remain supported.
 
 Default borders: dark `rgba(255,255,255,0.10)` / light `rgba(0,0,0,0.10)`; `textSecondary` dark `rgba(255,255,255,0.54)`.
 
@@ -88,7 +88,7 @@ Transparent `40px` bar, controls right `28x28 6px`, hover `alpha(text,0.08)` and
 - Scene colours are confined to number badges. Headings use semibold UI text; synopses use regular secondary text. Storylines appear as compact rectangular tags with a 4px radius, subtle theme border/fill and text at 11px or above.
 - Sections and nested subsections use indentation and disclosure controls. Closing a parent hides its complete subtree and retains each child's disclosure state.
 - Search and filter controls use the standard 6px input/button radius. Selection uses the theme's full-row selection surface.
-- Drag grips work on scenes and section groups. Horizontal insertion lines indicate before/after placement; a highlighted section indicates nesting. A temporary root drop target moves items outside all sections. No scene-number strip appears beneath this panel; the existing timeline is within the editor column.
+- Drag grips work on scenes and section groups. Horizontal insertion lines indicate before/after placement; a highlighted section indicates nesting. A temporary root drop target moves items outside all sections. No scene-number strip appears beneath this panel; the timeline shares the status-bar footer outside the rounded editor container.
 - Keep virtual row measurement caching and cursor-follow suppression during structure moves. Animate colour only; do not animate row heights or offsets.
 
 ### Timeline precision
@@ -97,7 +97,7 @@ Transparent `40px` bar, controls right `28x28 6px`, hover `alpha(text,0.08)` and
 - A click targets the segment's exact source heading. A drag maps the pointer against the full zoomed track rectangle. Playhead movement is immediate, without position easing. Navigator selection must not override the current editor scene.
 - Map navigation and cursor positions between the parsed snapshot and the live editor document while parsing is pending.
 
-- **Buttons:** `borderRadius 6`, `contained` gradient `accent 100%→85% black` + inset `rgba(white,0.12)`, `outlined` `1px solid border`, `hover color-mix(accent 8%, transparent)`. Disable ripple (`MuiButtonBase:518`).
+- **Buttons:** `borderRadius 6`, `contained` solid chosen accent with automatically contrasting text, `outlined` `1px solid border`, `hover color-mix(accent 8%, transparent)`. Disable ripple (`MuiButtonBase:518`).
 - **Dialogs:** `12px` `1px solid border` `0 16px 40px -8px rgba(0,0,0,0.25)` (`muiTheme.ts:609`).
 - **Paper/Popover/Menu:** `8px` `1px solid border` `0 8px 24px rgba(0,0,0,0.12)`; MenuItem `12px/5-7px 10px margin 2px 6px 6px`.
 - **Inputs:** `6px` `bg dropdown` `1px solid border`, focus `1px inset accent`.
@@ -128,4 +128,14 @@ All window startup and screen-loading states use `WindowLoading`, a centered tra
 
 ### Yellow scene and marker colors
 
-Named yellow uses `#DBD600` in light themes and the existing luminous yellow in dark themes. It follows the same rendering rules as other scene colors: 35% navigator badge fills, 18% timeline pill fills, and standard theme/selection label colors. Editor markers use colored text without a background highlight. There are no yellow-only text or selection overrides.
+Named yellow uses `#DBD600` in light themes and the existing luminous yellow in dark themes. It follows the same rendering rules as other scene colors: 35% navigator badge fills and solid timeline pill fills. Timeline numbers use automatically contrasting ink for each pill colour. Editor markers use colored text without a background highlight. There are no yellow-only text or selection overrides.
+
+Switches use a consistent 40 × 24px track, 14px thumb and 5px thumb inset for both normal and small sizes; checked translation is 16px.
+
+The timeline is interface chrome: its root explicitly uses `--bg-timeline` and `--timeline-ink`, independent of its writing-surface parent. The timeline is rendered in MainLayout’s footer above StatusBar, outside the rounded editor container. Its surface matches the status-bar/interface-panel surface exactly, with independently contrasting lines and labels. Scene pills use opaque scene/accent fills with automatically contrasting numbers; filtered items use an opaque neutral fill. Paper colour changes must not recolour the timeline.
+
+Status-bar labels and icons use `--status-ink`; accents and saved/error indicators use surface-adjusted status tokens with at least 4.5:1 contrast against footer chrome. Do not dim language controls using opacity or use raw accent/success colours for footer text. Menus and popovers retain their own surface palettes.
+
+Shared interactive colours are surface-aware: MUI primary controls use a readable adaptation of the chosen accent against the panel surface; paired primary foregrounds are computed independently. The chosen accent is preserved for solid contained-button fills and editor syntax. Secondary UI labels and CSS muted tokens receive contrast correction, including legacy alpha colours composited against the actual surface. Menus/inputs resolve their own foreground and focus colour, and tooltips use an explicit foreground/background pair. Outline menu checkmarks inherit menu ink; selected colour chips derive their ink from the actual chip fill. Do not apply extra opacity to secondary labels or useful drag/add affordances.
+
+Document tabs are flat: active and inactive tabs use no box shadow. Active tabs retain their rounded shape and theme surface highlight.

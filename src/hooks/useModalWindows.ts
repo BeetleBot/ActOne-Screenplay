@@ -91,7 +91,7 @@ export function useModalWindows(): ModalWindowsHook {
   const openThemeManagerWindow = useCallback(async () => {
     if (windowsRef.current.get("theme-manager")) return;
     windowsRef.current.set("theme-manager", true);
-    const ok = await createTauriWindow("theme-manager", "/?modal=theme-manager", "ActOne – Theme Manager", 700, 580, true, () => windowsRef.current.delete("theme-manager"));
+    const ok = await createTauriWindow("theme-manager", "/?modal=theme-manager", "ActOne – Theme Manager", 1000, 700, true, () => windowsRef.current.delete("theme-manager"));
     if (!ok) {
       windowsRef.current.delete("theme-manager");
     }

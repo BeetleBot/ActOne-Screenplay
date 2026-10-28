@@ -224,7 +224,7 @@ export const OutlineRow = React.memo(function OutlineRow({
                 event.stopPropagation();
                 handleHandleMouseDown(event, sceneIndex);
               }}
-              sx={{ display: "flex", ml: 0.5, pt: 0.2, cursor: "grab", color: "text.secondary", opacity: 0.45 }}
+              sx={{ display: "flex", ml: 0.5, pt: 0.2, cursor: "grab", color: "text.secondary", opacity: 1 }}
             >
               <DragHandleIcon sx={{ fontSize: 15 }} />
             </Box>

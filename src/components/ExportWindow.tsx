@@ -108,12 +108,12 @@ const NavItem: React.FC<{
       borderRadius: "6px",
       fontSize: 12.5,
       fontWeight: active ? 700 : 500,
-      color: (t) => active ? (t.palette.mode === "dark" ? "#ffffff" : t.palette.primary.main) : "text.secondary",
+      color: (t) => active ? t.palette.primary.main : "text.secondary",
       bgcolor: (t) => active ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.25 : 0.12) : "transparent",
       transition: "all 0.12s ease",
       "&:hover": {
         bgcolor: (t) => active ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.32 : 0.18) : alpha(t.palette.text.primary, 0.06),
-        color: (t) => active ? (t.palette.mode === "dark" ? "#ffffff" : t.palette.primary.main) : "text.primary",
+        color: (t) => active ? t.palette.primary.main : "text.primary",
       },
       userSelect: "none",
     }}

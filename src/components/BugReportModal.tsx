@@ -128,7 +128,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
                 height: 56,
                 borderRadius: '50%',
                 bgcolor: 'success.main',
-                color: '#fff',
+                color: 'success.contrastText',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',

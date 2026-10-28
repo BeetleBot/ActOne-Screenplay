@@ -284,7 +284,7 @@ export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
                           }}
                           sx={{
                             p: 0.25,
-                            opacity: 0.4,
+                            opacity: 1,
                             "&:hover": { opacity: 1 },
                             flexShrink: 0,
                           }}
