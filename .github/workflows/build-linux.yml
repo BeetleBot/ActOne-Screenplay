@@ -192,12 +192,25 @@ jobs:
           node -e '
             const fs = require("fs");
             const version = process.argv[1].replace(/^v/, "");
-            const escaped = version.replace(/\./g, "\\.");
             let changelog = "";
             try { changelog = fs.readFileSync("CHANGELOG.md", "utf8"); } catch (e) {}
-            const regex = new RegExp(`^## \\\\[${escaped}\\\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\\\[|$)`, "m");
-            const match = changelog.match(regex);
-            const notes = match ? match[1].trim() : `ActOne Screenplay v${version} release assets.`;
+            const lines = changelog.split(/\r?\n/);
+            let inSection = false;
+            const extracted = [];
+            const targetHeader = "## [" + version + "]";
+            for (const line of lines) {
+              if (line.startsWith(targetHeader)) {
+                inSection = true;
+                continue;
+              }
+              if (inSection && line.startsWith("## [")) {
+                break;
+              }
+              if (inSection) {
+                extracted.push(line);
+              }
+            }
+            const notes = extracted.join("\n").trim() || `ActOne Screenplay v${version} release assets.`;
             fs.writeFileSync("RELEASE_NOTES.md", notes + "\n");
           ' "$VERSION"
 
@@ -276,12 +289,25 @@ jobs:
           node -e '
             const fs = require("fs");
             const version = process.argv[1].replace(/^v/, "");
-            const escaped = version.replace(/\./g, "\\.");
             let changelog = "";
             try { changelog = fs.readFileSync("CHANGELOG.md", "utf8"); } catch (e) {}
-            const regex = new RegExp(`^## \\\\[${escaped}\\\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\\\[|$)`, "m");
-            const match = changelog.match(regex);
-            const notes = match ? match[1].trim() : `ActOne Screenplay v${version} release assets.`;
+            const lines = changelog.split(/\r?\n/);
+            let inSection = false;
+            const extracted = [];
+            const targetHeader = "## [" + version + "]";
+            for (const line of lines) {
+              if (line.startsWith(targetHeader)) {
+                inSection = true;
+                continue;
+              }
+              if (inSection && line.startsWith("## [")) {
+                break;
+              }
+              if (inSection) {
+                extracted.push(line);
+              }
+            }
+            const notes = extracted.join("\n").trim() || `ActOne Screenplay v${version} release assets.`;
             fs.writeFileSync("RELEASE_NOTES.md", notes + "\n");
           ' "$VERSION"
 
