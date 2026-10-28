@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.6] - 2026-10-28
+
+### Added / Improved
+
+- 📄 **Interactive PDF Export Preview & Watermarking** – Live paginated PDF export preview with zoom controls, page jumps, thumbnail navigation, fit-to-width/page modes, and optional custom diagonal watermarks with adjustable opacity.
+- 🪟 **Native Multi-Window Export Dialog** – Desktop exports now open in dedicated multi-window dialogs on Tauri with clean window loading states and unified file export options.
+- 🎨 **Enhanced Scene Color Contrast** – Tuned yellow scene heading and outline colors to dedicated high-contrast hex values across light and dark themes.
+- 🐧 **Platform-Aware Path Normalization** – Case-sensitive file path handling on Linux and case-insensitive matching on Windows for consistent project and file resolution.
+
 ## [0.5.5] - 2026-10-26
 
 ### Added / Improved
