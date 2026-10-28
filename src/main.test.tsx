@@ -25,7 +25,7 @@ afterEach(cleanup);
 it("opens without flashing loading text and displays the app when its module is ready", async () => {
   await import("./main");
   render(startup.render.mock.calls[0][0]);
-  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  expect(screen.getByRole("status", { name: "Loading window" })).toBeInTheDocument();
   expect(document.body).not.toHaveTextContent(/Loading/);
   await waitFor(() => expect(startup.resolveApp).toBeTypeOf("function"));
   await act(async () => {

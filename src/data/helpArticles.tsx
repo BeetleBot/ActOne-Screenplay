@@ -558,7 +558,7 @@ Additionally, pressing \`(\` on a blank line after a character name automaticall
     relatedIds: ["smart-quotes", "smart-newline", "character-names"],
     content: `ActOne provides inline ghost text suggestions as you type:
 
-- On **character lines**: suggests character names from previously used characters.
+- On **character lines**: suggests character names from previously used characters, with smart contextual prioritization for alternating speakers and recent speakers in the current scene.
 - On **heading lines**: suggests location names from previously used scene headings.
 - On **character lines with \`(\`**: suggests 29 character extensions like \`(V.O.)\`, \`(O.S.)\`, \`(CONT'D)\`, \`(NARRATOR)\`, etc.
 - On **action lines**: suggests character names if the text is ALL-CAPS.
@@ -1106,7 +1106,7 @@ Parked text is saved automatically with your project.`,
 
 **7 supported named colors:** red, orange, yellow, green, blue, purple, pink.
 
-Highlighted scenes show a colored left border in the editor, a colored dot in the Outline Navigator, and are exported as color-tagged elements in FDX format. The Outline Navigator's filter popover lets you filter by scene color with count badges.`,
+Highlighted scenes display colored scene tag text in the editor, color-tinted number badges in the Outline Navigator, and color-coded segments in the Timeline. Scene colors are also exported as color-tagged elements in FDX format. The Outline Navigator's filter popover lets you filter by scene color with count badges.`,
   },
   {
     id: "notes-markers",
