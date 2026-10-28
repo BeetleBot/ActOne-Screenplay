@@ -52,6 +52,7 @@ The production build splits vendor code:
 1. Built in CI via `flatpak-builder` container (`gnome-48` platform)
 2. Packages metadata, icons, MIME database, and sandboxed binary
 3. Generates offline single-file bundle: `ActOne-Screenplay-x86_64-<version>.flatpak`
+4. Installer script: `scripts/install-flatpak.sh` dynamically queries GitHub releases API (with redirect fallback), downloads the latest `.flatpak` bundle, and installs or updates `ink.iyal.actone` for the current user (`flatpak install --user --or-update -y`).
 
 ## Windows Build
 

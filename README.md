@@ -50,7 +50,13 @@ Install ActOne directly from the **Microsoft Store**:
 
 ### Linux
 
-- **Flatpak (`.flatpak` bundle)**:
+- **Flatpak (Quick Install via `curl`)**:
+  Automatically download and install or update to the latest Flatpak release:
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/Beetlebot/ActOne-Screenplay/main/scripts/install-flatpak.sh | bash
+  ```
+
+- **Flatpak (`.flatpak` manual bundle)**:
   Install the offline single-file bundle for the current user:
   ```bash
   flatpak install --user ActOne-Screenplay-x86_64.flatpak
