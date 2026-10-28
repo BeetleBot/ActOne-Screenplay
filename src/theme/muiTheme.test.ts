@@ -169,13 +169,13 @@ describe("getThemeHighlightColors", () => {
 
 
 describe("yellow scene and marker contrast", () => {
-  it("keeps yellow readable on every light editor and sidebar", async () => {
+  it("uses recognizable yellow fills with readable dark ink in light themes", async () => {
     const { getSceneYellow } = await import("./muiTheme");
     const { getContrastRatio } = await import("@mui/material/styles");
     for (const theme of themes.filter(theme => !theme.isDark)) {
-      const gold = getSceneYellow(theme);
-      expect(getContrastRatio(gold, theme.colors.editor), theme.id).toBeGreaterThanOrEqual(4.5);
-      expect(getContrastRatio(gold, theme.colors.sidebar), theme.id).toBeGreaterThanOrEqual(4.5);
+      const yellow = getSceneYellow(theme);
+      expect(yellow).toBe("#DBD600");
+      expect(getContrastRatio("#302800", yellow), theme.id).toBeGreaterThanOrEqual(4.5);
     }
   });
 });

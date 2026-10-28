@@ -128,4 +128,4 @@ All window startup and screen-loading states use `WindowLoading`, a centered tra
 
 ### Yellow scene and marker colors
 
-Named yellow uses contrast-adjusted gold ink on light themes, with at least 4.5:1 contrast against the editor and sidebar surfaces. The shared `--scene-color-yellow` token covers editor marker text, navigator badges, and timeline outlines; existing translucent badge/segment fills remain subtle. Dark themes retain their luminous yellow. Highlight fills use separate tokens.
+Named yellow uses `#DBD600` in light themes and the existing luminous yellow in dark themes. It follows the same rendering rules as other scene colors: 35% navigator badge fills, 18% timeline pill fills, and standard theme/selection label colors. Editor markers use colored text without a background highlight. There are no yellow-only text or selection overrides.
