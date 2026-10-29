@@ -50,32 +50,42 @@ Install ActOne directly from the **Microsoft Store**:
 
 ### Linux
 
-- **Flatpak (Quick Install via `curl`)**:
-  Automatically download and install or update to the latest Flatpak release:
-  ```bash
-  curl -fsSL https://raw.githubusercontent.com/Beetlebot/ActOne-Screenplay/main/scripts/install-flatpak.sh | bash
-  ```
+#### Flatpak (recommended)
 
-- **Flatpak (`.flatpak` manual bundle)**:
-  Install the offline single-file bundle for the current user:
-  ```bash
-  flatpak install --user ActOne-Screenplay-x86_64.flatpak
-  ```
-  To uninstall:
-  ```bash
-  flatpak uninstall ink.iyal.actone
-  ```
+With Flatpak installed, download [Install ActOne Screenplay](https://flatpak.iyal.ink/actone.flatpakref) and open it with **KDE Discover** or **GNOME Software** with Flatpak support. Approve the ActOne repository and install the app directly from its installation page.
 
-- **AppImage (Portable)**:
-  Make the downloaded `.AppImage` executable and run directly without installation:
-  ```bash
-  chmod +x ActOne-Screenplay-x86_64.AppImage
-  ./ActOne-Screenplay-x86_64.AppImage
-  ```
+Or install from the terminal:
+
+```bash
+flatpak install --user https://flatpak.iyal.ink/actone.flatpakref
+```
+
+Future updates are available through your software manager or:
+
+```bash
+flatpak update --user ink.iyal.actone
+```
+
+To uninstall:
+
+```bash
+flatpak uninstall --user ink.iyal.actone
+```
+
+#### AppImage (portable)
+
+Make the downloaded `.AppImage` executable and run directly without installation:
+
+```bash
+chmod +x ActOne-Screenplay-x86_64.AppImage
+./ActOne-Screenplay-x86_64.AppImage
+```
 
 ## Command Line Interface (CLI)
 
 ActOne supports terminal execution on **Linux**.
+
+For Flatpak installations, use `flatpak run ink.iyal.actone` in place of `actone` in the examples below.
 
 ### Opening Files from the Terminal
 
