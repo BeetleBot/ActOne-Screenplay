@@ -288,7 +288,7 @@ jobs:
       R2_ENDPOINT: https://6a2606ac3d2c7b841572db244af34b20.r2.cloudflarestorage.com
       R2_BUCKET: actone-flatpak
       FLATPAK_REPOSITORY_URL: https://flatpak.iyal.ink/repo
-      GNUPGHOME: ${{ runner.temp }}/actone-flatpak-signing
+      GNUPGHOME: /tmp/actone-flatpak-signing
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
