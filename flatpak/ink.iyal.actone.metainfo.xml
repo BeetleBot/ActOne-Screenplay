@@ -4,27 +4,67 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <name>ActOne Screenplay</name>
-  <summary>Modern screenplay and script writing application</summary>
+  <summary>Write, organize, and export Fountain screenplays</summary>
   <description>
     <p>
-      ActOne Screenplay is a native plain-text Fountain screenplay editor for Windows and Linux. Featuring live syntax formatting, outline tree navigation, X-Ray analytics, automatic revision snapshots, and local Muse AI assistant.
+      ActOne Screenplay is a desktop writing workspace for screenwriters. Write with Fountain formatting, navigate scenes in the outline, and keep multiple scripts and notes together in portable projects.
     </p>
     <p>
-      ActOne supports standard Fountain markup, customizable visual themes, ambient focus soundscapes, and production-ready PDF, FDX, and Fade In exports.
+      Review your story with X-Ray analytics, recover earlier drafts with local snapshots, and export to PDF, Final Draft, Fade In, or Fountain. Customize the editor with themes.
     </p>
+    <p>Muse is an optional AI writing assistant that connects to local Ollama models or an OpenAI-compatible service of your choice.</p>
   </description>
   <launchable type="desktop-id">ink.iyal.actone.desktop</launchable>
-  <url type="homepage">https://iyal.ink</url>
-  <url type="help">https://iyal.ink</url>
+  <url type="homepage">https://iyal.ink/actone/</url>
+  <url type="help">https://iyal.ink/actone/docs/</url>
+  <url type="bugtracker">https://github.com/BeetleBot/ActOne-Screenplay/issues</url>
+  <url type="vcs-browser">https://github.com/BeetleBot/ActOne-Screenplay</url>
   <developer id="ink.iyal">
-    <name>Iyal Inc</name>
+    <name>iyal.ink</name>
   </developer>
+  <categories>
+    <category>Office</category>
+    <category>WordProcessor</category>
+  </categories>
+  <keywords>
+    <keyword>screenplay</keyword>
+    <keyword>screenwriting</keyword>
+    <keyword>Fountain</keyword>
+    <keyword>script</keyword>
+  </keywords>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Write screenplays with Fountain formatting</caption>
+      <image type="source" width="1920" height="1032">https://flatpak.iyal.ink/screenshots/v0.5.7/editor.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Navigate scenes, sections, and storylines</caption>
+      <image type="source" width="1920" height="1032">https://flatpak.iyal.ink/screenshots/v0.5.7/navigator.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Keep scripts and notes together in one project</caption>
+      <image type="source" width="1920" height="1032">https://flatpak.iyal.ink/screenshots/v0.5.7/projects.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Review and restore earlier drafts with snapshots</caption>
+      <image type="source" width="1920" height="1032">https://flatpak.iyal.ink/screenshots/v0.5.7/snapshots.png</image>
+    </screenshot>
+  </screenshots>
   <provides>
     <mediatype>text/vnd.fountain</mediatype>
     <mediatype>application/vnd.actone.bundle</mediatype>
     <mediatype>application/vnd.actone.theme</mediatype>
   </provides>
   <releases>
+    <release version="0.5.7" date="2026-10-29">
+      <description>
+        <ul>
+          <li>Plan stories with Canvas documents inside projects.</li>
+          <li>View open-source credits and dependencies.</li>
+          <li>Improved theme colors and contrast.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.5.0" date="2026-09-16" />
     <release version="0.4.25" date="2026-09-12" />
     <release version="0.4.24" date="2026-09-09" />

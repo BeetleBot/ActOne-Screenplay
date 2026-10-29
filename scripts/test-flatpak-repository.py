@@ -2,19 +2,51 @@
 import base64
 import configparser
 import importlib.util
+import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+import struct
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
+from urllib.parse import urlparse
 
 SCRIPTS = Path(__file__).resolve().parent
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location('references', SCRIPTS / 'write-flatpak-reference.py')
 references = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(references)
+
+
+class ListingTest(unittest.TestCase):
+    def setUp(self):
+        self.root = ET.parse(SCRIPTS.parent / 'flatpak/ink.iyal.actone.metainfo.xml').getroot()
+
+    def test_listing_identity_and_version_match_the_app(self):
+        version = json.loads((SCRIPTS.parent / 'package.json').read_text())['version']
+        self.assertEqual(self.root.findtext('id'), 'ink.iyal.actone')
+        self.assertEqual(self.root.findtext('developer/name'), 'iyal.ink')
+        self.assertEqual(self.root.find('releases/release').get('version'), version)
+
+    def test_screenshots_have_captions_and_matching_publishable_images(self):
+        screenshots = self.root.findall('screenshots/screenshot')
+        self.assertGreaterEqual(len(screenshots), 1)
+        self.assertEqual(sum(s.get('type') == 'default' for s in screenshots), 1)
+        for screenshot in screenshots:
+            self.assertTrue(screenshot.findtext('caption'))
+            image = screenshot.find('image')
+            url = urlparse(image.text)
+            self.assertEqual(url.scheme, 'https')
+            self.assertEqual(url.netloc, 'flatpak.iyal.ink')
+            self.assertTrue(url.path.startswith('/screenshots/'))
+            source = SCRIPTS.parent / 'flatpak' / url.path.lstrip('/')
+            header = source.read_bytes()[:24]
+            self.assertEqual(header[:8], b'\x89PNG\r\n\x1a\n')
+            self.assertEqual(struct.unpack('>II', header[16:24]),
+                             (int(image.get('width')), int(image.get('height'))))
 
 
 class ReferencesTest(unittest.TestCase):
@@ -68,6 +100,7 @@ class SigningTest(unittest.TestCase):
                 result = run('bash', str(SCRIPTS / 'sign-flatpak-repository.sh'), str(root / 'app.flatpak'), str(root / 'site'))
                 self.assertIn(b'App commit and repository summary signatures verified.', result.stdout)
                 self.assertTrue((root / 'site/actone.flatpakref').is_file())
+                self.assertTrue((root / 'site/screenshots/v0.5.7/editor.png').is_file())
                 # A wrong key must not verify the signed summary.
                 run('ostree', f'--repo={root}/untrusted', 'init', '--mode=bare-user-only')
                 run('ostree', f'--repo={root}/untrusted', 'remote', 'add', '--set=gpg-verify-summary=true',

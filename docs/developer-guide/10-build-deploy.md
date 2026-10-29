@@ -84,6 +84,14 @@ flatpak update --user ink.iyal.actone
 
 The workflow restores the existing repository to preserve update history. It uploads objects before summaries and uses `Cache-Control: no-cache` to prevent stale metadata. It does not delete old remote objects; monitor R2 storage and operations as releases accumulate. Do not configure an age-based deletion lifecycle for repository objects: older objects can still belong to current app versions. The publication job is serialized, and it cleans up private signing material even on failure. Preserve an encrypted backup of the signing key and passphrase; changing the key requires a migration plan for installed clients. Installing an old standalone bundle does not automatically move its origin to the new remote.
 
+### Discover listing and screenshots
+
+Edit `flatpak/ink.iyal.actone.metainfo.xml` for the displayed publisher (`developer/name`, currently `iyal.ink`), summary, description, links, screenshot captions, and release notes. Keep the latest `releases/release` version and date aligned with `package.json` and `CHANGELOG.md`; Discover uses this metadata for the version shown on its app page.
+
+Screenshot PNGs are tracked in `flatpak/screenshots/v0.5.7/`. Their public URLs are under `https://flatpak.iyal.ink/screenshots/v0.5.7/`, with actual pixel dimensions declared in MetaInfo. Exactly one screenshot is marked `type="default"`. The signing script stages these assets, and `build-linux.yml` uploads them to R2 before publishing repository metadata. For replacement screenshots, prefer a new versioned path so cached images remain consistent with their captions.
+
+Listing-only corrections can be published under the existing app version by manually running `build-linux.yml` on `main` with that version. This rebuilds and replaces the GitHub release packages and refreshes the signed repository. It does not move the existing Git tag. Discover may cache listing data; refresh it with `flatpak update --user --appstream actone`, then restart Discover if needed. `python3 scripts/test-flatpak-repository.py` validates publisher/version alignment, screenshot URLs and image dimensions, and screenshot staging alongside its signing integration test.
+
 ## Windows Build
 
 **`Release/windows/build-msix.ps1`** (180 lines):

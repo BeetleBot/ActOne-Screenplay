@@ -324,6 +324,9 @@ jobs:
 
       - name: Upload repository objects before advertising the update
         run: |
+          # Publish images before clients see metadata that references them.
+          aws s3 sync "$RUNNER_TEMP/flatpak-site/screenshots/" "s3://$R2_BUCKET/screenshots/" \
+            --endpoint-url "$R2_ENDPOINT" --cache-control 'public,max-age=86400' --only-show-errors
           # Keep old objects so clients downloading an earlier version can finish.
           aws s3 sync "$RUNNER_TEMP/flatpak-site/repo/" "s3://$R2_BUCKET/repo/" \
             --endpoint-url "$R2_ENDPOINT" --exclude 'summary*' \

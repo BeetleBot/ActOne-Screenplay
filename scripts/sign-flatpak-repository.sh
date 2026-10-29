@@ -49,6 +49,7 @@ if metadata.get('Application', 'name') != 'ink.iyal.actone':
     sys.exit('Bundle metadata does not identify ActOne')
 PY
 cp "$PROJECT_ROOT/src-tauri/icons/128x128@2x.png" "$SITE/actone.png"
+cp -a "$PROJECT_ROOT/flatpak/screenshots" "$SITE/screenshots"
 python3 "$SCRIPT_DIR/write-flatpak-reference.py" "$SITE" "$FLATPAK_REPOSITORY_URL"
 
 # Read the repo as a client with signature verification enabled. No installation.
