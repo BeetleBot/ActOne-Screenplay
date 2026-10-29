@@ -268,3 +268,85 @@ jobs:
           else
             gh release create "$TAG_NAME" "$FLATPAK_FILE" --title "ActOne Screenplay v$VERSION" --notes-file RELEASE_NOTES.md
           fi
+
+  publish-flatpak-repository:
+    name: Sign and publish Flatpak repository
+    needs: [build-bundle, package-flatpak]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    concurrency:
+      group: actone-flatpak-repository
+      cancel-in-progress: false
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+      R2_ENDPOINT: https://6a2606ac3d2c7b841572db244af34b20.r2.cloudflarestorage.com
+      R2_BUCKET: actone-flatpak
+      FLATPAK_REPOSITORY_URL: https://flatpak.iyal.ink/repo
+      GNUPGHOME: ${{ runner.temp }}/actone-flatpak-signing
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install repository tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak ostree gnupg
+          command -v aws
+
+      - name: Download this workflow's Flatpak
+        uses: actions/download-artifact@v4
+        with:
+          name: ActOne-Screenplay-Flatpak-x86_64
+          path: ${{ runner.temp }}/bundle
+
+      - name: Restore published repository
+        run: |
+          mkdir -p "$RUNNER_TEMP/flatpak-site/repo"
+          aws s3 sync "s3://$R2_BUCKET/repo/" "$RUNNER_TEMP/flatpak-site/repo/" \
+            --endpoint-url "$R2_ENDPOINT" --only-show-errors
+
+      - name: Sign and validate repository
+        env:
+          FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          FLATPAK_GPG_PASSPHRASE: ${{ secrets.FLATPAK_GPG_PASSPHRASE }}
+          RELEASE_VERSION: ${{ needs.build-bundle.outputs.version }}
+        run: |
+          BUNDLE="$RUNNER_TEMP/bundle/ActOne-Screenplay-x86_64-$RELEASE_VERSION.flatpak"
+          bash scripts/sign-flatpak-repository.sh "$BUNDLE" "$RUNNER_TEMP/flatpak-site"
+
+      - name: Upload repository objects before advertising the update
+        run: |
+          # Keep old objects so clients downloading an earlier version can finish.
+          aws s3 sync "$RUNNER_TEMP/flatpak-site/repo/" "s3://$R2_BUCKET/repo/" \
+            --endpoint-url "$R2_ENDPOINT" --exclude 'summary*' \
+            --cache-control 'no-cache' --only-show-errors
+          aws s3 cp "$RUNNER_TEMP/flatpak-site/repo/" "s3://$R2_BUCKET/repo/" \
+            --endpoint-url "$R2_ENDPOINT" --recursive --exclude '*' --include 'summary*' \
+            --cache-control 'no-cache' --only-show-errors
+          for FILE in actone.flatpakrepo actone.flatpakref actone.gpg actone.png; do
+            aws s3 cp "$RUNNER_TEMP/flatpak-site/$FILE" "s3://$R2_BUCKET/$FILE" \
+              --endpoint-url "$R2_ENDPOINT" --cache-control 'no-cache' --only-show-errors
+          done
+
+      - name: Check public installation link
+        run: |
+          curl --fail --retry 5 --retry-all-errors --retry-delay 5 \
+            https://flatpak.iyal.ink/actone.flatpakref --output "$RUNNER_TEMP/published.flatpakref"
+          cmp "$RUNNER_TEMP/flatpak-site/actone.flatpakref" "$RUNNER_TEMP/published.flatpakref"
+          echo 'Install: flatpak install --user https://flatpak.iyal.ink/actone.flatpakref' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove temporary signing material
+        if: always()
+        run: |
+          if [ -d "$GNUPGHOME" ]; then
+            gpgconf --kill all || true
+            rm -rf "$GNUPGHOME"
+          fi

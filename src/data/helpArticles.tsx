@@ -27,6 +27,26 @@ Existing screenplay and prose projects continue to open. Saving an older project
   },
   // ===== GETTING STARTED =====
   {
+    id: "linux-installation",
+    title: "Linux Installation and Updates",
+    category: "Getting Started",
+    tags: ["linux", "install", "flatpak", "update", "repository"],
+    relatedIds: ["cli-commands"],
+    content: `ActOne provides a Flatpak repository for Linux. Install from it with:
+
+\`\`\`bash
+flatpak install --user https://flatpak.iyal.ink/actone.flatpakref
+\`\`\`
+
+Accept the repository and runtime prompts to complete installation. Updates are then available through a software manager that supports Flatpak, or with:
+
+\`\`\`bash
+flatpak update --user ink.iyal.actone
+\`\`\`
+
+If you previously installed a standalone Flatpak download, it may still use its original update source. Installing from the repository link may ask you to replace or switch the existing installation. Back up your screenplay files before changing installations.`,
+  },
+  {
     id: "welcome-screen",
     title: "Welcome Screen",
     category: "Getting Started",
