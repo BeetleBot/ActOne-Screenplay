@@ -20,7 +20,8 @@ if [ "${#bundles[@]}" -ne 1 ]; then
     exit 1
 fi
 
-# Validate before copying to the directory uploaded by the release workflows.
-bash "$SCRIPT_DIR/verify-appimage.sh" "${bundles[0]}"
 mkdir -p Release/artifacts
-cp "${bundles[0]}" "Release/artifacts/ActOne-Screenplay-x86_64-$VERSION.AppImage"
+OUTPUT="Release/artifacts/ActOne-Screenplay-x86_64-$VERSION.AppImage"
+bash "$SCRIPT_DIR/repack-appimage.sh" "${bundles[0]}" "$OUTPUT"
+# Validate the exact repacked artifact that the release workflows upload.
+bash "$SCRIPT_DIR/verify-appimage.sh" "$OUTPUT"

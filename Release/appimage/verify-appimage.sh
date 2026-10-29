@@ -11,6 +11,8 @@ chmod +x "$APPIMAGE"
 "$APPIMAGE" --appimage-extract > /dev/null
 APPDIR="$CHECK_DIR/squashfs-root"
 
+python3 "$SCRIPT_DIR/verify-appdir.py" "$APPDIR"
+
 for helper in WebKitNetworkProcess WebKitWebProcess libwebkit2gtkinjectedbundle.so; do
     path="$(find "$APPDIR/usr" -name "$helper" -type f -print -quit)"
     if [ -z "$path" ]; then
