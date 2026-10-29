@@ -1333,7 +1333,9 @@ The Quick Guide is generated from the same registries used by the application, s
 
 **Muse:** Configure AI providers, model selection, translation languages, and custom instructions.
 
-Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full window.`,
+Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full window.
+
+After upgrading from an older desktop installation, your settings may start at their defaults because the app's storage location has changed. Previous settings are not automatically transferred.`,
   },
   {
     id: "theme-manager",

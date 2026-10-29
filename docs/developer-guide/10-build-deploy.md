@@ -13,6 +13,8 @@ npm run tauri build   # Full build
 
 The `prebuild` hook runs `sync-version.js`, which stamps the `package.json` version into `tauri.conf.json` and `Cargo.toml`.
 
+The Tauri application identifier is `ink.iyal.actone`, matching the Flatpak application ID. Keep the Flatpak manifest, desktop filename, icon name, and MetaInfo ID aligned. Tauri's application data directory depends on this identifier; installations using the previous identifier may retain preferences and other app data in their previous directory. This change does not migrate that data automatically.
+
 ## Chunk Splitting (Vite config)
 
 The production build splits vendor code:

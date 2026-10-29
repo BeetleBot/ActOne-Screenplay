@@ -1,7 +1,7 @@
 {
   "productName": "ActOne Screenplay",
   "version": "0.5.7",
-  "identifier": "com.writeup.actone",
+  "identifier": "ink.iyal.actone",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:1420",
