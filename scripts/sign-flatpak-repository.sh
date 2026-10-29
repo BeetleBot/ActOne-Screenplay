@@ -28,6 +28,11 @@ printf '%s\n' "$FLATPAK_GPG_PASSPHRASE" | "$PRESET" --preset "$KEYGRIP"
 if [ ! -f "$SITE/repo/config" ]; then
     ostree --repo="$SITE/repo" init --mode=archive-z2
 fi
+# Object storage preserves files, but not OSTree's empty working directories.
+# Recreate these after restoring an existing repository from R2.
+mkdir -p "$SITE/repo/refs/heads" "$SITE/repo/refs/remotes" \
+    "$SITE/repo/refs/mirrors" "$SITE/repo/tmp" "$SITE/repo/state" \
+    "$SITE/repo/extensions" "$SITE/repo/objects"
 flatpak build-import-bundle --no-update-summary --gpg-sign="$FINGERPRINT" \
     --gpg-homedir="$GNUPGHOME" "$SITE/repo" "$BUNDLE"
 REF="$(ostree --repo="$SITE/repo" refs | sed -n '\|^app/ink\.iyal\.actone/x86_64/|p')"
@@ -49,7 +54,8 @@ if metadata.get('Application', 'name') != 'ink.iyal.actone':
     sys.exit('Bundle metadata does not identify ActOne')
 PY
 cp "$PROJECT_ROOT/src-tauri/icons/128x128@2x.png" "$SITE/actone.png"
-cp -a "$PROJECT_ROOT/flatpak/screenshots" "$SITE/screenshots"
+mkdir -p "$SITE/screenshots"
+cp -a "$PROJECT_ROOT/flatpak/screenshots/." "$SITE/screenshots/"
 python3 "$SCRIPT_DIR/write-flatpak-reference.py" "$SITE" "$FLATPAK_REPOSITORY_URL"
 
 # Read the repo as a client with signature verification enabled. No installation.

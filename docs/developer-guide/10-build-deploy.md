@@ -82,7 +82,7 @@ flatpak install --user https://flatpak.iyal.ink/actone.flatpakref
 flatpak update --user ink.iyal.actone
 ```
 
-The workflow restores the existing repository to preserve update history. It uploads objects before summaries and uses `Cache-Control: no-cache` to prevent stale metadata. It does not delete old remote objects; monitor R2 storage and operations as releases accumulate. Do not configure an age-based deletion lifecycle for repository objects: older objects can still belong to current app versions. The publication job is serialized, and it cleans up private signing material even on failure. Preserve an encrypted backup of the signing key and passphrase; changing the key requires a migration plan for installed clients. Installing an old standalone bundle does not automatically move its origin to the new remote.
+The workflow restores the existing repository to preserve update history. The signing script recreates OSTree's empty working directories after restoration because R2 stores files only; the integration test covers publishing again after those directories are removed. It uploads objects before summaries and uses `Cache-Control: no-cache` to prevent stale metadata. It does not delete old remote objects; monitor R2 storage and operations as releases accumulate. Do not configure an age-based deletion lifecycle for repository objects: older objects can still belong to current app versions. The publication job is serialized, and it cleans up private signing material even on failure. Preserve an encrypted backup of the signing key and passphrase; changing the key requires a migration plan for installed clients. Installing an old standalone bundle does not automatically move its origin to the new remote.
 
 ### Discover listing and screenshots
 

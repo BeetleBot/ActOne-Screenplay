@@ -101,6 +101,17 @@ class SigningTest(unittest.TestCase):
                 self.assertIn(b'App commit and repository summary signatures verified.', result.stdout)
                 self.assertTrue((root / 'site/actone.flatpakref').is_file())
                 self.assertTrue((root / 'site/screenshots/v0.5.7/editor.png').is_file())
+                # R2 restores files only: simulate losing every empty directory,
+                # then publish into that existing repository again.
+                repo = root / 'site/repo'
+                for path in sorted(repo.rglob('*'), key=lambda p: len(p.parts), reverse=True):
+                    if path.is_dir() and not any(path.iterdir()):
+                        path.rmdir()
+                self.assertFalse((repo / 'refs/remotes').exists())
+                result = run('bash', str(SCRIPTS / 'sign-flatpak-repository.sh'),
+                             str(root / 'app.flatpak'), str(root / 'site'))
+                self.assertIn(b'App commit and repository summary signatures verified.', result.stdout)
+                self.assertFalse((root / 'site/screenshots/screenshots').exists())
                 # A wrong key must not verify the signed summary.
                 run('ostree', f'--repo={root}/untrusted', 'init', '--mode=bare-user-only')
                 run('ostree', f'--repo={root}/untrusted', 'remote', 'add', '--set=gpg-verify-summary=true',
