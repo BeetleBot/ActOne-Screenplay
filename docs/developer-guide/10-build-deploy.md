@@ -43,11 +43,14 @@ The production build splits vendor code:
 
 **`Release/appimage/build-appimage.sh`**:
 
-1. Prepares AppDir directory layout with desktop and MIME configuration
-2. Bundles application and document type icons (`.fountain`, `.actone`, `.actheme`)
-3. Uses `linuxdeploy` with `linuxdeploy-plugin-gtk` to bundle all shared library dependencies (including `libwebkit2gtk-4.1.so.0`, schemas, and loaders) into `usr/lib`
-4. Fetches `appimagetool` and packages into a standalone portable AppImage
-5. Output: `ActOne-Screenplay-<version>-x86_64.AppImage` in `Release/artifacts/`
+1. Builds the Tauri release binary, then calls `Release/appimage/package-appimage.sh`.
+2. The packaging script runs `tauri bundle --bundles appimage` with `src-tauri/tauri.appimage.conf.json` to preserve custom MIME definitions and document icons. Both Linux GitHub Actions workflows use this same script after downloading the compiled binary and installing npm dependencies.
+3. Tauri's bundler includes WebKit helper executables, the injected bundle, and its relocation-aware AppRun. Generic linuxdeploy GTK packaging alone omitted the helpers and crashed at startup; setting `WEBKIT_EXEC_PATH` is insufficient for production WebKit builds that disable developer mode.
+4. `verify-appimage.sh` extracts the final artifact and requires executable `WebKitNetworkProcess` and `WebKitWebProcess`, the injected bundle, and resolvable helper dependencies. This checks resolution on the build host, not compatibility with every distribution.
+5. CI sets `APPIMAGE_SMOKE_TEST=1` to run `smoke-appimage.sh` under Xvfb. It uses temporary settings, requires a visible ActOne window and a surviving process after at least 11 seconds, and fails before release upload. It disables DMABUF rendering for the virtual display, without disabling WebKit sandboxing.
+6. Output: `ActOne-Screenplay-x86_64-<version>.AppImage` in `Release/artifacts/`. Build release artifacts on Ubuntu 22.04 for the existing glibc baseline; bundling on a newer host can raise the minimum supported glibc version.
+
+Run packaging regression checks with `npm test -- src/appimagePackaging.test.ts`. To inspect an existing artifact, run `bash Release/appimage/verify-appimage.sh /path/to/app.AppImage`. For a startup test, install Xvfb and xdotool, then prefix that command with `APPIMAGE_SMOKE_TEST=1`.
 
 **Flatpak Bundle (`flatpak/ink.iyal.actone.yml`)**:
 

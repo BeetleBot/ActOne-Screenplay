@@ -1,0 +1,17 @@
+{
+  "bundle": {
+    "linux": {
+      "appimage": {
+        "files": {
+          "/usr/share/mime/packages/actone.xml": "../assets/linux/actone.xml",
+          "/usr/share/icons/hicolor/64x64/mimetypes/text-vnd.fountain.png": "icons/text-vnd.fountain_64x64.png",
+          "/usr/share/icons/hicolor/256x256/mimetypes/text-vnd.fountain.png": "icons/text-vnd.fountain_256x256.png",
+          "/usr/share/icons/hicolor/64x64/mimetypes/application-vnd.actone.bundle.png": "icons/application-vnd.actone.bundle_64x64.png",
+          "/usr/share/icons/hicolor/256x256/mimetypes/application-vnd.actone.bundle.png": "icons/application-vnd.actone.bundle_256x256.png",
+          "/usr/share/icons/hicolor/64x64/mimetypes/application-vnd.actone.theme.png": "icons/application-vnd.actone.theme_64x64.png",
+          "/usr/share/icons/hicolor/256x256/mimetypes/application-vnd.actone.theme.png": "icons/application-vnd.actone.theme_256x256.png"
+        }
+      }
+    }
+  }
+}

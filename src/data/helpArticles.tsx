@@ -179,6 +179,8 @@ actone [file_path]
 
 When launched without arguments, ActOne displays the Welcome screen.
 
+For an AppImage download, allow the file to run as a program in your file manager's Permissions settings before opening it. If it closes immediately, run it from a terminal and include the error message when reporting the problem.
+
 ### Supported File Arguments
 Passing a file path opens or imports the document directly:
 
