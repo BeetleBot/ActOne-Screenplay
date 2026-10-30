@@ -1225,16 +1225,16 @@ body:not(.dark-theme) .timeline-segment-number {
 }
 
 .timeline-segment:hover .timeline-segment-number {
-  color: var(--accent-color, #2196f3);
+  color: var(--seg-text, var(--timeline-scene-ink));
 }
 
 .timeline-segment.active .timeline-segment-number {
-  color: var(--accent-color, #2196f3);
+  color: var(--seg-text, var(--timeline-scene-ink));
   font-weight: 800;
 }
 
 .timeline-segment.colored.active .timeline-segment-number {
-  color: var(--seg-color);
+  color: var(--seg-text, var(--timeline-scene-ink));
   font-weight: 800;
 }
 
@@ -1257,7 +1257,7 @@ body:not(.dark-theme) .timeline-segment-number {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--accent-color, #2196f3);
+  background: var(--timeline-scene);
   box-shadow: none;
   z-index: 5;
   pointer-events: none;
@@ -1278,7 +1278,7 @@ body:not(.dark-theme) .timeline-segment-number {
   transform: translateX(-50%);
   border-left: 3px solid transparent;
   border-right: 3px solid transparent;
-  border-top: 4px solid var(--accent-color, #2196f3);
+  border-top: 4px solid var(--timeline-scene);
 }
 
 /* Playhead Bottom Inverted Chevron */
@@ -1292,7 +1292,7 @@ body:not(.dark-theme) .timeline-segment-number {
   height: 0;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-bottom: 5px solid var(--accent-color, #2196f3);
+  border-bottom: 5px solid var(--timeline-scene);
 }
 
 /* Timeline Markers — Pin needle stuck into the timeline */

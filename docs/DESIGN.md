@@ -143,3 +143,5 @@ Shared interactive colours are surface-aware: MUI primary controls use a readabl
 Document tabs are flat: active and inactive tabs use no box shadow. Active tabs retain their rounded shape and theme surface highlight.
 
 Switch root descendant rules explicitly fix thumb and switch-base dimensions for both sizes so MUI small-size defaults cannot enlarge the thumb beyond the track. The 22px switch base moves 14px inside a 36px root, leaving a consistent 3px thumb inset.
+
+Timeline pills and playhead use neutral gray independently of the interface accent: dark gray (#595959) in light themes and light gray (#b8b8b8) in dark themes, with contrasting numbers. Assigned scene colors override the neutral fill when enabled. Filtered nonmatches remain subdued.

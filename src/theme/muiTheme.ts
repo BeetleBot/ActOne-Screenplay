@@ -479,6 +479,8 @@ export function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainC
     '--status-accent': readableOn(c.accent, timelineBackground),
     '--status-success': readableOn('#4caf50', timelineBackground),
     '--status-error': readableOn('#d32f2f', timelineBackground),
+    '--timeline-scene': t.isDark ? '#b8b8b8' : '#595959',
+    '--timeline-scene-ink': t.isDark ? '#171717' : '#ffffff',
     '--timeline-pill': blend(timelineInk, timelineBackground, 0.18),
     '--timeline-pill-ink': automaticInk(blend(timelineInk, timelineBackground, 0.18)),
     '--accent-ink': automaticInk(c.accent),

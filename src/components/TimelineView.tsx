@@ -591,13 +591,13 @@ export const TimelineView: React.FC = () => {
               }
 
               if (!bg && (!isFilterActive || isMatch)) {
-                bg = "var(--accent-color, #2196f3)";
+                bg = "var(--timeline-scene)";
               }
 
               const sceneBg = bg || "var(--timeline-pill)";
               const sceneInk = isMatch && timelineShowSceneColors && segment.color
                 ? segment.color.startsWith("#") ? automaticInk(segment.color) : `var(--scene-ink-${segment.color}, var(--timeline-pill-ink))`
-                : bg ? "var(--accent-ink)" : "var(--timeline-pill-ink)";
+                : bg ? "var(--timeline-scene-ink)" : "var(--timeline-pill-ink)";
 
               const tooltip = isDummy
                 ? "Setup"
