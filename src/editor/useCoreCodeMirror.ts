@@ -94,7 +94,6 @@ export const editorTheme = EditorView.theme({
     backgroundColor: "var(--selection-bg, rgba(128, 128, 128, 0.2))",
     fontWeight: "700",
     borderRadius: "4px",
-    boxShadow: "inset 2px 0 currentColor",
   },
   ".cm-lineNumbers .cm-gutterElement": { color: "var(--text-secondary, #888)", fontSize: "11px", padding: "0 8px", minWidth: "36px", justifyContent: "flex-end !important" },
   ".cm-gutter": {

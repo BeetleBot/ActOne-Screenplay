@@ -1,6 +1,6 @@
 {
   "productName": "ActOne Screenplay",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "identifier": "ink.iyal.actone",
   "build": {
     "beforeDevCommand": "npm run dev",

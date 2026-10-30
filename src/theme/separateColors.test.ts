@@ -32,8 +32,8 @@ it("keeps legacy theme fallbacks", () => {
 it("keeps small and normal switch thumbs inside their tracks", () => {
   const theme = createActOneTheme(config);
   const root = theme.components?.MuiSwitch?.styleOverrides?.root as Record<string, unknown>;
-  expect(root.width).toBe(40);
-  expect(root.height).toBe(24);
-  expect(root["& .MuiSwitch-switchBase"]).toEqual({ padding: 5 });
-  expect(root["&.MuiSwitch-sizeSmall"]).toEqual({ width: 40, height: 24, padding: 0 });
+  expect(root.width).toBe(36);
+  expect(root.height).toBe(22);
+  expect(root["& .MuiSwitch-switchBase"]).toEqual({ padding: 3, width: 22, height: 22, margin: 0, boxSizing: 'border-box' });
+  expect(root["&.MuiSwitch-sizeSmall"]).toEqual({ width: 36, height: 22, padding: 0 });
 });
