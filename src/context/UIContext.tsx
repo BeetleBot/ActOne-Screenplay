@@ -6,6 +6,7 @@ import { setPrefs } from "../theme/AppPrefsEngine";
 import { getTauriWindow } from "../utils/window";
 
 export interface TranslationJob {
+  nativeJobId?: string;
   fileId: string;
   scriptIndex: number;
   scriptName: string;
@@ -90,7 +91,9 @@ export interface UIContextProps {
   hideSyntaxEnabled: boolean;
   setHideSyntaxEnabled: (enabled: boolean) => void;
   lineFocusEnabled: boolean;
+  lineNumbersEnabled: boolean;
   setLineFocusEnabled: (enabled: boolean) => void;
+  setLineNumbersEnabled: (enabled: boolean) => void;
   autoContdEnabled: boolean;
   setAutoContdEnabled: (enabled: boolean) => void;
   fountainColorsEnabled: boolean;
@@ -172,6 +175,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         case STORAGE_KEYS.LINE_FOCUS_ENABLED:
           setLineFocusEnabledState(strVal === "true");
           break;
+        case STORAGE_KEYS.LINE_NUMBERS_ENABLED:
+          setLineNumbersEnabledState(strVal === "true");
+          break;
         case STORAGE_KEYS.AUTO_CONTD_ENABLED:
           setAutoContdEnabledState(strVal !== "false");
           break;
@@ -239,6 +245,11 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     return localStorage.getItem(STORAGE_KEYS.SPELLCHECK_LANGUAGE) ?? String(DEFAULTS[STORAGE_KEYS.SPELLCHECK_LANGUAGE]);
   });
   const [aiStatus, setAiStatus] = useState<string | null>(null);
+  useEffect(() => {
+    const report = (e: Event) => setAiStatus((e as CustomEvent<string>).detail);
+    window.addEventListener("urai-credential-error", report);
+    return () => window.removeEventListener("urai-credential-error", report);
+  }, []);
   const [translationState, setTranslationStateState] = useState<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
   const translationStateRef = useRef<'idle' | 'running' | 'paused' | 'cancelled'>('idle');
   const setTranslationState = useCallback((s: 'idle' | 'running' | 'paused' | 'cancelled') => {
@@ -253,8 +264,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       const stored = localStorage.getItem("actone-active-translation-job");
       if (stored) {
         const parsed = JSON.parse(stored) as TranslationJob;
-        if (parsed.state === "running" || parsed.state === "paused") {
-          return parsed;
+        if (parsed.nativeJobId) {
+          return { ...parsed, state: "error", statusMessage: "Translation checkpoint available. Resume to continue." };
         }
       }
     } catch {}
@@ -363,6 +374,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [lineFocusEnabled, setLineFocusEnabledState] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.LINE_FOCUS_ENABLED);
     return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.LINE_FOCUS_ENABLED]);
+  });
+  const [lineNumbersEnabled, setLineNumbersEnabledState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.LINE_NUMBERS_ENABLED);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.LINE_NUMBERS_ENABLED]);
   });
   const [autoContdEnabled, setAutoContdEnabledState] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.AUTO_CONTD_ENABLED);
@@ -528,6 +543,11 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
     broadcastSetting(STORAGE_KEYS.LINE_FOCUS_ENABLED, enabled ? "true" : "false");
   };
+  const setLineNumbersEnabled = (enabled: boolean) => {
+    setLineNumbersEnabledState(enabled);
+    localStorage.setItem(STORAGE_KEYS.LINE_NUMBERS_ENABLED, enabled ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.LINE_NUMBERS_ENABLED, enabled ? "true" : "false");
+  };
 
   const setAutoContdEnabled = (enabled: boolean) => {
     setAutoContdEnabledState(enabled);
@@ -623,7 +643,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         hideSyntaxEnabled,
         setHideSyntaxEnabled,
         lineFocusEnabled,
+        lineNumbersEnabled,
         setLineFocusEnabled,
+        setLineNumbersEnabled,
         autoContdEnabled,
         setAutoContdEnabled,
         fountainColorsEnabled,

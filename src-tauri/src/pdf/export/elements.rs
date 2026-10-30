@@ -185,9 +185,10 @@ fn user_family_for_text(text: &str, script_fonts: &HashMap<String, String>) -> O
             _ => continue,
         };
         if let Some(font) = script_fonts.get(script)
-            && !font.is_empty() {
-                return Some(font.clone());
-            }
+            && !font.is_empty()
+        {
+            return Some(font.clone());
+        }
     }
     None
 }
@@ -591,9 +592,10 @@ pub fn get_krilla_font(
     };
 
     if !(is_neutral_run && is_indic_para)
-        && let Some(font) = font_cache.get(&face_info.id) {
-            return font.clone();
-        }
+        && let Some(font) = font_cache.get(&face_info.id)
+    {
+        return font.clone();
+    }
 
     let user_override = text.chars().find_map(|c| {
         let val = c as u32;
@@ -845,7 +847,12 @@ pub(crate) fn draw_shaped_line(
         }));
         for (hl_x, hl_width) in &line.highlight_ranges {
             if *hl_width > 0.0
-                && let Some(r) = Rect::from_xywh(x + hl_x - 1.0, y - font_size * 0.78, hl_width + 2.0, font_size * 1.05)
+                && let Some(r) = Rect::from_xywh(
+                    x + hl_x - 1.0,
+                    y - font_size * 0.78,
+                    hl_width + 2.0,
+                    font_size * 1.05,
+                )
             {
                 let mut pb = PathBuilder::new();
                 pb.push_rect(r);
@@ -1291,13 +1298,7 @@ pub fn write_element(
     residual: &mut Option<usize>,
 ) -> std::io::Result<bool> {
     write_element_sized(
-        ctx,
-        content,
-        margin,
-        alignment,
-        can_split,
-        residual,
-        FONT_SIZE,
+        ctx, content, margin, alignment, can_split, residual, FONT_SIZE,
     )
 }
 

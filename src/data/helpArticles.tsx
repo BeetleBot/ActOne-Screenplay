@@ -624,7 +624,9 @@ Press <kbd>Tab</kbd> to accept the ghost suggestion, or <kbd>ArrowDown</kbd> to 
     category: "Writing Tools",
     tags: ["typewriter", "scroll", "center cursor"],
     relatedIds: ["hide-syntax", "editor-zoom", "focus-mode"],
-    content: `Keeps your active editing line vertically centered on screen. As you type, the page scrolls smoothly around your active line so your gaze stays comfortably in the center of the display. Toggle via Quick Settings in the Activity Bar, the Command Palette, or Settings → Editor.`,
+    content: `Line numbers appear at the left edge of the editor. Toggle them in Settings > Editor > Line Numbers or search Show Line Numbers / Hide Line Numbers in the command palette. The current cursor line has a highlighted, bold line number. They count text lines, not scenes, and are not exported.
+
+Keeps your active editing line vertically centered on screen. As you type, the page scrolls smoothly around your active line so your gaze stays comfortably in the center of the display. Toggle via Quick Settings in the Activity Bar, the Command Palette, or Settings → Editor.`,
   },
   {
     id: "hide-syntax",
@@ -1086,7 +1088,7 @@ Parked text is saved automatically with your project.`,
 - Displays the active script name — click to quickly switch between documents in your project.
 
 **Right group (Utilities & Status):**
-- **Muse AI indicator** — displays AI status and provides one-click access.
+- **UrAI AI indicator** — displays AI status and provides one-click access.
 - **Active Sprint** — displays a live countdown timer and current words-per-minute when a sprint is running.
 - **Save Indicator** — shows whether changes are saved.
 - **Scenes** — total scene heading count.`,
@@ -1213,7 +1215,7 @@ The import modal shows a detailed preview of each beat. Choose insertion mode: *
 - **Parked Snippets**: Cut scenes and parked ideas.
 - **Sprint History**: Writing sprint analytics and statistics.
 - **Production Tags**: Scene breakdown tags and color coding.
-- **Muse AI Chat**: Dedicated AI conversation history per project.
+- **UrAI AI Chat**: Dedicated AI conversation history per project.
 - **Workspace Settings**: Project-specific preferences.
 
 Older project bundle versions are automatically recognized and seamlessly updated upon save.`,
@@ -1343,7 +1345,7 @@ The Quick Guide is generated from the same registries used by the application, s
     category: "Settings & Customization",
     tags: ["settings", "ctrl+,", "configuration"],
     relatedIds: ["theme-manager", "auto-save", "font-paper", "interface-scale", "editor-settings"],
-    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings window. It has five tabs: General, Editor, Spellcheck, Snapshots, and Muse.
+    content: `Press <kbd>Ctrl+,</kbd> or use the Command Palette → "Open Settings…" to open the Settings window. It has five tabs: General, Editor, Spellcheck, Snapshots, and UrAI.
 
 **General:** Paper Size (Letter / A4), Icon Style, Auto-Save toggle and interval, and Reset Settings.
 
@@ -1353,7 +1355,7 @@ The Quick Guide is generated from the same registries used by the application, s
 
 **Snapshots:** Enable Automated Snapshots, Save Location folder picker, project snapshot management, and **Open Snapshots Folder**.
 
-**Muse:** Configure AI providers, model selection, translation languages, and custom instructions.
+**UrAI:** Configure AI providers, model selection, translation languages, and custom instructions.
 
 Quick Settings are also available from the Activity Bar gear icon for common adjustments without opening the full window.
 
@@ -1464,35 +1466,35 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
 - **Hide Fountain Markup**: Clean reading view (hide prefixes on non-active lines).
 - **Focus Mode**: Dim all lines except the active cursor line.`,
   },
-  // ===== AI & MUSE =====
-  // ===== AI & MUSE =====
+  // ===== AI & URAI =====
+  // ===== AI & URAI =====
   {
-    id: "muse-overview",
-    title: "Muse AI Feature Overview",
-    category: "AI & Muse",
-    tags: ["muse", "muse go", "ai", "assistant", "overview", "help"],
-    relatedIds: ["muse-configure", "muse-chat"],
-    content: `**Muse** is ActOne's integrated AI feature suite. The right sidebar companion, **Muse Go!**, provides an intelligent conversational assistant for discussing, exploring, and analyzing your screenplay.
+    id: "urai-overview",
+    title: "UrAI AI Feature Overview",
+    category: "AI & UrAI",
+    tags: ["urai", "urai go", "ai", "assistant", "overview", "help"],
+    relatedIds: ["urai-configure", "urai-chat"],
+    content: `**UrAI** is ActOne's integrated AI feature suite. The right sidebar companion, **UrAI**, provides an intelligent conversational assistant for discussing, exploring, and analyzing your screenplay.
 
-**How to open Muse Go!:**
+**How to open UrAI:**
 - Press \`Alt+M\`.
-- Open Command Palette (\`Ctrl+K\`) → select **"Show Muse Go!"** (visible when Muse is configured).
-- The Muse Go! panel opens on the right side of your workspace.
+- Open Command Palette (\`Ctrl+K\`) → select **"Show UrAI"** (visible when UrAI is configured).
+- The UrAI panel opens on the right side of your workspace.
 
 **Key features:**
 - **Conversational Screenplay Q&A**: Ask questions about your story, character arcs, scene flow, and dialogue.
-- **Intelligent Scene Context**: Muse Go! automatically finds and reads only the scenes relevant to your question (e.g. "Summarize scenes with John") without sending your entire manuscript every time.
-- **Look up & Synonyms**: Right-click words in the editor to look up definitions and synonyms in Muse Go!.
+- **Intelligent Scene Context**: UrAI automatically finds and reads only the scenes relevant to your question (e.g. "Summarize scenes with John") without sending your entire manuscript every time.
+- **Look up & Synonyms**: Right-click words in the editor to look up definitions and synonyms in UrAI.
 - **Per-script history**: Each screenplay maintains its own conversation sessions across your writing workflow.
 - **Real-time streaming**: Watch responses generate smoothly in real time.`,
   },
   {
-    id: "muse-configure",
-    title: "Configuring Muse (AI Providers)",
-    category: "AI & Muse",
-    tags: ["muse", "ai", "configure", "setup", "provider", "api", "openai", "ollama"],
-    relatedIds: ["muse-overview", "settings-overview"],
-    content: `Before using Muse Go!, you can configure an AI provider in **Settings** (\`Ctrl+,\`) → **Muse** tab.
+    id: "urai-configure",
+    title: "Configuring UrAI (AI Providers)",
+    category: "AI & UrAI",
+    tags: ["urai", "ai", "configure", "setup", "provider", "api", "openai", "ollama"],
+    relatedIds: ["urai-overview", "settings-overview"],
+    content: `Before using UrAI, you can configure an AI provider in **Settings** (\`Ctrl+,\`) → **UrAI** tab.
 
 **Supported Providers:**
 
@@ -1508,36 +1510,29 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
   - **Model**: Select from models detected on your local Ollama server.
 
 **Privacy & Workspace Integration:**
-- When Muse is disabled ("None"), all Muse indicators and buttons remain completely hidden from your interface.`,
+- When UrAI is disabled ("None"), all UrAI indicators and buttons remain completely hidden from your interface.`,
   },
   {
-    id: "muse-chat",
-    title: "Using Muse Go! Chat",
-    category: "AI & Muse",
-    tags: ["muse", "muse go", "chat", "conversation", "history", "streaming"],
-    relatedIds: ["muse-overview", "muse-configure"],
-    content: `The **Muse Go!** panel is your dedicated conversational companion:
+    id: "urai-chat",
+    title: "Using UrAI Chat",
+    category: "AI & UrAI",
+    tags: ["urai", "urai go", "chat", "conversation", "history", "streaming"],
+    relatedIds: ["urai-overview", "urai-configure"],
+    content: `UrAI helps you brainstorm, discuss screenplay context, translate and rephrase.
 
-**Asking questions:**
-- Type in the "Message Muse Go!..." composer and press \`Enter\` to send.
-- Press \`Shift+Enter\` to insert a newline.
-- Press \`Escape\` or click the Stop button to cancel streaming.
-
-**Intelligent character & scene queries:**
-- Ask about specific characters: *"What does John do across his scenes?"* — Muse Go! intelligently slices only the scenes where John appears.
-- Ask about specific scenes: *"What happens in scenes 3 to 5?"* — Muse Go! loads and analyzes only those scenes.
-
-**Chat session management:**
-- Click the **clock icon** to view, switch, and manage past chat sessions for the current screenplay.
-- Click the **+ icon** to start a fresh conversation.
-- Click the **trash icon** to clear messages in the active session.`,
+- UrAI asks permission before reading a screenplay. After you allow access, it chooses scenes automatically. Change or revoke access through the header gear.
+- For local Ollama models, use the **Index screenplay** book button. It processes scenes in small batches and saves completed scenes locally. Restarting indexing skips unchanged scenes; edits need reindexing.
+- Ask about **scene 3** to retrieve its original text. General questions use relevant passages or index summaries. Summaries can contain mistakes; UrAI may not have read every scene for a given answer.
+- Rephrase and translate replace selected text after generation, with an animated highlight. Use Undo to restore the original. If you edit while UrAI is working, the result is not applied.
+- Context limits are available in the gear menu. A larger number does not increase a model's actual supported context.
+`,
   },
   {
-    id: "muse-translate",
+    id: "urai-translate",
     title: "Whole Document Translation",
-    category: "AI & Muse",
-    tags: ["translate", "language", "whole document", "background", "multilingual", "muse"],
-    relatedIds: ["muse-overview", "muse-configure"],
+    category: "AI & UrAI",
+    tags: ["translate", "language", "whole document", "background", "multilingual", "urai"],
+    relatedIds: ["urai-overview", "urai-configure"],
     content: `ActOne allows you to translate an entire screenplay or prose document to any supported language without disrupting your writing workflow.
 
 ### How it Works:
@@ -1549,18 +1544,20 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
    - **Character Names:** Option to keep character names unchanged to prevent proper noun mistranslation.
    - **AI Model:** Select your preferred local (Ollama) or remote API model.
 3. ActOne duplicates your document into a target script (e.g., \`MyScript-Tamil\`) and runs a pre-flight connection check before starting.
-4. **Scene-by-Scene Engine:** ActOne translates scene by scene with complete narrative context rather than isolated line batches. Long scenes are adaptively partitioned at character boundaries to maintain context window stability.
+**Translation glossary:** Choose Prepare glossary first. UrAI suggests recurring names, terms and speech traits in small batches. Review or edit the glossary, then start translation. Custom instructions take priority, and the reviewed glossary is saved for resume and retry. Dialogue aims for natural speech; action stays concise and precise.
+
+4. **Scene-by-Scene Engine:** ActOne processes small batches within each scene. Completed batches are saved so interrupted work can resume. Failed elements retain their original text and can be retried.
 5. The progress window displays the active scene heading, part count for long scenes, real-time status (including provider rate-limit wait countdowns), percentage bar, time remaining estimates, and a live streaming preview.
 6. Click **"Run in Background"** to dismiss the progress window anytime and keep writing in other scripts.
 7. If any scenes fail after automatic retries, the completion screen gives you a **"Retry Failed Scenes"** button to re-run them with one click.
 8. Once complete, click **"Open Translated Script"** to view your translated screenplay.`,
   },
   {
-    id: "muse-quick-model-switcher",
+    id: "urai-quick-model-switcher",
     title: "Quick AI Model Switcher",
-    category: "AI & Muse",
+    category: "AI & UrAI",
     tags: ["model switcher", "quick switch", "ai model", "palette", "keyboard shortcut"],
-    relatedIds: ["muse-configure", "muse-overview"],
+    relatedIds: ["urai-configure", "urai-overview"],
     content: `You can instantly switch active AI models without navigating through the full Settings window.
 
 ### How to Use:
@@ -1584,5 +1581,5 @@ export const categories = [
   "Files & Projects",
   "Export",
   "Settings & Customization",
-  "AI & Muse",
+  "AI & UrAI",
 ];

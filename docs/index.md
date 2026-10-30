@@ -95,7 +95,7 @@ End-user documentation for every feature in ActOne.
 |----------|-------------|
 | [Editor](features/01-editor.md) | Core editing features, syntax highlighting, smart typing |
 | [Autocomplete](features/02-autocomplete.md) | Ghost text suggestions for characters, transitions, etc. |
-| [Sidebar Panels](features/03-sidebar.md) | 8 sidebar tabs (46px grouped dock, pill active) + Header pill tabs, Search/Muse floating panes |
+| [Sidebar Panels](features/03-sidebar.md) | 8 sidebar tabs (46px grouped dock, pill active) + Header pill tabs, Search/UrAI floating panes |
 | [Export](features/05-export.md) | PDF, FDX, FadeIn, and Fountain export — pill nav + rounded modal |
 | [Multi-Script Bundles](features/06-scripts.md) | Managing multiple scripts in .actone bundles (rounded cards, pill search) |
 | [Parking](features/07-parking.md) | Temporary text storage (rounded cards) |
@@ -111,7 +111,7 @@ End-user documentation for every feature in ActOne.
 | [Settings](features/18-settings.md) | All configuration options — pill tabs, 8px cards, ambient removal |
 | [Help Guide](features/19-help-guide.md) | 91 searchable articles across 10 categories (incl. Markdown Syntax) |
 | [Interactive Tutorials](features/20-onboarding-tutorials.md) | User onboarding and Fountain writing tours |
-| [Muse AI Assistant](features/21-muse.md) | AI screenwriting assistant — pill composer (v0.4.0+) |
+| [UrAI AI Assistant](features/21-urai.md) | AI screenwriting assistant — pill composer (v0.4.0+) |
 | [Command Line Interface (CLI)](features/23-cli.md) | Linux terminal execution, file opening, and auto-import |
 
 ---

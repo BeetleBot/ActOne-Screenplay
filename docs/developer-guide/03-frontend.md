@@ -31,7 +31,7 @@ App
               Workspace
                 SidebarViews (routes sidebar panels)
                 FountainEditor (CodeMirror 6 container)
-                SearchPanel / MusePanel (right panes — AmbientPanel was removed in v0.4.19)
+                SearchPanel / UrAIPanel (right panes — AmbientPanel was removed in v0.4.19)
                StatusBar (file, save, document, sprint, spellcheck, AI, and scene information)
             ModalManager
               CommandPalette
@@ -82,8 +82,8 @@ ErrorBoundary
 | `MainLayout` | `layout/MainLayout.tsx` | Grid layout combining HeaderBar, ActivityBar, Workspace, StatusBar |
 | `HeaderBar` | `layout/HeaderBar.tsx` | Multi-file tabs, window controls, themed context menu (close/close others/close all), update banner |
 | `ActivityBar` | `layout/ActivityBar.tsx` | Slim 46px grouped dock (Content/Tools), 8 sidebar tabs in 38×38px 8px rounded items with pill active + hairline separator, quick settings + zen toggle; command palette trigger moved to header |
-| `StatusBar` | `layout/StatusBar.tsx` | File and save status, word/character/page counts, sprint tracker, scene location, script switcher, AI status, X-Ray, and Muse indicator |
-| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor, manages search and Muse right panes |
+| `StatusBar` | `layout/StatusBar.tsx` | File and save status, word/character/page counts, sprint tracker, scene location, script switcher, AI status, X-Ray, and UrAI indicator |
+| `Workspace` | `layout/Workspace.tsx` | Routes sidebar panels and editor, manages search and UrAI right panes |
 
 ### Sidebar Panels (8 tabs)
 
@@ -127,9 +127,9 @@ ErrorBoundary
 | `TutorialsWindow` | `TutorialsWindow.tsx` | Interactive tutorial launcher |
 | `ThemeManagerWindow` | `ThemeManagerWindow.tsx` | Custom theme editor |
 
-### Muse Panel
+### UrAI Panel
 
-`MusePanel.tsx` is the right-side chat interface. It connects `useAIChat()` to the active `FileContext`, `EditorContext`, and `CursorContext`.
+`UrAIPanel.tsx` is the right-side chat interface. It connects `useAIChat()` to the active `FileContext`, `EditorContext`, and `CursorContext`.
 
 The panel provides:
 
@@ -142,7 +142,7 @@ The panel provides:
 - Tool-step rendering for screenplay reads, analysis, drafts, metadata, and X-Ray actions.
 - Pending scene replacement cards with an Apply action.
 
-The composer is normal text input. It does not provide `@write-scene`, `@q`, `@lookup`, or `@synonyms` autocomplete. See `docs/features/21-muse.md` for the provider, tool, persistence, and privacy contract.
+The composer is normal text input. It does not provide `@write-scene`, `@q`, `@lookup`, or `@synonyms` autocomplete. See `docs/features/21-urai.md` for the provider, tool, persistence, and privacy contract.
 
 ## Audio System (Removed)
 

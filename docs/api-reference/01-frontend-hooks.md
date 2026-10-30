@@ -112,7 +112,7 @@ Closes all open modal sub-windows (settings, help, theme-manager, xray, tutorial
 
 ### `useAIChat(getParsedDoc, filePath, activeFileId, ...)`
 
-Manages a file-scoped Muse chat session, provider streaming, screenplay context, and the current JSON/text tool loop. The current composer does not implement `@` command autocomplete or command mode.
+Manages the React view of script-scoped UrAI conversations, explicit sharing, native streaming, and native read-tool activity. The current composer does not implement `@` command autocomplete or command mode.
 
 ```typescript
 function useAIChat(
@@ -124,6 +124,7 @@ function useAIChat(
   updateSettings?: (updater: (previous: Record<string, unknown>) => Record<string, unknown>) => void,
   openXrayWindow?: () => void,
   scriptFileName?: string,
+  sharing?: { context: UrAIContext; contextTokens: number },
 ): AIChatResult;
 ```
 
@@ -147,7 +148,7 @@ Returns:
 
 `ChatTurn` may contain `thinking` and `toolCalls`. A tool step includes its name, arguments, status, result, and optional pending scene-apply data.
 
-The current tool loop can execute up to eight provider iterations. The advertised tools are declared in `src/lib/aiTools.ts` and include screenplay reads, scene drafting, scene tagging, project notes, character profiles, and X-Ray opening. `replace_scene` creates a pending review card; other mutating tools currently apply through the supplied callbacks.
+The Rust service owns the bounded read-tool loop (up to four generations). Tools can only inspect explicitly shared scenes. The assistant does not invoke project mutation handlers. Existing application integrations retain their helpers in `aiTools.ts`.
 
 ### `usePromptConfig()`
 
@@ -171,20 +172,15 @@ interface PromptConfig {
 }
 ```
 
-Configuration is persisted in localStorage. Use `setPromptConfigField(key, value)` for supported fields and call `notifyConfigChange()` after direct storage updates. The hook does not currently expose or apply command-specific `@write-scene`, `@q`, `@lookup`, or `@synonyms` instructions.
+Non-secret configuration is persisted in localStorage; desktop secrets use native credential references. `activateConfiguredApi` updates endpoint/model/credential/provider atomically after secure storage succeeds. Use `setPromptConfigField(key, value)` for supported fields and call `notifyConfigChange()` after direct storage updates. The hook does not currently expose or apply command-specific `@write-scene`, `@q`, `@lookup`, or `@synonyms` instructions.
 
 ### `notifyConfigChange()`
 
 Manually triggers all `usePromptConfig` subscribers to re-read from localStorage. Settings uses it after API entry selection and API list changes. Direct updates to every provider field should also notify subscribers when the update is expected to be visible in another window.
 
-### `createAIProvider(config)`
+### Native UrAI bridge
 
-Factory that returns an `AIProvider` instance based on config:
-- `"openai-compatible"` → `OpenAICompatibleProvider(endpoint, apiKey, model)`
-- `"ollama"` → `OllamaProvider(ollamaUrl, model)`
-- `"none"` → `null`
-
-`OpenAICompatibleProvider.chat()` streams SSE data from the configured endpoint. `OllamaProvider.chat()` uses the Rust proxy and Tauri events in desktop mode and `/api/chat` in browser mode. Both accept an `AbortSignal`, temperature, and an `onChunk` callback.
+`src/lib/urai.ts` exposes `nativeChat`, `nativeTransform`, context construction, native conversation storage, and context fingerprints. Desktop generation uses `urai_chat` / `urai_transform` and request-correlated Tauri events. The former frontend provider classes have been retired. See [UrAI runtime](../features/21-urai.md) for commands, permissions, job recovery and validation.
 
 ### `fetchModels(provider)`
 

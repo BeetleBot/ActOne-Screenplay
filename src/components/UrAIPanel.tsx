@@ -1,20 +1,39 @@
+import { activateConfiguredApi, reportCredentialError } from "../hooks/usePromptConfig";
+import { EMPTY_CONTEXT } from "../lib/urai";
+import { formatIndexProgress, useScreenplayIndex } from "../hooks/useScreenplayIndex";
+
 import { useState, useCallback, useEffect, useRef, UIEvent, useMemo } from "react";
-import { Box, Typography, IconButton, Menu, MenuItem, ListItemText, Divider, Tooltip, Chip } from "@mui/material";
+import {
+  Box,
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  Popover,
+  LinearProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  ListItemText,
+  Divider,
+  Tooltip,
+  Chip,
+  TextField,
+} from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { usePromptConfig, setPromptConfigField, fetchModels } from "../hooks/usePromptConfig";
 import { useApiList } from "../hooks/useApiList";
 import { useAIChat } from "../hooks/useAIChat";
 import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
-import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon, RestartAltIcon } from "./Icons";
+import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon, RestartAltIcon, SettingsIcon, MenuBookIcon } from "./Icons";
 import { AIChatMessage } from "./ai/AIChatMessage";
 import { AIChatComposer } from "./ai/AIChatComposer";
+import { UrAIAbout } from "./ai/UrAIAbout";
 import { LineType } from "../parser";
 import { setRephraseRangeEffect } from "../editor/rephraseState";
 import { copyToClipboard } from "../utils";
 
 import "../styles/ai-chat.css";
 
-interface MusePanelProps {
+interface UrAIPanelProps {
   onInsertAtCursor?: (text: string) => void;
 }
 
@@ -27,7 +46,7 @@ function formatRelativeDate(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString();
 }
 
-export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
+export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
   const { parsedDoc, filePath, activeFileId, updateSettings, scriptFileName } = useFile();
   const { scrollToLine, editorView } = useEditor();
   const { replaceSceneText } = useScriptEditor();
@@ -37,6 +56,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [historyAnchorEl, setHistoryAnchorEl] = useState<null | HTMLElement>(null);
   const [modelAnchorEl, setModelAnchorEl] = useState<null | HTMLElement>(null);
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
 
   const apiList = useApiList();
 
@@ -60,7 +80,22 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
     }
   }, []);
 
-  const chat = useAIChat(getParsedDoc, filePath, activeFileId, activeLineNumber, replaceSceneText, updateSettings, handleOpenXray, scriptFileName);
+  const [contextTokens, setContextTokens] = useState(8192);
+  const [allowed, setAllowed] = useState(false);
+  const [pending, setPending] = useState<{ kind: "index" | "chat"; text?: string } | null>(null);
+  const index = useScreenplayIndex(parsedDoc, promptConfig, (filePath || activeFileId) + "::" + scriptFileName);
+  useEffect(() => { setAllowed(false); setPending(null); }, [activeFileId, scriptFileName, promptConfig.provider, promptConfig.apiEndpoint, promptConfig.ollamaUrl]);
+  const chat = useAIChat(
+    getParsedDoc,
+    filePath,
+    activeFileId + "::" + scriptFileName,
+    activeLineNumber,
+    replaceSceneText,
+    updateSettings,
+    handleOpenXray,
+    scriptFileName,
+    { context: EMPTY_CONTEXT, contextTokens, resolveContext: allowed ? index.retrieve : undefined },
+  );
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const pinnedRef = useRef(true);
@@ -78,11 +113,18 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
 
   const handleSend = useCallback(
     (text: string) => {
-      chat.send(text, text);
+      if (!allowed) { setPending({ kind: "chat", text }); return; }
+      void chat.send(text, text);
     },
-    [chat]
+    [chat, allowed],
   );
 
+  useEffect(() => {
+    if (!allowed || !pending) return;
+    setPending(null);
+    if (pending.kind === "index") void index.run();
+    else if (pending.text) void chat.send(pending.text, pending.text);
+  }, [allowed, pending, chat, index]);
   useEffect(() => {
     const handleLookup = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
@@ -93,7 +135,9 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
     const handleSynonyms = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
       if (text?.trim()) {
-        handleSend(`What are some evocative synonyms and alternative action/dialogue phrases for "${text.trim()}" in a screenwriting context?`);
+        handleSend(
+          `What are some evocative synonyms and alternative action/dialogue phrases for "${text.trim()}" in a screenwriting context?`,
+        );
       }
     };
     window.addEventListener("prompt-lookup", handleLookup);
@@ -108,7 +152,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
     (fountainText: string) => {
       onInsertAtCursor?.(fountainText);
     },
-    [onInsertAtCursor]
+    [onInsertAtCursor],
   );
 
   const handleApplyToEditor = useCallback(
@@ -164,7 +208,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
         replaceSceneText(sceneNumber, fountainText);
       }
     },
-    [parsedDoc, scrollToLine, replaceSceneText, editorView]
+    [parsedDoc, scrollToLine, replaceSceneText, editorView],
   );
 
   const activeModelLabel = useMemo(() => {
@@ -196,21 +240,41 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Typography
             variant="subtitle2"
-            sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em", textTransform: "uppercase" }}
+            sx={{ fontWeight: 700, opacity: 0.8, fontSize: "0.7rem", letterSpacing: "0.05em" }}
           >
-            Muse Go!
+            UrAI
           </Typography>
-          <Tooltip title="Muse AI features are currently in Beta. Responses and capabilities are constantly improving with each update." arrow placement="bottom">
-            <Chip 
-              label="Beta" 
-              size="small" 
-              color="primary" 
-              variant="outlined" 
-              sx={{ height: 16, fontSize: "0.55rem", ml: 1, borderColor: (t) => alpha(t.palette.primary.main, 0.4), color: "primary.main", cursor: "help" }} 
+          <UrAIAbout />
+          <Tooltip
+            title="UrAI features are currently in Beta. Responses and capabilities are constantly improving with each update."
+            arrow
+            placement="bottom"
+          >
+            <Chip
+              label="Beta"
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{
+                height: 16,
+                fontSize: "0.55rem",
+                ml: 1,
+                borderColor: (t) => alpha(t.palette.primary.main, 0.4),
+                color: "primary.main",
+                cursor: "help",
+              }}
             />
           </Tooltip>
         </Box>
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+          <Tooltip title={(index.progress ? formatIndexProgress(index.progress) : null) || (index.ready ? "Update screenplay index" : "Index screenplay")}>
+            <IconButton aria-label="Index screenplay" color={index.ready ? "primary" : "default"} size="small" disabled={Boolean(index.progress) || promptConfig.provider !== "ollama"} onClick={() => { if (allowed) void index.run(); else setPending({ kind: "index" }); }}><MenuBookIcon sx={{ fontSize: 16 }} /></IconButton>
+          </Tooltip>
+          <Tooltip title="Chat settings" placement="bottom">
+            <IconButton size="small" onClick={(e) => setSettingsAnchorEl(e.currentTarget)} aria-label="Chat settings">
+              <SettingsIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="New conversation" placement="bottom">
             <IconButton size="small" onClick={() => chat.newSession()}>
               <AddIcon sx={{ fontSize: 16 }} />
@@ -231,6 +295,32 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
         </Box>
       </Box>
 
+      {index.progress && <Box sx={{ px: 1.5, py: 0.75, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><Typography variant="caption">Indexing | {formatIndexProgress(index.progress)}</Typography><Button size="small" onClick={index.stop}>Pause</Button></Box>
+        <LinearProgress />
+      </Box>}
+      <Popover
+        open={Boolean(settingsAnchorEl)}
+        anchorEl={settingsAnchorEl}
+        onClose={() => setSettingsAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { p: 1.5, width: 300, maxWidth: "calc(100vw - 32px)" } } }}
+      >
+        <Typography variant="subtitle2" sx={{ fontWeight: 650, mb: 1 }}>Chat settings</Typography>
+        <Typography variant="body2" sx={{ mb: 1 }}>Screenplay access: {allowed ? "Allowed for this document and provider" : "Ask before reading"}</Typography>
+        {allowed && <Button size="small" onClick={() => { index.stop(); chat.stop(); setAllowed(false); }}>Revoke access</Button>}
+        <Typography variant="caption" sx={{ display: "block" }}>{(index.progress ? formatIndexProgress(index.progress) : null) || (index.ready ? "Index ready" : "Not indexed or changes need indexing")}</Typography>
+        {index.error && <Typography color="error" variant="caption">{index.error}</Typography>}
+        {index.progress && <Button onClick={index.stop}>Pause indexing</Button>}
+        <TextField size="small" label="Model context limit (tokens)" type="number" value={contextTokens} disabled={chat.streaming} onChange={(e) => setContextTokens(Math.max(2048, Math.min(1048576, Number(e.target.value) || 8192)))} slotProps={{ htmlInput: { "aria-label": "Model context limit in tokens" } }} helperText="Must fit the model's configured context and available memory." sx={{ mt: 1.25, width: "100%" }} />
+      </Popover>
+
+      <Dialog open={Boolean(pending) && !allowed} onClose={() => setPending(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Allow UrAI to read this screenplay?</DialogTitle>
+        <DialogContent>UrAI can index this document and automatically read relevant scenes to answer your questions. Text is sent to {promptConfig.provider === "ollama" ? promptConfig.ollamaUrl : promptConfig.apiEndpoint}. Permission lasts until you switch documents or providers, revoke access, or close this panel. Index summaries are saved locally.</DialogContent>
+        <DialogActions><Button onClick={() => { const text = pending?.text; setPending(null); if (text) void chat.send(text, text); }}>Don't allow</Button><Button onClick={() => setAllowed(true)}>Allow</Button></DialogActions>
+      </Dialog>
       {/* History Menu */}
       <Menu
         anchorEl={historyAnchorEl}
@@ -276,9 +366,17 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
           >
             <ListItemText
               primary={sess.title || "Conversation"}
-              secondary={`${formatRelativeDate(sess.createdAt)} · ${sess.turns.filter((t) => t.role === "user").length} messages`}
+              secondary={`${formatRelativeDate(sess.createdAt)} | ${sess.turns.filter((t) => t.role === "user").length} messages`}
               slotProps={{
-                primary: { sx: { fontSize: 12, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                primary: {
+                  sx: {
+                    fontSize: 12,
+                    fontWeight: 500,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  },
+                },
                 secondary: { sx: { fontSize: 10 } },
               }}
             />
@@ -331,8 +429,12 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
             </Box>
           )}
           {chat.turns.length === 0 && (
-            <Box sx={{ color: "text.secondary", fontSize: "0.78rem", textAlign: "center", py: 5, px: 2, lineHeight: 1.5 }}>
-              {parsedDoc.screenplayText ? "Start a conversation about your screenplay..." : "Open a screenplay to chat about it..."}
+            <Box
+              sx={{ color: "text.secondary", fontSize: "0.78rem", textAlign: "center", py: 5, px: 2, lineHeight: 1.5 }}
+            >
+              {parsedDoc.screenplayText
+                ? "Start a conversation about your screenplay..."
+                : "Open a screenplay to chat about it..."}
             </Box>
           )}
           {chat.turns.map((turn, index) => (
@@ -395,7 +497,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
             <AIChatComposer
               streaming={chat.streaming}
               disabled={promptConfig.provider === "none"}
-              placeholder={parsedDoc.screenplayText ? "Message Muse Go!..." : "Open a screenplay first..."}
+              placeholder={parsedDoc.screenplayText ? "Message UrAI..." : "Open a screenplay first..."}
               onSend={handleSend}
               onStop={chat.stop}
             />
@@ -405,7 +507,10 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 2, pt: 0.25, pb: 0.75 }}>
             <AddIcon sx={{ fontSize: 12, color: "text.secondary", opacity: 1 }} />
             <Typography
-              onClick={(e) => { loadModels(); setModelAnchorEl(e.currentTarget); }}
+              onClick={(e) => {
+                loadModels();
+                setModelAnchorEl(e.currentTarget);
+              }}
               variant="caption"
               sx={{
                 cursor: "pointer",
@@ -419,11 +524,14 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
               {activeModelLabel}
             </Typography>
             <Box
-              onClick={(e) => { loadModels(); setModelAnchorEl(e.currentTarget); }}
+              onClick={(e) => {
+                loadModels();
+                setModelAnchorEl(e.currentTarget);
+              }}
               component="span"
               sx={{ cursor: "pointer", fontSize: "0.55rem", color: "text.secondary", opacity: 0.6 }}
             >
-              ▲
+              ^
             </Box>
           </Box>
         </Box>
@@ -441,7 +549,10 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
         {apiList.length > 0 && (
           <>
             <Box sx={{ px: 2, py: 0.75, borderBottom: "1px solid", borderColor: "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: "0.05em" }}>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: "0.05em" }}
+              >
                 OPENAI API
               </Typography>
             </Box>
@@ -450,10 +561,7 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
                 key={entry.id}
                 selected={promptConfig.provider === "openai-compatible" && promptConfig.apiModel === entry.model}
                 onClick={() => {
-                  setPromptConfigField("provider", "openai-compatible");
-                  setPromptConfigField("apiModel", entry.model);
-                  setPromptConfigField("apiEndpoint", entry.endpoint);
-                  setPromptConfigField("apiKey", entry.apiKey);
+                  void activateConfiguredApi(entry).catch(reportCredentialError);
                   setModelAnchorEl(null);
                 }}
                 sx={{ fontSize: 12 }}
@@ -480,7 +588,10 @@ export const MusePanel: React.FC<MusePanelProps> = ({ onInsertAtCursor }) => {
             borderColor: "divider",
           }}
         >
-          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: "0.05em" }}>
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, fontSize: 10, color: "text.secondary", letterSpacing: "0.05em" }}
+          >
             OLLAMA (LOCAL)
           </Typography>
         </Box>

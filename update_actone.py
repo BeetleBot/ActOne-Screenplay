@@ -91,7 +91,7 @@ pack_logic = """
       "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
       "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
       "production_tags.json": strToU8(JSON.stringify(productionTags || { tags: [], definitions: [] }, null, 2)),
-      "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
+      "urai.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
     };
     
     const assets = settings.assets as Record<string, Uint8Array> | undefined;
@@ -104,6 +104,6 @@ pack_logic = """
     }
 """
 
-content = re.sub(r'    const manifest = scripts\.map\(\(s\) => \(\{ name: s\.name, file: s\.fileName \}\)\);\s*const entries: Record<string, Uint8Array> = \{\s*"fountain\.json": strToU8\(JSON\.stringify\(manifest, null, 2\)\),\s*"settings\.json": strToU8\(JSON\.stringify\(restSettings \|\| \{\}, null, 2\)\),\s*"sprint_data\.json": strToU8\(JSON\.stringify\(sprintData \|\| \[\], null, 2\)\),\s*"production_tags\.json": strToU8\(JSON\.stringify\(productionTags \|\| \{ tags: \[\], definitions: \[\] \}, null, 2\)\),\s*"muse\.json": strToU8\(JSON\.stringify\(promptChats \|\| \{ conversations: \[\], activeConversationId: null \}, null, 2\)\),\s*\};', pack_logic, content)
+content = re.sub(r'    const manifest = scripts\.map\(\(s\) => \(\{ name: s\.name, file: s\.fileName \}\)\);\s*const entries: Record<string, Uint8Array> = \{\s*"fountain\.json": strToU8\(JSON\.stringify\(manifest, null, 2\)\),\s*"settings\.json": strToU8\(JSON\.stringify\(restSettings \|\| \{\}, null, 2\)\),\s*"sprint_data\.json": strToU8\(JSON\.stringify\(sprintData \|\| \[\], null, 2\)\),\s*"production_tags\.json": strToU8\(JSON\.stringify\(productionTags \|\| \{ tags: \[\], definitions: \[\] \}, null, 2\)\),\s*"urai\.json": strToU8\(JSON\.stringify\(promptChats \|\| \{ conversations: \[\], activeConversationId: null \}, null, 2\)\),\s*\};', pack_logic, content)
 
 open("src/utils/actone.ts", "w").write(content)

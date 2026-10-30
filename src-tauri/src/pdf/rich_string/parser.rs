@@ -43,7 +43,11 @@ pub(crate) fn match_delimiters(delimiters: &mut [Delimiter]) -> Vec<Match> {
                 let attrs = match (delimiters[opener_idx].char, used) {
                     ('_', _) => Attributes::UNDERLINE,
                     ('=', _) => {
-                        if used >= 2 { Attributes::HIGHLIGHT } else { continue; }
+                        if used >= 2 {
+                            Attributes::HIGHLIGHT
+                        } else {
+                            continue;
+                        }
                     }
                     (_, 1) => Attributes::ITALIC,
                     (_, 2) => Attributes::BOLD,

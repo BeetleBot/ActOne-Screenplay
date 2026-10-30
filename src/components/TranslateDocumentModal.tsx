@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
+import { generateTranslationGlossary } from "../utils/translationGlossary";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -30,22 +31,22 @@ import { runTranslationJob, analyzeFountainLine } from "../utils/translationEngi
 import { parseScreenplay, LineType } from "../parser";
 
 export const BetaTooltip: React.FC = () => (
-  <Tooltip title="Muse AI features are currently in Beta. Responses and capabilities are constantly improving with each update." arrow placement="top">
-    <Chip 
-      label="Beta" 
-      size="small" 
-      color="primary" 
-      variant="outlined" 
-      sx={{ 
-        height: 18, 
-        fontSize: "0.65rem", 
+  <Tooltip title="UrAI AI features are currently in Beta. Responses and capabilities are constantly improving with each update." arrow placement="top">
+    <Chip
+      label="Beta"
+      size="small"
+      color="primary"
+      variant="outlined"
+      sx={{
+        height: 18,
+        fontSize: "0.65rem",
         ml: 1.5,
         mt: 0.2,
         borderColor: (t) => alpha(t.palette.primary.main, 0.5),
         color: (t) => alpha(t.palette.primary.main, 0.8),
         cursor: "help",
         "& .MuiChip-label": { px: 1, py: 0 }
-      }} 
+      }}
     />
   </Tooltip>
 );
@@ -74,7 +75,7 @@ export const TranslateDocumentModal: React.FC = () => {
   // If translationSetupTarget is set, the user explicitly opened setup for a script.
   // An active in-flight job always shows progress. A completed job only shows progress if setup wasn't requested.
   const isJobInFlight = translationState === "running" || translationState === "paused" || job?.state === "running" || job?.state === "preflight" || job?.state === "waiting";
-  const isJobFinished = (job?.state === "completed" || job?.state === "error") && !translationSetupTarget;
+  const isJobFinished = (job?.state === "completed" || job?.state === "error" || job?.state === "cancelled") && !translationSetupTarget;
   const mode = (isJobInFlight || isJobFinished) && job ? "progress" : "setup";
 
   // --- Setup State ---
@@ -90,6 +91,16 @@ export const TranslateDocumentModal: React.FC = () => {
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("current");
   const [customInstruction, setCustomInstruction] = useState<string>("");
+  const [glossary, setGlossary] = useState("");
+  const [glossaryReady, setGlossaryReady] = useState(false);
+  const [glossaryProgress, setGlossaryProgress] = useState("");
+  const glossaryAbort = useRef<AbortController | null>(null);
+  useEffect(() => {
+    glossaryAbort.current?.abort(); setGlossary(""); setGlossaryReady(false); setGlossaryProgress("");
+    return () => glossaryAbort.current?.abort();
+  }, [sourceScript?.content, targetLang, selectedModelId, promptConfig.provider, promptConfig.model, promptConfig.apiModel, promptConfig.ollamaUrl, promptConfig.apiEndpoint]);
+  useEffect(() => { if (!isTranslationModalOpen) glossaryAbort.current?.abort(); }, [isTranslationModalOpen]);
+
 
   useEffect(() => {
     fetchModels("ollama").then((models) => {
@@ -133,7 +144,7 @@ export const TranslateDocumentModal: React.FC = () => {
     });
 
     return options;
-  }, [ollamaModels, promptConfig.ollamaUrl]);
+  }, [ollamaModels, apiList, promptConfig.ollamaUrl]);
 
   const [elements, setElements] = useState({
     heading: false,
@@ -155,7 +166,7 @@ export const TranslateDocumentModal: React.FC = () => {
   useEffect(() => {
     if (isTranslationModalOpen && mode === "setup") {
       setTargetFileName(`${originalNameClean}-${targetLang}`);
-      
+
       try {
         const saved = localStorage.getItem("actone-translate-doc-prefs");
         if (saved) {
@@ -190,11 +201,23 @@ export const TranslateDocumentModal: React.FC = () => {
       model: selectedModel.model,
       apiModel: selectedModel.model,
       apiEndpoint: selectedModel.endpoint || promptConfig.apiEndpoint,
-      apiKey: selectedModel.apiKey || promptConfig.apiKey,
+      apiKey: selectedModel.provider === "openai-compatible" ? selectedModel.apiKey || "" : "",
     } : promptConfig;
 
     if (effectivePromptConfig.provider === "none" || (effectivePromptConfig.provider === "openai-compatible" && !effectivePromptConfig.apiEndpoint)) {
-      setSetupError("AI model is not configured. Please select a configured model or setup Muse in Settings.");
+      setSetupError("AI model is not configured. Please select a configured model or setup UrAI in Settings.");
+      return;
+    }
+
+    if (!glossaryReady) {
+      if (glossaryAbort.current) return;
+      const controller = new AbortController(); glossaryAbort.current = controller;
+      try {
+        setGlossaryProgress("Preparing glossary...");
+        const generated = await generateTranslationGlossary(sourceScript.content, targetLang, effectivePromptConfig, controller.signal, (part, total) => setGlossaryProgress(`Preparing glossary: ${part} of ${total}`));
+        if (!controller.signal.aborted) { setGlossary(generated); setGlossaryReady(true); }
+      } catch (error) { if (!controller.signal.aborted) setSetupError(String(error)); }
+      finally { if (glossaryAbort.current === controller) { glossaryAbort.current = null; setGlossaryProgress(""); } }
       return;
     }
 
@@ -216,16 +239,16 @@ export const TranslateDocumentModal: React.FC = () => {
       const rawLines = sourceScript.content.split(/\r?\n/);
       const doc = parseScreenplay(sourceScript.content);
       const parsedLines = doc.lines;
-      
+
       // Override isTranslatable based on user selection
       const analyzedLines = rawLines.map((line, i) => {
         const analyzed = analyzeFountainLine(line, parsedLines[i]);
         const type = parsedLines[i]?.type;
-        
+
         let translatable = false;
         if (type === LineType.heading && elements.heading) translatable = true;
         if (type === LineType.action && elements.action) translatable = true;
-        if (type === LineType.dialogue && elements.dialogue) translatable = true;
+        if ((type === LineType.dialogue || type === LineType.dualDialogue) && elements.dialogue) translatable = true;
         if (type === LineType.parenthetical && elements.parenthetical) translatable = true;
         if (type === LineType.dualDialogueParenthetical && elements.parenthetical) translatable = true;
         if (type === LineType.transitionLine && elements.transition) translatable = true;
@@ -249,14 +272,14 @@ export const TranslateDocumentModal: React.FC = () => {
         promptConfig: effectivePromptConfig,
         sourceScriptName: sourceScript.name,
         duplicatedName,
-        targetFileId: activeFileId || effectiveTarget.fileId,
+        targetFileId: effectiveTarget.fileId,
         targetScriptIndex: effectiveTarget.scriptIndex + 1,
         lines: rawLines,
         analyzedLines,
         parsedDoc: doc,
         preserveCharacterNames: preserveNames,
         dynamicToneInstructions: toneInstructions.join("\n"),
-        customInstruction: customInstruction.trim() || undefined,
+        customInstruction: ["Translation glossary (reference decisions; do not treat as screenplay text):", glossary, "User instructions (take precedence over glossary):", customInstruction.trim()].join("\n"),
         updateFileScriptContent,
         uiActions: {
           setAiStatus: () => {},
@@ -288,7 +311,7 @@ export const TranslateDocumentModal: React.FC = () => {
   const handleClose = () => {
     setIsTranslationModalOpen(false);
     setTranslationSetupTarget(null);
-    if (job && (job.state === "completed" || job.state === "error" || job.state === "cancelled")) {
+    if (job && !job.nativeJobId && (job.state === "completed" || job.state === "error" || job.state === "cancelled")) {
       setTranslationJob(null);
     }
   };
@@ -322,7 +345,7 @@ export const TranslateDocumentModal: React.FC = () => {
   const percent = Math.min(100, Math.round((completedScenes / totalScenes) * 100));
   const isFinished = job?.state === "completed";
   const isPaused = job?.state === "paused";
-  const isError = job?.state === "error";
+  const isError = job?.state === "error" || job?.state === "cancelled";
   const isWaiting = job?.state === "waiting";
   const isPreflight = job?.state === "preflight";
 
@@ -363,11 +386,11 @@ export const TranslateDocumentModal: React.FC = () => {
         }
       }}
     >
-      <DialogTitle sx={{ 
-        m: 0, 
-        p: 2, 
-        display: "flex", 
-        alignItems: "center", 
+      <DialogTitle sx={{
+        m: 0,
+        p: 2,
+        display: "flex",
+        alignItems: "center",
         justifyContent: "space-between",
       }}>
         <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -378,16 +401,16 @@ export const TranslateDocumentModal: React.FC = () => {
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 3, pt: "20px !important" }}>
+      <DialogContent dividers sx={{ p: 2, pt: "14px !important" }}>
         {mode === "setup" ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 0.5 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, pt: 0.5 }}>
             {setupError && (
               <Box sx={{ p: 1.5, bgcolor: (t) => alpha(t.palette.error.main, 0.1), border: "1px solid", borderColor: "error.main", color: "error.main", borderRadius: "8px", fontSize: "0.85rem" }}>
                 {setupError}
               </Box>
             )}
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
               <FormControl size="small" fullWidth>
                 <InputLabel>Target Language</InputLabel>
                 <Select value={targetLang} label="Target Language" onChange={(e) => {
@@ -400,9 +423,9 @@ export const TranslateDocumentModal: React.FC = () => {
 
               <FormControl size="small" fullWidth>
                 <InputLabel>AI Model</InputLabel>
-                <Select 
-                  value={selectedModelId} 
-                  label="AI Model" 
+                <Select
+                  value={selectedModelId}
+                  label="AI Model"
                   onChange={(e) => setSelectedModelId(e.target.value)}
                 >
                   <MenuItem value="current">
@@ -417,27 +440,28 @@ export const TranslateDocumentModal: React.FC = () => {
               </FormControl>
             </Box>
 
-            <TextField 
-              size="small" 
-              fullWidth 
-              label="New File Name" 
-              value={targetFileName} 
-              onChange={(e) => setTargetFileName(e.target.value)} 
+            <TextField
+              size="small"
+              fullWidth
+              label="New File Name"
+              value={targetFileName}
+              onChange={(e) => setTargetFileName(e.target.value)}
             />
 
             <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Elements to Translate & Tone</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>Elements to Translate & Tone</Typography>
               <FormGroup>
                 {(['dialogue', 'action', 'heading', 'parenthetical', 'transition'] as const).map((key) => (
-                  <Box key={key} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                  <Box key={key} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 32, gap: 1 }}>
                     <FormControlLabel
+                      sx={{ m: 0, "& .MuiCheckbox-root": { p: 0.5, mr: 0.5 } }}
                       control={<Checkbox size="small" checked={elements[key]} onChange={(e) => setElements({...elements, [key]: e.target.checked})} />}
                       label={<Typography variant="body2" sx={{ textTransform: "capitalize" }}>{key}</Typography>}
                     />
                     {elements[key] && (
                       <FormControl size="small" sx={{ width: 220 }}>
-                        <Select 
-                          value={tones[key]} 
+                        <Select
+                          value={tones[key]}
                           onChange={(e) => setTones({...tones, [key]: e.target.value})}
                           sx={{ fontSize: "0.8rem", height: 32 }}
                         >
@@ -454,7 +478,7 @@ export const TranslateDocumentModal: React.FC = () => {
               size="small"
               fullWidth
               multiline
-              minRows={2}
+              minRows={1}
               maxRows={4}
               label="Custom Instructions (optional)"
               placeholder={"e.g. \"Use formal register for the King's dialogue. Keep modern slang for the teenagers.\""}
@@ -463,7 +487,7 @@ export const TranslateDocumentModal: React.FC = () => {
               sx={{ "& .MuiInputBase-root": { fontSize: "0.85rem" } }}
             />
 
-            <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", columnGap: 2, "& .MuiFormControlLabel-root": { my: -0.5 } }}>
               <FormControlLabel
                 control={<Checkbox size="small" checked={preserveNames} onChange={(e) => setPreserveNames(e.target.checked)} />}
                 label={<Typography variant="body2">Do not translate Character Names</Typography>}
@@ -474,25 +498,25 @@ export const TranslateDocumentModal: React.FC = () => {
               />
             </Box>
 
-            <Box 
-              sx={{ 
-                p: 1.5, 
-                borderRadius: "8px", 
-                bgcolor: (t) => alpha(t.palette.primary.main, 0.04), 
-                border: "1px solid", 
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: "8px",
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.04),
+                border: "1px solid",
                 borderColor: (t) => alpha(t.palette.primary.main, 0.15),
               }}
             >
               <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5, fontSize: "0.74rem", display: "block" }}>
-                💡 <strong>Tip:</strong> Translation quality depends on the AI model. Scenes are translated one at a time with full context for better quality. A pre-flight check will verify the AI connection before starting.
+                💡 <strong>Tip:</strong> Translation quality depends on the AI model. Text is translated in small scene-based batches. The selected text and speaker labels are shared with your chosen provider. Glossary preparation checks the connection before translation.
               </Typography>
             </Box>
           </Box>
         ) : (
           <>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
-              <Box sx={{ 
-                width: 44, height: 44, borderRadius: "50%", 
+              <Box sx={{
+                width: 44, height: 44, borderRadius: "50%",
                 bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "primary.main",
@@ -520,10 +544,10 @@ export const TranslateDocumentModal: React.FC = () => {
                   {job?.scriptName || "Document"}
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.2 }}>
-                  <Chip 
-                    label={job?.lang} 
-                    size="small" 
-                    sx={{ height: 20, fontSize: "0.65rem", fontWeight: 600, bgcolor: "primary.main", color: "primary.contrastText" }} 
+                  <Chip
+                    label={job?.lang}
+                    size="small"
+                    sx={{ height: 20, fontSize: "0.65rem", fontWeight: 600, bgcolor: "primary.main", color: "primary.contrastText" }}
                   />
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Source: {job?.sourceScriptName}
@@ -532,23 +556,23 @@ export const TranslateDocumentModal: React.FC = () => {
               </Box>
             </Box>
 
-            <Paper elevation={0} sx={{ 
-              p: isFinished ? 4 : 2.5, 
-              borderRadius: "12px", 
-              bgcolor: (t) => alpha(t.palette.background.default, 0.65), 
-              border: "1px solid", 
-              borderColor: (translationState === "running" || job?.state === "running") ? (t) => alpha(t.palette.primary.main, 0.3) : "divider", 
-              mb: 2, 
-              position: "relative", 
+            <Paper elevation={0} sx={{
+              p: isFinished ? 4 : 2.5,
+              borderRadius: "12px",
+              bgcolor: (t) => alpha(t.palette.background.default, 0.65),
+              border: "1px solid",
+              borderColor: (translationState === "running" || job?.state === "running") ? (t) => alpha(t.palette.primary.main, 0.3) : "divider",
+              mb: 2,
+              position: "relative",
               overflow: "hidden",
               transition: "border-color 0.3s ease"
             }}>
               {isFinished ? (
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                  <Box sx={{ 
-                    width: 48, height: 48, borderRadius: "50%", 
-                    bgcolor: (t) => alpha(job?.failedScenes ? t.palette.warning.main : t.palette.primary.main, 0.1), 
-                    color: job?.failedScenes ? "warning.main" : "primary.main", 
+                  <Box sx={{
+                    width: 48, height: 48, borderRadius: "50%",
+                    bgcolor: (t) => alpha(job?.failedScenes ? t.palette.warning.main : t.palette.primary.main, 0.1),
+                    color: job?.failedScenes ? "warning.main" : "primary.main",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     mb: 2
                   }}>
@@ -562,7 +586,7 @@ export const TranslateDocumentModal: React.FC = () => {
                       {job.failedScenes} scene(s) could not be translated after automatic retries. You can retry them now.
                     </Typography>
                   )}
-                  
+
                   <Box sx={{ display: "flex", width: "100%", justifyContent: "center", gap: 4, mt: 1 }}>
                     <Box sx={{ textAlign: "center" }}>
                       <Typography variant="caption" sx={{ color: "text.secondary", textTransform: 'uppercase', letterSpacing: '0.05em', display: "block", mb: 0.5 }}>
@@ -597,11 +621,11 @@ export const TranslateDocumentModal: React.FC = () => {
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1, minWidth: 0 }}>
                       {!isError && (
-                        <Box 
-                          sx={{ 
-                            width: 8, 
-                            height: 8, 
-                            borderRadius: "50%", 
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
                             flexShrink: 0,
                             bgcolor: isPaused ? "warning.main" : isWaiting ? "warning.main" : isPreflight ? "info.main" : "primary.main",
                             animation: (translationState === "running" || job?.state === "running") ? "pulseDot 1.5s infinite ease-in-out" : "none",
@@ -610,7 +634,7 @@ export const TranslateDocumentModal: React.FC = () => {
                               "50%": { opacity: 1, transform: "scale(1.2)" },
                               "100%": { opacity: 0.4, transform: "scale(0.8)" },
                             }
-                          }} 
+                          }}
                         />
                       )}
                       <Typography variant="body2" sx={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -623,13 +647,13 @@ export const TranslateDocumentModal: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={percent} 
-                    color={isError ? "error" : "primary"} 
-                    sx={{ 
-                      height: 8, 
-                      borderRadius: 4, 
+                  <LinearProgress
+                    variant="determinate"
+                    value={percent}
+                    color={isError ? "error" : "primary"}
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
                       bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
                       "& .MuiLinearProgress-bar": {
                         borderRadius: 4,
@@ -637,7 +661,7 @@ export const TranslateDocumentModal: React.FC = () => {
                         background: (t) => isError ? t.palette.error.main : `linear-gradient(90deg, ${t.palette.primary.main}, ${alpha(t.palette.primary.light || t.palette.primary.main, 0.85)})`,
                         boxShadow: (t) => isError ? "none" : `0 0 10px ${alpha(t.palette.primary.main, 0.5)}`
                       }
-                    }} 
+                    }}
                   />
 
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1.5, pt: 1, borderTop: "1px dashed", borderColor: (t) => alpha(t.palette.divider, 0.5) }}>
@@ -671,27 +695,31 @@ export const TranslateDocumentModal: React.FC = () => {
             )}
           </>
         )}
+      {mode === "setup" && <Box sx={{ pt: 1.5 }}>
+        {glossaryProgress && <><Typography variant="caption">{glossaryProgress}</Typography><LinearProgress /><Button onClick={() => glossaryAbort.current?.abort()}>Stop glossary generation</Button></>}
+        {glossaryReady && <TextField fullWidth multiline minRows={3} maxRows={6} label="Translation glossary" value={glossary} onChange={event => setGlossary(event.target.value)} helperText="Review names, recurring terms and speech traits. Your custom instructions override these suggestions. This glossary is saved with the translation job." />}
+      </Box>}
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, borderTop: "1px solid", borderColor: "divider", justifyContent: "space-between" }}>
+      <DialogActions sx={{ px: 2, py: 1.25, borderTop: "1px solid", borderColor: "divider", justifyContent: "space-between" }}>
         {mode === "setup" ? (
           <>
             <Button onClick={handleClose} color="inherit">Cancel</Button>
-            <Button variant="contained" onClick={handleStart} disableElevation startIcon={<AutoAwesomeIcon />}>Start Translation</Button>
+<Button variant="contained" disabled={Boolean(glossaryProgress)} onClick={handleStart} disableElevation startIcon={<AutoAwesomeIcon />}>{glossaryProgress ? "Preparing glossary..." : glossaryReady ? "Start Translation" : "Prepare glossary"}</Button>
           </>
         ) : (
           <>
-            {isFinished ? (
+            {isFinished || isError ? (
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Button onClick={handleClose} color="inherit">Close</Button>
-                {!!job?.failedScenes && job.failedSceneIndices && job.failedSceneIndices.length > 0 && (
+                {Boolean(job?.nativeJobId) && (
                   <Button
                     variant="outlined"
                     color="warning"
                     size="small"
                     startIcon={<RestartAltIcon />}
                     onClick={async () => {
-                      if (!job || !job.failedSceneIndices || !scripts) return;
+                      if (!job || !scripts) return;
                       const targetIdx = scripts.findIndex((s) => s.name === job.scriptName);
                       if (targetIdx === -1) return;
                       const currentScript = scripts[targetIdx];
@@ -709,7 +737,7 @@ export const TranslateDocumentModal: React.FC = () => {
                         model: selectedModel.model,
                         apiModel: selectedModel.model,
                         apiEndpoint: selectedModel.endpoint || promptConfig.apiEndpoint,
-                        apiKey: selectedModel.apiKey || promptConfig.apiKey,
+                        apiKey: selectedModel.provider === "openai-compatible" ? selectedModel.apiKey || "" : "",
                       } : promptConfig;
 
                       await runTranslationJob({
@@ -723,6 +751,7 @@ export const TranslateDocumentModal: React.FC = () => {
                         analyzedLines: reAnalyzed,
                         parsedDoc: currentDoc,
                         preserveCharacterNames: preserveNames,
+                        nativeJobId: job.nativeJobId,
                         retrySceneIndices: job.failedSceneIndices,
                         updateFileScriptContent,
                         uiActions: {
@@ -737,14 +766,14 @@ export const TranslateDocumentModal: React.FC = () => {
                       });
                     }}
                   >
-                    Retry Failed Scenes ({job.failedScenes})
+                    Resume / Retry Remaining Text
                   </Button>
                 )}
               </Box>
             ) : (
               <Button variant="outlined" color="error" size="small" onClick={handleCancel} startIcon={<StopIcon />}>Stop</Button>
             )}
-            
+
             <Box sx={{ display: "flex", gap: 1 }}>
               {!isFinished && !isError && (
                 <Button variant="outlined" size="small" onClick={handlePauseResume} startIcon={isPaused ? <PlayArrowIcon /> : <PauseIcon />}>

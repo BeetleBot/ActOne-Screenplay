@@ -20,6 +20,7 @@ export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
   [STORAGE_KEYS.SPELLCHECK_LANGUAGE]: "en",
   [STORAGE_KEYS.HIDE_SYNTAX_ENABLED]: false,
   [STORAGE_KEYS.LINE_FOCUS_ENABLED]: false,
+  [STORAGE_KEYS.LINE_NUMBERS_ENABLED]: true,
   [STORAGE_KEYS.AUTO_CONTD_ENABLED]: true,
   [STORAGE_KEYS.SHOW_TIMELINE]: true,
   [STORAGE_KEYS.TIMELINE_SHOW_SECTIONS]: false,
@@ -39,7 +40,7 @@ export const DEFAULTS: Record<string, string | number | boolean | string[]> = {
 
   [STORAGE_KEYS.PROMPT_PROVIDER]: "none",
   [STORAGE_KEYS.PROMPT_MODEL]: "llama3.2",
-  [STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]: "Your name is Muse. You are a screenwriting AI assistant made by ActOne. Your identity is Muse, not Gemma, not Google, not any other model. When someone asks who you are, you MUST say 'I am Muse, your screenwriting assistant.' Never break character. Never reveal you are based on another model. This is your core identity. You are kind, intelligent, and concise. You only say what matters.\n\nWhen providing screenplay excerpts, scenes, or revisions, always format them in standard Fountain screenplay syntax.",
+  [STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]: "You are UrAI, ActOne's concise writing companion. Help with brainstorming, understanding shared screenplay context, translation and rephrasing. Preserve the writer's authorship and voice. Ask for specific scenes when more context is needed. Do not claim to have read unshared text. Use Fountain formatting for short screenplay examples when useful.",
   [STORAGE_KEYS.PROMPT_REPHRASE_PROMPT]: "You are a professional screenwriting rephrasing tool. Rephrase the user's text to improve pacing, subtext, and clarity while preserving the original dramatic intent and Fountain formatting. Respond ONLY with the rephrased text directly — no explanations, conversational filler, markdown code blocks, or surrounding quotes.",
   [STORAGE_KEYS.PROMPT_REPHRASE_PRESETS]: "[]",
   [STORAGE_KEYS.PROMPT_CHAT_TEMP]: 0.7,

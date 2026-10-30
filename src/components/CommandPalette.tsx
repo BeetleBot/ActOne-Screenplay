@@ -8,7 +8,7 @@ import {
   NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon,
   SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon,
   ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon,
-  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon, MuseIcon, ViewAgendaIcon
+  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon, UrAIIcon, ViewAgendaIcon
 } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
@@ -82,7 +82,7 @@ interface CommandPaletteProps {
   onOpenThemeManagerModal: () => void;
   onOpenXrayModal?: () => void;
   onToggleSnapshotsPanel?: () => void;
-  onOpenMuseSettings?: () => void;
+  onOpenUrAISettings?: () => void;
   openTutorialsWindow?: () => void;
   onOpenAboutModal?: () => void;
   onOpenBugReportModal?: () => void;
@@ -145,6 +145,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     setZoomLevel,
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
+    lineNumbersEnabled, setLineNumbersEnabled,
     lineFocusEnabled,
     setLineFocusEnabled,
     spellcheckEnabled,
@@ -321,6 +322,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     ...(toggleSidebar ? [{ id: "view-toggle-sidebar", name: isSidebarOpen ? "Hide Sidebar" : "Show Sidebar", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+\\", action: () => { toggleSidebar(); onClose(); } }] : []),
     { id: "view-typewriter", name: typewriterMode ? "Disable Typewriter Mode" : "Enable Typewriter Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setTypewriterMode(!typewriterMode); onClose(); } },
     { id: "view-zen-mode", name: isZenMode ? "Disable Zen Mode" : "Enable Zen Mode", category: "View", icon: <FullscreenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Alt+Enter", action: () => { setIsZenMode(!isZenMode); onClose(); } },
+    { id: "view-line-numbers", name: lineNumbersEnabled ? "Hide Line Numbers" : "Show Line Numbers", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setLineNumbersEnabled(!lineNumbersEnabled); onClose(); } },
     { id: "view-focus-mode", name: lineFocusEnabled ? "Disable Focus Mode" : "Enable Focus Mode", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setLineFocusEnabled(!lineFocusEnabled); onClose(); } },
     { id: "view-zoom-in", name: "Zoom In", category: "View", icon: <ZoomInIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+=", action: () => { setZoomLevel(zoomLevel + 10); onClose(); } },
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
@@ -333,10 +335,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-snapshots", name: "Show Snapshots", category: "View", icon: <CameraIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+S", action: () => { onToggleSnapshotsPanel?.(); onClose(); } },
     ...(provider !== "none" ? [
       {
-        id: "view-muse-go",
-        name: activeRightPane === "prompt" ? "Hide Muse Go!" : "Show Muse Go!",
+        id: "view-urai-go",
+        name: activeRightPane === "prompt" ? "Hide UrAI" : "Show UrAI",
         category: "View",
-        icon: <MuseIcon sx={{ fontSize: 16 }} />,
+        icon: <UrAIIcon sx={{ fontSize: 16 }} />,
         shortcut: "Alt+M",
         action: () => {
           setActiveRightPane(activeRightPane === "prompt" ? null : "prompt");

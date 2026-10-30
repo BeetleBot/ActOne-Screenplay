@@ -11,36 +11,69 @@ pub fn generate(pages: Vec<String>) -> Result<Vec<u8>, String> {
     }
     let mut document = Document::new();
     for encoded in pages {
-        let bytes = base64::engine::general_purpose::STANDARD.decode(encoded)
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
             .map_err(|_| "An atlas page could not be decoded.")?;
         // Read dimensions before decoding image pixels, avoiding oversized image allocations.
-        let reader = image::ImageReader::with_format(std::io::Cursor::new(&bytes), image::ImageFormat::Png);
-        let (width, height) = reader.into_dimensions().map_err(|_| "An atlas page is not a valid PNG.")?;
+        let reader =
+            image::ImageReader::with_format(std::io::Cursor::new(&bytes), image::ImageFormat::Png);
+        let (width, height) = reader
+            .into_dimensions()
+            .map_err(|_| "An atlas page is not a valid PNG.")?;
         if width == 0 || height == 0 || width > 2000 || height > 3000 {
             return Err("An atlas page has unsupported dimensions.".into());
         }
-        let image = Image::from_png(bytes.into(), false).map_err(|_| "An atlas page could not be rendered.")?;
+        let image = Image::from_png(bytes.into(), false)
+            .map_err(|_| "An atlas page could not be rendered.")?;
         let mut page = document.start_page_with(PageSettings::from_wh(595.0, 841.5).unwrap());
         let mut surface = page.surface();
         surface.draw_image(image, Size::from_wh(595.0, 841.5).unwrap());
         surface.finish();
         page.finish();
     }
-    document.finish().map_err(|_| "The atlas PDF could not be created.".into())
+    document
+        .finish()
+        .map_err(|_| "The atlas PDF could not be created.".into())
 }
 
 #[tauri::command]
-pub async fn export_xray_pdf(pages: Vec<String>, file_name: String) -> Result<Option<String>, String> {
+pub async fn export_xray_pdf(
+    pages: Vec<String>,
+    file_name: String,
+) -> Result<Option<String>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let bytes = generate(pages)?;
-        let stem: String = file_name.chars().map(|c| if c.is_control() || "<>:\"/\\|?*".contains(c) { '_' } else { c }).take(100).collect();
-        let name = if stem.trim().is_empty() { "Untitled" } else { stem.trim() };
-        let Some(mut path) = rfd::FileDialog::new().add_filter("PDF analysis", &["pdf"])
-            .set_file_name(format!("{name} - X-Ray.pdf")).save_file() else { return Ok(None); };
+        let stem: String = file_name
+            .chars()
+            .map(|c| {
+                if c.is_control() || "<>:\"/\\|?*".contains(c) {
+                    '_'
+                } else {
+                    c
+                }
+            })
+            .take(100)
+            .collect();
+        let name = if stem.trim().is_empty() {
+            "Untitled"
+        } else {
+            stem.trim()
+        };
+        let Some(mut path) = rfd::FileDialog::new()
+            .add_filter("PDF analysis", &["pdf"])
+            .set_file_name(format!("{name} - X-Ray.pdf"))
+            .save_file()
+        else {
+            return Ok(None);
+        };
         path.set_extension("pdf");
-        crate::write_file_atomically(&path, bytes).map_err(|_| "The PDF could not be saved. Choose another location and try again.".to_string())?;
+        crate::write_file_atomically(&path, bytes).map_err(|_| {
+            "The PDF could not be saved. Choose another location and try again.".to_string()
+        })?;
         Ok(Some(path.to_string_lossy().into_owned()))
-    }).await.map_err(|_| "The PDF export could not finish.".to_string())?
+    })
+    .await
+    .map_err(|_| "The PDF export could not finish.".to_string())?
 }
 
 #[cfg(test)]

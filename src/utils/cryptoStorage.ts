@@ -1,6 +1,11 @@
+import { invoke } from "@tauri-apps/api/core";
 import type { ApiEntry } from "../constants";
 
 const PREFIX = "enc:v1:";
+const NATIVE_PREFIX = "secure:v1:";
+function nativeStorage() {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 const SALT_STORAGE_KEY = "actone-device-salt";
 
 let cachedKey: CryptoKey | null = null;
@@ -42,16 +47,10 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 
   const salt = getOrCreateDeviceSalt();
   const rawMaterial = new TextEncoder().encode(
-    "actone-secure-storage-v1-" + (typeof window !== "undefined" ? window.location.origin : "app")
+    "actone-secure-storage-v1-" + (typeof window !== "undefined" ? window.location.origin : "app"),
   );
 
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    rawMaterial,
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
+  const keyMaterial = await crypto.subtle.importKey("raw", rawMaterial, "PBKDF2", false, ["deriveKey"]);
 
   const derived = await crypto.subtle.deriveKey(
     {
@@ -63,7 +62,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
     keyMaterial,
     { name: "AES-GCM", length: 256 },
     false,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt"],
   );
 
   cachedKey = derived;
@@ -71,23 +70,24 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 }
 
 export function isEncrypted(value: string): boolean {
-  return typeof value === "string" && value.startsWith(PREFIX);
+  return typeof value === "string" && (value.startsWith(PREFIX) || value.startsWith(NATIVE_PREFIX));
 }
 
 export async function encryptApiKey(plaintext: string): Promise<string> {
   if (!plaintext || plaintext.trim() === "") return "";
   if (isEncrypted(plaintext)) return plaintext;
+  if (nativeStorage()) {
+    const id = crypto.randomUUID();
+    await invoke("urai_store_secret", { id, secret: plaintext });
+    return NATIVE_PREFIX + id;
+  }
 
   try {
     const key = await getEncryptionKey();
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const encoded = new TextEncoder().encode(plaintext);
 
-    const ciphertext = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
-      encoded
-    );
+    const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
 
     return `${PREFIX}${bufferToBase64(iv)}:${bufferToBase64(ciphertext)}`;
   } catch {
@@ -97,6 +97,9 @@ export async function encryptApiKey(plaintext: string): Promise<string> {
 
 export async function decryptApiKey(stored: string): Promise<string> {
   if (!stored || stored.trim() === "") return "";
+  if (stored.startsWith(NATIVE_PREFIX)) {
+    return invoke<string>("urai_read_secret", { id: stored.slice(NATIVE_PREFIX.length) });
+  }
   if (!isEncrypted(stored)) {
     return stored;
   }
@@ -113,7 +116,7 @@ export async function decryptApiKey(stored: string): Promise<string> {
     const decrypted = await crypto.subtle.decrypt(
       { name: "AES-GCM", iv: iv as BufferSource },
       key,
-      ciphertext as BufferSource
+      ciphertext as BufferSource,
     );
 
     return new TextDecoder().decode(decrypted);
@@ -128,7 +131,7 @@ export async function encryptApiList(list: ApiEntry[]): Promise<ApiEntry[]> {
       if (!entry.apiKey || isEncrypted(entry.apiKey)) return entry;
       const enc = await encryptApiKey(entry.apiKey);
       return { ...entry, apiKey: enc };
-    })
+    }),
   );
 }
 
@@ -138,6 +141,6 @@ export async function decryptApiList(list: ApiEntry[]): Promise<ApiEntry[]> {
       if (!entry.apiKey || !isEncrypted(entry.apiKey)) return entry;
       const dec = await decryptApiKey(entry.apiKey);
       return { ...entry, apiKey: dec };
-    })
+    }),
   );
 }

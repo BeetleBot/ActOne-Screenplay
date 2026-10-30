@@ -25,7 +25,7 @@ MyProject.actone
 ├── sprint_data.json               # Writing sprint history & statistics
 ├── production_tags.json           # Per-document scene/production tags
 ├── marker.json                    # Line markers
-└── muse.json                      # Muse AI prompt chat sessions
+└── urai.json                      # UrAI AI prompt chat sessions
 
 [4-byte magic header: "ACT1"]
 ```
@@ -79,9 +79,9 @@ All document-specific metadata (`notepad`, `todos`, `parking`, `genders`, `chara
 }
 ```
 
-### `muse.json`
+### `urai.json`
 
-Muse AI chat sessions stored in the bundle:
+UrAI AI chat sessions stored in the bundle:
 
 ```json
 {

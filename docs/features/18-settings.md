@@ -2,7 +2,7 @@
 
 **Window:** `?modal=settings` (`src/components/SettingsWindow.tsx`)
 
-Settings is a standalone Tauri window with five **pill-segmented tabs** (General / Editor / Spellcheck / Snapshots / Muse) — the tab bar is a soft inset track (`8px` radius) with the active tab shown as a paper pill with shadow. The transparent TitleBar uses minimal `28px` rounded window controls. All section cards are `8px` rounded. In browser dev mode it renders through the same URL param but native window behavior is unavailable.
+Settings is a standalone Tauri window with five **pill-segmented tabs** (General / Editor / Spellcheck / Snapshots / UrAI) — the tab bar is a soft inset track (`8px` radius) with the active tab shown as a paper pill with shadow. The transparent TitleBar uses minimal `28px` rounded window controls. All section cards are `8px` rounded. In browser dev mode it renders through the same URL param but native window behavior is unavailable.
 
 ## General
 
@@ -48,7 +48,7 @@ Settings is a standalone Tauri window with five **pill-segmented tabs** (General
 | Snapshot Info | Note that snapshots live in the project's `.snapshots/` folder + **Open Snapshots Folder** pill button (`6px`) |
 | Background | Periodic auto-snapshots and snapshot-on-save are configured separately; Max Retention (auto/on_save snapshots to keep) |
 
-## Muse
+## UrAI
 
 | Setting | Description |
 |---------|-------------|
@@ -59,10 +59,10 @@ Settings is a standalone Tauri window with five **pill-segmented tabs** (General
 | Rephrase Temperature | Slider 0.0-1.0, default 0.1 |
 | Translate Temperature | Slider 0.0-1.0, default 0.1 |
 | Translate Languages | Languages shown in the editor Translate menu |
-| Custom Instructions | General Muse prompt, rephrase presets, and translation instructions |
+| Custom Instructions | General UrAI prompt, rephrase presets, and translation instructions |
 | Fountain Rules | Read-only display of rules added to writing prompts |
 
-The current chat composer is a pill input (`20px` radius) with a pill send button and streaming indicator. It does not provide `@write-scene`, `@q`, `@lookup`, or `@synonyms` command autocomplete. Users enter normal-language requests in Muse chat.
+The current chat composer is a pill input (`20px` radius) with a pill send button and streaming indicator. It does not provide `@write-scene`, `@q`, `@lookup`, or `@synonyms` command autocomplete. Users enter normal-language requests in UrAI chat.
 
 ### OpenAI-compatible entries
 
@@ -79,4 +79,4 @@ The endpoint is sent as entered. ActOne does not append `/chat/completions` auto
 
 The default URL is `http://localhost:11434`. The Settings window checks Ollama availability and loads model names from the server.
 
-See `features/21-muse.md` for provider behavior, chat sessions, tool execution, persistence, and privacy details.
+See `features/21-urai.md` for provider behavior, chat sessions, tool execution, persistence, and privacy details.

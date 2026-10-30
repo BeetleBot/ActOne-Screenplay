@@ -83,8 +83,8 @@ function formatTurnMetadata(turn: ChatTurn) {
 
   return {
     fullDate: `${timeStr} • ${dateStr}`,
-    model: turn.model || "Muse",
-    tokens: `${calculatedTokens.toLocaleString()} tokens`,
+    model: turn.model || "UrAI",
+    tokens: `${turn.inputTokens === undefined ? "~" : ""}${calculatedTokens.toLocaleString()} output tokens${turn.inputTokens === undefined ? " (estimate)" : ` · ${turn.inputTokens.toLocaleString()} input tokens`}`,
   };
 }
 
@@ -199,7 +199,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <AutoAwesomeIcon sx={{ fontSize: 12, color: "primary.main" }} />
           <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.65rem", color: "primary.main", letterSpacing: "0.06em" }}>
-            MUSE
+            UrAI
           </Typography>
         </Box>
         {hasContent && (
@@ -244,7 +244,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
             }}
           >
             <span style={{ fontSize: "0.6rem" }}>{stepsOpen ? "▼" : "▶"}</span>
-            <span>Muse used {stepCount} step{stepCount !== 1 ? "s" : ""}</span>
+            <span>UrAI used {stepCount} step{stepCount !== 1 ? "s" : ""}</span>
           </Box>
 
           {stepsOpen && (

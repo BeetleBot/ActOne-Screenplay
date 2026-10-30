@@ -53,7 +53,7 @@ Manages UI chrome state and editor preferences:
 | `lineFocusEnabled` | `boolean` | Focus on active line |
 | `fountainColorsEnabled` | `boolean` | Toggle syntax coloring |
 | `iconStyle` | `'fill' \| 'duotone' \| 'regular'` | Phosphor icon weight |
-| `aiStatus` | `string` | Muse/provider status indicator |
+| `aiStatus` | `string` | UrAI/provider status indicator |
 | `translationState` | `'idle' \| 'running' \| 'paused' \| 'cancelled'` | Scene translation state |
 
 ### FileContext (`src/context/FileContext.tsx`)
@@ -131,7 +131,7 @@ Bridges CodeMirror state to React and provides text manipulation actions:
 
 ### CursorContext (`src/context/CursorContext.tsx`)
 
-Provides live cursor and selection state read by the status bar and scene-aware features (X-Ray, Muse, launch bar):
+Provides live cursor and selection state read by the status bar and scene-aware features (X-Ray, UrAI, launch bar):
 
 | State | Type | Description |
 |-------|------|-------------|

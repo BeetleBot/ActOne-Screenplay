@@ -4,15 +4,29 @@
 pub fn is_indic_combining(c: char) -> bool {
     let code = c as u32;
     // Devanagari: 0x0901..=0x0903, 0x093C, 0x093E..=0x094F, 0x0951..=0x0957, 0x0962..=0x0963
-    if (0x0901..=0x0903).contains(&code) || code == 0x093C || (0x093E..=0x094F).contains(&code) || (0x0951..=0x0957).contains(&code) || (0x0962..=0x0963).contains(&code) {
+    if (0x0901..=0x0903).contains(&code)
+        || code == 0x093C
+        || (0x093E..=0x094F).contains(&code)
+        || (0x0951..=0x0957).contains(&code)
+        || (0x0962..=0x0963).contains(&code)
+    {
         return true;
     }
     // Bengali: 0x0981..=0x0983, 0x09BC, 0x09BE..=0x09CD, 0x09D7, 0x09E2..=0x09E3
-    if (0x0981..=0x0983).contains(&code) || code == 0x09BC || (0x09BE..=0x09CD).contains(&code) || code == 0x09D7 || (0x09E2..=0x09E3).contains(&code) {
+    if (0x0981..=0x0983).contains(&code)
+        || code == 0x09BC
+        || (0x09BE..=0x09CD).contains(&code)
+        || code == 0x09D7
+        || (0x09E2..=0x09E3).contains(&code)
+    {
         return true;
     }
     // Gurmukhi: 0x0A01..=0x0A03, 0x0A3C, 0x0A3E..=0x0A4D, 0x0A70..=0x0A71
-    if (0x0A01..=0x0A03).contains(&code) || code == 0x0A3C || (0x0A3E..=0x0A4D).contains(&code) || (0x0A70..=0x0A71).contains(&code) {
+    if (0x0A01..=0x0A03).contains(&code)
+        || code == 0x0A3C
+        || (0x0A3E..=0x0A4D).contains(&code)
+        || (0x0A70..=0x0A71).contains(&code)
+    {
         return true;
     }
     // Gujarati: 0x0A81..=0x0A83, 0x0ABC, 0x0ABE..=0x0ACD
@@ -20,7 +34,11 @@ pub fn is_indic_combining(c: char) -> bool {
         return true;
     }
     // Oriya: 0x0B01..=0x0B03, 0x0B3C, 0x0B3E..=0x0B4D, 0x0B56..=0x0B57
-    if (0x0B01..=0x0B03).contains(&code) || code == 0x0B3C || (0x0B3E..=0x0B4D).contains(&code) || (0x0B56..=0x0B57).contains(&code) {
+    if (0x0B01..=0x0B03).contains(&code)
+        || code == 0x0B3C
+        || (0x0B3E..=0x0B4D).contains(&code)
+        || (0x0B56..=0x0B57).contains(&code)
+    {
         return true;
     }
     // Tamil: 0x0B82, 0x0BBE..=0x0BCD, 0x0BD7
@@ -28,15 +46,26 @@ pub fn is_indic_combining(c: char) -> bool {
         return true;
     }
     // Telugu: 0x0C00..=0x0C03, 0x0C3E..=0x0C4D, 0x0C55..=0x0C56
-    if (0x0C00..=0x0C03).contains(&code) || (0x0C3E..=0x0C4D).contains(&code) || (0x0C55..=0x0C56).contains(&code) {
+    if (0x0C00..=0x0C03).contains(&code)
+        || (0x0C3E..=0x0C4D).contains(&code)
+        || (0x0C55..=0x0C56).contains(&code)
+    {
         return true;
     }
     // Kannada: 0x0C81..=0x0C83, 0x0CBC, 0x0CBE..=0x0CCD, 0x0CD5..=0x0CD6
-    if (0x0C81..=0x0C83).contains(&code) || code == 0x0CBC || (0x0CBE..=0x0CCD).contains(&code) || (0x0CD5..=0x0CD6).contains(&code) {
+    if (0x0C81..=0x0C83).contains(&code)
+        || code == 0x0CBC
+        || (0x0CBE..=0x0CCD).contains(&code)
+        || (0x0CD5..=0x0CD6).contains(&code)
+    {
         return true;
     }
     // Malayalam: 0x0D00..=0x0D03, 0x0D3B..=0x0D3C, 0x0D3E..=0x0D4D, 0x0D57
-    if (0x0D00..=0x0D03).contains(&code) || (0x0D3B..=0x0D3C).contains(&code) || (0x0D3E..=0x0D4D).contains(&code) || code == 0x0D57 {
+    if (0x0D00..=0x0D03).contains(&code)
+        || (0x0D3B..=0x0D3C).contains(&code)
+        || (0x0D3E..=0x0D4D).contains(&code)
+        || code == 0x0D57
+    {
         return true;
     }
     false

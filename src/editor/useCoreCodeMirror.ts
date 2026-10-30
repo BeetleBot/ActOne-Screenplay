@@ -1,7 +1,8 @@
+import { edgeLineNumbers } from "./edgeLineNumbers";
 import { searchHighlightPlugin } from "./searchHighlights";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { EditorState, RangeSetBuilder, Extension, Compartment, type Text } from "@codemirror/state";
-import { EditorView, ViewPlugin, ViewUpdate, keymap, placeholder, layer, RectangleMarker, Decoration, DecorationSet } from "@codemirror/view";
+import { EditorView, lineNumbers, highlightActiveLineGutter, ViewPlugin, ViewUpdate, keymap, placeholder, layer, RectangleMarker, Decoration, DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, redo } from "@codemirror/commands";
 import { search } from "@codemirror/search";
 import { useDocumentText, useFileActions, useWorkspaceMetadata, useParsedScreenplay, useUI, useEditor, useCursor } from "../context";
@@ -16,6 +17,7 @@ import DiffMatchPatch from "diff-match-patch";
 import { readEditorPosition, trackEditorPosition, type EditorPositionSession } from "../utils/editorPosition";
 import { registerPendingEditor } from "./pendingEdits";
 import type { DocumentTarget } from "../context/FileContext";
+const lineNumbersCompartment = new Compartment();
 export const readOnlyCompartment = new Compartment();
 
 let scriptSwitchToken = 0;
@@ -86,6 +88,15 @@ export const editorTheme = EditorView.theme({
     border: "none !important",
     userSelect: "none",
   },
+  ".cm-lineNumbers": { position: "absolute", left: "var(--line-number-edge, 0px)", top: "0", pointerEvents: "auto" },
+  ".cm-lineNumbers .cm-gutterElement.cm-activeLineGutter": {
+    color: "var(--editor-text, var(--text-main)) !important",
+    backgroundColor: "var(--selection-bg, rgba(128, 128, 128, 0.2))",
+    fontWeight: "700",
+    borderRadius: "4px",
+    boxShadow: "inset 2px 0 currentColor",
+  },
+  ".cm-lineNumbers .cm-gutterElement": { color: "var(--text-secondary, #888)", fontSize: "11px", padding: "0 8px", minWidth: "36px", justifyContent: "flex-end !important" },
   ".cm-gutter": {
     minWidth: "16px",
   },
@@ -182,11 +193,13 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
   const { setRawText } = useFileActions();
   const { activeScriptIndex, activeFileId, scriptFileName, filePath } = useWorkspaceMetadata();
   const parsedDoc = useParsedScreenplay();
-  const { typewriterMode, lineFocusEnabled, isZenMode, spellcheckEnabled, translationState, translatingTarget } = useUI();
+  const { typewriterMode, lineNumbersEnabled, lineFocusEnabled, isZenMode, spellcheckEnabled, translationState, translatingTarget } = useUI();
+  useEffect(() => { viewRef.current?.dispatch({ effects: lineNumbersCompartment.reconfigure(lineNumbersEnabled ? [lineNumbers(), highlightActiveLineGutter()] : []) }); }, [lineNumbersEnabled]);
+
   const { setEditorView } = useEditor();
   const { setActiveLineNumber } = useCursor();
   
-  const isScriptTranslating = translationState === "running" && translatingTarget?.fileId === activeFileId && translatingTarget?.scriptIndex === activeScriptIndex;
+  const isScriptTranslating = (translationState === "running" || translationState === "paused") && translatingTarget?.fileId === activeFileId && translatingTarget?.scriptIndex === activeScriptIndex;
   
   const lastScriptKeyRef = useRef("");
   const currentScriptKey = `${activeFileId}::${scriptFileName || activeScriptIndex}`;
@@ -300,6 +313,8 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
 
     const extensions = [
       history(),
+      edgeLineNumbers,
+      lineNumbersCompartment.of(lineNumbersEnabled ? [lineNumbers(), highlightActiveLineGutter()] : []),
       cursorLayer,
       ...extraExtensions,
       activeLineAlwaysPlugin,

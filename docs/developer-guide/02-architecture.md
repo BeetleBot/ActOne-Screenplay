@@ -12,12 +12,12 @@ flowchart TD
     Windows --> Standalone[Settings, Help, X-Ray, Tutorials, Theme Manager, Crash]
     Main --> Layout[MainLayout]
     Layout --> Editor[FountainEditor + CodeMirror 6]
-    Layout --> Panels[Sidebar, Search, Muse, Status Bar]
+    Layout --> Panels[Sidebar, Search, UrAI, Status Bar]
     Main --> Contexts[React Context state domains]
     Main --> Parser[Frontend Fountain parser]
     Parser --> Worker[Parser worker / async parser]
     Main --> Index[Scene indexer]
-    Main --> AI[Muse providers and JSON tool loop]
+    Main --> AI[UrAI providers and JSON tool loop]
     Main --> IPC[Tauri commands and events]
     Standalone --> IPC
     IPC --> Rust[Rust backend]
@@ -41,13 +41,13 @@ ActOneCode/
 │   ├── App.tsx                  Main editor root and global event wiring
 │   ├── components/              Feature and layout components
 │   │   ├── layout/              MainLayout, Workspace, HeaderBar, ActivityBar, StatusBar
-│   │   ├── ai/                  Muse composer, messages, and Fountain blocks
+│   │   ├── ai/                  UrAI composer, messages, and Fountain blocks
 │   │   ├── FountainEditor.tsx   CodeMirror editor shell
 │   │   └── ...
 │   ├── context/                 React Context providers and domain actions
 │   ├── editor/                  CodeMirror extensions and editor helpers
-│   ├── hooks/                   Application hooks, Muse hooks, and window hooks
-│   ├── lib/                     AI providers and Muse tool handlers
+│   ├── hooks/                   Application hooks, UrAI hooks, and window hooks
+│   ├── lib/                     AI providers and UrAI tool handlers
 │   ├── parser/                  Frontend Fountain parser
 │   ├── theme/                   Theme and application preference engines
 │   ├── utils/                   Archives, parser bridge, indexing, text, and diagnostics
@@ -76,7 +76,7 @@ ActOneCode/
 | Query | Component | Purpose |
 |---|---|---|
 | none | `App` | Main editor window |
-| `?modal=settings` | `SettingsWindow` | General, editor, spellcheck, snapshot, and Muse settings |
+| `?modal=settings` | `SettingsWindow` | General, editor, spellcheck, snapshot, and UrAI settings |
 | `?modal=help` | `HelpWindow` | Searchable in-app help guide |
 | `?modal=theme-manager` | `ThemeManagerWindow` | Custom theme editor |
 | `?modal=xray` | `XrayWindow` | Screenplay analysis and character profiles |
@@ -131,7 +131,7 @@ App
               TitlePageEditorModal
 ```
 
-The right pane can display search or Muse. Muse is provided by `MusePanel` in `Workspace` and is not a separate Tauri window. (Ambient audio was removed in v0.4.19 — commit `ed45a8b`.)
+The right pane can display search or UrAI. UrAI is provided by `UrAIPanel` in `Workspace` and is not a separate Tauri window. (Ambient audio was removed in v0.4.19 — commit `ed45a8b`.)
 
 ## State Domains
 
@@ -155,20 +155,20 @@ CodeMirror owns the live editor view. `useCodeMirror.ts` retains editor state pe
 
 Text changes are normalized to LF. Parsing is debounced and uses `src/utils/asyncParser.ts` and `src/workers/parserWorker.ts` for the asynchronous path. The frontend parser classifies Fountain lines and supplies title-page, scene, character, dialogue, marker, section, synopsis, and formatting information.
 
-`sceneIndexer.ts` builds a structured scene and character index for Muse and analysis views. Scene IDs in the current Muse tool protocol are ordinal scene indexes, not guaranteed to equal printed Fountain scene numbers.
+`sceneIndexer.ts` builds a structured scene and character index for UrAI and analysis views. Scene IDs in the current UrAI tool protocol are ordinal scene indexes, not guaranteed to equal printed Fountain scene numbers.
 
-## Muse Architecture
+## UrAI Architecture
 
-Muse has four layers:
+UrAI has four layers:
 
 1. `usePromptConfig()` reads provider configuration and model preferences.
-2. `aiProviders.ts` streams OpenAI-compatible SSE or Ollama responses.
-3. `useAIChat.ts` manages file-scoped sessions, prompt context, streaming, and the tool loop.
+2. `src-tauri/src/urai/provider.rs` streams OpenAI-compatible SSE or Ollama responses; `src/lib/urai.ts` bridges native requests.
+3. `useAIChat.ts` presents native conversations, explicit context sharing, and streaming. Rust owns the bounded read-tool loop.
 4. `aiTools.ts` declares and executes screenplay read, analysis, drafting, metadata, and X-Ray tools.
 
 The current tool protocol is JSON/text based. `replace_scene` creates a pending review card; other current mutating tools may apply immediately through settings or editor callbacks.
 
-Muse context can include the screenplay index, active scene lines, todos, parking notes, and character profiles. Provider selection determines whether that content leaves the device. See `docs/features/21-muse.md` and `PRIVACY.md`.
+UrAI context can include the screenplay index, active scene lines, todos, parking notes, and character profiles. Provider selection determines whether that content leaves the device. See `docs/features/21-urai.md` and `PRIVACY.md`.
 
 ## Tauri Backend Boundary
 

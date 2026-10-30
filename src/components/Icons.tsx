@@ -133,8 +133,8 @@ export const RobotIcon: React.FC<IconProps> = (props) => {
   );
 };
 
-/* ── Faceted Geometric Star Icon for Muse ── */
-export const MuseIcon: React.FC<IconProps> = (props) => {
+/* ── Faceted Geometric Star Icon for UrAI ── */
+export const UrAIIcon: React.FC<IconProps> = (props) => {
   return (
     <SvgIcon viewBox="0 0 24 24" fill="none" {...props}>
       <path

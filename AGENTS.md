@@ -10,7 +10,7 @@ Cross-platform screenplay editor (Windows WebView2 & Linux webkitgtk) using Reac
 - **UI Guidelines**: Do NOT use left-side vertical colored accent lines/bars on scene items in Outline View or lists.
 - **React/TS**: Use named exports, `interface` for objects, `type` for unions. Store cross-event state in React state + `useRef`. Icons belong in `src/components/Icons.tsx`. Fonts are bundled in `fonts.css`.
 - **Tauri & Cross-Platform**: Guard Tauri API calls with `typeof window !== "undefined" && "__TAURI_INTERNALS__" in window`. Use `Path`/`PathBuf` in Rust. Normalize `\r\n` to `\n` on text read. Use `e.key` and `e.ctrlKey || e.metaKey` for keyboard shortcuts.
-- **Muse AI**: Tools defined in `src/lib/aiTools.ts` & `src/hooks/useAIChat.ts`. Single JSON tool protocol. Treat model input/output as untrusted.
+- **UrAI AI**: Tools defined in `src/lib/aiTools.ts` & `src/hooks/useAIChat.ts`. Single JSON tool protocol. Treat model input/output as untrusted.
 - **Updating Help Articles and Documentation:** Keep documentation and help content strictly up-to-date after every feature addition, removal, or behavior change:
   - `docs/` is written specifically for **developers** and technical contributors; keep it architecturally accurate, actionable, and usable for engineering work.
   - `src/data/helpArticles.tsx` and any other user-facing help files (e.g. `src/constants/shortcuts.ts` quick reference/syntax guides) are written for **end users and writers**; explain features clearly and practically without technical jargon, internal implementation details, or codebase terminology.

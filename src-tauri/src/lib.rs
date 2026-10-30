@@ -105,6 +105,7 @@ pub mod pdf;
 mod snapshots;
 mod spellcheck;
 mod structures;
+mod urai;
 mod xray_pdf;
 
 #[tauri::command]
@@ -146,9 +147,14 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
         Some("fountain") => {
             dialog = dialog.add_filter("Fountain (.fountain, .txt)", &["fountain", "txt"]);
         }
-        Some("canvas") => { dialog = dialog.add_filter("Canvas", &["excalidraw"]); }
+        Some("canvas") => {
+            dialog = dialog.add_filter("Canvas", &["excalidraw"]);
+        }
         Some("markdown") => {
-            dialog = dialog.add_filter("Markdown (.md, .markdown, .txt)", &["md", "markdown", "txt"]);
+            dialog = dialog.add_filter(
+                "Markdown (.md, .markdown, .txt)",
+                &["md", "markdown", "txt"],
+            );
         }
         _ => {
             dialog = dialog
@@ -160,7 +166,10 @@ fn import_script_dialog(format: Option<String>) -> Option<serde_json::Value> {
                 .add_filter("Final Draft (.fdx)", &["fdx"])
                 .add_filter("Fade In (.fadein)", &["fadein"])
                 .add_filter("Fountain (.fountain, .txt)", &["fountain", "txt"])
-                .add_filter("Markdown (.md, .markdown, .txt)", &["md", "markdown", "txt"]);
+                .add_filter(
+                    "Markdown (.md, .markdown, .txt)",
+                    &["md", "markdown", "txt"],
+                );
         }
     }
     let file = dialog.pick_file()?;
@@ -188,11 +197,11 @@ pub(crate) fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(
 ) -> Result<(), String> {
     let path = path.as_ref();
     let parent = path.parent().unwrap_or_else(|| std::path::Path::new(""));
-    
+
     static SAVE_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let seq = SAVE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let pid = std::process::id();
-    
+
     let temp_name = format!(
         ".{}.{}-{}.tmp",
         path.file_name()
@@ -208,7 +217,9 @@ pub(crate) fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(
     if let Err(rename_err) = fs::rename(&temp_path, path) {
         if let Err(copy_err) = fs::copy(&temp_path, path) {
             let _ = fs::remove_file(&temp_path);
-            return Err(format!("rename failed ({rename_err}), copy failed ({copy_err})"));
+            return Err(format!(
+                "rename failed ({rename_err}), copy failed ({copy_err})"
+            ));
         }
         let _ = fs::remove_file(&temp_path);
     }
@@ -226,9 +237,19 @@ fn prepare_project_path(path: String) -> Result<String, String> {
         let parent = original.parent().ok_or("Project has no parent folder")?;
         let filename = original.file_name().ok_or("Project has no filename")?;
         // Verify sibling creation rather than relying on read-only permission flags.
-        let probe = parent.join(format!(".actone-access-{}-{}", std::process::id(),
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos()));
-        if let Ok(file) = fs::OpenOptions::new().write(true).create_new(true).open(&probe) {
+        let probe = parent.join(format!(
+            ".actone-access-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        if let Ok(file) = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&probe)
+        {
             drop(file);
             fs::remove_file(&probe).map_err(|e| e.to_string())?;
             return Ok(path);
@@ -241,9 +262,13 @@ fn prepare_project_path(path: String) -> Result<String, String> {
         let candidate = folder.join(filename);
         if original.exists() {
             let source = fs::metadata(original).map_err(|e| e.to_string())?;
-            let target = fs::metadata(&candidate).map_err(|_| "Select the folder containing this project")?;
+            let target = fs::metadata(&candidate)
+                .map_err(|_| "Select the folder containing this project")?;
             if source.dev() != target.dev() || source.ino() != target.ino() {
-                return Err("The selected folder contains a different project. No files were changed.".into());
+                return Err(
+                    "The selected folder contains a different project. No files were changed."
+                        .into(),
+                );
             }
         } else if candidate.exists() {
             return Err("A file with this name already exists in the selected folder. Use Save As to choose it explicitly.".into());
@@ -548,8 +573,6 @@ fn get_fonts_for_script(
 fn get_detected_scripts(text: String) -> Vec<String> {
     font_cache::detect_scripts(&text)
 }
-
-
 
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
@@ -1133,8 +1156,16 @@ pub fn run() {
             get_sample_bundle,
             ollama::ollama_check,
             ollama::ollama_list_models,
-            ollama::ollama_chat,
-            ollama::cancel_ollama_chat,
+            urai::jobs::urai_run_job,
+            urai::jobs::urai_pause_job,
+            urai::jobs::urai_load_job,
+            urai::credentials::urai_store_secret,
+            urai::credentials::urai_read_secret,
+            urai::storage::urai_load_sessions,
+            urai::storage::urai_save_sessions,
+            urai::urai_chat,
+            urai::urai_transform,
+            urai::urai_cancel,
             spellcheck::spellcheck_init,
             spellcheck::spellcheck_set_language,
             spellcheck::spellcheck_check_text,
@@ -1155,13 +1186,16 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app_handle, event| {
             match event {
-                tauri::RunEvent::WindowEvent { event: tauri::WindowEvent::CloseRequested { .. }, .. } => {
+                tauri::RunEvent::WindowEvent {
+                    event: tauri::WindowEvent::CloseRequested { .. },
+                    ..
+                } => {
                     // Save window state *before* it is destroyed to prevent 'cannot move state from Destroyed' panic
                     let _ = app_handle.save_window_state(StateFlags::all());
                 }
                 tauri::RunEvent::ExitRequested { .. } => {
                     // Cancel all active background AI/streaming processes
-                    ollama::cancel_all_sessions();
+                    urai::cancel_all();
 
                     // Flush any pending crash/panic logs
                     let _ = flush_pending_panics();
@@ -1292,7 +1326,7 @@ mod tests {
         use std::sync::Arc;
         let temp_dir = std::env::temp_dir();
         let target = Arc::new(temp_dir.join("actone_test_write_atomic_concurrent.txt"));
-        
+
         let mut handles = vec![];
         for i in 0..10 {
             let target = target.clone();
@@ -1308,7 +1342,7 @@ mod tests {
 
         let read_back = fs::read_to_string(&*target).unwrap();
         assert!(read_back.starts_with("content "));
-        
+
         let _ = fs::remove_file(&*target);
     }
 
@@ -1318,4 +1352,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-

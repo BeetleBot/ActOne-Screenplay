@@ -42,6 +42,7 @@ jobs:
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
             libssl-dev \
+            libdbus-1-dev \
             libfontconfig1-dev \
             pkg-config
 

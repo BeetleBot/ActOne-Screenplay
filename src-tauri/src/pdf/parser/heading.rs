@@ -39,13 +39,15 @@ impl<'a> Parser<'a> {
                 let pats = ["INT", "EXT", "EST", "I/E", "INT./EXT", "INT/EXT"];
                 let bytes = trimmed.as_bytes();
 
-                pats.iter().any(|p| {
-                    let n = p.len();
-                    bytes
-                        .get(..n)
-                        .is_some_and(|head| head.eq_ignore_ascii_case(p.as_bytes()))
-                        && bytes.get(n).is_some_and(|&end| end == b' ' || end == b'.')
-                }).then_some(trimmed)
+                pats.iter()
+                    .any(|p| {
+                        let n = p.len();
+                        bytes
+                            .get(..n)
+                            .is_some_and(|head| head.eq_ignore_ascii_case(p.as_bytes()))
+                            && bytes.get(n).is_some_and(|&end| end == b' ' || end == b'.')
+                    })
+                    .then_some(trimmed)
             },
             |this, inner| {
                 let mut number = None;
@@ -57,7 +59,9 @@ impl<'a> Parser<'a> {
                         && let Some(start) = inner.trim_end().strip_suffix('#')
                         && let Some((new_inner, numbering)) = start.rsplit_once('#')
                         && !numbering.is_empty()
-                        && numbering.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '.')
+                        && numbering
+                            .chars()
+                            .all(|c| c.is_alphanumeric() || c == '-' || c == '.')
                     {
                         number = Some(numbering.to_string());
                         inner = new_inner.trim_end();
@@ -95,7 +99,6 @@ impl<'a> Parser<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::pdf::{parse, screenplay::Element};
@@ -106,12 +109,17 @@ mod tests {
         assert_eq!(parsed.elements.len(), 2);
         match &parsed.elements[0].inner {
             Element::Heading { slug, number, .. } => {
-                assert_eq!(slug.to_plain_string(), "INT. GOA HOTEL / RADHI’S ROOM - DAY");
+                assert_eq!(
+                    slug.to_plain_string(),
+                    "INT. GOA HOTEL / RADHI’S ROOM - DAY"
+                );
                 assert_eq!(number.as_deref(), Some("1"));
             }
             other => panic!("expected heading, got {other:?}"),
         }
-        assert!(matches!(&parsed.elements[1].inner, Element::Action(text) if text.to_plain_string() == "RADHI’S MEDICAL SCENE"));
+        assert!(
+            matches!(&parsed.elements[1].inner, Element::Action(text) if text.to_plain_string() == "RADHI’S MEDICAL SCENE")
+        );
     }
 
     #[test]
@@ -119,7 +127,11 @@ mod tests {
         for suffix in ["#1A# [[color blue]]", "[[color blue]] #1A#"] {
             let parsed = parse(&format!("INT. ROOM - DAY {suffix}\n\nAction."));
             match &parsed.elements[0].inner {
-                Element::Heading { slug, number, color } => {
+                Element::Heading {
+                    slug,
+                    number,
+                    color,
+                } => {
                     assert_eq!(slug.to_plain_string(), "INT. ROOM - DAY");
                     assert_eq!(number.as_deref(), Some("1A"));
                     assert_eq!(color.as_deref(), Some("blue"));

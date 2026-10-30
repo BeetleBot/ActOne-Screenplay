@@ -44,12 +44,12 @@ Right-clicking opens a context menu (`8px` radius, ambient shadow) with options:
 
 The menu is rendered inside the app so it follows the active ActOne theme while retaining compact native-style rows, keyboard navigation, hover selection, and submenu behavior.
 
-**Muse** (when text is selected):
+**UrAI** (when text is selected):
 - **Look up** / **Synonyms**
 - **Rephrase** → configured rephrase presets
 - **Translate** → configured languages
 
-When no text is selected, **Muse** provides **Translate Whole Script**.
+When no text is selected, **UrAI** provides **Translate Whole Script**.
 
 **Clipboard Actions:**
 - **Cut** / **Copy** / **Paste** — uses Tauri clipboard plugin (`@tauri-apps/plugin-clipboard-manager`)
@@ -119,7 +119,7 @@ When a character name ends with `^`, the line and its associated dialogue block 
 When a project has no scripts open, the Fountain editor is replaced by the **Landing Pad** view:
 - Displays a clean prompt: *"Act One, Scene One. / Every screenplay starts here. Create your first script to begin writing."*
 - Features a **"Create a new script"** button that prompts for the script title and instantly opens the editor.
-- The sidebar feature tabs and Muse AI assistant are disabled until a script is created.
+- The sidebar feature tabs and UrAI AI assistant are disabled until a script is created.
 
 ### Prose & Markdown Editor (Notepad & Scratchpad)
 

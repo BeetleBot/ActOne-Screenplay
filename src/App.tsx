@@ -390,7 +390,7 @@ function AppInner() {
         setActiveRightPane("search");
       }
     }, [activeRightPane, setActiveRightPane, setIsSidebarOpen]),
-    openMusePane: useCallback(() => {
+    openUrAIPane: useCallback(() => {
       if (activeRightPane === "prompt") {
         setActiveRightPane(null);
       } else {

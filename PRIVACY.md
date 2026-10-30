@@ -19,22 +19,22 @@ ActOne stores the following data **locally on your device** using your browser/W
 - **User preferences**: theme choice, font family, zoom level, paper size, autocomplete settings, and other editor preferences.
 - **Application state**: recent file list, sprint tracking data, and window coordination flags.
 - **Custom themes**: any themes you create.
-- **Muse state**: provider configuration (including any API key you enter), and per-file chat session history (`actone_ai_chat::<path>`).
+- **UrAI state**: provider configuration (including any API key you enter), and per-file chat session history (`actone_ai_chat::<path>`).
 
-This data is stored **solely on your local machine** and is never transmitted except as described under [Muse Providers](#muse-providers) and [Crash Reporting](#crash-reporting) below.
+This data is stored **solely on your local machine** and is never transmitted except as described under [UrAI Providers](#urai-providers) and [Crash Reporting](#crash-reporting) below.
 
 ## Files
 
 - ActOne reads and writes `.fountain`, `.actone`, and `.fdx` files exclusively on your local filesystem.
 - You choose where to save and open files. ActOne does not access your files without your explicit action.
-- No file content is ever uploaded or transmitted unless you enable a Muse provider (below).
+- No file content is ever uploaded or transmitted unless you enable a UrAI provider (below).
 
-## Muse Providers
+## UrAI Providers
 
-Muse is an optional AI assistant. ActOne does **not** host a model or provide a default AI service. You must configure a provider yourself:
+UrAI is an optional AI assistant. ActOne does **not** host a model or provide a default AI service. You must configure a provider yourself:
 
 - **Ollama**: runs entirely on your machine if you use a local Ollama server. Requests are proxied through the app; no data leaves your device.
-- **OpenAI-compatible endpoints**: when configured with a remote base URL, the provider, endpoint, and model you choose receive the chat messages and the screenplay context Muse builds for a request (screenplay index, active scene text, todos, parking notes, and character profiles as applicable).
+- **OpenAI-compatible endpoints**: when configured with a remote base URL, the provider, endpoint, and model you choose receive the chat messages and the screenplay context UrAI builds for a request (screenplay index, active scene text, todos, parking notes, and character profiles as applicable).
 
 Only the screenplay text required to answer the selected request is included. Provider configuration and API keys are stored in localStorage and are sent to the configured provider endpoint when a request is made. Do not configure a remote provider if keeping screenplay content local is a requirement.
 
@@ -43,7 +43,7 @@ Only the screenplay text required to answer the selected request is included. Pr
 The only dependencies that interact with external resources are:
 
 - **Tauri's `opener` plugin**: used to open files with your operating system's default application (e.g., opening a PDF in your PDF viewer). This is a purely local operation.
-- **Muse providers** you configure (see [Muse Providers](#muse-providers)).
+- **UrAI providers** you configure (see [UrAI Providers](#urai-providers)).
 - **Crash reporting & User bug reporting** (see below).
 
 ## Crash Reporting
@@ -73,3 +73,10 @@ For questions about this privacy policy, contact our team at:
 
 Email us : actonesupport@iyal.ink
 
+
+
+## UrAI Rust runtime
+
+UrAI performs provider requests in the desktop Rust service. Chat sends only the selected sharing scope; choosing a different endpoint or shared source excludes prior conversation context from future requests. Inline writing actions offer selected-text-only or nearby-context sharing and preview changes before acceptance. Whole-document translation shares the chosen elements, speaker labels, and instructions with the selected endpoint.
+
+API keys are saved through Windows Credential Manager or Linux Secret Service when available. Legacy credentials remain recoverable until migration succeeds. Conversation files and translation checkpoints are stored locally in the application data directory and contain writing text; they do not contain API keys. Older local browser-storage conversation copies are retained for compatibility. Endpoint operators control their own retention policies.

@@ -4,12 +4,7 @@
 
 use cosmic_text::FontSystem;
 use image::ImageEncoder;
-use krilla::{
-    geom::Point,
-    image::Image,
-    surface::Surface,
-    text::Font,
-};
+use krilla::{geom::Point, image::Image, surface::Surface, text::Font};
 
 use super::layout::{CourierFonts, IndicFonts, LayoutInfo, SymbolFonts};
 
@@ -100,7 +95,8 @@ impl Default for WatermarkSettings {
 
 pub fn build_font_system() -> FontSystem {
     // Font sources are shared by database clones; shaping state remains per export.
-    static DATABASE: std::sync::OnceLock<cosmic_text::fontdb::Database> = std::sync::OnceLock::new();
+    static DATABASE: std::sync::OnceLock<cosmic_text::fontdb::Database> =
+        std::sync::OnceLock::new();
     let db = DATABASE.get_or_init(|| {
         let mut db = cosmic_text::fontdb::Database::new();
         for data in FONTS {
@@ -258,10 +254,7 @@ pub fn load_center_image(settings: &WatermarkSettings) -> Option<Image> {
         std::fs::read(&settings.center_image_path)
             .ok()
             .and_then(|bytes| {
-                let is_png = settings
-                    .center_image_path
-                    .to_lowercase()
-                    .ends_with(".png");
+                let is_png = settings.center_image_path.to_lowercase().ends_with(".png");
                 if is_png {
                     Image::from_png(bytes.into(), false).ok()
                 } else {
@@ -283,40 +276,44 @@ pub fn draw_watermarks(
     let font_size = 10.0;
 
     // 1. Header Watermark
-    if settings.header_enabled && !settings.header_text.is_empty()
-        && let Some(opacity_norm) = krilla::num::NormalizedF32::new(settings.header_opacity) {
-            surface.push_opacity(opacity_norm);
-            let font = layout_info.fonts.courier.regular.clone();
-            let width = measure_text_width(font_system, &settings.header_text, font_size);
-            let x_pos = (page_width - width) / 2.0;
-            surface.draw_text(
-                Point::from_xy(x_pos, 36.0),
-                font,
-                font_size,
-                &settings.header_text,
-                false,
-                krilla::text::TextDirection::LeftToRight,
-            );
-            surface.pop();
-        }
+    if settings.header_enabled
+        && !settings.header_text.is_empty()
+        && let Some(opacity_norm) = krilla::num::NormalizedF32::new(settings.header_opacity)
+    {
+        surface.push_opacity(opacity_norm);
+        let font = layout_info.fonts.courier.regular.clone();
+        let width = measure_text_width(font_system, &settings.header_text, font_size);
+        let x_pos = (page_width - width) / 2.0;
+        surface.draw_text(
+            Point::from_xy(x_pos, 36.0),
+            font,
+            font_size,
+            &settings.header_text,
+            false,
+            krilla::text::TextDirection::LeftToRight,
+        );
+        surface.pop();
+    }
 
     // 2. Footer Watermark
-    if settings.footer_enabled && !settings.footer_text.is_empty()
-        && let Some(opacity_norm) = krilla::num::NormalizedF32::new(settings.footer_opacity) {
-            surface.push_opacity(opacity_norm);
-            let font = layout_info.fonts.courier.regular.clone();
-            let width = measure_text_width(font_system, &settings.footer_text, font_size);
-            let x_pos = (page_width - width) / 2.0;
-            surface.draw_text(
-                Point::from_xy(x_pos, page_height - 24.0),
-                font,
-                font_size,
-                &settings.footer_text,
-                false,
-                krilla::text::TextDirection::LeftToRight,
-            );
-            surface.pop();
-        }
+    if settings.footer_enabled
+        && !settings.footer_text.is_empty()
+        && let Some(opacity_norm) = krilla::num::NormalizedF32::new(settings.footer_opacity)
+    {
+        surface.push_opacity(opacity_norm);
+        let font = layout_info.fonts.courier.regular.clone();
+        let width = measure_text_width(font_system, &settings.footer_text, font_size);
+        let x_pos = (page_width - width) / 2.0;
+        surface.draw_text(
+            Point::from_xy(x_pos, page_height - 24.0),
+            font,
+            font_size,
+            &settings.footer_text,
+            false,
+            krilla::text::TextDirection::LeftToRight,
+        );
+        surface.pop();
+    }
 
     // 3. Center Watermark
     if settings.center_enabled {
@@ -347,11 +344,8 @@ pub fn draw_watermarks(
                 // Draw Text Center Watermark
                 let font = layout_info.fonts.courier.bold.clone();
                 let center_font_size = 48.0;
-                let width = measure_text_width(
-                    font_system,
-                    &settings.center_text,
-                    center_font_size,
-                );
+                let width =
+                    measure_text_width(font_system, &settings.center_text, center_font_size);
                 let x = (page_width - width) / 2.0;
                 let y = page_height / 2.0;
 

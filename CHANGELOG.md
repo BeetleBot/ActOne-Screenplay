@@ -136,7 +136,7 @@
 ## [0.4.23] - 2026-09-09
 
 ### Added / Improved
-- ⚡ **Quick AI Model Switcher Palette (<kbd>Alt+Shift+M</kbd>)** – Introduced a minimal, fast floating model chooser dialog to switch between custom OpenAI-compatible API models and locally running Ollama models on the fly. Includes quick options to disable AI or jump straight to provider configuration in Settings. Accessible via shortcut, Command Palette, or Muse panels.
+- ⚡ **Quick AI Model Switcher Palette (<kbd>Alt+Shift+M</kbd>)** – Introduced a minimal, fast floating model chooser dialog to switch between custom OpenAI-compatible API models and locally running Ollama models on the fly. Includes quick options to disable AI or jump straight to provider configuration in Settings. Accessible via shortcut, Command Palette, or UrAI panels.
 - 🎬 **Scene-by-Scene Screenplay Translation Architecture** – Transitioned whole-document translation from fixed line batches to narrative scene-by-scene units (`LineType.heading` boundaries) with adaptive sub-chunking for scenes exceeding 35 lines. Preserves narrative context, character speaker attributions, and emotional tone across scene progression.
 - 🛡️ **Tauri Drag-and-Drop Listener Lifecycle Guard** – Hardened window event listener cleanup in `useNativeAppBehavior` against unhandled Tauri `TypeError: Cannot read properties of undefined (reading 'handlerId')` unregistration crashes during React unmounts and hot reloads.
 - 🔄 **Synchronous Active Script State Synchronization** – Ensured `activeScriptIndexRef` and `activeFileIdRef` immediately synchronize during script duplication, deletion, creation, switching, and reordering in `FileContext`, preventing background updates from dropping or targeting outdated scripts.
@@ -159,8 +159,8 @@
 - 💬 **Automatic Consecutive `(CONT'D)` Dialogue Tagging** – Integrated smart screenplay dialogue continuation tags, automatically appending `(CONT'D)` to character names during consecutive dialogue blocks.
 - 📋 **Cross-Platform Robust Clipboard Utility** – Built a unified cross-platform clipboard service with asynchronous native clipboard access and synchronous fallback support across Windows and Linux.
 - 🪟 **Seamless Borderless Chrome & Extruded Pane Geometry** – Redesigned the primary application layout into a continuous borderless chrome surface (`MainLayout`, `ActivityBar`, `HeaderBar`, `StatusBar`) with a smooth 12px rounded editor canvas that dynamically extrudes sidebars and side panels.
-- 📐 **Mutual Pane Exclusivity** – Enforced single-pane workspace focus: opening any left-side panel instantly closes right-side panels (Muse AI / Find & Replace) and vice versa.
-- ⌨️ **Intelligent Workspace Shortcuts** – <kbd>Alt+M</kbd> now smoothly toggles the Muse AI assistant open and closed while auto-dismissing the sidebar; <kbd>Ctrl+\\</kbd> closes any open right panel and opens the Outline View.
+- 📐 **Mutual Pane Exclusivity** – Enforced single-pane workspace focus: opening any left-side panel instantly closes right-side panels (UrAI AI / Find & Replace) and vice versa.
+- ⌨️ **Intelligent Workspace Shortcuts** – <kbd>Alt+M</kbd> now smoothly toggles the UrAI AI assistant open and closed while auto-dismissing the sidebar; <kbd>Ctrl+\\</kbd> closes any open right panel and opens the Outline View.
 - 📏 **Persistent Workspace Dimensions** – Sidebar and Right Pane widths now persist across sessions and Zen Mode in `localStorage` with safety clamping.
 - 🌊 **Fluid Pane Layout & Symmetrical Transitions** – Replaced static inner container pixel constraints with fluid 100% responsive width and synchronized 240ms `cubic-bezier(0.25, 1, 0.5, 1)` natural deceleration curves across all panel entrance and exit animations.
 - 🧪 **Expanded Automated Test Coverage** – Expanded test suite to **71 test files and 709 tests** (100% pass rate), adding unit tests for translation retries, provider max_tokens, and element mapping.
@@ -318,8 +318,8 @@
 ## [0.4.9] - 2026-08-08
 
 ### Added
-- 🤖 **Agentic AI Tools & Batch Tool Calls** – Enabled dynamic tool execution within Muse AI (`src/lib/aiTools.ts`), supporting batch tool calls, direct script reading/editing, line insertions, deletions, replacements, scene metadata extraction, and automatic character profile syncing with the X-Ray window.
-- 💬 **Direct AI Chat & Composer** – Replaced legacy prompt listeners with direct AI chat session management in `MusePanel.tsx` and `useAIChat.ts`, featuring streaming responses, custom prompt configurations, rich markdown rendering, and interactive Fountain script diff cards (`FountainBlock.tsx`).
+- 🤖 **Agentic AI Tools & Batch Tool Calls** – Enabled dynamic tool execution within UrAI AI (`src/lib/aiTools.ts`), supporting batch tool calls, direct script reading/editing, line insertions, deletions, replacements, scene metadata extraction, and automatic character profile syncing with the X-Ray window.
+- 💬 **Direct AI Chat & Composer** – Replaced legacy prompt listeners with direct AI chat session management in `UrAIPanel.tsx` and `useAIChat.ts`, featuring streaming responses, custom prompt configurations, rich markdown rendering, and interactive Fountain script diff cards (`FountainBlock.tsx`).
 - ⚡ **Scene Indexing Engine** – Integrated a high-performance AST scene indexer (`src/utils/sceneIndexer.ts`) with character, location, dialogue, and line range extraction for instant script navigation and precise AI tool targeting.
 - 🎯 **Global Cursor Context** – Added `CursorContext` to track active cursor positions, line numbers, and script selections globally across the editor and AI features.
 - 🎨 **App Native Context Menus** – Replaced heavy Material-UI context menus with zero-dependency native-style custom app context menus (`ContextMenu.tsx`) across the editor, tab bar, and snapshot panel with full keyboard accessibility, submenus, and viewport auto-clamping.
@@ -365,8 +365,8 @@
 - 🚨 **Severity-based Crash Recovery** – Crashes are classified by severity (`pane` / `window` / `app`) and recovered based on where the failure happened, not the error type: contained pane failures show an inline Retry bar and keep the app running, window-level failures open a compact crash window with a Reload action, and app-level failures offer a full Restart.
 - 🪟 **Compact Crash Window** – New standalone 540×480 crash window showing the error code, diagnostics, and severity-matched recovery actions (`Reload Window` / `Restart App`) with Dismiss and Copy options.
 - 🎛️ **Recovery Commands** – Added `reload_window(label)` (reloads only the affected webview so other windows survive) and `restart_app` Tauri commands.
-- 🟩 **Muse Status Indicator** – The Muse entry moved from the header bar to a full-height square at the far right of the status bar: green when an AI provider is configured (click toggles the Muse pane), red when none is set (click opens Muse Settings).
-- 🎯 **Consolidated Muse Commands** – The Command Palette now offers exactly two Muse entries — "Open Muse Pane" (`Alt+M`) and "Open Muse Settings" — replacing the four overlapping options (Toggle Muse, Open Muse, Open Muse Pane, Switch Sidebar Tab: Muse).
+- 🟩 **UrAI Status Indicator** – The UrAI entry moved from the header bar to a full-height square at the far right of the status bar: green when an AI provider is configured (click toggles the UrAI pane), red when none is set (click opens UrAI Settings).
+- 🎯 **Consolidated UrAI Commands** – The Command Palette now offers exactly two UrAI entries — "Open UrAI Pane" (`Alt+M`) and "Open UrAI Settings" — replacing the four overlapping options (Toggle UrAI, Open UrAI, Open UrAI Pane, Switch Sidebar Tab: UrAI).
 
 ### Changed / Improved
 - **Always-Complete Diagnostics** – Crash reports merge system info at send time, so reports captured before OS/CPU/RAM resolution still ship with full system details in Discord.
@@ -375,16 +375,16 @@
 
 ### Removed
 - **Previous-Session Crash Detection** – Removed heartbeat/clean-exit tracking, the startup "previous session crashed" notice, and the `webview-crash` report type. A crashed session already sent its report live, and Alt+F4 no longer triggers false positives.
-- **Title Bar Muse Button** – Removed in favor of the status bar indicator and Command Palette.
+- **Title Bar UrAI Button** – Removed in favor of the status bar indicator and Command Palette.
 
 ### Fixed
-- **Muse AI Test Regression** – Fixed the `useAIChat` test that failed on the `registerTranslationAbort` mock introduced during 0.4.3's AI cancellation work.
+- **UrAI AI Test Regression** – Fixed the `useAIChat` test that failed on the `registerTranslationAbort` mock introduced during 0.4.3's AI cancellation work.
 
 ## [0.4.3] - 2026-08-01
 
 ### Added
 - 📤 **Export Pane Overhaul** – Redesigned the screenplay Export Modal into a modern, compact, two-column window with a vertical format sidebar and fixed height (`520px`) to eliminate layout jumping.
-- ⏹️ **Immediate AI Cancel/Stop** – Integrated a global Stop button in the status bar with pulsing square indicator to immediately terminate active Muse chat generation or document translation tasks.
+- ⏹️ **Immediate AI Cancel/Stop** – Integrated a global Stop button in the status bar with pulsing square indicator to immediately terminate active UrAI chat generation or document translation tasks.
 - ⚙️ **Atomic File Writing** – Reimplemented Rust file saving (`save_file_content` and `save_file_binary`) to write to a temp file first and rename it, preventing 0-byte file corruption on OS crashes.
 - ⚡ **Web Worker Background Parser** – Offloaded Fountain script AST parsing to a background Web Worker thread, eliminating typing lag and keeping the main UI thread completely fluid.
 - 🗂️ **Virtualized Outline View** – Virtualized rendering of the screenplay outline panel, allowing navigation of scripts with thousands of scenes with zero lag.

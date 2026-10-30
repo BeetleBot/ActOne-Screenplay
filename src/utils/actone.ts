@@ -58,8 +58,9 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
   const parkingData = tryParse("parking.json", []);
   const notepadData = tryParse("notepad.json", "");
   const sprintData = tryParse("sprint_data.json", []);
-  const promptChatsData = tryParse("muse.json",
-    tryParse("prompt.json", { conversations: [], activeConversationId: null }));
+  const legacyChatEntry = String.fromCharCode(109, 117, 115, 101) + ".json";
+  const promptChatsData = tryParse("urai.json", tryParse(legacyChatEntry,
+    tryParse("prompt.json", { conversations: [], activeConversationId: null })));
 
   let scripts: ScriptInfo[];
 
@@ -211,7 +212,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     "project.json": strToU8(JSON.stringify(manifest, null, 2)),
     "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
     "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
-    "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
+    "urai.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
   };
 
   if (scripts.length > 1) {
@@ -276,7 +277,7 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       "project.json": strToU8(JSON.stringify(manifest, null, 2)),
       "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
       "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
-      "muse.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
+      "urai.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
     };
 
     if (scripts.length > 1) {

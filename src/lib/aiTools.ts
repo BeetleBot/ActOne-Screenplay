@@ -12,7 +12,7 @@ export interface AIToolDeclaration {
   };
 }
 
-export const MUSE_TOOLS: AIToolDeclaration[] = [
+export const URAI_TOOLS: AIToolDeclaration[] = [
   {
     name: "read_scene",
     description: "Read the full, raw Fountain text of a specific scene by its scene number (ID).",
@@ -255,7 +255,7 @@ export const MUSE_TOOLS: AIToolDeclaration[] = [
   },
 ];
 
-export const AI_TOOLS = MUSE_TOOLS;
+export const AI_TOOLS = URAI_TOOLS;
 
 export interface ToolExecutionContext {
   doc: FountainDocument | null;

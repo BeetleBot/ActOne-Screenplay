@@ -111,7 +111,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onOpenXrayModal={openXrayWindow || (() => {})}
           openTutorialsWindow={openTutorialsWindow}
           onToggleSnapshotsPanel={toggleSnapshotsPanel}
-          onOpenMuseSettings={() => openSettingsWindow?.("muse")}
+          onOpenUrAISettings={() => openSettingsWindow?.("urai")}
           onOpenAboutModal={() => setShowAbout(true)}
           onOpenBugReportModal={() => setShowBugReport(true)}
           onOpenSceneJump={setIsSceneJumpOpen ? () => setIsSceneJumpOpen(true) : undefined}

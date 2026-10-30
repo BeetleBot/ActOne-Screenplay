@@ -78,7 +78,7 @@ describe("AiModelPalette", () => {
     await user.click(input);
     await user.keyboard("{End}{Enter}");
 
-    expect(openSettingsWindow).toHaveBeenCalledWith("muse");
+    expect(openSettingsWindow).toHaveBeenCalledWith("urai");
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -98,7 +98,7 @@ describe("AiModelPalette", () => {
     render(<AiModelPalette isOpen onClose={vi.fn()} />);
 
     await user.click(screen.getByRole("option", { name: /Configure Models…/i }));
-    expect(openSettingsWindow).toHaveBeenCalledWith("muse");
+    expect(openSettingsWindow).toHaveBeenCalledWith("urai");
   });
 
   it("restores editor focus safely without jumping viewport when closing", async () => {

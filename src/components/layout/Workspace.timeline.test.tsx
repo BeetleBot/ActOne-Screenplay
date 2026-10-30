@@ -24,7 +24,7 @@ vi.mock("../SidebarViews", () => ({ SidebarViews: () => <div data-testid="naviga
 vi.mock("../ScriptEditor", () => ({ ScriptEditor: () => <div>Editor</div> }));
 vi.mock("../ProseEditor", () => ({ ProseEditor: () => null }));
 vi.mock("../SearchPanel", () => ({ SearchPanel: () => null }));
-vi.mock("../MusePanel", () => ({ MusePanel: () => null }));
+vi.mock("../UrAIPanel", () => ({ UrAIPanel: () => null }));
 vi.mock("../RightPane", () => ({ RightPane: () => null }));
 vi.mock("../TimelineView", () => ({ TimelineView: () => <div data-testid="timeline">Timeline</div> }));
 import { Workspace } from "./Workspace";

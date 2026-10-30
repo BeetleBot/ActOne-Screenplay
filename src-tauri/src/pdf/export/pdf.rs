@@ -689,12 +689,23 @@ impl PdfExporter {
                     Element::Dialogue(dialogue) => {
                         let mut dialogue_styled = dialogue.clone();
                         if residual_dialogue_idx.is_none() {
-                            let char_name = dialogue.character.to_plain_string().trim().to_uppercase();
-                            let ext_str = dialogue.extension.as_ref().map(|e| e.to_plain_string().to_uppercase()).unwrap_or_default();
-                            let has_contd = ext_str.contains("CONT'D") || char_name.contains("CONT'D");
-                            if self.auto_contd && !char_name.is_empty() && char_name == last_speaking_character && !has_contd {
+                            let char_name =
+                                dialogue.character.to_plain_string().trim().to_uppercase();
+                            let ext_str = dialogue
+                                .extension
+                                .as_ref()
+                                .map(|e| e.to_plain_string().to_uppercase())
+                                .unwrap_or_default();
+                            let has_contd =
+                                ext_str.contains("CONT'D") || char_name.contains("CONT'D");
+                            if self.auto_contd
+                                && !char_name.is_empty()
+                                && char_name == last_speaking_character
+                                && !has_contd
+                            {
                                 if let Some(ext) = &dialogue.extension {
-                                    dialogue_styled.extension = Some(format!("{}) (CONT'D", ext.to_plain_string()).into());
+                                    dialogue_styled.extension =
+                                        Some(format!("{}) (CONT'D", ext.to_plain_string()).into());
                                 } else {
                                     dialogue_styled.extension = Some("CONT'D".into());
                                 }
@@ -1098,44 +1109,46 @@ fn draw_watermarks(
     let font_size = 10.0;
 
     // 1. Header Watermark
-    if exporter.watermark_header_enabled && !exporter.watermark_header_text.is_empty()
+    if exporter.watermark_header_enabled
+        && !exporter.watermark_header_text.is_empty()
         && let Some(opacity_norm) =
             krilla::num::NormalizedF32::new(exporter.watermark_header_opacity)
-        {
-            surface.push_opacity(opacity_norm);
-            let font = layout_info.fonts.courier.regular.clone();
-            let width = measure_text_width(font_system, &exporter.watermark_header_text, font_size);
-            let x_pos = (page_width - width) / 2.0;
-            surface.draw_text(
-                Point::from_xy(x_pos, 36.0),
-                font,
-                font_size,
-                &exporter.watermark_header_text,
-                false,
-                krilla::text::TextDirection::LeftToRight,
-            );
-            surface.pop();
-        }
+    {
+        surface.push_opacity(opacity_norm);
+        let font = layout_info.fonts.courier.regular.clone();
+        let width = measure_text_width(font_system, &exporter.watermark_header_text, font_size);
+        let x_pos = (page_width - width) / 2.0;
+        surface.draw_text(
+            Point::from_xy(x_pos, 36.0),
+            font,
+            font_size,
+            &exporter.watermark_header_text,
+            false,
+            krilla::text::TextDirection::LeftToRight,
+        );
+        surface.pop();
+    }
 
     // 2. Footer Watermark
-    if exporter.watermark_footer_enabled && !exporter.watermark_footer_text.is_empty()
+    if exporter.watermark_footer_enabled
+        && !exporter.watermark_footer_text.is_empty()
         && let Some(opacity_norm) =
             krilla::num::NormalizedF32::new(exporter.watermark_footer_opacity)
-        {
-            surface.push_opacity(opacity_norm);
-            let font = layout_info.fonts.courier.regular.clone();
-            let width = measure_text_width(font_system, &exporter.watermark_footer_text, font_size);
-            let x_pos = (page_width - width) / 2.0;
-            surface.draw_text(
-                Point::from_xy(x_pos, page_height - 36.0),
-                font,
-                font_size,
-                &exporter.watermark_footer_text,
-                false,
-                krilla::text::TextDirection::LeftToRight,
-            );
-            surface.pop();
-        }
+    {
+        surface.push_opacity(opacity_norm);
+        let font = layout_info.fonts.courier.regular.clone();
+        let width = measure_text_width(font_system, &exporter.watermark_footer_text, font_size);
+        let x_pos = (page_width - width) / 2.0;
+        surface.draw_text(
+            Point::from_xy(x_pos, page_height - 36.0),
+            font,
+            font_size,
+            &exporter.watermark_footer_text,
+            false,
+            krilla::text::TextDirection::LeftToRight,
+        );
+        surface.pop();
+    }
 
     // 3. Center Watermark
     if exporter.watermark_center_enabled {
@@ -1391,7 +1404,8 @@ This is action.
 
     #[test]
     fn test_auto_contd_export() {
-        let content = "INT. ROOM - DAY\n\nJOHN\nFirst line.\n\nAction happens.\n\nJOHN\nSecond line.";
+        let content =
+            "INT. ROOM - DAY\n\nJOHN\nFirst line.\n\nAction happens.\n\nJOHN\nSecond line.";
         let screenplay = crate::pdf::parse(content);
 
         let exporter_on = PdfExporter {

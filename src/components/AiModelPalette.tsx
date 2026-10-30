@@ -1,3 +1,4 @@
+import { activateConfiguredApi, reportCredentialError } from "../hooks/usePromptConfig";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
@@ -13,34 +14,19 @@ import {
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import {
-  usePromptConfig,
-  setPromptConfigField,
-  fetchModels,
-} from "../hooks/usePromptConfig";
+import { usePromptConfig, setPromptConfigField, fetchModels } from "../hooks/usePromptConfig";
 import { useApiList } from "../hooks/useApiList";
 import { STORAGE_KEYS } from "../constants";
-import { encryptApiKey } from "../utils/cryptoStorage";
 import { useModalWindows } from "../hooks/useModalWindows";
 import { useUI, useEditor } from "../context";
-import {
-  CheckIcon,
-  SettingsIcon,
-  AutoAwesomeIcon,
-  CloseIcon,
-  MuseIcon,
-  SearchIcon,
-} from "./Icons";
+import { CheckIcon, SettingsIcon, AutoAwesomeIcon, CloseIcon, UrAIIcon, SearchIcon } from "./Icons";
 
 interface AiModelPaletteProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
-  isOpen,
-  onClose,
-}) => {
+export const AiModelPalette: React.FC<AiModelPaletteProps> = ({ isOpen, onClose }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const config = usePromptConfig();
@@ -106,20 +92,12 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
   const handleSelectApi = (id: string) => {
     const entry = apiList.find((e) => e.id === id);
     if (!entry) return;
-    localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
-    localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
-    encryptApiKey(entry.apiKey).then((enc) => {
-      localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, enc);
-      setPromptConfigField("provider", "openai-compatible");
-      try {
-        window.dispatchEvent(new Event("prompt-config-changed"));
-      } catch {}
-    });
+    void activateConfiguredApi(entry).catch(reportCredentialError);
     onClose();
   };
 
   const handleConfigure = () => {
-    openSettingsWindow("muse");
+    openSettingsWindow("urai");
     onClose();
   };
 
@@ -145,13 +123,12 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
   ];
 
   for (const m of ollamaModels) {
-    const isActive =
-      !isDisabled && config.provider === "ollama" && config.model === m;
+    const isActive = !isDisabled && config.provider === "ollama" && config.model === m;
     modelItems.push({
       id: `ollama:${m}`,
       label: m,
       badge: "local",
-      icon: <MuseIcon sx={{ fontSize: 13 }} />,
+      icon: <UrAIIcon sx={{ fontSize: 13 }} />,
       active: isActive,
       action: () => handleSelectOllama(m),
     });
@@ -198,9 +175,7 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const selectedElement = container.querySelector(
-      `[data-index="${selectedIndex}"]`
-    ) as HTMLElement | null;
+    const selectedElement = container.querySelector(`[data-index="${selectedIndex}"]`) as HTMLElement | null;
     if (selectedElement) {
       const elemTop = selectedElement.offsetTop;
       const elemBottom = elemTop + selectedElement.offsetHeight;
@@ -353,21 +328,12 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
         }}
       >
         {loading && (
-          <Typography
-            sx={{ p: 1.5, fontSize: "0.74rem", textAlign: "center" }}
-            color="text.secondary"
-          >
+          <Typography sx={{ p: 1.5, fontSize: "0.74rem", textAlign: "center" }} color="text.secondary">
             Loading models…
           </Typography>
         )}
 
-        <List
-          id="ai-model-options"
-          disablePadding
-          role="listbox"
-          aria-label="AI models and actions"
-          sx={{ py: 0.25 }}
-        >
+        <List id="ai-model-options" disablePadding role="listbox" aria-label="AI models and actions" sx={{ py: 0.25 }}>
           {filteredModelItems.map((it, modelIndex) => {
             const idx = modelIndex;
             const isSelected = idx === selectedIndex;
@@ -391,15 +357,13 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
                   bgcolor: isSelected
                     ? `${theme.palette.primary.main}20`
                     : it.active && it.id !== "disable"
-                    ? alpha(theme.palette.primary.main, 0.1)
-                    : undefined,
+                      ? alpha(theme.palette.primary.main, 0.1)
+                      : undefined,
                   "&.Mui-selected": {
                     bgcolor: `${theme.palette.primary.main}20`,
                   },
                   "&:hover": {
-                    bgcolor: isSelected
-                      ? `${theme.palette.primary.main}20`
-                      : `${theme.palette.primary.main}12`,
+                    bgcolor: isSelected ? `${theme.palette.primary.main}20` : `${theme.palette.primary.main}12`,
                   },
                 }}
               >
@@ -409,10 +373,10 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
                     color: isSelected
                       ? "var(--button-color, primary.main)"
                       : it.id === "disable" && it.active
-                      ? "error.main"
-                      : it.active
-                      ? "primary.main"
-                      : "text.secondary",
+                        ? "error.main"
+                        : it.active
+                          ? "primary.main"
+                          : "text.secondary",
                   }}
                 >
                   {it.icon}
@@ -432,8 +396,8 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
                           it.id === "disable" && it.active
                             ? "error.main"
                             : it.active
-                            ? "text.primary"
-                            : "text.secondary",
+                              ? "text.primary"
+                              : "text.secondary",
                       }}
                       title={it.label}
                     >
@@ -450,10 +414,7 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
                       px: 0.5,
                       py: 0.1,
                       borderRadius: "3px",
-                      bgcolor: alpha(
-                        it.badge === "local" ? theme.palette.success.main : theme.palette.info.main,
-                        0.12,
-                      ),
+                      bgcolor: alpha(it.badge === "local" ? theme.palette.success.main : theme.palette.info.main, 0.12),
                       color: it.badge === "local" ? "success.main" : "info.main",
                       lineHeight: 1.2,
                       flexShrink: 0,
@@ -477,10 +438,7 @@ export const AiModelPalette: React.FC<AiModelPaletteProps> = ({
             );
           })}
           {!loading && filteredModelItems.length === 0 && (
-            <Typography
-              sx={{ px: 1.25, py: 2, fontSize: "0.74rem", textAlign: "center" }}
-              color="text.secondary"
-            >
+            <Typography sx={{ px: 1.25, py: 2, fontSize: "0.74rem", textAlign: "center" }} color="text.secondary">
               {search ? "No matching models" : "No models available"}
             </Typography>
           )}

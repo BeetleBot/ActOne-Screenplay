@@ -9,7 +9,10 @@ impl<'a> Parser<'a> {
             line,
             |_, s| {
                 let t = s.trim_start();
-                (t.starts_with("===") && t.chars().all(|c| c == '=' || c.is_whitespace()) && t.replace('=', "").trim().is_empty()).then_some(s)
+                (t.starts_with("===")
+                    && t.chars().all(|c| c == '=' || c.is_whitespace())
+                    && t.replace('=', "").trim().is_empty())
+                .then_some(s)
             },
             |this, _| this.elements.push(Span::new(Element::PageBreak, line_idx)),
         )

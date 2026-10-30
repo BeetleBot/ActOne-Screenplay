@@ -5,9 +5,7 @@
 //! into [`RichString`] elements so the exporter can render it with the shared
 //! krilla pipeline.
 
-use pulldown_cmark::{
-    Alignment, CodeBlockKind, Event, Options, Parser, Tag, TagEnd,
-};
+use pulldown_cmark::{Alignment, CodeBlockKind, Event, Options, Parser, Tag, TagEnd};
 
 use crate::pdf::rich_string::{Element, RichString};
 
@@ -20,15 +18,32 @@ pub struct ProseDoc {
 /// A block-level element in a Markdown document.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Block {
-    Heading { level: u8, content: RichString },
+    Heading {
+        level: u8,
+        content: RichString,
+    },
     Paragraph(RichString),
-    List { ordered: bool, start: u64, items: Vec<ListItem> },
+    List {
+        ordered: bool,
+        start: u64,
+        items: Vec<ListItem>,
+    },
     Blockquote(Vec<Block>),
-    CodeBlock { lang: String, text: String },
-    Table { alignments: Vec<Align>, header: Vec<RichString>, rows: Vec<Vec<RichString>> },
+    CodeBlock {
+        lang: String,
+        text: String,
+    },
+    Table {
+        alignments: Vec<Align>,
+        header: Vec<RichString>,
+        rows: Vec<Vec<RichString>>,
+    },
     HorizontalRule,
     RawHtml(String),
-    FootnoteDefinition { label: String, blocks: Vec<Block> },
+    FootnoteDefinition {
+        label: String,
+        blocks: Vec<Block>,
+    },
 }
 
 /// A list item, with optional task-list checkbox state.
@@ -67,8 +82,9 @@ pub fn parse(src: &str) -> ProseDoc {
     options.insert(Options::ENABLE_FOOTNOTES);
 
     let cleaned = crate::pdf::sanitizer::sanitize_text(src);
-    let events: Vec<(Event, std::ops::Range<usize>)> =
-        Parser::new_ext(&cleaned, options).into_offset_iter().collect();
+    let events: Vec<(Event, std::ops::Range<usize>)> = Parser::new_ext(&cleaned, options)
+        .into_offset_iter()
+        .collect();
     let mut index = 0;
     let blocks = parse_blocks(src, &events, &mut index);
     ProseDoc { blocks }
@@ -97,7 +113,10 @@ fn parse_blocks<'a>(
                     *index += 1;
                     let rs = parse_inline(src, events, index, TagEnd::Heading(heading_level));
                     if !rs.elements.is_empty() {
-                        blocks.push(Block::Heading { level: heading_level as u8, content: rs });
+                        blocks.push(Block::Heading {
+                            level: heading_level as u8,
+                            content: rs,
+                        });
                     }
                 }
                 Tag::BlockQuote(_) => {
@@ -122,8 +141,12 @@ fn parse_blocks<'a>(
                             Event::Start(Tag::Item) => {
                                 *index += 1;
                                 let mut checked = None;
-                                if matches!(events.get(*index).map(|e| &e.0), Some(Event::TaskListMarker(_))) {
-                                    if let Some((Event::TaskListMarker(c), _)) = events.get(*index) {
+                                if matches!(
+                                    events.get(*index).map(|e| &e.0),
+                                    Some(Event::TaskListMarker(_))
+                                ) {
+                                    if let Some((Event::TaskListMarker(c), _)) = events.get(*index)
+                                    {
                                         checked = Some(*c);
                                     }
                                     *index += 1;
@@ -132,12 +155,19 @@ fn parse_blocks<'a>(
                                 if *index < events.len() {
                                     *index += 1;
                                 }
-                                items.push(ListItem { checked, blocks: item_blocks });
+                                items.push(ListItem {
+                                    checked,
+                                    blocks: item_blocks,
+                                });
                             }
                             _ => *index += 1,
                         }
                     }
-                    blocks.push(Block::List { ordered, start: start_num, items });
+                    blocks.push(Block::List {
+                        ordered,
+                        start: start_num,
+                        items,
+                    });
                 }
                 Tag::CodeBlock(kind) => {
                     let lang = match kind {
@@ -190,7 +220,12 @@ fn parse_blocks<'a>(
                                         }
                                         Event::Start(Tag::TableCell) => {
                                             *index += 1;
-                                            header.push(parse_inline(src, events, index, TagEnd::TableCell));
+                                            header.push(parse_inline(
+                                                src,
+                                                events,
+                                                index,
+                                                TagEnd::TableCell,
+                                            ));
                                         }
                                         _ => *index += 1,
                                     }
@@ -203,7 +238,11 @@ fn parse_blocks<'a>(
                             _ => *index += 1,
                         }
                     }
-                    blocks.push(Block::Table { alignments: aligns, header, rows });
+                    blocks.push(Block::Table {
+                        alignments: aligns,
+                        header,
+                        rows,
+                    });
                 }
                 Tag::HtmlBlock => {
                     *index += 1;
@@ -234,7 +273,10 @@ fn parse_blocks<'a>(
                     if *index < events.len() {
                         *index += 1;
                     }
-                    blocks.push(Block::FootnoteDefinition { label, blocks: inner });
+                    blocks.push(Block::FootnoteDefinition {
+                        label,
+                        blocks: inner,
+                    });
                 }
                 _ => *index += 1,
             },
@@ -389,7 +431,12 @@ fn parse_inline<'a>(
                                 hs.highlight = true;
                                 push_styled(&mut current, inner, hs, link);
                             } else {
-                                push_styled(&mut current, &rest[start..start + 2 + end + 2], base, link);
+                                push_styled(
+                                    &mut current,
+                                    &rest[start..start + 2 + end + 2],
+                                    base,
+                                    link,
+                                );
                             }
                             rest = &after_open[end + 2..];
                         } else {
@@ -407,12 +454,7 @@ fn parse_inline<'a>(
             Event::Code(text) => {
                 let mut s = *styles.last().unwrap();
                 s.mono = true;
-                push_styled(
-                    &mut current,
-                    text,
-                    s,
-                    links.last().map(|s| s.as_str()),
-                );
+                push_styled(&mut current, text, s, links.last().map(|s| s.as_str()));
                 *index += 1;
             }
             Event::SoftBreak => {
@@ -440,7 +482,9 @@ fn parse_inline<'a>(
                     s.underline = true;
                     styles.push(s);
                     *index += 1;
-                } else if trimmed.eq_ignore_ascii_case("</u>") || trimmed.eq_ignore_ascii_case("</ins>") {
+                } else if trimmed.eq_ignore_ascii_case("</u>")
+                    || trimmed.eq_ignore_ascii_case("</ins>")
+                {
                     if styles.len() > 1 {
                         styles.pop();
                     }
@@ -499,10 +543,12 @@ fn push_styled(rs: &mut RichString, text: &str, style: Style, link: Option<&str>
         el.set_link(url.to_string());
     }
     if let Some(last) = rs.elements.last_mut()
-        && last.attributes == el.attributes && last.link_url == el.link_url {
-            last.text.push_str(&el.text);
-            return;
-        }
+        && last.attributes == el.attributes
+        && last.link_url == el.link_url
+    {
+        last.text.push_str(&el.text);
+        return;
+    }
     rs.elements.push(el);
 }
 
@@ -521,7 +567,10 @@ mod tests {
                 content: RichString::from("Title")
             }
         );
-        assert_eq!(doc.blocks[1], Block::Paragraph(RichString::from("Hello world.")));
+        assert_eq!(
+            doc.blocks[1],
+            Block::Paragraph(RichString::from("Hello world."))
+        );
     }
 
     #[test]
@@ -563,7 +612,12 @@ mod tests {
         let doc = parse("- one\n- two\n\n1. first\n2. second\n");
         assert!(matches!(doc.blocks[0], Block::List { ordered: false, .. }));
         assert!(matches!(doc.blocks[1], Block::List { ordered: true, .. }));
-        let Block::List { ordered: false, items, .. } = &doc.blocks[0] else {
+        let Block::List {
+            ordered: false,
+            items,
+            ..
+        } = &doc.blocks[0]
+        else {
             panic!("expected unordered list");
         };
         assert_eq!(items.len(), 2);
@@ -623,7 +677,10 @@ mod tests {
     #[test]
     fn image_markdown_renders_alt_text() {
         let doc = parse("![alt text](images/cat.png)\n");
-        assert_eq!(doc.blocks[0], Block::Paragraph(RichString::from("alt text")));
+        assert_eq!(
+            doc.blocks[0],
+            Block::Paragraph(RichString::from("alt text"))
+        );
     }
 
     #[test]

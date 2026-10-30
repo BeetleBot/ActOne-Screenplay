@@ -76,7 +76,7 @@ Adaptive meta (`ADAPTIVE_THEME_META:36`) groups: `adaptive` (Classic), `catppucc
 - **Extruded Geometry:** Sidebars and right-side panels extrude directly out of the continuous window chrome without interior dividing borders (`border: 'none'`, `boxShadow: 'none'`).
 - **Motion:** Panes animate using synchronized `240ms cubic-bezier(0.25, 1, 0.5, 1)` natural deceleration curves on `width`, `min-width`, and `max-width`.
 - **Fluid Content:** Inner pane containers use `width: 100%` for fluid scaling with zero trailing background gaps.
-- **Mutual Pane Exclusivity:** Only one pane (Left Sidebar or Right Pane) is open at any time. Opening a sidebar closes right panels (Muse/Search) and vice-versa.
+- **Mutual Pane Exclusivity:** Only one pane (Left Sidebar or Right Pane) is open at any time. Opening a sidebar closes right panels (UrAI/Search) and vice-versa.
 - **Persistence:** Pane dimensions (`sidebarWidth` 180–800px, `rightPaneWidth` 240–700px) are persisted in `localStorage`.
 
 ### TitleBar (`src/components/TitleBar.tsx:103`)
@@ -132,7 +132,7 @@ All window startup and screen-loading states use `WindowLoading`, a centered tra
 
 Named yellow uses `#DBD600` in light themes and the existing luminous yellow in dark themes. It follows the same rendering rules as other scene colors: 35% navigator badge fills and solid timeline pill fills. Timeline numbers use automatically contrasting ink for each pill colour. Editor markers use colored text without a background highlight. There are no yellow-only text or selection overrides.
 
-Switches use a consistent 40 × 24px track, 14px thumb and 5px thumb inset for both normal and small sizes; checked translation is 16px.
+Switches use a slim 36 × 22px track, 16px thumb and 3px inset for both normal and small sizes; checked translation is 14px. Off tracks use a subtle muted fill and border; on tracks use the interface accent with a contrasting thumb. Keyboard focus uses a clear outline and disabled switches reduce opacity.
 
 The timeline is interface chrome: its root explicitly uses `--bg-timeline` and `--timeline-ink`, independent of its writing-surface parent. The timeline is rendered in MainLayout’s footer above StatusBar, outside the rounded editor container. Its surface matches the status-bar/interface-panel surface exactly, with independently contrasting lines and labels. Scene pills use opaque scene/accent fills with automatically contrasting numbers; filtered items use an opaque neutral fill. Paper colour changes must not recolour the timeline.
 
@@ -141,3 +141,5 @@ Status-bar labels and icons use `--status-ink`; accents and saved/error indicato
 Shared interactive colours are surface-aware: MUI primary controls use a readable adaptation of the chosen accent against the panel surface; paired primary foregrounds are computed independently. The chosen accent is preserved for solid contained-button fills and editor syntax. Secondary UI labels and CSS muted tokens receive contrast correction, including legacy alpha colours composited against the actual surface. Menus/inputs resolve their own foreground and focus colour, and tooltips use an explicit foreground/background pair. Outline menu checkmarks inherit menu ink; selected colour chips derive their ink from the actual chip fill. Do not apply extra opacity to secondary labels or useful drag/add affordances.
 
 Document tabs are flat: active and inactive tabs use no box shadow. Active tabs retain their rounded shape and theme surface highlight.
+
+Switch root descendant rules explicitly fix thumb and switch-base dimensions for both sizes so MUI small-size defaults cannot enlarge the thumb beyond the track. The 22px switch base moves 14px inside a 36px root, leaving a consistent 3px thumb inset.

@@ -2,11 +2,10 @@ import { useSyncExternalStore } from "react";
 import { STORAGE_KEYS } from "../constants";
 import type { ApiEntry } from "../constants";
 import { notifyConfigChange } from "./usePromptConfig";
-import { decryptApiList } from "../utils/cryptoStorage";
+import { decryptApiList, encryptApiList } from "../utils/cryptoStorage";
 
 let cachedRaw: string | null = null;
 let cachedApiList: ApiEntry[] = [];
-let isDecrypting = false;
 
 function getApiList(): ApiEntry[] {
   try {
@@ -25,17 +24,38 @@ function getApiList(): ApiEntry[] {
       return cachedApiList;
     }
 
-    cachedApiList = parsed;
+    cachedApiList = parsed.map((entry) => ({
+      ...entry,
+      apiKey: entry.apiKey?.startsWith("secure:v1:") || entry.apiKey?.startsWith("enc:v1:") ? "" : entry.apiKey,
+    }));
 
-    if (!isDecrypting) {
-      isDecrypting = true;
-      decryptApiList(parsed).then((decrypted) => {
-        cachedApiList = decrypted;
-        isDecrypting = false;
-        notifyApiListChangeOnly();
-      }).catch(() => {
-        isDecrypting = false;
-      });
+    {
+      decryptApiList(parsed)
+        .then((decrypted) => {
+          if (cachedRaw !== raw) return;
+          cachedApiList = decrypted;
+          notifyApiListChangeOnly();
+          if (
+            typeof window !== "undefined" &&
+            "__TAURI_INTERNALS__" in window &&
+            parsed.some((e) => e.apiKey && !e.apiKey.startsWith("secure:v1:"))
+          ) {
+            void encryptApiList(decrypted)
+              .then((secured) => {
+                if (localStorage.getItem(STORAGE_KEYS.PROMPT_API_LIST) === raw) {
+                  const migrated = JSON.stringify(secured);
+                  localStorage.setItem(STORAGE_KEYS.PROMPT_API_LIST, migrated);
+                  cachedRaw = migrated;
+                }
+              })
+              .catch(() => {
+                /* Retain recoverable original credentials when the native store is locked. */
+              });
+          }
+        })
+        .catch(() => {
+          /* Show entries without unavailable credentials; keep saved references intact. */
+        });
     }
 
     return cachedApiList;

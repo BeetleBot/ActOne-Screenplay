@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 
-const { editorViewRef, copySceneMock } = vi.hoisted(() => ({
+const { editorViewRef, copySceneMock, lineNumberToggle } = vi.hoisted(() => ({
   editorViewRef: { current: null as { state: import("@codemirror/state").EditorState } | null },
+  lineNumberToggle: vi.fn(),
   copySceneMock: vi.fn().mockResolvedValue(true),
 }));
 
@@ -28,6 +29,8 @@ vi.mock("../context", () => ({
     setHideSyntaxEnabled: vi.fn(),
     hideTagsEnabled: false,
     setHideTagsEnabled: vi.fn(),
+    lineNumbersEnabled: true,
+    setLineNumbersEnabled: lineNumberToggle,
     lineFocusEnabled: false,
     setLineFocusEnabled: vi.fn(),
   }),
@@ -111,3 +114,10 @@ describe("CommandPalette Component", () => {
   });
 });
 
+
+it("can hide editor line numbers from the command palette", () => {
+  render(<CommandPalette {...defaultProps} isOpen />);
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Hide Line Numbers" } });
+  fireEvent.click(screen.getByText("Hide Line Numbers"));
+  expect(lineNumberToggle).toHaveBeenCalledWith(false);
+});

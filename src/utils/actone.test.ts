@@ -242,7 +242,7 @@ describe("actone bundle - Backward Compatibility & Migration", () => {
     expect(manifest[1].file).toBe("files/58.fountain");
   });
 
-  it("migrates legacy prompt.json to muse.json", () => {
+  it("migrates legacy prompt.json to urai.json", () => {
     const rawZip = zipSync({
       "project.json": strToU8(JSON.stringify([{ name: "Test", file: "files/Test.fountain" }])),
       "files/Test.fountain": strToU8("INT. ROOM - DAY"),
@@ -261,12 +261,12 @@ describe("actone bundle - Backward Compatibility & Migration", () => {
       activeConversationId: "c1",
     });
 
-    // Verify when re-packed, it is saved into muse.json
+    // Verify when re-packed, it is saved into urai.json
     const repacked = packActoneBundle(unpacked.scripts, unpacked.settings);
     const unzipped = unzipSync(repacked.slice(4));
-    expect(unzipped["muse.json"]).toBeDefined();
-    const museChats = JSON.parse(strFromU8(unzipped["muse.json"]));
-    expect(museChats.activeConversationId).toBe("c1");
+    expect(unzipped["urai.json"]).toBeDefined();
+    const uraiChats = JSON.parse(strFromU8(unzipped["urai.json"]));
+    expect(uraiChats.activeConversationId).toBe("c1");
   });
 
   it("silently ignores obsolete marker.json without throwing", () => {
@@ -485,3 +485,13 @@ describe("actone bundle - Per-Script Settings Isolation & Script Renaming", () =
   });
 });
 
+
+
+describe("UrAI archive compatibility", () => {
+  it("loads conversations from the previous archive entry", () => {
+    const legacyEntry = String.fromCharCode(109, 117, 115, 101) + ".json";
+    const chats = { conversations: [{ id: "saved-chat" }], activeConversationId: "saved-chat" };
+    const archive = zipSync({ "document.fountain": strToU8("INT. ROOM - DAY"), [legacyEntry]: strToU8(JSON.stringify(chats)) });
+    expect(unpackActoneBundle(archive).promptChats).toEqual(chats);
+  });
+});

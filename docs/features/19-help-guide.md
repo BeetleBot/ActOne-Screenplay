@@ -33,8 +33,8 @@ The Help Guide provides **91 searchable articles across 10 categories**. The art
 9. **Settings & Customization** (7 articles)
    - Settings Overview, Spellcheck, Theme Manager & Custom Themes, Font & Paper Settings, Interface Scaling & Display DPI, Auto-Save, Editor Preferences
 
-10. **AI & Muse** (5 articles)
-    - Muse AI Assistant Overview, Configuring Muse (AI Providers), Using Muse Chat, Whole Document Translation, Quick AI Model Switcher
+10. **AI & UrAI** (5 articles)
+    - UrAI AI Assistant Overview, Configuring UrAI (AI Providers), Using UrAI Chat, Whole Document Translation, Quick AI Model Switcher
 
 ## Features
 
@@ -57,4 +57,4 @@ interface HelpArticle {
 }
 ```
 
-The current Muse article IDs are `muse-overview`, `muse-configure`, `muse-chat`, and `muse-tools`. There is no implemented `@command` mode; help content must not describe `@write-scene`, `@q`, `@lookup`, or `@synonyms` autocomplete as available features.
+The current UrAI article IDs are `urai-overview`, `urai-configure`, `urai-chat`, and `urai-tools`. There is no implemented `@command` mode; help content must not describe `@write-scene`, `@q`, `@lookup`, or `@synonyms` autocomplete as available features.

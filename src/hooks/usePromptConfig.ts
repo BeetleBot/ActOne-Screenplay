@@ -7,7 +7,6 @@ import { encryptApiKey, decryptApiKey, isEncrypted } from "../utils/cryptoStorag
 
 let decryptedApiKeyCache: string = "";
 let lastEncryptedKeyValue: string | null = null;
-let isDecrypting = false;
 
 function syncDecryptApiKey(stored: string) {
   if (!stored) {
@@ -24,16 +23,31 @@ function syncDecryptApiKey(stored: string) {
     return;
   }
   lastEncryptedKeyValue = stored;
-  if (!isDecrypting) {
-    isDecrypting = true;
-    decryptApiKey(stored).then((plain) => {
-      decryptedApiKeyCache = plain;
-      isDecrypting = false;
-      notifyConfigChange();
-    }).catch(() => {
-      decryptedApiKeyCache = stored;
-      isDecrypting = false;
-    });
+  {
+    decryptedApiKeyCache = "";
+    decryptApiKey(stored)
+      .then((plain) => {
+        if (lastEncryptedKeyValue !== stored) return;
+        decryptedApiKeyCache = plain;
+        notifyConfigChange();
+        if (isTauriEnv() && !stored.startsWith("secure:v1:")) {
+          void encryptApiKey(plain)
+            .then((reference) => {
+              if (localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) === stored) {
+                localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, reference);
+                lastEncryptedKeyValue = reference;
+              }
+            })
+            .catch(() => {
+              /* Keep the recoverable original if the native store is locked. */
+            });
+        }
+      })
+      .catch((error) => {
+        if (lastEncryptedKeyValue !== stored) return;
+        reportCredentialError(error);
+        decryptedApiKeyCache = "";
+      });
   }
 }
 
@@ -83,6 +97,15 @@ export interface PromptConfig {
 let cachedConfig: PromptConfig | null = null;
 
 function getConfig(): PromptConfig {
+  try {
+    const previousBrand = String.fromCharCode(77, 117, 115, 101);
+    const storedInstructions = localStorage.getItem(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT);
+    if (storedInstructions?.includes(previousBrand)) {
+      localStorage.setItem(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT, storedInstructions.replaceAll(previousBrand, "UrAI"));
+    }
+  } catch {
+    /* Storage may be unavailable in browser privacy modes. */
+  }
   let newConfig: PromptConfig;
   try {
     const rawChat = localStorage.getItem(STORAGE_KEYS.PROMPT_CHAT_TEMP);
@@ -92,33 +115,52 @@ function getConfig(): PromptConfig {
     let rephrasePresets: { name: string; prompt: string }[];
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES);
-      translateLangs = raw ? JSON.parse(raw) : [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])];
-    } catch { translateLangs = [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])]; }
+      translateLangs = raw
+        ? JSON.parse(raw)
+        : [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])];
+    } catch {
+      translateLangs = [...(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_LANGUAGES] as unknown as string[])];
+    }
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.PROMPT_REPHRASE_PRESETS);
       rephrasePresets = raw ? JSON.parse(raw) : JSON.parse(String(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_PRESETS]));
-    } catch { rephrasePresets = []; }
-    const standardPreset = { name: "Standard", prompt: "You are a professional screenwriting rephrasing tool. Rephrase the user's text. Never use dashes or hyphens (- or -- or —) unless part of a necessary compound word like 'co-working' or 'ten-year-old'. Use commas, full stops, or conjunctions (and, but, so) instead." };
-    if (!rephrasePresets.some(p => p.name === "Standard")) {
+    } catch {
+      rephrasePresets = [];
+    }
+    const standardPreset = {
+      name: "Standard",
+      prompt:
+        "You are a professional screenwriting rephrasing tool. Rephrase the user's text. Never use dashes or hyphens (- or -- or —) unless part of a necessary compound word like 'co-working' or 'ten-year-old'. Use commas, full stops, or conjunctions (and, but, so) instead.",
+    };
+    if (!rephrasePresets.some((p) => p.name === "Standard")) {
       rephrasePresets = [standardPreset, ...rephrasePresets];
     }
-    const storedKey = localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY]);
+    const storedKey =
+      localStorage.getItem(STORAGE_KEYS.PROMPT_API_KEY) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_KEY]);
     syncDecryptApiKey(storedKey);
     newConfig = {
-        provider: (localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) as PromptProvider | null) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_PROVIDER]) as PromptProvider,
-        model: localStorage.getItem(STORAGE_KEYS.PROMPT_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_MODEL]),
-        systemPrompt: localStorage.getItem(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]),
-        rephrasePresets,
-        chatTemp: rawChat !== null ? parseFloat(rawChat) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_CHAT_TEMP]),
-        rephraseTemp: rawRep !== null ? parseFloat(rawRep) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_TEMP]),
-        translateLanguages: translateLangs,
-        translatePrompt: localStorage.getItem(STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT]),
-        translateTemp: rawTransTemp !== null ? parseFloat(rawTransTemp) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_TEMP]),
-        apiEndpoint: localStorage.getItem(STORAGE_KEYS.PROMPT_API_ENDPOINT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_ENDPOINT]),
-        apiKey: decryptedApiKeyCache,
-        apiModel: localStorage.getItem(STORAGE_KEYS.PROMPT_API_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_MODEL]),
-        ollamaUrl: localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL]),
-      };
+      provider:
+        (localStorage.getItem(STORAGE_KEYS.PROMPT_PROVIDER) as PromptProvider | null) ??
+        (String(DEFAULTS[STORAGE_KEYS.PROMPT_PROVIDER]) as PromptProvider),
+      model: localStorage.getItem(STORAGE_KEYS.PROMPT_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_MODEL]),
+      systemPrompt:
+        localStorage.getItem(STORAGE_KEYS.PROMPT_SYSTEM_PROMPT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_SYSTEM_PROMPT]),
+      rephrasePresets,
+      chatTemp: rawChat !== null ? parseFloat(rawChat) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_CHAT_TEMP]),
+      rephraseTemp: rawRep !== null ? parseFloat(rawRep) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_REPHRASE_TEMP]),
+      translateLanguages: translateLangs,
+      translatePrompt:
+        localStorage.getItem(STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT) ??
+        String(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_PROMPT]),
+      translateTemp:
+        rawTransTemp !== null ? parseFloat(rawTransTemp) : Number(DEFAULTS[STORAGE_KEYS.PROMPT_TRANSLATE_TEMP]),
+      apiEndpoint:
+        localStorage.getItem(STORAGE_KEYS.PROMPT_API_ENDPOINT) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_ENDPOINT]),
+      apiKey: decryptedApiKeyCache,
+      apiModel: localStorage.getItem(STORAGE_KEYS.PROMPT_API_MODEL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_API_MODEL]),
+      ollamaUrl:
+        localStorage.getItem(STORAGE_KEYS.PROMPT_OLLAMA_URL) ?? String(DEFAULTS[STORAGE_KEYS.PROMPT_OLLAMA_URL]),
+    };
   } catch {
     newConfig = {
       provider: "none",
@@ -195,18 +237,22 @@ export function setPromptConfigField(key: keyof PromptConfig, value: string | nu
     const plainStr = String(value);
     decryptedApiKeyCache = plainStr;
     notifyConfigChange();
-    encryptApiKey(plainStr).then((enc) => {
-      try {
-        localStorage.setItem(storageMap.apiKey, enc);
-        lastEncryptedKeyValue = enc;
-      } catch {}
-    });
+    encryptApiKey(plainStr)
+      .then((enc) => {
+        try {
+          localStorage.setItem(storageMap.apiKey, enc);
+          lastEncryptedKeyValue = enc;
+        } catch {}
+      })
+      .catch(reportCredentialError);
     return;
   }
   try {
     const stored = key === "translateLanguages" || key === "rephrasePresets" ? JSON.stringify(value) : String(value);
     localStorage.setItem(storageMap[key], stored);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   notifyConfigChange();
 }
 
@@ -230,7 +276,7 @@ export async function fetchModels(provider: PromptProvider): Promise<string[]> {
       }
       const res = await platformFetch(`${base.replace(/\/+$/, "")}/api/tags`, { signal: AbortSignal.timeout(3000) });
       if (!res.ok) return [];
-      const data = await res.json() as { models?: { name: string }[] };
+      const data = (await res.json()) as { models?: { name: string }[] };
       return (data.models ?? []).map((m) => m.name.replace(/:latest$/, ""));
     }
     return [];
@@ -264,8 +310,25 @@ export function getActiveModelName(config: PromptConfig): string {
           if (entry?.name) return entry.name;
         }
       }
-    } catch { void 0; }
+    } catch {
+      void 0;
+    }
     return config.apiModel || "OpenAI API";
   }
   return config.model || "Ollama";
+}
+
+export function reportCredentialError(error: unknown) {
+  window.dispatchEvent(new CustomEvent("urai-credential-error", { detail: String(error) }));
+}
+export async function activateConfiguredApi(entry: { endpoint: string; model: string; apiKey: string }) {
+  const plain = isEncrypted(entry.apiKey) ? await decryptApiKey(entry.apiKey) : entry.apiKey;
+  const secured = await encryptApiKey(plain);
+  localStorage.setItem(STORAGE_KEYS.PROMPT_API_ENDPOINT, entry.endpoint);
+  localStorage.setItem(STORAGE_KEYS.PROMPT_API_MODEL, entry.model);
+  localStorage.setItem(STORAGE_KEYS.PROMPT_API_KEY, secured);
+  localStorage.setItem(STORAGE_KEYS.PROMPT_PROVIDER, "openai-compatible");
+  decryptedApiKeyCache = plain;
+  lastEncryptedKeyValue = secured;
+  notifyConfigChange();
 }

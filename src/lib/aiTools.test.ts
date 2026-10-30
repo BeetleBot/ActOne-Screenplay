@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { AI_TOOLS, MUSE_TOOLS, executeToolCall } from "./aiTools";
+import { AI_TOOLS, URAI_TOOLS, executeToolCall } from "./aiTools";
 import { FountainDocument, LineType } from "../parser/FountainParser";
 
 function createMockDoc(lines: Array<{ text: string; type: LineType; sceneNumber?: string; marker?: { color: string; description: string } }> = [], settings: any = {}): FountainDocument {
@@ -17,10 +17,10 @@ function createMockDoc(lines: Array<{ text: string; type: LineType; sceneNumber?
   };
 }
 
-describe("aiTools (Muse AI Tools)", () => {
-  describe("Tool Declarations (AI_TOOLS & MUSE_TOOLS)", () => {
-    it("exports MUSE_TOOLS and AI_TOOLS aliases identically", () => {
-      expect(AI_TOOLS).toBe(MUSE_TOOLS);
+describe("aiTools (UrAI AI Tools)", () => {
+  describe("Tool Declarations (AI_TOOLS & URAI_TOOLS)", () => {
+    it("exports URAI_TOOLS and AI_TOOLS aliases identically", () => {
+      expect(AI_TOOLS).toBe(URAI_TOOLS);
       expect(Array.isArray(AI_TOOLS)).toBe(true);
       expect(AI_TOOLS.length).toBeGreaterThanOrEqual(10);
     });

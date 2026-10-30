@@ -13,7 +13,7 @@ import { RightPane } from "../RightPane";
 import { ScriptEditor } from "../ScriptEditor";
 const CanvasEditor = lazy(() => import("../CanvasEditor").then(module => ({ default: module.CanvasEditor })));
 import { ProseEditor } from "../ProseEditor";
-import { MusePanel } from "../MusePanel";
+import { UrAIPanel } from "../UrAIPanel";
 import Typography from "@mui/material/Typography";
 import { DescriptionIcon, MenuBookIcon, UploadIcon } from "../Icons";
 const StructureImportModal = lazy(() => import("../StructureImportModal").then(module => ({ default: module.StructureImportModal })));
@@ -643,9 +643,9 @@ export const Workspace = React.memo<WorkspaceProps>(({
           isOpen={activeRightPane === "prompt"}
           onClose={() => setActiveRightPane(null)}
           errorBoundaryName="prompt-pane"
-          ariaLabel="Muse Go!"
+          ariaLabel="UrAI"
         >
-          <MusePanel onInsertAtCursor={handleInsertAtCursor} />
+          <UrAIPanel onInsertAtCursor={handleInsertAtCursor} />
         </RightPane>
       )}
     </Box>

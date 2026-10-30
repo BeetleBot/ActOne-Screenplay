@@ -18,6 +18,7 @@ export const STORAGE_KEYS = {
   ACTIVE_SPRINTS: "actone-active-sprints",
   SPRINT_HISTORY: "actone-sprint-history",
   HIDE_SYNTAX_ENABLED: "actone-hide-syntax-enabled",
+  LINE_NUMBERS_ENABLED: "actone-line-numbers-enabled",
   LINE_FOCUS_ENABLED: "actone-line-focus-enabled",
   SNAPSHOTS_ENABLED: "actone-snapshots-enabled",
   SNAPSHOT_LOCATION: "actone-snapshot-location",

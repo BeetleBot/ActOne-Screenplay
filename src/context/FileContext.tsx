@@ -68,7 +68,7 @@ export interface FileContextProps {
   openFilePath: (path: string) => Promise<void>;
   removeFromRecent: (path: string) => void;
   updateSettings: (updater: SettingsUpdater) => void;
-  updateFileScriptContent: (fileId: string, scriptIndex: number | undefined, text: string) => void;
+  updateFileScriptContent: (fileId: string, scriptIndex: number | undefined, text: string, expectedScriptName?: string) => void;
   scripts: ScriptInfo[];
   activeScriptIndex: number;
   activeScriptName: string;
@@ -514,10 +514,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 100);
   };
 
-  const updateFileScriptContent = useCallback(async (fileId: string, scriptIndex: number | undefined, text: string) => {
+  const updateFileScriptContent = useCallback(async (fileId: string, scriptIndex: number | undefined, text: string, expectedScriptName?: string) => {
     const normalized = text.replace(/\r\n/g, "\n");
     const targetFile = filesRef.current.find(f => f.id === fileId);
-    const targetIdx = scriptIndex ?? targetFile?.activeScriptIndex ?? 0;
+    let targetIdx = expectedScriptName ? (targetFile?.scripts?.findIndex(s => s.name === expectedScriptName) ?? -1) : (scriptIndex ?? targetFile?.activeScriptIndex ?? 0);
+    if (targetIdx < 0) return;
     const targetScr = targetFile?.scripts && targetFile.scripts[targetIdx];
     const isProse = isNonScreenplay(targetScr, targetFile?.filePath);
 
@@ -533,6 +534,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setFiles(prev => prev.map(f => {
       if (f.id === fileId) {
+        if (expectedScriptName) {
+          targetIdx = f.scripts?.findIndex(s => s.name === expectedScriptName) ?? -1;
+          if (targetIdx < 0) return f;
+        }
         const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
 
         let updatedScripts = f.scripts;
@@ -576,6 +581,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     filesRef.current = filesRef.current.map(f => {
       if (f.id === fileId) {
+        if (expectedScriptName) {
+          targetIdx = f.scripts?.findIndex(s => s.name === expectedScriptName) ?? -1;
+          if (targetIdx < 0) return f;
+        }
         let updatedScripts = f.scripts;
         if (updatedScripts && updatedScripts.length > 0) {
           updatedScripts = updatedScripts.map((s, i) =>

@@ -99,7 +99,7 @@ export const UI_STEPS: TourStep[] = [
   {
     targetId: "status-bar",
     title: "The Status Bar",
-    description: "The bottom bar provides live document feedback, project save status, Muse AI assistant access, and analysis tools.",
+    description: "The bottom bar provides live document feedback, project save status, UrAI AI assistant access, and analysis tools.",
   },
   {
     targetId: "status-file-name",

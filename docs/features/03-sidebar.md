@@ -5,7 +5,7 @@ The **Activity Bar** is a slim **46px** vertical dock with **4px** inset padding
 Sidebar panels extrude smoothly from the borderless chrome with a `240ms` `cubic-bezier(0.25, 1, 0.5, 1)` deceleration curve. Panel widths persist across sessions and Zen Mode in `localStorage` (`180–800px`).
 
 ### Mutual Pane Exclusivity
-To maintain an uncluttered workspace, only one pane (Left Sidebar or Right Pane) is active at a time. Opening a sidebar panel automatically closes any open right-side panel (Muse AI / Find & Replace), and vice versa.
+To maintain an uncluttered workspace, only one pane (Left Sidebar or Right Pane) is active at a time. Opening a sidebar panel automatically closes any open right-side panel (UrAI AI / Find & Replace), and vice versa.
 
 ## Header Tabs & Window Chrome
 

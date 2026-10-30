@@ -12,7 +12,7 @@
     <p>
       Review your story with X-Ray analytics, recover earlier drafts with local snapshots, and export to PDF, Final Draft, Fade In, or Fountain. Customize the editor with themes.
     </p>
-    <p>Muse is an optional AI writing assistant that connects to local Ollama models or an OpenAI-compatible service of your choice.</p>
+    <p>UrAI is an optional AI writing assistant that connects to local Ollama models or an OpenAI-compatible service of your choice.</p>
   </description>
   <launchable type="desktop-id">ink.iyal.actone.desktop</launchable>
   <url type="homepage">https://iyal.ink/actone/</url>

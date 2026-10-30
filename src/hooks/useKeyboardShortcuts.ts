@@ -18,7 +18,7 @@ interface ShortcutActions {
   openSettings?: () => void;
   toggleSearch: () => void;
   openSceneJump?: () => void;
-  openMusePane?: () => void;
+  openUrAIPane?: () => void;
   openModelPalette?: () => void;
   openHelp?: () => void;
   openShortcuts?: () => void;
@@ -78,7 +78,7 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
         }
         if (!e.shiftKey) {
           e.preventDefault();
-          actionsRef.current.openMusePane?.();
+          actionsRef.current.openUrAIPane?.();
           return;
         }
       }

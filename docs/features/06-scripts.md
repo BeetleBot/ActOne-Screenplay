@@ -13,7 +13,7 @@ When a new `.actone` project is created with no scripts, or if all existing scri
 - **Editor is replaced with Landing Pad UI**: A clean, centered desktop prompt ("Act One, Scene One. / Every screenplay starts here. Create your first script to begin writing.") with a **"Create a new script"** button.
 - **Sidebar Feature Tabs Disabled**: Feature buttons (Outline, Notepad, Markers, Tasks, Snapshots, Sprint, Parking) in the Activity Bar are greyed out (`opacity: 0.35`, `pointerEvents: 'none'`) since they require an active screenplay.
 - **Scripts Pane Active**: The sidebar automatically switches to and opens the Scripts pane so you can view project files and add or import scripts.
-- **Status Bar & Muse Muted**: Word counts, scene counts, and page metrics display *"No active script"*. The Muse AI button is greyed out, unclickable, and its background glow is disabled.
+- **Status Bar & UrAI Muted**: Word counts, scene counts, and page metrics display *"No active script"*. The UrAI AI button is greyed out, unclickable, and its background glow is disabled.
 - **Creating a Script**: Clicking "Create a new script" on the Landing Pad or the `[+]` button in the Scripts pane prompts for a name, adds the script to the project, and automatically transitions into the editor.
 
 ## Switching Scripts

@@ -2,7 +2,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MainLayout } from "./MainLayout";
 const state = vi.hoisted(() => ({ showTimeline: true, isZenMode: false, isProse: false, hasNoScripts: false }));
-vi.mock("../../context", () => ({ useUI: () => ({ ...state, setActiveTab: vi.fn() }), useWorkspaceMetadata: () => state }));
+vi.mock("../../context", () => ({ useUI: () => ({ ...state, setActiveTab: vi.fn() }), useWorkspaceMetadata: () => ({ ...state, scripts: [{ type: "fountain" }], activeScriptIndex: 0 }) }));
 vi.mock("./HeaderBar", () => ({ HeaderBar: () => null }));
 vi.mock("./ActivityBar", () => ({ ActivityBar: () => null }));
 vi.mock("./Workspace", () => ({ Workspace: () => <div className="editor-container">Editor</div> }));

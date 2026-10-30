@@ -114,7 +114,7 @@ Three pieces of state are managed via `tauri::State`:
 | `get_structures` | Lists all 8 story structure templates with beats |
 | `get_structure_template` | Returns raw Fountain content for a structure |
 
-### Ollama (Muse provider proxy)
+### Ollama (UrAI provider proxy)
 
 | Command | Description |
 |---------|-------------|
