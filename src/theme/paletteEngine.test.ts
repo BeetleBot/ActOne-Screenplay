@@ -1,6 +1,6 @@
 import { getEditorVars } from "./muiTheme";
 import { expect, it } from "vitest";
-import { compileTheme, contrast } from "./paletteEngine";
+import { compileTheme, contrast, resolveUiColors, opaqueColor, readableOn } from "./paletteEngine";
 import { completeCustomColors, exportTheme, importTheme } from "./themeUtils";
 
 it("generates readable text across independently light, dark and coloured surfaces", () => {
@@ -50,4 +50,15 @@ it("keeps footer accents and saved indicators readable even when accent matches 
       expect(contrast(vars[role], surface)).toBeGreaterThanOrEqual(4.5);
     }
   }
+});
+
+it("safely resolves UI colors and opaque colors when roles are missing or undefined", () => {
+  const partial = { sidebar: "#222222" };
+  const ui = resolveUiColors(partial);
+  expect(ui.ink).toBeDefined();
+  expect(ui.menuSurface).toBe("#222222");
+  expect(ui.secondary).toBeDefined();
+  expect(ui.menuText).toBeDefined();
+  expect(opaqueColor(undefined, "#333333")).toBe("#333333");
+  expect(readableOn(undefined, "#333333")).toBeDefined();
 });

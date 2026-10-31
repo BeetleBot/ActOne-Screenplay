@@ -76,9 +76,10 @@ export const ThemeManagerWindow: React.FC = () => {
   };
 
   const startEdit = (ct: CustomTheme) => {
+    const full = completeCustomColors(ct.colors, ct.isDark);
     setFormName(ct.name);
     setFormIsDark(ct.isDark);
-    setForm({ ...ct.colors, app: ct.colors.app ?? ct.colors.editor, editorText: ct.colors.editorText ?? ct.colors.text });
+    setForm({ ...full, app: full.app ?? full.editor, editorText: full.editorText ?? full.text });
     setEditingId(ct.id);
     setShowForm(true);
   };

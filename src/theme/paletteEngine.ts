@@ -84,9 +84,10 @@ export function contrastingLine(surface: string): string {
 
 
 /** Preserve a semantic hue where possible, moving toward readable ink only when necessary. */
-export function readableOn(color: string, surface: string): string {
-  if (contrast(color, surface) >= 4.5) return normalizeHex(color);
+export function readableOn(color: string | undefined, surface: string): string {
   const ink = automaticInk(surface);
+  if (!color || typeof color !== "string" || !isHexColor(color)) return ink;
+  if (contrast(color, surface) >= 4.5) return normalizeHex(color);
   for (let step = 5; step <= 100; step += 5) {
     const candidate = blend(ink, color, step / 100);
     if (contrast(candidate, surface) >= 4.5) return candidate;
@@ -95,7 +96,8 @@ export function readableOn(color: string, surface: string): string {
 }
 
 /** Resolve literal alpha colours against their surface before doing contrast calculations. */
-export function opaqueColor(value: string, backdrop: string): string {
+export function opaqueColor(value: string | undefined, backdrop: string): string {
+  if (!value || typeof value !== "string") return backdrop;
   if (/^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(value)) return normalizeHex(value);
   const match = value.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(0?\.\d+|0|1))?\s*\)$/);
   if (!match || match.slice(1, 4).some(channel => Number(channel) > 255)) return backdrop;
@@ -103,12 +105,13 @@ export function opaqueColor(value: string, backdrop: string): string {
   return blend(hex, backdrop, match[4] === undefined ? 1 : Number(match[4]));
 }
 
-export function resolveUiColors(colors: ThemeColors) {
-  const ink = automaticInk(colors.sidebar);
-  const menuSurface = opaqueColor(colors.dropdown, colors.sidebar);
+export function resolveUiColors(colors: Partial<ThemeColors>) {
+  const sidebar = colors.sidebar ?? "#f5f5f5";
+  const ink = automaticInk(sidebar);
+  const menuSurface = opaqueColor(colors.dropdown, sidebar);
   return {
-    accent: readableOn(colors.accent, colors.sidebar),
-    secondary: readableOn(opaqueColor(colors.textSecondary, colors.sidebar), colors.sidebar),
+    accent: readableOn(colors.accent, sidebar),
+    secondary: readableOn(opaqueColor(colors.textSecondary, sidebar), sidebar),
     menuSurface,
     menuText: readableOn(opaqueColor(colors.dropdownText, menuSurface), menuSurface),
     fieldAccent: readableOn(colors.accent, menuSurface),
