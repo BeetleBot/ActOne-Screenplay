@@ -325,9 +325,9 @@ function AppInner() {
   useNativeAppBehavior(handleDropFiles, handleDragStateChange);
 
   const {
-    isModalActive, isPaletteOpen, isSceneJumpOpen, showExportWindow, showStructureModal,
+    isModalActive, isPaletteOpen, showExportWindow, showExportScriptWindow, showStructureModal,
     showTitlePageModal, showShortcutsModal,
-    setIsPaletteOpen, setIsSceneJumpOpen, setShowExportWindow, setShowStructureModal,
+    setIsPaletteOpen, setShowExportWindow, setShowExportScriptWindow, setShowStructureModal,
     setShowTitlePageModal, setShowShortcutsModal,
     togglePalette
   } = useModals();
@@ -349,7 +349,6 @@ function AppInner() {
     saveFileAs,
     closeFile: useCallback(() => closeFile(activeFileId), [closeFile, activeFileId]),
     togglePalette,
-    openSceneJump: useCallback(() => setIsSceneJumpOpen(true), [setIsSceneJumpOpen]),
     openModelPalette: useCallback(() => setIsModelPaletteOpen(true), []),
     exportPDF: useCallback(() => {
       if (/\.excalidraw$/i.test(scriptFileName)) {
@@ -358,6 +357,9 @@ function AppInner() {
       }
       setShowExportWindow(true);
     }, [setShowExportWindow, scriptFileName]),
+    exportScript: useCallback(() => {
+      setShowExportScriptWindow(true);
+    }, [setShowExportScriptWindow]),
     toggleSidebar: useCallback(() => {
       if (activeRightPane) {
         setActiveRightPane(null);
@@ -969,10 +971,10 @@ function AppInner() {
       <ModalManager
         isPaletteOpen={isPaletteOpen}
         setIsPaletteOpen={setIsPaletteOpen}
-        isSceneJumpOpen={isSceneJumpOpen}
-        setIsSceneJumpOpen={setIsSceneJumpOpen}
         showExportWindow={showExportWindow}
         setShowExportWindow={setShowExportWindow}
+        showExportScriptWindow={showExportScriptWindow}
+        setShowExportScriptWindow={setShowExportScriptWindow}
         showStructureModal={showStructureModal}
         setShowStructureModal={setShowStructureModal}
         showTitlePageModal={showTitlePageModal}

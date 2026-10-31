@@ -17,7 +17,7 @@ import {
   MenuBookIcon,
 } from "./Icons";
 import { TitleBar } from "./TitleBar";
-import { SHORTCUTS_REGISTRY, SYNTAX_REGISTRY, type ShortcutItem } from "../constants/shortcuts";
+import { SHORTCUTS_REGISTRY, SYNTAX_REGISTRY, QUICK_ACTIONS_REGISTRY, type ShortcutItem } from "../constants/shortcuts";
 interface QuickGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,7 +31,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
 }) => {
   const muiTheme = useMuiTheme();
   const isDark = muiTheme.palette.mode === "dark";
-  const [tab, setTab] = useState<"shortcuts" | "syntax">("shortcuts");
+  const [tab, setTab] = useState<"shortcuts" | "quick-actions" | "syntax">("shortcuts");
   const [search, setSearch] = useState("");
 
   const handleOpenHelp = () => {
@@ -72,6 +72,17 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
         (item.forcedSyntax && item.forcedSyntax.toLowerCase().includes(q)) ||
         (item.autoExample && item.autoExample.toLowerCase().includes(q)) ||
         (item.forcedExample && item.forcedExample.toLowerCase().includes(q))
+    );
+  }, [search]);
+
+  const filteredQuickActions = useMemo(() => {
+    const q = search.toLowerCase();
+    return QUICK_ACTIONS_REGISTRY.filter(
+      (item) =>
+        item.prefix.toLowerCase().includes(q) ||
+        item.label.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.example.toLowerCase().includes(q)
     );
   }, [search]);
 
@@ -128,8 +139,9 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
             onChange={(_, val) => val !== null && setTab(val)}
             size="small"
           >
-            <ToggleButton value="shortcuts" sx={{ fontSize: 12, py: 0.5, px: 2.5, textTransform: "none", fontWeight: 600 }}>Shortcuts</ToggleButton>
-            <ToggleButton value="syntax" sx={{ fontSize: 12, py: 0.5, px: 2.5, textTransform: "none", fontWeight: 600 }}>Syntax Reference</ToggleButton>
+            <ToggleButton value="shortcuts" sx={{ fontSize: 12, py: 0.5, px: 2, textTransform: "none", fontWeight: 600 }}>Shortcuts</ToggleButton>
+            <ToggleButton value="quick-actions" sx={{ fontSize: 12, py: 0.5, px: 2, textTransform: "none", fontWeight: 600 }}>Quick Actions</ToggleButton>
+            <ToggleButton value="syntax" sx={{ fontSize: 12, py: 0.5, px: 2, textTransform: "none", fontWeight: 600 }}>Syntax Reference</ToggleButton>
           </ToggleButtonGroup>
 
           <Box
@@ -147,7 +159,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
           >
             <SearchIcon sx={{ fontSize: 18, color: "text.secondary" }} />
             <InputBase
-              placeholder={tab === "shortcuts" ? "Search shortcuts..." : "Search syntax..."}
+              placeholder={tab === "shortcuts" ? "Search shortcuts..." : tab === "quick-actions" ? "Search quick actions..." : "Search syntax..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               sx={{
@@ -236,7 +248,73 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
             </Box>
           )}
 
-          {/* Tab 2: Syntax Reference */}
+          {/* Tab 2: Quick Actions */}
+          {tab === "quick-actions" && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: "10px",
+                  bgcolor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                  border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+                }}
+              >
+                <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "text.secondary", lineHeight: 1.5 }}>
+                  Type these prefixes directly inside the <strong>Command Palette (Ctrl+K)</strong> to filter scenes or browse recent projects in one quick stroke.
+                </Typography>
+              </Box>
+
+              {filteredQuickActions.map((item) => (
+                <Box
+                  key={item.prefix}
+                  sx={{
+                    p: 2,
+                    borderRadius: "12px",
+                    bgcolor: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
+                    border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1.25,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.95rem", color: muiTheme.palette.primary.main }}>
+                      {item.label}
+                    </Typography>
+                    <Chip
+                      label={item.prefix}
+                      size="small"
+                      sx={{
+                        height: 24,
+                        fontSize: "0.8rem",
+                        fontWeight: 700,
+                        fontFamily: "monospace",
+                        borderRadius: "4px",
+                        bgcolor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+                        color: "text.primary",
+                        border: `1px solid ${isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.15)"}`,
+                      }}
+                    />
+                  </Box>
+
+                  <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "text.secondary", lineHeight: 1.5 }}>
+                    {item.description}
+                  </Typography>
+
+                  <Box sx={{ p: 1.2, borderRadius: "6px", bgcolor: isDark ? "#0d1117" : "#f6f8fa", border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary", fontSize: "0.72rem" }}>
+                      Example:
+                    </Typography>
+                    <Typography component="span" sx={{ fontFamily: "monospace", fontSize: "0.82rem", color: isDark ? "#e6edf3" : "#24292f" }}>
+                      {item.example}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {/* Tab 3: Syntax Reference */}
           {tab === "syntax" && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {filteredSyntax.map((item) => (

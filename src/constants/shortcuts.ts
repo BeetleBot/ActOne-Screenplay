@@ -113,12 +113,12 @@ export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   { id: "save-file", label: "Save", category: "File & Document", keys: ["Ctrl", "S"] },
   { id: "save-as", label: "Save As", category: "File & Document", keys: ["Ctrl", "Shift", "S"] },
   { id: "close-tab", label: "Close Tab", category: "File & Document", keys: ["Alt", "Q"] },
-  { id: "export", label: "Export PDF / FDX", category: "File & Document", keys: ["Ctrl", "P"] },
+  { id: "export-pdf", label: "Export PDF", category: "File & Document", keys: ["Ctrl", "P"] },
+  { id: "export-script", label: "Export Script", category: "File & Document", keys: ["Ctrl", "Shift", "P"] },
   { id: "next-tab", label: "Next Tab", category: "File & Document", keys: ["Ctrl", "Tab"] },
   { id: "prev-tab", label: "Previous Tab", category: "File & Document", keys: ["Ctrl", "Shift", "Tab"] },
 
   // ===== Navigation & View =====
-  { id: "scene-jump", label: "Jump to Scene", category: "Navigation & View", keys: ["Ctrl", "J"] },
   { id: "prev-scene", label: "Previous Scene", category: "Navigation & View", keys: ["Alt", "↑"] },
   { id: "next-scene", label: "Next Scene", category: "Navigation & View", keys: ["Alt", "↓"] },
   { id: "shortcuts-modal", label: "Keyboard Shortcuts Modal", category: "Navigation & View", keys: ["F1"] },
@@ -129,7 +129,7 @@ export const SHORTCUTS_REGISTRY: ShortcutItem[] = [
   { id: "open-urai", label: "Open UrAI AI", category: "Navigation & View", keys: ["Alt", "M"] },
   { id: "open-model-palette", label: "Switch AI Model", category: "Navigation & View", keys: ["Alt", "Shift", "M"] },
   { id: "open-snapshots", label: "Open Snapshots", category: "Navigation & View", keys: ["Alt", "S"] },
-  { id: "toggle-timeline", label: "Toggle Timeline View", category: "Navigation & View", keys: ["Ctrl", "Shift", "P"] },
+  { id: "toggle-timeline", label: "Toggle Timeline View", category: "Navigation & View", keys: ["Alt", "T"] },
   { id: "open-settings", label: "Settings", category: "Navigation & View", keys: ["Ctrl", ","] },
 
   // ===== Editor & Formatting =====
@@ -173,3 +173,44 @@ export function generateShortcutsHelpMarkdown(): string {
 
   return markdown.trim();
 }
+
+
+export interface QuickActionItem {
+  prefix: string;
+  label: string;
+  description: string;
+  example: string;
+}
+
+export const QUICK_ACTIONS_REGISTRY: QuickActionItem[] = [
+  {
+    prefix: "sc.",
+    label: "Filter & Go to Scene",
+    description: "Instantly search and jump to screenplay scenes or prose headings by scene number, slugline, location, or synopsis.",
+    example: "sc. coffee (or sc. 14)",
+  },
+  {
+    prefix: "rf.",
+    label: "Search Recent Projects",
+    description: "Quickly browse and open previously saved screenplay and prose projects.",
+    example: "rf. interstellar",
+  },
+  {
+    prefix: "ch.",
+    label: "Characters & Dialogue Pass",
+    description: "List speaking characters with speech counts and jump directly to their dialogue.",
+    example: "ch. bob",
+  },
+  {
+    prefix: "th.",
+    label: "Theme Switcher",
+    description: "Fast-switch color palettes, light/dark modes, and custom theme presets.",
+    example: "th. midnight",
+  },
+  {
+    prefix: "mk.",
+    label: "Markers & Notes",
+    description: "Audit revision notes and color-coded markers throughout the script.",
+    example: "mk. red (or mk. fix)",
+  },
+];

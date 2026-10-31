@@ -1,26 +1,76 @@
-import { beforeEach, expect, it, vi } from "vitest";
-import { openExportWindow, type ExportWindowData } from "./exportWindow";
-const mocks = vi.hoisted(() => ({ ready: undefined as undefined | (() => void), emit: vi.fn().mockResolvedValue(undefined), focus: vi.fn(), existing: false, options: undefined as unknown }));
-vi.mock("@tauri-apps/api/event", () => ({
-  emitTo: mocks.emit,
-  listen: vi.fn(async (_event, callback) => { mocks.ready = callback; return vi.fn(); }),
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { openExportPdfWindow, openExportScriptWindow, type ExportWindowData } from "./exportWindow";
+
+const mocks = vi.hoisted(() => ({
+  emit: vi.fn().mockResolvedValue(undefined),
+  listen: vi.fn(),
+  getByLabel: vi.fn().mockResolvedValue(null),
+  getCurrentWindow: vi.fn(() => ({ label: "main" })),
 }));
-vi.mock("@tauri-apps/api/window", () => ({ getCurrentWindow: () => ({ label: "main" }) }));
-vi.mock("@tauri-apps/api/webviewWindow", () => ({ WebviewWindow: class {
-  static getByLabel = async () => mocks.existing ? { setFocus: mocks.focus } : null;
-  constructor(_label: string, options: unknown) { mocks.options = options; queueMicrotask(() => mocks.ready?.()); }
-  once = vi.fn();
-} }));
-const data = { file: { rawText: "Unsaved draft" }, ui: { paperSize: "a4" } } as ExportWindowData;
-beforeEach(() => { vi.clearAllMocks(); mocks.existing = false; Object.assign(window, { __TAURI_INTERNALS__: {} }); });
-it("hands off unsaved content after the native window is ready", async () => {
-  await openExportWindow(data);
-  expect(mocks.options).toMatchObject({ url: "/?modal=export&parent=main", resizable: true, maximized: true });
-  expect(mocks.emit).toHaveBeenCalledWith("export", "export:document", data);
-});
-it("updates and focuses an existing export window", async () => {
-  mocks.existing = true;
-  await openExportWindow(data);
-  expect(mocks.emit).toHaveBeenCalledWith("export", "export:document", data);
-  expect(mocks.focus).toHaveBeenCalled();
+
+vi.mock("@tauri-apps/api/event", () => ({
+  emitTo: (...args: unknown[]) => mocks.emit(...args),
+  listen: (...args: unknown[]) => mocks.listen(...args),
+}));
+
+vi.mock("@tauri-apps/api/webviewWindow", () => ({
+  WebviewWindow: class {
+    static getByLabel = mocks.getByLabel;
+    once = vi.fn();
+    constructor(public label: string, public options: unknown) {}
+  },
+}));
+
+vi.mock("@tauri-apps/api/window", () => ({
+  getCurrentWindow: mocks.getCurrentWindow,
+}));
+
+describe("exportWindow helper", () => {
+  const data: ExportWindowData = {
+    file: { rawText: "INT. COFFEE SHOP - DAY", isBundle: false, activeScriptName: "Draft", filePath: null, parsedDoc: null, scripts: [], activeScriptIndex: 0 },
+    ui: { fontFamily: "courier-prime", paperSize: "letter" },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (window as unknown as { __TAURI_INTERNALS__?: object }).__TAURI_INTERNALS__ = {};
+  });
+
+  it("opens the PDF export window and delivers document payload on ready", async () => {
+    mocks.listen.mockImplementation((event: string, handler: () => void) => {
+      if (event === "export-pdf:ready") handler();
+      return Promise.resolve(() => {});
+    });
+
+    await openExportPdfWindow(data);
+    expect(mocks.emit).toHaveBeenCalledWith("export-pdf", "export:document", data);
+  });
+
+  it("re-uses an existing PDF export window without re-creating it", async () => {
+    const focus = vi.fn().mockResolvedValue(undefined);
+    mocks.getByLabel.mockResolvedValueOnce({ setFocus: focus });
+
+    await openExportPdfWindow(data);
+    expect(mocks.emit).toHaveBeenCalledWith("export-pdf", "export:document", data);
+    expect(focus).toHaveBeenCalled();
+  });
+
+  it("opens the Script export window and delivers document payload on ready", async () => {
+    mocks.listen.mockImplementation((event: string, handler: () => void) => {
+      if (event === "export-script:ready") handler();
+      return Promise.resolve(() => {});
+    });
+
+    await openExportScriptWindow(data);
+    expect(mocks.emit).toHaveBeenCalledWith("export-script", "export:document", data);
+  });
+
+  it("re-uses an existing Script export window without re-creating it", async () => {
+    const focus = vi.fn().mockResolvedValue(undefined);
+    mocks.getByLabel.mockResolvedValueOnce({ setFocus: focus });
+
+    await openExportScriptWindow(data);
+    expect(mocks.emit).toHaveBeenCalledWith("export-script", "export:document", data);
+    expect(focus).toHaveBeenCalled();
+  });
 });

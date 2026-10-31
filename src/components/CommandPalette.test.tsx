@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 
-const { editorViewRef, copySceneMock, lineNumberToggle, openFilePathMock } = vi.hoisted(() => ({
+const { editorViewRef, copySceneMock, lineNumberToggle, openFilePathMock, scrollToLineMock } = vi.hoisted(() => ({
   editorViewRef: { current: null as { state: import("@codemirror/state").EditorState } | null },
   lineNumberToggle: vi.fn(),
   copySceneMock: vi.fn().mockResolvedValue(true),
   openFilePathMock: vi.fn(),
+  scrollToLineMock: vi.fn(),
 }));
 
 const mockRecentFiles = [
@@ -14,9 +15,24 @@ const mockRecentFiles = [
   { path: "C:/Projects/ScriptB.fountain", name: "ScriptB", lastOpened: Date.now() - 1000 * 60 * 60 * 2 },
 ];
 
+import { CommandPalette } from "./CommandPalette";
+import { EditorState } from "@codemirror/state";
+import { lineTypesField } from "../editor/fountainSyntax";
+import { LineType } from "../parser";
+
+const mockParsedDoc = {
+  lines: [
+    { id: "line-0", type: LineType.heading, text: "INT. COFFEE SHOP - DAY", sceneNumber: "1", setting: "INT", location: "COFFEE SHOP", timeOfDay: "DAY" },
+    { id: "line-1", type: LineType.action, text: "Bob sips his coffee." },
+    { id: "line-2", type: LineType.heading, text: "EXT. CITY STREET - NIGHT", sceneNumber: "2", setting: "EXT", location: "CITY STREET", timeOfDay: "NIGHT" },
+  ],
+  sceneHeadings: [],
+};
+
 vi.mock("../context", () => ({
   useFile: () => ({
     rawText: "",
+    parsedDoc: mockParsedDoc,
     scripts: [],
     scriptFileName: "test.fountain",
     recentFiles: mockRecentFiles,
@@ -24,7 +40,9 @@ vi.mock("../context", () => ({
     saveFile: vi.fn(),
     updateSettings: vi.fn(),
   }),
-  useEditor: () => ({ editorView: editorViewRef.current }),
+  useEditor: () => ({ editorView: editorViewRef.current, scrollToLine: scrollToLineMock }),
+  usePageBreaks: () => [0, 55],
+  useTheme: () => ({ theme: "dark", setTheme: vi.fn(), customThemes: [] }),
   useScriptEditor: () => ({ autoAddSceneNumbers: vi.fn(), clearSceneNumbers: vi.fn() }),
   useUI: () => ({
     typewriterMode: false,
@@ -59,10 +77,6 @@ vi.mock("../utils", () => ({
   readFromClipboard: vi.fn().mockResolvedValue(""),
 }));
 
-import { CommandPalette } from "./CommandPalette";
-import { EditorState } from "@codemirror/state";
-import { lineTypesField } from "../editor/fountainSyntax";
-
 const defaultProps = {
   isOpen: false,
   onClose: vi.fn(),
@@ -90,7 +104,7 @@ describe("CommandPalette Component", () => {
 
   it("renders command palette when isOpen is true", () => {
     render(React.createElement(CommandPalette, { ...defaultProps, isOpen: true }));
-    expect(screen.getByPlaceholderText("Type a command or search...")).toBeTruthy();
+    expect(screen.getByPlaceholderText(/Type a command or search/i)).toBeTruthy();
   });
 
   it("triggers onOpenBugReportModal when clicking Report a Bug", () => {
@@ -102,13 +116,12 @@ describe("CommandPalette Component", () => {
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
 
-  it("triggers onOpenSceneJump when clicking Jump to Scene", () => {
-    const onOpenSceneJump = vi.fn();
-    render(React.createElement(CommandPalette, { ...defaultProps, isOpen: true, onOpenSceneJump }));
-    const jumpItem = screen.getByText("Jump to Scene...");
-    jumpItem.click();
-    expect(onOpenSceneJump).toHaveBeenCalledTimes(1);
-    expect(defaultProps.onClose).toHaveBeenCalled();
+  it("opens scene navigation when clicking Go to Scene...", () => {
+    render(React.createElement(CommandPalette, { ...defaultProps, isOpen: true }));
+    const jumpItem = screen.getByText("Go to Scene...");
+    fireEvent.click(jumpItem);
+    expect(screen.getByPlaceholderText(/Search scenes/i)).toBeTruthy();
+    expect(screen.getByText("INT. COFFEE SHOP - DAY")).toBeTruthy();
   });
 
   it("copies the scene under the cursor from the command palette", () => {
@@ -162,7 +175,7 @@ describe("CommandPalette Component", () => {
     fireEvent.keyDown(input, { key: "Escape" });
 
     // Should return to main commands view without closing palette
-    expect(screen.getByPlaceholderText("Type a command or search...")).toBeTruthy();
+    expect(screen.getByPlaceholderText(/Type a command or search/i)).toBeTruthy();
     expect(defaultProps.onClose).not.toHaveBeenCalled();
 
     // Second Escape closes palette
@@ -182,5 +195,60 @@ describe("CommandPalette Component", () => {
     fireEvent.change(input, { target: { value: "recent" } });
     fireEvent.click(screen.getByText("Open Recent Projects..."));
     expect(screen.getByText("MovieA")).toBeTruthy();
+  });
+
+  it("supports sc. quick action prefix to filter and select scenes", () => {
+    render(<CommandPalette {...defaultProps} isOpen />);
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "sc. coffee" } });
+
+    // View switched to scenes mode and filtered by coffee
+    expect(screen.getByPlaceholderText(/Search scenes/i)).toBeTruthy();
+    expect(screen.getByText("INT. COFFEE SHOP - DAY")).toBeTruthy();
+    expect(screen.queryByText("EXT. CITY STREET - NIGHT")).toBeNull();
+
+    // Clicking scene jumps and closes palette
+    fireEvent.click(screen.getByText("INT. COFFEE SHOP - DAY"));
+    expect(scrollToLineMock).toHaveBeenCalledWith(0);
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
+
+  it("supports rf. quick action prefix to filter recent projects", () => {
+    render(<CommandPalette {...defaultProps} isOpen />);
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "rf. MovieA" } });
+
+    // View switched to recent mode and filtered by MovieA
+    expect(screen.getByPlaceholderText("Search recent projects...")).toBeTruthy();
+    expect(screen.getByText("MovieA")).toBeTruthy();
+    expect(screen.queryByText("ScriptB")).toBeNull();
+
+    fireEvent.click(screen.getByText("MovieA"));
+    expect(openFilePathMock).toHaveBeenCalledWith("C:/Projects/MovieA.actone");
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
+
+  it("supports ch. quick action prefix to filter characters", () => {
+    render(<CommandPalette {...defaultProps} isOpen />);
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "ch." } });
+
+    expect(screen.getByPlaceholderText(/Search characters/i)).toBeTruthy();
+  });
+
+  it("supports th. quick action prefix to switch theme", () => {
+    render(<CommandPalette {...defaultProps} isOpen />);
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "th." } });
+
+    expect(screen.getByPlaceholderText(/Search themes/i)).toBeTruthy();
+  });
+
+  it("supports mk. quick action prefix to inspect markers", () => {
+    render(<CommandPalette {...defaultProps} isOpen />);
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "mk." } });
+
+    expect(screen.getByPlaceholderText(/Search markers/i)).toBeTruthy();
   });
 });

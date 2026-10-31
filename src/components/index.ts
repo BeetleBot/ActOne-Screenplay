@@ -5,7 +5,7 @@ export { BugReportModal } from './BugReportModal';
 
 export { ErrorBoundary } from './ErrorBoundary';
 export { CrashScreen } from './CrashScreen';
-export { ExportWindow } from './ExportWindow';
+export { ExportWindow, ExportPdfWindow, ExportScriptWindow } from './ExportWindow';
 export { ScriptEditor } from './ScriptEditor';
 export { CoreEditor } from './editor/CoreEditor';
 export { MarkerView } from './MarkerView';
@@ -34,7 +34,6 @@ export { TutorialsWindow } from './TutorialsWindow';
 export { TranslateDocumentModal } from './TranslateDocumentModal';
 export { QuickGuideModal } from './QuickGuideModal';
 export { AiModelPalette } from './AiModelPalette';
-export { SceneJumpPalette } from './SceneJumpPalette';
 
 export {
   AddIcon, AddCircleIcon, ArchiveIcon, ArrowCircleDownIcon,

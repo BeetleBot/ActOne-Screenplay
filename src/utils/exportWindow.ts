@@ -5,32 +5,89 @@ export interface ExportWindowData {
   ui: Pick<UIContextProps, "fontFamily" | "paperSize">;
 }
 
-let pending: Promise<void> | undefined;
-export function openExportWindow(data: ExportWindowData): Promise<void> {
-  if (pending) return pending;
-  pending = open(data).finally(() => { pending = undefined; });
-  return pending;
+let pendingPdf: Promise<void> | undefined;
+let pendingScript: Promise<void> | undefined;
+
+export function openExportPdfWindow(data: ExportWindowData): Promise<void> {
+  if (pendingPdf) return pendingPdf;
+  pendingPdf = openPdf(data).finally(() => { pendingPdf = undefined; });
+  return pendingPdf;
 }
-async function open(data: ExportWindowData): Promise<void> {
+
+export function openExportScriptWindow(data: ExportWindowData): Promise<void> {
+  if (pendingScript) return pendingScript;
+  pendingScript = openScript(data).finally(() => { pendingScript = undefined; });
+  return pendingScript;
+}
+
+// Backwards compatibility alias
+export const openExportWindow = openExportPdfWindow;
+
+async function openPdf(data: ExportWindowData): Promise<void> {
   if (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) return;
   const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
   const { listen, emitTo } = await import("@tauri-apps/api/event");
   const { getCurrentWindow } = await import("@tauri-apps/api/window");
-  const existing = await WebviewWindow.getByLabel("export");
-  if (existing) { await emitTo("export", "export:document", data); await existing.setFocus(); return; }
+  const existing = await WebviewWindow.getByLabel("export-pdf");
+  if (existing) {
+    await emitTo("export-pdf", "export:document", data);
+    await existing.setFocus();
+    return;
+  }
   const parent = getCurrentWindow().label;
   await new Promise<void>((resolve, reject) => {
     let stop: (() => void) | undefined;
-    const timer = window.setTimeout(() => { stop?.(); reject(new Error("Export window did not respond.")); }, 20000);
+    const timer = window.setTimeout(() => { stop?.(); reject(new Error("Export PDF window did not respond.")); }, 20000);
     const finish = (error?: unknown) => { window.clearTimeout(timer); stop?.(); if (error) reject(error); else resolve(); };
-    void listen("export:ready", () => {
-      void emitTo("export", "export:document", data).then(() => finish()).catch(finish);
+    void listen("export-pdf:ready", () => {
+      void emitTo("export-pdf", "export:document", data).then(() => finish()).catch(finish);
     }).then(unlisten => {
       stop = unlisten;
-      const win = new WebviewWindow("export", {
-        url: `/?modal=export&parent=${encodeURIComponent(parent)}`,
-        title: "ActOne – Export", width: 1200, height: 800,
-        minWidth: 800, minHeight: 500, resizable: true, maximized: true, decorations: false,
+      const win = new WebviewWindow("export-pdf", {
+        url: `/?modal=export-pdf&parent=${encodeURIComponent(parent)}`,
+        title: "ActOne – Export PDF",
+        width: 1200,
+        height: 800,
+        minWidth: 800,
+        minHeight: 500,
+        resizable: true,
+        maximized: true,
+        decorations: false,
+      });
+      void win.once("tauri://error", event => finish(event.payload));
+    }).catch(finish);
+  });
+}
+
+async function openScript(data: ExportWindowData): Promise<void> {
+  if (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) return;
+  const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+  const { listen, emitTo } = await import("@tauri-apps/api/event");
+  const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  const existing = await WebviewWindow.getByLabel("export-script");
+  if (existing) {
+    await emitTo("export-script", "export:document", data);
+    await existing.setFocus();
+    return;
+  }
+  const parent = getCurrentWindow().label;
+  await new Promise<void>((resolve, reject) => {
+    let stop: (() => void) | undefined;
+    const timer = window.setTimeout(() => { stop?.(); reject(new Error("Export Script window did not respond.")); }, 20000);
+    const finish = (error?: unknown) => { window.clearTimeout(timer); stop?.(); if (error) reject(error); else resolve(); };
+    void listen("export-script:ready", () => {
+      void emitTo("export-script", "export:document", data).then(() => finish()).catch(finish);
+    }).then(unlisten => {
+      stop = unlisten;
+      const win = new WebviewWindow("export-script", {
+        url: `/?modal=export-script&parent=${encodeURIComponent(parent)}`,
+        title: "ActOne – Export Script",
+        width: 720,
+        height: 520,
+        minWidth: 600,
+        minHeight: 480,
+        resizable: true,
+        decorations: false,
       });
       void win.once("tauri://error", event => finish(event.payload));
     }).catch(finish);

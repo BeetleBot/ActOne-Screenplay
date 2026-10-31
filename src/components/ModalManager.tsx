@@ -1,6 +1,7 @@
 import { WindowLoading } from "./WindowLoading";
 import React, { lazy, Suspense, useState, useEffect } from 'react';
-const ExportWindow = lazy(() => import('./ExportWindow').then(module => ({ default: module.ExportWindow })));
+const ExportPdfWindow = lazy(() => import('./ExportPdfWindow').then(module => ({ default: module.ExportPdfWindow })));
+const ExportScriptWindow = lazy(() => import('./ExportScriptWindow').then(module => ({ default: module.ExportScriptWindow })));
 const StructureImportModal = lazy(() => import('./StructureImportModal').then(module => ({ default: module.StructureImportModal })));
 import { CommandPalette } from './CommandPalette';
 const TitlePageEditorModal = lazy(() => import('./TitlePageEditorModal').then(module => ({ default: module.TitlePageEditorModal })));
@@ -10,20 +11,19 @@ const QuickGuideModal = lazy(() => import('./QuickGuideModal').then(module => ({
 const FixFormattingModal = lazy(() => import('./FixFormattingModal').then(module => ({ default: module.FixFormattingModal })));
 import { ErrorBoundary } from './ErrorBoundary';
 import { TranslateDocumentModal } from './TranslateDocumentModal';
-import { SceneJumpPalette } from './SceneJumpPalette';
 import { flushPendingEditorEdits } from '../editor/pendingEdits';
 import { Alert } from '@mui/material';
 import { useFile, useUI } from '../context';
-import { openExportWindow } from '../utils/exportWindow';
+import { openExportPdfWindow, openExportScriptWindow } from '../utils/exportWindow';
 import type { FixFormattingReport } from '../utils/fixFormatting';
 
 export interface ModalManagerProps {
   isPaletteOpen: boolean;
   setIsPaletteOpen: (open: boolean) => void;
-  isSceneJumpOpen?: boolean;
-  setIsSceneJumpOpen?: (open: boolean) => void;
   showExportWindow: boolean;
   setShowExportWindow: (open: boolean) => void;
+  showExportScriptWindow?: boolean;
+  setShowExportScriptWindow?: (open: boolean) => void;
   showStructureModal: boolean;
   setShowStructureModal: (open: boolean) => void;
   showTitlePageModal: boolean;
@@ -47,10 +47,10 @@ export interface ModalManagerProps {
 export const ModalManager: React.FC<ModalManagerProps> = ({
   isPaletteOpen,
   setIsPaletteOpen,
-  isSceneJumpOpen = false,
-  setIsSceneJumpOpen,
   showExportWindow,
   setShowExportWindow,
+  showExportScriptWindow = false,
+  setShowExportScriptWindow,
   showStructureModal,
   setShowStructureModal,
   showTitlePageModal,
@@ -73,14 +73,26 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   const exportFile = useFile();
   const exportUI = useUI();
   const [exportWindowError, setExportWindowError] = useState("");
+  const [exportScriptWindowError, setExportScriptWindowError] = useState("");
+
   useEffect(() => {
     if (!showExportWindow || !(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) return;
     setExportWindowError("");
-    void openExportWindow({
+    void openExportPdfWindow({
       file: { rawText: exportFile.rawText, isBundle: exportFile.isBundle, activeScriptName: exportFile.activeScriptName, filePath: exportFile.filePath, parsedDoc: exportFile.parsedDoc, scripts: exportFile.scripts, activeScriptIndex: exportFile.activeScriptIndex },
       ui: { fontFamily: exportUI.fontFamily, paperSize: exportUI.paperSize },
     }).then(() => setShowExportWindow(false)).catch(error => setExportWindowError(String(error)));
   }, [showExportWindow]);
+
+  useEffect(() => {
+    if (!showExportScriptWindow || !(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) return;
+    setExportScriptWindowError("");
+    void openExportScriptWindow({
+      file: { rawText: exportFile.rawText, isBundle: exportFile.isBundle, activeScriptName: exportFile.activeScriptName, filePath: exportFile.filePath, parsedDoc: exportFile.parsedDoc, scripts: exportFile.scripts, activeScriptIndex: exportFile.activeScriptIndex },
+      ui: { fontFamily: exportUI.fontFamily, paperSize: exportUI.paperSize },
+    }).then(() => setShowExportScriptWindow?.(false)).catch(error => setExportScriptWindowError(String(error)));
+  }, [showExportScriptWindow]);
+
   const [localShowAbout, setLocalShowAbout] = useState(false);
   const showAbout = externalShowAbout !== undefined ? externalShowAbout : localShowAbout;
   const setShowAbout = externalSetShowAbout || setLocalShowAbout;
@@ -101,6 +113,10 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
             flushPendingEditorEdits();
             setShowExportWindow(true);
           }}
+          onExportScript={() => {
+            flushPendingEditorEdits();
+            setShowExportScriptWindow?.(true);
+          }}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
           onOpenStructureModal={() => setShowStructureModal(true)}
@@ -114,20 +130,13 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
           onOpenUrAISettings={() => openSettingsWindow?.("urai")}
           onOpenAboutModal={() => setShowAbout(true)}
           onOpenBugReportModal={() => setShowBugReport(true)}
-          onOpenSceneJump={setIsSceneJumpOpen ? () => setIsSceneJumpOpen(true) : undefined}
           onFixFormattingResult={(report) => setFixFormattingReport(report)}
         />
       </ErrorBoundary>
-      <ErrorBoundary name="scene-jump-palette">
-        {isSceneJumpOpen && setIsSceneJumpOpen && (
-          <SceneJumpPalette
-            isOpen={isSceneJumpOpen}
-            onClose={() => setIsSceneJumpOpen(false)}
-          />
-        )}
-      </ErrorBoundary>
-      {exportWindowError && <Alert severity="error" onClose={() => { setExportWindowError(""); setShowExportWindow(false); }}>Could not open the export window: {exportWindowError}</Alert>}
-      <ErrorBoundary name="export-window">{showExportWindow && (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) && <ExportWindow onClose={() => setShowExportWindow(false)} />}</ErrorBoundary>
+      {exportWindowError && <Alert severity="error" onClose={() => { setExportWindowError(""); setShowExportWindow(false); }}>Could not open the PDF export window: {exportWindowError}</Alert>}
+      {exportScriptWindowError && <Alert severity="error" onClose={() => { setExportScriptWindowError(""); setShowExportScriptWindow?.(false); }}>Could not open the script export window: {exportScriptWindowError}</Alert>}
+      <ErrorBoundary name="export-pdf-window">{showExportWindow && (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) && <ExportPdfWindow onClose={() => setShowExportWindow(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="export-script-window">{showExportScriptWindow && (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) && <ExportScriptWindow onClose={() => setShowExportScriptWindow?.(false)} />}</ErrorBoundary>
       <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
       <ErrorBoundary name="about-modal">{showAbout && <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />}</ErrorBoundary>

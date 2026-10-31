@@ -8,6 +8,7 @@ interface ShortcutActions {
   saveFileAs: () => void;
   togglePalette: () => void;
   exportPDF: () => void;
+  exportScript?: () => void;
   toggleSidebar: () => void;
   toggleZenMode: () => void;
   getEditorView: () => EditorView | null;
@@ -17,7 +18,6 @@ interface ShortcutActions {
   closeFile: () => void;
   openSettings?: () => void;
   toggleSearch: () => void;
-  openSceneJump?: () => void;
   openUrAIPane?: () => void;
   openModelPalette?: () => void;
   openHelp?: () => void;
@@ -125,12 +125,6 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
         return;
       }
 
-      if (key === "j" && !shift && !alt) {
-        e.preventDefault();
-        actionsRef.current.openSceneJump?.();
-        return;
-      }
-
       if (key === "," && !shift) {
         e.preventDefault();
         actionsRef.current.openSettings?.();
@@ -158,6 +152,12 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       if (key === "s" && !shift) {
         e.preventDefault();
         actionsRef.current.saveFile();
+        return;
+      }
+
+      if (key === "p" && shift) {
+        e.preventDefault();
+        actionsRef.current.exportScript?.();
         return;
       }
 

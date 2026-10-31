@@ -2,8 +2,8 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 
 export interface ModalState {
   isPaletteOpen: boolean;
-  isSceneJumpOpen: boolean;
   showExportWindow: boolean;
+  showExportScriptWindow: boolean;
   showStructureModal: boolean;
   showTitlePageModal: boolean;
   showShortcutsModal: boolean;
@@ -11,8 +11,8 @@ export interface ModalState {
 
 export interface ModalActions {
   setIsPaletteOpen: (v: boolean) => void;
-  setIsSceneJumpOpen: (v: boolean) => void;
   setShowExportWindow: (v: boolean) => void;
+  setShowExportScriptWindow: (v: boolean) => void;
   setShowStructureModal: (v: boolean) => void;
   setShowTitlePageModal: (v: boolean) => void;
   setShowShortcutsModal: (v: boolean) => void;
@@ -20,15 +20,15 @@ export interface ModalActions {
 
 export function useModals() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const [isSceneJumpOpen, setIsSceneJumpOpen] = useState(false);
   const [showExportWindow, setShowExportWindow] = useState(false);
+  const [showExportScriptWindow, setShowExportScriptWindow] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [showTitlePageModal, setShowTitlePageModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const isModalActive = useMemo(
-    () => isPaletteOpen || isSceneJumpOpen || showExportWindow || showStructureModal || showTitlePageModal || showShortcutsModal,
-    [isPaletteOpen, isSceneJumpOpen, showExportWindow, showStructureModal, showTitlePageModal, showShortcutsModal]
+    () => isPaletteOpen || showExportWindow || showExportScriptWindow || showStructureModal || showTitlePageModal || showShortcutsModal,
+    [isPaletteOpen, showExportWindow, showExportScriptWindow, showStructureModal, showTitlePageModal, showShortcutsModal]
   );
 
   const savedScrollTopRef = useRef<number | null>(null);
@@ -52,15 +52,24 @@ export function useModals() {
   }, [isModalActive]);
 
   const togglePalette = useCallback(() => setIsPaletteOpen(p => !p), []);
-  const toggleSceneJump = useCallback(() => setIsSceneJumpOpen(p => !p), []);
 
   const state: ModalState = useMemo(() => ({
-    isPaletteOpen, isSceneJumpOpen, showExportWindow, showStructureModal, showTitlePageModal, showShortcutsModal
-  }), [isPaletteOpen, isSceneJumpOpen, showExportWindow, showStructureModal, showTitlePageModal, showShortcutsModal]);
+    isPaletteOpen,
+    showExportWindow,
+    showExportScriptWindow,
+    showStructureModal,
+    showTitlePageModal,
+    showShortcutsModal,
+  }), [isPaletteOpen, showExportWindow, showExportScriptWindow, showStructureModal, showTitlePageModal, showShortcutsModal]);
 
   const actions: ModalActions = {
-    setIsPaletteOpen, setIsSceneJumpOpen, setShowExportWindow, setShowStructureModal, setShowTitlePageModal, setShowShortcutsModal
+    setIsPaletteOpen,
+    setShowExportWindow,
+    setShowExportScriptWindow,
+    setShowStructureModal,
+    setShowTitlePageModal,
+    setShowShortcutsModal,
   };
 
-  return { ...state, ...actions, isModalActive, togglePalette, toggleSceneJump };
+  return { ...state, ...actions, isModalActive, togglePalette };
 }

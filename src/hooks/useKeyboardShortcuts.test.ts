@@ -87,6 +87,15 @@ describe("useKeyboardShortcuts", () => {
     expect(actions.exportPDF).toHaveBeenCalled();
   });
 
+  it("calls exportScript on Ctrl+Shift+P", () => {
+    const exportScript = vi.fn();
+    const actions = { ...createActions(), exportScript };
+    renderHook(() => useKeyboardShortcuts(actions));
+    fireKey("p", { ctrl: true, shift: true });
+    expect(exportScript).toHaveBeenCalledTimes(1);
+    expect(actions.exportPDF).not.toHaveBeenCalled();
+  });
+
   it("calls toggleSearch on Ctrl+F", () => {
     const actions = createActions();
     renderHook(() => useKeyboardShortcuts(actions));

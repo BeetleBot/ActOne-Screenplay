@@ -784,27 +784,39 @@ For prose documents (\`.md\`), the panel switches to **Table of Contents** mode 
   },
   {
     id: "scene-jump-palette",
-    title: "Instant Scene Jump Palette (Ctrl+J)",
+    title: "Go to Scene & Quick Action Prefixes",
     category: "Workspace & Views",
-    tags: ["scene jump", "jump to scene", "ctrl+j", "quick jump", "navigation", "palette", "fuzzy search"],
+    tags: ["scene jump", "go to scene", "quick action", "sc.", "rf.", "quick jump", "navigation", "palette", "fuzzy search"],
     relatedIds: ["outline-navigator", "command-palette", "scene-headings"],
-    content: `Press <kbd>Ctrl+J</kbd> (or select **"Jump to Scene..."** from the Command Palette) to open the instant Scene Jump Palette.
-    
-Designed for speed and uninterrupted writing flow, it lets screenwriters and prose authors jump anywhere in their script in milliseconds.
+    content: `Inside the Command Palette (<kbd>Ctrl+K</kbd>), use quick action prefixes to instantly jump to scenes or browse recent projects without leaving the keyboard.
 
-### Fast Fuzzy Search Options
-You can type any combination of search terms:
+### Quick Action Prefixes in Command Palette
+- **\`sc.\` (Go to Scene)**: Type \`sc.\` (or select **"Go to Scene..."**) to filter all scenes in your screenplay.
+  - Type \`sc. coffee\` to find scenes featuring coffee shops or mentions in sluglines.
+  - Type \`sc. 14\` or \`sc. #14\` to filter directly by scene number.
+  - In Markdown documents, \`sc.\` searches headings and chapters with depth badges (\`#\`, \`##\`).
+- **\`rf.\` (Recent Files)**: Type \`rf.\` (or select **"Open Recent Projects..."**) to filter and reopen previously worked-on screenplays.
+  - Type \`rf. interstellar\` to search project file names and paths.
+- **\`ch.\` (Characters & Dialogue Pass)**: Type \`ch.\` (or select **"Characters & Dialogue Pass..."**) to audit all speaking characters.
+  - Shows each character's total dialogue count and starting line.
+  - Type \`ch. bob\` to instantly find Bob's speech counts and jump directly to his first dialogue.
+- **\`th.\` (Theme Switcher)**: Type \`th.\` (or select **"Theme Switcher..."**) to browse and switch themes in 1 second.
+  - Type \`th. midnight\` or \`th. sepia\` and press <kbd>Enter</kbd> to apply instantly.
+- **\`mk.\` (Markers & Notes)**: Type \`mk.\` (or select **"Markers & Notes..."**) to audit revision notes and margin markers.
+  - Type \`mk. red\` or \`mk. fix\` to filter notes by color or description and jump directly to their location.
+
+### Fast Fuzzy Search Options in Scene Navigation
 - **Scene Number**: Type \`14\`, \`#14\`, or \`14A\` to jump directly to that specific scene.
 - **Prefix / Setting**: Type \`INT\`, \`EXT\`, or \`I/E\` to filter interior or exterior scenes.
 - **Location**: Type keywords like \`COFFEE SHOP\`, \`APARTMENT\`, \`HIGHWAY\`, or \`BEACH\`.
 - **Time of Day**: Type \`DAY\`, \`NIGHT\`, \`DAWN\`, \`EVENING\`, or \`CONTINUOUS\`.
 - **Storylines & Synopses**: Search for plot arc tags or synopsis beats (e.g. \`ChaseArc\` or \`informant\`).
-- **Prose / Markdown Headings**: When editing a Markdown document, the palette automatically indexes and searches chapters and headings (\`# Chapter 1\`, \`## Beat A\`).
 
 ### Keyboard Navigation
-- <kbd>↑</kbd> and <kbd>↓</kbd>: Navigate through matched scenes.
-- <kbd>Enter</kbd>: Instantly jump to and center the selected scene in the editor.
-- <kbd>Esc</kbd>: Close the palette and return focus smoothly to the editor.`,
+- <kbd>↑</kbd> and <kbd>↓</kbd>: Navigate through matched scenes or recent projects.
+- <kbd>Enter</kbd>: Instantly jump to and center the selected scene in the editor (or open the project).
+- <kbd>Esc</kbd> or <kbd>Backspace</kbd> (on empty input): Return to the main commands list.
+- <kbd>Esc</kbd> (on main list): Close the Command Palette.`,
   },
   {
     id: "timeline-view",
@@ -1254,7 +1266,7 @@ Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\
     category: "Export",
     tags: ["export", "pdf", "fountain", "fdx", "print"],
     relatedIds: ["export-pdf", "export-fountain", "export-fdx"],
-    content: `Press <kbd>Ctrl+P</kbd> or open the Command Palette → "Export…" to open the separate Export window. Screenplays support PDF, Fountain, Final Draft FDX, and Fade In exports. Prose documents support PDF and Markdown exports. Export is fast, high-quality, and runs completely offline on your device.
+    content: `Press <kbd>Ctrl+P</kbd> to open the separate **Export PDF** window with live preview, or <kbd>Ctrl+Shift+P</kbd> (or open the Command Palette → "Export Script…") to open the compact **Export Script** window for script interchange files. Screenplays support PDF, Fountain, Final Draft FDX, and Fade In exports. Prose documents support PDF and Markdown exports. Export is fast, high-quality, and runs completely offline on your device.
 
 After a successful desktop export, choose **Open file** to open the exported document in its default application, **Show in folder** to reveal it in your file manager, or **Done** to return to writing. These actions appear only after a file has been saved. Canceling the save dialog leaves your export options open.`,
   },
