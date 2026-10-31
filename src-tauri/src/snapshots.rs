@@ -153,25 +153,31 @@ fn app_prefs_enabled(state: &crate::app_prefs::AppPrefsState) -> bool {
         .unwrap_or(false)
 }
 
-#[tauri::command]
-pub fn create_snapshot(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, crate::app_prefs::AppPrefsState>,
-    file_path: String,
+pub fn create_snapshot_impl(
+    state: &crate::app_prefs::AppPrefsState,
+    file_path: &str,
     comment: Option<String>,
     snapshot_type: Option<String>,
     custom_tag: Option<String>,
+    content: Option<String>,
+    bytes: Option<Vec<u8>>,
 ) -> Result<SnapshotInfo, String> {
-    if !app_prefs_enabled(&state) {
+    if !app_prefs_enabled(state) {
         return Err("Snapshots are disabled".to_string());
     }
 
-    let source = Path::new(&file_path);
-    if !source.exists() {
+    let source = Path::new(file_path);
+    let has_payload = bytes.is_some() || content.is_some();
+    if !has_payload && !source.exists() {
         return Err("File does not exist".to_string());
     }
 
-    let dir = snapshot_dir(&app, &file_path, &state);
+    let root = Path::new(file_path)
+        .parent()
+        .unwrap_or(Path::new("."))
+        .join(".snapshots");
+    let folder = sanitize_folder_name(file_path);
+    let dir = root.join(folder);
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
     let ext = source
@@ -182,7 +188,13 @@ pub fn create_snapshot(
     let filename = format!("{}.{}", id, ext);
     let dest = dir.join(&filename);
 
-    fs::copy(source, &dest).map_err(|e| e.to_string())?;
+    if let Some(byte_data) = bytes {
+        crate::write_file_atomically(&dest, &byte_data)?;
+    } else if let Some(text_data) = content {
+        crate::write_file_atomically(&dest, text_data.as_bytes())?;
+    } else {
+        fs::copy(source, &dest).map_err(|e| e.to_string())?;
+    }
 
     let file_size = fs::metadata(&dest).map(|m| m.len()).unwrap_or(0);
 
@@ -262,6 +274,20 @@ pub fn create_snapshot(
     save_index(&dir, &index)?;
 
     Ok(info)
+}
+
+#[tauri::command]
+pub fn create_snapshot(
+    _app: tauri::AppHandle,
+    state: tauri::State<'_, crate::app_prefs::AppPrefsState>,
+    file_path: String,
+    comment: Option<String>,
+    snapshot_type: Option<String>,
+    custom_tag: Option<String>,
+    content: Option<String>,
+    bytes: Option<Vec<u8>>,
+) -> Result<SnapshotInfo, String> {
+    create_snapshot_impl(&state, &file_path, comment, snapshot_type, custom_tag, content, bytes)
 }
 
 #[tauri::command]
@@ -423,5 +449,78 @@ mod tests {
             );
         }
         let _ = fs::remove_dir_all(&snapshots_path);
+    }
+
+    #[test]
+    fn test_create_snapshot_with_live_content_unsaved() {
+        use std::collections::HashMap;
+        use std::sync::Mutex;
+
+        let temp_dir = std::env::temp_dir().join(format!("actone_test_snap_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        let mut prefs = HashMap::new();
+        prefs.insert("actone-snapshots-enabled".to_string(), "true".to_string());
+        prefs.insert("actone-snapshot-max-retention".to_string(), "5".to_string());
+        let state = crate::app_prefs::AppPrefsState(Mutex::new(prefs));
+
+        // The target file does NOT even need to exist on disk when live content is supplied!
+        let virtual_file = temp_dir.join("live_script.fountain");
+        let live_text = "EXT. LIVE COFFEE SHOP - DAY
+Unsaved brilliance typed in memory.
+";
+
+        let snapshot = create_snapshot_impl(
+            &state,
+            &virtual_file.to_string_lossy(),
+            Some("Manual live snapshot".to_string()),
+            Some("manual".to_string()),
+            None,
+            Some(live_text.to_string()),
+            None,
+        ).expect("Live snapshot creation should succeed");
+
+        assert_eq!(snapshot.snapshot_type, "manual");
+        assert_eq!(snapshot.comment, "Manual live snapshot");
+        assert!(snapshot.file_size > 0);
+
+        let saved_content = fs::read_to_string(&snapshot.snapshot_path).expect("Snapshot file should exist on disk");
+        assert_eq!(saved_content, live_text);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_create_snapshot_with_live_bundle_bytes() {
+        use std::collections::HashMap;
+        use std::sync::Mutex;
+
+        let temp_dir = std::env::temp_dir().join(format!("actone_test_snap_bytes_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        let mut prefs = HashMap::new();
+        prefs.insert("actone-snapshots-enabled".to_string(), "true".to_string());
+        let state = crate::app_prefs::AppPrefsState(Mutex::new(prefs));
+
+        let bundle_file = temp_dir.join("project.actone");
+        let mock_zip_bytes = vec![0x50, 0x4b, 0x03, 0x04, 0x00, 0x01, 0x02];
+
+        let snapshot = create_snapshot_impl(
+            &state,
+            &bundle_file.to_string_lossy(),
+            None,
+            Some("auto".to_string()),
+            None,
+            None,
+            Some(mock_zip_bytes.clone()),
+        ).expect("Live binary bundle snapshot should succeed");
+
+        assert_eq!(snapshot.snapshot_type, "auto");
+        assert_eq!(snapshot.file_size, mock_zip_bytes.len() as u64);
+
+        let read_bytes = fs::read(&snapshot.snapshot_path).expect("Binary snapshot should exist on disk");
+        assert_eq!(read_bytes, mock_zip_bytes);
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

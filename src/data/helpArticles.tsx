@@ -986,7 +986,7 @@ Counts exclude headings, cues, parentheticals, notes and title pages. Reading es
 
 **Creating Snapshots:**
 - **Manual**: Add an optional comment and tag in the panel header, then click **New Snapshot**.
-- **Auto-snapshot**: Enable in Settings to take automatic snapshots at regular intervals (1–60 min).
+- **Auto-snapshot**: Enable in Settings to take automatic snapshots at regular intervals (1–60 min). Auto-snapshots preserve your live, unsaved words directly from memory even when Auto-Save is switched off.
 - **On save**: Automatically snapshots your screenplay every time you save.
 
 **Managing Snapshots:**

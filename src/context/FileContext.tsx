@@ -85,6 +85,7 @@ export interface FileContextProps {
   openSnapshotAsNewProject: (snapshotPath: string) => Promise<void>;
   saveStatus: "idle" | "saving" | "saved";
   importingScriptName: string | null;
+  getSnapshotPayload: () => Promise<{ content?: string; bytes?: number[] } | null>;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -2049,6 +2050,36 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     rememberActiveDocument(filePath, scriptFileName);
   }, [filePath, scriptFileName]);
 
+  const getSnapshotPayload = useCallback(async (): Promise<{ content?: string; bytes?: number[] } | null> => {
+    flushPendingEditorEdits();
+    const currentId = activeFileIdRef.current || activeFileId;
+    const currentActive = filesRef.current.find(f => f.id === currentId) || files.find(f => f.id === currentId);
+    if (!currentActive || !currentActive.filePath) return null;
+
+    const isActone = currentActive.filePath.toLowerCase().endsWith(".actone");
+    const cleanText = currentActive.rawText;
+
+    if (isActone) {
+      let updatedScripts = currentActive.scripts ? [...currentActive.scripts] : [];
+      if (updatedScripts.length > 0) {
+        const idx = currentActive.activeScriptIndex ?? 0;
+        updatedScripts[idx] = { ...updatedScripts[idx], content: cleanText };
+      } else {
+        const fallbackName = currentActive.filePath.split(/[\/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
+        updatedScripts = [{
+          name: fallbackName,
+          fileName: "document.fountain",
+          content: cleanText,
+          savedContent: cleanText,
+        }];
+      }
+      const zipped = await packActoneBundleAsync(updatedScripts, currentActive.parsedDoc.settings);
+      return { bytes: Array.from(zipped) };
+    }
+
+    return { content: cleanText };
+  }, [activeFileId, files]);
+
   const value: FileContextProps = {
         files,
         activeFileId,
@@ -2087,7 +2118,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openSnapshotAsNewProject,
         saveStatus,
         importingScriptName,
-
+        getSnapshotPayload,
   };
   return (
     <FileContext.Provider value={value}>

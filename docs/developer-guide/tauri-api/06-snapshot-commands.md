@@ -27,8 +27,12 @@ invoke<SnapshotInfo>("create_snapshot", {
     comment?: string,
     snapshotType?: string,     // "auto" | "manual" | "on_save"
     customTag?: string,
+    content?: string | null,   // Live in-memory text payload (for text/fountain files)
+    bytes?: number[] | null,   // Live in-memory zipped bundle payload (for .actone bundles)
 });
 ```
+
+If `bytes` or `content` is provided, `create_snapshot` writes the live in-memory editor state directly to the snapshot target. This guarantees periodic or manual snapshots capture unsaved typing even when Auto-Save is turned off. If neither payload is passed, it falls back to copying the saved file from disk.
 
 **Snapshot location** (determined by app prefs):
 - `"project"`: `.snapshots/` directory next to the file
@@ -48,52 +52,3 @@ invoke<SnapshotInfo[]>("get_snapshots", { filePath: string });
 ```
 
 ---
-
-## `delete_snapshot`
-
-Deletes a specific snapshot.
-
-```typescript
-invoke<void>("delete_snapshot", {
-    filePath: string,
-    snapshotId: string,
-});
-```
-
----
-
-## `restore_snapshot`
-
-Restores a file from a snapshot (copies snapshot content back to original location).
-
-```typescript
-invoke<void>("restore_snapshot", {
-    filePath: string,
-    snapshotPath: string,
-});
-```
-
----
-
-## `get_snapshot_folder_path`
-
-Returns the snapshot directory path for a given file.
-
-```typescript
-invoke<string>("get_snapshot_folder_path", { filePath: string });
-```
-
----
-
-## `open_folder`
-
-Opens a folder in the system file manager.
-
-```typescript
-invoke<void>("open_folder", { path: string });
-```
-
-**Platform behavior:**
-- **Windows:** `explorer <path>`
-- **macOS:** `open <path>`
-- **Linux:** `xdg-open <path>`

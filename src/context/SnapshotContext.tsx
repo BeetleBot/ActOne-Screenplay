@@ -99,7 +99,7 @@ export const useSnapshots = () => {
 };
 
 export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { filePath, saveStatus, openSnapshotAsNewProject } = useFile();
+  const { filePath, saveStatus, openSnapshotAsNewProject, getSnapshotPayload } = useFile();
   const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([]);
   const [isPanelOpen, setPanelOpen] = useState(false);
   const [settings, setSettings] = useState<SnapshotSettings>(loadSettings);
@@ -181,33 +181,40 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSnapshots((prev) => [tempItem, ...prev]);
 
     try {
+      const payload = await getSnapshotPayload().catch(() => null);
       await invoke("create_snapshot", {
         filePath,
         comment: comment || null,
         snapshotType: type || "manual",
         customTag: customTag || null,
+        content: payload?.content ?? null,
+        bytes: payload?.bytes ?? null,
       });
       await refreshSnapshots();
     } catch (e) {
       logger.warn("snapshots", "Failed to create snapshot", e);
       await refreshSnapshots(); // Revert to backend state on error
     }
-  }, [filePath, settings.enabled, refreshSnapshots]);
+  }, [filePath, settings.enabled, getSnapshotPayload, refreshSnapshots]);
 
   // On-save trigger: watch saveStatus transition "saving" -> "saved"
   useEffect(() => {
     if (prevSaveStatusRef.current === "saving" && saveStatus === "saved" && settings.enabled && settings.on_save && filePath) {
-      invoke("create_snapshot", {
-        filePath,
-        comment: null,
-        snapshotType: "on_save",
-        customTag: null,
+      getSnapshotPayload().then((payload) => {
+        return invoke("create_snapshot", {
+          filePath,
+          comment: null,
+          snapshotType: "on_save",
+          customTag: null,
+          content: payload?.content ?? null,
+          bytes: payload?.bytes ?? null,
+        });
       }).then(() => refreshSnapshots()).catch((e) =>
         logger.warn("snapshots", "on-save snapshot failed", e)
       );
     }
     prevSaveStatusRef.current = saveStatus;
-  }, [saveStatus, settings.enabled, settings.on_save, filePath, refreshSnapshots]);
+  }, [saveStatus, settings.enabled, settings.on_save, filePath, getSnapshotPayload, refreshSnapshots]);
 
   const deleteSnapshot = useCallback(async (info: SnapshotInfo) => {
     if (!filePath) return;
