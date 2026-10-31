@@ -495,6 +495,17 @@ export const XrayWindow: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleClose]);
+
   const currentThemeConfig = useMemo(
     () => resolveThemeConfig(themeId, customThemes, systemDark),
     [themeId, customThemes, systemDark],

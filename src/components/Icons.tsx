@@ -2,7 +2,7 @@ import React, { useSyncExternalStore } from 'react';
 import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon';
 import type { SxProps, Theme } from '@mui/material/styles';
 import {
-  ClipboardText, Plus, PlusCircle, Archive, ArrowCircleDown, ArrowDown, ArrowUp,
+  ClipboardText, Plus, PlusCircle, Archive, ArrowCircleDown, ArrowDown, ArrowUp, ArrowLeft,
   Sparkle, ChartBar, BookmarkSimple, Bug, Check, CheckCircle, CaretRight, X,
   Palette, Copy, Scissors, Trash, FileText, Checks, Download, Upload, Trophy,
   MagnifyingGlass, FolderOpen, TextB, TextItalic, ListBullets, TextUnderline,
@@ -47,6 +47,7 @@ export const AddIcon = createPhosphorIcon(Plus);
 export const AddCircleIcon = createPhosphorIcon(PlusCircle);
 export const ArchiveIcon = createPhosphorIcon(Archive);
 export const ArrowCircleDownIcon = createPhosphorIcon(ArrowCircleDown);
+export const ArrowBackIcon = createPhosphorIcon(ArrowLeft);
 export const ArrowDownwardIcon = createPhosphorIcon(ArrowDown);
 export const ArrowUpwardIcon = createPhosphorIcon(ArrowUp);
 export const AutoAwesomeIcon = createPhosphorIcon(Sparkle);

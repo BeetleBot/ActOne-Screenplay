@@ -820,6 +820,19 @@ export const SettingsWindow: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        const hasOpenDialog = document.querySelector(".MuiDialog-root:not([aria-hidden='true'])");
+        if (hasOpenDialog) return;
+        e.preventDefault();
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const currentThemeConfig = resolveThemeConfig(themeId, customThemes, systemDark);
   const muiTheme = createActOneTheme(currentThemeConfig, appScale, fountainColorsEnabled);
 

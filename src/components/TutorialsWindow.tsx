@@ -143,6 +143,30 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
     }
   };
 
+  const handleClose = async () => {
+    if (isModal && onClose) {
+      onClose();
+    } else {
+      try {
+        const { getCurrentWindow } = await import("@tauri-apps/api/window");
+        await getCurrentWindow().close();
+      } catch {
+        window.close();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isModal, onClose]);
+
   const section = TUTORIAL_SECTIONS.find((s) => s.id === activeSection) || TUTORIAL_SECTIONS[0];
 
   return (

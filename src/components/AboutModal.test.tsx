@@ -48,4 +48,12 @@ describe('AboutModal Component', () => {
     fireEvent.click(creditsButton);
     expect(screen.queryByText(/CodeMirror 6/i)).toBeNull();
   });
+
+  it('calls onClose when Escape key is pressed', () => {
+    const onClose = vi.fn();
+    render(<AboutModal isOpen={true} onClose={onClose} />);
+    const dialog = screen.getByRole('dialog');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalled();
+  });
 });

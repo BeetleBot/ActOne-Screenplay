@@ -160,6 +160,17 @@ export const ThemeManagerWindow: React.FC = () => {
     } catch { window.close(); }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const params = new URLSearchParams(window.location.search);
   const isTourMode = params.get("tour") === "theming";
 

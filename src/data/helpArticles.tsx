@@ -129,7 +129,7 @@ When you reopen a saved project, ActOne returns to the document you last used, i
     relatedIds: ["keyboard-shortcuts"],
     content: `Press <kbd>Ctrl+K</kbd> to open the Command Palette. Type to filter commands across six categories:
 
-**File:** New Project, Open Project, Import Screenplay, Save Project, Save Project As, Close Active Project, Export.
+**File:** New Project, Open Project, **Open Recent Projects**, Import Screenplay, Save Project, Save Project As, Close Active Project, Export.
 
 **Edit:** Undo, Redo, Cut, Copy, Paste, **Copy Current Scene**, Find/Search, and Enable/Disable Spellcheck. Copy Current Scene copies the Fountain text for the scene where the editor cursor is located.
 

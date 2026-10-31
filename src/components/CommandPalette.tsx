@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { copyToClipboard, readFromClipboard } from "../utils";
 import { useFile, useEditor, useScriptEditor, useUI, useCustomModal } from "../context";
 
-
-
 import {
   NoteAddIcon, FolderOpenIcon, SaveIcon, FileDownloadIcon, DeleteIcon, AutoAwesomeIcon,
   SettingsIcon, ContentCutIcon, ContentCopyIcon, AssignmentIcon, SearchIcon, FullscreenIcon,
   ZoomInIcon, ZoomOutIcon, RestartAltIcon, HelpOutlinedIcon, MenuBookIcon, BugReportIcon,
-  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon, UrAIIcon, ViewAgendaIcon
+  ColorLensIcon, BarChartIcon, CameraIcon, DescriptionIcon, UrAIIcon, ViewAgendaIcon,
+  HistoryIcon, ArrowBackIcon
 } from "./Icons";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
@@ -19,8 +18,6 @@ import { getSceneBlockAtLine } from "../editor/sceneBlock";
 import { useModalWindows } from "../hooks/useModalWindows";
 import { usePromptConfig } from "../hooks/usePromptConfig";
 import { isProseScript } from "../utils/scriptMode";
-
-
 
 import {
   Dialog,
@@ -36,6 +33,7 @@ import {
   Typography,
   Divider,
   useTheme,
+  IconButton,
 } from "@mui/material";
 
 const fuzzyScore = (query: string, target: string): number => {
@@ -60,12 +58,26 @@ const fuzzyScore = (query: string, target: string): number => {
   return score;
 };
 
+function formatRelativeTime(timestamp: number): string {
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return `${Math.floor(days / 7)}w ago`;
+}
+
 interface CommandItem {
   id: string;
   name: string;
   category: string;
   icon: React.ReactNode;
   shortcut?: string;
+  subtitle?: string;
   action: () => void;
 }
 
@@ -113,11 +125,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   const isDark = theme.palette.mode === 'dark';
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<"commands" | "recent">("commands");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const {
     newFile,
     openFile,
+    openFilePath,
+    recentFiles,
     saveFile,
     saveFileAs,
     closeFile,
@@ -226,6 +241,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     if (isOpen) {
       setSearch("");
       setSelectedIndex(0);
+      setViewMode("commands");
       setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
     }
   }, [isOpen]);
@@ -290,6 +306,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     // File
     { id: "file-new", name: "New Project", category: "File", icon: <NoteAddIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+N", action: () => { newFile(); onClose(); } },
     { id: "file-open", name: "Open Project...", category: "File", icon: <FolderOpenIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+O", action: () => { openFile(); onClose(); } },
+    {
+      id: "file-recent",
+      name: "Open Recent Projects...",
+      category: "File",
+      icon: <HistoryIcon sx={{ fontSize: 16 }} />,
+      action: () => {
+        setViewMode("recent");
+        setSearch("");
+        setSelectedIndex(0);
+      },
+    },
     ...(!isProse ? [{ id: "file-import", name: "Import Screenplay...", category: "File", icon: <DescriptionIcon sx={{ fontSize: 16 }} />, action: handleImport }] : []),
     { id: "file-save", name: "Save Project", category: "File", icon: <SaveIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+S", action: () => { saveFile(); onClose(); } },
     { id: "file-save-as", name: "Save Project As...", category: "File", icon: <FileDownloadIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+Shift+S", action: () => { saveFileAs(); onClose(); } },
@@ -391,12 +418,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "help-bug", name: "Report a Bug", category: "Help", icon: <BugReportIcon sx={{ fontSize: 16 }} />, action: () => { onOpenBugReportModal?.(); onClose(); } },
   ];
 
+  // Convert recentFiles into CommandItem format
+  const recentItems: CommandItem[] = (recentFiles || []).map((file) => ({
+    id: `recent-${file.path}`,
+    name: file.name,
+    category: "Recent Projects",
+    icon: <HistoryIcon sx={{ fontSize: 16 }} />,
+    shortcut: formatRelativeTime(file.lastOpened),
+    subtitle: file.path,
+    action: () => {
+      onClose();
+      openFilePath(file.path);
+    },
+  }));
+
+  const activeItems = viewMode === "recent" ? recentItems : commands;
+
   const filteredCommands = search.trim() === ""
-    ? commands
-    : commands
+    ? activeItems
+    : activeItems
         .map((cmd) => ({
           cmd,
-          score: fuzzyScore(search, cmd.name) + fuzzyScore(search, cmd.category),
+          score: fuzzyScore(search, cmd.name) + fuzzyScore(search, cmd.category) + (cmd.subtitle ? fuzzyScore(search, cmd.subtitle) * 0.5 : 0),
         }))
         .filter(({ score }) => score > 0)
         .sort((a, b) => b.score - a.score)
@@ -423,18 +466,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % flatGroupedList.length);
+      setSelectedIndex((prev) => (prev + 1) % Math.max(1, flatGroupedList.length));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + flatGroupedList.length) % flatGroupedList.length);
+      setSelectedIndex((prev) => (prev - 1 + flatGroupedList.length) % Math.max(1, flatGroupedList.length));
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (flatGroupedList[selectedIndex]) {
         flatGroupedList[selectedIndex].action();
       }
+    } else if (e.key === "Backspace" && search === "" && viewMode === "recent") {
+      e.preventDefault();
+      setViewMode("commands");
+      setSelectedIndex(0);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      onClose();
+      e.stopPropagation();
+      if (viewMode === "recent") {
+        setViewMode("commands");
+        setSelectedIndex(0);
+      } else {
+        onClose();
+      }
     }
   };
 
@@ -462,7 +515,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   return (
     <Dialog
       open
-      onClose={onClose}
+      onClose={(_event, reason) => {
+        if (reason === "escapeKeyDown" && viewMode === "recent") {
+          setViewMode("commands");
+          setSelectedIndex(0);
+          return;
+        }
+        onClose();
+      }}
       fullWidth
       maxWidth="xs"
       scroll="paper"
@@ -492,7 +552,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
       <Box data-tour-palette sx={{ p: 1.5, pb: 1 }}>
         <TextField
           inputRef={inputRef}
-          placeholder="Type a command or search..."
+          placeholder={viewMode === "recent" ? "Search recent projects..." : "Type a command or search..."}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -518,8 +578,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
                 "& input::placeholder": { color: theme.palette.text.secondary, opacity: 0.6 },
               },
               startAdornment: (
-                <Box sx={{ display: "flex", color: "var(--button-color, primary.main)", mr: 1.2 }}>
-                  <SearchIcon sx={{ fontSize: 20 }} />
+                <Box sx={{ display: "flex", alignItems: "center", mr: 1.2 }}>
+                  {viewMode === "recent" ? (
+                    <IconButton
+                      size="small"
+                      onClick={() => { setViewMode("commands"); setSelectedIndex(0); }}
+                      aria-label="Back to commands"
+                      sx={{ p: 0.25, mr: 0.5, color: "var(--button-color, primary.main)" }}
+                    >
+                      <ArrowBackIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  ) : (
+                    <Box sx={{ display: "flex", color: "var(--button-color, primary.main)" }}>
+                      <SearchIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                  )}
                 </Box>
               ),
             },
@@ -530,7 +603,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
       <DialogContent dividers sx={{ p: 0, maxHeight: "50vh" }} ref={containerRef}>
         {flatGroupedList.length === 0 ? (
           <Typography color="text.secondary" sx={{ p: 3, textAlign: "center", fontSize: 13 }}>
-            No results found for "{search}"
+            {viewMode === "recent"
+              ? (recentFiles.length === 0 ? "No recent projects found" : `No recent projects match "${search}"`)
+              : `No results found for "${search}"`}
           </Typography>
         ) : (
           <List disablePadding sx={{ px: 1, py: 0.5 }}>
@@ -582,6 +657,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
                       </ListItemIcon>
                       <ListItemText
                         primary={<Typography variant="body2" sx={{ fontWeight: isSelected ? 600 : 400, fontSize: "0.84rem" }}>{cmd.name}</Typography>}
+                        secondary={cmd.subtitle ? (
+                          <Typography variant="caption" sx={{ fontSize: "0.72rem", color: "text.secondary", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 260 }}>
+                            {cmd.subtitle}
+                          </Typography>
+                        ) : undefined}
                       />
                       {cmd.shortcut && (
                         <Chip
@@ -611,10 +691,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
             <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.6, py: 0.2, borderRadius: "4px" }}>Enter</Typography> run
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.6, py: 0.2, borderRadius: "4px" }}>Esc</Typography> close
+            <Typography variant="caption" component="span" sx={{ fontFamily: "monospace", fontWeight: 700, bgcolor: isDark ? `${theme.palette.text.primary}1a` : "action.selected", color: theme.palette.text.primary, px: 0.6, py: 0.2, borderRadius: "4px" }}>Esc</Typography> {viewMode === "recent" ? "back" : "close"}
           </Typography>
         </Box>
-        <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.7 }}>ActOne Palette</Typography>
+        <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.7 }}>
+          {viewMode === "recent" ? "Recent Projects" : "ActOne Palette"}
+        </Typography>
       </Box>
     </Dialog>
   );
