@@ -213,7 +213,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
 
   const rawTextDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRawTextRef = useRef<{ doc: Text; target: DocumentTarget } | null>(null);
-  const documentTargetRef = useRef<DocumentTarget>({ fileId: activeFileId, scriptIndex: activeScriptIndex });
+  const documentTargetRef = useRef<DocumentTarget>({ fileId: activeFileId, scriptIndex: activeScriptIndex, scriptFileName });
   const flushPendingRef = useRef(() => {});
   flushPendingRef.current = () => {
     positionSessionRef.current?.flush();
@@ -419,7 +419,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
           rawTextDebounceTimerRef.current = null;
         }
         flushPendingRef.current();
-        documentTargetRef.current = { fileId: activeFileId, scriptIndex: activeScriptIndex };
+        documentTargetRef.current = { fileId: activeFileId, scriptIndex: activeScriptIndex, scriptFileName };
 
         const scrollArea = getScrollArea(view);
 

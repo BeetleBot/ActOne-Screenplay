@@ -5,11 +5,9 @@ import {
   formatRelativeTime,
   getPageNumberForLine,
   buildSceneQuickActionItems,
-  buildRecentQuickActionItems,
   buildCharacterQuickActionItems,
   buildThemeQuickActionItems,
   buildMarkerQuickActionItems,
-  QUICK_ACTION_PREFIXES,
 } from "./QuickActionsModule";
 import { LineType, type FountainDocument } from "../parser";
 

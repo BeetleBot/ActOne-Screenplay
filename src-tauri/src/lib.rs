@@ -212,17 +212,20 @@ pub(crate) fn write_file_atomically<P: AsRef<std::path::Path>, C: AsRef<[u8]>>(
     );
     let temp_path = parent.join(temp_name);
 
-    fs::write(&temp_path, data).map_err(|e| e.to_string())?;
-
-    if let Err(rename_err) = fs::rename(&temp_path, path) {
-        if let Err(copy_err) = fs::copy(&temp_path, path) {
-            let _ = fs::remove_file(&temp_path);
-            return Err(format!(
-                "rename failed ({rename_err}), copy failed ({copy_err})"
-            ));
-        }
-        let _ = fs::remove_file(&temp_path);
+    // Never truncate the destination as a fallback. Failed replacement preserves
+    // the original and leaves the complete temporary file available for recovery.
+    {
+        use std::io::Write;
+        let mut temporary = fs::OpenOptions::new()
+            .write(true).create_new(true).open(&temp_path)
+            .map_err(|e| e.to_string())?;
+        temporary.write_all(data.as_ref()).map_err(|e| e.to_string())?;
+        temporary.sync_all().map_err(|e| e.to_string())?;
     }
+    fs::rename(&temp_path, path).map_err(|e| format!(
+        "Could not replace destination: {e}. Original preserved; temporary file: {}",
+        temp_path.display()
+    ))?;
 
     Ok(())
 }
@@ -1331,7 +1334,7 @@ mod tests {
         for i in 0..10 {
             let target = target.clone();
             handles.push(std::thread::spawn(move || {
-                let content = format!("content {}", i);
+                let content = format!("content {}", i).repeat(8192);
                 let _ = write_file_atomically(&*target, content);
             }));
         }
@@ -1341,9 +1344,43 @@ mod tests {
         }
 
         let read_back = fs::read_to_string(&*target).unwrap();
-        assert!(read_back.starts_with("content "));
+        assert!((0..10).any(|i| read_back == format!("content {}", i).repeat(8192)));
 
         let _ = fs::remove_file(&*target);
+    }
+
+    #[test]
+    fn test_write_file_atomically_preserves_destination_on_replacement_failure() {
+        let directory = std::env::temp_dir().join(format!("actone_save_failure_{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        let destination = directory.join("existing_directory");
+        fs::create_dir_all(&destination).unwrap();
+        let original = destination.join("original.txt");
+        fs::write(&original, "must survive").unwrap();
+        let error = write_file_atomically(&destination, "replacement").unwrap_err();
+        assert!(error.contains("Original preserved"));
+        assert_eq!(fs::read_to_string(&original).unwrap(), "must survive");
+        let temporary = fs::read_dir(&directory).unwrap().filter_map(Result::ok)
+            .find(|entry| entry.path().extension().and_then(|e| e.to_str()) == Some("tmp")).unwrap();
+        assert_eq!(fs::read_to_string(temporary.path()).unwrap(), "replacement");
+        fs::remove_dir_all(&directory).unwrap();
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn test_write_file_atomically_preserves_locked_file() {
+        use std::os::windows::fs::OpenOptionsExt;
+        let directory = std::env::temp_dir().join(format!("actone_locked_save_{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        let target = directory.join("project.actone");
+        fs::write(&target, "original complete project").unwrap();
+        let locked = fs::OpenOptions::new().read(true).share_mode(0).open(&target).unwrap();
+        assert!(write_file_atomically(&target, "new complete project").is_err());
+        drop(locked);
+        assert_eq!(fs::read_to_string(&target).unwrap(), "original complete project");
+        write_file_atomically(&target, "new complete project").unwrap();
+        assert_eq!(fs::read_to_string(&target).unwrap(), "new complete project");
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]

@@ -27,6 +27,7 @@ export type SettingsUpdater = (prev: Record<string, unknown>) => Record<string, 
 export interface DocumentTarget {
   fileId: string;
   scriptIndex: number;
+  scriptFileName?: string;
 }
 
 export interface ScreenplayFile {
@@ -329,6 +330,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (confirmClose === "cancel") return;
       if (confirmClose === "save") {
         await saveFile(id);
+        flushPendingEditorEdits();
+        if (filesRef.current.find(f => f.id === id)?.isDirty) return;
       }
     }
 
@@ -369,6 +372,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (confirmClose === "cancel") return;
       if (confirmClose === "save") {
         await saveFile(f.id);
+        flushPendingEditorEdits();
+        if (filesRef.current.find(current => current.id === f.id)?.isDirty) return;
       }
     }
     const fileToKeep = filesRef.current.find(f => f.id === id);
@@ -394,6 +399,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (confirmClose === "cancel") return;
       if (confirmClose === "save") {
         await saveFile(f.id);
+        flushPendingEditorEdits();
+        if (filesRef.current.find(current => current.id === f.id)?.isDirty) return;
       }
     }
     setFiles([]);
@@ -420,7 +427,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const targetFileId = target?.fileId ?? activeFileIdRef.current;
     const activeF = filesRef.current.find(f => f.id === targetFileId);
     if (!activeF) return;
-    const targetScriptIndex = target?.scriptIndex ?? activeScriptIndexRef.current;
+    const targetScriptIndex = target?.scriptFileName
+      ? (activeF.scripts?.findIndex(script => script.fileName === target.scriptFileName) ?? -1)
+      : target?.scriptIndex ?? activeScriptIndexRef.current;
+    if (targetScriptIndex < 0 || (activeF.scripts?.length && !activeF.scripts[targetScriptIndex])) return;
     const isActive = targetFileId === activeFileIdRef.current && targetScriptIndex === activeScriptIndexRef.current;
     if (isActive) setRawTextState(normalized);
     const activeScr = activeF.scripts?.[targetScriptIndex];
@@ -1043,7 +1053,16 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await invoke("save_file_binary", { path: normalizedPath, bytes: Array.from(zipped) });
   };
 
-  const saveFile = async (targetFileId?: string) => {
+  const saveQueues = useRef(new Map<string, Promise<void>>());
+  const saveFile = (targetFileId?: string): Promise<void> => {
+    const id = targetFileId || activeFileIdRef.current;
+    const previous = saveQueues.current.get(id) ?? Promise.resolve();
+    const next = previous.catch(() => {}).then(() => performSave(id));
+    saveQueues.current.set(id, next);
+    void next.finally(() => { if (saveQueues.current.get(id) === next) saveQueues.current.delete(id); }).catch(() => {});
+    return next;
+  };
+  const performSave = async (targetFileId?: string) => {
     flushPendingEditorEdits();
     const currentId = targetFileId || activeFileIdRef.current || activeFileId;
     const currentActive = filesRef.current.find(f => f.id === currentId) || files.find(f => f.id === currentId);
@@ -1081,6 +1100,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: true } : f));
         try {
           await saveActoneFile(normalizedPath, updatedScripts, currentActive.parsedDoc.settings);
+          filesRef.current = filesRef.current.map(f => f.id === currentId ? acknowledgeSavedFile(f, currentActive, updatedScripts) : f);
           setFiles(prev => prev.map(f => f.id === currentId ? {
             ...acknowledgeSavedFile(f, currentActive, updatedScripts),
             filePath: normalizedPath,
@@ -1099,6 +1119,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         } finally {
           if (isCurrentActiveTab) setIsSaving(false);
+          filesRef.current = filesRef.current.map(f => f.id === currentId ? { ...f, isSaving: false } : f);
           setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: false } : f));
         }
       } else {
@@ -1111,6 +1132,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link.download = normalizedPath;
           link.click();
           URL.revokeObjectURL(url);
+          filesRef.current = filesRef.current.map(f => f.id === currentId ? acknowledgeSavedFile(f, currentActive, updatedScripts) : f);
           setFiles(prev => prev.map(f => f.id === currentId ? {
             ...acknowledgeSavedFile(f, currentActive, updatedScripts),
             filePath: normalizedPath,
@@ -1132,6 +1154,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: true } : f));
         try {
           await invoke("save_file_content", { path: currentActive.filePath, content: cleanTextToSave });
+          filesRef.current = filesRef.current.map(f => f.id === currentId ? acknowledgeSavedFile(f, currentActive) : f);
           setFiles(prev => prev.map(f => f.id === currentId ? acknowledgeSavedFile(f, currentActive) : f));
           if (isCurrentActiveTab) triggerSaveStatusSaved();
         } catch (e) {
@@ -1144,6 +1167,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         } finally {
           if (isCurrentActiveTab) setIsSaving(false);
+          filesRef.current = filesRef.current.map(f => f.id === currentId ? { ...f, isSaving: false } : f);
           setFiles(prev => prev.map(f => f.id === currentId ? { ...f, isSaving: false } : f));
         }
       } else {
@@ -1156,6 +1180,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link.download = normalizedPlainPath;
           link.click();
           URL.revokeObjectURL(url);
+          filesRef.current = filesRef.current.map(f => f.id === currentId ? acknowledgeSavedFile(f, currentActive) : f);
           setFiles(prev => prev.map(f => f.id === currentId ? acknowledgeSavedFile(f, currentActive) : f));
           if (isCurrentActiveTab) triggerSaveStatusSaved();
         } catch (e) {
@@ -1208,6 +1233,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             await saveActoneFile(normalizedPath, finalScripts, currentActive.parsedDoc.settings);
           }
+          filesRef.current = filesRef.current.map(f => f.id === currentId ? {
+            ...acknowledgeSavedFile(f, currentActive, isActone ? finalScripts : undefined),
+            filePath: normalizedPath,
+            activeScriptIndex: isActone ? (f.activeScriptIndex ?? 0) : undefined,
+          } : f);
           setFiles(prev => prev.map(f => f.id === currentId ? {
             ...acknowledgeSavedFile(f, currentActive, isActone ? finalScripts : undefined),
             filePath: normalizedPath,
@@ -1472,7 +1502,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [prompt, paperSize]);
 
   const renameScript = useCallback(async (index: number, newName: string): Promise<boolean> => {
-    const file = files.find(f => f.id === activeFileId);
+    flushPendingEditorEdits();
+    const file = filesRef.current.find(f => f.id === activeFileIdRef.current);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return false;
 
     const trimmed = newName.trim();
@@ -1507,7 +1538,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [files, activeFileId, confirm]);
 
   const duplicateScript = useCallback(async (index: number, name?: string, activateNew = true): Promise<string | null> => {
-    const file = files.find(f => f.id === activeFileId);
+    flushPendingEditorEdits();
+    const file = filesRef.current.find(f => f.id === activeFileIdRef.current);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return null;
 
     const source = file.scripts[index];
@@ -1585,10 +1617,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [files, activeFileId, paperSize]);
 
   const deleteScript = useCallback(async (index: number): Promise<boolean> => {
-    const file = files.find(f => f.id === activeFileId);
+    flushPendingEditorEdits();
+    let file = filesRef.current.find(f => f.id === activeFileIdRef.current);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return false;
 
 
+    const requestedFileName = file.scripts[index].fileName;
     const result = await confirm({
       title: "Delete Script",
       message: `Are you sure you want to delete "${file.scripts[index].name}"? This action cannot be undone.`,
@@ -1598,6 +1632,11 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]
     });
     if (result !== "delete") return false;
+    flushPendingEditorEdits();
+    file = filesRef.current.find(f => f.id === activeFileIdRef.current);
+    if (!file?.scripts) return false;
+    index = file.scripts.findIndex(script => script.fileName === requestedFileName);
+    if (index < 0) return false;
 
     const deletedFileName = file.scripts[index].fileName;
     const cleanedSettings = removeSettingsKey(file.parsedDoc.settings, deletedFileName);
@@ -1845,7 +1884,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [files, activeFileId, isTauri, paperSize, showPdfNotice]);
 
   const moveScript = useCallback(async (fromIndex: number, toIndex: number) => {
-    const file = files.find(f => f.id === activeFileId);
+    flushPendingEditorEdits();
+    const file = filesRef.current.find(f => f.id === activeFileIdRef.current);
     if (!file || !file.scripts) return;
     if (fromIndex < 0 || fromIndex >= file.scripts.length) return;
     if (toIndex < 0 || toIndex >= file.scripts.length) return;
@@ -1853,7 +1893,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const currentActive = file.activeScriptIndex ?? 0;
     const syncedScripts = file.scripts.map((s, i) =>
-      i === currentActive ? { ...s, content: rawText } : s
+      i === currentActive ? { ...s, content: file.rawText } : s
     );
 
     const updatedScripts = [...syncedScripts];
@@ -1878,7 +1918,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       doc.settings = file.parsedDoc.settings;
     }
 
-    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+    filesRef.current = filesRef.current.map(f => f.id === activeFileIdRef.current ? {
       ...f,
       scripts: updatedScripts,
       activeScriptIndex: newActiveIndex,
@@ -1886,7 +1926,8 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       savedText: targetScript.savedContent,
       isDirty: isBundleDirty(updatedScripts),
       parsedDoc: doc,
-    } : f));
+    } : f);
+    setFiles(filesRef.current);
 
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(newActiveIndex);
@@ -2044,8 +2085,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const activeScriptName = scriptsState[activeScriptIndex]?.name || "";
-  const scriptFileName = scriptsState[activeScriptIndex]?.fileName || "";
+  const currentScripts = activeFile?.scripts ?? scriptsState;
+  const activeScriptName = currentScripts[activeScriptIndex]?.name || "";
+  const scriptFileName = currentScripts[activeScriptIndex]?.fileName || "";
   useEffect(() => {
     rememberActiveDocument(filePath, scriptFileName);
   }, [filePath, scriptFileName]);
@@ -2065,7 +2107,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const idx = currentActive.activeScriptIndex ?? 0;
         updatedScripts[idx] = { ...updatedScripts[idx], content: cleanText };
       } else {
-        const fallbackName = currentActive.filePath.split(/[\/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
+        const fallbackName = currentActive.filePath.split(/[/\\]/).pop()?.replace(/\.actone$/i, "") || "Untitled";
         updatedScripts = [{
           name: fallbackName,
           fileName: "document.fountain",
@@ -2102,7 +2144,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openFilePath,
         removeFromRecent,
         updateSettings,
-        scripts: scriptsState,
+        scripts: currentScripts,
         activeScriptIndex,
         activeScriptName,
         scriptFileName,

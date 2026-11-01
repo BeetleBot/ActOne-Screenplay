@@ -504,6 +504,12 @@ export function paginateScreenplay(lines: ParsedLine[], paperSize: 'letter' | 'a
 
     const h = heights[i];
     if (h === 0) continue;
+    // An oversized source line cannot be split by this source-line paginator.
+    // Consume it once; retrying the same line on an empty page never progresses.
+    if (currentLinesOnPage === 0 && h > maxPageLines) {
+      currentLinesOnPage = h;
+      continue;
+    }
 
     if (currentLinesOnPage + h > maxPageLines) {
       let breakIndex = i;
