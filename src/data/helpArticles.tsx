@@ -1556,7 +1556,7 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
    - **Character Names:** Option to keep character names unchanged to prevent proper noun mistranslation.
    - **AI Model:** Select your preferred local (Ollama) or remote API model.
 3. ActOne duplicates your document into a target script (e.g., \`MyScript-Tamil\`) and runs a pre-flight connection check before starting.
-**Translation glossary:** Choose Prepare glossary first. UrAI suggests recurring names, terms and speech traits in small batches. Review or edit the glossary, then start translation. Custom instructions take priority, and the reviewed glossary is saved for resume and retry. Dialogue aims for natural speech; action stays concise and precise.
+**Start translation:** Choose your language, model and preferences, then select Start Translation. Use custom instructions for preferred names, recurring terms or speech traits. Your instructions are saved for resume and retry.
 
 4. **Scene-by-Scene Engine:** ActOne processes small batches within each scene. Completed batches are saved so interrupted work can resume. Failed elements retain their original text and can be retried.
 5. The progress window displays the active scene heading, part count for long scenes, real-time status (including provider rate-limit wait countdowns), percentage bar, time remaining estimates, and a live streaming preview.

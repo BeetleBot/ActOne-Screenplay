@@ -19,13 +19,12 @@ The **Translation System** in ActOne provides whole-script and selection-based s
                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 translationEngine.ts                        │
-│  - Pre-flight AI connection health check                    │
+│  - Native job creation & checkpointed progress              │
 │  - AST & Fountain Line Classifier (Preserves Syntax)        │
 │  - Scene Segmentation (Heading-to-Heading units)            │
 │  - Adaptive Chunking (Splits scenes >35 lines at character cues)
 │  - Custom Per-Document Instruction injection                │
 │  - Element Selection (Heading, Action, Dialogue, etc.)      │
-│  - Character & Proper Noun Glossary Extractor               │
 │  - Tolerant line-by-line response parsing                   │
 │  - Auto-throttling & HTTP 429 RateLimit backoff with UI countdown
 │  - Per-Scene Failure Tracking & Manual Retry Support        │
@@ -45,8 +44,8 @@ The **Translation System** in ActOne provides whole-script and selection-based s
 
 ## 3. Detailed Workflow: How Translation Works
 
-### Step 1: Pre-flight Verification
-Before duplicating the screenplay or starting the translation loop, the engine issues a fast test probe ("Translate to English: Hello") with a 10-second timeout. If the AI model or endpoint is misconfigured or offline, the modal surfaces the exact connection error immediately without creating duplicate or dirty files.
+### Step 1: Setup & Job Creation
+Start Translation validates that a model is configured, duplicates the source screenplay, and starts `runTranslationJob` directly. Custom instructions are passed to the native job and saved in its checkpoint. Provider errors surface through job progress; there is no separate model preparation request before starting translation.
 
 ### Step 2: Scene Segmentation & Adaptive Chunking
 Instead of decontextualized arbitrary batches of lines, ActOne segments the screenplay into **natural scenes**:
@@ -56,7 +55,7 @@ Instead of decontextualized arbitrary batches of lines, ActOne segments the scre
 ### Step 3: Natural Prompting & Character Name Preservation
 * Prompts provide the scene heading, the characters active in that scene, any user-provided custom instructions, and the clean screenplay lines.
 * **Tolerant Parsing:** Output is parsed line-by-line without demanding brittle synthetic delimiter schemes (such as `N|text`). If the model provides fewer lines, original text is preserved gracefully.
-* **Character Name Preservation:** Character names are detected from the AST and protected from translation. Leading `@` symbols are stripped when passed to prompt glossaries, and prompt rules strictly forbid models from prepending `@` to character names in action descriptions or dialogue lines.
+* **Character Name Preservation:** Character names are detected from the AST and protected from translation. Leading `@` symbols are stripped when passed to translation prompts, and prompt rules strictly forbid models from prepending `@` to character names in action descriptions or dialogue lines.
 * **Syntax Normalization & Cleaners:** 
   - Automatically strips model-generated enclosing quotation marks (`"..."`, `'...'`, `“...”`) from dialogue lines.
   - Automatically strips accidental enclosing parentheses `(...)` from action lines to prevent improper Fountain parenthetical parsing.

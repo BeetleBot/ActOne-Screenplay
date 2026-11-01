@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.1] - 2026-11-01
+
+### Removed
+
+- **Translation Glossary Preparation** – Removed the required glossary generation and review step. Start Translation now starts translation directly, with custom instructions available for preferred names and terminology.
+
 ## [0.6.0] - 2026-11-01
 
 ### Added / Improved

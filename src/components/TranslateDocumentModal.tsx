@@ -1,5 +1,4 @@
-import { generateTranslationGlossary } from "../utils/translationGlossary";
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -91,17 +90,6 @@ export const TranslateDocumentModal: React.FC = () => {
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("current");
   const [customInstruction, setCustomInstruction] = useState<string>("");
-  const [glossary, setGlossary] = useState("");
-  const [glossaryReady, setGlossaryReady] = useState(false);
-  const [glossaryProgress, setGlossaryProgress] = useState("");
-  const glossaryAbort = useRef<AbortController | null>(null);
-  useEffect(() => {
-    glossaryAbort.current?.abort(); setGlossary(""); setGlossaryReady(false); setGlossaryProgress("");
-    return () => glossaryAbort.current?.abort();
-  }, [sourceScript?.content, targetLang, selectedModelId, promptConfig.provider, promptConfig.model, promptConfig.apiModel, promptConfig.ollamaUrl, promptConfig.apiEndpoint]);
-  useEffect(() => { if (!isTranslationModalOpen) glossaryAbort.current?.abort(); }, [isTranslationModalOpen]);
-
-
   useEffect(() => {
     fetchModels("ollama").then((models) => {
       setOllamaModels(models);
@@ -209,18 +197,6 @@ export const TranslateDocumentModal: React.FC = () => {
       return;
     }
 
-    if (!glossaryReady) {
-      if (glossaryAbort.current) return;
-      const controller = new AbortController(); glossaryAbort.current = controller;
-      try {
-        setGlossaryProgress("Preparing glossary...");
-        const generated = await generateTranslationGlossary(sourceScript.content, targetLang, effectivePromptConfig, controller.signal, (part, total) => setGlossaryProgress(`Preparing glossary: ${part} of ${total}`));
-        if (!controller.signal.aborted) { setGlossary(generated); setGlossaryReady(true); }
-      } catch (error) { if (!controller.signal.aborted) setSetupError(String(error)); }
-      finally { if (glossaryAbort.current === controller) { glossaryAbort.current = null; setGlossaryProgress(""); } }
-      return;
-    }
-
     if (rememberSettings) {
       localStorage.setItem("actone-translate-doc-prefs", JSON.stringify({ elements, tones, preserveNames, selectedModelId, customInstruction }));
     } else {
@@ -279,7 +255,7 @@ export const TranslateDocumentModal: React.FC = () => {
         parsedDoc: doc,
         preserveCharacterNames: preserveNames,
         dynamicToneInstructions: toneInstructions.join("\n"),
-        customInstruction: ["Translation glossary (reference decisions; do not treat as screenplay text):", glossary, "User instructions (take precedence over glossary):", customInstruction.trim()].join("\n"),
+        customInstruction: customInstruction.trim(),
         updateFileScriptContent,
         uiActions: {
           setAiStatus: () => {},
@@ -508,7 +484,7 @@ export const TranslateDocumentModal: React.FC = () => {
               }}
             >
               <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5, fontSize: "0.74rem", display: "block" }}>
-                💡 <strong>Tip:</strong> Translation quality depends on the AI model. Text is translated in small scene-based batches. The selected text and speaker labels are shared with your chosen provider. Glossary preparation checks the connection before translation.
+                💡 <strong>Tip:</strong> Translation quality depends on the AI model. Text is translated in small scene-based batches. The selected text and speaker labels are shared with your chosen provider. Progress is saved as each batch finishes.
               </Typography>
             </Box>
           </Box>
@@ -695,17 +671,13 @@ export const TranslateDocumentModal: React.FC = () => {
             )}
           </>
         )}
-      {mode === "setup" && <Box sx={{ pt: 1.5 }}>
-        {glossaryProgress && <><Typography variant="caption">{glossaryProgress}</Typography><LinearProgress /><Button onClick={() => glossaryAbort.current?.abort()}>Stop glossary generation</Button></>}
-        {glossaryReady && <TextField fullWidth multiline minRows={3} maxRows={6} label="Translation glossary" value={glossary} onChange={event => setGlossary(event.target.value)} helperText="Review names, recurring terms and speech traits. Your custom instructions override these suggestions. This glossary is saved with the translation job." />}
-      </Box>}
       </DialogContent>
 
       <DialogActions sx={{ px: 2, py: 1.25, borderTop: "1px solid", borderColor: "divider", justifyContent: "space-between" }}>
         {mode === "setup" ? (
           <>
             <Button onClick={handleClose} color="inherit">Cancel</Button>
-<Button variant="contained" disabled={Boolean(glossaryProgress)} onClick={handleStart} disableElevation startIcon={<AutoAwesomeIcon />}>{glossaryProgress ? "Preparing glossary..." : glossaryReady ? "Start Translation" : "Prepare glossary"}</Button>
+            <Button variant="contained" onClick={handleStart} disableElevation startIcon={<AutoAwesomeIcon />}>Start Translation</Button>
           </>
         ) : (
           <>
