@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.6.0] - 2026-11-01
+
+### Added / Improved
+
+- 🪟 **Dedicated Export Windows (<kbd>Ctrl+P</kbd> / <kbd>Ctrl+Shift+P</kbd>)** – Split export workflows into dedicated, focused dialogs:
+  - **Export PDF (<kbd>Ctrl+P</kbd>)**: Direct access to paginated PDF rendering, custom diagonal watermarks, page preview controls, and layout preferences.
+  - **Export Script (<kbd>Ctrl+Shift+P</kbd>)**: Modernized full-screen script export dialog with segmented format switching (Fountain, Plain Text, Markdown, Final Draft FDX, HTML), customizable formatting toggles, and unified export triggers.
+- ⚡ **Unified Quick Actions & Navigation Palette** – Expanded the Command Palette (<kbd>Ctrl+K</kbd>) into a versatile Quick Actions launcher with keyboard prefixes:
+  - **`sc.` (Scenes & Headings)**: Instant fuzzy navigation across scenes, sluglines, times of day, locations, or Markdown headings.
+  - **`rf.` (Recent Projects)**: Instant filtering and reopening of recent screenplays and projects.
+  - **`ch.` (Characters & Dialogue Pass)**: Audit speaking characters, dialogue counts, and jump directly to character scenes.
+  - **`th.` (Theme Switcher)**: Live theme preview and switching in seconds.
+  - **`mk.` (Markers & Notes)**: Search and navigate inline revision markers, color tags, and notes.
+- 🤖 **UrAI AI Writing Assistant Overhaul** – Upgraded the integrated assistant (rebranded to UrAI) with native inline writing tools:
+  - **Native UrAI Engine & Provider Architecture**: Added native Rust backend integration with encrypted credential storage, job processing, and flexible AI provider support (Ollama, custom endpoints).
+  - **UrAI Transform Tools**: Contextual inline writing and rewrite actions with native prompt templates and screenplay indexing.
+  - **Translation Glossaries & Safe Jobs**: Added structured glossary generation, chunked batch translation, and non-destructive screenplay translation pipelines preserving original source formatting.
+- 📸 **Live In-Memory Snapshot Capture** – Manual and automatic snapshot creation now captures live unsaved editor buffer content across active documents in the project bundle without requiring prior manual saves.
+- 🛡️ **Resilient Atomic File Saves & Oversized Line Protection** – Backend atomic file operations preserve the original document if writes fail or encounter disk issues. Enhanced CodeMirror line and decoration handling to safely manage oversized source lines without editor freeze or indexing crashes.
+- 🐧 **Linux Packaging & Flatpak Repository** –
+  - Fully signed OSTree Flatpak repository published via Cloudflare R2 with dedicated installation script (`scripts/install-flatpak.sh`).
+  - Standardized application ID to `ink.iyal.actone` with AppStream/Discover metadata and screenshots.
+  - Migrated portable AppImage packaging to the Tauri bundler pipeline with automated structure verification and smoke testing.
+- 🎨 **Theme & Timeline Polish** –
+  - Refined timeline styling and track contrast to match active editor themes smoothly.
+  - Enhanced color conversion, palette generation, and contrast calculation utilities in theme management.
+  - Line numbers now default to off (`false`) for a cleaner, distraction-free writing canvas.
+
 ## [0.5.7] - 2026-10-29
 
 ### Added / Improved
