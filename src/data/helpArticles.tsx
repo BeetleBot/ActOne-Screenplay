@@ -936,7 +936,7 @@ Image embeds (\`![alt](url)\`) are not supported in ActOne Screenplay — there 
 - **Page** — "Page: currentPage of totalPages" (always visible), updated as you move your cursor.
 
 **2. X-Ray Analysis window:**
-The compact **Overview** shows scene rhythm, dialogue balance and leading voices. **Scenes** compares stacked word-count bars. **Cast** shows dialogue bars, a presence heatmap and a shared-scene matrix. **World** charts locations, settings and time of day. Select chart marks for details. The information button contains reading-rate settings. **Export PDF** saves the visual atlas.`,
+Resize the window to rearrange chart panels; scroll to see all charts. Chart labels keep a consistent size. The compact **Overview** shows scene rhythm, dialogue balance and leading voices. **Scenes** compares stacked word-count bars. **Cast** shows dialogue bars, a presence heatmap and a shared-scene matrix. **World** charts locations, settings and time of day. Select chart marks for details. The information button contains reading-rate settings. **Export PDF** saves the visual atlas.`,
   },
   {
     id: "xray-analysis",
@@ -1266,7 +1266,7 @@ Fields are stored in standard Fountain title page format (\`Title:\`, \`Author:\
     category: "Export",
     tags: ["export", "pdf", "fountain", "fdx", "print"],
     relatedIds: ["export-pdf", "export-fountain", "export-fdx"],
-    content: `Press <kbd>Ctrl+P</kbd> to open the separate **Export PDF** window with live preview, or <kbd>Ctrl+Shift+P</kbd> (or open the Command Palette → "Export Script…") to open the compact **Export Script** window for script interchange files. Screenplays support PDF, Fountain, Final Draft FDX, and Fade In exports. Prose documents support PDF and Markdown exports. Export is fast, high-quality, and runs completely offline on your device.
+    content: `Press <kbd>Ctrl+P</kbd> to open the separate **Export PDF** window with live preview. The preview opens in **Fit page** so a whole page is visible. Choose **Fit width** for larger text, or use the zoom controls. Pages appear as separate sheets with space between them. Scroll to read more pages. Settings scroll separately, with export buttons always visible. Press <kbd>Ctrl+Shift+P</kbd> (or open the Command Palette → "Export Script…") to open the compact **Export Script** window for script interchange files. Screenplays support PDF, Fountain, Final Draft FDX, and Fade In exports. Prose documents support PDF and Markdown exports. Export is fast, high-quality, and runs completely offline on your device.
 
 After a successful desktop export, choose **Open file** to open the exported document in its default application, **Show in folder** to reveal it in your file manager, or **Done** to return to writing. These actions appear only after a file has been saved. Canceling the save dialog leaves your export options open.`,
   },

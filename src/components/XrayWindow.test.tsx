@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseScreenplay } from "../parser";
 import { XrayContent } from "./XrayWindow";
@@ -54,4 +54,38 @@ it("shows the shared logo while receiving the screenplay", () => {
   render(<XrayContent data={null} />);
   expect(screen.getByRole("status", { name: "Loading X-Ray" })).toBeInTheDocument();
   expect(screen.queryByText(/Waiting for your screenplay/)).not.toBeInTheDocument();
+});
+
+it("keeps analysis content scrollable without compressing chart panels", () => {
+  render(<XrayContent data={data} />);
+  expect(screen.getByRole("tabpanel", { name: "Overview" })).toHaveStyle({ overflow: "auto", minHeight: 0 });
+  const chart = screen.getByRole("group", { name: /Scene rhythm:/ });
+  expect(chart).toHaveAttribute("viewBox", "0 0 280 125");
+});
+
+it("recalculates chart geometry on resize while keeping label sizes stable", () => {
+  const callbacks: ResizeObserverCallback[] = [];
+  const original = globalThis.ResizeObserver;
+  globalThis.ResizeObserver = class {
+    constructor(callback: ResizeObserverCallback) { callbacks.push(callback); }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as typeof ResizeObserver;
+  try {
+    render(<XrayContent data={data} />);
+    const chart = screen.getByRole("group", { name: /Scene rhythm:/ });
+    const resize = (width: number) => act(() => {
+      callbacks.forEach(callback => callback([{ contentRect: { width } } as ResizeObserverEntry], {} as ResizeObserver));
+    });
+    resize(440);
+    expect(chart).toHaveAttribute("viewBox", "0 0 440 125");
+    const label = chart.querySelector("text");
+    const fontSize = label?.getAttribute("font-size");
+    resize(680);
+    expect(chart).toHaveAttribute("viewBox", "0 0 680 125");
+    expect(label).toHaveAttribute("font-size", fontSize!);
+  } finally {
+    globalThis.ResizeObserver = original;
+  }
 });

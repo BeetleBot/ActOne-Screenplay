@@ -12,7 +12,7 @@ vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({
     },
   ),
   getDocument: vi.fn(() => ({
-    promise: Promise.resolve({ numPages: 0, fingerprints: ["preview"] }),
+    promise: Promise.resolve({ numPages: 0, fingerprints: ["preview"], getPage: vi.fn().mockResolvedValue({ getViewport: () => ({ width: 612, height: 792 }) }) }),
     destroy: vi.fn().mockResolvedValue(undefined),
   })),
 }));
@@ -112,17 +112,60 @@ it("zooms without regenerating the PDF and resets to fit width", async () => {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   render(<PdfExportPreview argumentsJson="{}" isProse={false} />);
   await waitFor(() => expect(pdfjs.getDocument).toHaveBeenCalledTimes(1));
+  fireEvent.click(screen.getByRole("button", { name: "Fit width" }));
   fireEvent.click(screen.getByRole("button", { name: "Zoom in PDF" }));
   expect(screen.getByLabelText("PDF zoom")).toHaveTextContent("125%");
-  expect(screen.getByTestId("pdf-pages")).toHaveStyle({ width: "125%" });
+
   for (let i = 0; i < 8; i++) fireEvent.click(screen.getByRole("button", { name: "Zoom in PDF" }));
   expect(screen.getByRole("button", { name: "Zoom in PDF" })).toBeDisabled();
   expect(screen.getByLabelText("PDF zoom")).toHaveTextContent("200%");
   fireEvent.click(screen.getByRole("button", { name: "Fit width" }));
   expect(screen.getByLabelText("PDF zoom")).toHaveTextContent("100%");
   for (let i = 0; i < 4; i++) fireEvent.click(screen.getByRole("button", { name: "Zoom out PDF" }));
-  expect(screen.getByLabelText("PDF zoom")).toHaveTextContent("50%");
+  expect(screen.getByLabelText("PDF zoom")).toHaveTextContent("10%");
   expect(screen.getByRole("button", { name: "Zoom out PDF" })).toBeDisabled();
   expect(invoke).toHaveBeenCalledTimes(1);
   expect(pdfjs.getDocument).toHaveBeenCalledTimes(1);
 });
+
+ it("constrains the preview and provides a keyboard accessible page scroll area", () => {
+  render(<PdfExportPreview argumentsJson="{}" isProse={false} />);
+  expect(screen.getByRole("region", { name: "Live PDF preview" })).toHaveStyle({ width: "100%", height: "100%", minHeight: 0, overflow: "hidden" });
+  const pages = screen.getByRole("region", { name: "PDF pages" });
+  expect(pages).toHaveAttribute("tabindex", "0");
+  expect(pages).toHaveStyle({ overflow: "auto", minHeight: 0 });
+});
+
+it("defaults to fit page and keeps separate paper sheets fitted on resize", async () => {
+  const callbacks: ResizeObserverCallback[] = [];
+  const original = globalThis.ResizeObserver;
+  globalThis.ResizeObserver = class {
+    constructor(callback: ResizeObserverCallback) { callbacks.push(callback); }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as typeof ResizeObserver;
+  try {
+    render(<PdfExportPreview argumentsJson="{}" isProse={false} />);
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 pages"));
+    const resize = (width: number, height: number) => act(() => {
+      callbacks.forEach(callback => callback([{ contentRect: { width, height } } as ResizeObserverEntry], {} as ResizeObserver));
+    });
+    resize(1200, 792);
+    expect(screen.getByRole("button", { name: "Fit page" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("pdf-pages").style.gridTemplateColumns).toBe("repeat(1, 612px)");
+    expect(screen.queryByRole("button", { name: "Two pages" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("pdf-pages")).toHaveStyle({ gap: "24px" });
+    resize(1600, 792);
+    expect(screen.getByTestId("pdf-pages").style.gridTemplateColumns).toBe("repeat(1, 612px)");
+    fireEvent.click(screen.getByRole("button", { name: "Fit width" }));
+    expect(screen.getByTestId("pdf-pages").style.gridTemplateColumns).toBe("repeat(1, 1600px)");
+    fireEvent.click(screen.getByRole("button", { name: "Fit page" }));
+    expect(screen.getByTestId("pdf-pages").style.gridTemplateColumns).toBe("repeat(1, 612px)");
+    expect(invoke).toHaveBeenCalledTimes(1);
+  } finally {
+    globalThis.ResizeObserver = original;
+  }
+});
+
+

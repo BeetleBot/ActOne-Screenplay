@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.2] - 2026-11-01
+
+### Added / Improved
+
+- **Fit Page PDF Preview** – PDF previews now open with the whole page visible. Added a Fit page control alongside Fit width and manual zoom, with automatic fitting when the window is resized.
+- **Separate Paper Sheets** – Added clear spacing, edges, and shadows between preview pages.
+
+### Fixed
+
+- **PDF Export Window Layout and Scrolling** – The preview fills the available space and scrolls independently from export settings. Export buttons stay visible, and the settings column adapts to the window width.
+- **X-Ray Window Resizing** – Charts adapt to the available width while keeping labels and row heights consistent. Panels stack in narrower windows, and shorter windows scroll without squeezing chart content.
+
 ## [0.6.1] - 2026-11-01
 
 ### Removed

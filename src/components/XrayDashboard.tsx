@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Box,
   Button,
@@ -54,6 +54,16 @@ function Panel({
   children: ReactNode;
   action?: ReactNode;
 }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      setChartWidth(Math.max(280, Math.floor(entry.contentRect.width)));
+    });
+    if (contentRef.current) observer.observe(contentRef.current);
+    return () => observer.disconnect();
+  }, []);
+  const charts = [ConnectionChart, DonutChart, PresenceChart, RankedBars, RhythmChart, SceneRowsChart];
   return (
     <Paper variant="outlined" sx={{ p: 1.25, borderRadius: 2, minWidth: 0, overflow: "hidden", flexShrink: 0 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 0.75 }}>
@@ -67,7 +77,13 @@ function Panel({
         </Box>
         {action}
       </Box>
-      {children}
+      <Box ref={contentRef} sx={{ minWidth: 0, overflowX: "auto" }}>
+        {Children.map(children, child =>
+          isValidElement<{ width?: number }>(child) && charts.some(chart => child.type === chart)
+            ? <Box sx={{ minWidth: 280 }}>{cloneElement(child, { width: chartWidth || 280 })}</Box>
+            : child,
+        )}
+      </Box>
     </Paper>
   );
 }
@@ -192,7 +208,7 @@ export function XrayDashboard({
       value: c.words,
       detail: `${c.scenes.length} speaking scenes`,
     }));
-  const grid = { display: "grid", gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) minmax(0, 1fr)" }, gap: 1.5 };
+  const grid = { display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) minmax(0, 1fr)" }, gap: 1.5 };
   const scenePager = (
     <Pager page={safeRhythmPage} total={report.scenes.length} size={40} onChange={setRhythmPage} label="chart scenes" />
   );
@@ -200,6 +216,8 @@ export function XrayDashboard({
     <>
       <Box
         sx={{
+          flexShrink: 0,
+          flexWrap: "wrap",
           px: 2.5,
           pt: 1,
           pb: 0.75,
@@ -248,10 +266,10 @@ export function XrayDashboard({
       <Box
         role="tabpanel"
         aria-label={["Overview", "Scenes", "Cast", "World"][tab]}
-        sx={{ overflow: "auto", minHeight: 0, flex: 1, p: 1.25, display: "flex", flexDirection: "column", gap: 1 }}
+        sx={{ overflow: "auto", minHeight: 0, minWidth: 0, flex: 1, p: 1.25, display: "flex", flexDirection: "column", gap: 1, scrollbarGutter: "stable", "& > *": { flexShrink: 0 } }}
       >
         {notices}
-        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 1 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(4, minmax(0, 1fr))" }, gap: 1 }}>
           {[
             [report.scenes.length, "SCENES"],
             [report.characters.length, "VOICES"],

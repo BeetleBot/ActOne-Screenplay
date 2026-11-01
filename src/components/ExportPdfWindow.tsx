@@ -377,7 +377,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
       }}
     >
       {typeof window !== "undefined" && "__TAURI_INTERNALS__" in window && <WindowResizeHandles />}
-      <DialogTitle sx={{ m: 0, p: 0 }}>
+      <DialogTitle sx={{ m: 0, p: 0, flexShrink: 0 }}>
         <TitleBar
           title={isProse ? "Export Prose PDF" : "Export Script PDF"}
           onClose={onClose}
@@ -385,11 +385,11 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
       </DialogTitle>
 
       {/* Body: Single left settings column + right PDF preview */}
-      <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0 }}>
+      <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0, overflow: "hidden" }}>
         {/* ── Left Settings Panel (380px fixed width, elegant card layout) ── */}
         <Box
           sx={{
-            width: 380,
+            width: { xs: 300, md: 340, lg: 360 },
             flexShrink: 0,
             borderRight: "1px solid",
             borderColor: "divider",
@@ -403,6 +403,9 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
           <Box
             sx={{
               p: 2,
+              flexShrink: 0,
+              flexWrap: "wrap",
+              gap: 1,
               borderBottom: "1px solid",
               borderColor: "divider",
               bgcolor: "background.paper",
@@ -440,9 +443,15 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
 
           {/* Unified Settings Scroll Area */}
           <Box
+            role="region"
+            aria-label="PDF export settings"
+            tabIndex={0}
             sx={{
               flex: 1,
+              minHeight: 0,
               overflowY: "auto",
+              overscrollBehavior: "contain",
+              '& > *': { flexShrink: 0 },
               p: 2,
               display: "flex",
               flexDirection: "column",
@@ -795,6 +804,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
           <Box
             sx={{
               p: 1.75,
+              flexShrink: 0,
               borderTop: "1px solid",
               borderColor: "divider",
               bgcolor: "background.paper",
@@ -809,7 +819,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
               disabled={isExporting}
               color="inherit"
               size="small"
-              sx={{ fontSize: 12, fontWeight: 600, textTransform: "none", borderRadius: "18px", px: 2 }}
+              sx={{ fontSize: 12, fontWeight: 600, textTransform: "none", borderRadius: "6px", px: 2 }}
             >
               Cancel
             </Button>
@@ -826,7 +836,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
                 textTransform: "none",
                 px: 3,
                 py: 0.65,
-                borderRadius: "18px",
+                borderRadius: "6px",
                 boxShadow: "none",
                 flex: 1,
               }}
@@ -837,7 +847,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
         </Box>
 
         {/* ── Right Live PDF Preview (fills remaining space) ── */}
-        <Box sx={{ flex: 1, minWidth: 0, height: "100%", bgcolor: "background.default" }}>
+        <Box sx={{ display: "flex", flex: 1, minWidth: 0, minHeight: 0, overflow: "hidden", bgcolor: "background.default" }}>
           <PdfExportPreview argumentsJson={previewArguments} isProse={isProse} />
         </Box>
       </Box>

@@ -85,3 +85,9 @@ The watermark configuration (header/footer/center opacity and grayscale) is save
 ## FDX Scene Color Encoding
 
 Scene colors in FDX export are written as standard 6-hex `RRGGBB` codes for compatibility with Final Draft and other screenwriting software.
+
+### PDF window sizing
+
+`ExportPdfWindow` uses a responsive-width settings column and a flexible preview. Settings and PDF pages scroll independently with a constrained flex height; title, toolbar and export actions do not shrink. `PdfExportPreview` fills its parent and exposes a focusable page scroll region, including horizontal scrolling when zoomed.
+
+The preview defaults to fit-page sizing using the scroll viewport content width/height and the generated first page aspect ratio (including A4). Fit width and manual zoom remain available. Pages use a single-column grid with an explicit 24px gap and paper edges; fit-page constrains both page width and height. Viewport resize and layout changes recompute fitting without regenerating PDF bytes. These controls affect preview only.

@@ -145,3 +145,7 @@ Document tabs are flat: active and inactive tabs use no box shadow. Active tabs 
 Switch root descendant rules explicitly fix thumb and switch-base dimensions for both sizes so MUI small-size defaults cannot enlarge the thumb beyond the track. The 22px switch base moves 14px inside a 36px root, leaving a consistent 3px thumb inset.
 
 Timeline pills and playhead use neutral gray independently of the interface accent: dark gray (#595959) in light themes and light gray (#b8b8b8) in dark themes, with contrasting numbers. Assigned scene colors override the neutral fill when enabled. Filtered nonmatches remain subdued.
+
+### X-Ray resizing
+
+Dashboard panels measure their content width with ResizeObserver and pass that width to chart geometry, keeping SVG labels and row heights stable as plots resize. Paired panels stack below the medium breakpoint; summary tiles use two columns on small windows. Dashboard scroll children do not flex-shrink, so short windows scroll rather than compress the charts. PDF atlas rendering retains its explicit chart dimensions.

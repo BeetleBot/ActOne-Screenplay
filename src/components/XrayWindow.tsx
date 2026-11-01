@@ -140,6 +140,10 @@ export function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
     <Box
       sx={{
         height: "100vh",
+        minWidth: 0,
+        minHeight: 0,
+        overflow: "hidden",
+        "& > header": { flexShrink: 0 },
         display: "flex",
         flexDirection: "column",
         bgcolor: "background.default",

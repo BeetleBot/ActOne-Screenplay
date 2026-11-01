@@ -78,6 +78,7 @@ describe("ExportPdfWindow Component", () => {
     expect(screen.getByText("Element Styles & Scene Numbers")).toBeInTheDocument();
     expect(screen.getByText("Watermarks & Security")).toBeInTheDocument();
     expect(screen.getByTestId("pdf-preview")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "PDF export settings" })).toHaveStyle({ overflowY: "auto", minHeight: 0 });
   });
 
   it("offers actions after a successful PDF export", async () => {
