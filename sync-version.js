@@ -30,6 +30,20 @@ function syncVersion() {
     }
   }
 
+  const metainfoPath = path.join(rootDir, 'flatpak', 'ink.iyal.actone.metainfo.xml');
+  if (fs.existsSync(metainfoPath)) {
+    let metainfo = fs.readFileSync(metainfoPath, 'utf8');
+    const releaseRegex = /<release\s+version="([^"]+)"/;
+    const match = metainfo.match(releaseRegex);
+    if (match && match[1] !== version) {
+      const today = new Date().toISOString().slice(0, 10);
+      const newReleaseTag = `  <releases>\n    <release version="${version}" date="${today}" />`;
+      metainfo = metainfo.replace(/<releases>/, newReleaseTag);
+      fs.writeFileSync(metainfoPath, metainfo, 'utf8');
+      console.log(`Added release ${version} to flatpak/ink.iyal.actone.metainfo.xml`);
+    }
+  }
+
 
 }
 
