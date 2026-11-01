@@ -1,8 +1,17 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+describe("AppImage tool release pin", () => {
+  it("uses a versioned release and its verified SHA-256 instead of a rolling download", () => {
+    const script = readFileSync("Release/appimage/repack-appimage.sh", "utf8");
+    expect(script).toContain("releases/download/1.9.1/appimagetool-x86_64.AppImage");
+    expect(script).toContain("ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0");
+    expect(script).not.toContain("releases/download/continuous/");
+  });
+});
 
 describe.skipIf(process.platform !== "linux")("AppImage packaging checks", () => {
   let directory: string;
@@ -96,6 +105,23 @@ describe.skipIf(process.platform !== "linux")("AppImage packaging checks", () =>
     const result = spawnSync("bash", [resolve("Release/appimage/smoke-appimage.sh"), fixture], { encoding: "utf8" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("WebKit startup failed");
+  });
+
+  it("rejects a downloaded tool with a mismatched checksum before executing it", () => {
+    const bin = join(directory, "bin");
+    mkdirSync(bin);
+    const curl = join(bin, "curl");
+    // Return a runnable but untrusted download. It must never reach execution.
+    writeFileSync(curl, '#!/bin/bash\nset -eu\nwhile [ "$1" != --output ]; do shift; done\nshift\nprintf \'#!/bin/bash\\ntouch "$APPIMAGE_TOOL_EXECUTED"\\n\' > "$1"\n');
+    chmodSync(curl, 0o755);
+    const marker = join(directory, "executed");
+    const result = spawnSync("bash", [resolve("Release/appimage/repack-appimage.sh"), image, join(directory, "output.AppImage")], {
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, APPIMAGETOOL: "", APPIMAGE_TEST_FIXTURE: fixture, APPIMAGE_TOOL_EXECUTED: marker },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("checksum did NOT match");
+    expect(() => readFileSync(marker)).toThrow();
   });
 
   it("keeps the packaging shell scripts syntactically valid", () => {

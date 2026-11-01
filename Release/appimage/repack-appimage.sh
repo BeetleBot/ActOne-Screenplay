@@ -23,9 +23,9 @@ if [ -n "${APPIMAGETOOL:-}" ]; then
 else
     TOOL="$WORK_DIR/appimagetool.AppImage"
     curl --fail --location --retry 3 --output "$TOOL" \
-        https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
-    # Pin the tool contents even though upstream publishes under a rolling tag.
-    printf '%s  %s\n' 793fca0ce4bcc309dc65d3f66669f58e3755643e4dadbe03932e7b436128494f "$TOOL" | sha256sum --check
+        https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+    # Upgrade the versioned URL and checksum together; never use the rolling tag.
+    printf '%s  %s\n' ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0 "$TOOL" | sha256sum --check
 fi
 chmod +x "$TOOL"
 mkdir -p "$(dirname "$OUTPUT")"
