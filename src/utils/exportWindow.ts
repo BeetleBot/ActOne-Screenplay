@@ -64,8 +64,15 @@ async function openScript(data: ExportWindowData): Promise<void> {
   const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
   const { listen, emitTo } = await import("@tauri-apps/api/event");
   const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  const { LogicalSize } = await import("@tauri-apps/api/dpi");
   const existing = await WebviewWindow.getByLabel("export-script");
   if (existing) {
+    if (typeof existing.setSize === "function") {
+      await existing.setSize(new LogicalSize(500, 600)).catch(() => {});
+    }
+    if (typeof existing.center === "function") {
+      await existing.center().catch(() => {});
+    }
     await emitTo("export-script", "export:document", data);
     await existing.setFocus();
     return;
@@ -82,12 +89,18 @@ async function openScript(data: ExportWindowData): Promise<void> {
       const win = new WebviewWindow("export-script", {
         url: `/?modal=export-script&parent=${encodeURIComponent(parent)}`,
         title: "ActOne – Export Script",
-        width: 720,
-        height: 520,
-        minWidth: 600,
-        minHeight: 480,
-        resizable: true,
+        width: 500,
+        height: 600,
+        minWidth: 500,
+        minHeight: 600,
+        maxWidth: 500,
+        maxHeight: 600,
+        resizable: false,
         decorations: false,
+      });
+      void win.once("tauri://created", () => {
+        void win.setSize(new LogicalSize(500, 600)).catch(() => {});
+        void win.center().catch(() => {});
       });
       void win.once("tauri://error", event => finish(event.payload));
     }).catch(finish);

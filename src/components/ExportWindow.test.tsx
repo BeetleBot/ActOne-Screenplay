@@ -72,11 +72,11 @@ describe("ExportPdfWindow Component", () => {
     mockFileState.filePath = "/home/writer/Projects/Draft.fountain";
   });
 
-  it("renders without crashing and displays PDF tabs", () => {
+  it("renders without crashing and displays unified PDF settings and preview", () => {
     render(<ExportPdfWindow onClose={vi.fn()} />);
-    expect(screen.getByText("Document & Layout")).toBeInTheDocument();
-    expect(screen.getByText("Element Formatting")).toBeInTheDocument();
-    expect(screen.getByText("Watermarks")).toBeInTheDocument();
+    expect(screen.getByText("Page & Layout")).toBeInTheDocument();
+    expect(screen.getByText("Element Styles & Scene Numbers")).toBeInTheDocument();
+    expect(screen.getByText("Watermarks & Security")).toBeInTheDocument();
     expect(screen.getByTestId("pdf-preview")).toBeInTheDocument();
   });
 
@@ -118,7 +118,7 @@ describe("ExportScriptWindow Component", () => {
   });
 
   it.each([
-    { prose: false, nav: "Fountain (.fountain)", button: "Export to Fountain (.fountain)", command: "export_fountain", extension: "fountain" },
+    { prose: false, nav: "Fountain", button: "Export to Fountain (.fountain)", command: "export_fountain", extension: "fountain" },
     { prose: false, nav: "Final Draft (.fdx)", button: "Export to Final Draft (.fdx)", command: "export_fdx", extension: "fdx" },
     { prose: false, nav: "Fade In (.fadein)", button: "Export to Fade In (.fadein)", command: "export_fadein", extension: "fadein" },
     { prose: true, nav: "Markdown (.md)", button: "Export to Markdown (.md)", command: "export_markdown", extension: "md" },

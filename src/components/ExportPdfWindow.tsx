@@ -16,7 +16,6 @@ import {
   Checkbox,
   Dialog,
   DialogTitle,
-  DialogActions,
   Button,
   Box,
   Typography,
@@ -29,12 +28,13 @@ import {
   Slider,
   Chip,
   Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 
 import { isProseScript } from "../utils/scriptMode";
 import type { ExportWindowData } from "../utils/exportWindow";
-
-type PdfSubTab = "document" | "formatting" | "watermarks";
 
 interface ElementFormat {
   bold: boolean;
@@ -83,40 +83,6 @@ export interface ExportPdfWindowProps {
   onClose: () => void;
 }
 
-/* ── Sidebar nav item ── */
-const NavItem: React.FC<{
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  indent?: boolean;
-}> = ({ label, active, onClick, indent }) => (
-  <Box
-    onClick={onClick}
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      gap: 1,
-      pl: indent ? 3 : 1.5,
-      pr: 1.5,
-      py: 0.75,
-      cursor: "pointer",
-      borderRadius: "6px",
-      fontSize: 12.5,
-      fontWeight: active ? 700 : 500,
-      color: (t) => active ? t.palette.primary.main : "text.secondary",
-      bgcolor: (t) => active ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.25 : 0.12) : "transparent",
-      transition: "all 0.12s ease",
-      "&:hover": {
-        bgcolor: (t) => active ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.32 : 0.18) : alpha(t.palette.text.primary, 0.06),
-        color: (t) => active ? t.palette.primary.main : "text.primary",
-      },
-      userSelect: "none",
-    }}
-  >
-    {label}
-  </Box>
-);
-
 /* ── Option row with checkbox ── */
 const OptionRow: React.FC<{
   label: string;
@@ -129,15 +95,16 @@ const OptionRow: React.FC<{
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      py: 0.5,
-      px: 0.5,
+      py: 0.6,
+      px: 1,
       cursor: "pointer",
-      borderRadius: 0.5,
+      borderRadius: 1,
+      transition: "background-color 0.15s ease",
       '&:hover': { bgcolor: "action.hover" },
       userSelect: "none",
     }}
   >
-    <Typography sx={{ fontSize: 12.5, fontWeight: 500, color: "text.primary" }}>{label}</Typography>
+    <Typography sx={{ fontSize: 13, fontWeight: 500, color: "text.primary" }}>{label}</Typography>
     <Checkbox
       size="small"
       checked={checked}
@@ -149,7 +116,7 @@ const OptionRow: React.FC<{
 
 /* ── Section heading ── */
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", letterSpacing: 0.6, textTransform: "uppercase", mb: 0.75 }}>
+  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", letterSpacing: 0.6, textTransform: "uppercase", mb: 1 }}>
     {children}
   </Typography>
 );
@@ -164,7 +131,6 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
   const activeScript = scripts?.[activeScriptIndex ?? 0];
   const isProse = isProseScript(activeScript, filePath);
 
-  const [pdfSubTab, setPdfSubTab] = useState<PdfSubTab>("document");
   const [exportedPath, setExportedPath] = useState<string | null>(null);
   const [exportError, setExportError] = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -184,6 +150,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
   const [exportTitlePage, setExportTitlePage] = useState(true);
   const [exportSceneColors, setExportSceneColors] = useState(false);
   const [scenePageBreaks, setScenePageBreaks] = useState(false);
+  const [selectedPaperSize, setSelectedPaperSize] = useState<"letter" | "a4">(paperSize as "letter" | "a4");
   const [selectedFont, setSelectedFont] = useState<string>(fontFamily);
   
   const savedWatermarks = parsedDoc?.settings?.watermarkSettings;
@@ -293,7 +260,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
 
   const pdfArguments = {
     fountainText: rawText,
-    paperSize,
+    paperSize: selectedPaperSize,
     fontFamily: selectedFont,
     elementFormats: JSON.stringify(elementFormats),
     mirrorSceneNumbers: sceneNumberMode,
@@ -385,292 +352,6 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
     }
   };
 
-  /* ── Render right panel content ── */
-  const renderContent = () => {
-    // Document tab
-    if (pdfSubTab === "document") {
-      return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-          {!isProse && (
-            <>
-              <Box>
-                <SectionTitle>Page Options</SectionTitle>
-                <Box sx={{ display: "flex", flexDirection: "column" }}>
-                  <OptionRow label="Include Title Page" checked={exportTitlePage} onChange={setExportTitlePage} />
-                  <OptionRow label="Export Scene Colors" checked={exportSceneColors} onChange={handleSceneColorToggle} />
-                  <OptionRow label="Section Headings (#)" checked={exportSections} onChange={setExportSections} />
-                  <OptionRow label="Include Synopses (=)" checked={exportSynopses} onChange={setExportSynopses} />
-                  <OptionRow label="Start Each Scene on New Page" checked={scenePageBreaks} onChange={setScenePageBreaks} />
-                </Box>
-              </Box>
-
-              <Divider />
-            </>
-          )}
-
-          <Box>
-            <SectionTitle>{isProse ? "Document Font" : "Screenplay Font"}</SectionTitle>
-            <Select
-              size="small"
-              fullWidth
-              value={selectedFont}
-              onChange={(e) => setSelectedFont(e.target.value)}
-              sx={{ fontSize: 12.5, borderRadius: 1 }}
-            >
-              <MenuItem value="courier-prime" sx={{ fontSize: 12.5 }}>Courier Prime</MenuItem>
-              <MenuItem value="courier-prime-sans" sx={{ fontSize: 12.5 }}>Courier Prime Sans</MenuItem>
-            </Select>
-          </Box>
-
-          {detectedScripts.length > 0 && (
-            <>
-              <Divider />
-              <Box>
-                <SectionTitle>Script Fonts</SectionTitle>
-                {detectedScripts.map((script) => (
-                  <Box key={script} sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-                    <Typography sx={{ fontSize: 12.5, fontWeight: 500, textTransform: "capitalize", minWidth: 80, flexShrink: 0, color: "text.secondary" }}>
-                      {script}
-                    </Typography>
-                    <Select
-                      size="small"
-                      fullWidth
-                      value={scriptFonts[script] || ""}
-                      onChange={(e) => {
-                        if (e.target.value === CHOOSE_OTHER) {
-                          setSystemFontPickerScript(script);
-                        } else {
-                          setScriptFonts(prev => ({ ...prev, [script]: e.target.value }));
-                        }
-                      }}
-                      renderValue={(value) => (
-                        <Typography sx={{ fontSize: 12.5, fontFamily: `"${value}"` }}>
-                          {value || "Select…"}
-                        </Typography>
-                      )}
-                      sx={{ fontSize: 12.5, borderRadius: 1 }}
-                    >
-                      {(scriptFontOptions[script] || []).map((font) => {
-                        if (font === CHOOSE_OTHER) {
-                          return [
-                            <MenuItem disabled key="sep" sx={{ fontSize: 12, opacity: 0.3, minHeight: 20, '&.Mui-disabled': { opacity: 0.3 } }}>
-                              ──────────
-                            </MenuItem>,
-                            <MenuItem key={CHOOSE_OTHER} value={CHOOSE_OTHER} sx={{ fontSize: 12.5, color: "primary.main", fontWeight: 600 }}>
-                              Choose system font…
-                            </MenuItem>,
-                          ];
-                        }
-                        return (
-                          <MenuItem key={font} value={font} sx={{ fontFamily: `"${font}"`, fontSize: 12.5 }}>
-                            {font}
-                          </MenuItem>
-                        );
-                      })}
-                    </Select>
-                  </Box>
-                ))}
-              </Box>
-            </>
-          )}
-        </Box>
-      );
-    }
-
-    // Formatting tab
-    if (pdfSubTab === "formatting") {
-      return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-          <Box>
-            <SectionTitle>Scene Numbers</SectionTitle>
-            <RadioGroup
-              value={sceneNumberMode}
-              onChange={(e) => handleSceneNumberChange(e.target.value as "off" | "left_side" | "mirror")}
-              sx={{ gap: 0 }}
-            >
-              <FormControlLabel value="off" control={<Radio size="small" sx={{ p: 0.5 }} />} label={<Typography sx={{ fontSize: 12.5 }}>No scene numbers</Typography>} sx={{ m: 0, mb: 0.25 }} />
-              <FormControlLabel value="left_side" control={<Radio size="small" sx={{ p: 0.5 }} />} label={<Typography sx={{ fontSize: 12.5 }}>Left side only</Typography>} sx={{ m: 0, mb: 0.25 }} />
-              <FormControlLabel value="mirror" control={<Radio size="small" sx={{ p: 0.5 }} />} label={<Typography sx={{ fontSize: 12.5 }}>Both sides (mirrored)</Typography>} sx={{ m: 0 }} />
-            </RadioGroup>
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <SectionTitle>Element Styles</SectionTitle>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                alignItems: "center",
-                rowGap: 0.25,
-              }}
-            >
-              {/* Header row */}
-              <Box />
-              <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center", pb: 0.5 }}>
-                <Typography sx={{ width: 28, textAlign: "center", fontSize: 10, fontWeight: 700, color: "text.disabled" }}>B</Typography>
-                <Typography sx={{ width: 28, textAlign: "center", fontSize: 10, fontWeight: 700, color: "text.disabled", fontStyle: "italic" }}>I</Typography>
-                <Typography sx={{ width: 28, textAlign: "center", fontSize: 10, fontWeight: 700, color: "text.disabled", textDecoration: "underline" }}>U</Typography>
-              </Box>
-
-              {(Object.keys(FORMAT_LABELS) as (keyof ElementFormats)[]).map((key) => (
-                <React.Fragment key={key}>
-                  <Typography sx={{ fontSize: 12.5, fontWeight: 500, py: 0.4 }}>
-                    {FORMAT_LABELS[key]}
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}>
-                    {(["bold", "italic", "underline"] as const).map((attr) => {
-                      const on = elementFormats[key][attr];
-                      return (
-                        <Box
-                          key={attr}
-                          onClick={() => handleFormatToggle(key, attr)}
-                          sx={{
-                            width: 28,
-                            height: 24,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            borderRadius: 0.5,
-                            border: "1px solid",
-                            borderColor: on ? "primary.main" : "divider",
-                            bgcolor: on ? "primary.main" : "transparent",
-                            color: on ? "primary.contrastText" : "text.secondary",
-                            fontSize: 12,
-                            fontWeight: attr === "bold" ? 800 : 600,
-                            fontStyle: attr === "italic" ? "italic" : "normal",
-                            textDecoration: attr === "underline" ? "underline" : "none",
-                            transition: "all 0.1s ease",
-                            '&:hover': {
-                              borderColor: on ? "primary.dark" : "text.secondary",
-                              bgcolor: on ? "primary.dark" : "action.hover",
-                            },
-                            userSelect: "none",
-                          }}
-                        >
-                          {attr === "bold" ? "B" : attr === "italic" ? "I" : "U"}
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                </React.Fragment>
-              ))}
-            </Box>
-          </Box>
-        </Box>
-      );
-    }
-
-    // Watermarks tab
-    if (pdfSubTab === "watermarks") {
-      return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-          {/* Header watermark */}
-          <Box>
-            <OptionRow label="Header Watermark" checked={watermarkHeaderEnabled} onChange={setWatermarkHeaderEnabled} />
-            {watermarkHeaderEnabled && (
-              <Box sx={{ pl: 0.5, mt: 1, display: "flex", flexDirection: "column", gap: 1.25 }}>
-                <TextField
-                  fullWidth size="small" placeholder="e.g. DRAFT — FOR REVIEW ONLY"
-                  value={watermarkHeaderText} onChange={(e) => setWatermarkHeaderText(e.target.value)}
-                  slotProps={{ input: { style: { fontSize: 12.5 } } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                />
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Typography sx={{ fontSize: 11.5, color: "text.secondary", flexShrink: 0 }}>Opacity</Typography>
-                  <Slider size="small" value={watermarkHeaderOpacity} min={10} max={100} step={5} onChange={(_, v) => setWatermarkHeaderOpacity(v as number)} sx={{ flex: 1 }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "text.secondary", minWidth: 32, textAlign: "right" }}>{watermarkHeaderOpacity}%</Typography>
-                </Box>
-              </Box>
-            )}
-          </Box>
-
-          <Divider />
-
-          {/* Footer watermark */}
-          <Box>
-            <OptionRow label="Footer Watermark" checked={watermarkFooterEnabled} onChange={setWatermarkFooterEnabled} />
-            {watermarkFooterEnabled && (
-              <Box sx={{ pl: 0.5, mt: 1, display: "flex", flexDirection: "column", gap: 1.25 }}>
-                <TextField
-                  fullWidth size="small" placeholder="e.g. CONFIDENTIAL"
-                  value={watermarkFooterText} onChange={(e) => setWatermarkFooterText(e.target.value)}
-                  slotProps={{ input: { style: { fontSize: 12.5 } } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                />
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Typography sx={{ fontSize: 11.5, color: "text.secondary", flexShrink: 0 }}>Opacity</Typography>
-                  <Slider size="small" value={watermarkFooterOpacity} min={10} max={100} step={5} onChange={(_, v) => setWatermarkFooterOpacity(v as number)} sx={{ flex: 1 }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "text.secondary", minWidth: 32, textAlign: "right" }}>{watermarkFooterOpacity}%</Typography>
-                </Box>
-              </Box>
-            )}
-          </Box>
-
-          <Divider />
-
-          {/* Center watermark */}
-          <Box>
-            <OptionRow label="Center Watermark (Diagonal)" checked={watermarkCenterEnabled} onChange={setWatermarkCenterEnabled} />
-            {watermarkCenterEnabled && (
-              <Box sx={{ pl: 0.5, mt: 1, display: "flex", flexDirection: "column", gap: 1.25 }}>
-                <RadioGroup row value={watermarkCenterType} onChange={(e) => setWatermarkCenterType(e.target.value as "text" | "image")}>
-                  <FormControlLabel value="text" control={<Radio size="small" sx={{ p: 0.5 }} />} label={<Typography sx={{ fontSize: 12.5 }}>Text</Typography>} sx={{ m: 0, mr: 2 }} />
-                  <FormControlLabel value="image" control={<Radio size="small" sx={{ p: 0.5 }} />} label={<Typography sx={{ fontSize: 12.5 }}>Image</Typography>} sx={{ m: 0 }} />
-                </RadioGroup>
-
-                {watermarkCenterType === "text" ? (
-                  <TextField
-                    fullWidth size="small" placeholder="e.g. DO NOT COPY"
-                    value={watermarkCenterText} onChange={(e) => setWatermarkCenterText(e.target.value)}
-                    slotProps={{ input: { style: { fontSize: 12.5 } } }}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                  />
-                ) : (
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    <Box sx={{ display: "flex", gap: 1 }}>
-                      <TextField
-                        fullWidth size="small" placeholder="Select image…"
-                        value={watermarkCenterImagePath}
-                        slotProps={{ input: { style: { fontSize: 12.5 }, readOnly: true } }}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                      />
-                      <Button
-                        variant="outlined" size="small"
-                        onClick={async () => {
-                          try {
-                            const selected = await invoke<string | null>("select_watermark_image");
-                            if (selected) setWatermarkCenterImagePath(selected);
-                          } catch (e) {
-                            logger.error("export", "select_watermark_image failed", e);
-                          }
-                        }}
-                        sx={{ fontSize: 12, borderRadius: 1, textTransform: "none", flexShrink: 0 }}
-                      >
-                        Browse
-                      </Button>
-                    </Box>
-                    <OptionRow label="Convert to grayscale" checked={watermarkCenterGrayscale} onChange={setWatermarkCenterGrayscale} />
-                  </Box>
-                )}
-
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Typography sx={{ fontSize: 11.5, color: "text.secondary", flexShrink: 0 }}>Opacity</Typography>
-                  <Slider size="small" value={watermarkCenterOpacity} min={10} max={100} step={5} onChange={(_, v) => setWatermarkCenterOpacity(v as number)} sx={{ flex: 1 }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "text.secondary", minWidth: 32, textAlign: "right" }}>{watermarkCenterOpacity}%</Typography>
-                </Box>
-              </Box>
-            )}
-          </Box>
-        </Box>
-      );
-    }
-
-    return null;
-  };
-
   if (exportedPath) return <ExportCompleteDialog path={exportedPath} onClose={onClose} />;
 
   return (
@@ -703,95 +384,463 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
         />
       </DialogTitle>
 
-      {/* Body */}
+      {/* Body: Single left settings column + right PDF preview */}
       <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0 }}>
-        <Box sx={{ display: "flex", width: "40%", minWidth: 0 }}>
-          {/* ── Left Sidebar ── */}
+        {/* ── Left Settings Panel (380px fixed width, elegant card layout) ── */}
+        <Box
+          sx={{
+            width: 380,
+            flexShrink: 0,
+            borderRight: "1px solid",
+            borderColor: "divider",
+            bgcolor: (t) => t.palette.mode === "dark" ? "background.default" : alpha(t.palette.background.default, 0.6),
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+          }}
+        >
+          {/* Document Header Card */}
           <Box
             sx={{
-              width: "35%",
-              maxWidth: 190,
-              minWidth: 120,
-              flexShrink: 0,
-              borderRight: "1px solid",
+              p: 2,
+              borderBottom: "1px solid",
               borderColor: "divider",
-              bgcolor: "action.hover",
+              bgcolor: "background.paper",
               display: "flex",
-              flexDirection: "column",
-              py: 1.5,
-              px: 1,
-              gap: 0.25,
-              overflowY: "auto",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            {/* Script target */}
-            <Box sx={{ px: 1, mb: 1 }}>
-              <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.disabled", letterSpacing: 0.6, textTransform: "uppercase", mb: 0.25 }}>
-                Exporting PDF
+            <Box sx={{ minWidth: 0, pr: 1.5 }}>
+              <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.disabled", letterSpacing: 0.6, textTransform: "uppercase", mb: 0.3 }}>
+                Target Document
               </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <DescriptionIcon sx={{ fontSize: 13, color: "text.secondary" }} />
-                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "text.primary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <DescriptionIcon sx={{ fontSize: 15, color: "primary.main", flexShrink: 0 }} />
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: "text.primary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {activeScriptName}
                 </Typography>
               </Box>
-              <Chip
-                label={`${paperSize === "letter" ? "US Letter" : "A4"} · ${selectedFont === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}`}
-                size="small"
-                sx={{ height: 18, fontSize: 9.5, fontWeight: 600, mt: 0.5, borderRadius: "4px", bgcolor: "background.paper" }}
-              />
+            </Box>
+            <Chip
+              label={`${selectedPaperSize === "letter" ? "Letter" : "A4"} · ${selectedFont === "courier-prime" ? "Courier Prime" : "Prime Sans"}`}
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: 10,
+                fontWeight: 600,
+                borderRadius: "6px",
+                bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
+                border: "1px solid",
+                borderColor: "divider",
+                flexShrink: 0,
+              }}
+            />
+          </Box>
+
+          {/* Unified Settings Scroll Area */}
+          <Box
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              p: 2,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            {/* Page & Layout Options */}
+            <Box sx={{ bgcolor: "background.paper", borderRadius: 1.5, p: 1.75, border: "1px solid", borderColor: "divider" }}>
+              <SectionTitle>Page & Layout</SectionTitle>
+              {!isProse ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, mb: 1.5 }}>
+                  <OptionRow label="Include Title Page" checked={exportTitlePage} onChange={setExportTitlePage} />
+                  <OptionRow label="Export Scene Colors" checked={exportSceneColors} onChange={handleSceneColorToggle} />
+                  <OptionRow label="Section Headings (#)" checked={exportSections} onChange={setExportSections} />
+                  <OptionRow label="Include Synopses (=)" checked={exportSynopses} onChange={setExportSynopses} />
+                  <OptionRow label="Start Scene on New Page" checked={scenePageBreaks} onChange={setScenePageBreaks} />
+                </Box>
+              ) : (
+                <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 1.5 }}>
+                  Standard page margins and header formatting will be rendered.
+                </Typography>
+              )}
+
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5, mb: 0.5 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: "text.primary", mb: 0.75 }}>
+                    Paper Size
+                  </Typography>
+                  <Select
+                    size="small"
+                    fullWidth
+                    value={selectedPaperSize}
+                    onChange={(e) => setSelectedPaperSize(e.target.value as "letter" | "a4")}
+                    sx={{ fontSize: 12.5, borderRadius: 1, bgcolor: "background.default" }}
+                  >
+                    <MenuItem value="letter" sx={{ fontSize: 12.5 }}>US Letter</MenuItem>
+                    <MenuItem value="a4" sx={{ fontSize: 12.5 }}>A4</MenuItem>
+                  </Select>
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: "text.primary", mb: 0.75 }}>
+                    {isProse ? "Document Font" : "Font"}
+                  </Typography>
+                  <Select
+                    size="small"
+                    fullWidth
+                    value={selectedFont}
+                    onChange={(e) => setSelectedFont(e.target.value)}
+                    sx={{ fontSize: 12.5, borderRadius: 1, bgcolor: "background.default" }}
+                  >
+                    <MenuItem value="courier-prime" sx={{ fontSize: 12.5 }}>Courier Prime</MenuItem>
+                    <MenuItem value="courier-prime-sans" sx={{ fontSize: 12.5 }}>Courier Prime Sans</MenuItem>
+                  </Select>
+                </Box>
+              </Box>
+
+              {detectedScripts.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", mb: 1 }}>
+                    Script Fonts
+                  </Typography>
+                  {detectedScripts.map((script) => (
+                    <Box key={script} sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                      <Typography sx={{ fontSize: 12, fontWeight: 500, textTransform: "capitalize", minWidth: 70, flexShrink: 0, color: "text.secondary" }}>
+                        {script}
+                      </Typography>
+                      <Select
+                        size="small"
+                        fullWidth
+                        value={scriptFonts[script] || ""}
+                        onChange={(e) => {
+                          if (e.target.value === CHOOSE_OTHER) {
+                            setSystemFontPickerScript(script);
+                          } else {
+                            setScriptFonts(prev => ({ ...prev, [script]: e.target.value }));
+                          }
+                        }}
+                        renderValue={(value) => (
+                          <Typography sx={{ fontSize: 12, fontFamily: `"${value}"` }}>
+                            {value || "Select…"}
+                          </Typography>
+                        )}
+                        sx={{ fontSize: 12, borderRadius: 1, bgcolor: "background.default" }}
+                      >
+                        {(scriptFontOptions[script] || []).map((font) => {
+                          if (font === CHOOSE_OTHER) {
+                            return [
+                              <MenuItem disabled key="sep" sx={{ fontSize: 11, opacity: 0.3, minHeight: 18, '&.Mui-disabled': { opacity: 0.3 } }}>
+                                ──────────
+                              </MenuItem>,
+                              <MenuItem key={CHOOSE_OTHER} value={CHOOSE_OTHER} sx={{ fontSize: 12, color: "primary.main", fontWeight: 600 }}>
+                                Choose system font…
+                              </MenuItem>,
+                            ];
+                          }
+                          return (
+                            <MenuItem key={font} value={font} sx={{ fontFamily: `"${font}"`, fontSize: 12 }}>
+                              {font}
+                            </MenuItem>
+                          );
+                        })}
+                      </Select>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
 
-            <Divider sx={{ mb: 0.5 }} />
-
-            {/* Format nav */}
-            <NavItem label="Document & Layout" active={pdfSubTab === "document"} onClick={() => setPdfSubTab("document")} />
+            {/* Element Formatting (Collapsible Accordion for screenplay) */}
             {!isProse && (
-              <NavItem label="Element Formatting" active={pdfSubTab === "formatting"} onClick={() => setPdfSubTab("formatting")} />
+              <Accordion
+                disableGutters
+                elevation={0}
+                sx={{
+                  bgcolor: "background.paper",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: "10px !important",
+                  '&:before': { display: 'none' },
+                }}
+              >
+                <AccordionSummary
+                  sx={{
+                    px: 1.75,
+                    py: 0.5,
+                    minHeight: 44,
+                    '& .MuiAccordionSummary-content': { my: 0.5 },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: "text.primary" }}>
+                      Element Styles & Scene Numbers
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, color: "text.secondary", pr: 1 }}>
+                      {sceneNumberMode === "off" ? "No numbers" : sceneNumberMode === "mirror" ? "Mirrored" : "Left numbers"}
+                    </Typography>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 1.75, pt: 0, pb: 2 }}>
+                  <Divider sx={{ mb: 1.5 }} />
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", mb: 0.75 }}>
+                    Scene Numbering
+                  </Typography>
+                  <RadioGroup
+                    row
+                    value={sceneNumberMode}
+                    onChange={(e) => handleSceneNumberChange(e.target.value as "off" | "left_side" | "mirror")}
+                    sx={{ mb: 2, gap: 1 }}
+                  >
+                    <FormControlLabel value="off" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 12 }}>Off</Typography>} />
+                    <FormControlLabel value="left_side" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 12 }}>Left</Typography>} />
+                    <FormControlLabel value="mirror" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 12 }}>Mirrored</Typography>} />
+                  </RadioGroup>
+
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", mb: 1 }}>
+                    Element Typography Styles
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      alignItems: "center",
+                      rowGap: 0.5,
+                    }}
+                  >
+                    <Box />
+                    <Box sx={{ display: "flex", gap: 0.75, justifyContent: "center", pb: 0.5 }}>
+                      <Typography sx={{ width: 26, textAlign: "center", fontSize: 10, fontWeight: 700, color: "text.disabled" }}>B</Typography>
+                      <Typography sx={{ width: 26, textAlign: "center", fontSize: 10, fontWeight: 700, color: "text.disabled", fontStyle: "italic" }}>I</Typography>
+                      <Typography sx={{ width: 26, textAlign: "center", fontSize: 10, fontWeight: 700, color: "text.disabled", textDecoration: "underline" }}>U</Typography>
+                    </Box>
+
+                    {(Object.keys(FORMAT_LABELS) as (keyof ElementFormats)[]).map((key) => (
+                      <React.Fragment key={key}>
+                        <Typography sx={{ fontSize: 12, fontWeight: 500, color: "text.primary" }}>
+                          {FORMAT_LABELS[key]}
+                        </Typography>
+                        <Box sx={{ display: "flex", gap: 0.75, justifyContent: "center" }}>
+                          {(["bold", "italic", "underline"] as const).map((attr) => {
+                            const on = elementFormats[key][attr];
+                            return (
+                              <Box
+                                key={attr}
+                                onClick={() => handleFormatToggle(key, attr)}
+                                sx={{
+                                  width: 26,
+                                  height: 22,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  borderRadius: 0.5,
+                                  border: "1px solid",
+                                  borderColor: on ? "primary.main" : "divider",
+                                  bgcolor: on ? "primary.main" : "background.default",
+                                  color: on ? "primary.contrastText" : "text.secondary",
+                                  fontSize: 11.5,
+                                  fontWeight: attr === "bold" ? 800 : 600,
+                                  fontStyle: attr === "italic" ? "italic" : "normal",
+                                  textDecoration: attr === "underline" ? "underline" : "none",
+                                  transition: "all 0.1s ease",
+                                  '&:hover': {
+                                    borderColor: on ? "primary.dark" : "text.secondary",
+                                  },
+                                  userSelect: "none",
+                                }}
+                              >
+                                {attr === "bold" ? "B" : attr === "italic" ? "I" : "U"}
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      </React.Fragment>
+                    ))}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
             )}
-            <NavItem label="Watermarks" active={pdfSubTab === "watermarks"} onClick={() => setPdfSubTab("watermarks")} />
+
+            {/* Watermarks (Collapsible Accordion) */}
+            <Accordion
+              disableGutters
+              elevation={0}
+              sx={{
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: "10px !important",
+                '&:before': { display: 'none' },
+              }}
+            >
+              <AccordionSummary
+                sx={{
+                  px: 1.75,
+                  py: 0.5,
+                  minHeight: 44,
+                  '& .MuiAccordionSummary-content': { my: 0.5 },
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: "text.primary" }}>
+                    Watermarks & Security
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: "text.secondary", pr: 1 }}>
+                    {(watermarkHeaderEnabled || watermarkFooterEnabled || watermarkCenterEnabled) ? "Active" : "None"}
+                  </Typography>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails sx={{ px: 1.75, pt: 0, pb: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Divider />
+                {/* Header watermark */}
+                <Box>
+                  <OptionRow label="Header Watermark" checked={watermarkHeaderEnabled} onChange={setWatermarkHeaderEnabled} />
+                  {watermarkHeaderEnabled && (
+                    <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                      <TextField
+                        fullWidth size="small" placeholder="e.g. DRAFT — FOR REVIEW ONLY"
+                        value={watermarkHeaderText} onChange={(e) => setWatermarkHeaderText(e.target.value)}
+                        slotProps={{ input: { style: { fontSize: 12 } } }}
+                      />
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography sx={{ fontSize: 11, color: "text.secondary", flexShrink: 0 }}>Opacity</Typography>
+                        <Slider size="small" value={watermarkHeaderOpacity} min={10} max={100} step={5} onChange={(_, v) => setWatermarkHeaderOpacity(v as number)} sx={{ flex: 1 }} />
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", minWidth: 32, textAlign: "right" }}>{watermarkHeaderOpacity}%</Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+
+                <Divider />
+
+                {/* Footer watermark */}
+                <Box>
+                  <OptionRow label="Footer Watermark" checked={watermarkFooterEnabled} onChange={setWatermarkFooterEnabled} />
+                  {watermarkFooterEnabled && (
+                    <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                      <TextField
+                        fullWidth size="small" placeholder="e.g. CONFIDENTIAL"
+                        value={watermarkFooterText} onChange={(e) => setWatermarkFooterText(e.target.value)}
+                        slotProps={{ input: { style: { fontSize: 12 } } }}
+                      />
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography sx={{ fontSize: 11, color: "text.secondary", flexShrink: 0 }}>Opacity</Typography>
+                        <Slider size="small" value={watermarkFooterOpacity} min={10} max={100} step={5} onChange={(_, v) => setWatermarkFooterOpacity(v as number)} sx={{ flex: 1 }} />
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", minWidth: 32, textAlign: "right" }}>{watermarkFooterOpacity}%</Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+
+                <Divider />
+
+                {/* Center watermark */}
+                <Box>
+                  <OptionRow label="Center Watermark (Diagonal)" checked={watermarkCenterEnabled} onChange={setWatermarkCenterEnabled} />
+                  {watermarkCenterEnabled && (
+                    <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                      <RadioGroup row value={watermarkCenterType} onChange={(e) => setWatermarkCenterType(e.target.value as "text" | "image")}>
+                        <FormControlLabel value="text" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 12 }}>Text</Typography>} sx={{ mr: 2 }} />
+                        <FormControlLabel value="image" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 12 }}>Image</Typography>} />
+                      </RadioGroup>
+
+                      {watermarkCenterType === "text" ? (
+                        <TextField
+                          fullWidth size="small" placeholder="e.g. DO NOT COPY"
+                          value={watermarkCenterText} onChange={(e) => setWatermarkCenterText(e.target.value)}
+                          slotProps={{ input: { style: { fontSize: 12 } } }}
+                        />
+                      ) : (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            <TextField
+                              fullWidth size="small" placeholder="Select image…"
+                              value={watermarkCenterImagePath}
+                              slotProps={{ input: { style: { fontSize: 12 }, readOnly: true } }}
+                            />
+                            <Button
+                              variant="outlined" size="small"
+                              onClick={async () => {
+                                try {
+                                  const selected = await invoke<string | null>("select_watermark_image");
+                                  if (selected) setWatermarkCenterImagePath(selected);
+                                } catch (e) {
+                                  logger.error("export", "select_watermark_image failed", e);
+                                }
+                              }}
+                              sx={{ fontSize: 12, borderRadius: 1, textTransform: "none", flexShrink: 0 }}
+                            >
+                              Browse
+                            </Button>
+                          </Box>
+                          <OptionRow label="Convert to grayscale" checked={watermarkCenterGrayscale} onChange={setWatermarkCenterGrayscale} />
+                        </Box>
+                      )}
+
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography sx={{ fontSize: 11, color: "text.secondary", flexShrink: 0 }}>Opacity</Typography>
+                        <Slider size="small" value={watermarkCenterOpacity} min={10} max={100} step={5} onChange={(_, v) => setWatermarkCenterOpacity(v as number)} sx={{ flex: 1 }} />
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", minWidth: 32, textAlign: "right" }}>{watermarkCenterOpacity}%</Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              </AccordionDetails>
+            </Accordion>
           </Box>
 
-          {/* ── Right Panel ── */}
-          <Box sx={{ flex: 1, minWidth: 0, overflowY: "auto", p: 2.5 }}>
-            {renderContent()}
+          {/* Action Bar at Bottom of Left Panel */}
+          {exportError && <Alert severity="error" sx={{ mx: 2, mb: 1, fontSize: 12 }}>{exportError}</Alert>}
+          <Box
+            sx={{
+              p: 1.75,
+              borderTop: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1.5,
+            }}
+          >
+            <Button
+              onClick={onClose}
+              disabled={isExporting}
+              color="inherit"
+              size="small"
+              sx={{ fontSize: 12, fontWeight: 600, textTransform: "none", borderRadius: "18px", px: 2 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExport}
+              disabled={isExporting}
+              variant="contained"
+              color="primary"
+              size="small"
+              startIcon={<DownloadIcon sx={{ fontSize: 15 }} />}
+              sx={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                textTransform: "none",
+                px: 3,
+                py: 0.65,
+                borderRadius: "18px",
+                boxShadow: "none",
+                flex: 1,
+              }}
+            >
+              {isExporting ? "Exporting..." : "Export to PDF"}
+            </Button>
           </Box>
         </Box>
-        <PdfExportPreview argumentsJson={previewArguments} isProse={isProse} />
-      </Box>
 
-      {/* ── Footer ── */}
-      {exportError && <Alert severity="error" sx={{ mx: 2, my: 1 }}>{exportError}</Alert>}
-      <DialogActions sx={{ px: 2, py: 1.25, justifyContent: "space-between", borderTop: "1px solid", borderColor: "divider" }}>
-        <Button
-          onClick={onClose}
-          disabled={isExporting}
-          color="inherit"
-          size="small"
-          sx={{ fontSize: 12, fontWeight: 600, textTransform: "none", borderRadius: "20px", px: 2.25, py: 0.6 }}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleExport}
-          disabled={isExporting}
-          variant="contained"
-          color="primary"
-          size="small"
-          startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
-          sx={{
-            fontSize: 12,
-            fontWeight: 700,
-            textTransform: "none",
-            px: 2.75,
-            py: 0.6,
-            borderRadius: "20px",
-            boxShadow: "none",
-          }}
-        >
-          {isExporting ? "Exporting..." : "Export to PDF"}
-        </Button>
-      </DialogActions>
+        {/* ── Right Live PDF Preview (fills remaining space) ── */}
+        <Box sx={{ flex: 1, minWidth: 0, height: "100%", bgcolor: "background.default" }}>
+          <PdfExportPreview argumentsJson={previewArguments} isProse={isProse} />
+        </Box>
+      </Box>
 
       {/* System Font Picker Dialog */}
       {systemFontPickerScript && (

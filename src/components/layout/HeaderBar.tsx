@@ -167,30 +167,23 @@ export const HeaderBar = React.memo(() => {
                   whiteSpace: 'nowrap',
                   bgcolor: (theme) => isActive ? alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.12 : 0.08) : 'transparent',
                   color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.secondary,
-                  border: 'none',
+                  border: '1px solid',
+                  borderColor: (theme) => isActive
+                    ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.45 : 0.35)
+                    : 'transparent',
                   boxShadow: 'none',
                   backdropFilter: isActive ? 'blur(8px)' : 'none',
                   '&:hover': {
                     bgcolor: (theme) => isActive ? alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.16 : 0.11) : alpha(theme.palette.text.primary, 0.06),
                     color: (theme) => isActive ? theme.palette.text.primary : theme.palette.text.primary,
+                    borderColor: (theme) => isActive
+                      ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.6 : 0.5)
+                      : alpha(theme.palette.text.primary, 0.1),
                   },
                   transition: 'all 0.15s ease',
                   position: 'relative',
                 }}
               >
-                {/* Active dot indicator */}
-                {isActive && (
-                  <Box 
-                    sx={{ 
-                      width: 6, 
-                      height: 6, 
-                      borderRadius: '50%', 
-                      bgcolor: 'primary.main', 
-                      flexShrink: 0,
-                      boxShadow: (t) => `0 0 6px ${alpha(t.palette.primary.main, 0.6)}`,
-                    }} 
-                  />
-                )}
                 <span className="tab-name" style={{ fontFamily: 'var(--font-ui, "Inter", sans-serif)', fontWeight: isActive ? 600 : 500, letterSpacing: "0.005em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{display}</span>
                 {file.isDirty && (
                   <Box 

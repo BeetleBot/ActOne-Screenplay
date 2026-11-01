@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useFile, useUI } from "../context";
+import { useFile } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { alpha } from "@mui/material/styles";
 import { DownloadIcon, DescriptionIcon } from "./Icons";
@@ -14,12 +14,11 @@ import {
   Checkbox,
   Dialog,
   DialogTitle,
-  DialogActions,
   Button,
   Box,
   Typography,
-  Chip,
-  Divider,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 
 import { isProseScript } from "../utils/scriptMode";
@@ -33,39 +32,7 @@ export interface ExportScriptWindowProps {
   onClose: () => void;
 }
 
-/* ── Sidebar nav item ── */
-const NavItem: React.FC<{
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}> = ({ label, active, onClick }) => (
-  <Box
-    onClick={onClick}
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      gap: 1,
-      px: 1.5,
-      py: 0.75,
-      cursor: "pointer",
-      borderRadius: "6px",
-      fontSize: 12.5,
-      fontWeight: active ? 700 : 500,
-      color: (t) => active ? t.palette.primary.main : "text.secondary",
-      bgcolor: (t) => active ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.25 : 0.12) : "transparent",
-      transition: "all 0.12s ease",
-      "&:hover": {
-        bgcolor: (t) => active ? alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.32 : 0.18) : alpha(t.palette.text.primary, 0.06),
-        color: (t) => active ? t.palette.primary.main : "text.primary",
-      },
-      userSelect: "none",
-    }}
-  >
-    {label}
-  </Box>
-);
-
-/* ── Option row with checkbox ── */
+/* ── Option row with checkbox (Settings Window style) ── */
 const OptionRow: React.FC<{
   label: string;
   checked: boolean;
@@ -77,15 +44,16 @@ const OptionRow: React.FC<{
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      py: 0.5,
-      px: 0.5,
+      py: 0.6,
+      px: 1,
       cursor: "pointer",
-      borderRadius: 0.5,
+      borderRadius: "6px",
+      transition: "background-color 0.15s ease",
       '&:hover': { bgcolor: "action.hover" },
       userSelect: "none",
     }}
   >
-    <Typography sx={{ fontSize: 12.5, fontWeight: 500, color: "text.primary" }}>{label}</Typography>
+    <Typography sx={{ fontSize: 13, fontWeight: 500, color: "text.primary" }}>{label}</Typography>
     <Checkbox
       size="small"
       checked={checked}
@@ -95,18 +63,9 @@ const OptionRow: React.FC<{
   </Box>
 );
 
-/* ── Section heading ── */
-const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "text.secondary", letterSpacing: 0.6, textTransform: "uppercase", mb: 0.75 }}>
-    {children}
-  </Typography>
-);
-
 export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose, data }) => {
   const fileContext = useFile();
   const { rawText, isBundle, activeScriptName, filePath, scripts, activeScriptIndex } = data?.file ?? fileContext;
-  const ui = useUI();
-  const { fontFamily, paperSize } = data?.ui ?? ui;
 
   const activeScript = scripts?.[activeScriptIndex ?? 0];
   const isProse = isProseScript(activeScript, filePath);
@@ -304,64 +263,9 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
     }
   };
 
-  const formatLabel = isProse
-    ? "Markdown (.md)"
-    : (format === "fdx" ? "Final Draft (.fdx)" : format === "fadein" ? "Fade In (.fadein)" : "Fountain (.fountain)");
-
-  /* ── Render right panel content ── */
-  const renderContent = () => {
-    if (format === "markdown") {
-      return (
-        <Box>
-          <SectionTitle>Markdown Export</SectionTitle>
-          <Typography sx={{ fontSize: 12.5, color: "text.secondary", lineHeight: 1.6, mb: 2 }}>
-            Exports your document as a standard Markdown (.md) file.
-          </Typography>
-        </Box>
-      );
-    }
-
-    if (format === "fountain") {
-      return (
-        <Box>
-          <SectionTitle>Export Options</SectionTitle>
-          <OptionRow label="Include Title Page" checked={exportTitlePage} onChange={setExportTitlePage} />
-          <OptionRow label="Section Headings (#)" checked={exportSections} onChange={setExportSections} />
-          <OptionRow label="Synopses (=)" checked={exportSynopses} onChange={setExportSynopses} />
-          <Divider sx={{ my: 2 }} />
-          <Typography sx={{ fontSize: 12, color: "text.secondary", lineHeight: 1.5 }}>
-            Exports clean Fountain markup without ActOne-specific metadata, markers, or storyline tags.
-          </Typography>
-        </Box>
-      );
-    }
-
-    if (format === "fdx") {
-      return (
-        <Box>
-          <SectionTitle>Final Draft XML</SectionTitle>
-          <Typography sx={{ fontSize: 12.5, color: "text.secondary", lineHeight: 1.6, mb: 2 }}>
-            Exports the screenplay as a Final Draft XML (.fdx) file compatible with Final Draft, Highland, and Movie Magic Screenwriter.
-          </Typography>
-          <OptionRow label="Include Title Page" checked={exportTitlePage} onChange={setExportTitlePage} />
-        </Box>
-      );
-    }
-
-    if (format === "fadein") {
-      return (
-        <Box>
-          <SectionTitle>Fade In Professional</SectionTitle>
-          <Typography sx={{ fontSize: 12.5, color: "text.secondary", lineHeight: 1.6, mb: 2 }}>
-            Exports the screenplay as a native Fade In (.fadein) file for Fade In Professional on Windows, macOS, and Linux.
-          </Typography>
-          <OptionRow label="Include Title Page" checked={exportTitlePage} onChange={setExportTitlePage} />
-        </Box>
-      );
-    }
-
-    return null;
-  };
+  const formatButtonLabel = isProse
+    ? "Export to Markdown (.md)"
+    : (format === "fdx" ? "Export to Final Draft (.fdx)" : format === "fadein" ? "Export to Fade In (.fadein)" : "Export to Fountain (.fountain)");
 
   if (exportedPath) return <ExportCompleteDialog path={exportedPath} onClose={onClose} />;
 
@@ -369,24 +273,23 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
     <Dialog
       open
       onClose={onClose}
-      fullWidth
-      maxWidth="sm"
+      fullScreen
+      maxWidth={false}
       disableScrollLock
-      transitionDuration={200}
+      transitionDuration={150}
       sx={{
         '& .MuiDialog-paper': {
-          borderRadius: "12px",
-          height: 520,
-          maxHeight: '90vh',
+          borderRadius: 0,
+          width: "100%",
+          height: "100%",
+          maxWidth: "100%",
+          maxHeight: "100%",
           bgcolor: 'background.paper',
           backgroundImage: 'none',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           m: 0,
-          width: "100%",
-          maxWidth: "100%",
         }
       }}
     >
@@ -395,74 +298,177 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
         <TitleBar
           title={isProse ? "Export Prose" : "Export Script"}
           onClose={onClose}
+          isModal={true}
         />
       </DialogTitle>
 
-      {/* Body */}
-      <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
-        {/* ── Left Sidebar ── */}
+      {/* Format Selector Pill Header (Identical to SettingsWindow top tab bar) */}
+      {!isProse && (
+        <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+          <ToggleButtonGroup
+            value={format}
+            exclusive
+            onChange={(_, val) => val !== null && setFormat(val as ScriptFormat)}
+            fullWidth
+            size="small"
+            sx={{
+              p: "3px",
+              gap: "4px",
+              borderRadius: "8px",
+              bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
+              border: "1px solid",
+              borderColor: "divider",
+              "& .MuiToggleButtonGroup-grouped": {
+                border: "none !important",
+                borderRadius: "6px !important",
+                mx: 0,
+              },
+            }}
+          >
+            {[
+              { id: "fountain", label: "Fountain" },
+              { id: "fdx", label: "Final Draft (.fdx)" },
+              { id: "fadein", label: "Fade In (.fadein)" },
+            ].map(({ id, label }) => {
+              const isSelected = format === id;
+              return (
+                <ToggleButton
+                  key={id}
+                  value={id}
+                  sx={{
+                    fontSize: 12,
+                    py: 0.5,
+                    textTransform: "none",
+                    fontWeight: isSelected ? 600 : 500,
+                    color: isSelected ? "text.primary" : "text.secondary",
+                    bgcolor: isSelected ? "background.paper !important" : "transparent",
+                    boxShadow: isSelected ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                    transition: "all 0.15s ease",
+                    "&:hover": {
+                      bgcolor: isSelected ? "background.paper !important" : (t) => alpha(t.palette.text.primary, 0.05),
+                    },
+                  }}
+                >
+                  {label}
+                </ToggleButton>
+              );
+            })}
+          </ToggleButtonGroup>
+        </Box>
+      )}
+
+      {/* Settings Card Content Area */}
+      <Box sx={{ flex: 1, overflow: "auto", px: 2, py: isProse ? 1.5 : 0.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
+        {/* Document Header Card */}
         <Box
           sx={{
-            width: 190,
-            flexShrink: 0,
-            borderRight: "1px solid",
+            border: "1px solid",
             borderColor: "divider",
-            bgcolor: "action.hover",
+            borderRadius: "8px",
+            p: 1.5,
             display: "flex",
-            flexDirection: "column",
-            py: 1.5,
-            px: 1,
-            gap: 0.25,
-            overflowY: "auto",
+            alignItems: "center",
+            gap: 1.25,
+            bgcolor: (t) => alpha(t.palette.text.primary, 0.02),
           }}
         >
-          {/* Script target */}
-          <Box sx={{ px: 1, mb: 1 }}>
-            <Typography sx={{ fontSize: 10, fontWeight: 700, color: "text.disabled", letterSpacing: 0.6, textTransform: "uppercase", mb: 0.25 }}>
-              Exporting Script
+          <DescriptionIcon sx={{ fontSize: 18, color: "primary.main", flexShrink: 0 }} />
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                fontSize: 10,
+                color: "text.secondary",
+                letterSpacing: 0.5,
+                display: "block",
+                textTransform: "uppercase",
+              }}
+            >
+              ACTIVE DOCUMENT
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <DescriptionIcon sx={{ fontSize: 13, color: "text.secondary" }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 700, color: "text.primary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {activeScriptName}
-              </Typography>
-            </Box>
-            <Chip
-              label={`${paperSize === "letter" ? "US Letter" : "A4"} · ${fontFamily === "courier-prime" ? "Courier Prime" : "Courier Prime Sans"}`}
-              size="small"
-              sx={{ height: 18, fontSize: 9.5, fontWeight: 600, mt: 0.5, borderRadius: "4px", bgcolor: "background.paper" }}
-            />
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "text.primary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {activeScriptName}
+            </Typography>
           </Box>
-
-          <Divider sx={{ mb: 0.5 }} />
-
-          {/* Format nav */}
-          {isProse ? (
-            <NavItem label="Markdown (.md)" active={format === "markdown"} onClick={() => setFormat("markdown")} />
-          ) : (
-            <>
-              <NavItem label="Fountain (.fountain)" active={format === "fountain"} onClick={() => setFormat("fountain")} />
-              <NavItem label="Final Draft (.fdx)" active={format === "fdx"} onClick={() => setFormat("fdx")} />
-              <NavItem label="Fade In (.fadein)" active={format === "fadein"} onClick={() => setFormat("fadein")} />
-            </>
-          )}
         </Box>
 
-        {/* ── Right Panel ── */}
-        <Box sx={{ flex: 1, overflowY: "auto", p: 2.5 }}>
-          {renderContent()}
-        </Box>
+        {/* Options Card */}
+        {!isProse ? (
+          <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: "8px", p: 1.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                fontSize: 10,
+                color: "text.secondary",
+                letterSpacing: 0.5,
+                mb: 1,
+                display: "block",
+                textTransform: "uppercase",
+              }}
+            >
+              OPTIONS
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+              <OptionRow label="Include Title Page" checked={exportTitlePage} onChange={setExportTitlePage} />
+              {format === "fountain" && (
+                <>
+                  <OptionRow label="Section Headings (#)" checked={exportSections} onChange={setExportSections} />
+                  <OptionRow label="Include Synopses (=)" checked={exportSynopses} onChange={setExportSynopses} />
+                </>
+              )}
+            </Box>
+            <Typography sx={{ fontSize: 11.5, color: "text.secondary", mt: 1.25, lineHeight: 1.45 }}>
+              {format === "fountain" && "Strips app-specific markers and colors, outputting standardized Fountain plain text."}
+              {format === "fdx" && "Converts screenplay elements into Final Draft XML compatible with Final Draft & Highland."}
+              {format === "fadein" && "Generates native Fade In package bundle with character, scene, and dialogue layout."}
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: "8px", p: 1.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                fontSize: 10,
+                color: "text.secondary",
+                letterSpacing: 0.5,
+                mb: 0.75,
+                display: "block",
+                textTransform: "uppercase",
+              }}
+            >
+              MARKDOWN EXPORT
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: "text.secondary", lineHeight: 1.5 }}>
+              Exports your active document as standard Markdown (.md) with all headings, emphasis, blockquotes, and prose structure preserved.
+            </Typography>
+          </Box>
+        )}
       </Box>
 
-      {/* ── Footer ── */}
-      {exportError && <Alert severity="error" sx={{ mx: 2, my: 1 }}>{exportError}</Alert>}
-      <DialogActions sx={{ px: 2, py: 1.25, justifyContent: "space-between", borderTop: "1px solid", borderColor: "divider" }}>
+      {/* Footer Action Bar */}
+      {exportError && <Alert severity="error" sx={{ mx: 2, mb: 1, fontSize: 12 }}>{exportError}</Alert>}
+      <Box
+        sx={{
+          px: 2,
+          py: 1.5,
+          borderTop: "1px solid",
+          borderColor: "divider",
+          bgcolor: "background.paper",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
         <Button
           onClick={onClose}
           disabled={isExporting}
           color="inherit"
           size="small"
-          sx={{ fontSize: 12, fontWeight: 600, textTransform: "none", borderRadius: "20px", px: 2.25, py: 0.6 }}
+          sx={{ fontSize: 12, fontWeight: 600, textTransform: "none", borderRadius: "8px", px: 2 }}
         >
           Cancel
         </Button>
@@ -472,20 +478,21 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
           variant="contained"
           color="primary"
           size="small"
-          startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
+          startIcon={<DownloadIcon sx={{ fontSize: 15 }} />}
           sx={{
-            fontSize: 12,
+            fontSize: 12.5,
             fontWeight: 700,
             textTransform: "none",
-            px: 2.75,
-            py: 0.6,
-            borderRadius: "20px",
+            px: 2.5,
+            py: 0.65,
+            borderRadius: "8px",
             boxShadow: "none",
+            flex: 1,
           }}
         >
-          {isExporting ? "Exporting..." : `Export to ${formatLabel}`}
+          {isExporting ? "Exporting..." : formatButtonLabel}
         </Button>
-      </DialogActions>
+      </Box>
     </Dialog>
   );
 };
