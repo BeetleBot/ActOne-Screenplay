@@ -1005,11 +1005,12 @@ Counts exclude headings, cues, parentheticals, notes and title pages. Reading es
 - Each snapshot shows the date/time, file size, comment, and tag (MANUAL, SAVE, AUTO, or custom).
 - Filter by tag type using the tag buttons at the top.
 - Three-dot menu on each snapshot:
-  - **Restore** — Replaces the current script with the snapshot. A safety snapshot is taken first so you never lose pending work.
-  - **Open as File** — Opens the snapshot content in a separate read-only tab for comparison.
+  - **Open as File** — Opens the snapshot as a new unsaved project. Your current project stays open, so you can compare versions and save the recovered copy under a new name.
   - **Delete** — Removes the snapshot permanently.
 
-Click **Open Snapshots Folder** to browse saved versions directly in your system file manager.`,
+Click **Open Snapshots Folder** to browse saved versions directly in your system file manager.
+
+If the snapshot list is missing or damaged, ActOne can rebuild it from saved snapshot files. These copies appear as **Recovered snapshot** and are kept until you delete them. Their original comments and tags may be unavailable.`,
   },
   {
     id: "parking",
@@ -1241,6 +1242,8 @@ Older project bundle versions are automatically recognized and seamlessly update
     content: `<kbd>Ctrl+S</kbd> saves the active project. For .actone projects, this saves all documents, notes, tasks, and settings. For plain .fountain files, it writes the Fountain text directly.
 
 <kbd>Ctrl+Shift+S</kbd> opens Save Project As, allowing you to save as .actone (recommended for all features) or .fountain.
+
+You can keep writing while a save finishes. Changes made during that save remain marked as unsaved until the next successful save. If a save fails, your previous project file is preserved.
 
 When closing the app, ActOne checks all open projects for unsaved changes and prompts you to save, discard, or cancel.`,
   },

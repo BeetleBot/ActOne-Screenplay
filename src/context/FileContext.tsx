@@ -6,6 +6,7 @@ import { parseScreenplayAsync } from "../utils/asyncParser";
 import { invoke } from "@tauri-apps/api/core";
 import { useUI } from "./UIContext";
 import { unpackActoneBundle, packActoneBundleAsync } from "../utils";
+import { readProject, saveProject } from "../utils/fileCore";
 import type { ScriptInfo } from "../utils";
 import { parseScriptFileToFountain } from "../utils/text";
 import { isNonScreenplay, isProseScript, isCanvasScript, isActonePath } from "../utils/scriptMode";
@@ -23,6 +24,12 @@ import { useDocumentPagination, equalPageBreaks } from "../hooks/useDocumentPagi
 
 
 export type SettingsUpdater = (prev: Record<string, unknown>) => Record<string, unknown>;
+
+export interface SnapshotPayload {
+  content?: string;
+  bytes?: number[];
+  project?: { scripts: ScriptInfo[]; settings: Record<string, unknown> };
+}
 
 export interface DocumentTarget {
   fileId: string;
@@ -86,7 +93,7 @@ export interface FileContextProps {
   openSnapshotAsNewProject: (snapshotPath: string) => Promise<void>;
   saveStatus: "idle" | "saving" | "saved";
   importingScriptName: string | null;
-  getSnapshotPayload: () => Promise<{ content?: string; bytes?: number[] } | null>;
+  getSnapshotPayload: () => Promise<SnapshotPayload | null>;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -711,11 +718,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (isPdf) {
             content = await invoke<string>("parse_pdf_to_fountain", { path });
           } else if (isFadeIn) {
-            const bytes = await invoke<number[]>("read_file_binary", { path });
-            content = parseScriptFileToFountain(path, new Uint8Array(bytes));
+            content = await invoke<string>("import_script_content", { path });
           } else {
-            const raw = await invoke<string>("read_file_content", { path });
-            content = (isMarkdown || isCanvas) ? raw : parseScriptFileToFountain(path, raw);
+            content = await invoke<string>((isMarkdown || isCanvas) ? "read_file_content" : "import_script_content", { path });
           }
         } else {
           throw new Error("Cannot open direct path in web mode");
@@ -787,8 +792,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (isTauri) {
         try {
-          const bytes = await invoke<number[]>("read_file_binary", { path });
-          const bundle = unpackActoneBundle(new Uint8Array(bytes), bundleName);
+          const bundle = await readProject(path, bundleName);
           if (bundle && bundle.scripts && bundle.scripts.length > 0) {
             scripts = bundle.scripts;
             settings = bundle.settings;
@@ -954,8 +958,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isActone) {
         if (isTauri) {
           try {
-            const bytes = await invoke<number[]>("read_file_binary", { path: res.path });
-            const bundle = unpackActoneBundle(new Uint8Array(bytes), bundleName);
+            const bundle = await readProject(res.path, bundleName);
             scripts = bundle.scripts;
             content = bundle.scripts[0]?.content || "";
             settings = bundle.settings;
@@ -1049,8 +1052,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const saveActoneFile = async (path: string, scripts: ScriptInfo[], settings: Record<string, unknown>) => {
     const normalizedPath = path;
-    const zipped = await packActoneBundleAsync(scripts, settings);
-    await invoke("save_file_binary", { path: normalizedPath, bytes: Array.from(zipped) });
+    await saveProject(normalizedPath, scripts, settings);
   };
 
   const saveQueues = useRef(new Map<string, Promise<void>>());
@@ -1718,14 +1720,18 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isPdf) {
           content = await invoke<string>("parse_pdf_to_fountain", { path });
         } else if (isFadeIn) {
-          const bytes = await invoke<number[]>("read_file_binary", { path });
-          content = parseScriptFileToFountain(path, new Uint8Array(bytes));
+          content = await invoke<string>("import_script_content", { path });
         } else {
-          const raw = await invoke<string>("read_file_content", { path });
-          content = (isMarkdown || isCanvas) ? raw : parseScriptFileToFountain(path, raw);
+          content = await invoke<string>((isMarkdown || isCanvas) ? "read_file_content" : "import_script_content", { path });
         }
       } catch (e) {
         logger.error("file", `Failed to import script from path: ${path}`, e);
+        setImportingScriptName(null);
+        await confirm({
+          title: "Import Failed",
+          message: "This file could not be read. It may be damaged or use an unsupported format. Your project has not been changed.",
+          buttons: [{ value: "ok", label: "OK", variant: "contained" }],
+        });
         return null;
       }
 
@@ -1769,7 +1775,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setImportingScriptName(null);
     }
-  }, [files, activeFileId, paperSize, showPdfNotice]);
+  }, [files, activeFileId, paperSize, showPdfNotice, confirm]);
 
   const importScript = useCallback(async (type?: "fountain" | "markdown" | "canvas" | "fdx" | "fadein" | "pdf"): Promise<string | null> => {
     const file = files.find(f => f.id === activeFileId);
@@ -1791,14 +1797,18 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isPdfImport) {
           content = await invoke<string>("parse_pdf_to_fountain", { path: result.path });
         } else if (result.path.toLowerCase().endsWith(".fadein")) {
-          const bytes = await invoke<number[]>("read_file_binary", { path: result.path });
-          content = parseScriptFileToFountain(result.path, new Uint8Array(bytes));
+          content = await invoke<string>("import_script_content", { path: result.path });
         } else {
-          const raw = await invoke<string>("read_file_content", { path: result.path });
-          content = (type === "markdown" || type === "canvas") ? raw : parseScriptFileToFountain(result.path, raw);
+          content = await invoke<string>((type === "markdown" || type === "canvas") ? "read_file_content" : "import_script_content", { path: result.path });
         }
       } catch (e) {
         logger.error("file", "Import script dialog failed", e);
+        setImportingScriptName(null);
+        await confirm({
+          title: "Import Failed",
+          message: "This file could not be read. It may be damaged or use an unsupported format. Your project has not been changed.",
+          buttons: [{ value: "ok", label: "OK", variant: "contained" }],
+        });
         return null;
       }
     } else {
@@ -1881,7 +1891,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setImportingScriptName(null);
     }
-  }, [files, activeFileId, isTauri, paperSize, showPdfNotice]);
+  }, [files, activeFileId, isTauri, paperSize, showPdfNotice, confirm]);
 
   const moveScript = useCallback(async (fromIndex: number, toIndex: number) => {
     flushPendingEditorEdits();
@@ -1947,8 +1957,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let rawTextContent = "";
 
       if (isActone) {
-        const bytes = await invoke<number[]>("read_file_binary", { path: snapshotPath });
-        const bundle = unpackActoneBundle(new Uint8Array(bytes), cleanBundleName);
+        const bundle = await readProject(snapshotPath, cleanBundleName);
         scripts = bundle.scripts;
         rawTextContent = bundle.scripts[0]?.content || "";
         settings = bundle.settings;
@@ -2092,7 +2101,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     rememberActiveDocument(filePath, scriptFileName);
   }, [filePath, scriptFileName]);
 
-  const getSnapshotPayload = useCallback(async (): Promise<{ content?: string; bytes?: number[] } | null> => {
+  const getSnapshotPayload = useCallback(async (): Promise<SnapshotPayload | null> => {
     flushPendingEditorEdits();
     const currentId = activeFileIdRef.current || activeFileId;
     const currentActive = filesRef.current.find(f => f.id === currentId) || files.find(f => f.id === currentId);
@@ -2115,8 +2124,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           savedContent: cleanText,
         }];
       }
-      const zipped = await packActoneBundleAsync(updatedScripts, currentActive.parsedDoc.settings);
-      return { bytes: Array.from(zipped) };
+      return { project: { scripts: updatedScripts, settings: currentActive.parsedDoc.settings } };
     }
 
     return { content: cleanText };

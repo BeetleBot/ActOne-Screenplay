@@ -16,7 +16,7 @@ Snapshots are copies of your file at specific points in time, stored in a snapsh
 
 ### Storage Locations
 
-Snapshots are stored in the active project's `.snapshots/` folder next to the project file by default. The folder contains the snapshot index and saved revisions. A custom path can be picked via **Settings → Snapshots → Browse…** (with Reset to Default). When snapshots are disabled, the panel shows a dashed `12px` empty state with an **Enable Snapshots** pill CTA.
+Snapshots are stored in the active project's `.snapshots/` folder next to the project file by default. The folder contains the snapshot index and saved revisions. Location preferences are present in settings, but native storage currently always uses the project folder; custom/app-data destinations are not implemented. When snapshots are disabled, the panel shows a dashed `12px` empty state with an **Enable Snapshots** pill CTA.
 
 ## Snapshot Panel
 
@@ -24,7 +24,7 @@ Snapshots are stored in the active project's `.snapshots/` folder next to the pr
 - **Header row** (`8px 8px 0 0`): timestamp, file size, type badge
 - **Sub-card** (`0 0 8px 8px`): comment, tags, colored dot
 - **Filter pills** at the top (`20px` radius): MANUAL / SAVE / AUTO / custom tags — active pill uses primary accent
-- Three-dot menu per snapshot: **Restore** (takes a safety snapshot first), **Open as New File** (read-only tab), **Delete**
+- Three-dot menu per snapshot: **Open as File** (new unsaved editable project) and **Delete**
 
 ## Key Actions
 
@@ -32,8 +32,18 @@ Snapshots are stored in the active project's `.snapshots/` folder next to the pr
 Pill comment + tag inputs at the top, then **New Snapshot** (full-width pill button, `20px` radius).
 
 ### Deleting / Restoring
-Use the three-dot menu on each card. **Restore** replaces the current file with the snapshot (safety snapshot first). **Delete** removes permanently; old auto/on_save snapshots are auto-pruned at the retention limit.
+Use the three-dot menu on each card. **Open as File** opens a new unsaved editable project without replacing the current file. **Delete** removes permanently; old auto/on_save snapshots are auto-pruned at the retention limit.
 
 ## Opening Snapshots Folder
 
 The panel includes a pill button (`6px`) to open the snapshot directory in the system file manager.
+
+## Native storage
+
+Rust packs live project snapshots, gives rapid snapshots distinct names, serializes index mutations, and atomically replaces the index before retention removes old files. See [Snapshot Commands](../developer-guide/tauri-api/06-snapshot-commands.md) for payloads and current storage limitations.
+
+### Recovery and responsiveness
+
+Snapshot compression and storage run on background workers. When the snapshot list is missing or damaged, ActOne rebuilds it from recognizable saved revision files. A damaged list is backed up first. Recovered entries are protected from automatic cleanup and labeled “Recovered snapshot”; their original comments and tags may be unavailable. An unreadable list produces an error rather than silently discarding history.
+
+Deletion commits the updated list before removing revision bytes. If deletion fails, ActOne restores the entry and reports the failure. An index update failure leaves the revision untouched.

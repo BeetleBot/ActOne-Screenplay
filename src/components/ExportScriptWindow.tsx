@@ -22,7 +22,7 @@ import {
 } from "@mui/material";
 
 import { isProseScript } from "../utils/scriptMode";
-import { stripFountainForExport } from "../utils/fountainExport";
+import { prepareFountainExport } from "../utils/fileCore";
 import type { ExportWindowData } from "../utils/exportWindow";
 
 type ScriptFormat = "fountain" | "fdx" | "fadein" | "markdown";
@@ -103,7 +103,7 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
         const defaultName = activeScriptName.endsWith(".md") ? activeScriptName : `${activeScriptName}.md`;
 
         const result = await invoke<string | null>("export_markdown", {
-          markdownText: rawText,
+          content: rawText,
           defaultDirectory: defaultDir,
           defaultName,
         });
@@ -133,7 +133,7 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
 
   const handleExportFountain = async () => {
     try {
-      const cleaned = stripFountainForExport(rawText, {
+      const cleaned = await prepareFountainExport(rawText, {
         sections: exportSections,
         synopses: exportSynopses,
         titlePage: exportTitlePage,
@@ -170,7 +170,7 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
 
   const handleExportFDX = async () => {
     try {
-      const cleaned = stripFountainForExport(rawText, {
+      const cleaned = await prepareFountainExport(rawText, {
         sections: false,
         synopses: false,
         titlePage: exportTitlePage,
@@ -207,7 +207,7 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
 
   const handleExportFadeIn = async () => {
     try {
-      const cleaned = stripFountainForExport(rawText, {
+      const cleaned = await prepareFountainExport(rawText, {
         sections: false,
         synopses: false,
         titlePage: exportTitlePage,

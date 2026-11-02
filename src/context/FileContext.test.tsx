@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 import { UIProvider } from "./UIContext";
 import { FileProvider, useFile } from "./FileContext";
@@ -11,6 +11,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { invoke } from "@tauri-apps/api/core";
+import { parseScriptFileToFountain } from "../utils/text";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return React.createElement(UIProvider, null,
@@ -34,8 +35,8 @@ describe("FileContext", () => {
       )
     );
     vi.mocked(invoke).mockImplementation(async (cmd: string, _args: { path: string }) => {
-      if (cmd === "read_file_binary" && _args.path.endsWith(".actOne")) {
-        return mockedBytes;
+      if (cmd === "read_actone_bundle" && _args.path.endsWith(".actOne")) {
+        return unpackActoneBundle(new Uint8Array(mockedBytes));
       }
       return null;
     });
@@ -57,7 +58,7 @@ describe("FileContext", () => {
       if (cmd === "save_file_dialog") {
         return "C:/scripts/new_movie.actOne";
       }
-      if (cmd === "save_file_binary") {
+      if (cmd === "save_actone_bundle") {
         return null;
       }
       return null;
@@ -83,7 +84,7 @@ describe("FileContext", () => {
     const bytes = Array.from(packActoneBundle(
       [{ name: "Script", fileName: "files/script.fountain", content: "hello", savedContent: "hello" }], {}
     ));
-    vi.mocked(invoke).mockImplementation(async (cmd: string) => cmd === "read_file_binary" ? bytes : null);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => cmd === "read_actone_bundle" ? unpackActoneBundle(new Uint8Array(bytes)) : null);
     const { result } = renderHook(() => useFile(), { wrapper });
     await act(async () => { await result.current.openFilePath("/home/me/Movie.ACTONE"); });
     await act(async () => { await result.current.openFilePath("/home/me/movie.actone"); });
@@ -93,7 +94,7 @@ describe("FileContext", () => {
     await act(async () => { await result.current.openFilePath("/home/me/Movie.ACTONE"); });
     vi.mocked(invoke).mockClear();
     await act(async () => { await result.current.saveFile(); });
-    expect(invoke).toHaveBeenCalledWith("save_file_binary", expect.objectContaining({ path: "/home/me/Movie.ACTONE" }));
+    expect(invoke).toHaveBeenCalledWith("save_actone_bundle", expect.objectContaining({ path: "/home/me/Movie.ACTONE" }));
   });
 
   it("uses the granted folder path for Save As", async () => {
@@ -107,7 +108,7 @@ describe("FileContext", () => {
     await act(async () => {
       expect(await result.current.saveFileAs()).toBe("/run/user/1000/doc/folder/Movie.ACTONE");
     });
-    expect(invoke).toHaveBeenCalledWith("save_file_binary", expect.objectContaining({ path: "/run/user/1000/doc/folder/Movie.ACTONE" }));
+    expect(invoke).toHaveBeenCalledWith("save_actone_bundle", expect.objectContaining({ path: "/run/user/1000/doc/folder/Movie.ACTONE" }));
   });
 
   it("manages saveStatus transition during file saving", async () => {
@@ -115,7 +116,7 @@ describe("FileContext", () => {
       if (cmd === "save_file_dialog") {
         return "C:/scripts/new_movie.actOne";
       }
-      if (cmd === "save_file_binary") {
+      if (cmd === "save_actone_bundle") {
         return null;
       }
       return null;
@@ -214,12 +215,12 @@ describe("FileContext", () => {
     );
 
     vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
-      if (cmd === "read_file_binary") {
-        return mockedBytes;
+      if (cmd === "read_actone_bundle") {
+        return unpackActoneBundle(new Uint8Array(mockedBytes));
       }
-      if (cmd === "save_file_binary") {
-        const payload = args as { path: string; bytes: number[] };
-        savedBytes = payload.bytes;
+      if (cmd === "save_actone_bundle") {
+        const payload = args as { path: string; scripts: import("../utils").ScriptInfo[]; settings: Record<string, unknown> };
+        savedBytes = Array.from(packActoneBundle(payload.scripts, payload.settings));
         return null;
       }
       return null;
@@ -294,8 +295,8 @@ describe("FileContext", () => {
     );
 
     vi.mocked(invoke).mockImplementation(async (cmd: string) => {
-      if (cmd === "read_file_binary") {
-        return mockedBytes;
+      if (cmd === "read_actone_bundle") {
+        return unpackActoneBundle(new Uint8Array(mockedBytes));
       }
       return null;
     });
@@ -319,9 +320,9 @@ describe("FileContext", () => {
       if (cmd === "save_file_dialog") {
         return "C:/scripts/renamed.actone";
       }
-      if (cmd === "save_file_binary") {
-        const payload = args as { bytes: number[] };
-        savedBytes = payload.bytes;
+      if (cmd === "save_actone_bundle") {
+        const payload = args as { scripts: import("../utils").ScriptInfo[]; settings: Record<string, unknown> };
+        savedBytes = Array.from(packActoneBundle(payload.scripts, payload.settings));
         return null;
       }
       return null;
@@ -401,8 +402,8 @@ describe("FileContext", () => {
 
   it("opens external .fdx file via openFilePath converting to fountain", async () => {
     vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
-      if (cmd === "read_file_content" && args.path.endsWith(".fdx")) {
-        return `<?xml version="1.0" encoding="UTF-8"?><FinalDraft DocumentType="Script" Template="No" Version="1"><Content><Paragraph Type="Scene Heading"><Text>INT. HOUSE - NIGHT</Text></Paragraph></Content></FinalDraft>`;
+      if (cmd === "import_script_content" && args.path.endsWith(".fdx")) {
+        return parseScriptFileToFountain(args.path, `<?xml version="1.0" encoding="UTF-8"?><FinalDraft DocumentType="Script" Template="No" Version="1"><Content><Paragraph Type="Scene Heading"><Text>INT. HOUSE - NIGHT</Text></Paragraph></Content></FinalDraft>`);
       }
       return null;
     });
@@ -442,6 +443,35 @@ describe("FileContext", () => {
     expect(activeFile?.rawText).toContain("My Treatment Notes");
   });
 
+  it.each(["path", "dialog"])("reports a rejected native import via %s without adding a blank script", async (route) => {
+    const bundle = unpackActoneBundle(packActoneBundle(
+      [{ name: "Original", fileName: "files/original.fountain", content: "INT. LAB - DAY", savedContent: "INT. LAB - DAY" }], {}
+    ));
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === "read_actone_bundle") return bundle;
+      if (cmd === "import_script_dialog") return {path: "C:/downloads/broken.fdx", name: "broken"};
+      if (cmd === "import_script_content") throw new Error("Invalid Final Draft XML");
+      return null;
+    });
+    const { result } = renderHook(() => useFile(), { wrapper });
+    await act(async () => { await result.current.openFilePath("C:/scripts/original.actone"); });
+    const previous = result.current.rawText;
+    let pending!: Promise<string | null>;
+    await act(async () => {
+      pending = route === "path" ? result.current.importScriptFromPath("C:/downloads/broken.fdx") : result.current.importScript("fdx");
+      await Promise.resolve();
+    });
+    expect(await screen.findByText("Import Failed")).toBeInTheDocument();
+    expect(result.current.importingScriptName).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", {name: "OK"}));
+      expect(await pending).toBeNull();
+    });
+    expect(result.current.scripts).toHaveLength(1);
+    expect(result.current.rawText).toBe(previous);
+    expect(result.current.files.find(file => file.id === result.current.activeFileId)?.isDirty).toBe(false);
+  });
+
   it("imports .pdf via importScriptFromPath into the current active project", async () => {
     const mockedBytes = Array.from(
       packActoneBundle(
@@ -450,8 +480,8 @@ describe("FileContext", () => {
       )
     );
     vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
-      if (cmd === "read_file_binary" && args.path.endsWith(".actone")) {
-        return mockedBytes;
+      if (cmd === "read_actone_bundle" && args.path.endsWith(".actone")) {
+        return unpackActoneBundle(new Uint8Array(mockedBytes));
       }
       if (cmd === "parse_pdf_to_fountain" && args.path.endsWith(".pdf")) {
         return "INT. OFFICE - DAY\n\nSALLY\nHey!";
@@ -485,8 +515,8 @@ describe("FileContext", () => {
       )
     );
     vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
-      if (cmd === "read_file_binary" && args.path.endsWith(".actone")) {
-        return mockedBytes;
+      if (cmd === "read_actone_bundle" && args.path.endsWith(".actone")) {
+        return unpackActoneBundle(new Uint8Array(mockedBytes));
       }
       if (cmd === "read_file_content" && args.path.endsWith(".md")) {
         return "# Character Bible\n\nDetails about characters.";
@@ -574,7 +604,7 @@ describe("remembered project document", () => {
       { name: "Second Script", fileName: "files/second.fountain", content: "EXT. PARK - DAY\n\nA second script.", savedContent: "EXT. PARK - DAY\n\nA second script." },
     ], {}));
     vi.mocked(invoke).mockImplementation(async (command) => {
-      if (command === "read_file_binary") return bytes;
+      if (command === "read_actone_bundle") return unpackActoneBundle(new Uint8Array(bytes));
       if (command === "open_file_dialog") return { path: "C:/projects/file1.actone", content: "" };
       return null;
     });
@@ -599,7 +629,55 @@ describe("remembered project document", () => {
     const file = reopened.result.current.files.find(file => file.id === reopened.result.current.activeFileId);
     expect(file?.isDirty).toBe(false);
     expect(file?.parsedDoc.settings).toEqual(originalSettings);
-    expect(vi.mocked(invoke).mock.calls.some(([command]) => command === "save_file_binary")).toBe(false);
+    expect(vi.mocked(invoke).mock.calls.some(([command]) => command === "save_actone_bundle")).toBe(false);
     reopened.unmount();
   });
+});
+
+describe("native saves preserve edits made during a write", () => {
+  it.each(["text", "settings", "rename", "reorder", "add", "delete"] as const)(
+    "keeps %s changes dirty after acknowledging an older native save", async change => {
+      localStorage.clear();
+      vi.clearAllMocks();
+      (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+      const original = unpackActoneBundle(packActoneBundle([
+        { name: "First", fileName: "files/first.fountain", content: "INT. ROOM - DAY\n\nOriginal.", savedContent: "", type: "fountain" },
+        { name: "Notes", fileName: "files/notes.md", content: "# Notes", savedContent: "", type: "markdown" },
+      ], {}));
+      let release: (() => void) | undefined;
+      vi.mocked(invoke).mockImplementation(async command => {
+        if (command === "read_actone_bundle") return structuredClone(original);
+        if (command === "save_actone_bundle") return new Promise<void>(resolve => { release = resolve; });
+        return null;
+      });
+      const { result, unmount } = renderHook(() => useFile(), { wrapper });
+      await act(async () => { await result.current.openFilePath("C:/projects/race.actone"); });
+      let saving: Promise<void>;
+      await act(async () => { saving = result.current.saveFile(); await Promise.resolve(); });
+      expect(release).toBeDefined();
+      let deleting: Promise<boolean> | undefined;
+      await act(async () => {
+        if (change === "text") result.current.setRawText("INT. ROOM - DAY\n\nNew revision.");
+        if (change === "settings") result.current.updateSettings(previous => ({ ...previous, notepad: "New notes" }));
+        if (change === "rename") await result.current.renameScript(0, "Renamed");
+        if (change === "reorder") await result.current.moveScript(0, 1);
+        if (change === "add") await result.current.addScript("Third", "fountain", "INT. THIRD - DAY");
+        if (change === "delete") deleting = result.current.deleteScript(1);
+      });
+      if (change === "delete") {
+        fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+        await act(async () => { await deleting; });
+      }
+      await act(async () => { release!(); await saving!; });
+      const file = result.current.files.find(file => file.id === result.current.activeFileId);
+      expect(file?.isDirty).toBe(true);
+      if (change === "text") expect(result.current.rawText).toContain("New revision.");
+      if (change === "settings") expect(file?.parsedDoc.settings.notepad).toBe("New notes");
+      if (change === "rename") expect(file?.scripts?.[0].name).toBe("Renamed");
+      if (change === "reorder") expect(file?.scripts?.[0].name).toBe("Notes");
+      if (change === "add") expect(file?.scripts).toHaveLength(3);
+      if (change === "delete") expect(file?.scripts).toHaveLength(1);
+      unmount();
+    },
+  );
 });

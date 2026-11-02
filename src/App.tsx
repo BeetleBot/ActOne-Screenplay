@@ -1,3 +1,4 @@
+import { decodeProject } from "./utils/fileCore";
 import { lazy, Suspense, useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@mui/material";
 import { AppProviders, useFileActions, useWorkspaceMetadata, useParsedScreenplay, useUI, useEditor, useScriptEditor, SprintProvider, useCustomModal } from "./context";
@@ -74,7 +75,7 @@ function AppInner() {
           if (isTauriEnv) {
             const { invoke } = await import("@tauri-apps/api/core");
             const bytes = await invoke<number[]>("get_sample_bundle");
-            const bundle = unpackActoneBundle(new Uint8Array(bytes), "Bee Detective v2");
+            const bundle = await decodeProject(new Uint8Array(bytes), "Bee Detective v2");
             newFile(bundle.scripts[0]?.content || "");
           } else {
             const res = await fetch("/samples/BeeDetectiveTour.actone");
@@ -665,7 +666,7 @@ function AppInner() {
             if (isTauriEnv) {
               const { invoke } = await import("@tauri-apps/api/core");
               const bytes = await invoke<number[]>("get_sample_bundle");
-              const bundle = unpackActoneBundle(new Uint8Array(bytes), "Bee Detective v2");
+              const bundle = await decodeProject(new Uint8Array(bytes), "Bee Detective v2");
               newFile(bundle.scripts[0]?.content || "");
             } else {
               const res = await fetch("/samples/BeeDetectiveTour.actone");

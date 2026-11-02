@@ -165,15 +165,15 @@ describe("SnapshotContext", () => {
 
   it("captures live unsaved bundle bytes for .actone projects", async () => {
     // Open an actone file so FileContext sets active filePath properly
-    const { packActoneBundle } = await import("../utils");
+    const { packActoneBundle, unpackActoneBundle } = await import("../utils");
     const testBundle = packActoneBundle(
       [{ name: "Screenplay", fileName: "document.fountain", content: "INT. ORIGINAL - DAY", savedContent: "INT. ORIGINAL - DAY" }],
       {}
     );
 
     vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
-      if (cmd === "read_file_binary") {
-        return Array.from(testBundle);
+      if (cmd === "read_actone_bundle") {
+        return unpackActoneBundle(testBundle);
       }
       if (cmd === "get_snapshots") {
         return [];
@@ -216,9 +216,9 @@ describe("SnapshotContext", () => {
     const createArgs = createCall![1] as any;
     expect(createArgs.filePath).toBe("C:/projects/MyActOneProject.actone");
     expect(createArgs.snapshotType).toBe("auto");
-    expect(createArgs.bytes).toBeDefined();
-    expect(Array.isArray(createArgs.bytes)).toBe(true);
-    expect(createArgs.bytes.length).toBeGreaterThan(0);
+    expect(createArgs.bytes).toBeNull();
+    expect(createArgs.project.scripts[0].content).toBe("INT. BUNDLE - NIGHT\nUnsaved bundle modifications.");
+    expect(createArgs.project.settings).toBeDefined();
     expect(createArgs.content).toBeNull();
   });
 });

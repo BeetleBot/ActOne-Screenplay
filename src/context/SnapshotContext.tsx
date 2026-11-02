@@ -181,7 +181,7 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSnapshots((prev) => [tempItem, ...prev]);
 
     try {
-      const payload = await getSnapshotPayload().catch(() => null);
+      const payload = await getSnapshotPayload();
       await invoke("create_snapshot", {
         filePath,
         comment: comment || null,
@@ -189,6 +189,7 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         customTag: customTag || null,
         content: payload?.content ?? null,
         bytes: payload?.bytes ?? null,
+        project: payload?.project ?? null,
       });
       await refreshSnapshots();
     } catch (e) {
@@ -208,6 +209,7 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           customTag: null,
           content: payload?.content ?? null,
           bytes: payload?.bytes ?? null,
+        project: payload?.project ?? null,
         });
       }).then(() => refreshSnapshots()).catch((e) =>
         logger.warn("snapshots", "on-save snapshot failed", e)

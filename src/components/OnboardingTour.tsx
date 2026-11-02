@@ -1,3 +1,4 @@
+import { decodeProject } from "../utils/fileCore";
 import React, { useState, useEffect, useRef } from "react";
 import { useEditor, useFile } from "../context";
 import { CrossWindowTourCard } from "./CrossWindowTourCard";
@@ -479,7 +480,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
         if (isTauriEnv) {
           const { invoke } = await import("@tauri-apps/api/core");
           const bytes = await invoke<number[]>("get_sample_bundle");
-          const bundle = unpackActoneBundle(new Uint8Array(bytes), "Bee Detective v2");
+          const bundle = await decodeProject(new Uint8Array(bytes), "Bee Detective v2");
           bundleContent = bundle.scripts[0]?.content || "";
         } else {
           const res = await fetch("/samples/BeeDetectiveTour.actone");

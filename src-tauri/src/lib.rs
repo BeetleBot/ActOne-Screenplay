@@ -98,6 +98,11 @@ fn install_panic_hook(path: PathBuf) {
     }));
 }
 
+pub mod actone;
+pub mod file_formats;
+// Reference implementations for parity tests; React owns live UI state.
+#[cfg(test)]
+pub mod project_state;
 mod app_prefs;
 mod font_cache;
 mod ollama;
@@ -287,7 +292,7 @@ fn save_file_content(path: String, content: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn save_file_dialog(content: String, default_name: Option<String>) -> Option<String> {
+fn save_file_dialog(content: String, default_name: Option<String>) -> Result<Option<String>, String> {
     let mut dialog = rfd::FileDialog::new()
         .add_filter("ActOne Project", &["actone"])
         .add_filter("Fountain Screenplays", &["fountain"]);
@@ -306,7 +311,7 @@ fn save_file_dialog(content: String, default_name: Option<String>) -> Option<Str
         }
     }
 
-    let file = dialog.save_file()?;
+    let Some(file) = dialog.save_file() else { return Ok(None); };
 
     let mut file_path = file;
     // Preserve the spelling selected by the user, including extension case.
@@ -316,13 +321,11 @@ fn save_file_dialog(content: String, default_name: Option<String>) -> Option<Str
 
     let path = file_path.to_string_lossy().to_string();
     if path.to_ascii_lowercase().ends_with(".actone") {
-        return Some(path);
+        return Ok(Some(path));
     }
 
-    if write_file_atomically(&file_path, content).is_ok() {
-        return Some(path);
-    }
-    None
+    write_file_atomically(&file_path, content)?;
+    Ok(Some(path))
 }
 
 #[tauri::command]
@@ -414,12 +417,12 @@ fn export_pdf(
     watermark_center_grayscale: Option<bool>,
     script_fonts: Option<String>,
     default_directory: Option<String>,
-) -> Option<String> {
+) -> Result<Option<String>, String> {
     let mut dialog = rfd::FileDialog::new();
     if let Some(dir) = &default_directory {
         dialog = dialog.set_directory(dir);
     }
-    let file = dialog.add_filter("PDF Document", &["pdf"]).save_file()?;
+    let Some(file) = dialog.add_filter("PDF Document", &["pdf"]).save_file() else { return Ok(None); };
 
     let paper = if paper_size == "letter" {
         pdf::LETTER
@@ -465,10 +468,9 @@ fn export_pdf(
         watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
         script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
     };
-    if pdf::export_to_pdf(&fountain_text, &file, config).is_ok() {
-        return Some(file.to_string_lossy().to_string());
-    }
-    None
+    let bytes = pdf::generate_pdf_bytes(&fountain_text, config).map_err(|e| e.to_string())?;
+    write_file_atomically(&file, bytes)?;
+    Ok(Some(file.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
@@ -654,54 +656,44 @@ fn generate_pdf_bytes(
 }
 
 #[tauri::command]
-fn export_fountain(content: String, default_directory: Option<String>) -> Option<String> {
+fn export_fountain(fountain_text: String, default_directory: Option<String>) -> Result<Option<String>, String> {
     let mut dialog = rfd::FileDialog::new();
     if let Some(dir) = &default_directory {
         dialog = dialog.set_directory(dir);
     }
-    let file = dialog
-        .add_filter("Fountain Screenplay", &["fountain"])
-        .save_file()?;
+    let Some(file) = dialog.add_filter("Fountain Screenplay", &["fountain"]).save_file() else { return Ok(None); };
 
-    if fs::write(&file, &content).is_ok() {
-        return Some(file.to_string_lossy().to_string());
-    }
-    None
+    write_file_atomically(&file, &fountain_text)?;
+    Ok(Some(file.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
-fn export_fdx(fountain_text: String, default_directory: Option<String>) -> Option<String> {
+fn export_fdx(fountain_text: String, default_directory: Option<String>) -> Result<Option<String>, String> {
     let mut dialog = rfd::FileDialog::new();
     if let Some(dir) = &default_directory {
         dialog = dialog.set_directory(dir);
     }
-    let file = dialog
-        .add_filter("Final Draft File", &["fdx"])
-        .save_file()?;
+    let Some(file) = dialog.add_filter("Final Draft File", &["fdx"]).save_file() else { return Ok(None); };
 
     let screenplay = pdf::parse(&fountain_text);
     let fdx_content = pdf::export_to_fdx(&screenplay);
-    if fs::write(&file, &fdx_content).is_ok() {
-        return Some(file.to_string_lossy().to_string());
-    }
-    None
+    write_file_atomically(&file, &fdx_content)?;
+    Ok(Some(file.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
-fn export_fadein(fountain_text: String, default_directory: Option<String>) -> Option<String> {
+fn export_fadein(fountain_text: String, default_directory: Option<String>) -> Result<Option<String>, String> {
     let mut dialog = rfd::FileDialog::new();
     if let Some(dir) = &default_directory {
         dialog = dialog.set_directory(dir);
     }
-    let file = dialog.add_filter("Fade In File", &["fadein"]).save_file()?;
+    let Some(file) = dialog.add_filter("Fade In File", &["fadein"]).save_file() else { return Ok(None); };
 
     let screenplay = pdf::parse(&fountain_text);
     let fadein_xml = pdf::export_to_fadein(&screenplay);
-    let packed = pdf::fadein_pack::pack(&fadein_xml).ok()?;
-    if fs::write(&file, &packed).is_ok() {
-        return Some(file.to_string_lossy().to_string());
-    }
-    None
+    let packed = pdf::fadein_pack::pack(&fadein_xml)?;
+    write_file_atomically(&file, &packed)?;
+    Ok(Some(file.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
@@ -718,24 +710,21 @@ fn generate_fdx_string(fountain_text: String) -> String {
 }
 
 #[tauri::command]
-fn export_markdown(content: String, default_directory: Option<String>) -> Option<String> {
+fn export_markdown(content: String, default_directory: Option<String>, default_name: Option<String>) -> Result<Option<String>, String> {
     let mut dialog = rfd::FileDialog::new();
     if let Some(dir) = &default_directory {
         dialog = dialog.set_directory(dir);
     }
-    let file = dialog
-        .add_filter("Markdown Document", &["md", "markdown"])
-        .save_file()?;
+    if let Some(name) = default_name { dialog = dialog.set_file_name(name); }
+    let Some(file) = dialog.add_filter("Markdown Document", &["md", "markdown"]).save_file() else { return Ok(None); };
 
     let mut file_path = file;
     if file_path.extension().is_none() {
         file_path.set_extension("md");
     }
 
-    if fs::write(&file_path, &content).is_ok() {
-        return Some(file_path.to_string_lossy().to_string());
-    }
-    None
+    write_file_atomically(&file_path, &content)?;
+    Ok(Some(file_path.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
@@ -758,12 +747,12 @@ fn export_prose_pdf(
     watermark_center_grayscale: Option<bool>,
     script_fonts: Option<String>,
     default_directory: Option<String>,
-) -> Option<String> {
+) -> Result<Option<String>, String> {
     let mut dialog = rfd::FileDialog::new();
     if let Some(dir) = &default_directory {
         dialog = dialog.set_directory(dir);
     }
-    let file = dialog.add_filter("PDF Document", &["pdf"]).save_file()?;
+    let Some(file) = dialog.add_filter("PDF Document", &["pdf"]).save_file() else { return Ok(None); };
 
     let paper = if paper_size.as_deref() == Some("letter") {
         pdf::LETTER
@@ -802,12 +791,10 @@ fn export_prose_pdf(
         file_path.set_extension("pdf");
     }
 
-    let mut out_file = std::fs::File::create(&file_path).ok()?;
-    if let Err(e) = exporter.export(&markdown_text, &mut out_file) {
-        eprintln!("export_prose_pdf failed: {:?}", e);
-        return None;
-    }
-    Some(file_path.to_string_lossy().to_string())
+    let mut out_file = Vec::new();
+    exporter.export(&markdown_text, &mut out_file).map_err(|e|e.to_string())?;
+    write_file_atomically(&file_path, out_file)?;
+    Ok(Some(file_path.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
@@ -1105,6 +1092,12 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            actone::read_actone_bundle,
+            actone::unpack_actone_bundle,
+            actone::pack_actone_bundle,
+            actone::save_actone_bundle,
+            file_formats::prepare_fountain_export,
+            file_formats::import_script_content,
             open_file_dialog,
             prepare_project_path,
             save_file_content,

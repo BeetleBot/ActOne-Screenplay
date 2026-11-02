@@ -15,6 +15,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:file-core:fixtures": "vitest run --config vitest.file-core.config.ts && python tests/file-core/generate-rust-tests.py",
+    "test:file-core:native": "cargo build --manifest-path src-tauri/Cargo.toml --locked --example file_core_bridge && vitest run --config vitest.native-file-core.config.ts",
     "tauri": "tauri",
     "lint": "eslint src/",
     "lint:tsc": "tsc --noEmit",

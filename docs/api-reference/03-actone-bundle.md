@@ -1,155 +1,85 @@
-# .actone Bundle Format
+# .actone Bundle Format and Desktop File Core
 
-**Implementation:** `src/utils/actone.ts`
+## Ownership
 
-The `.actone` format is ActOne's native multi-document project bundle — a ZIP archive containing Screenplay (`.fountain`), Prose (`.md`), and Canvas (`.excalidraw`) documents plus per-document metadata and binary assets, prefixed with a 4-byte magic header.
+Desktop project encoding/decoding is implemented in `src-tauri/src/actone.rs`. `src/utils/fileCore.ts` is the guarded Tauri command boundary used by FileContext and embedded tutorial loading. Native commands fail explicitly if the desktop service is unavailable; they do not switch to a TypeScript codec.
 
-## File Structure
+The previous implementations in `src/utils/actone.ts`, `canvasAssets.ts`, `fountainExport.ts`, `fadeinParser.ts`, and `text.ts` are deliberately retained for reference, test comparison, and rollback. Existing non-native branches are legacy code, not a web release target. Android is outside this migration.
 
-Current format version is 4, recorded as `{"version":4}` in `format.json`. The manifest remains an array and adds the `canvas` document type. Canvas documents use `files/<name>.excalidraw`. Their images are binary entries under `assets/<encoded-document-path>/<encoded-image-id>`; internal Canvas JSON uses `actoneAsset` references instead of data URLs. Unpacking restores data URLs for the embedded editor and standalone export. Screenplay and prose storage is unchanged. Both packers emit the current format; existing legacy loading and upgrade paths recognize archives without `format.json`.
+React still owns live editor state, pending-edit flushing, document selection, save queues, per-script setting updates, and dirty-state acknowledgement. This is an explicit runtime boundary, not a completed migration of UI state to Rust. `project_state.rs` is compiled only for Rust parity tests; its reference implementations are not production services. Rust owns bundle conversion, disk writes, native import conversion, snapshot packing/storage, and export text preparation. The existing Rust PDF/FDX/Fade In engines remain in use. Canvas image rendering and X-Ray page rendering retain their existing graphics pipeline.
 
-```
-MyProject.actone
-├── format.json                    # Current storage version: 4
-├── assets/                        # Canvas image binaries, grouped by document
-├── project.json                   # Document manifest (screenplays & prose)
-├── files/                         # Document files directory
-│   ├── Act One.fountain           # Screenplay document
-│   ├── Act Two.fountain
-│   └── Research Notes.md          # Prose document
-├── settings.json                  # Workspace preferences & character profiles
-├── characters.json                # Character list & gender assignments
-├── todos.json                     # Per-document to-do checklists
-├── parking.json                   # Per-document parked text snippets
-├── notepad.json                   # Per-document scratchpad notes
-├── sprint_data.json               # Writing sprint history & statistics
-├── production_tags.json           # Per-document scene/production tags
-├── marker.json                    # Line markers
-└── urai.json                      # UrAI AI prompt chat sessions
+## Native Commands
 
-[4-byte magic header: "ACT1"]
-```
+All payload keys use camelCase. `ScriptInfo` contains `name`, `fileName`, `type` (`fountain`, `markdown`, or `canvas`), `content`, and `savedContent`. The last field is UI bookkeeping; only current content is stored in the archive.
 
-## Format Details
+| Command | Payload | Result |
+| --- | --- | --- |
+| `read_actone_bundle` | `{ path, bundleName? }` | Decoded bundle, reading disk in Rust |
+| `unpack_actone_bundle` | `{ bytes, bundleName? }` | Decoded bundle for embedded samples |
+| `pack_actone_bundle` | `{ scripts, settings }` | Encoded bytes; available for boundary testing/explicit byte consumers |
+| `save_actone_bundle` | `{ path, scripts, settings }` | Completes only after encoding and atomic replacement |
+| `import_script_content` | `{ path }` | Fountain text from FDX/Fade In, or normalized text |
+| `prepare_fountain_export` | `{ rawText, options }` | Cleaned Fountain text |
 
-### Magic Header
+A decoded bundle contains ordered `scripts`, `settings`, `promptChats`, and `isLegacy`. The file core runs blocking encoding/decoding and file work through `spawn_blocking`. Core errors reject the frontend invocation.
 
-All `.actone` files start with 4 bytes: `0x41 0x43 0x54 0x31` (`ACT1`). This distinguishes them from generic ZIP files and prevents file-transfer apps from misidentifying them as plain ZIP archives.
+`prepare_fountain_export` accepts `sections`, `synopses`, `titlePage`, and optional `uppercaseElements` (default true). FDX/Fade In export callers disable section/synopsis output as before. Native Fountain export accepts `fountainText`; Markdown export accepts `content`, `defaultDirectory?`, and `defaultName?`.
 
-**Legacy format** (pre-0.3.0): Magic was appended at the end of the file. `unpackActoneBundle` recognizes both start and end positions for full backward compatibility.
+## Storage Format
 
-### `project.json` (Manifest)
+Output is a ZIP archive prefixed by the four bytes `ACT1` (`41 43 54 31`). `format.json` records version 4. ZIP compression bytes/timestamps may differ between implementations without changing project contents.
 
-```json
-[
-  { "name": "Act One", "file": "files/Act One.fountain", "type": "fountain" },
-  { "name": "Act Two", "file": "files/Act Two.fountain", "type": "fountain" },
-  { "name": "Research Notes", "file": "files/Research Notes.md", "type": "markdown" }
-]
+```text
+format.json
+project.json
+files/<document>.fountain
+files/<document>.md
+files/<document>.excalidraw
+assets/<encoded-document-path>/<encoded-image-id>
+settings.json
+characters.json
+todos.json
+parking.json
+notepad.json
+sprint_data.json
+urai.json
 ```
 
-### Document Files (`files/`)
+`project.json` is an ordered array of `{ name, file, type }`. Unknown settings, character profiles and productionTags remain in `settings.json`. The current writer does not emit separate production_tags.json or marker.json entries.
 
-All screenplay and prose files reside under the `files/` folder inside the archive. When unpacking legacy bundles with flat root paths (e.g., `"57.fountain"`), ActOne normalizes them to `"files/57.fountain"` and transparently upgrades them upon save.
+Canvas images are binary asset entries. Stored Canvas JSON references `actoneAsset`; opening restores data URLs, preserving binary bytes and MIME information. A missing referenced image is an error. JSON field order is preserved; floating-point parsing uses round-trip precision. Tests compare Canvas JSON values where JSON numeric spelling differs between serializers.
 
-### Metadata Isolation & Migration
+Single-document and multiple-document metadata shapes preserve existing compatibility rules. Packing filters orphaned keys for genders, todos, parking and notepad in keyed multi-document metadata. Existing rename/delete UI helpers cover notepad, todos, parking, genders and characterProfiles; productionTags is not implicitly migrated by those helpers.
 
-All document-specific metadata (`notepad`, `todos`, `parking`, `genders`, `characterProfiles`, and `productionTags`) is keyed by document file path:
-- **On Document Rename**: All metadata keys are automatically migrated to the new file path via `migrateSettingsKey()`.
-- **On Document Deletion**: Orphaned keys are cleaned up in memory via `removeSettingsKey()` and filtered on pack via `resolvePerScript()`.
+Duplicate or reserved document archive paths are rejected before the destination is written. Entries are decoded in memory and never extracted to filesystem paths. Arbitrary unknown ZIP entries were not round-tripped by the previous codec and are not newly promised by this migration.
 
-### `characters.json`
+## Legacy Input
 
-```json
-{
-  "files/Act One.fountain": {
-    "SHARANYA": "female",
-    "VIKRAM": "male"
-  }
-}
-```
+The reader accepts prefixed ACT1, historical trailing ACT1, and ordinary ZIP bytes. It supports flat `project.json` paths, older `fountain.json` manifests, manifest-less Fountain/Markdown files, empty-manifest fallback and missing optional metadata. Flat document paths normalize to `files/`, along with supported keyed metadata.
 
-### `todos.json`
+Conversation precedence is `urai.json`, then historical `muse.json`, then `prompt.json`. Malformed optional metadata uses its existing defaults; corrupt archives and invalid required manifests fail. Native project opening retains the existing immediate legacy-upgrade behavior, so tests must use disposable copies.
 
-```json
-{
-  "files/Act One.fountain": [
-    { "id": "todo-1", "text": "Polish dialogue in scene 3", "completed": false, "createdAt": "2026-08-27T10:00:00.000Z" }
-  ]
-}
-```
+## Save Semantics
 
-### `urai.json`
+Frontend code flushes pending editor/Canvas edits before capturing the project. `save_actone_bundle` compresses and writes within Rust, avoiding the previous frontend ZIP-to-number-array transfer. The shared writer uses a unique sibling temporary file, writes and syncs it, then renames it over the destination. Failed replacement preserves the original and reports the complete temporary file's location.
 
-UrAI AI chat sessions stored in the bundle:
+A completed save acknowledges only the captured revision. Later text, metadata or document-structure changes remain dirty. Existing per-project frontend queues and save-before-close checks remain necessary; atomic filesystem replacement alone does not establish UI revision correctness.
 
-```json
-{
-  "conversations": [],
-  "activeConversationId": null
-}
-```
+Native script and PDF exports also finish generation before atomic replacement. Cancellation returns null; export/write errors reject. The PDF renderer and export settings remain unchanged.
 
-Legacy bundles containing `prompt.json` are automatically migrated on unpack.
+## Verification and Fixture Maintenance
 
----
+- `npm test`: retained UI/TypeScript tests plus native boundary and save-race tests.
+- `cargo test --manifest-path src-tauri/Cargo.toml --locked`: Rust unit tests, named TypeScript-oracle tests, real Tauri MockRuntime command decoding, and PDF output comparison.
+- `npm run test:file-core:native`: builds the test process bridge and verifies real samples and generated projects through both codecs in both directions. TypeScript is the retained reference implementation, not a browser product requirement.
+- `npm run test:file-core:fixtures`: explicitly reruns the six original logic suites and regenerates their committed oracle fixtures and named Rust cases. Review fixture changes; do not regenerate expected results merely to silence a regression.
 
-## API
+Oracle fixtures reside in `src-tauri/tests/fixtures/file-core/`; their original test names are retained. Seventy named Rust tests cover calls made by the 71 original tests (the parameterized Canvas cases share a name). UI tests remain in TypeScript; Rust equivalents do not replace webview state/integration coverage.
 
-### `unpackActoneBundle`
+Production samples are read-only during comparisons. No test rewrites the checked-in project files. Windows execution does not establish Linux/Flatpak runtime parity; verify native dialogs, folder grants, permissions and locks on each release platform.
 
-```typescript
-function unpackActoneBundle(
-  bytes: Uint8Array,
-  bundleName?: string
-): ActoneBundle;
-```
+## Compatibility edge cases
 
-**Input:** Raw bytes of a `.actone` file (ACT1 header + ZIP data).
+Missing, empty, and null manifest document types default to Fountain. Canvas base64 decoding accepts browser-compatible unpadded input, ASCII spacing, and nonzero trailing bits, while rejecting malformed data. Fountain cleanup matches ECMAScript whitespace (including BOM, excluding NEL) and ASCII word boundaries. The cross-language suite checks these inputs against the retained TypeScript functions across all export option combinations.
 
-**Returns:**
-```typescript
-interface ActoneBundle {
-  scripts: ScriptInfo[];
-  settings: Record<string, any>;
-  promptChats?: ActonePromptChats;
-  isLegacy: boolean;
-}
-```
-
-### `packActoneBundle` / `packActoneBundleAsync`
-
-```typescript
-function packActoneBundle(
-  scripts: ScriptInfo[],
-  settings: Record<string, any>
-): Uint8Array;
-
-function packActoneBundleAsync(
-  scripts: ScriptInfo[],
-  settings: Record<string, any>
-): Promise<Uint8Array>;
-```
-
-**Input:** Scripts array + settings object.
-**Output:** Raw bytes ready to write atomically as `.actone` file.
-
-### `ScriptInfo`
-
-```typescript
-interface ScriptInfo {
-  name: string;          // Display name (e.g., "Act One")
-  fileName: string;      // Canonical path in ZIP (e.g., "files/Act One.fountain")
-  content: string;       // Current text content
-  savedContent: string;  // Last saved text content (for dirty tracking)
-  type?: "fountain" | "markdown"; // Document type
-}
-```
-
----
-
-## Legacy Compatibility & Auto-Upgrade
-
-1. **Gen 1 (Pre-0.3.0)**: Trailing `ACT1` magic + single `document.fountain`. Unpacks and auto-upgrades to Gen 3.
-2. **Gen 2 (0.3.0 - 0.4.0)**: `fountain.json` manifest with flat files. Unpacks and normalizes to `files/`.
-3. **Gen 3 (Current)**: `project.json` manifest with multi-document (`.fountain` & `.md`) support in `files/`, atomic saves, and per-document metadata isolation.
+Native Fade In/FDX XML parsing accepts DOCTYPE declarations with bounded document node counts. External entities are not loaded. Malformed XML rejects the native import command instead of returning an empty success or raw XML. FileContext displays an Import Failed dialog, clears the progress indicator, and adds no document on either import route. Empty Fade In `basestyle` attributes fall back to `name`, including when deciding dialogue continuity.

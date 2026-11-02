@@ -126,7 +126,7 @@ describe("ExportScriptWindow Component", () => {
   ])("offers completion actions for $extension exports", async ({ prose, nav, button, command, extension }) => {
     if (prose) mockFileState.scripts = [{ name: "Draft", type: "markdown", path: "Draft.md" }];
     const exported = `/home/writer/Exports/Draft.${extension}`;
-    vi.mocked(invoke).mockImplementation(async name => name === command ? exported : []);
+    vi.mocked(invoke).mockImplementation(async (name, args) => name === "prepare_fountain_export" ? (args as { rawText: string }).rawText : name === command ? exported : []);
     const onClose = vi.fn();
     render(<ExportScriptWindow onClose={onClose} />);
     if (!prose) {
@@ -134,12 +134,15 @@ describe("ExportScriptWindow Component", () => {
     }
     fireEvent.click(screen.getByRole("button", { name: button }));
     fireEvent.click(await screen.findByRole("button", { name: "Open file" }));
+    expect(invoke).toHaveBeenCalledWith(command, expect.objectContaining(
+      prose ? { content: mockFileState.rawText, defaultName: "Draft.md" } : { fountainText: mockFileState.rawText },
+    ));
     await waitFor(() => expect(openPath).toHaveBeenCalledWith(exported));
     expect(onClose).not.toHaveBeenCalled();
   });
 
   it("keeps export options open when the save dialog is canceled", async () => {
-    vi.mocked(invoke).mockImplementation(async command => command === "export_fountain" ? null : []);
+    vi.mocked(invoke).mockImplementation(async (command, args) => command === "prepare_fountain_export" ? (args as { rawText: string }).rawText : command === "export_fountain" ? null : []);
     const onClose = vi.fn();
     render(<ExportScriptWindow onClose={onClose} />);
     fireEvent.click(screen.getByRole("button", { name: "Export to Fountain (.fountain)" }));
