@@ -26,6 +26,7 @@ vi.mock("../context/SnapshotContext", () => ({
     deleteSnapshot: mockDeleteSnapshot,
     openSnapshotAsFile: mockOpenSnapshotAsFile,
     updateSettings: mockUpdateSettings,
+    setPanelOpen: vi.fn(),
   }),
 }));
 

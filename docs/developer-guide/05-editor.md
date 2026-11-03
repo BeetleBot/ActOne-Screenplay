@@ -4,6 +4,37 @@ The editor is the core of ActOne. It uses **CodeMirror 6** with custom extension
 
 ## Architecture
 
+### Document switching
+
+`FileContext.setActiveScript` flushes pending edits and selects the destination
+immediately. Screenplays publish lightweight derived state while a deferred task
+calls `parseScreenplayAsync` (the parser Worker, with its existing synchronous
+fallback). This task is held in `pendingPreparationRef` until the keyed editor
+loading gate calls `prepareDocument` after the editor has mounted and painted. `isDocumentLoading` identifies these pending lines. Sequence, filename,
+and source checks prevent late results replacing a newer revision or selection.
+Parse failures end the loading state with an error; selecting the document again
+retries. Returning to a project with an unfinished parse restarts that work.
+
+`DocumentLoadingGate`, keyed by project/document, shows an embedded spinning
+ActOne logo before mounting the editor. Two animation frames let the loading view
+paint before synchronous editor setup. The editor displays source text before
+background screenplay parsing and page estimates complete.
+Prose uses the same initial loading frame. Canvas keeps the logo visible through
+lazy module and drawing-data loading. The loader stays within the editor, leaves
+project navigation available, and respects reduced-motion preferences.
+
+There are no document-switch caches for parsed results, native page breaks, or
+CodeMirror states. Each visit builds a fresh editor; cursor and scroll positions
+still restore through `editorPosition`, while undo history resets on switching.
+The editor uses the Fountain parser's lightweight page estimates; `FileContext` does not request native PDF layout when opening, switching, or editing documents. Exact pagination belongs to PDF preview/export. Canvas views remount and validate drawing data;
+the save bridge serializes only after a drawing/settings change.
+
+The desktop `get_page_breaks` command is asynchronous and runs PDF/font layout
+on `tauri::async_runtime::spawn_blocking`, keeping that CPU work off the desktop
+event loop. The document loader portals an inline SVG into `.editor-container`,
+outside the paper's scroll and padding, and stays visible until after editor mount
+and a paint opportunity. It does not depend on a CSS mask asset resolving.
+
 ```
 FountainEditor.tsx (React shell)
   └── useCodeMirror.ts (custom hook)
@@ -129,3 +160,10 @@ Located at `src/editor/markdown/inline-preview.ts` (~1050 lines) with accompanyi
 - **Smart Blockquote Continuation**: `handleBlockquoteEnter` preserves nesting levels and exits to a clean line on double-Enter. `blockquoteInputHandler` collapses intermediate spaces when typing `>` on an empty quote prefix.
 - **List & Quote Indentation**: `handleMarkdownTab` and `handleMarkdownShiftTab` handle `Tab` / `Shift-Tab` key events to nest/un-nest blockquotes and list items, with `getNextOrderedListNumber` dynamically resolving sequential parent numbers.
 
+
+Hidden sidebar views are unmounted, so Outline only builds while its pane is visible.
+Timeline is mounted only when enabled, outside Zen mode, with an eligible screenplay.
+Closed Search/UrAI pane contents unmount immediately while their shell can animate out.
+Command-palette document lists are built only for the open category. Snapshot history
+queries require a mounted Snapshots panel; automatic snapshot creation does not.
+Status-bar filter lists build only while their menu is open; script word/page statistics wait for deferred parsing. X-Ray data is sent only to a visible X-Ray window.

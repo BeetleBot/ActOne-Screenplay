@@ -16,7 +16,7 @@ export const StatusBar = React.memo(() => {
   const parsedScreenplay = useParsedScreenplay();
   const pageBreaks = usePageBreaks();
   const parsedDoc = useMemo(() => ({ ...parsedScreenplay, pageBreaks }), [parsedScreenplay, pageBreaks]);
-  const { isBundle, scripts, activeScriptIndex, filePath, activeScriptName, activeFileId, hasNoScripts, isProse: isMarkdown } = useWorkspaceMetadata();
+  const { isBundle, scripts, activeScriptIndex, filePath, activeScriptName, activeFileId, hasNoScripts, isProse: isMarkdown, isDocumentLoading } = useWorkspaceMetadata();
   const { setActiveScript } = useFileActions();
   const saveStatus = useFileSaveStatus();
   const {
@@ -46,6 +46,7 @@ export const StatusBar = React.memo(() => {
   const [locSearchQuery, setLocSearchQuery] = useState("");
 
   const parsedTokens = useMemo(() => {
+    if (!timelineMenuAnchor) return { characters: [], locations: [], times: [] };
     const characters = new Set<string>();
     const locations = new Set<string>();
     const times = new Set<string>();
@@ -77,7 +78,7 @@ export const StatusBar = React.memo(() => {
       locations: Array.from(locations).sort(),
       times: Array.from(times).sort(),
     };
-  }, [parsedDoc]);
+  }, [parsedDoc, timelineMenuAnchor]);
 
   const filteredCharacters = useMemo(() => {
     const query = charSearchQuery.trim().toUpperCase();
@@ -183,6 +184,10 @@ export const StatusBar = React.memo(() => {
   }, [editorView, editorView?.state.selection.main.from, editorView?.state.selection.main.to, rawText]);
 
   const docStats = useMemo(() => {
+    if (isDocumentLoading) return {
+      words: "…", chars: "…", pages: "…", rawPages: 1, hasBreaks: false,
+      hasTitlePage: false, breaks: [] as number[], sceneCount: "…",
+    };
     const text = rawText || "";
     const words = countWords(text);
     const chars = text.length;
@@ -220,7 +225,7 @@ export const StatusBar = React.memo(() => {
       breaks,
       sceneCount: sceneCount.toLocaleString()
     };
-  }, [rawText, parsedDoc, isMarkdown]);
+  }, [rawText, parsedDoc, isMarkdown, isDocumentLoading]);
 
   const currentPage = useMemo(() => {
     const currentLineNumber = Math.max(1, activeLineNumber + 1);

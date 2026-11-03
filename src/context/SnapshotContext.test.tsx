@@ -40,6 +40,23 @@ beforeEach(() => {
 });
 
 describe("SnapshotContext", () => {
+  it("loads snapshot history only while the panel is open", async () => {
+    vi.mocked(invoke).mockImplementation(async command => {
+      if (command === "open_file_dialog") return { path: "C:/scripts/test.fountain", content: "INT. ROOM - DAY" };
+      if (command === "get_snapshots") return [];
+      return undefined;
+    });
+    const { result } = renderHook(useCombinedHook, { wrapper });
+    await act(async () => { await result.current.file.openFile(); });
+    act(() => result.current.snapshot.updateSettings({ enabled: true }));
+    expect(vi.mocked(invoke).mock.calls.some(([name]) => name === "get_snapshots")).toBe(false);
+    await act(async () => result.current.snapshot.setPanelOpen(true));
+    expect(invoke).toHaveBeenCalledWith("get_snapshots", { filePath: "C:/scripts/test.fountain" });
+    act(() => result.current.snapshot.setPanelOpen(false));
+    vi.mocked(invoke).mockClear();
+    await act(async () => result.current.snapshot.refreshSnapshots());
+    expect(invoke).not.toHaveBeenCalled();
+  });
   it("starts with empty snapshots and panel closed", () => {
     const { result } = renderHook(() => useSnapshots(), { wrapper });
     expect(result.current.snapshots).toEqual([]);

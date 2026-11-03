@@ -203,7 +203,6 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
   const lastScriptKeyRef = useRef("");
   const currentScriptKey = `${activeFileId}::${scriptFileName || activeScriptIndex}`;
   const positionSessionRef = useRef<EditorPositionSession | null>(null);
-  const statesRef = useRef<Record<string, EditorState>>({});
   const extensionsRef = useRef<any[]>([]);
 
   const setRawTextRef = useRef(setRawText);
@@ -363,8 +362,13 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
 
     extensionsRef.current = extensions;
 
+    const savedPosition = readEditorPosition(filePath, scriptFileName);
     const startState = EditorState.create({
       doc: rawText,
+      selection: savedPosition ? {
+        anchor: Math.min(savedPosition.anchor, rawText.length),
+        head: Math.min(savedPosition.head, rawText.length),
+      } : undefined,
       extensions,
     });
 
@@ -414,6 +418,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
       const isDifferentScript = lastScriptKeyRef.current !== currentScriptKey;
 
       if (isDifferentScript) {
+        const isInitialDocument = lastScriptKeyRef.current === "";
         if (rawTextDebounceTimerRef.current !== null) {
           clearTimeout(rawTextDebounceTimerRef.current);
           rawTextDebounceTimerRef.current = null;
@@ -424,7 +429,6 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
         const scrollArea = getScrollArea(view);
 
         if (lastScriptKeyRef.current) {
-          statesRef.current[lastScriptKeyRef.current] = view.state;
           if (scrollArea) {
             scrollPositionsRef.current[lastScriptKeyRef.current] = scrollArea.scrollTop;
           }
@@ -439,9 +443,7 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
           scrollPositionsRef.current[currentScriptKey] = savedPosition.scrollTop;
         }
 
-        if (statesRef.current[currentScriptKey]) {
-          view.setState(statesRef.current[currentScriptKey]);
-        } else {
+        if (!isInitialDocument) {
           const newState = EditorState.create({
             doc: rawText,
             selection: savedPosition ? {
@@ -456,6 +458,8 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
         setActiveLineNumberRef.current(view.state.doc.lineAt(view.state.selection.main.head).number - 1);
 
         const effects: any[] = [
+          lineNumbersCompartment.reconfigure(lineNumbersEnabled ? [lineNumbers(), highlightActiveLineGutter()] : []),
+          readOnlyCompartment.reconfigure(isScriptTranslating ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
           spellcheckCompartment.reconfigure(
             spellcheckEnabled ? spellcheckExtension : []
           ),

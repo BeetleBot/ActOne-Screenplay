@@ -1,8 +1,10 @@
 import { WindowLoading } from "../WindowLoading";
+import { DocumentLoadingGate } from "../DocumentLoadingGate";
 import React, { lazy, Suspense, useState, useEffect, useCallback } from "react";
 import { useUI, useEditor, useFileActions, useWorkspaceMetadata } from "../../context";
 import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
+import Alert from "@mui/material/Alert";
 import Paper from "@mui/material/Paper";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -34,8 +36,8 @@ export const Workspace = React.memo<WorkspaceProps>(({
   const { paperSize, activeTab, zoomLevel, isZenMode, typewriterMode, activeRightPane, setActiveRightPane, sidebarWidth, setSidebarWidth } = useUI();
 
   const { editorView } = useEditor();
-  const { addScript, importScript } = useFileActions();
-  const { hasNoScripts, isProse: isMarkdown, scripts, activeScriptIndex, activeFileId } = useWorkspaceMetadata();
+  const { addScript, importScript, prepareDocument } = useFileActions();
+  const { hasNoScripts, isProse: isMarkdown, scripts, activeScriptIndex, activeFileId, documentLoadError } = useWorkspaceMetadata();
   const isCanvas = scripts[activeScriptIndex]?.type === "canvas";
 
   useEffect(() => {
@@ -225,7 +227,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
       >
         <Box className="sidebar-content" sx={{ width: '100%', height: '100%', overflow: 'auto' }}>
           <ErrorBoundary name="sidebar">
-            <SidebarViews activeTab={activeTab} />
+            {isSidebarVisible && <SidebarViews activeTab={activeTab} />}
           </ErrorBoundary>
         </Box>
       </Paper>
@@ -616,11 +618,19 @@ export const Workspace = React.memo<WorkspaceProps>(({
                 '--editor-zoom': zoomLevel / 100,
               } as React.CSSProperties}
             >
-              {isCanvas ? <ErrorBoundary name="canvas"><Suspense fallback={<WindowLoading />}><CanvasEditor key={`${activeFileId}:${scripts[activeScriptIndex]?.fileName}`} /></Suspense></ErrorBoundary> : isMarkdown ? (
-                <ErrorBoundary name="prose-editor"><ProseEditor /></ErrorBoundary>
-              ) : (
-                <ErrorBoundary name="editor"><ScriptEditor /></ErrorBoundary>
-              )}
+              <DocumentLoadingGate key={`${activeFileId}:${scripts[activeScriptIndex]?.fileName ?? activeScriptIndex}`} ready onPresented={prepareDocument}>
+                {documentLoadError ? <Alert severity="error">{documentLoadError}</Alert> : isCanvas ? (
+                  <ErrorBoundary name="canvas">
+                    <Suspense fallback={<WindowLoading embedded spinning label="Loading canvas" />}>
+                      <CanvasEditor key={`${activeFileId}:${scripts[activeScriptIndex]?.fileName}`} />
+                    </Suspense>
+                  </ErrorBoundary>
+                ) : isMarkdown ? (
+                  <ErrorBoundary name="prose-editor"><ProseEditor /></ErrorBoundary>
+                ) : (
+                  <ErrorBoundary name="editor"><ScriptEditor /></ErrorBoundary>
+                )}
+              </DocumentLoadingGate>
             </Box>
           </Box>
         )}
@@ -633,7 +643,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
           onClose={() => setActiveRightPane(null)}
           errorBoundaryName="search-pane"
         >
-          <SearchPanel />
+          {activeRightPane === "search" && <SearchPanel />}
         </RightPane>
       )}
 
@@ -645,7 +655,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
           errorBoundaryName="prompt-pane"
           ariaLabel="UrAI"
         >
-          <UrAIPanel onInsertAtCursor={handleInsertAtCursor} />
+          {activeRightPane === "prompt" && <UrAIPanel onInsertAtCursor={handleInsertAtCursor} />}
         </RightPane>
       )}
     </Box>

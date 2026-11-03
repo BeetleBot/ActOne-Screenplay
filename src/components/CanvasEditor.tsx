@@ -14,6 +14,7 @@ import { useDocumentText, useFileActions, useWorkspaceMetadata } from "../contex
 import { registerPendingEditor } from "../editor/pendingEdits";
 import "@excalidraw/excalidraw/index.css";
 import "./canvas.css";
+import { WindowLoading } from "./WindowLoading";
 
 declare global {
   interface Window {
@@ -34,14 +35,16 @@ export function CanvasEditor() {
   const editorApi = useRef<ExcalidrawImperativeAPI | null>(null);
   const lastSaved = useRef(text);
   const version = useRef<number | null>(null);
+  const dirty = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialText = useRef(text);
   const flush = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
-    if (!snapshot.current) return;
+    if (!snapshot.current || !dirty.current) return;
     const [elements, state, files] = snapshot.current;
     const json = serializeAsJSON(elements, state, files, "local");
+    dirty.current = false;
     if (json !== lastSaved.current) {
       lastSaved.current = json;
       setRawText(json, { fileId: activeFileId, scriptIndex: activeScriptIndex });
@@ -81,21 +84,27 @@ export function CanvasEditor() {
         editorApi.current?.updateScene({ appState: { openSidebar: null } });
       }
       const nextVersion = getSceneVersion(elements);
-      const changed = nextVersion !== version.current || snapshot.current?.[2] !== files || snapshot.current?.[1].viewBackgroundColor !== state.viewBackgroundColor;
+      const previousState = snapshot.current?.[1];
+      // These are the app-state fields retained by Excalidraw's JSON export.
+      const changed = nextVersion !== version.current || snapshot.current?.[2] !== files ||
+        previousState?.viewBackgroundColor !== state.viewBackgroundColor ||
+        previousState?.gridSize !== state.gridSize || previousState?.gridStep !== state.gridStep ||
+        previousState?.gridModeEnabled !== state.gridModeEnabled;
       snapshot.current = [elements, state, files];
       if (version.current === null) {
         version.current = nextVersion;
-        lastSaved.current = serializeAsJSON(elements, state, files, "local");
         return;
       }
       version.current = nextVersion;
       if (!changed) return;
+      dirty.current = true;
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(flush, 400);
     },
     [flush],
   );
   if (error) return <Alert severity="error">{error}</Alert>;
+  if (!initialData) return <WindowLoading embedded spinning label="Loading canvas" />;
   return (
     <Box
       className="actone-canvas"

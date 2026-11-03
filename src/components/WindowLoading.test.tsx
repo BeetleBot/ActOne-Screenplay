@@ -13,3 +13,16 @@ it("supports window-specific accessible labels and embedded loading areas", () =
   expect(screen.getByRole("status", { name: "Loading X-Ray" })).toHaveClass("actone-window-loading-embedded");
   expect(screen.queryByText("Loading X-Ray")).not.toBeInTheDocument();
 });
+
+it("places the spinning SVG above the scrolling document", () => {
+  const host = document.createElement("div");
+  host.className = "editor-container";
+  document.body.appendChild(host);
+  const view = render(<WindowLoading embedded spinning label="Loading document" />);
+  const loader = screen.getByRole("status", { name: "Loading document" });
+  expect(loader.parentElement).toBe(host);
+  expect(loader).toHaveClass("actone-document-loading-overlay");
+  expect(loader.querySelector("svg")).not.toBeNull();
+  view.unmount();
+  host.remove();
+});

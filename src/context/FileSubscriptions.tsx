@@ -4,7 +4,7 @@ import type { FountainDocument } from "../parser";
 import { isProseScript } from "../utils/scriptMode";
 
 export type FileActions = Pick<FileContextProps,
-"setRawText" | "updateFileScriptContent" | "openFile" | "saveFile" | "saveFileAs" | "selectFile" | "newFile" | "importAsActoneProject" | "closeFile" | "closeOthers" | "closeAll" | "openFilePath" | "removeFromRecent" | "updateSettings" | "setActiveScript" | "addScript" | "importScript" | "importScriptFromPath" | "renameScript" | "duplicateScript" | "deleteScript" | "moveScript" | "openSnapshotAsNewProject">;
+"prepareDocument" | "setRawText" | "updateFileScriptContent" | "openFile" | "saveFile" | "saveFileAs" | "selectFile" | "newFile" | "importAsActoneProject" | "closeFile" | "closeOthers" | "closeAll" | "openFilePath" | "removeFromRecent" | "updateSettings" | "setActiveScript" | "addScript" | "importScript" | "importScriptFromPath" | "renameScript" | "duplicateScript" | "deleteScript" | "moveScript" | "openSnapshotAsNewProject">;
 
 export interface FileTab {
   id: string;
@@ -24,6 +24,8 @@ export interface WorkspaceMetadata {
   isBundle: boolean;
   hasNoScripts: boolean;
   isProse: boolean;
+  isDocumentLoading: boolean;
+  documentLoadError: string | null;
   scripts: { name: string; fileName: string; type?: string }[];
 }
 
@@ -67,6 +69,7 @@ export function FileSubscriptions({ value, children }: { value: FileContextProps
   latest.current = value;
   // Stable action delegates always use the latest committed file operations.
   const actions = useMemo<FileActions>(() => ({
+    prepareDocument: () => latest.current.prepareDocument(),
     setRawText: (...args) => latest.current.setRawText(...args),
     updateFileScriptContent: (...args) => latest.current.updateFileScriptContent(...args),
     openFile: (...args) => latest.current.openFile(...args),
@@ -100,10 +103,10 @@ export function FileSubscriptions({ value, children }: { value: FileContextProps
   const hasNoScripts = activeFile?.scripts !== undefined && activeFile.scripts.length === 0;
   const scripts = tabs.find(file => file.id === value.activeFileId)?.scripts ?? [];
   const isProse = isProseScript(activeFile?.scripts?.[value.activeScriptIndex], value.filePath);
-  const { activeFileId, filePath, activeScriptIndex, activeScriptName, scriptFileName, isBundle } = value;
+  const { activeFileId, filePath, activeScriptIndex, activeScriptName, scriptFileName, isBundle, isDocumentLoading, documentLoadError } = value;
   const workspace = useMemo<WorkspaceMetadata>(() => ({
-    files: tabs, activeFileId, filePath, activeScriptIndex, activeScriptName, scriptFileName, isBundle, hasNoScripts, isProse, scripts,
-  }), [tabs, activeFileId, filePath, activeScriptIndex, activeScriptName, scriptFileName, isBundle, hasNoScripts, isProse]);
+    files: tabs, activeFileId, filePath, activeScriptIndex, activeScriptName, scriptFileName, isBundle, hasNoScripts, isProse, scripts, isDocumentLoading, documentLoadError,
+  }), [tabs, activeFileId, filePath, activeScriptIndex, activeScriptName, scriptFileName, isBundle, hasNoScripts, isProse, isDocumentLoading, documentLoadError]);
   const { lines, settings, screenplayText, lineToSceneMap } = value.parsedDoc;
   const parsed = useMemo<ParsedScreenplay>(() => ({ lines, settings, screenplayText, lineToSceneMap }), [lines, settings, screenplayText, lineToSceneMap]);
   return (

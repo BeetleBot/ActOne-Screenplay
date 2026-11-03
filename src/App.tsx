@@ -591,22 +591,21 @@ function AppInner() {
     return () => { unlisteners.forEach(fn => fn()); };
   }, []);
 
-  // Broadcast updates to the xray modal when parsedDoc or scriptFileName changes
+  // Serialize analysis data only for a visible statistics window.
   useEffect(() => {
-    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-    if (!isTauri) return;
-    (async () => {
+    if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
+    let cancelled = false;
+    void (async () => {
       try {
-        const { emit } = await import("@tauri-apps/api/event");
-        emit("modal:xray:init", {
-          parsedDoc,
-          scriptFileName,
-          settings: parsedDoc?.settings || {},
+        const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+        const target = await WebviewWindow.getByLabel("xray");
+        if (!target || !(await target.isVisible()) || cancelled) return;
+        await target.emit("modal:xray:init", {
+          parsedDoc, scriptFileName, settings: parsedDoc?.settings || {},
         });
-      } catch (e) {
-        void e;
-      }
+      } catch { /* The statistics window may have closed during the check. */ }
     })();
+    return () => { cancelled = true; };
   }, [parsedDoc, scriptFileName]);
 
 

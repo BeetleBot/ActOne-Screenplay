@@ -20,7 +20,6 @@ import { acknowledgeSavedFile } from "../utils/savedFile";
 import { rememberActiveDocument, rememberedDocumentIndex } from "../utils/editorPosition";
 import { sameFilePath } from "../utils/filePath";
 import { flushPendingEditorEdits } from "../editor/pendingEdits";
-import { useDocumentPagination, equalPageBreaks } from "../hooks/useDocumentPagination";
 
 
 export type SettingsUpdater = (prev: Record<string, unknown>) => Record<string, unknown>;
@@ -62,6 +61,9 @@ export interface FileContextProps {
   isSaving: boolean;
   rawText: string;
   parsedDoc: FountainDocument;
+  prepareDocument: () => void;
+  isDocumentLoading: boolean;
+  documentLoadError: string | null;
   setRawText: (text: string, target?: DocumentTarget) => void;
   openFile: () => Promise<void>;
   saveFile: () => Promise<void>;
@@ -120,7 +122,7 @@ const getUniqueName = (base: string, existing: ScriptInfo[]): string => {
 };
 
 export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { paperSize, fontFamily, autoContdEnabled } = useUI();
+  const { paperSize } = useUI();
   const { confirm, prompt } = useCustomModal();
 
   const showPdfNotice = useCallback(() => {
@@ -175,11 +177,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
   const [rawText, setRawTextState] = useState<string>(defaultText);
+  const [documentLoadError, setDocumentLoadError] = useState<string | null>(null);
   const [parsedDoc, setParsedDoc] = useState<FountainDocument>(() => {
     const doc = parseScreenplay(defaultText, paperSize);
-    if (isTauri) {
-      doc.pageBreaks = undefined;
-    }
     return doc;
   });
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -211,9 +211,18 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const activeFile = files.find(f => f.id === activeFileId);
   const isBundle = !!activeFile?.scripts;
+  const pendingPreparationRef = useRef<(() => void) | null>(null);
+  const prepareDocument = useCallback(() => {
+    const work = pendingPreparationRef.current;
+    pendingPreparationRef.current = null;
+    work?.();
+  }, []);
+  const pendingLinesRef = useRef(new WeakSet<FountainDocument["lines"]>());
 
   useEffect(() => {
     const updateAll = () => {
+      // Invalidate outstanding switch parses made with the previous paper size.
+      for (const key of Object.keys(fileUpdateSeqRef.current)) fileUpdateSeqRef.current[key]++;
       setFiles(prev => prev.map(f => {
         const activeScr = f.scripts && f.activeScriptIndex !== undefined ? f.scripts[f.activeScriptIndex] : undefined;
         const isProse = isNonScreenplay(activeScr, f.filePath);
@@ -221,7 +230,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ? createProseDocument(f.rawText, f.parsedDoc.settings)
           : parseScreenplay(f.rawText, paperSize);
         const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
-        const pageBreaks = isTauri && f.parsedDoc?.pageBreaks ? f.parsedDoc.pageBreaks : doc.pageBreaks;
+        const pageBreaks = doc.pageBreaks;
         return { ...f, parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : pageBreaks } };
       }));
       setParsedDoc(prevDoc => {
@@ -232,7 +241,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ? createProseDocument(rawText, prevDoc.settings)
           : parseScreenplay(rawText, paperSize);
         const mergedSettings = { ...(prevDoc.settings || {}), ...(doc.settings || {}) };
-        const pageBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
+        const pageBreaks = doc.pageBreaks;
         return { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : pageBreaks };
       });
     };
@@ -254,8 +263,10 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const selectFile = (id: string) => {
     flushPendingEditorEdits();
+    pendingPreparationRef.current = null;
     const file = filesRef.current.find(f => f.id === id);
     if (!file) return;
+    setDocumentLoadError(null);
     if (parseTimeoutRef.current !== null) {
       clearTimeout(parseTimeoutRef.current);
       parseTimeoutRef.current = null;
@@ -270,7 +281,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const scrIdx = file.activeScriptIndex ?? 0;
     setActiveScriptIndexState(scrIdx);
     activeScriptIndexRef.current = scrIdx;
-    if (file.parsedDoc.screenplayText !== file.rawText) {
+    if (file.parsedDoc.screenplayText !== file.rawText || pendingLinesRef.current.has(file.parsedDoc.lines)) {
       const seqKey = `${file.id}:${scrIdx}`;
       const seq = (fileUpdateSeqRef.current[seqKey] ?? 0) + 1;
       fileUpdateSeqRef.current[seqKey] = seq;
@@ -280,7 +291,13 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ? { ...current, parsedDoc: { ...doc, settings: current.parsedDoc.settings } }
           : current));
         if (activeFileIdRef.current === file.id && activeScriptIndexRef.current === scrIdx) {
-          setParsedDoc(prev => prev.screenplayText === file.rawText ? prev : { ...doc, settings: prev.settings });
+          setParsedDoc(prev => prev.screenplayText === file.rawText && !pendingLinesRef.current.has(prev.lines) ? prev : { ...doc, settings: prev.settings });
+        }
+      }).catch(error => {
+        logger.error("file", "Document selection parsing failed", error);
+        if (activeFileIdRef.current === file.id && activeScriptIndexRef.current === scrIdx &&
+            fileUpdateSeqRef.current[seqKey] === seq) {
+          setDocumentLoadError("This document could not be prepared. Select it again to retry.");
         }
       });
     }
@@ -508,7 +525,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
             : f.rawText !== normalized;
           if (isStale) return f;
           const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
-          const existingBreaks = isTauri && f.parsedDoc?.pageBreaks ? f.parsedDoc.pageBreaks : doc.pageBreaks;
+          const existingBreaks = doc.pageBreaks;
           return {
             ...f,
             parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : existingBreaks },
@@ -525,7 +542,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!isStaleDoc && activeFileIdRef.current === targetFileId && (activeScriptIndexRef.current ?? 0) === targetScriptIndex) {
         setParsedDoc(prevDoc => {
           const mergedSettings = { ...(prevDoc.settings || {}), ...(doc.settings || {}) };
-          const existingBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
+          const existingBreaks = doc.pageBreaks;
           return { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : existingBreaks };
         });
       }
@@ -572,12 +589,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isCurrentlyActive = (f.id === activeFileIdRef.current) &&
           (!updatedScripts || targetIdx === activeScriptIndexRef.current);
 
-        const existingBreaks = isTauri && f.parsedDoc?.pageBreaks ? f.parsedDoc.pageBreaks : doc.pageBreaks;
+        const existingBreaks = doc.pageBreaks;
 
         if (isCurrentlyActive) {
           setRawTextState(normalized);
-          setParsedDoc(prevDoc => {
-            const activeExistingBreaks = isTauri && prevDoc?.pageBreaks ? prevDoc.pageBreaks : doc.pageBreaks;
+          setParsedDoc(() => {
+            const activeExistingBreaks = doc.pageBreaks;
             return { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : activeExistingBreaks };
           });
         }
@@ -659,31 +676,6 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
     );
   }, []); // run once on mount
-
-  const paginationScript = activeFile?.scripts?.[activeFile.activeScriptIndex ?? 0];
-  useDocumentPagination({
-    fileId: activeFileId,
-    scriptIndex: activeScriptIndex,
-    text: rawText,
-    enabled: isTauri && !isNonScreenplay(paginationScript, activeFile?.filePath),
-    paperSize, fontFamily, autoContd: autoContdEnabled,
-    elementFormats: JSON.stringify(parsedDoc.settings?.elementFormats || {}),
-    scriptFonts: JSON.stringify(parsedDoc.settings?.scriptFonts || {}),
-    onResult: (breaks) => {
-      setParsedDoc(prev => prev.screenplayText === rawText && !equalPageBreaks(prev.pageBreaks, breaks)
-        ? { ...prev, pageBreaks: breaks } : prev);
-      setFiles(prev => {
-        let changed = false;
-        const next = prev.map(f => {
-          if (f.id !== activeFileId || (f.activeScriptIndex ?? 0) !== activeScriptIndex ||
-              f.rawText !== rawText || equalPageBreaks(f.parsedDoc.pageBreaks, breaks)) return f;
-          changed = true;
-          return { ...f, parsedDoc: { ...f.parsedDoc, pageBreaks: breaks } };
-        });
-        return changed ? next : prev;
-      });
-    },
-  });
 
   const openFilePath = async (path: string) => {
     flushPendingEditorEdits();
@@ -1408,20 +1400,26 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     flushPendingEditorEdits();
     const file = filesRef.current.find(f => f.id === activeFileIdRef.current);
     if (!file || !file.scripts || index < 0 || index >= file.scripts.length) return;
+    if (index === (file.activeScriptIndex ?? 0) && !documentLoadError) return;
+    setDocumentLoadError(null);
+    pendingPreparationRef.current = null;
+    if (parseTimeoutRef.current !== null) {
+      clearTimeout(parseTimeoutRef.current);
+      parseTimeoutRef.current = null;
+    }
 
     const updatedScripts = file.scripts.map((s, i) =>
       i === (file.activeScriptIndex ?? 0) ? { ...s, content: file.rawText } : s
     );
     const newScript = updatedScripts[index];
     const isProse = isNonScreenplay(newScript, file.filePath);
-    const doc = isProse
-      ? createProseDocument(newScript.content, file.parsedDoc.settings)
-      : parseScreenplay(newScript.content, paperSize);
-    if (file.parsedDoc.settings) {
-      doc.settings = file.parsedDoc.settings;
-    }
+    const doc = createProseDocument(newScript.content, file.parsedDoc.settings);
+    if (!isProse) pendingLinesRef.current.add(doc.lines);
+    const seqKey = `${file.id}:${index}`;
+    const seq = (fileUpdateSeqRef.current[seqKey] ?? 0) + 1;
+    fileUpdateSeqRef.current[seqKey] = seq;
 
-    setFiles(prev => prev.map(f => f.id === activeFileId ? {
+    const nextFiles = filesRef.current.map(f => f.id === file.id ? {
       ...f,
       rawText: newScript.content,
       savedText: newScript.savedContent,
@@ -1429,14 +1427,47 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isDirty: isBundleDirty(updatedScripts),
       scripts: updatedScripts,
       activeScriptIndex: index,
-    } : f));
+    } : f);
+    filesRef.current = nextFiles;
+    setFiles(nextFiles);
 
     setRawTextState(newScript.content);
     setParsedDoc(doc);
     setScriptsState(updatedScripts);
     setActiveScriptIndexState(index);
     activeScriptIndexRef.current = index;
-  }, [files, activeFileId, rawText, paperSize]);
+    if (!isProse) {
+      // Commit the selected document before starting even the no-Worker fallback.
+      pendingPreparationRef.current = () => {
+      if (activeFileIdRef.current !== file.id || activeScriptIndexRef.current !== index || fileUpdateSeqRef.current[seqKey] !== seq) return;
+      parseTimeoutRef.current = setTimeout(() => {
+        parseTimeoutRef.current = null;
+        void parseScreenplayAsync(newScript.content, paperSize, seqKey).then(parsed => {
+          if (!parsed || fileUpdateSeqRef.current[seqKey] !== seq) return;
+          if (activeFileIdRef.current !== file.id || activeScriptIndexRef.current !== index) return;
+          const target = filesRef.current.find(current => current.id === file.id)?.scripts?.[index];
+          if (target?.fileName !== newScript.fileName || target.content !== newScript.content) return;
+          setFiles(prev => prev.map(current => {
+            if (current.id !== file.id || current.scripts?.[index]?.fileName !== newScript.fileName ||
+                current.scripts[index].content !== newScript.content) return current;
+            return { ...current, parsedDoc: { ...parsed, settings: current.parsedDoc.settings,
+              pageBreaks: parsed.pageBreaks } };
+          }));
+          setParsedDoc(current => current.screenplayText !== newScript.content ? current : {
+            ...parsed, settings: current.settings, pageBreaks: parsed.pageBreaks,
+          });
+        }).catch(error => {
+          logger.error("file", "Document switch parsing failed", error);
+          if (activeFileIdRef.current === file.id && activeScriptIndexRef.current === index &&
+              fileUpdateSeqRef.current[seqKey] === seq) {
+            setDocumentLoadError("This document could not be prepared. Select it again to retry.");
+          }
+        });
+      }, 0);
+      };
+      if (documentLoadError) prepareDocument();
+    }
+  }, [activeFileId, paperSize, isTauri, documentLoadError, prepareDocument]);
 
   const addScript = useCallback(async (name?: string, forceType?: "fountain" | "markdown" | "canvas", initialContent: string = ""): Promise<string | null> => {
     flushPendingEditorEdits();
@@ -2137,6 +2168,9 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isSaving,
         rawText,
         parsedDoc,
+        prepareDocument,
+        isDocumentLoading: !documentLoadError && pendingLinesRef.current.has(parsedDoc.lines),
+        documentLoadError: pendingLinesRef.current.has(parsedDoc.lines) ? documentLoadError : null,
         setRawText,
         updateFileScriptContent,
         openFile,

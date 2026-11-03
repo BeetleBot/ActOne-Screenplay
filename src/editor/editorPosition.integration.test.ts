@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useCoreCodeMirror } from "./useCoreCodeMirror";
 import { readEditorPosition } from "../utils/editorPosition";
 import { flushPendingEditorEdits } from "./pendingEdits";
+import { undo } from "@codemirror/commands";
 
 const app = vi.hoisted(() => ({
   text: "", fileId: "first-session", path: "C:/file1.actone", script: "files/test.md", index: 0,
@@ -44,6 +45,29 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 afterEach(() => { for (const area of areas.splice(0)) area.remove(); });
+
+it("creates a fresh editor after switching types without retaining old undo history", () => {
+  app.script = "files/prose.md";
+  app.text = "Original prose";
+  const prose = mount();
+  act(() => prose.result.current.current!.dispatch({ changes: { from: app.text.length, insert: " edited" } }));
+  prose.unmount();
+  app.text = "INT. ROOM - DAY";
+  app.script = "files/script.fountain";
+  const script = mount();
+  script.unmount();
+  app.script = "files/prose.md";
+  app.text = "Original prose edited";
+  const restored = mount();
+  act(() => { expect(undo(restored.result.current.current!)).toBe(false); });
+  expect(restored.result.current.current!.state.doc.toString()).toBe("Original prose edited");
+  restored.unmount();
+  app.text = "Externally replaced prose";
+  const replaced = mount();
+  expect(replaced.result.current.current!.state.doc.toString()).toBe(app.text);
+  act(() => { expect(undo(replaced.result.current.current!)).toBe(false); });
+  replaced.unmount();
+});
 
 it.each(["md", "fountain"])("restores selection and scroll in a reopened %s document after another project", async extension => {
   app.script = `files/test.${extension}`;

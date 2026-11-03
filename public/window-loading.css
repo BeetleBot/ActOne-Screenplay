@@ -27,6 +27,28 @@
   0%, 100% { opacity: .3; transform: scale(.85); }
   50% { opacity: 1; transform: scale(1.15); }
 }
+.actone-document-loading {
+  min-height: 50vh;
+  background: transparent;
+}
+.actone-document-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  min-height: 0;
+  background: var(--bg-editor-wrapper, var(--bg-app, #eee));
+}
+.actone-document-loading-logo {
+  width: 48px;
+  height: 48px;
+  opacity: .6;
+  animation: actone-document-spin 1.4s linear infinite;
+  will-change: transform;
+}
+@keyframes actone-document-spin {
+  to { transform: rotate(360deg); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .actone-window-loading-logo { animation: none; will-change: auto; }
+  .actone-window-loading-logo,
+  .actone-document-loading-logo { animation: none; will-change: auto; }
 }

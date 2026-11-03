@@ -102,22 +102,24 @@ export const SnapshotProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { filePath, saveStatus, openSnapshotAsNewProject, getSnapshotPayload } = useFile();
   const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([]);
   const [isPanelOpen, setPanelOpen] = useState(false);
+  const panelOpenRef = useRef(isPanelOpen);
+  panelOpenRef.current = isPanelOpen;
   const [settings, setSettings] = useState<SnapshotSettings>(loadSettings);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevSaveStatusRef = useRef<"idle" | "saving" | "saved">("idle");
 
   const refreshSnapshots = useCallback(async () => {
-    if (!settings.enabled || !filePath) {
+    if (!isPanelOpen || !settings.enabled || !filePath) {
       setSnapshots([]);
       return;
     }
     try {
       const list = await invoke<SnapshotInfo[]>("get_snapshots", { filePath });
-      setSnapshots(list.reverse());
+      if (panelOpenRef.current) setSnapshots(list.reverse());
     } catch (e) {
       logger.warn("snapshots", "Failed to load snapshots", e);
     }
-  }, [settings.enabled, filePath]);
+  }, [settings.enabled, filePath, isPanelOpen]);
 
   useEffect(() => {
     refreshSnapshots();

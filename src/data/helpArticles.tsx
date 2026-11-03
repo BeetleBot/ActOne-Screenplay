@@ -1056,7 +1056,7 @@ Parked text is saved automatically with your project.`,
 - **Duplicate**: Three-dot menu → Duplicate creates a copy with a unique name and auto-selects the name for renaming.
 - **Reorder**: Drag-and-drop documents by the left drag handle within the list, or use the three-dot menu → Move Up / Move Down.
 - **Delete**: Three-dot menu → Delete (with confirmation). Automatically cleans up document metadata. If all documents in a project are deleted, the project gracefully enters the Landing Pad state.
-- Click a document card to load it into the editor. The Status Bar shows the active document name — click it to quickly switch.`,
+- Click a document card to open it. A spinning ActOne logo appears in the editor while the document prepares; you can select another document at any time. Your cursor and scroll position are restored when you return. Undo history starts fresh each time you switch documents. The script appears first, then page estimates update. Outline, Timeline, and detailed statistics populate only while their views are open. Snapshot history loads when you open its pane; automatic snapshots still run when enabled. Use PDF preview for exact pagination. The Status Bar shows the active document name — click it to quickly switch.`,
   },
   {
     id: "zen-mode",

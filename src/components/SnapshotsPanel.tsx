@@ -31,7 +31,11 @@ interface SnapshotsPanelProps {
 }
 
 export const SnapshotsPanel: React.FC<SnapshotsPanelProps> = () => {
-  const { snapshots, settings, createSnapshot, deleteSnapshot, openSnapshotAsFile, updateSettings } = useSnapshots();
+  const { snapshots, settings, createSnapshot, deleteSnapshot, openSnapshotAsFile, updateSettings, setPanelOpen } = useSnapshots();
+  React.useEffect(() => {
+    setPanelOpen?.(true);
+    return () => setPanelOpen?.(false);
+  }, [setPanelOpen]);
   const { confirm } = useCustomModal();
   const { openSettingsWindow } = useModalWindows();
   const [comment, setComment] = useState("");

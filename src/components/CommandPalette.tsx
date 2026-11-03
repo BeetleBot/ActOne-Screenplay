@@ -475,6 +475,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
   const proseText = activeScript?.content ?? rawText ?? "";
 
   const sceneItems = React.useMemo(() => {
+    if (!isOpen || viewMode !== "scenes") return [];
     return buildSceneQuickActionItems({
       isProse,
       proseText,
@@ -485,9 +486,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         scrollToLine(lineNumber);
       },
     });
-  }, [isProse, proseText, parsedDoc, pageBreaks, scrollToLine, onClose]);
+  }, [isOpen, viewMode, isProse, proseText, parsedDoc, pageBreaks, scrollToLine, onClose]);
 
   const recentItems = React.useMemo(() => {
+    if (!isOpen || viewMode !== "recent") return [];
     return buildRecentQuickActionItems({
       recentFiles: recentFiles || [],
       onOpenFile: (path) => {
@@ -495,9 +497,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         openFilePath(path);
       },
     });
-  }, [recentFiles, openFilePath, onClose]);
+  }, [isOpen, viewMode, recentFiles, openFilePath, onClose]);
 
   const characterItems = React.useMemo(() => {
+    if (!isOpen || viewMode !== "characters") return [];
     return buildCharacterQuickActionItems({
       parsedDoc,
       onSelectLine: (lineNumber) => {
@@ -505,9 +508,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         scrollToLine(lineNumber);
       },
     });
-  }, [parsedDoc, scrollToLine, onClose]);
+  }, [isOpen, viewMode, parsedDoc, scrollToLine, onClose]);
 
   const themeItems = React.useMemo(() => {
+    if (!isOpen || viewMode !== "themes") return [];
     return buildThemeQuickActionItems({
       activeThemeId,
       customThemes,
@@ -516,9 +520,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         onClose();
       },
     });
-  }, [activeThemeId, customThemes, setAppTheme, onClose]);
+  }, [isOpen, viewMode, activeThemeId, customThemes, setAppTheme, onClose]);
 
   const markerItems = React.useMemo(() => {
+    if (!isOpen || viewMode !== "markers") return [];
     return buildMarkerQuickActionItems({
       parsedDoc,
       onSelectLine: (lineNumber) => {
@@ -526,7 +531,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
         scrollToLine(lineNumber);
       },
     });
-  }, [parsedDoc, scrollToLine, onClose]);
+  }, [isOpen, viewMode, parsedDoc, scrollToLine, onClose]);
 
   const activeItems = React.useMemo(() => {
     switch (viewMode) {
@@ -560,7 +565,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     setSelectedIndex(0);
   };
 
-  const filteredCommands = search.trim() === ""
+  const filteredCommands = !isOpen ? [] : search.trim() === ""
     ? activeItems
     : activeItems
         .map((cmd) => {

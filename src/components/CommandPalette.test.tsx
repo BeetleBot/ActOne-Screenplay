@@ -16,6 +16,7 @@ const mockRecentFiles = [
 ];
 
 import { CommandPalette } from "./CommandPalette";
+import * as quickActions from "./QuickActionsModule";
 import { EditorState } from "@codemirror/state";
 import { lineTypesField } from "../editor/fountainSyntax";
 import { LineType } from "../parser";
@@ -97,6 +98,21 @@ beforeEach(() => {
 });
 
 describe("CommandPalette Component", () => {
+  it("builds document lists only when their category is opened", () => {
+    const scenes = vi.spyOn(quickActions, "buildSceneQuickActionItems");
+    const characters = vi.spyOn(quickActions, "buildCharacterQuickActionItems");
+    const view = render(<CommandPalette {...defaultProps} isOpen={false} />);
+    expect(scenes).not.toHaveBeenCalled();
+    expect(characters).not.toHaveBeenCalled();
+    view.rerender(<CommandPalette {...defaultProps} isOpen />);
+    expect(scenes).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByPlaceholderText(/Type a command or search/i), { target: { value: "sc." } });
+    expect(scenes).toHaveBeenCalled();
+    expect(characters).not.toHaveBeenCalled();
+    view.unmount();
+    scenes.mockRestore();
+    characters.mockRestore();
+  });
   it("renders nothing when isOpen is false", () => {
     const { container } = render(React.createElement(CommandPalette, defaultProps));
     expect(container.textContent).toBe("");

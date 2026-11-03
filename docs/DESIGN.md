@@ -31,6 +31,7 @@ Canvas documents embed the upstream hand-drawn editor in the existing workspace,
 ### Motion
 `src/index.css:29`
 - `fast 0.12s`, `normal 0.20s`, `slow 0.28s`; `spring cubic-bezier(0.34,1.56,0.64,1)`, `snappy 0.16,1,0.3,1`. All buttons scale `0.97` on `:active` (`src/index.css:855`).
+- Document preparation uses an inline SVG ActOne logo (`public/window-loading.css`): a 48px logo with a 1.4s linear rotation, centered in an overlay attached to the editor container, outside document scrolling. Reduced-motion preferences disable rotation. Project navigation remains available.
 
 ### Layout
 - TitleBar `40px` (`TitleBar.tsx:106`), uppercase `11px 700 0.04em` (`TitleBar.tsx:133`), controls `28x28 6px`.

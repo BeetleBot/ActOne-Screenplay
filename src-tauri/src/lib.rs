@@ -475,7 +475,7 @@ fn export_pdf(
 
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
-fn get_page_breaks(
+async fn get_page_breaks(
     fountain_text: String,
     paper_size: String,
     font_family: String,
@@ -546,7 +546,13 @@ fn get_page_breaks(
         watermark_center_grayscale: watermark_center_grayscale.unwrap_or(false),
         script_fonts: serde_json::from_str(&script_fonts.unwrap_or_default()).unwrap_or_default(),
     };
-    pdf::get_page_breaks(&fountain_text, config).ok()
+    // Font loading and PDF layout must not block the desktop event loop.
+    tauri::async_runtime::spawn_blocking(move || {
+        pdf::get_page_breaks(&fountain_text, config).ok()
+    })
+    .await
+    .ok()
+    .flatten()
 }
 
 #[tauri::command]
@@ -555,6 +561,21 @@ fn select_watermark_image() -> Option<String> {
         .add_filter("Image File", &["png", "jpg", "jpeg", "bmp"])
         .pick_file()?;
     Some(file.to_string_lossy().to_string())
+}
+
+#[cfg(test)]
+mod document_layout_tests {
+    #[test]
+    fn page_break_command_completes_on_background_runtime() {
+        let result = tauri::async_runtime::block_on(super::get_page_breaks(
+            "INT. ROOM - DAY\n\nA writer opens a script.".into(),
+            "letter".into(), "courier-prime".into(), "{}".into(), "off".into(),
+            false, false, true, None, None, None, vec![],
+            None, None, None, None, None, None, None, None, None, None, None, None,
+            None,
+        ));
+        assert!(result.is_some(), "background layout should return page breaks");
+    }
 }
 
 #[tauri::command]
