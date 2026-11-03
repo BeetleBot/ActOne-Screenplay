@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<FinalDraft DocumentType="Script" Template="No" Version="4">
+  <Content>
+    <Paragraph Type="Scene Heading">
+      <Text>EXT. CITY PARK - DAY</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Sunlight filters through the oak trees.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>SARAH</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>We made it in time.</Text>
+    </Paragraph>
+  </Content>
+</FinalDraft>
