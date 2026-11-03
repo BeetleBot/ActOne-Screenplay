@@ -56,6 +56,16 @@
     <mediatype>application/vnd.actone.theme</mediatype>
   </provides>
   <releases>
+    <release version="0.6.2" date="2026-11-01">
+      <description>
+        <ul>
+          <li>Fit page PDF preview with whole page visibility and auto-fitting on window resize.</li>
+          <li>Separated paper sheets with distinct spacing and shadows in PDF preview.</li>
+          <li>Independent scrolling and responsive layout for PDF export settings.</li>
+          <li>Responsive X-Ray charts that dynamically adapt to window width.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.5.7" date="2026-10-29">
       <description>
         <ul>
