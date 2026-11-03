@@ -1,4 +1,3 @@
-import { WindowLoading } from "./WindowLoading";
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 const ExportPdfWindow = lazy(() => import('./ExportPdfWindow').then(module => ({ default: module.ExportPdfWindow })));
 const ExportScriptWindow = lazy(() => import('./ExportScriptWindow').then(module => ({ default: module.ExportScriptWindow })));
@@ -104,7 +103,7 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
   const [fixFormattingReport, setFixFormattingReport] = useState<FixFormattingReport | null>(null);
 
   return (
-    <Suspense fallback={<WindowLoading />}>
+    <>
       <ErrorBoundary name="command-palette">
         <CommandPalette
           isOpen={isPaletteOpen}
@@ -135,33 +134,33 @@ export const ModalManager: React.FC<ModalManagerProps> = ({
       </ErrorBoundary>
       {exportWindowError && <Alert severity="error" onClose={() => { setExportWindowError(""); setShowExportWindow(false); }}>Could not open the PDF export window: {exportWindowError}</Alert>}
       {exportScriptWindowError && <Alert severity="error" onClose={() => { setExportScriptWindowError(""); setShowExportScriptWindow?.(false); }}>Could not open the script export window: {exportScriptWindowError}</Alert>}
-      <ErrorBoundary name="export-pdf-window">{showExportWindow && (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) && <ExportPdfWindow onClose={() => setShowExportWindow(false)} />}</ErrorBoundary>
-      <ErrorBoundary name="export-script-window">{showExportScriptWindow && (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) && <ExportScriptWindow onClose={() => setShowExportScriptWindow?.(false)} />}</ErrorBoundary>
-      <ErrorBoundary name="structure-modal">{showStructureModal && <StructureImportModal onClose={() => setShowStructureModal(false)} />}</ErrorBoundary>
-      <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} />}</ErrorBoundary>
-      <ErrorBoundary name="about-modal">{showAbout && <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />}</ErrorBoundary>
-      <ErrorBoundary name="bug-report-modal">{showBugReport && <BugReportModal isOpen={showBugReport} onClose={() => setShowBugReport(false)} />}</ErrorBoundary>
+      <ErrorBoundary name="export-pdf-window">{showExportWindow && (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) && <Suspense fallback={null}><ExportPdfWindow onClose={() => setShowExportWindow(false)} /></Suspense>}</ErrorBoundary>
+      <ErrorBoundary name="export-script-window">{showExportScriptWindow && (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) && <Suspense fallback={null}><ExportScriptWindow onClose={() => setShowExportScriptWindow?.(false)} /></Suspense>}</ErrorBoundary>
+      <ErrorBoundary name="structure-modal">{showStructureModal && <Suspense fallback={null}><StructureImportModal onClose={() => setShowStructureModal(false)} /></Suspense>}</ErrorBoundary>
+      <ErrorBoundary name="titlepage-modal">{showTitlePageModal && <Suspense fallback={null}><TitlePageEditorModal onClose={() => setShowTitlePageModal(false)} /></Suspense>}</ErrorBoundary>
+      <ErrorBoundary name="about-modal">{showAbout && <Suspense fallback={null}><AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} /></Suspense>}</ErrorBoundary>
+      <ErrorBoundary name="bug-report-modal">{showBugReport && <Suspense fallback={null}><BugReportModal isOpen={showBugReport} onClose={() => setShowBugReport(false)} /></Suspense>}</ErrorBoundary>
       <ErrorBoundary name="quickguide-modal">
         {showShortcutsModal && setShowShortcutsModal && (
-          <QuickGuideModal
+          <Suspense fallback={null}><QuickGuideModal
             isOpen={showShortcutsModal}
             onClose={() => setShowShortcutsModal(false)}
             openHelpWindow={openHelpWindow}
-          />
+          /></Suspense>
         )}
       </ErrorBoundary>
       <ErrorBoundary name="fix-formatting-modal">
         {fixFormattingReport && (
-          <FixFormattingModal
+          <Suspense fallback={null}><FixFormattingModal
             isOpen={Boolean(fixFormattingReport)}
             onClose={() => setFixFormattingReport(null)}
             report={fixFormattingReport}
-          />
+          /></Suspense>
         )}
       </ErrorBoundary>
       <ErrorBoundary name="translation-progress-modal">
         <TranslateDocumentModal />
       </ErrorBoundary>
-    </Suspense>
+    </>
   );
 };
