@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Box, Typography, IconButton, Tooltip } from "@mui/material";
+import { Box, Button, Typography, IconButton, Tooltip } from "@mui/material";
 
-import { ContentCopyIcon, CheckIcon, AutoAwesomeIcon } from "../Icons";
+import { ContentCopyIcon, CheckIcon, AutoAwesomeIcon, PushPinIcon } from "../Icons";
 import type { ChatTurn } from "../../hooks/useAIChat";
+import type { UrAISceneRef } from "../../lib/uraiSources";
 import { FountainBlock } from "./FountainBlock";
 import { copyToClipboard } from "../../utils";
 
@@ -15,8 +16,9 @@ interface AIChatMessageProps {
   turn: ChatTurn;
   isStreaming?: boolean;
   pending?: boolean;
-  onInsertAtCursor?: (text: string) => void;
-  onApplyToEditor?: (sceneNumber: number, fountainText: string) => void;
+  onPin?: () => void;
+  onSource?: (source: UrAISceneRef) => void;
+  onSaveNote?: (source: UrAISceneRef) => void;
 }
 
 const FOUNTAIN_FENCE_RE = /```fountain\s*\n([\s\S]*?)```/g;
@@ -51,8 +53,8 @@ function splitContent(content: string): Array<{ type: "markdown" | "fountain"; t
   return segments;
 }
 
-function getToolLabel(step: { name: string; args: Record<string, any> }): string {
-  const sceneId = step.args.sceneNumber ?? step.args.scene_number ?? step.args.scene_id ?? step.args.id;
+function getToolLabel(step: { name: string; args: Record<string, unknown> }): string {
+  const sceneId = step.args.label ?? step.args.sceneNumber ?? step.args.scene_number ?? step.args.scene_id ?? step.args.id;
   const query = step.args.query ?? step.args.q;
   const task = step.args.taskText ?? step.args.task;
   const color = step.args.color;
@@ -60,6 +62,13 @@ function getToolLabel(step: { name: string; args: Record<string, any> }): string
 
   switch (step.name) {
     case "read_scene": return `Looking into Scene ${sceneId || "screenplay"}...`;
+    case "read_requested_source": return "Read the requested source";
+    case "read_candidate_scenes": return "Read matching scenes";
+    case "read_source_part": return "Read a source part";
+    case "read_scenes": return "Read multiple scenes";
+    case "compare_scenes": return "Compared scenes";
+    case "find_scenes": return "Found scene headings";
+    case "search_dialogue": return "Searched dialogue";
     case "replace_scene": return `Drafted Scene ${sceneId || ""}`;
     case "tag_scene": return `Tagging Scene ${sceneId || ""} (${[color ? `color: ${color}` : "", storyline ? `storyline: ${storyline}` : ""].filter(Boolean).join(", ")})`;
     case "search_script": return `Searching screenplay for "${query || ""}"`;
@@ -88,16 +97,45 @@ function formatTurnMetadata(turn: ChatTurn) {
   };
 }
 
-export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, onApplyToEditor }: AIChatMessageProps) {
+const pinVisibility = {
+  "@media (hover: hover)": {
+    "& .urai-pin": { opacity: 0 },
+    "&:hover .urai-pin, &:focus-within .urai-pin": { opacity: 1 },
+  },
+};
+
+function MessageDetails({ meta, children }: { meta: ReturnType<typeof formatTurnMetadata>; children?: React.ReactNode }) {
+  const shortModel = meta.model.split("/").at(-1);
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0, maxWidth: "100%", px: 0.5, color: "text.secondary" }}>
+      <Typography variant="caption" sx={{ flexShrink: 0, whiteSpace: "nowrap" }}>{meta.fullDate}</Typography>
+      <Typography component="span" variant="caption" aria-hidden="true">·</Typography>
+      <Tooltip title={meta.model + " · " + meta.tokens}>
+        <Typography variant="caption" noWrap tabIndex={0} sx={{ minWidth: 0, maxWidth: 160 }}>{shortModel}</Typography>
+      </Tooltip>
+      {children}
+    </Box>
+  );
+}
+
+export function AIChatMessage({ turn, isStreaming, pending, onPin, onSource, onSaveNote }: AIChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [stepsOpen, setStepsOpen] = useState(false);
   const [thinkingOpen, setThinkingOpen] = useState(false);
-  const segments = useMemo(() => splitContent(turn.content), [turn.content]);
+  const segments = useMemo(() => turn.sourceText ? [{ type: "fountain", text: turn.content }] : splitContent(turn.content), [turn.content, turn.sourceText]);
   const meta = useMemo(() => formatTurnMetadata(turn), [turn]);
 
   const isStreamingThisTurn = Boolean(isStreaming || pending);
   const hasContent = Boolean(turn.content && turn.content.trim().length > 0);
   const stepCount = (turn.toolCalls?.length || 0) + (turn.thinking ? 1 : 0);
+  const sources = [...new Map(turn.sources?.map((source) => [source.id, source])).values()];
+  const pin = onPin && hasContent && !isStreamingThisTurn && (
+    <Tooltip title={turn.pinned ? "Unpin message" : "Pin for future replies"}>
+      <IconButton size="small" color={turn.pinned ? "primary" : "default"} className={turn.pinned ? undefined : "urai-pin"} onClick={onPin} aria-pressed={Boolean(turn.pinned)} aria-label={turn.pinned ? "Unpin message" : "Pin for future replies"}>
+        <PushPinIcon sx={{ fontSize: 13 }} />
+      </IconButton>
+    </Tooltip>
+  );
 
   const handleCopy = useCallback(() => {
     void copyToClipboard(turn.content).then((success) => {
@@ -110,7 +148,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
 
   if (turn.role === "user") {
     return (
-      <Box className="ai-message-fade-in" sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: "100%", gap: 0.35 }}>
+      <Box className="ai-message-fade-in" sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: "100%", gap: 0.35, ...pinVisibility }}>
         <Box
           dir="auto"
           sx={{
@@ -156,13 +194,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
             {turn.display ?? turn.content}
           </ReactMarkdown>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, opacity: 1, fontSize: "0.62rem", color: "text.secondary", px: 0.5 }}>
-          <span>{meta.fullDate}</span>
-          <span>•</span>
-          <span style={{ fontWeight: 600 }}>{meta.model}</span>
-          <span>•</span>
-          <span>{meta.tokens}</span>
-        </Box>
+        <MessageDetails meta={meta}>{pin}</MessageDetails>
       </Box>
     );
   }
@@ -193,6 +225,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
         width: "100%",
         gap: 0.25,
         "&:hover .ai-copy-btn": { opacity: 1 },
+        ...pinVisibility,
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 0.25 }}>
@@ -203,6 +236,8 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
           </Typography>
         </Box>
         {hasContent && (
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+          {pin}
           <Tooltip title={copied ? "Copied!" : "Copy"} placement="left">
             <IconButton
               className="ai-copy-btn"
@@ -222,8 +257,22 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
               }
             </IconButton>
           </Tooltip>
+          </Box>
         )}
       </Box>
+
+      {sources.length > 0 && (
+        <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.25 }}>
+          {sources.map((source) => (
+            <Button key={source.id} size="small" title={source.heading} onClick={() => onSource?.(source)}>
+              Scene {source.label}
+            </Button>
+          ))}
+          {onSaveNote && hasContent && !isStreamingThisTurn && sources.length === 1 && (
+            <Button size="small" onClick={() => onSaveNote(sources[0])}>Save scene note</Button>
+          )}
+        </Box>
+      )}
 
       {/* Collapsible Steps Section */}
       {stepCount > 0 && (
@@ -318,7 +367,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
                     }}
                   >
                     <span>{getToolLabel(step)}</span>
-                    <span style={{ fontSize: "0.7rem", opacity: 0.4 }}>›</span>
+                    {step.result && step.sources && <span>{step.result}</span>}
                   </Typography>
                   {step.status === "running" && (
                     <Typography
@@ -337,8 +386,6 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
                   key={`apply-${step.id}`}
                   fountainText={step.pendingApply!.fountainText}
                   sceneNumber={step.pendingApply!.sceneNumber}
-                  onInsertAtCursor={onInsertAtCursor}
-                  onApplyToEditor={onApplyToEditor}
                 />
               ))}
             </Box>
@@ -354,8 +401,6 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
               key={`apply-direct-${step.id}`}
               fountainText={step.pendingApply!.fountainText}
               sceneNumber={step.pendingApply!.sceneNumber}
-              onInsertAtCursor={onInsertAtCursor}
-              onApplyToEditor={onApplyToEditor}
             />
           ))}
         </Box>
@@ -410,7 +455,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
         >
           {segments.map((seg, i) =>
             seg.type === "fountain" ? (
-              <FountainBlock key={i} fountainText={seg.text} onInsertAtCursor={onInsertAtCursor} />
+              <FountainBlock key={i} fountainText={seg.text} />
             ) : (
               <ReactMarkdown 
                 key={i} 
@@ -455,14 +500,7 @@ export function AIChatMessage({ turn, isStreaming, pending, onInsertAtCursor, on
         </Box>
       )}
 
-      {/* Metadata footer for Assistant turn */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, opacity: 1, fontSize: "0.62rem", color: "text.secondary", pl: 0.5, pt: 0.25 }}>
-        <span>{meta.fullDate}</span>
-        <span>•</span>
-        <span style={{ fontWeight: 600 }}>{meta.model}</span>
-        <span>•</span>
-        <span>{meta.tokens}</span>
-      </Box>
+      {hasContent && <MessageDetails meta={meta} />}
     </Box>
   );
 }

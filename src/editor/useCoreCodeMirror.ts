@@ -227,7 +227,12 @@ export function useCoreCodeMirror({ containerRef, extraExtensions = [], onScript
     lastDispatchedTextRef.current = text;
     setRawTextRef.current(text, pending.target);
   };
-  useEffect(() => registerPendingEditor(activeFileId, () => flushPendingRef.current()), [activeFileId]);
+  useEffect(() => registerPendingEditor(activeFileId, () => flushPendingRef.current(), (script) => {
+    const target = documentTargetRef.current;
+    if (target.fileId === activeFileId && target.scriptFileName === script) {
+      return viewRef.current?.state.doc.toString();
+    }
+  }), [activeFileId]);
   const cursorDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setActiveLineNumberRef = useRef(setActiveLineNumber);

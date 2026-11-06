@@ -1,6 +1,6 @@
 import { WindowLoading } from "../WindowLoading";
 import { DocumentLoadingGate } from "../DocumentLoadingGate";
-import React, { lazy, Suspense, useState, useEffect, useCallback } from "react";
+import React, { lazy, Suspense, useState, useEffect } from "react";
 import { useUI, useEditor, useFileActions, useWorkspaceMetadata } from "../../context";
 import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -147,17 +147,6 @@ export const Workspace = React.memo<WorkspaceProps>(({
       window.removeEventListener("mouseup", onUp, true);
     };
   }, []);
-
-  const handleInsertAtCursor = useCallback((text: string) => {
-    const view = editorView;
-    if (!view) return;
-    const sel = view.state.selection.main;
-    view.dispatch({
-      changes: { from: sel.from, to: sel.to, insert: `\n\n${text}` },
-      selection: { anchor: sel.from + text.length + 2 },
-    });
-    view.focus();
-  }, [editorView]);
 
   const [renderedRightPane, setRenderedRightPane] = useState<string | null>(activeRightPane);
 
@@ -655,7 +644,7 @@ export const Workspace = React.memo<WorkspaceProps>(({
           errorBoundaryName="prompt-pane"
           ariaLabel="UrAI"
         >
-          {activeRightPane === "prompt" && <UrAIPanel onInsertAtCursor={handleInsertAtCursor} />}
+          {activeRightPane === "prompt" && <UrAIPanel />}
         </RightPane>
       )}
     </Box>

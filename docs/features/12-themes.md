@@ -82,15 +82,6 @@ All theme surfaces adhere to the warm Craft radius + shadow scale from `DESIGN.m
 
 The theme also controls per-element syntax highlighting colors. When `fountainColorsEnabled` is toggled off, all text appears in the base text color (for a distraction-free writing experience).
 
-## Interactive Tour
-
-The Theming tour (in Tutorials) opens the Bee Detective sample in the main window
-and the Theme Manager window with an embedded tour card. The tour covers:
-
-1. **Pick a Theme** — browse and select a different built-in theme (rounded `6px` rows)
-2. **Create a Custom Theme** — click the Create button to open the color editor
-3. **Export & Import** — learn about .actheme files
-
 
 ## Shared control readability
 

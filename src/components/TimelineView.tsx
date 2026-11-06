@@ -57,7 +57,12 @@ export const TimelineView: React.FC = () => {
     [positions, liveText, snapshot],
   );
   const navigate = useCallback(
-    (line: number, noFocus: boolean) => scrollToLine(toLive(line), noFocus),
+    (line: number, noFocus: boolean) => {
+      if (typeof document !== "undefined") {
+        document.body.dataset.timelineScrubbed = "true";
+      }
+      return scrollToLine(toLive(line), noFocus);
+    },
     [scrollToLine, toLive],
   );
 
@@ -443,6 +448,9 @@ export const TimelineView: React.FC = () => {
     e.currentTarget.setPointerCapture?.(e.pointerId);
     scrubbingRef.current = true;
     setIsScrubbing(true);
+    if (typeof document !== "undefined") {
+      document.body.dataset.timelineScrubbed = "true";
+    }
     const segment = e.target instanceof Element ? e.target.closest<HTMLElement>("[data-timeline-line]") : null;
     const line = segment ? Number(segment.dataset.timelineLine) : null;
     gestureRef.current = { x: e.clientX, line, moved: false };

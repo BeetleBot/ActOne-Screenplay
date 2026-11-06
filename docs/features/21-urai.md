@@ -18,11 +18,13 @@ UrAI helps with brainstorming, understanding screenplay context, translation, an
 
 ## Context and privacy contract
 
-Chat asks permission before screenplay access. Permission is held in panel memory and resets on document/provider changes or revocation. Manual scene selection has been removed. After permission, local retrieval selects original scenes for specific scene numbers or matching questions; broad questions use cached summaries. Context and token configuration live in the header gear popover. Rust checks scope again before constructing prompts or returning tool results. No index of unshared scenes is included. Title-page/contact information and project notes are not automatically attached.
+Chat asks permission before screenplay access. Permission is held in panel memory and resets when the document or provider destination changes, the panel closes, or access is revoked. The frontend reads the active CodeMirror document through a script-scoped registration and falls back to the active file text. The approved scene corpus is passed to Rust for local lookups, with raw Fountain text, parsed dialogue, scene labels, and line ranges. Provider prompts contain the evidence retrieved for the current request. Title-page text and project notes are outside the corpus. Discussing a saved scene note attaches it explicitly.
 
-Each turn has a SHA-256 fingerprint of destination and exact shared context. Changing scope, shared source, or endpoint excludes prior turns from the next request. Older chats without provenance remain visible but are not automatically retransmitted. The UI explains that changing sharing starts fresh model context.
+Conversation replay is scoped to script, session, destination, and screenplay permission. A change in retrieved scenes or a live edit keeps the eligible chat history. Older turns with legacy fingerprints are replayed only when their existing provenance matches. The last selected session and pinned turns are saved with the transcript. Rust budgets recent messages and bounded excerpts from older and pinned messages separately from screenplay evidence.
 
-Full sharing means all parsed screenplay scenes, not the complete project bundle. A scene-less prose document uses selected-text sharing. Explicit budget errors ask writers to share less or set their model's supported limit; the service never silently truncates the current source/request.
+Numbered requests, including ordinal wording such as “the 16th scene,” resolve the printed label before generation. A draft with no printed labels uses scene order. Mixed drafts require a printed match for numbered requests. Cursor and prior-scene references are also supported. Rust emits verified source references and coverage for editor navigation. Large source reads use bounded evidence extraction across every part or return an explicit budget error.
+
+A direct request to read or show one scene renders its original Fountain locally in the transcript. Follow-up analysis uses the current source and a short reference to the earlier display. For model-assisted screenplay lookups, Rust buffers responses until it can distinguish tool calls from prose, including JSON fences preceded by a short model preamble.
 
 ## Provider contract
 
@@ -30,9 +32,9 @@ Commands: `urai_chat`, `urai_transform`, `urai_cancel`, `urai_run_job`, `urai_pa
 
 Ollama uses `/api/chat`, its native schema format and explicit context/output limits. Existing discovery commands remain in `ollama.rs`. OpenAI uses Chat Completions with native structured output for transformations; other compatible endpoints receive a JSON instruction and undergo the same application validation. Model-specific optional parameters are omitted for reasoning-model families.
 
-Incomplete/truncated streams are errors, never successful replacements. Cancellation drops the in-flight future, including connection/read waits. Streaming events are emitted only to the calling window and correlated by request ID. Ordinary chat streams immediately; potential tool JSON is buffered until classified. Read tools are bounded to four generations and approved context. Existing TypeScript project-action handlers remain available to application integrations; the assistant does not invoke mutation tools.
+Incomplete/truncated streams are errors. Cancellation drops the in-flight future, including connection/read waits. Streaming events are emitted only to the calling window and correlated by request ID. Ordinary chat streams immediately and potential tool JSON is buffered until classified. Chat supports scene reads, batch reads and comparisons, heading/location search, literal text search, speaker-specific dialogue search, and statistics. The bounded lookup loop keeps the original question in each generation. Statistics reuse live X-Ray and screenplay pagination, with per-scene page spans defined as pages touched. The chat UI exposes copy, scene navigation, pins, and confirmed note actions. Screenplay access is read-only.
 
-Estimates use UTF-8 length plus an allowance for non-ASCII characters. They are budgeting estimates rather than exact tokenizer counts. Provider-reported input/output usage replaces estimates when available. Recent history is bounded; context/instructions/latest question and output allowance must fit. There is no model-generated summary cache in this version.
+Estimates use UTF-8 length plus an allowance for non-ASCII characters. Provider-reported input/output usage replaces estimates when available. Recent history is bounded, with local extractive memory for longer conversations.
 
 ## Transformations
 
@@ -52,7 +54,7 @@ See `docs/URAI-TASKS.md` for actual completed checks and remaining platform/real
 
 ## Local indexing
 
-The header index button batches each scene into at most 2,200 Unicode code points and asks the selected Ollama model for a short summary through the Rust chat transport. Completed scenes are checkpointed in localStorage with their original text, keyed by document, provider endpoint, and model. Pause/restart skips unchanged completed scenes; edits invalidate affected scenes. This cache is local plaintext and includes screenplay text. Retrieval uses scene numbers and lexical matching; summaries are model-generated reference data, not verified facts. Explicit scene requests retrieve original text. Oversized context is bounded in Rust and coverage is reported through activity and assistant instructions. Semantic embeddings and exhaustive multi-pass whole-story analysis are not implemented.
+The header index button batches each scene into at most 2,200 Unicode code points and asks the selected Ollama model for a short summary through the Rust chat transport. Completed scenes are checkpointed in localStorage with their original text, keyed by document, provider endpoint, and model. Pause/restart skips unchanged completed scenes. A summary helps rank candidates only when its stored source matches the current scene. The provider receives original text from the selected candidates. Continuity and setup/payoff reviews combine bounded candidate reads with further local lookups, and report the inspected scope.
 
 ## Translation setup
 

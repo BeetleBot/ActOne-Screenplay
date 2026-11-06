@@ -110,21 +110,20 @@ Closes all open modal sub-windows (settings, help, theme-manager, xray, tutorial
 
 ## AI Hooks (v0.4.0+)
 
-### `useAIChat(getParsedDoc, filePath, activeFileId, ...)`
+### `useAIChat(filePath, activeFileId, scriptFileName, sharing)`
 
 Manages the React view of script-scoped UrAI conversations, explicit sharing, native streaming, and native read-tool activity. The current composer does not implement `@` command autocomplete or command mode.
 
 ```typescript
 function useAIChat(
-  getParsedDoc: () => FountainDocument | null,
   filePath: string | null,
   activeFileId: string,
-  activeLineNumber?: number,
-  replaceSceneText?: (sceneNumber: number, newFountainText: string) => boolean,
-  updateSettings?: (updater: (previous: Record<string, unknown>) => Record<string, unknown>) => void,
-  openXrayWindow?: () => void,
   scriptFileName?: string,
-  sharing?: { context: UrAIContext; contextTokens: number },
+  sharing?: {
+    context: UrAIContext;
+    contextTokens: number;
+    resolveReading?: (query: string, previous: UrAISceneRef[]) => UrAIReading | { error: string };
+  },
 ): AIChatResult;
 ```
 
@@ -145,8 +144,9 @@ Returns:
 | `deleteSession(id)` | `(id: string) => void` | Delete a session |
 | `clear()` | `() => void` | Clear the active session |
 | `retry()` | `() => void` | Send the latest user turn again |
+| `togglePin(id)` | `(id: number) => void` | Toggle a message's priority in conversation memory |
 
-`ChatTurn` may contain `thinking` and `toolCalls`. A tool step includes its name, arguments, status, result, and optional pending scene-apply data.
+`ChatTurn` may contain thinking, pinned state, tool activity, and verified scene references. Tool activity carries a name, arguments, status, coverage, and optional source references. Legacy drafts can be displayed and copied.
 
 The Rust service owns the bounded read-tool loop (up to four generations). Tools can only inspect explicitly shared scenes. The assistant does not invoke project mutation handlers. Existing application integrations retain their helpers in `aiTools.ts`.
 

@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Box, Typography, IconButton, Button, TextField } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TitleBar } from "./TitleBar";
-import { CrossWindowTourCard } from "./CrossWindowTourCard";
-import { THEMING_STEPS } from "./OnboardingTour";
 import { createActOneTheme, themes, THEME_CATEGORIES, ADAPTIVE_THEME_META, type ThemeColors } from "../theme";
 import { resolveThemeConfig } from "../theme/themeUtils";
 import { initThemeEngine, setThemeState as engineSetTheme, onThemeChanged, getInitialThemeId, getInitialCustomThemes } from "../theme/ThemeEngine";
@@ -171,70 +169,6 @@ export const ThemeManagerWindow: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const params = new URLSearchParams(window.location.search);
-  const isTourMode = params.get("tour") === "theming";
-
-  const [tourActive, setTourActive] = useState(isTourMode);
-  const [tourStep, setTourStep] = useState(0);
-  const [tourTaskComplete, setTourTaskComplete] = useState(false);
-
-  const initialThemeId = useRef(themeId);
-
-  useEffect(() => {
-    if (!tourActive) return;
-    setTourTaskComplete(false);
-
-    if (tourStep === 0 || tourStep >= 3) {
-      setTourTaskComplete(true);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      let complete = false;
-      if (tourStep === 1) complete = themeId !== initialThemeId.current;
-      else if (tourStep === 2) complete = showForm;
-      if (complete) {
-        setTourTaskComplete(true);
-        clearInterval(interval);
-      }
-    }, 200);
-    return () => clearInterval(interval);
-  }, [tourActive, tourStep, themeId, showForm]);
-
-  const handleTourNext = () => {
-    if (tourStep < THEMING_STEPS.length - 1) {
-      setTourStep((p) => p + 1);
-      setTourTaskComplete(false);
-    } else {
-      handleClose();
-    }
-  };
-
-  const handleTourBack = () => {
-    if (tourStep > 0) {
-      setTourStep((p) => p - 1);
-      setTourTaskComplete(false);
-    }
-  };
-
-  const handleTourCancel = () => {
-    setTourActive(false);
-    handleClose();
-  };
-
-  useEffect(() => {
-    if (!tourActive) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && (e.shiftKey || e.metaKey) && tourTaskComplete) {
-        e.preventDefault();
-        e.stopPropagation();
-        handleTourNext();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [tourActive, tourTaskComplete]);
-
   return (
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
@@ -374,20 +308,6 @@ export const ThemeManagerWindow: React.FC = () => {
           </Box>
         </Box>
       </Box>
-      {tourActive && (
-        <CrossWindowTourCard
-          step={THEMING_STEPS[tourStep]}
-          tourName="Themes"
-          progress={((tourStep + 1) / THEMING_STEPS.length) * 100}
-          taskComplete={tourTaskComplete}
-          isLastStep={tourStep === THEMING_STEPS.length - 1}
-          stepNumber={tourStep + 1}
-          totalSteps={THEMING_STEPS.length}
-          onNext={handleTourNext}
-          onBack={tourStep > 0 ? handleTourBack : undefined}
-          onCancel={handleTourCancel}
-        />
-      )}
     </MuiThemeProvider>
   );
 };

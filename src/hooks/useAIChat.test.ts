@@ -1,6 +1,9 @@
 ﻿import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAIChat, extractThinkingAndClean } from "./useAIChat";
+import { parseScreenplay } from "../parser";
+import { resolveSceneFocus, screenplaySources } from "../lib/uraiSources";
+import { EMPTY_CONTEXT, nativeChat } from "../lib/urai";
 
 // Mock dependencies
 vi.mock("./usePromptConfig", () => ({
@@ -37,7 +40,7 @@ describe("useAIChat (UrAI Chat Hook)", () => {
   });
 
   it("initializes with default session", () => {
-    const { result } = renderHook(() => useAIChat(() => null, null, "file-1"));
+    const { result } = renderHook(() => useAIChat(null, "file-1"));
 
     expect(result.current.sessions).toHaveLength(1);
     expect(result.current.sessions[0].title).toBe("New Conversation");
@@ -47,7 +50,7 @@ describe("useAIChat (UrAI Chat Hook)", () => {
   });
 
   it("creates a new session and switches to it", async () => {
-    const { result } = renderHook(() => useAIChat(() => null, null, "file-1"));
+    const { result } = renderHook(() => useAIChat(null, "file-1"));
 
     await act(async () => {});
     const firstId = result.current.activeSessionId;
@@ -63,7 +66,7 @@ describe("useAIChat (UrAI Chat Hook)", () => {
   });
 
   it("selects an existing session", async () => {
-    const { result } = renderHook(() => useAIChat(() => null, null, "file-1"));
+    const { result } = renderHook(() => useAIChat(null, "file-1"));
 
     await act(async () => {});
     const firstId = result.current.activeSessionId;
@@ -84,7 +87,7 @@ describe("useAIChat (UrAI Chat Hook)", () => {
   });
 
   it("deletes a session", async () => {
-    const { result } = renderHook(() => useAIChat(() => null, null, "file-1"));
+    const { result } = renderHook(() => useAIChat(null, "file-1"));
 
     await act(async () => {});
     act(() => {
@@ -102,7 +105,7 @@ describe("useAIChat (UrAI Chat Hook)", () => {
   });
 
   it("recreates a session if the last one is deleted", async () => {
-    const { result } = renderHook(() => useAIChat(() => null, null, "file-1"));
+    const { result } = renderHook(() => useAIChat(null, "file-1"));
 
     await act(async () => {});
     const initialId = result.current.sessions[0].id;
@@ -116,7 +119,7 @@ describe("useAIChat (UrAI Chat Hook)", () => {
   });
 
   it("sends message and appends turns", async () => {
-    const { result } = renderHook(() => useAIChat(() => null, null, "file-1"));
+    const { result } = renderHook(() => useAIChat(null, "file-1"));
 
     await act(async () => {});
     await act(async () => {
@@ -147,11 +150,51 @@ describe("useAIChat (UrAI Chat Hook)", () => {
 });
 
 describe("UrAI sharing provenance", () => {
+  it("keeps the conversation as the live scene changes and withholds protected history after revocation", async () => {
+    localStorage.clear();
+    vi.mocked(nativeChat).mockClear();
+    const scenes = screenplaySources(parseScreenplay("INT. HOUSE - DAY #67#\n\nMaya runs.\n\nEXT. RIVER - NIGHT #68#\n\nMaya stops."));
+    const { result, rerender } = renderHook(({ allowed }) => useAIChat(null, "continuous", "draft", {
+      context: EMPTY_CONTEXT,
+      contextTokens: 8192,
+      resolveReading: allowed ? (query, previous) => ({ scenes, focusIds: resolveSceneFocus(query, scenes, undefined, previous).ids }) : undefined,
+    }), { initialProps: { allowed: true } });
+    await act(async () => {});
+    await act(async () => { await result.current.send("Read scene 67"); });
+    act(() => result.current.togglePin(result.current.turns[1].id));
+    await act(async () => { await result.current.send("What happens in the next scene?"); });
+    expect(vi.mocked(nativeChat).mock.calls[1][1]).toHaveLength(3);
+    expect(vi.mocked(nativeChat).mock.calls[1][2]).toMatchObject({
+      reading: { focusIds: [2] },
+      memory: expect.stringContaining("Pinned"),
+    });
+    rerender({ allowed: false });
+    await act(async () => { await result.current.send("A new question without access"); });
+    expect(vi.mocked(nativeChat).mock.calls[2][1]).toEqual([{ role: "user", content: "A new question without access" }]);
+    expect(vi.mocked(nativeChat).mock.calls[2][2]?.reading).toBeUndefined();
+    expect(vi.mocked(nativeChat).mock.calls[2][2]?.memory).toBe("");
+  });
+
+  it("reopens the last selected conversation and flushes new messages on close", async () => {
+    localStorage.clear();
+    const first = renderHook(() => useAIChat("/workspace/project", "resume"));
+    await act(async () => {});
+    const original = first.result.current.activeSessionId;
+    act(() => first.result.current.newSession());
+    act(() => first.result.current.selectSession(original));
+    await act(async () => { await first.result.current.send("Remember this"); });
+    first.unmount();
+    const reopened = renderHook(() => useAIChat("/workspace/project", "resume"));
+    await act(async () => {});
+    expect(reopened.result.current.activeSessionId).toBe(original);
+    expect(reopened.result.current.turns[0].content).toBe("Remember this");
+  });
+
   it("does not resend earlier turns when sharing changes", async () => {
     localStorage.clear();
     const { nativeChat } = await import("../lib/urai");
     vi.mocked(nativeChat).mockClear();
-    const { result, rerender } = renderHook(({ selection }) => useAIChat(() => null, null, "scope-test", undefined, undefined, undefined, undefined, "script", {
+    const { result, rerender } = renderHook(({ selection }) => useAIChat(null, "scope-test", "script", {
       context: { scope: "selection", scenes: [], sceneIds: [], selection }, contextTokens: 8192,
     }), { initialProps: { selection: "first shared excerpt" } });
     await act(async () => {});

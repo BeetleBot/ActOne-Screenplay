@@ -85,7 +85,7 @@ export function migrateSettingsKey(
 ): Record<string, any> {
   if (!settings || typeof settings !== "object") return settings || {};
   if (oldFileName === newFileName || !oldFileName || !newFileName) return settings;
-  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles"];
+  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles", "uraiNotes"];
   const migrated = { ...settings };
 
   for (const key of KEYED_PROPS) {
@@ -104,7 +104,7 @@ export function removeSettingsKey(
 ): Record<string, any> {
   if (!settings || typeof settings !== "object") return settings || {};
   if (!fileName) return settings;
-  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles"];
+  const KEYED_PROPS = ["notepad", "todos", "parking", "genders", "characterProfiles", "uraiNotes"];
   const cleaned = { ...settings };
 
   for (const key of KEYED_PROPS) {

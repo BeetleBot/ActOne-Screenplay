@@ -175,11 +175,12 @@ You can drag and drop any supported file directly into ActOne:
     category: "Getting Started",
     tags: ["tutorial", "tour", "learn", "onboarding"],
     relatedIds: ["welcome-screen", "command-palette"],
-    content: `You can launch the **Interactive Tutorial** from the Welcome screen or by searching for it in the Command Palette (<kbd>Ctrl+K</kbd>).
+    content: `You can launch the **Interactive Tutorials** from the Welcome screen or by searching for it in the Command Palette (<kbd>Ctrl+K</kbd>).
 
-There are two tutorials available:
-- **UI Tour:** A quick guided tour showing you around the interface (Sidebar, X-Ray, Focus Mode, Zen Mode, etc.).
-- **Fountain Elements:** An interactive sandbox that teaches you how to format a screenplay using the Fountain syntax. It will live-validate your formatting as you learn.`,
+Choose from three interactive learning paths:
+- **Basic UI:** An end-to-end guided walkthrough of the workspace: the Landing Pad (screenplays, prose, and visual canvas), Activity Bar side panels, document tabs, Timeline View (interactive playhead scrubbing & zooming), Timeline Options, and the Status Bar, concluding with power-user Command Palette navigation.
+- **Basic Fountain Syntax:** A hands-on typing sandbox where you practice standard screenplay elements (scene headings, characters, dialogue, parentheticals, transitions, and camera shots) with real-time feedback as you type.
+- **Advanced Syntax:** Master professional screenplay markup — act and sequence sections, scene synopses, color tags, storylines, and production breakdown markers — followed by hands-on navigation in a sample multi-scene project.`,
   },
   {
     id: "cli-commands",
@@ -1498,7 +1499,7 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
 
 **Key features:**
 - **Conversational Screenplay Q&A**: Ask questions about your story, character arcs, scene flow, and dialogue.
-- **Intelligent Scene Context**: UrAI automatically finds and reads only the scenes relevant to your question (e.g. "Summarize scenes with John") without sending your entire manuscript every time.
+- **Screenplay conversations**: Ask follow-up questions about scenes, dialogue, characters, and X-Ray statistics. Jump from a cited scene back to the editor.
 - **Look up & Synonyms**: Right-click words in the editor to look up definitions and synonyms in UrAI.
 - **Per-script history**: Each screenplay maintains its own conversation sessions across your writing workflow.
 - **Real-time streaming**: Watch responses generate smoothly in real time.`,
@@ -1535,9 +1536,13 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
     relatedIds: ["urai-overview", "urai-configure"],
     content: `UrAI helps you brainstorm, discuss screenplay context, translate and rephrase.
 
-- UrAI asks permission before reading a screenplay. After you allow access, it chooses scenes automatically. Change or revoke access through the header gear.
+- UrAI asks before reading your screenplay. After you allow access, it can look up passages and statistics for the active script. You can revoke access from the header gear.
 - For local Ollama models, use the **Index screenplay** book button. It processes scenes in small batches and saves completed scenes locally. Restarting indexing skips unchanged scenes; edits need reindexing.
-- Ask about **scene 3** to retrieve its original text. General questions use relevant passages or index summaries. Summaries can contain mistakes; UrAI may not have read every scene for a given answer.
+- Ask **“Read scene 16”** or **“Read the 16th scene”** to show the scene numbered **16**, including unsaved edits. UrAI uses scene order only when the screenplay has no scene numbers. Labels like **15A** work too. Say **“read this scene”** to use the cursor.
+- Follow up with **“Why does she leave?”** or **“What happens in the next scene?”**. UrAI resumes your last conversation for the active script. Pin an important message to give it priority in long chats. Screenplay details from previous messages are shared again only with access to that script at the same AI destination.
+- Try **“Which scene spans the most pages?”**, **“Who speaks the most?”**, **“Show the longest dialogue”**, or **“What does X-Ray flag?”**. Scene page spans count the pages a scene touches, and reading times are estimates.
+- Ask **“When does Maya learn about the letter?”** or **“Where do I set up and pay off the broken watch?”**. Use the scene buttons to check the evidence in your draft. The steps show whether UrAI read full scenes, excerpts, or matching lines.
+- Ask **“Save that as a revision note for scene 67”** and review the note before saving. Use **Scene notes** to jump back to the scene, track a setup, or discuss a note in a later chat. UrAI chat has read-only access to the screenplay. Notes are stored separately from the scene text.
 - Rephrase and translate replace selected text after generation, with an animated highlight. Use Undo to restore the original. If you edit while UrAI is working, the result is not applied.
 - Context limits are available in the gear menu. A larger number does not increase a model's actual supported context.
 `,

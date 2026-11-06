@@ -33,6 +33,8 @@ export const StatusBar = React.memo(() => {
   const { openSettingsWindow } = useModalWindows();
   const pageHintId = React.useId();
   const [pageAnchor, setPageAnchor] = useState<HTMLElement | null>(null);
+  const isTourActive = typeof window !== "undefined" && localStorage.getItem("actone-active-tour") === "ui";
+  const isTimelineActive = (showTimeline || isTourActive) && !isMarkdown;
   const [pageInput, setPageInput] = useState("");
   const [pageError, setPageError] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -724,7 +726,7 @@ export const StatusBar = React.memo(() => {
                   />
                 </MenuItem>
               </Menu>
-              {showTimeline && !isMarkdown && (
+              {isTimelineActive && (
                 <Box
                   id="status-timeline-options"
                   onClick={handleTimelineMenuOpen}
@@ -769,7 +771,7 @@ export const StatusBar = React.memo(() => {
                   <KeyboardArrowDownIcon sx={{ fontSize: 12, opacity: 1, ml: -0.2 }} />
                 </Box>
               )}
-              {showTimeline && !isMarkdown && (
+              {isTimelineActive && (
                 <Menu
                   anchorEl={timelineMenuAnchor}
                   open={Boolean(timelineMenuAnchor)}

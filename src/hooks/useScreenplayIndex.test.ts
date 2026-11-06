@@ -1,11 +1,12 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { it, expect, vi } from "vitest";
 import { parseScreenplay } from "../parser";
+import { screenplaySources } from "../lib/uraiSources";
 import type { PromptConfig } from "./usePromptConfig";
 const { chat } = vi.hoisted(() => ({ chat: vi.fn() }));
 vi.mock("../lib/urai", async original => ({ ...(await original<typeof import("../lib/urai")>()), nativeChat: chat }));
 import { formatIndexProgress, useScreenplayIndex } from "./useScreenplayIndex";
-it("indexes in bounded batches, reuses unchanged scenes and retrieves a requested scene", async () => {
+it("indexes in bounded batches, reuses unchanged scenes and ranks candidates from matching live text", async () => {
   localStorage.clear(); chat.mockResolvedValue({ text: "John enters the observatory." });
   const doc = parseScreenplay("INT. OBSERVATORY - DAY\n\nJohn watches the stars.\n\nEXT. BEACH - NIGHT\n\nMary walks.");
   const config = { provider: "ollama", model: "test", ollamaUrl: "http://localhost:11434" } as PromptConfig;
@@ -13,7 +14,7 @@ it("indexes in bounded batches, reuses unchanged scenes and retrieves a requeste
   await act(async () => hook.result.current.run());
   await waitFor(() => expect(hook.result.current.ready).toBe(true));
   expect(chat).toHaveBeenCalledTimes(2);
-  expect(hook.result.current.retrieve("Read scene 2").scenes.map(scene => scene.id)).toEqual([2]);
+  expect(hook.result.current.suggest("Find Mary at the beach", screenplaySources(doc))).toEqual([2]);
   await act(async () => hook.result.current.run());
   expect(chat).toHaveBeenCalledTimes(2);
   hook.unmount();

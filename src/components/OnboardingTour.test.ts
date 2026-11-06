@@ -1,12 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { UI_STEPS, FOUNTAIN_STEPS, ADVANCED_STEPS, THEMING_STEPS } from "./OnboardingTour";
+import { UI_STEPS, FOUNTAIN_STEPS, ADVANCED_STEPS } from "./OnboardingTour";
 import type { TourStep } from "../types/tour";
 
 const ALL_STEP_SETS: [string, TourStep[], number][] = [
   ["UI_STEPS", UI_STEPS, UI_STEPS.length],
   ["FOUNTAIN_STEPS", FOUNTAIN_STEPS, FOUNTAIN_STEPS.length],
   ["ADVANCED_STEPS", ADVANCED_STEPS, ADVANCED_STEPS.length],
-  ["THEMING_STEPS", THEMING_STEPS, THEMING_STEPS.length],
 ];
 
 describe("Tour step arrays", () => {
@@ -63,6 +62,31 @@ describe("UI_STEPS", () => {
       if (!step.targetId && !step.validate && !step.detect) continue;
       expect(step.targetId, `Step ${i} "${step.title}" missing targetId`).toBeTruthy();
     }
+  });
+
+  it("landing pad step includes canvas format", () => {
+    const landingStep = UI_STEPS.find((s) => s.targetId === "landing-pad");
+    expect(landingStep).toBeDefined();
+    expect(landingStep?.description).toContain(".canvas");
+  });
+
+  it("does not have obsolete status-xray step", () => {
+    expect(UI_STEPS.some((s) => s.targetId === "status-xray")).toBe(false);
+  });
+
+  it("includes rich multi-step Timeline walkthrough with forced scrubbing", () => {
+    const timelineSteps = UI_STEPS.filter((s) => s.targetId === "timeline-view");
+    expect(timelineSteps.length).toBeGreaterThanOrEqual(3);
+
+    const scrubStep = UI_STEPS.find((s) => s.targetId === "timeline-view" && s.taskInstructions);
+    expect(scrubStep).toBeDefined();
+    expect(scrubStep?.title).toBe("Playhead & Scrubbing");
+    expect(scrubStep?.detect).toBeDefined();
+
+    const timelineOptionsStep = UI_STEPS.find((s) => s.targetId === "status-timeline-options");
+    expect(timelineOptionsStep).toBeDefined();
+    expect(timelineOptionsStep?.title).toBe("Timeline Options & Filtering");
+    expect(timelineOptionsStep?.cardPosition).toBe("left");
   });
 });
 
@@ -143,31 +167,3 @@ describe("ADVANCED_STEPS", () => {
   });
 });
 
-describe("THEMING_STEPS", () => {
-  it("has exactly 5 steps", () => {
-    expect(THEMING_STEPS).toHaveLength(5);
-  });
-
-  it("all steps target theme-manager window", () => {
-    for (let i = 0; i < THEMING_STEPS.length; i++) {
-      expect(THEMING_STEPS[i].window, `Step ${i}: missing window`).toBe("theme-manager");
-    }
-  });
-
-  it("all steps have noMask enabled", () => {
-    for (let i = 0; i < THEMING_STEPS.length; i++) {
-      expect(THEMING_STEPS[i].noMask, `Step ${i}: missing noMask`).toBe(true);
-    }
-  });
-
-  it("all steps have cardWidth 260", () => {
-    for (let i = 0; i < THEMING_STEPS.length; i++) {
-      expect(THEMING_STEPS[i].cardWidth, `Step ${i}: missing cardWidth`).toBe(260);
-    }
-  });
-
-  it("steps 1 and 2 have taskInstructions", () => {
-    expect(THEMING_STEPS[1].taskInstructions).toBeTruthy();
-    expect(THEMING_STEPS[2].taskInstructions).toBeTruthy();
-  });
-});

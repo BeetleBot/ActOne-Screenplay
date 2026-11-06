@@ -3,6 +3,8 @@ import { listen } from "@tauri-apps/api/event";
 import type { PromptConfig } from "../hooks/usePromptConfig";
 import type { FountainDocument } from "../parser";
 import { buildScreenplayIndex } from "../utils/sceneIndexer";
+import type { UrAISceneRef, UrAISource } from "./uraiSources";
+import type { UrAIStatistics } from "./uraiStats";
 
 export type SharingScope = "none" | "selection" | "scene" | "scenes" | "full";
 export interface UrAIContext {
@@ -26,6 +28,22 @@ export interface UrAIElement {
 export interface UrAIReplacement {
   id: string;
   text: string;
+}
+export interface UrAIActivity {
+  name: string;
+  result: string;
+  args?: Record<string, unknown>;
+  sources?: UrAISceneRef[];
+  status?: "done" | "error";
+}
+export interface UrAIReading {
+  showSource?: boolean;
+  scenes: UrAISource[];
+  focusIds: number[];
+  candidateIds?: number[];
+  review?: "continuity" | "setup";
+  statistics?: UrAIStatistics;
+  statisticsCategory?: string;
 }
 export const EMPTY_CONTEXT: UrAIContext = { scope: "none", scenes: [], sceneIds: [], selection: "" };
 export function isUrAIDesktop() {
@@ -77,7 +95,9 @@ export async function nativeChat(
     temperature?: number;
     maxTokens?: number;
     contextTokens?: number;
-    onTool?: (tool: { name: string; result: string }) => void;
+    onTool?: (tool: UrAIActivity) => void;
+    reading?: UrAIReading;
+    memory?: string;
   },
 ): Promise<UrAIUsage> {
   const requestId = crypto.randomUUID();
@@ -85,7 +105,7 @@ export async function nativeChat(
   const unlisten = await listen<{ requestId: string; text: string }>("urai-delta", (e) => {
     if (e.payload.requestId === requestId && !options.signal?.aborted) options.onChunk?.(e.payload.text);
   });
-  const unlistenTool = await listen<{ requestId: string; name: string; result: string }>("urai-tool", (e) => {
+  const unlistenTool = await listen<UrAIActivity & { requestId: string }>("urai-tool", (e) => {
     if (e.payload.requestId === requestId && !options.signal?.aborted) options.onTool?.(e.payload);
   });
   const abort = () => {
@@ -103,6 +123,8 @@ export async function nativeChat(
         context: options.context ?? EMPTY_CONTEXT,
         temperature: options.temperature,
         maxTokens: options.maxTokens,
+        reading: options.reading,
+        memory: options.memory,
       },
     });
     const result = await promise;
@@ -151,11 +173,23 @@ export async function nativeTransform(
   }
 }
 
+const conversationWrites = new Map<string, Promise<void>>();
+
 export async function loadNativeSessions(key: string): Promise<unknown> {
+  await conversationWrites.get(key)?.catch(() => undefined);
   return isUrAIDesktop() ? invoke("urai_load_sessions", { key }) : null;
 }
 export async function saveNativeSessions(key: string, sessions: unknown): Promise<void> {
-  if (isUrAIDesktop()) await invoke("urai_save_sessions", { key, sessions });
+  if (!isUrAIDesktop()) return;
+  const previous = conversationWrites.get(key);
+  const write = (previous ?? Promise.resolve()).catch(() => undefined)
+    .then(() => invoke<void>("urai_save_sessions", { key, sessions }));
+  conversationWrites.set(key, write);
+  try {
+    await write;
+  } finally {
+    if (conversationWrites.get(key) === write) conversationWrites.delete(key);
+  }
 }
 
 export async function contextFingerprint(config: PromptConfig, context: UrAIContext): Promise<string> {

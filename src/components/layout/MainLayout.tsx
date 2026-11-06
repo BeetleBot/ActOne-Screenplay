@@ -22,6 +22,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 }) => {
   const { activeTab, setActiveTab, isZenMode, showTimeline } = useUI();
   const { hasNoScripts, isProse, scripts, activeScriptIndex } = useWorkspaceMetadata();
+  const isTourActive = typeof window !== "undefined" && localStorage.getItem("actone-active-tour") === "ui";
+  const isTimelineVisible = (showTimeline || isTourActive) && !isZenMode && !isProse && scripts[activeScriptIndex]?.type !== "canvas" && !hasNoScripts;
 
   React.useEffect(() => {
     if (hasNoScripts) {
@@ -67,7 +69,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           />
         </Box>
         <Box component="footer" sx={{ display: 'flex', flexDirection: 'column', bgcolor: 'background.paper', flexShrink: 0 }}>
-          {showTimeline && !isZenMode && !isProse && scripts[activeScriptIndex]?.type !== "canvas" && !hasNoScripts && (
+          {isTimelineVisible && (
             <ErrorBoundary name="timeline"><TimelineView /></ErrorBoundary>
           )}
           <ErrorBoundary name="status"><StatusBar /></ErrorBoundary>

@@ -1,3 +1,4 @@
+mod chat;
 pub mod credentials;
 pub mod jobs;
 mod provider;
@@ -34,6 +35,8 @@ pub struct ChatRequest {
     pub context: Context,
     pub temperature: Option<f64>,
     pub max_tokens: Option<usize>,
+    pub reading: Option<tools::Reading>,
+    pub memory: Option<String>,
 }
 
 #[tauri::command]
@@ -74,6 +77,9 @@ pub async fn urai_chat(
     window: tauri::WebviewWindow,
     mut request: ChatRequest,
 ) -> Result<provider::Completion, String> {
+    if request.reading.is_some() || request.memory.is_some() {
+        return cancellable(&window, &request.request_id, chat::run(&window, &request)).await;
+    }
     let output = request.max_tokens.unwrap_or(2048).clamp(64, 8192);
     let query = request
         .messages

@@ -34,7 +34,7 @@ This data is stored **solely on your local machine** and is never transmitted ex
 UrAI is an optional AI assistant. ActOne does **not** host a model or provide a default AI service. You must configure a provider yourself:
 
 - **Ollama**: runs entirely on your machine if you use a local Ollama server. Requests are proxied through the app; no data leaves your device.
-- **OpenAI-compatible endpoints**: when configured with a remote base URL, the provider, endpoint, and model you choose receive the chat messages and the screenplay context UrAI builds for a request (screenplay index, active scene text, todos, parking notes, and character profiles as applicable).
+- **OpenAI-compatible endpoints**: when configured with a remote base URL, the endpoint and model you choose receive the chat messages and the approved screenplay excerpts or statistics UrAI retrieves for the request. A saved scene note is included when you choose to discuss it.
 
 Only the screenplay text required to answer the selected request is included. Provider configuration and API keys are stored in localStorage and are sent to the configured provider endpoint when a request is made. Do not configure a remote provider if keeping screenplay content local is a requirement.
 
@@ -77,6 +77,6 @@ Email us : actonesupport@iyal.ink
 
 ## UrAI Rust runtime
 
-UrAI performs provider requests in the desktop Rust service. Chat sends only the selected sharing scope; choosing a different endpoint or shared source excludes prior conversation context from future requests. Inline writing actions offer selected-text-only or nearby-context sharing and preview changes before acceptance. Whole-document translation shares the chosen elements, speaker labels, and instructions with the selected endpoint.
+UrAI performs provider requests in the desktop Rust service. Approved live screenplay text is available locally for lookups. The configured model receives the passages and statistics used for a request, along with eligible recent messages and compact excerpts from the conversation. Switching providers or endpoints prevents earlier protected conversation content from being sent to the new destination. Revoking screenplay access prevents earlier screenplay-dependent messages from being sent until access is granted again. Inline writing actions offer selected-text-only or nearby-context sharing and preview changes before acceptance. Whole-document translation shares the chosen elements, speaker labels, and instructions with the selected endpoint.
 
 API keys are saved through Windows Credential Manager or Linux Secret Service when available. Legacy credentials remain recoverable until migration succeeds. Conversation files and translation checkpoints are stored locally in the application data directory and contain writing text; they do not contain API keys. Older local browser-storage conversation copies are retained for compatibility. Endpoint operators control their own retention policies.

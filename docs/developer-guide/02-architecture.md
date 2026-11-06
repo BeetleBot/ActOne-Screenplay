@@ -155,7 +155,7 @@ CodeMirror owns the live editor view. `useCodeMirror.ts` retains editor state pe
 
 Text changes are normalized to LF. Parsing is debounced and uses `src/utils/asyncParser.ts` and `src/workers/parserWorker.ts` for the asynchronous path. The frontend parser classifies Fountain lines and supplies title-page, scene, character, dialogue, marker, section, synopsis, and formatting information.
 
-`sceneIndexer.ts` builds a structured scene and character index for UrAI and analysis views. Scene IDs in the current UrAI tool protocol are ordinal scene indexes, not guaranteed to equal printed Fountain scene numbers.
+`sceneIndexer.ts` builds a structured scene and character index. UrAI's source contracts carry both ordinal IDs and displayed Fountain labels. Numbered requests use printed labels whenever the screenplay has numbering and use ordinal IDs in unnumbered drafts.
 
 ## UrAI Architecture
 
@@ -164,11 +164,9 @@ UrAI has four layers:
 1. `usePromptConfig()` reads provider configuration and model preferences.
 2. `src-tauri/src/urai/provider.rs` streams OpenAI-compatible SSE or Ollama responses; `src/lib/urai.ts` bridges native requests.
 3. `useAIChat.ts` presents native conversations, explicit context sharing, and streaming. Rust owns the bounded read-tool loop.
-4. `aiTools.ts` declares and executes screenplay read, analysis, drafting, metadata, and X-Ray tools.
+4. `uraiSources.ts` and `uraiStats.ts` prepare the approved live scene corpus and computed statistics. `src-tauri/src/urai/chat.rs` and `tools.rs` budget evidence and execute read-only JSON lookups.
 
-The current tool protocol is JSON/text based. `replace_scene` creates a pending review card; other current mutating tools may apply immediately through settings or editor callbacks.
-
-UrAI context can include the screenplay index, active scene lines, todos, parking notes, and character profiles. Provider selection determines whether that content leaves the device. See `docs/features/21-urai.md` and `PRIVACY.md`.
+The provider receives eligible chat history and evidence from the approved screenplay. Scene notes live in per-script project settings and are attached to a request when a writer chooses to discuss them. See `docs/features/21-urai.md` and `PRIVACY.md`.
 
 ## Tauri Backend Boundary
 

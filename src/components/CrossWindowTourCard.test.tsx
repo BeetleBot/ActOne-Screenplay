@@ -143,4 +143,21 @@ describe("CrossWindowTourCard", () => {
     expect(card).toBeTruthy();
     expect(card.style.width).toBe("320px");
   });
+
+  it("positions card to the left for status-timeline-options target", () => {
+    const el = document.createElement("div");
+    el.id = "status-timeline-options";
+    Object.defineProperty(el, "getBoundingClientRect", {
+      value: () => ({ left: 400, top: 600, right: 500, bottom: 630, width: 100, height: 30 }),
+    });
+    document.body.appendChild(el);
+
+    const step: TourStep = { ...baseStep, targetId: "status-timeline-options", cardWidth: 280 };
+    const { container } = render(React.createElement(CrossWindowTourCard, { ...defaultProps, step }));
+    const card = container.querySelector(".tour-card") as HTMLElement;
+    expect(card).toBeTruthy();
+    // left should be targetRect.left - cardWidth - 16 = 400 - 280 - 16 = 104px
+    expect(card.style.left).toBe("104px");
+    document.body.removeChild(el);
+  });
 });

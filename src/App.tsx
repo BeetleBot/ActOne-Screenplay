@@ -1,4 +1,4 @@
-import { decodeProject } from "./utils/fileCore";
+
 import { lazy, Suspense, useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@mui/material";
 import { AppProviders, useFileActions, useWorkspaceMetadata, useParsedScreenplay, useUI, useEditor, useScriptEditor, SprintProvider, useCustomModal } from "./context";
@@ -21,7 +21,7 @@ import { STORAGE_KEYS } from "./constants";
 import { clearResetSettings, DEFAULTS } from "./constants/defaults";
 import { setPrefs } from "./theme/AppPrefsEngine";
 import { getPerScriptSettingObject, updatePerScriptSetting } from "./utils/perScriptSettings";
-import { unpackActoneBundle } from "./utils";
+
 
 const params = new URLSearchParams(window.location.search);
 const action = params.get("action");
@@ -36,11 +36,11 @@ function AppInner() {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTutorialsModal, setShowTutorialsModal] = useState(false);
   const { confirm } = useCustomModal();
-  const [activeTour, setActiveTourState] = useState<"ui" | "fountain" | "advanced" | "theming" | null>(() => {
-    return (localStorage.getItem("actone-active-tour") as "ui" | "fountain" | "advanced" | "theming" | null) || null;
+  const [activeTour, setActiveTourState] = useState<"ui" | "fountain" | "advanced" | null>(() => {
+    return (localStorage.getItem("actone-active-tour") as "ui" | "fountain" | "advanced" | null) || null;
   });
 
-  const setActiveTour = useCallback((tour: "ui" | "fountain" | "advanced" | "theming" | null) => {
+  const setActiveTour = useCallback((tour: "ui" | "fountain" | "advanced" | null) => {
     setActiveTourState(tour);
     if (tour) {
       localStorage.setItem("actone-active-tour", tour);
@@ -52,14 +52,14 @@ function AppInner() {
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "actone-active-tour") {
-        setActiveTourState((e.newValue as "ui" | "fountain" | "advanced" | "theming" | null) || null);
+        setActiveTourState((e.newValue as "ui" | "fountain" | "advanced" | null) || null);
       }
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  const handleTutorialStart = useCallback(async (type: "ui" | "fountain" | "advanced" | "theming") => {
+  const handleTutorialStart = useCallback(async (type: "ui" | "fountain" | "advanced") => {
     try {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
       await getCurrentWindow().maximize();
@@ -68,42 +68,7 @@ function AppInner() {
     if (type === "fountain" || type === "advanced") {
       newFile("=== TUTORIAL SANDBOX ===\n\n");
       setActiveTour(type);
-    } else if (type === "theming") {
-      if (!activeFileId) {
-        try {
-          const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-          if (isTauriEnv) {
-            const { invoke } = await import("@tauri-apps/api/core");
-            const bytes = await invoke<number[]>("get_sample_bundle");
-            const bundle = await decodeProject(new Uint8Array(bytes), "Bee Detective v2");
-            newFile(bundle.scripts[0]?.content || "");
-          } else {
-            const res = await fetch("/samples/BeeDetectiveTour.actone");
-            const buf = await res.arrayBuffer();
-            const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
-            newFile(bundle.scripts[0]?.content || "");
-          }
-        } catch {
-          newFile();
-        }
-      }
-      setTimeout(async () => {
-        try {
-          const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
-          const existing = await WebviewWindow.getByLabel("theme-manager");
-          if (existing) { existing.close().catch(() => {}); }
-          const win = new WebviewWindow("theme-manager", {
-            url: "/?modal=theme-manager&tour=theming",
-            title: "ActOne – Theme Manager",
-            width: 700,
-            height: 580,
-            resizable: true,
-            decorations: false,
-          });
-          win.once("tauri://created", () => {});
-          win.once("tauri://error", () => {});
-        } catch { /* not in Tauri */ }
-      }, 500);
+
     } else if (type === "ui") {
       newFile();
       setActiveTour(type);
@@ -120,7 +85,7 @@ function AppInner() {
     const setup = async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        const fn = await listen<{ type: "ui" | "fountain" | "advanced" | "theming" }>("tutorial:start", (event) => {
+        const fn = await listen<{ type: "ui" | "fountain" | "advanced" }>("tutorial:start", (event) => {
           if (!active) return;
           handleTutorialStart(event.payload.type);
         });
@@ -145,7 +110,7 @@ function AppInner() {
     const timer = setInterval(() => {
       const pendingAction = localStorage.getItem("pending-action");
       if (pendingAction === "tutorial") {
-        const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" | "advanced" | "theming" | null;
+        const type = localStorage.getItem("pending-tutorial-type") as "ui" | "fountain" | "advanced" | null;
         if (type) {
           localStorage.removeItem("pending-action");
           localStorage.removeItem("pending-tutorial-type");
@@ -653,30 +618,11 @@ function AppInner() {
       localStorage.removeItem("pending-action");
     } else if (action === "tutorial") {
       const rawType = params.get("type") || localStorage.getItem("pending-tutorial-type");
-      const type = (rawType === "fountain" ? "fountain" : rawType === "advanced" ? "advanced" : rawType === "theming" ? "theming" : "ui") as "ui" | "fountain" | "advanced" | "theming";
+      const type = (rawType === "fountain" ? "fountain" : rawType === "advanced" ? "advanced" : "ui") as "ui" | "fountain" | "advanced";
       localStorage.removeItem("pending-tutorial-type");
       localStorage.removeItem("pending-action");
       if (type === "ui") {
         newFile();
-      } else if (type === "theming") {
-        (async () => {
-          try {
-            const isTauriEnv = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-            if (isTauriEnv) {
-              const { invoke } = await import("@tauri-apps/api/core");
-              const bytes = await invoke<number[]>("get_sample_bundle");
-              const bundle = await decodeProject(new Uint8Array(bytes), "Bee Detective v2");
-              newFile(bundle.scripts[0]?.content || "");
-            } else {
-              const res = await fetch("/samples/BeeDetectiveTour.actone");
-              const buf = await res.arrayBuffer();
-              const bundle = unpackActoneBundle(new Uint8Array(buf), "Bee Detective v2");
-              newFile(bundle.scripts[0]?.content || "");
-            }
-          } catch {
-            newFile();
-          }
-        })();
       } else {
         newFile("=== TUTORIAL SANDBOX ===\n\n");
       }
@@ -688,27 +634,7 @@ function AppInner() {
         } catch { /* not in Tauri */ }
       })();
 
-      if (type === "theming") {
-        setTimeout(async () => {
-          try {
-          const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
-          const existing = await WebviewWindow.getByLabel("theme-manager");
-          if (existing) { existing.close().catch(() => {}); }
-          const win = new WebviewWindow("theme-manager", {
-            url: "/?modal=theme-manager&tour=theming",
-              title: "ActOne – Theme Manager",
-              width: 700,
-              height: 580,
-              resizable: true,
-              decorations: false,
-            });
-            win.once("tauri://created", () => {});
-            win.once("tauri://error", () => {});
-          } catch { /* not in Tauri */ }
-        }, 500);
-      } else {
-        setActiveTour(type);
-      }
+      setActiveTour(type);
     }
 
     setTimeout(async () => {
@@ -998,7 +924,7 @@ function AppInner() {
         openTutorialsWindow={isModalWindow ? undefined : () => setShowTutorialsModal(true)}
       />
     </div>
-    {activeTour && activeTour !== "theming" && (
+    {activeTour && (
     <OnboardingTour
       activeTour={activeTour}
       onCloseTour={() => setActiveTour(null)}

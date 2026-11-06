@@ -4,16 +4,18 @@ import {
   loadNativeSessions,
   saveNativeSessions,
   contextFingerprint,
+  destination,
   estimateUrAITokens,
   EMPTY_CONTEXT,
   type UrAIContext,
+  type UrAIReading,
 } from "../lib/urai";
+import { sceneRef, type UrAISceneRef } from "../lib/uraiSources";
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
 import { usePromptConfig, getActiveModelName } from "./usePromptConfig";
-import { FountainDocument } from "../parser/FountainParser";
 
 export interface ToolCallStep {
   id: string;
@@ -21,6 +23,7 @@ export interface ToolCallStep {
   args: Record<string, unknown>;
   result?: string;
   status: "running" | "done" | "error";
+  sources?: UrAISceneRef[];
   pendingApply?: {
     sceneNumber: number;
     fountainText: string;
@@ -39,6 +42,11 @@ export interface ChatTurn {
   tokens?: number;
   sharingKey?: string;
   inputTokens?: number;
+  conversationScope?: string;
+  sources?: UrAISceneRef[];
+  pinned?: boolean;
+  focusSources?: UrAISceneRef[];
+  sourceText?: boolean;
 }
 
 export interface ChatSession {
@@ -46,6 +54,25 @@ export interface ChatSession {
   title: string;
   createdAt: number;
   turns: ChatTurn[];
+}
+
+function conversationMemory(turns: ChatTurn[], limit: number): string {
+  const excerpts = [
+    ...turns.filter((turn) => turn.pinned).reverse(),
+    ...turns.slice(0, -6).filter((turn) => !turn.pinned).reverse(),
+  ];
+  let remaining = Math.min(900, Math.floor(limit / 12));
+  const notes: string[] = [];
+  for (const turn of excerpts) {
+    const labels = [...new Set(turn.sources?.map((source) => source.label))].join(", ");
+    const excerpt = Array.from(turn.content).slice(0, 300).join("");
+    const note = `${turn.pinned ? "Pinned · " : ""}${turn.role}${labels ? ` · scenes ${labels}` : ""}: ${excerpt}`;
+    const cost = estimateUrAITokens(note) + 4;
+    if (cost > remaining) continue;
+    remaining -= cost;
+    notes.push(note);
+  }
+  return notes.join("\n");
 }
 
 let sessionCounter = 0;
@@ -97,19 +124,20 @@ export function extractThinkingAndClean(text: string): { thinking: string | null
 }
 
 export function useAIChat(
-  _getParsedDoc: () => FountainDocument | null,
   filePath: string | null,
   activeFileId: string,
-  _activeLineNumber?: number,
-  _replaceSceneText?: (sceneNumber: number, newFountainText: string) => boolean,
-  _updateSettings?: (updater: (prev: Record<string, unknown>) => Record<string, unknown>) => void,
-  _openXrayWindow?: () => void,
-  _scriptFileName?: string,
-  sharing?: { context: UrAIContext; contextTokens: number; resolveContext?: (query: string) => UrAIContext },
+  scriptFileName = "",
+  sharing?: {
+    context: UrAIContext;
+    contextTokens: number;
+    resolveReading?: (query: string, previous: UrAISceneRef[]) => UrAIReading | { error: string };
+  },
 ) {
   const config = usePromptConfig();
 
-  const storageKey = getStorageKey(filePath, activeFileId) + "::" + (_scriptFileName || "");
+  // Preserve the existing unsaved-script key so local histories still reopen.
+  const documentKey = scriptFileName ? `${activeFileId}::${scriptFileName}` : activeFileId;
+  const storageKey = getStorageKey(filePath, documentKey) + "::" + scriptFileName;
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   const [sessions, setSessions] = useState<ChatSession[]>(() => loadSessions(storageKey));
@@ -119,6 +147,14 @@ export function useAIChat(
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const flushRef = useRef<(() => void) | null>(null);
+  const providerDestination = destination(config);
+  useEffect(() => () => abortRef.current?.abort(), [providerDestination]);
+
+  useEffect(() => () => {
+    flushRef.current?.();
+    flushRef.current = null;
+  }, [storageKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,16 +185,22 @@ export function useAIChat(
   useEffect(() => {
     if (loadedKey !== storageKey) return;
     const key = storageKey;
-    const timer = setTimeout(() => {
+    const ordered = [...sessions].sort((a, b) => Number(b.id === activeSessionId) - Number(a.id === activeSessionId));
+    let saved = false;
+    const save = () => {
+      if (saved) return;
+      saved = true;
       try {
-        localStorage.setItem(key, JSON.stringify(sessions));
+        localStorage.setItem(key, JSON.stringify(ordered));
       } catch {
         /* Native storage remains authoritative. */
       }
-      void saveNativeSessions(key, sessions).catch((e) => setError(`Cannot save conversations: ${String(e)}`));
-    }, 100);
+      void saveNativeSessions(key, ordered).catch((e) => setError(`Cannot save conversations: ${String(e)}`));
+    };
+    const timer = setTimeout(save, 100);
+    flushRef.current = save;
     return () => clearTimeout(timer);
-  }, [sessions, storageKey, loadedKey]);
+  }, [sessions, activeSessionId, storageKey, loadedKey]);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const turns = activeSession?.turns || [];
@@ -201,21 +243,42 @@ export function useAIChat(
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
-      const requestContext = sharing?.resolveContext?.(content) ?? sharing?.context ?? EMPTY_CONTEXT;
+      const requestContext = sharing?.context ?? EMPTY_CONTEXT;
       const sharingKey = await contextFingerprint(config, requestContext);
       if (controller.signal.aborted) return;
       setError(null);
 
-      const history: ChatMessage[] = (retryFrom === undefined ? turnsRef.current : turnsRef.current.slice(0, retryFrom))
-        .filter((turn) => turn.content && turn.sharingKey === sharingKey)
-        .map(({ role, content: c }) => ({ role, content: c }));
+      const earlier = retryFrom === undefined ? turnsRef.current : turnsRef.current.slice(0, retryFrom);
+      const scope = sharing?.resolveReading ? destination(config) + "::live-screenplay" : undefined;
+      const scopedTurns = earlier.filter((turn) => turn.content && (
+        scope ? turn.conversationScope === scope || (!turn.conversationScope && turn.sharingKey === sharingKey && requestContext.scope === "none")
+          : !turn.conversationScope && turn.sharingKey === sharingKey
+      ));
+      let reading: UrAIReading | { error: string } | undefined;
+      try {
+        const previous = [...scopedTurns].reverse().find((turn) => turn.focusSources?.length)?.focusSources ?? [];
+        reading = sharing?.resolveReading?.(content, previous);
+      } catch (failure) {
+        if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : String(failure));
+        return;
+      }
+      if (controller.signal.aborted) return;
+      if (reading && "error" in reading) {
+        setError(reading.error);
+        return;
+      }
+      const history: ChatMessage[] = scopedTurns.map((turn) => ({
+        role: turn.role,
+        content: turn.sourceText ? `Displayed live scene ${turn.sources?.[0]?.label ?? ""} in the chat.` : turn.content,
+      }));
       history.push({ role: "user", content });
 
-      const userId = Date.now();
-      const assistantId = Date.now() + 1;
+      const userId = Math.max(Date.now(), (turnsRef.current.at(-1)?.id ?? 0) + 1);
+      const assistantId = userId + 1;
       const turnTimestamp = Date.now();
       const turnModel = getActiveModelName(config);
       const userTokens = estimateUrAITokens(display || content);
+      const directScene = reading?.showSource ? reading.scenes.find((scene) => scene.id === reading.focusIds[0]) : undefined;
 
       updateActiveSessionTurns((prev) => [
         ...(retryFrom === undefined ? prev : prev.slice(0, retryFrom)),
@@ -228,18 +291,28 @@ export function useAIChat(
           model: turnModel,
           tokens: userTokens,
           sharingKey,
+          conversationScope: scope,
         },
         {
           id: assistantId,
           role: "assistant",
-          content: "",
+          content: directScene?.text ?? "",
+          sourceText: Boolean(directScene),
+          sources: directScene ? [sceneRef(directScene)] : undefined,
           toolCalls: [],
           timestamp: turnTimestamp,
-          model: turnModel,
+          model: directScene ? "Live screenplay" : turnModel,
           tokens: 0,
           sharingKey,
+          conversationScope: scope,
+          focusSources: reading?.focusIds.flatMap((id) => reading.scenes.filter((scene) => scene.id === id).map(sceneRef)),
         },
       ]);
+      if (directScene) {
+        abortRef.current = null;
+        setStreaming(false);
+        return;
+      }
       setStreaming(true);
 
       const systemPrompt = config.systemPrompt || "You are UrAI, a concise brainstorming and writing companion.";
@@ -250,6 +323,8 @@ export function useAIChat(
         const completion = await nativeChat(config, history, {
           instructions: systemPrompt,
           context: requestContext,
+          reading,
+          memory: conversationMemory(scopedTurns, sharing?.contextTokens ?? 8192),
           contextTokens: sharing?.contextTokens,
           temperature: config.chatTemp,
           signal: controller.signal,
@@ -264,11 +339,13 @@ export function useAIChat(
                         {
                           id: crypto.randomUUID(),
                           name: tool.name,
-                          args: {},
+                          args: tool.args ?? {},
                           result: tool.result,
-                          status: "done" as const,
+                          status: tool.status ?? "done",
+                          sources: tool.sources,
                         },
                       ],
+                      sources: [...(turn.sources ?? []), ...(tool.sources ?? [])],
                     }
                   : turn,
               ),
@@ -358,6 +435,10 @@ export function useAIChat(
     abortRef.current?.abort();
   }, []);
 
+  const togglePin = useCallback((id: number) => {
+    updateActiveSessionTurns((prev) => prev.map((turn) => turn.id === id ? { ...turn, pinned: !turn.pinned } : turn));
+  }, [updateActiveSessionTurns]);
+
   const clear = useCallback(() => {
     abortRef.current?.abort();
     updateActiveSessionTurns(() => []);
@@ -375,11 +456,13 @@ export function useAIChat(
     activeSessionId,
     activeSession,
     turns,
+    ready: loadedKey === storageKey,
     streaming,
     error,
     send,
     retry,
     stop,
+    togglePin,
     clear,
     newSession,
     selectSession,

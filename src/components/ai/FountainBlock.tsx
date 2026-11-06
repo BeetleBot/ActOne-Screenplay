@@ -1,23 +1,18 @@
 import { useCallback, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
-import { ContentCopyIcon, CheckIcon, PlayArrowIcon } from "../Icons";
+import { ContentCopyIcon, CheckIcon } from "../Icons";
 import { copyToClipboard } from "../../utils";
 
 interface FountainBlockProps {
   fountainText: string;
   sceneNumber?: number;
-  onInsertAtCursor?: (text: string) => void;
-  onApplyToEditor?: (sceneNumber: number, fountainText: string) => void;
 }
 
 export function FountainBlock({
   fountainText,
   sceneNumber,
-  onInsertAtCursor,
-  onApplyToEditor,
 }: FountainBlockProps) {
   const [copied, setCopied] = useState(false);
-  const [applied, setApplied] = useState(false);
 
   const handleCopy = useCallback(() => {
     void copyToClipboard(fountainText).then((success) => {
@@ -27,16 +22,6 @@ export function FountainBlock({
       }
     });
   }, [fountainText]);
-
-  const handleApply = useCallback(() => {
-    if (sceneNumber && onApplyToEditor) {
-      onApplyToEditor(sceneNumber, fountainText);
-    } else {
-      onInsertAtCursor?.(fountainText);
-    }
-    setApplied(true);
-    setTimeout(() => setApplied(false), 2500);
-  }, [sceneNumber, fountainText, onApplyToEditor, onInsertAtCursor]);
 
   return (
     <Box
@@ -88,24 +73,6 @@ export function FountainBlock({
             }}
           >
             {copied ? "Copied" : "Copy"}
-          </Button>
-          <Button
-            size="small"
-            startIcon={applied ? <CheckIcon sx={{ fontSize: 12 }} /> : <PlayArrowIcon sx={{ fontSize: 12 }} />}
-            onClick={handleApply}
-            disabled={applied}
-            sx={{
-              minWidth: 0,
-              py: 0.15,
-              px: 0.75,
-              fontSize: "0.6rem",
-              color: applied ? "success.main" : "primary.main",
-              fontWeight: 600,
-              textTransform: "none",
-              "&:hover": { bgcolor: "action.selected" },
-            }}
-          >
-            {applied ? "Applied ✓" : "Apply to Editor"}
           </Button>
         </Box>
       </Box>

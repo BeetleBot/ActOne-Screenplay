@@ -1,5 +1,5 @@
 import { activateConfiguredApi, reportCredentialError } from "../hooks/usePromptConfig";
-import { EMPTY_CONTEXT } from "../lib/urai";
+import { destination, EMPTY_CONTEXT } from "../lib/urai";
 import { formatIndexProgress, useScreenplayIndex } from "../hooks/useScreenplayIndex";
 
 import { useState, useCallback, useEffect, useRef, UIEvent, useMemo } from "react";
@@ -22,20 +22,20 @@ import { alpha } from "@mui/material/styles";
 import { usePromptConfig, setPromptConfigField, fetchModels } from "../hooks/usePromptConfig";
 import { useApiList } from "../hooks/useApiList";
 import { useAIChat } from "../hooks/useAIChat";
-import { useFile, useEditor, useScriptEditor, useCursor } from "../context";
-import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon, RestartAltIcon, SettingsIcon, MenuBookIcon } from "./Icons";
+import { useFile, useEditor, useCursor, useUI } from "../context";
+import { DeleteIcon, HistoryIcon, AddIcon, CloseIcon, ContentCopyIcon, RestartAltIcon, SettingsIcon, MenuBookIcon, BookmarkIcon } from "./Icons";
 import { AIChatMessage } from "./ai/AIChatMessage";
 import { AIChatComposer } from "./ai/AIChatComposer";
 import { UrAIAbout } from "./ai/UrAIAbout";
-import { LineType } from "../parser";
-import { setRephraseRangeEffect } from "../editor/rephraseState";
+import { parseScreenplay } from "../parser";
+import { locateScene, resolveSceneFocus, sceneRef, screenplaySources, type UrAIRevisionNote, type UrAISceneRef } from "../lib/uraiSources";
+import { getPerScriptSettingArray, updatePerScriptSetting } from "../utils/perScriptSettings";
+import { isNonScreenplay } from "../utils/scriptMode";
+import { readLiveEditorText } from "../editor/pendingEdits";
+import { requestedStatistics, screenplayStatistics } from "../lib/uraiStats";
 import { copyToClipboard } from "../utils";
 
 import "../styles/ai-chat.css";
-
-interface UrAIPanelProps {
-  onInsertAtCursor?: (text: string) => void;
-}
 
 function formatRelativeDate(timestamp: number): string {
   const diff = Date.now() - timestamp;
@@ -46,10 +46,10 @@ function formatRelativeDate(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString();
 }
 
-export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
-  const { parsedDoc, filePath, activeFileId, updateSettings, scriptFileName } = useFile();
-  const { scrollToLine, editorView } = useEditor();
-  const { replaceSceneText } = useScriptEditor();
+export function UrAIPanel() {
+  const { parsedDoc, filePath, activeFileId, updateSettings, scriptFileName, rawText, scripts, activeScriptIndex } = useFile();
+  const { scrollToLine } = useEditor();
+  const { paperSize } = useUI();
   const { activeLineNumber } = useCursor();
   const promptConfig = usePromptConfig();
 
@@ -57,6 +57,9 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
   const [historyAnchorEl, setHistoryAnchorEl] = useState<null | HTMLElement>(null);
   const [modelAnchorEl, setModelAnchorEl] = useState<null | HTMLElement>(null);
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState<Omit<UrAIRevisionNote, "id"> | null>(null);
+  const [noteError, setNoteError] = useState("");
 
   const apiList = useApiList();
 
@@ -70,32 +73,60 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
     loadModels();
   }, [loadModels, promptConfig.ollamaUrl]);
 
-  const getParsedDoc = useCallback(() => {
-    return parsedDoc || null;
-  }, [parsedDoc]);
-
-  const handleOpenXray = useCallback(() => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("actone:open-xray"));
-    }
-  }, []);
-
   const [contextTokens, setContextTokens] = useState(8192);
-  const [allowed, setAllowed] = useState(false);
+  const [allowedKey, setAllowedKey] = useState<string | null>(null);
+  const accessKey = JSON.stringify([activeFileId, filePath, scriptFileName, destination(promptConfig)]);
+  const allowed = allowedKey === accessKey;
   const [pending, setPending] = useState<{ kind: "index" | "chat"; text?: string } | null>(null);
   const index = useScreenplayIndex(parsedDoc, promptConfig, (filePath || activeFileId) + "::" + scriptFileName);
-  useEffect(() => { setAllowed(false); setPending(null); }, [activeFileId, scriptFileName, promptConfig.provider, promptConfig.apiEndpoint, promptConfig.ollamaUrl]);
+  useEffect(() => {
+    setAllowedKey(null);
+    setPending(null);
+    setNoteDraft(null);
+    setNotesOpen(false);
+    setNoteError("");
+  }, [accessKey]);
+  const liveDocument = () => {
+    if (isNonScreenplay(scripts[activeScriptIndex], filePath)) return null;
+    const text = readLiveEditorText(activeFileId, scriptFileName) ?? rawText;
+    return parsedDoc.screenplayText === text ? parsedDoc : parseScreenplay(text, paperSize);
+  };
+  const liveSources = () => {
+    const doc = liveDocument();
+    return doc ? screenplaySources(doc) : [];
+  };
+  const resolveReading = (query: string, previous: UrAISceneRef[]) => {
+    const doc = liveDocument();
+    const scenes = doc ? screenplaySources(doc) : [];
+    const statisticsCategory = requestedStatistics(query);
+    const focus = resolveSceneFocus(query, scenes, activeLineNumber + 1, statisticsCategory ? [] : previous);
+    if (focus.error) return { error: focus.error };
+    const review = /\b(?:setup|payoff|foreshadow\w*|plant(?:ed)?)\b/i.test(query) ? "setup"
+      : /\b(?:continuity|knows?|knew|learn\w*|finds? out|contradict\w*)\b/i.test(query) ? "continuity" : undefined;
+    const candidateIds = review || !focus.ids.length ? index.suggest(query, scenes).filter((id) => !focus.ids.includes(id)) : [];
+    const showSource = focus.ids.length === 1 && /^(?:please\s+)?(?:read|show)\s+(?:me\s+)?(?:the\s+)?(?:scenes?\s+#?\d+[a-z]*#?|\d+(?:st|nd|rd|th)\s+scene|(?:this|current|next|previous) scene)[.!?]?$/i.test(query.trim());
+    return { scenes, focusIds: focus.ids, showSource, candidateIds, review, statisticsCategory, statistics: doc ? screenplayStatistics(doc, scenes) : undefined } as const;
+  };
   const chat = useAIChat(
-    getParsedDoc,
     filePath,
-    activeFileId + "::" + scriptFileName,
-    activeLineNumber,
-    replaceSceneText,
-    updateSettings,
-    handleOpenXray,
+    activeFileId,
     scriptFileName,
-    { context: EMPTY_CONTEXT, contextTokens, resolveContext: allowed ? index.retrieve : undefined },
+    { context: EMPTY_CONTEXT, contextTokens, resolveReading: allowed ? resolveReading : undefined },
   );
+
+  const notes = getPerScriptSettingArray<UrAIRevisionNote>("uraiNotes", parsedDoc.settings, scriptFileName);
+  const changeNotes = (change: (previous: UrAIRevisionNote[]) => UrAIRevisionNote[]) => updateSettings((previous) => ({
+    ...previous,
+    ...updatePerScriptSetting(previous, "uraiNotes", scriptFileName, change(getPerScriptSettingArray("uraiNotes", previous, scriptFileName))),
+  }));
+  const jumpToScene = (reference: UrAISceneRef) => {
+    const scene = locateScene(liveSources(), reference);
+    if (scene) scrollToLine(scene.startLine - 1);
+  };
+  const startNote = (text: string, reference: UrAISceneRef, kind: UrAIRevisionNote["kind"] = "revision") => {
+    setNoteError("");
+    setNoteDraft({ text, scene: sceneRef(reference), kind });
+  };
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const pinnedRef = useRef(true);
@@ -111,13 +142,24 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
     if (el && pinnedRef.current) el.scrollTop = el.scrollHeight;
   }, [chat.turns]);
 
-  const handleSend = useCallback(
-    (text: string) => {
-      if (!allowed) { setPending({ kind: "chat", text }); return; }
-      void chat.send(text, text);
-    },
-    [chat, allowed],
-  );
+  const handleSend = (text: string) => {
+    setNoteError("");
+    if (/^(?:please\s+)?(?:save|add|track|pin)\b.*\b(?:note|setup|payoff)\b/i.test(text)) {
+      const response = [...chat.turns].reverse().find((turn) => turn.role === "assistant" && turn.content);
+      const scenes = liveSources();
+      const target = resolveSceneFocus(text, scenes, activeLineNumber + 1, response?.focusSources);
+      const reference = target.ids.length === 1 ? scenes.find((scene) => scene.id === target.ids[0]) : undefined;
+      if (!reference) {
+        setNoteError(target.error ?? "Specify one scene to attach the note to.");
+        return;
+      }
+      const kind = /\b(?:setup|payoff)\b/i.test(text) ? "setup" : "revision";
+      startNote(/\b(?:that|this)\b/i.test(text) ? response?.content ?? "" : "", reference, kind);
+      return;
+    }
+    if (!allowed) { setPending({ kind: "chat", text }); return; }
+    void chat.send(text, text);
+  };
 
   useEffect(() => {
     if (!allowed || !pending) return;
@@ -148,68 +190,6 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
     };
   }, [handleSend]);
 
-  const handleInsert = useCallback(
-    (fountainText: string) => {
-      onInsertAtCursor?.(fountainText);
-    },
-    [onInsertAtCursor],
-  );
-
-  const handleApplyToEditor = useCallback(
-    (sceneNumber: number, fountainText: string) => {
-      if (!parsedDoc?.lines) return;
-
-      const lines = parsedDoc.lines;
-      let sceneCount = 0;
-      let startLineIdx = -1;
-
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].type === LineType.heading) {
-          sceneCount++;
-          if (sceneCount === sceneNumber) {
-            startLineIdx = i;
-            break;
-          }
-        }
-      }
-
-      if (startLineIdx === -1) return;
-
-      scrollToLine(startLineIdx);
-
-      if (editorView) {
-        try {
-          const doc = editorView.state.doc;
-          const fromPos = doc.line(startLineIdx + 1).from;
-
-          let endLineIdx = lines.length - 1;
-          for (let i = startLineIdx + 1; i < lines.length; i++) {
-            if (lines[i].type === LineType.heading) {
-              endLineIdx = i - 1;
-              break;
-            }
-          }
-          const toPos = doc.line(endLineIdx + 1).to;
-
-          editorView.dispatch({ effects: setRephraseRangeEffect.of({ from: fromPos, to: toPos }) });
-
-          setTimeout(() => {
-            replaceSceneText(sceneNumber, fountainText);
-            setTimeout(() => {
-              try {
-                editorView.dispatch({ effects: setRephraseRangeEffect.of(null) });
-              } catch {}
-            }, 800);
-          }, 500);
-        } catch {
-          replaceSceneText(sceneNumber, fountainText);
-        }
-      } else {
-        replaceSceneText(sceneNumber, fountainText);
-      }
-    },
-    [parsedDoc, scrollToLine, replaceSceneText, editorView],
-  );
 
   const activeModelLabel = useMemo(() => {
     if (promptConfig.provider === "none") return "No model selected";
@@ -285,6 +265,11 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
               <HistoryIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
+          <Tooltip title="Scene notes" placement="bottom">
+            <IconButton size="small" aria-label="Scene notes" onClick={() => setNotesOpen(true)}>
+              <BookmarkIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Clear current chat" placement="bottom">
             <span>
               <IconButton size="small" onClick={() => chat.clear()} disabled={chat.turns.length === 0}>
@@ -309,7 +294,7 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
       >
         <Typography variant="subtitle2" sx={{ fontWeight: 650, mb: 1 }}>Chat settings</Typography>
         <Typography variant="body2" sx={{ mb: 1 }}>Screenplay access: {allowed ? "Allowed for this document and provider" : "Ask before reading"}</Typography>
-        {allowed && <Button size="small" onClick={() => { index.stop(); chat.stop(); setAllowed(false); }}>Revoke access</Button>}
+        {allowed && <Button size="small" onClick={() => { index.stop(); chat.stop(); setAllowedKey(null); }}>Revoke access</Button>}
         <Typography variant="caption" sx={{ display: "block" }}>{(index.progress ? formatIndexProgress(index.progress) : null) || (index.ready ? "Index ready" : "Not indexed or changes need indexing")}</Typography>
         {index.error && <Typography color="error" variant="caption">{index.error}</Typography>}
         {index.progress && <Button onClick={index.stop}>Pause indexing</Button>}
@@ -319,7 +304,58 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
       <Dialog open={Boolean(pending) && !allowed} onClose={() => setPending(null)} maxWidth="xs" fullWidth>
         <DialogTitle>Allow UrAI to read this screenplay?</DialogTitle>
         <DialogContent>UrAI can index this document and automatically read relevant scenes to answer your questions. Text is sent to {promptConfig.provider === "ollama" ? promptConfig.ollamaUrl : promptConfig.apiEndpoint}. Permission lasts until you switch documents or providers, revoke access, or close this panel. Index summaries are saved locally.</DialogContent>
-        <DialogActions><Button onClick={() => { const text = pending?.text; setPending(null); if (text) void chat.send(text, text); }}>Don't allow</Button><Button onClick={() => setAllowed(true)}>Allow</Button></DialogActions>
+        <DialogActions><Button onClick={() => { const text = pending?.text; setPending(null); if (text) void chat.send(text, text); }}>Don't allow</Button><Button onClick={() => setAllowedKey(accessKey)}>Allow</Button></DialogActions>
+      </Dialog>
+      <Dialog open={Boolean(noteDraft)} onClose={() => setNoteDraft(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Save a note for scene {noteDraft?.scene.label}</DialogTitle>
+        <DialogContent>
+          <TextField
+            select fullWidth label="Note type" value={noteDraft?.kind ?? "revision"} sx={{ mt: 1, mb: 2 }}
+            onChange={(event) => setNoteDraft((draft) => draft && { ...draft, kind: event.target.value as UrAIRevisionNote["kind"] })}
+          >
+            <MenuItem value="revision">Revision note</MenuItem>
+            <MenuItem value="setup">Setup to track</MenuItem>
+          </TextField>
+          <TextField
+            fullWidth multiline minRows={3} maxRows={12} label="Scene note" value={noteDraft?.text ?? ""}
+            onChange={(event) => setNoteDraft((draft) => draft && { ...draft, text: event.target.value })}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNoteDraft(null)}>Cancel</Button>
+          <Button disabled={!noteDraft?.text.trim()} onClick={() => {
+            if (!noteDraft?.text.trim()) return;
+            const note = { ...noteDraft, text: noteDraft.text.trim(), id: crypto.randomUUID() };
+            changeNotes((previous) => [note, ...previous]);
+            setNoteDraft(null);
+          }}>Save note</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={notesOpen} onClose={() => setNotesOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Scene notes</DialogTitle>
+        <DialogContent>
+          {!notes.length && <Typography variant="body2">Save a revision note or an unresolved setup from an UrAI response.</Typography>}
+          {notes.map((note) => (
+            <Box key={note.id} sx={{ mb: 2 }}>
+              <Typography variant="subtitle2">{note.kind === "setup" ? "Setup to track" : "Revision note"}</Typography>
+              <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{note.text}</Typography>
+              <Button size="small" disabled={!locateScene(liveSources(), note.scene)} onClick={() => { jumpToScene(note.scene); setNotesOpen(false); }}>Scene {note.scene.label}</Button>
+              <Button size="small" disabled={chat.streaming || !locateScene(liveSources(), note.scene)} onClick={() => {
+                const scene = locateScene(liveSources(), note.scene);
+                if (!scene) return;
+                setNotesOpen(false);
+                const prompt = `For the scene at position ${scene.id}, help me ${note.kind === "setup" ? "trace this setup and its payoff" : "work through this revision note"}:\n${note.text}`;
+                // This button explicitly attaches the note to the next request.
+                if (!allowed) setPending({ kind: "chat", text: prompt });
+                else void chat.send(prompt, prompt);
+              }}>Discuss in UrAI</Button>
+              <Button size="small" onClick={() => changeNotes((previous) => previous.filter(({ id }) => id !== note.id))}>
+                {note.kind === "setup" ? "Mark resolved" : "Delete note"}
+              </Button>
+            </Box>
+          ))}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setNotesOpen(false)}>Close</Button></DialogActions>
       </Dialog>
       {/* History Menu */}
       <Menu
@@ -442,12 +478,15 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
               key={turn.id}
               turn={turn}
               isStreaming={chat.streaming && index === chat.turns.length - 1 && turn.role === "assistant"}
-              onInsertAtCursor={handleInsert}
-              onApplyToEditor={handleApplyToEditor}
+              onPin={() => chat.togglePin(turn.id)}
+              onSource={jumpToScene}
+              onSaveNote={(source) => startNote(turn.content, source)}
             />
           ))}
+          {noteError && <Typography role="alert" variant="body2" color="error">{noteError}</Typography>}
           {chat.error && (
             <Box
+              role="alert"
               sx={{
                 display: "flex",
                 alignItems: "flex-start",
@@ -496,43 +535,30 @@ export const UrAIPanel: React.FC<UrAIPanelProps> = ({ onInsertAtCursor }) => {
           <Box sx={{ pt: 0.5 }}>
             <AIChatComposer
               streaming={chat.streaming}
-              disabled={promptConfig.provider === "none"}
+              disabled={!chat.ready || promptConfig.provider === "none"}
               placeholder={parsedDoc.screenplayText ? "Message UrAI..." : "Open a screenplay first..."}
               onSend={handleSend}
               onStop={chat.stop}
             />
           </Box>
 
-          {/* Single Model Pill */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 2, pt: 0.25, pb: 0.75 }}>
-            <AddIcon sx={{ fontSize: 12, color: "text.secondary", opacity: 1 }} />
-            <Typography
-              onClick={(e) => {
-                loadModels();
-                setModelAnchorEl(e.currentTarget);
-              }}
-              variant="caption"
-              sx={{
-                cursor: "pointer",
-                fontSize: "0.7rem",
-                fontWeight: 500,
-                color: "text.secondary",
-                userSelect: "none",
-                "&:hover": { color: "text.primary" },
-              }}
-            >
-              {activeModelLabel}
-            </Typography>
-            <Box
-              onClick={(e) => {
-                loadModels();
-                setModelAnchorEl(e.currentTarget);
-              }}
-              component="span"
-              sx={{ cursor: "pointer", fontSize: "0.55rem", color: "text.secondary", opacity: 0.6 }}
-            >
-              ^
-            </Box>
+          <Box sx={{ px: 2, pt: 0.25, pb: 0.75 }}>
+            <Tooltip title={activeModelLabel}>
+              <Button
+                size="small"
+                aria-label="Choose AI model"
+                aria-haspopup="menu"
+                aria-expanded={Boolean(modelAnchorEl)}
+                onClick={(event) => {
+                  loadModels();
+                  setModelAnchorEl(event.currentTarget);
+                }}
+                sx={{ maxWidth: "100%", minWidth: 0, color: "text.secondary", textTransform: "none" }}
+              >
+                <Typography variant="caption" noWrap>{activeModelLabel.split("/").at(-1)}</Typography>
+                <Box component="span" aria-hidden="true" sx={{ ml: 0.75 }}>▾</Box>
+              </Button>
+            </Tooltip>
           </Box>
         </Box>
       </Box>

@@ -112,7 +112,8 @@ export const CrossWindowTourCard: React.FC<CrossWindowTourCardProps> = ({
     step.targetId === "quick-settings";
 
   const isStatusTarget = step.targetId === "status-bar" ||
-    step.targetId?.startsWith("status-");
+    step.targetId?.startsWith("status-") ||
+    step.targetId === "timeline-view";
 
   if (dragPosition) {
     cardStyle.left = dragPosition.x;
@@ -132,10 +133,14 @@ export const CrossWindowTourCard: React.FC<CrossWindowTourCardProps> = ({
       cardStyle.top = Math.max(16, Math.min(targetRect.top, maxAllowedTop));
     } else if (isStatusTarget) {
       cardStyle.bottom = (window.innerHeight - targetRect.top) + 8;
-      if (step.targetId === "status-file-name") {
+      const cardWidth = step.cardWidth ?? 300;
+      if (step.targetId === "status-timeline-options" || step.cardPosition === "left") {
+        cardStyle.left = Math.max(16, targetRect.left - cardWidth - 16);
+      } else if (step.targetId === "status-file-name") {
         cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160 + 300);
       } else {
-        cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160);
+        const centerLeft = targetRect.left + (targetRect.width / 2) - (cardWidth / 2);
+        cardStyle.left = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, centerLeft));
       }
     } else if (step.targetId === "header-bar") {
       cardStyle.left = Math.max(16, targetRect.left + (targetRect.width / 2) - 160);

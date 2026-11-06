@@ -10,17 +10,16 @@ A dedicated **Tutorials Window** component (`src/components/TutorialsWindow.tsx`
 - **Command Palette** → "Interactive Tutorial" command
 - **Programmatically** via `openTutorialsWindow()` from `useModalWindows` hook
 
-The window is rendered either as a standalone Tauri window (`?modal=tutorials`, 500×400, not resizable) or as a MUI Dialog modal inside the editor window. It displays 4 tour cards (App Tour, Fountain Syntax, Advanced Syntax, Theming) with descriptions and a "Start" button for each.
+The window is rendered either as a standalone Tauri window (`?modal=tutorials`, 500×400, not resizable) or as a MUI Dialog modal inside the editor window. It displays 3 tour cards (App Tour, Fountain Syntax, Advanced Syntax) with descriptions and a "Start" button for each.
 
 ---
 
 ## Overview
 
-The onboarding system consists of four paths:
-1. **🧭 App Tour (`ui`)**: An end-to-end walkthrough of the workspace — Activity Bar, Project Panel, Landing Pad & Document Types, Header, Editor Workspace, and Status Bar — finishing with hands-on Command Palette discovery.
+The onboarding system consists of three paths:
+1. **🧭 App Tour (`ui`)**: An end-to-end walkthrough of the workspace — Activity Bar, Project Panel, Landing Pad & Document Types (Screenplay, Prose, and Visual Canvas), Header tabs, Status Bar statistics, Multi-step Timeline (interactive playhead scrubbing, zooming, and filtering options) — finishing with hands-on Command Palette discovery.
 2. **✍ Basic Fountain Syntax (`fountain`)**: A hands-on sandbox tutorial instructing users to type scene headings, characters, dialogue, parentheticals, transitions, and camera shots.
 3. **🎨 Advanced Syntax (`advanced`)**: Sections, subsections, synopses, scene colours, storyline tags, and markers — six production-ready Fountain features. Users type each syntax in a blank sandbox (like the Basic Fountain tour), then explore a 6-scene demo via the Outline navigator and Markers pane.
-4. **🎨 Theming Tour (`theming`)**: Opens the Bee Detective sample in the main window and the Theme Manager window with an embedded tour card. Covers picking a theme, creating a custom one, and exporting/importing .actheme files.
 
 ---
 
@@ -37,7 +36,7 @@ Cards can also be **clicked and dragged** from their header. Dragging raises car
 ### 3. Verification & Live Validation
 For interactive writing steps, the tutorial reads CodeMirror's document state in real-time to validate user inputs against target regex rules. The "Next" button only unlocks once the typing task is successfully matched.
 
-For DOM-based steps (e.g., the Command Palette tour), steps can declare a `detect()` function that polls the DOM every 200ms. When the condition passes (e.g., `[data-tour-palette]` appears because the palette opened), the step completes — and steps flagged `autoAdvance` move forward without requiring a "Next" click.
+For DOM-based interactive steps (such as opening the Command Palette or scrubbing the screenplay timeline), steps declare a `detect()` function that polls the DOM. The "Next" button remains locked until the user completes the action (e.g. clicking or scrubbing along the timeline tracks).
 
 Steps can also opt out of the spotlight mask (`noMask`) so floating UI like the Command Palette stays fully visible and interactive, override the card position (`cardPosition`), and customize the "Next" button label (`nextLabel`).
 
@@ -63,4 +62,3 @@ All tours launch inside a temporary, virtual workspace sandbox. When exiting or 
 *   **Command Palette:** The `Interactive Tutorial` command is registered under the Help section of the command registry.
 *   **Container Component:** `App.tsx` handles the initial `?action=tutorial` query param, instantly creating the sandbox file in memory on mount to prevent rendering deadlocks, then mounts `<OnboardingTour>`.
 *   **Main Component:** `src/components/OnboardingTour.tsx` contains the tour definitions (`UI_STEPS`, `FOUNTAIN_STEPS`, `ADVANCED_STEPS`), drag event listeners, coordinate polling hooks, SVG mask elements, and typography layout.
-*   **Theme Manager Tour:** The `"theming"` tour is rendered standalone inside `ThemeManagerWindow.tsx` when opened with `?modal=theme-manager&tour=theming`. It uses `CrossWindowTourCard` directly with its own step polling effect, rather than going through `OnboardingTour`. The main window loads the Bee Detective sample and opens the Theme Manager, but does not mount `OnboardingTour` for theming.

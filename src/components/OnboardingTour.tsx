@@ -1,12 +1,12 @@
 import { decodeProject } from "../utils/fileCore";
 import React, { useState, useEffect, useRef } from "react";
-import { useEditor, useFile } from "../context";
+import { useEditor, useFile, useUI } from "../context";
 import { CrossWindowTourCard } from "./CrossWindowTourCard";
 import { unpackActoneBundle } from "../utils";
 import type { TourStep } from "../types/tour";
 
 interface OnboardingTourProps {
-  activeTour: "ui" | "fountain" | "advanced" | "theming" | null;
+  activeTour: "ui" | "fountain" | "advanced" | null;
   onCloseTour: () => void;
 }
 
@@ -18,7 +18,7 @@ export const UI_STEPS: TourStep[] = [
   {
     targetId: "landing-pad",
     title: "The Landing Pad",
-    description: "When starting a fresh project, ActOne displays the Landing Pad instead of a blank editor. From here, choose 'Create a new script (.fountain)' for screenplays with real-time formatting, or 'Create a new prose (.md)' for treatments, character bios, and series bibles.",
+    description: "When starting a fresh project, ActOne displays the Landing Pad instead of a blank editor. From here, choose 'New Screenplay (.fountain)' for screenplays with real-time formatting, 'New Prose Document (.md)' for treatments, character bios, and series bibles, or 'New Visual Canvas (.canvas)' for visual beat boards and story mapping.",
   },
   {
     targetId: "activity-bar",
@@ -113,9 +113,29 @@ export const UI_STEPS: TourStep[] = [
     description: "Keep an eye on live statistics: Scene count, Word count, and Estimated Pages for screenplays (or Word count for prose documents).",
   },
   {
-    targetId: "status-xray",
-    title: "Status Bar - X-Ray Deep Analysis",
-    description: "The bar chart icon opens the X-Ray analysis window. Explore your story through scene rhythm, character voices, shared scenes and optional revision prompts. Export the complete analysis as a PDF.",
+    targetId: "timeline-view",
+    title: "The Screenplay Timeline",
+    description: "Docked right above the status bar, the Timeline provides a continuous visual overview of your entire screenplay. Every colored segment corresponds to an individual scene in your script, sized proportionally to its length in your draft.",
+  },
+  {
+    targetId: "timeline-view",
+    title: "Playhead & Scrubbing",
+    description: "The vertical playhead tracks your current cursor position in real time. Click or drag (scrub) anywhere along the timeline tracks to jump straight to that scene in the editor.",
+    taskInstructions: "Click or drag along the timeline tracks to scrub to a scene.",
+    detect: () => document.body.dataset.timelineScrubbed === "true",
+  },
+  {
+    targetId: "timeline-view",
+    title: "Timeline Zoom & Pan",
+    description: "For long scripts with dozens of scenes, hold Ctrl (or Alt) while scrolling your mouse wheel over the timeline to smoothly zoom in up to 15x. Standard scrolling or trackpad gestures pan horizontally across your story.",
+  },
+  {
+    targetId: "status-timeline-options",
+    title: "Timeline Options & Filtering",
+    description: "Click 'Timeline Options' in the status bar to customize the timeline: toggle Acts & Sequences section tracks, scene numbers, or scene colors, and isolate scenes by Character, Location, Time of Day, INT/EXT setting, or Production Markers.",
+    noMask: true,
+    cardPosition: "left",
+    cardWidth: 300,
   },
   {
     title: "Where Did the Menu Go?",
@@ -372,50 +392,6 @@ export const ADVANCED_STEPS: TourStep[] = [
   },
 ];
 
-export const THEMING_STEPS: TourStep[] = [
-  {
-    title: "Welcome to Themes",
-    description: "The Theme Manager lets you switch between built-in themes, create your own, and export/import .actheme files. Let's walk through each feature.",
-    noMask: true,
-    cardPosition: "center",
-    cardWidth: 260,
-    window: "theme-manager",
-  },
-  {
-    title: "Pick a Theme",
-    description: "Browse the theme list on the left. Each theme changes the app's entire color scheme. Try clicking a different theme to see the preview update in real time.",
-    taskInstructions: "Click any theme from the list on the left to select it.",
-    noMask: true,
-    cardPosition: "right",
-    cardWidth: 260,
-    window: "theme-manager",
-  },
-  {
-    title: "Create Custom Theme",
-    description: "Scroll down the theme list on the left. Near the bottom, in the CUSTOM THEMES section, click the Create button to build your own theme. You'll see color pickers for each UI element — pick any colors you like.",
-    taskInstructions: "Scroll down and click the Create button to open the custom theme form.",
-    noMask: true,
-    cardPosition: "right",
-    cardWidth: 260,
-    window: "theme-manager",
-  },
-  {
-    title: "Export & Import",
-    description: "After saving a custom theme, use the Export button (download icon) next to it to save as a .actheme file — share themes or back them up. Use the Import button at the top of the Custom Themes section to load a .actheme file from disk. .actheme files are plain JSON and can be edited in any text editor.",
-    noMask: true,
-    cardPosition: "center",
-    cardWidth: 260,
-    window: "theme-manager",
-  },
-  {
-    title: "Themes Complete!",
-    description: "You've learned how to pick themes, create custom ones, and work with .actheme files. Happy theming!",
-    noMask: true,
-    cardPosition: "center",
-    cardWidth: 260,
-    window: "theme-manager",
-  },
-];
 
 export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   activeTour,
@@ -423,6 +399,8 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 }) => {
   const { editorView } = useEditor();
   const { importAsActoneProject } = useFile();
+  const { showTimeline, setShowTimeline } = useUI();
+  const originalShowTimelineRef = useRef<boolean | null>(null);
   const [activeStep, setActiveStepState] = useState(0);
   const [taskComplete, setTaskComplete] = useState(false);
   const sandboxCreated = useRef(false);
@@ -430,15 +408,32 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
   const steps = activeTour === "fountain" 
     ? FOUNTAIN_STEPS 
-    : (activeTour === "advanced" ? ADVANCED_STEPS : (activeTour === "theming" ? THEMING_STEPS : UI_STEPS));
+    : (activeTour === "advanced" ? ADVANCED_STEPS : UI_STEPS);
   const currentStep = steps[activeStep];
   const tourName = activeTour === "fountain" 
     ? "Fountain Syntax" 
-    : (activeTour === "advanced" ? "Advanced Syntax" : (activeTour === "theming" ? "Themes" : "App Tour"));
+    : (activeTour === "advanced" ? "Advanced Syntax" : "App Tour");
 
   const setActiveStep = (step: number | ((prev: number) => number)) => {
     setActiveStepState(step);
   };
+
+  useEffect(() => {
+    if (activeTour === "ui") {
+      if (originalShowTimelineRef.current === null) {
+        originalShowTimelineRef.current = showTimeline;
+      }
+      setShowTimeline(true);
+    }
+  }, [activeTour, showTimeline, setShowTimeline]);
+
+  useEffect(() => {
+    return () => {
+      if (originalShowTimelineRef.current === false) {
+        setShowTimeline(false);
+      }
+    };
+  }, [setShowTimeline]);
 
   useEffect(() => {
     setActiveStepState(0);
@@ -709,18 +704,33 @@ Another day, another case.
     return () => clearInterval(interval);
   }, [activeTour, activeStep, currentStep, editorView]);
 
-  // DOM detection polling (e.g., Command Palette tour)
+  // DOM detection polling (e.g., Command Palette tour, Timeline scrubbing)
   useEffect(() => {
     if (!currentStep?.detect) return;
+
+    if (currentStep.taskInstructions) {
+      document.body.dataset.timelineScrubbed = "false";
+    }
+
+    const onTimelinePointerDown = () => {
+      document.body.dataset.timelineScrubbed = "true";
+      setTaskComplete(true);
+    };
+
+    const timelineEl = document.getElementById("timeline-view");
+    timelineEl?.addEventListener("pointerdown", onTimelinePointerDown);
 
     setTaskComplete(false);
     const interval = setInterval(() => {
       if (currentStep.detect!()) {
         setTaskComplete(true);
       }
-    }, 200);
+    }, 150);
 
-    return () => clearInterval(interval);
+    return () => {
+      timelineEl?.removeEventListener("pointerdown", onTimelinePointerDown);
+      clearInterval(interval);
+    };
   }, [activeStep, currentStep, steps.length]);
 
   // Shift+Enter to advance the tour

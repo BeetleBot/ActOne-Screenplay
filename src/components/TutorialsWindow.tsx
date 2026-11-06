@@ -10,7 +10,7 @@ interface TutorialItem {
   id: string;
   title: string;
   description: string;
-  tourType?: "ui" | "fountain" | "advanced" | "theming";
+  tourType?: "ui" | "fountain" | "advanced";
   comingSoon?: boolean;
 }
 
@@ -25,8 +25,8 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
     id: "ui",
     label: "UI",
     tutorials: [
-      { id: "basic-ui", title: "Basic UI", description: "Explore every part of the workspace: Activity Bar, Project Panel, Landing Pad & Document Types, Header tabs, Editor, and Status Bar.", tourType: "ui" },
-      { id: "theming", title: "Theming", description: "Customize colors and appearance to match your workflow.", tourType: "theming" },
+      { id: "basic-ui", title: "Basic UI", description: "Explore every part of the workspace: Activity Bar, Project Panel, Landing Pad & Document Types, Header tabs, Editor, Timeline, and Status Bar.", tourType: "ui" },
+
     ],
   },
   {
@@ -84,7 +84,7 @@ export const TutorialsWindow: React.FC<TutorialsWindowProps> = ({ isModal = fals
     document.body.classList.toggle("dark-theme", currentThemeConfig.isDark);
   }, [currentThemeConfig.isDark]);
 
-  const handleStartTutorial = async (tourType: "ui" | "fountain" | "advanced" | "theming") => {
+  const handleStartTutorial = async (tourType: "ui" | "fountain" | "advanced") => {
     localStorage.setItem("pending-tutorial-type", tourType);
     localStorage.setItem("pending-action", "tutorial");
 

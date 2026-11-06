@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { FountainDocument } from "../parser";
 import type { PromptConfig } from "./usePromptConfig";
-import { nativeChat, screenplayContext, EMPTY_CONTEXT, destination, type UrAIContext } from "../lib/urai";
+import { nativeChat, screenplayContext, EMPTY_CONTEXT, destination } from "../lib/urai";
+import type { UrAISource } from "../lib/uraiSources";
 interface Entry { source: string; summary: string }
 export function formatIndexProgress(progress: string): string {
   const scene = progress.match(/Scene\s+(\d+)\s+of\s+(\d+)/i);
@@ -38,18 +39,15 @@ export function useScreenplayIndex(doc: FountainDocument, config: PromptConfig, 
     } catch (failure) { if (!controller.signal.aborted) setError(String(failure)); }
     finally { if (active.current === controller) { active.current = null; setProgress(null); } }
   };
-  const retrieve = (query: string): UrAIContext => {
-    const explicit = [...query.matchAll(/\bscenes?\s*#?\s*(\d+)/gi)].map(match => Number(match[1]));
-    for (const range of query.matchAll(/\bscenes?\s*#?\s*(\d+)\s*(?:-|to)\s*#?\s*(\d+)/gi)) {
-      const first = Number(range[1]), last = Number(range[2]);
-      for (const scene of scenes) if (scene.id >= Math.min(first, last) && scene.id <= Math.max(first, last)) explicit.push(scene.id);
-    }
-    const words = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(word => word.length > 2 && !["the", "this", "that", "can", "you", "read", "screenplay", "script", "about", "what", "does", "with", "have", "and"].includes(word));
-    const ranked = scenes.map(scene => ({ scene, score: words.filter(word => (scene.heading + " " + (entries[scene.id]?.source === scene.text ? entries[scene.id].summary : scene.text)).toLowerCase().includes(word)).length })).sort((a,b) => b.score - a.score);
-    const selected = explicit.length ? scenes.filter(scene => explicit.includes(scene.id)) : ranked.filter(item => item.score > 0).slice(0, 3).map(item => item.scene);
-    if (selected.length) return { scope: "full", scenes: selected, sceneIds: [], selection: "" };
-    const summaries = scenes.map(scene => ({ ...scene, text: entries[scene.id]?.source === scene.text ? "INDEX SUMMARY ONLY (not the original scene): " + entries[scene.id].summary : "Not indexed. Ask for this scene explicitly." }));
-    return { scope: "full", scenes: summaries, sceneIds: [], selection: "" };
+  const suggest = (query: string, sources: UrAISource[]) => {
+    const words = [...new Set(query.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu))].filter((word) =>
+      !["the", "this", "that", "can", "you", "read", "screenplay", "script", "about", "what", "does", "with", "have", "and", "scene", "scenes", "why", "how", "when", "before", "after", "find", "compare", "happens", "happen"].includes(word));
+    return sources.map((source) => {
+      const entry = entries[source.id];
+      const text = `${source.text} ${entry?.source === source.text ? entry.summary : ""}`.toLowerCase();
+      const terms = new Set(text.match(/[\p{L}\p{N}]+/gu));
+      return { id: source.id, score: words.filter((word) => terms.has(word)).length };
+    }).filter(({ score }) => score > 0).sort((a, b) => b.score - a.score).slice(0, 5).map(({ id }) => id);
   };
-  return { ready, progress, error, run, retrieve, stop: () => active.current?.abort() };
+  return { ready, progress, error, run, suggest, stop: () => active.current?.abort() };
 }
