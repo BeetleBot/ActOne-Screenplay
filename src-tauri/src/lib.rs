@@ -1181,6 +1181,7 @@ pub fn run() {
             urai::storage::urai_load_sessions,
             urai::storage::urai_save_sessions,
             urai::urai_chat,
+            urai::focus::urai_resolve_scene_focus,
             urai::urai_transform,
             urai::urai_cancel,
             spellcheck::spellcheck_init,

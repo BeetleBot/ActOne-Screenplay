@@ -131,7 +131,7 @@ App
               TitlePageEditorModal
 ```
 
-The right pane can display search or UrAI. UrAI is provided by `UrAIPanel` in `Workspace` and is not a separate Tauri window. (Ambient audio was removed in v0.4.19 — commit `ed45a8b`.)
+The right pane can display search or UrAI. `Workspace` mounts `UrAIChatPane`, which connects assistant-ui to the Rust chat bridge through `useAIChat`.
 
 ## State Domains
 

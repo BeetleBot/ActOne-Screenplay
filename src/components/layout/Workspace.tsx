@@ -15,7 +15,7 @@ import { RightPane } from "../RightPane";
 import { ScriptEditor } from "../ScriptEditor";
 const CanvasEditor = lazy(() => import("../CanvasEditor").then(module => ({ default: module.CanvasEditor })));
 import { ProseEditor } from "../ProseEditor";
-import { UrAIPanel } from "../UrAIPanel";
+import { UrAIChatPane } from "../ai/UrAIChatPane";
 import Typography from "@mui/material/Typography";
 import { DescriptionIcon, MenuBookIcon, UploadIcon } from "../Icons";
 const StructureImportModal = lazy(() => import("../StructureImportModal").then(module => ({ default: module.StructureImportModal })));
@@ -642,9 +642,9 @@ export const Workspace = React.memo<WorkspaceProps>(({
           isOpen={activeRightPane === "prompt"}
           onClose={() => setActiveRightPane(null)}
           errorBoundaryName="prompt-pane"
-          ariaLabel="UrAI"
+          ariaLabel="UrAI Chat"
         >
-          {activeRightPane === "prompt" && <UrAIPanel />}
+          {activeRightPane === "prompt" && <UrAIChatPane />}
         </RightPane>
       )}
     </Box>

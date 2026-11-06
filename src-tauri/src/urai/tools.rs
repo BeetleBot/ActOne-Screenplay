@@ -40,6 +40,9 @@ pub struct Dialogue {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Reading {
+    pub index_key: Option<String>,
+    #[serde(default)]
+    pub index_requested: bool,
     pub scenes: Vec<Source>,
     pub focus_ids: Vec<usize>,
     #[serde(default)]

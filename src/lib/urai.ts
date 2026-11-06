@@ -4,6 +4,7 @@ import type { PromptConfig } from "../hooks/usePromptConfig";
 import type { FountainDocument } from "../parser";
 import { buildScreenplayIndex } from "../utils/sceneIndexer";
 import type { UrAISceneRef, UrAISource } from "./uraiSources";
+import { sceneRef } from "./uraiSources";
 import type { UrAIStatistics } from "./uraiStats";
 
 export type SharingScope = "none" | "selection" | "scene" | "scenes" | "full";
@@ -36,7 +37,17 @@ export interface UrAIActivity {
   sources?: UrAISceneRef[];
   status?: "done" | "error";
 }
+export interface UrAILiveTurn {
+  status: "running" | "completed" | "cancelled" | "failed";
+  content: string;
+  toolCalls: (UrAIActivity & { id: string })[];
+  sources: UrAISceneRef[];
+  tokens: number;
+  inputTokens?: number | null;
+}
 export interface UrAIReading {
+  indexKey?: string;
+  indexRequested?: boolean;
   showSource?: boolean;
   scenes: UrAISource[];
   focusIds: number[];
@@ -48,6 +59,12 @@ export interface UrAIReading {
 export const EMPTY_CONTEXT: UrAIContext = { scope: "none", scenes: [], sceneIds: [], selection: "" };
 export function isUrAIDesktop() {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+export function resolveNativeSceneFocus(query: string, scenes: UrAISource[], cursorLine: number, previous: UrAISceneRef[]) {
+  return invoke<number[]>("urai_resolve_scene_focus", {
+    query, scenes: scenes.map((scene) => ({ ...sceneRef(scene), explicitLabel: scene.explicitLabel })), cursorLine, previous,
+  });
 }
 export function providerConfig(config: PromptConfig, contextTokens?: number) {
   return {
@@ -96,25 +113,40 @@ export async function nativeChat(
     maxTokens?: number;
     contextTokens?: number;
     onTool?: (tool: UrAIActivity) => void;
+    onTurn?: (turn: UrAILiveTurn) => void;
     reading?: UrAIReading;
     memory?: string;
+    compactHistory?: boolean;
   },
 ): Promise<UrAIUsage> {
   const requestId = crypto.randomUUID();
   if (options.signal?.aborted) throw new DOMException("Aborted", "AbortError");
-  const unlisten = await listen<{ requestId: string; text: string }>("urai-delta", (e) => {
-    if (e.payload.requestId === requestId && !options.signal?.aborted) options.onChunk?.(e.payload.text);
-  });
-  const unlistenTool = await listen<UrAIActivity & { requestId: string }>("urai-tool", (e) => {
-    if (e.payload.requestId === requestId && !options.signal?.aborted) options.onTool?.(e.payload);
-  });
+  let terminalTurn = false;
+  const projectTurn = (turn: UrAILiveTurn) => {
+    if (terminalTurn) return;
+    terminalTurn = turn.status !== "running";
+    options.onTurn?.(turn);
+  };
+  const unlisten = options.compactHistory
+    ? await listen<UrAILiveTurn & { requestId: string }>("urai-turn", (e) => {
+        if (e.payload.requestId === requestId && (!options.signal?.aborted || e.payload.status === "cancelled")) projectTurn(e.payload);
+      })
+    : await listen<{ requestId: string; text: string }>("urai-delta", (e) => {
+        if (e.payload.requestId === requestId && !options.signal?.aborted) options.onChunk?.(e.payload.text);
+      });
+  let unlistenTool: (() => void) | undefined;
   const abort = () => {
-    void invoke("urai_cancel", { requestId });
+    void invoke("urai_cancel", { requestId }).catch(() => undefined);
   };
   options.signal?.addEventListener("abort", abort, { once: true });
   try {
+    if (!options.compactHistory) {
+      unlistenTool = await listen<UrAIActivity & { requestId: string }>("urai-tool", (e) => {
+        if (e.payload.requestId === requestId && !options.signal?.aborted) options.onTool?.(e.payload);
+      });
+    }
     if (options.signal?.aborted) throw new DOMException("Aborted", "AbortError");
-    const promise = invoke<UrAIUsage>("urai_chat", {
+    const promise = invoke<UrAIUsage & { turn?: UrAILiveTurn }>("urai_chat", {
       request: {
         requestId,
         config: providerConfig(config, options.contextTokens),
@@ -125,14 +157,16 @@ export async function nativeChat(
         maxTokens: options.maxTokens,
         reading: options.reading,
         memory: options.memory,
+        compactHistory: options.compactHistory,
       },
     });
     const result = await promise;
     if (options.signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    if (result.turn) projectTurn(result.turn);
     return result;
   } finally {
     unlisten();
-    unlistenTool();
+    unlistenTool?.();
     options.signal?.removeEventListener("abort", abort);
   }
 }
@@ -174,16 +208,24 @@ export async function nativeTransform(
 }
 
 const conversationWrites = new Map<string, Promise<void>>();
+const conversationRevisions = new Map<string, string>();
 
 export async function loadNativeSessions(key: string): Promise<unknown> {
   await conversationWrites.get(key)?.catch(() => undefined);
-  return isUrAIDesktop() ? invoke("urai_load_sessions", { key }) : null;
+  if (!isUrAIDesktop()) return null;
+  const snapshot = await invoke<{ sessions: unknown; revision: string } | null>("urai_load_sessions", { key });
+  if (snapshot) conversationRevisions.set(key, snapshot.revision);
+  else conversationRevisions.delete(key);
+  return snapshot?.sessions ?? null;
 }
 export async function saveNativeSessions(key: string, sessions: unknown): Promise<void> {
   if (!isUrAIDesktop()) return;
   const previous = conversationWrites.get(key);
   const write = (previous ?? Promise.resolve()).catch(() => undefined)
-    .then(() => invoke<void>("urai_save_sessions", { key, sessions }));
+    .then(async () => {
+      const revision = await invoke<string>("urai_save_sessions", { key, sessions, expectedRevision: conversationRevisions.get(key) ?? null });
+      conversationRevisions.set(key, revision);
+    });
   conversationWrites.set(key, write);
   try {
     await write;

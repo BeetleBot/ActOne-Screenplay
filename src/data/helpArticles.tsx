@@ -1498,8 +1498,7 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
 - The UrAI panel opens on the right side of your workspace.
 
 **Key features:**
-- **Conversational Screenplay Q&A**: Ask questions about your story, character arcs, scene flow, and dialogue.
-- **Screenplay conversations**: Ask follow-up questions about scenes, dialogue, characters, and X-Ray statistics. Jump from a cited scene back to the editor.
+- **Conversation**: Brainstorm story ideas, character arcs, scene flow, and dialogue. Ask about a scene or request a read of the whole screenplay.
 - **Look up & Synonyms**: Right-click words in the editor to look up definitions and synonyms in UrAI.
 - **Per-script history**: Each screenplay maintains its own conversation sessions across your writing workflow.
 - **Real-time streaming**: Watch responses generate smoothly in real time.`,
@@ -1534,18 +1533,17 @@ You can also adjust the Editor Zoom slider in the Quick Settings menu (gear icon
     category: "AI & UrAI",
     tags: ["urai", "urai go", "chat", "conversation", "history", "streaming"],
     relatedIds: ["urai-overview", "urai-configure"],
-    content: `UrAI helps you brainstorm, discuss screenplay context, translate and rephrase.
+    content: `Use UrAI to brainstorm and discuss your writing. Set up your provider in Settings → UrAI.
 
-- UrAI asks before reading your screenplay. After you allow access, it can look up passages and statistics for the active script. You can revoke access from the header gear.
-- For local Ollama models, use the **Index screenplay** book button. It processes scenes in small batches and saves completed scenes locally. Restarting indexing skips unchanged scenes; edits need reindexing.
-- Ask **“Read scene 16”** or **“Read the 16th scene”** to show the scene numbered **16**, including unsaved edits. UrAI uses scene order only when the screenplay has no scene numbers. Labels like **15A** work too. Say **“read this scene”** to use the cursor.
-- Follow up with **“Why does she leave?”** or **“What happens in the next scene?”**. UrAI resumes your last conversation for the active script. Pin an important message to give it priority in long chats. Screenplay details from previous messages are shared again only with access to that script at the same AI destination.
-- Try **“Which scene spans the most pages?”**, **“Who speaks the most?”**, **“Show the longest dialogue”**, or **“What does X-Ray flag?”**. Scene page spans count the pages a scene touches, and reading times are estimates.
-- Ask **“When does Maya learn about the letter?”** or **“Where do I set up and pay off the broken watch?”**. Use the scene buttons to check the evidence in your draft. The steps show whether UrAI read full scenes, excerpts, or matching lines.
-- Ask **“Save that as a revision note for scene 67”** and review the note before saving. Use **Scene notes** to jump back to the scene, track a setup, or discuss a note in a later chat. UrAI chat has read-only access to the screenplay. Notes are stored separately from the scene text.
-- Rephrase and translate replace selected text after generation, with an animated highlight. Use Undo to restore the original. If you edit while UrAI is working, the result is not applied.
-- Context limits are available in the gear menu. A larger number does not increase a model's actual supported context.
-`,
+- Enter a message and select **Send**. Use **Stop** to interrupt a reply or **Retry** when a request fails.
+- Use **New chat** to start another conversation and **History** to return to a conversation for the active script.
+- To remove a conversation, open **History**, select the trash button next to its name, and confirm **Delete chat**.
+- Use the model dropdown below the message box to switch between available Ollama models and providers configured in Settings. Replies display Markdown formatting such as headings, lists, bold, and italics.
+- Ask **“Read the 16th scene”** to show the printed scene 16, including unsaved edits. Select a scene button in the reply to jump to its heading.
+- Ask **“Read my whole screenplay”** to index the draft in parts. UrAI shows its progress and displays the saved overview when it finishes. You can stop and repeat the request to reuse completed scenes. Follow-up questions use the overview and retrieve specific scenes as needed.
+- Ask UrAI to find a line of dialogue or check where a character appears. You can also ask questions such as **“Which scene spans the most pages?”** or **“Who has the longest speech?”**.
+- UrAI asks for access before reading your screenplay. Your configured provider receives the messages and screenplay material needed for the request.
+- The new pane starts with fresh history for each script.`,
   },
   {
     id: "urai-translate",

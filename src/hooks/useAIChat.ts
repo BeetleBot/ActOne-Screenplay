@@ -7,6 +7,7 @@ import {
   destination,
   estimateUrAITokens,
   EMPTY_CONTEXT,
+  isUrAIDesktop,
   type UrAIContext,
   type UrAIReading,
 } from "../lib/urai";
@@ -130,14 +131,16 @@ export function useAIChat(
   sharing?: {
     context: UrAIContext;
     contextTokens: number;
-    resolveReading?: (query: string, previous: UrAISceneRef[]) => UrAIReading | { error: string };
+    resolveReading?: (query: string, previous: UrAISceneRef[]) => UrAIReading | { error: string } | Promise<UrAIReading | { error: string }>;
+    currentRevision?: () => string;
   },
+  freshHistory = false,
 ) {
   const config = usePromptConfig();
 
   // Preserve the existing unsaved-script key so local histories still reopen.
   const documentKey = scriptFileName ? `${activeFileId}::${scriptFileName}` : activeFileId;
-  const storageKey = getStorageKey(filePath, documentKey) + "::" + scriptFileName;
+  const storageKey = (freshHistory ? "rewrite-v1::" : "") + getStorageKey(filePath, documentKey) + "::" + scriptFileName;
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   const [sessions, setSessions] = useState<ChatSession[]>(() => loadSessions(storageKey));
@@ -148,6 +151,7 @@ export function useAIChat(
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const flushRef = useRef<(() => void) | null>(null);
+  const previousStorage = useRef<{ documentKey: string; key: string } | null>(null);
   const providerDestination = destination(config);
   useEffect(() => () => abortRef.current?.abort(), [providerDestination]);
 
@@ -162,10 +166,15 @@ export function useAIChat(
     setStreaming(false);
     setLoadedKey(null);
     const key = storageKey;
+    const previous = previousStorage.current;
+    previousStorage.current = { documentKey, key };
     const legacyKey = getStorageKey(filePath, activeFileId.split("::")[0]).toLowerCase();
-    const legacy = loadSessions(localStorage.getItem(key) ? key : legacyKey);
+    const legacy = loadSessions(freshHistory || localStorage.getItem(key) ? key : legacyKey);
     void loadNativeSessions(key)
-      .then((saved) => {
+      .then(async (saved) => {
+        if (freshHistory && !saved && previous?.documentKey === documentKey && previous.key !== key && !localStorage.getItem(key)) {
+          saved = await loadNativeSessions(previous.key) ?? loadSessions(previous.key);
+        }
         if (cancelled) return;
         const loaded = Array.isArray(saved) && saved.length ? (saved as ChatSession[]) : legacy;
         setSessions(loaded);
@@ -180,7 +189,7 @@ export function useAIChat(
       cancelled = true;
       abortRef.current?.abort();
     };
-  }, [storageKey, filePath, activeFileId]);
+  }, [storageKey, documentKey, filePath, activeFileId, freshHistory]);
 
   useEffect(() => {
     if (loadedKey !== storageKey) return;
@@ -190,10 +199,12 @@ export function useAIChat(
     const save = () => {
       if (saved) return;
       saved = true;
-      try {
-        localStorage.setItem(key, JSON.stringify(ordered));
-      } catch {
-        /* Native storage remains authoritative. */
+      if (!isUrAIDesktop()) {
+        try {
+          localStorage.setItem(key, JSON.stringify(ordered));
+        } catch {
+          // Browser storage can be unavailable.
+        }
       }
       void saveNativeSessions(key, ordered).catch((e) => setError(`Cannot save conversations: ${String(e)}`));
     };
@@ -255,9 +266,10 @@ export function useAIChat(
           : !turn.conversationScope && turn.sharingKey === sharingKey
       ));
       let reading: UrAIReading | { error: string } | undefined;
+      const revision = sharing?.currentRevision?.();
       try {
         const previous = [...scopedTurns].reverse().find((turn) => turn.focusSources?.length)?.focusSources ?? [];
-        reading = sharing?.resolveReading?.(content, previous);
+        reading = await sharing?.resolveReading?.(content, previous);
       } catch (failure) {
         if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : String(failure));
         return;
@@ -317,25 +329,40 @@ export function useAIChat(
 
       const systemPrompt = config.systemPrompt || "You are UrAI, a concise brainstorming and writing companion.";
 
+      let frame: number | undefined;
       try {
         let full = "";
+        let projectedContent: string | undefined;
 
         const completion = await nativeChat(config, history, {
           instructions: systemPrompt,
           context: requestContext,
           reading,
-          memory: conversationMemory(scopedTurns, sharing?.contextTokens ?? 8192),
+          memory: freshHistory ? undefined : conversationMemory(scopedTurns, sharing?.contextTokens ?? 8192),
+          compactHistory: freshHistory,
           contextTokens: sharing?.contextTokens,
           temperature: config.chatTemp,
           signal: controller.signal,
-          onTool: (tool) =>
+          onTurn: (snapshot) => {
+            if (abortRef.current !== controller) return;
+            if (snapshot.status === "completed") projectedContent = snapshot.content;
+            updateActiveSessionTurns((prev) => prev.map((turn) => turn.id === assistantId ? {
+              ...turn,
+              content: snapshot.content,
+              tokens: snapshot.tokens,
+              inputTokens: snapshot.inputTokens ?? undefined,
+              sources: snapshot.sources,
+              toolCalls: snapshot.toolCalls.map((tool) => ({ ...tool, args: tool.args ?? {}, status: tool.status ?? "done" })),
+            } : turn));
+          },
+          onTool: freshHistory ? undefined : (tool) =>
             updateActiveSessionTurns((prev) =>
               prev.map((turn) =>
                 turn.id === assistantId
                   ? {
                       ...turn,
                       toolCalls: [
-                        ...(turn.toolCalls ?? []),
+                        ...(turn.toolCalls ?? []).filter((step) => tool.name !== "index_screenplay" || step.name !== tool.name),
                         {
                           id: crypto.randomUUID(),
                           name: tool.name,
@@ -350,28 +377,35 @@ export function useAIChat(
                   : turn,
               ),
             ),
-          onChunk: (delta) => {
+          onChunk: freshHistory ? undefined : (delta) => {
             full += delta;
-            const { thinking, cleanContent } = extractThinkingAndClean(full);
-            const assistantTokens = estimateUrAITokens(cleanContent);
-            updateActiveSessionTurns((prev) =>
-              prev.map((turn) =>
-                turn.id === assistantId
+            if (frame !== undefined) return;
+            frame = window.requestAnimationFrame(() => {
+              frame = undefined;
+              if (controller.signal.aborted) return;
+              const { thinking, cleanContent } = extractThinkingAndClean(full);
+              const assistantTokens = estimateUrAITokens(cleanContent);
+              updateActiveSessionTurns((prev) =>
+                prev.map((turn) => turn.id === assistantId
                   ? { ...turn, content: cleanContent, thinking: thinking || turn.thinking, tokens: assistantTokens }
-                  : turn,
-              ),
-            );
+                  : turn),
+              );
+            });
           },
         });
 
-        const { thinking, cleanContent } = extractThinkingAndClean(completion.text || full);
+        const { thinking, cleanContent } = projectedContent !== undefined
+          ? { thinking: null, cleanContent: projectedContent }
+          : extractThinkingAndClean(completion.text || full);
         const finalTokens = estimateUrAITokens(cleanContent);
         updateActiveSessionTurns((prev) =>
           prev.map((turn) =>
             turn.id === assistantId
               ? {
                   ...turn,
-                  content: cleanContent,
+                  content: reading && revision !== sharing?.currentRevision?.()
+                    ? `${cleanContent}\n\nThis reply used an earlier draft revision.`
+                    : cleanContent,
                   thinking: thinking || turn.thinking,
                   tokens: completion.outputTokens ?? finalTokens,
                   inputTokens: completion.inputTokens ?? undefined,
@@ -389,13 +423,14 @@ export function useAIChat(
         }
         updateActiveSessionTurns((prev) => prev.filter((turn) => turn.id !== assistantId || turn.content));
       } finally {
+        if (frame !== undefined) window.cancelAnimationFrame(frame);
         if (abortRef.current === controller) {
           abortRef.current = null;
           setStreaming(false);
         }
       }
     },
-    [config, sharing, loadedKey, storageKey, updateActiveSessionTurns],
+    [config, sharing, loadedKey, storageKey, updateActiveSessionTurns, freshHistory],
   );
 
   const newSession = useCallback(() => {

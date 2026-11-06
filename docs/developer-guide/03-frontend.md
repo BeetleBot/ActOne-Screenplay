@@ -31,7 +31,7 @@ App
               Workspace
                 SidebarViews (routes sidebar panels)
                 FountainEditor (CodeMirror 6 container)
-                SearchPanel / UrAIPanel (right panes — AmbientPanel was removed in v0.4.19)
+                SearchPanel / UrAIChatPane (right panes)
                StatusBar (file, save, document, sprint, spellcheck, AI, and scene information)
             ModalManager
               CommandPalette
@@ -129,7 +129,7 @@ ErrorBoundary
 
 ### UrAI Panel
 
-`UrAIPanel.tsx` is the right-side chat interface. It connects `useAIChat()` to the active `FileContext`, `EditorContext`, and `CursorContext`.
+`UrAIChatPane.tsx` uses assistant-ui's external store runtime and connects `useAIChat()` to the active document identity in `FileContext`. The new pane starts in its own history namespace. See `URAI-CHAT-TASKS.md` at the project root for rollout status.
 
 The panel provides:
 

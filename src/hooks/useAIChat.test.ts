@@ -190,6 +190,18 @@ describe("UrAI sharing provenance", () => {
     expect(reopened.result.current.turns[0].content).toBe("Remember this");
   });
 
+  it("carries rewrite history forward when the active unsaved draft gets a path", async () => {
+    localStorage.clear();
+    const { result, rerender } = renderHook(({ path }) => useAIChat(path, "draft", "script", undefined, true),
+      { initialProps: { path: null as string | null } });
+    await act(async () => {});
+    await act(async () => { await result.current.send("Keep this with the draft"); });
+    rerender({ path: "/workspace/new.actone" });
+    await act(async () => {});
+    expect(result.current.ready).toBe(true);
+    expect(result.current.turns[0].content).toBe("Keep this with the draft");
+  });
+
   it("does not resend earlier turns when sharing changes", async () => {
     localStorage.clear();
     const { nativeChat } = await import("../lib/urai");

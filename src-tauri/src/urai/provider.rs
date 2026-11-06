@@ -5,6 +5,9 @@ use serde_json::{Value, json};
 use std::sync::LazyLock;
 use std::time::Duration;
 
+pub(super) const OUTPUT_LIMIT_ERROR: &str =
+    "AI output reached its token limit. Try a smaller selection.";
+
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
@@ -204,7 +207,7 @@ impl Decoder {
             return Err("AI connection ended before the response completed. Your source text has not been changed.".into());
         }
         if matches!(self.result.finish_reason.as_str(), "length" | "max_tokens") {
-            return Err("AI output reached its token limit. Try a smaller selection.".into());
+            return Err(OUTPUT_LIMIT_ERROR.into());
         }
         if self.result.text.trim().is_empty() {
             return Err("The model returned no text.".into());

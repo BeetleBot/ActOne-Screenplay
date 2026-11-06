@@ -1,10 +1,12 @@
 mod chat;
 pub mod credentials;
+pub mod focus;
 pub mod jobs;
 mod provider;
 pub mod storage;
 mod tools;
 mod transform;
+mod turn;
 mod types;
 use futures_util::future::{AbortHandle, Abortable};
 use serde::{Deserialize, Serialize};
@@ -37,6 +39,8 @@ pub struct ChatRequest {
     pub max_tokens: Option<usize>,
     pub reading: Option<tools::Reading>,
     pub memory: Option<String>,
+    #[serde(default)]
+    pub compact_history: bool,
 }
 
 #[tauri::command]
@@ -76,9 +80,19 @@ pub async fn cancellable<T>(
 pub async fn urai_chat(
     window: tauri::WebviewWindow,
     mut request: ChatRequest,
-) -> Result<provider::Completion, String> {
-    if request.reading.is_some() || request.memory.is_some() {
-        return cancellable(&window, &request.request_id, chat::run(&window, &request)).await;
+) -> Result<ChatResponse, String> {
+    if request.reading.is_some() || request.memory.is_some() || request.compact_history {
+        let mut turn = turn::LiveTurn::new(&window, &request.request_id, request.compact_history);
+        let result = cancellable(&window, &request.request_id, async {
+            turn.start();
+            chat::run(&mut turn, &request).await
+        })
+        .await;
+        let snapshot = turn.finish(&result);
+        return result.map(|completion| ChatResponse {
+            completion,
+            turn: snapshot,
+        });
     }
     let output = request.max_tokens.unwrap_or(2048).clamp(64, 8192);
     let query = request
@@ -146,7 +160,15 @@ pub async fn urai_chat(
             }
         }
         Err("Lookup limit reached.".into())
-    }).await
+    }).await.map(|completion| ChatResponse { completion, turn: None })
+}
+
+#[derive(Serialize)]
+pub struct ChatResponse {
+    #[serde(flatten)]
+    completion: provider::Completion,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    turn: Option<serde_json::Value>,
 }
 
 #[tauri::command]

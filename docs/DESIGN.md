@@ -83,6 +83,12 @@ Adaptive meta (`ADAPTIVE_THEME_META:36`) groups: `adaptive` (Classic), `catppucc
 ### TitleBar (`src/components/TitleBar.tsx:103`)
 Transparent `40px` bar, controls right `28x28 6px`, hover `alpha(text,0.08)` and close `alpha(error,0.15)`.
 
+### UrAI Chat
+
+- Use the Find and Replace pane's 40px header and compact uppercase title. Keep the History, New chat, and close controls on the same row.
+- Style the assistant name as a compact rectangular tag. Use the shared hover surface for assistant bubbles and the shared selection fill for writer messages.
+- Use an 8px composer with 28px controls and a compact model label. Keep the full model name available on the picker and open the model list above its trigger.
+
 ## 5. Component Language (MUI overrides `src/theme/muiTheme.ts:509`)
 
 ### Scene Navigator

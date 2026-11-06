@@ -36,7 +36,7 @@ UrAI is an optional AI assistant. ActOne does **not** host a model or provide a 
 - **Ollama**: runs entirely on your machine if you use a local Ollama server. Requests are proxied through the app; no data leaves your device.
 - **OpenAI-compatible endpoints**: when configured with a remote base URL, the endpoint and model you choose receive the chat messages and the approved screenplay excerpts or statistics UrAI retrieves for the request. A saved scene note is included when you choose to discuss it.
 
-Only the screenplay text required to answer the selected request is included. Provider configuration and API keys are stored in localStorage and are sent to the configured provider endpoint when a request is made. Do not configure a remote provider if keeping screenplay content local is a requirement.
+UrAI sends the screenplay material needed for the request. When you explicitly ask UrAI to read the whole screenplay and grant access, it sends scene text in parts to the selected provider. Generated scene summaries and the overview are saved locally to reuse completed work. Provider configuration and API keys are stored in localStorage and are sent to the configured provider endpoint when a request is made. Do not configure a remote provider if keeping screenplay content local is a requirement.
 
 ## Third-Party Services
 
