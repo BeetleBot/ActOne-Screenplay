@@ -75,8 +75,8 @@ Adaptive meta (`ADAPTIVE_THEME_META:36`) groups: `adaptive` (Classic), `catppucc
 
 ### Extruded Panes & Mutual Exclusivity (`src/components/layout/Workspace.tsx`, `src/components/RightPane.tsx`)
 - **Extruded Geometry:** Sidebars and right-side panels extrude directly out of the continuous window chrome without interior dividing borders (`border: 'none'`, `boxShadow: 'none'`).
-- **Motion:** Panes animate using synchronized `240ms cubic-bezier(0.25, 1, 0.5, 1)` natural deceleration curves on `width`, `min-width`, and `max-width`.
-- **Fluid Content:** Inner pane containers use `width: 100%` for fluid scaling with zero trailing background gaps.
+- **Motion:** Activity-bar panes, Find and Replace, and UrAI Chat use the same 240ms width transition and 180ms fade. Pane shells and resize handles stay mounted so the first open and subsequent closes animate. Dragging and reduced-motion preferences disable the transition.
+- **Fluid Content:** The shell clips the content at the configured pane width during animation, so controls and text keep their layout while the pane slides. Closing releases the pane contents immediately.
 - **Mutual Pane Exclusivity:** Only one pane (Left Sidebar or Right Pane) is open at any time. Opening a sidebar closes right panels (UrAI/Search) and vice-versa.
 - **Persistence:** Pane dimensions (`sidebarWidth` 180–800px, `rightPaneWidth` 240–700px) are persisted in `localStorage`.
 

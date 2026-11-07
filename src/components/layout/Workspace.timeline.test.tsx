@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ empty: false, loading: false, index: 0, addScript: vi.fn() }));
+const mock = vi.hoisted(() => ({ empty: false, loading: false, index: 0, rightPane: null as string | null, addScript: vi.fn() }));
 
 vi.mock("../../context", () => ({
   useUI: () => ({
@@ -12,7 +12,9 @@ vi.mock("../../context", () => ({
     isZenMode: false,
     typewriterMode: false,
     showTimeline: true,
-    activeRightPane: null,
+    activeRightPane: mock.rightPane,
+    rightPaneWidth: 320,
+    setRightPaneWidth: vi.fn(),
     setActiveRightPane: vi.fn(),
     setSidebarWidth: vi.fn(),
   }),
@@ -23,13 +25,35 @@ vi.mock("../../context", () => ({
 vi.mock("../SidebarViews", () => ({ SidebarViews: () => <div data-testid="navigator">Navigator</div> }));
 vi.mock("../ScriptEditor", () => ({ ScriptEditor: () => <div>Editor</div> }));
 vi.mock("../ProseEditor", () => ({ ProseEditor: () => null }));
-vi.mock("../SearchPanel", () => ({ SearchPanel: () => null }));
-vi.mock("../ai/UrAIChatPane", () => ({ UrAIChatPane: () => null }));
-vi.mock("../RightPane", () => ({ RightPane: () => null }));
+vi.mock("../SearchPanel", () => ({ SearchPanel: () => <div>Find panel contents</div> }));
+vi.mock("../ai/UrAIChatPane", () => ({ UrAIChatPane: () => <div>Chat panel contents</div> }));
 vi.mock("../TimelineView", () => ({ TimelineView: () => <div data-testid="timeline">Timeline</div> }));
 import { Workspace } from "./Workspace";
 
 describe("editor timeline placement", () => {
+  it("keeps the same pane shells and resize handles across open, switch, and close", () => {
+    const view = render(<Workspace isSidebarOpen={false} />);
+    const right = view.container.querySelector(".right-pane");
+    const leftHandle = view.container.querySelector(".sidebar-resizer");
+    expect(right).toHaveAttribute("inert");
+    try {
+      mock.rightPane = "search";
+      view.rerender(<Workspace isSidebarOpen />);
+      expect(screen.getByText("Find panel contents").closest(".right-pane")).toBe(right);
+      mock.rightPane = "prompt";
+      view.rerender(<Workspace isSidebarOpen={false} />);
+      expect(screen.getByText("Chat panel contents").closest(".right-pane")).toBe(right);
+      mock.rightPane = null;
+      view.rerender(<Workspace isSidebarOpen />);
+      expect(view.container.querySelector(".right-pane")).toBe(right);
+      expect(right).toHaveAttribute("inert");
+      expect(screen.queryByText("Chat panel contents")).toBeNull();
+      expect(view.container.querySelector(".sidebar-resizer")).toBe(leftHandle);
+    } finally {
+      mock.rightPane = null;
+      view.unmount();
+    }
+  });
   it("does not mount hidden sidebar views", () => {
     const view = render(<Workspace isSidebarOpen={false} />);
     expect(screen.queryByTestId("navigator")).toBeNull();

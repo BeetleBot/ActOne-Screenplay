@@ -12,6 +12,7 @@ import Divider from "@mui/material/Divider";
 import { SidebarViews } from "../SidebarViews";
 import { SearchPanel } from "../SearchPanel";
 import { RightPane } from "../RightPane";
+import { paneHandleTransition, paneTransition, reducedPaneMotion } from "../paneMotion";
 import { ScriptEditor } from "../ScriptEditor";
 const CanvasEditor = lazy(() => import("../CanvasEditor").then(module => ({ default: module.CanvasEditor })));
 import { ProseEditor } from "../ProseEditor";
@@ -148,20 +149,6 @@ export const Workspace = React.memo<WorkspaceProps>(({
     };
   }, []);
 
-  const [renderedRightPane, setRenderedRightPane] = useState<string | null>(activeRightPane);
-
-
-  useEffect(() => {
-    if (activeRightPane) {
-      setRenderedRightPane(activeRightPane);
-    } else {
-      const timer = setTimeout(() => {
-        setRenderedRightPane(null);
-      }, 260);
-      return () => clearTimeout(timer);
-    }
-  }, [activeRightPane]);
-
   const isSidebarVisible = isSidebarOpen && !isZenMode;
   const effectiveSidebarWidth = isSidebarVisible ? sidebarWidth : 0;
 
@@ -182,11 +169,11 @@ export const Workspace = React.memo<WorkspaceProps>(({
         className="sidebar"
         elevation={0}
         tabIndex={-1}
+        inert={!isSidebarVisible}
         sx={{
           width: effectiveSidebarWidth,
           minWidth: effectiveSidebarWidth,
           maxWidth: effectiveSidebarWidth,
-          flexBasis: effectiveSidebarWidth,
           flexShrink: 0,
           flexGrow: 0,
           outline: 'none',
@@ -200,9 +187,8 @@ export const Workspace = React.memo<WorkspaceProps>(({
           flexDirection: 'column',
           pointerEvents: isSidebarVisible ? 'auto' : 'none',
           opacity: isSidebarVisible ? 1 : 0,
-          transition: isDragging
-            ? 'none'
-            : 'width 240ms cubic-bezier(0.25, 1, 0.5, 1), min-width 240ms cubic-bezier(0.25, 1, 0.5, 1), max-width 240ms cubic-bezier(0.25, 1, 0.5, 1), opacity 180ms ease',
+          transition: isDragging ? "none" : paneTransition,
+          ...reducedPaneMotion,
           willChange: 'width, opacity',
         }}
         onMouseDown={(e) => {
@@ -214,27 +200,28 @@ export const Workspace = React.memo<WorkspaceProps>(({
           }
         }}
       >
-        <Box className="sidebar-content" sx={{ width: '100%', height: '100%', overflow: 'auto' }}>
+        <Box className="sidebar-content" sx={{ width: sidebarWidth, height: '100%', overflow: 'auto' }}>
           <ErrorBoundary name="sidebar">
             {isSidebarVisible && <SidebarViews activeTab={activeTab} />}
           </ErrorBoundary>
         </Box>
       </Paper>
-      {isSidebarVisible && (
-        <Box
-          className="sidebar-resizer"
-          onMouseDown={() => setIsDragging(true)}
-          sx={{
-            width: 4,
-            cursor: 'col-resize',
-            flexShrink: 0,
-            my: 1,
-            borderRadius: '2px',
-            '&:hover': { bgcolor: 'primary.main', opacity: 0.5 },
-            transition: 'background-color var(--duration-fast)',
-          }}
-        />
-      )}
+      <Box
+        className="sidebar-resizer"
+        onMouseDown={() => setIsDragging(true)}
+        sx={{
+          width: isSidebarVisible ? 4 : 0,
+          opacity: isSidebarVisible ? 1 : 0,
+          pointerEvents: isSidebarVisible ? "auto" : "none",
+          cursor: 'col-resize',
+          flexShrink: 0,
+          my: 1,
+          borderRadius: '2px',
+          '&:hover': { bgcolor: 'primary.main', opacity: 0.5 },
+          transition: isDragging ? "none" : paneHandleTransition,
+          ...reducedPaneMotion,
+        }}
+      />
 
       <Box
         className="editor-container"
@@ -625,28 +612,16 @@ export const Workspace = React.memo<WorkspaceProps>(({
         )}
       </Box>
 
-      {renderedRightPane === "search" && (
-        <RightPane
-          type="search"
-          isOpen={activeRightPane === "search"}
-          onClose={() => setActiveRightPane(null)}
-          errorBoundaryName="search-pane"
-        >
-          {activeRightPane === "search" && <SearchPanel />}
-        </RightPane>
-      )}
-
-      {renderedRightPane === "prompt" && (
-        <RightPane
-          type="prompt"
-          isOpen={activeRightPane === "prompt"}
-          onClose={() => setActiveRightPane(null)}
-          errorBoundaryName="prompt-pane"
-          ariaLabel="UrAI Chat"
-        >
-          {activeRightPane === "prompt" && <UrAIChatPane />}
-        </RightPane>
-      )}
+      <RightPane
+        type={activeRightPane ?? "closed"}
+        isOpen={activeRightPane === "search" || activeRightPane === "prompt"}
+        onClose={() => setActiveRightPane(null)}
+        errorBoundaryName={activeRightPane === "prompt" ? "prompt-pane" : "search-pane"}
+        ariaLabel={activeRightPane === "prompt" ? "UrAI Chat" : "Find and Replace"}
+      >
+        {activeRightPane === "search" && <SearchPanel />}
+        {activeRightPane === "prompt" && <UrAIChatPane />}
+      </RightPane>
     </Box>
   );
 });
