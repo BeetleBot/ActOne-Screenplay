@@ -707,7 +707,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
       },
       MuiDialog: {
         defaultProps: {
-          transitionDuration: 0,
+          transitionDuration: { enter: 180, exit: 120 },
         },
         styleOverrides: {
           paper: {
@@ -727,6 +727,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
       },
       MuiPopover: {
         defaultProps: {
+          transitionDuration: { enter: 160, exit: 100 },
           slotProps: {
             paper: {
               sx: {
@@ -748,6 +749,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
       },
       MuiMenu: {
         defaultProps: {
+          transitionDuration: { enter: 160, exit: 100 },
           slotProps: {
             paper: {
               sx: {
@@ -830,7 +832,7 @@ export function createActOneTheme(t: ThemeConfig, appScale: number = 100, founta
             color: menuInk,
             border: '1px solid',
             borderColor: c.border,
-            transition: 'border-color 0.15s, background-color 0.15s, box-shadow 0.15s',
+            transition: 'border-color var(--duration-fast) ease, background-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease',
             '& fieldset': { border: 'none' },
             '&:hover': { 
               backgroundColor: 'action.hover',

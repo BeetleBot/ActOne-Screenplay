@@ -1,5 +1,13 @@
 import { deriveAllColors, mixHex, deriveThemeBg, themes, createActOneTheme, getThemeHighlightColors } from "./muiTheme";
 
+it("provides matching menu and popover motion and a quicker dialog exit", () => {
+  const { components } = createActOneTheme(themes[0]);
+  const menu = components?.MuiMenu?.defaultProps?.transitionDuration;
+  expect(menu).toEqual({ enter: 160, exit: 100 });
+  expect(components?.MuiPopover?.defaultProps?.transitionDuration).toEqual(menu);
+  expect(components?.MuiDialog?.defaultProps?.transitionDuration).toEqual({ enter: 180, exit: 120 });
+});
+
 describe("deriveAllColors", () => {
   it("returns a complete ThemeColors object", () => {
     const result = deriveAllColors(

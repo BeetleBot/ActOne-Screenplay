@@ -904,26 +904,55 @@ body,
   box-shadow: none;
 }
 
-/* Fast yet Bouncy Transitions & Animations */
+/* Shared control feedback */
 button,
 .MuiButton-root,
 .MuiIconButton-root,
 .MuiCard-root,
 .cm-tooltip-autocomplete ul li {
-  transition: transform var(--duration-normal) var(--easing-spring), background-color var(--duration-fast) ease, box-shadow var(--duration-normal) var(--easing-spring), border-color var(--duration-fast) ease !important;
+  transition: transform var(--duration-fast) var(--easing-snappy), background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, border-color var(--duration-fast) ease !important;
 }
 
-button:active,
-.MuiButton-root:active,
-.MuiIconButton-root:active {
+button:enabled:active {
   transform: scale(0.97);
 }
 
-.sidebar,
-.editor-container,
-.app-workspace,
-.MuiDrawer-paper {
-  transition: width var(--duration-slow) var(--easing-spring), transform var(--duration-slow) var(--easing-spring) !important;
+@keyframes actone-chat-appear {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.urai-chat-message {
+  animation: actone-chat-appear var(--duration-normal) var(--easing-snappy) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+  }
+
+  button:enabled:active {
+    transform: none;
+  }
+
+  .MuiDialog-root .MuiBackdrop-root,
+  .MuiDialog-container,
+  .MuiPopover-paper,
+  .MuiTooltip-tooltip {
+    transition-duration: 0ms !important;
+  }
+
+  .urai-chat-message,
+  .timeline-container {
+    animation: none;
+  }
+
+  #activity-bar [data-tab]:active,
+  #command-palette-btn:active {
+    transform: none !important;
+  }
 }
 
 /* Loading Skeleton */

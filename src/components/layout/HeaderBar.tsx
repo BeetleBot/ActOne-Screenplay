@@ -180,7 +180,7 @@ export const HeaderBar = React.memo(() => {
                       ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.6 : 0.5)
                       : alpha(theme.palette.text.primary, 0.1),
                   },
-                  transition: 'all 0.15s ease',
+                  transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, transform var(--duration-fast) var(--easing-snappy)',
                   position: 'relative',
                 }}
               >
@@ -239,7 +239,7 @@ export const HeaderBar = React.memo(() => {
                   color: 'primary.main', 
                   bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
                 },
-                transition: 'all 0.15s ease',
+                transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, transform var(--duration-fast) var(--easing-snappy)',
               }}
             >
               <AddIcon sx={{ fontSize: 16 }} />
@@ -284,7 +284,7 @@ export const HeaderBar = React.memo(() => {
                 borderRadius: '6px',
                 color: 'text.secondary',
                 '&:hover': { bgcolor: (t) => alpha(t.palette.text.primary, 0.08), color: 'text.primary' },
-                transition: 'all 0.15s ease',
+                transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, transform var(--duration-fast) var(--easing-snappy)',
               }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -301,7 +301,7 @@ export const HeaderBar = React.memo(() => {
                 borderRadius: '6px',
                 color: 'text.secondary',
                 '&:hover': { bgcolor: (t) => alpha(t.palette.text.primary, 0.08), color: 'text.primary' },
-                transition: 'all 0.15s ease',
+                transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, transform var(--duration-fast) var(--easing-snappy)',
               }}
             >
               {isMaximized ? (
@@ -325,7 +325,7 @@ export const HeaderBar = React.memo(() => {
                 borderRadius: '6px',
                 color: 'text.secondary',
                 '&:hover': { bgcolor: (theme) => alpha(theme.palette.error.main, 0.15), color: (theme) => theme.palette.error.main },
-                transition: 'all 0.15s ease',
+                transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, transform var(--duration-fast) var(--easing-snappy)',
               }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

@@ -147,7 +147,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
             color: 'text.primary',
             border: 'none',
             mb: 0.5,
-            transition: 'all 0.15s ease',
+            transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, transform var(--duration-fast) var(--easing-snappy)',
             '&:hover': {
               bgcolor: (t) => alpha(t.palette.primary.main, 0.14),
               color: 'primary.main',
@@ -200,7 +200,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                   flexShrink: 0,
                   opacity: disabled ? 0.4 : 1,
                   pointerEvents: disabled ? 'none' : 'auto',
-                  transition: 'all 0.15s ease',
+                  transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, transform var(--duration-fast) var(--easing-snappy)',
                   '&:hover': {
                     bgcolor: disabled ? 'transparent' : (isActive ? 'primary.main' : (t) => alpha(t.palette.text.primary, 0.08)),
                     color: disabled ? 'text.secondary' : (isActive ? 'primary.contrastText' : 'text.primary'),
@@ -241,7 +241,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
           cursor: 'pointer',
           color: anchorEl ? 'primary.contrastText' : 'text.secondary',
           bgcolor: anchorEl ? 'primary.main' : 'transparent',
-          transition: 'all 0.15s ease',
+          transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease, transform var(--duration-fast) var(--easing-snappy)',
           '&:hover': {
             bgcolor: anchorEl ? 'primary.main' : (t) => alpha(t.palette.text.primary, 0.08),
             color: anchorEl ? 'primary.contrastText' : 'text.primary',
@@ -378,7 +378,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                               display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                               '&:hover': { borderColor: isActive ? 'primary.main' : 'divider', transform: 'scale(1.05)' },
-                              transition: 'all var(--duration-fast) ease',
+                              transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, opacity var(--duration-fast) ease',
                             }}
                           >
                             <Box sx={{ bgcolor: meta.swatchColors[0] }} />
@@ -401,7 +401,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                               display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                               '&:hover': { borderColor: isActive ? 'primary.main' : 'divider', transform: 'scale(1.05)' },
-                              transition: 'all var(--duration-fast) ease',
+                              transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, opacity var(--duration-fast) ease',
                             }}
                           >
                             <Box sx={{ bgcolor: t.colors.editor }} />
@@ -435,7 +435,7 @@ export const ActivityBar = React.memo<ActivityBarProps>(({
                             display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden',
                             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                             '&:hover': { borderColor: isActive ? 'primary.main' : 'divider', transform: 'scale(1.05)' },
-                            transition: 'all var(--duration-fast) ease',
+                            transition: 'background-color var(--duration-fast) ease, color var(--duration-fast) ease, opacity var(--duration-fast) ease',
                           }}
                         >
                           <Box sx={{ bgcolor: t.colors.editor }} />

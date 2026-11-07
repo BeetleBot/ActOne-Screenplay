@@ -96,7 +96,7 @@ function ChatMessage({ onSource }: { onSource: (source: UrAISceneRef) => void })
   const sourceText = useAuiState((state) => state.message.metadata.custom.sourceText);
   const user = role === "user";
   return (
-    <Box sx={{ alignSelf: user ? "flex-end" : "stretch", maxWidth: user ? "85%" : "100%", px: user ? 1.25 : 1.5, py: user ? 0.75 : 1.25, borderRadius: user ? "var(--radius-lg)" : "var(--radius-md)", bgcolor: user ? "action.selected" : "action.hover", whiteSpace: "pre-wrap", overflowWrap: "anywhere", typography: "body2", lineHeight: 1.65 }}>
+    <Box className="urai-chat-message" sx={{ alignSelf: user ? "flex-end" : "stretch", maxWidth: user ? "85%" : "100%", px: user ? 1.25 : 1.5, py: user ? 0.75 : 1.25, borderRadius: user ? "var(--radius-lg)" : "var(--radius-md)", bgcolor: user ? "action.selected" : "action.hover", whiteSpace: "pre-wrap", overflowWrap: "anywhere", typography: "body2", lineHeight: 1.65 }}>
       {!user && (
         <Typography component="span" variant="caption" color="text.secondary" sx={{ display: "inline-flex", alignItems: "center", px: 0.75, mb: 1, border: 1, borderColor: "divider", borderRadius: "var(--radius-xs)", bgcolor: "action.hover", fontWeight: 600, fontSize: 11, lineHeight: "18px" }}>
           UrAI

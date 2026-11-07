@@ -29,6 +29,8 @@ Canvas documents embed the upstream hand-drawn editor in the existing workspace,
 - Dark mode uses same layers with higher opacity: Welcome island `0 10px 30px -4px rgba(0,0,0,0.5)` (`WelcomeScreen.tsx:655`).
 
 ### Motion
+- Dialogs fade in over 180ms and out over 120ms. Menus and popovers use a 160ms opening and a 100ms closing transition. New UrAI messages fade in with a 4px rise. Existing messages stay in place while text streams.
+- Activity and header controls transition their fill, text color, shadow, and press scale. Input outlines transition when focus changes. Reduced-motion preferences remove decorative movement and the shared surface transitions.
 `src/index.css:29`
 - `fast 0.12s`, `normal 0.20s`, `slow 0.28s`; `spring cubic-bezier(0.34,1.56,0.64,1)`, `snappy 0.16,1,0.3,1`. All buttons scale `0.97` on `:active` (`src/index.css:855`).
 - Document preparation uses an inline SVG ActOne logo (`public/window-loading.css`): a 48px logo with a 1.4s linear rotation, centered in an overlay attached to the editor container, outside document scrolling. Reduced-motion preferences disable rotation. Project navigation remains available.
