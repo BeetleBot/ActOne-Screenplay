@@ -94,6 +94,8 @@ export interface UIContextProps {
   lineNumbersEnabled: boolean;
   setLineFocusEnabled: (enabled: boolean) => void;
   setLineNumbersEnabled: (enabled: boolean) => void;
+  structureLinesEnabled: boolean;
+  setStructureLinesEnabled: (enabled: boolean) => void;
   autoContdEnabled: boolean;
   setAutoContdEnabled: (enabled: boolean) => void;
   fountainColorsEnabled: boolean;
@@ -177,6 +179,9 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           break;
         case STORAGE_KEYS.LINE_NUMBERS_ENABLED:
           setLineNumbersEnabledState(strVal === "true");
+          break;
+        case STORAGE_KEYS.STRUCTURE_LINES_ENABLED:
+          setStructureLinesEnabledState(strVal === "true");
           break;
         case STORAGE_KEYS.AUTO_CONTD_ENABLED:
           setAutoContdEnabledState(strVal !== "false");
@@ -379,6 +384,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const stored = localStorage.getItem(STORAGE_KEYS.LINE_NUMBERS_ENABLED);
     return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.LINE_NUMBERS_ENABLED]);
   });
+  const [structureLinesEnabled, setStructureLinesEnabledState] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.STRUCTURE_LINES_ENABLED);
+    return stored !== null ? stored === "true" : Boolean(DEFAULTS[STORAGE_KEYS.STRUCTURE_LINES_ENABLED]);
+  });
   const [autoContdEnabled, setAutoContdEnabledState] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.AUTO_CONTD_ENABLED);
     return stored !== null ? stored !== "false" : Boolean(DEFAULTS[STORAGE_KEYS.AUTO_CONTD_ENABLED]);
@@ -548,6 +557,11 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.setItem(STORAGE_KEYS.LINE_NUMBERS_ENABLED, enabled ? "true" : "false");
     broadcastSetting(STORAGE_KEYS.LINE_NUMBERS_ENABLED, enabled ? "true" : "false");
   };
+  const setStructureLinesEnabled = (enabled: boolean) => {
+    setStructureLinesEnabledState(enabled);
+    localStorage.setItem(STORAGE_KEYS.STRUCTURE_LINES_ENABLED, enabled ? "true" : "false");
+    broadcastSetting(STORAGE_KEYS.STRUCTURE_LINES_ENABLED, enabled ? "true" : "false");
+  };
 
   const setAutoContdEnabled = (enabled: boolean) => {
     setAutoContdEnabledState(enabled);
@@ -646,6 +660,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         lineNumbersEnabled,
         setLineFocusEnabled,
         setLineNumbersEnabled,
+        structureLinesEnabled,
+        setStructureLinesEnabled,
         autoContdEnabled,
         setAutoContdEnabled,
         fountainColorsEnabled,

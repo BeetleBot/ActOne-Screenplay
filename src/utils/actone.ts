@@ -217,7 +217,7 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
     "urai.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
   };
 
-  entries["settings.json"] = strToU8(JSON.stringify(packProseImageRegistry(restSettings, entries), null, 2));
+  entries["settings.json"] = strToU8(JSON.stringify(packProseImageRegistry(restSettings, entries, scripts), null, 2));
   if (scripts.length > 1) {
     entries["characters.json"] = strToU8(JSON.stringify(resolvePerScript("genders", scripts), null, 2));
     entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));
@@ -284,7 +284,7 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
       "urai.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
     };
 
-    entries["settings.json"] = strToU8(JSON.stringify(packProseImageRegistry(restSettings, entries), null, 2));
+    entries["settings.json"] = strToU8(JSON.stringify(packProseImageRegistry(restSettings, entries, scripts), null, 2));
     if (scripts.length > 1) {
       entries["characters.json"] = strToU8(JSON.stringify(resolvePerScript("genders", scripts), null, 2));
       entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));

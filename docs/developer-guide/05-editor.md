@@ -167,3 +167,34 @@ Closed Search/UrAI pane contents unmount immediately while their shell can anima
 Command-palette document lists are built only for the open category. Snapshot history
 queries require a mounted Snapshots panel; automatic snapshot creation does not.
 Status-bar filter lists build only while their menu is open; script word/page statistics wait for deferred parsing. X-Ray data is sent only to a visible X-Ray window.
+
+## Collapsible Sections & Structure Lines
+
+Located in `src/editor/fountainFold.ts` and `src/editor/structureLines.ts`.
+
+- **Fountain Fold Engine (`fountainFold.ts`)**:
+  - `getFountainFoldRange`: Evaluates the Fountain structural hierarchy:
+    - Section (`#`): Collapses all nested content until the next act. Screenplay structure has only two levels: `#` acts and `##` sequences. Legacy deeper prefixes use sequence behavior, not additional levels.
+    - Sub-section (`##`): Collapses until the next sub-section or parent section.
+    - Scene (`LINE_HEADING`): Collapses scene body lines until the next scene heading or any section header.
+  - Registers `fountainFoldService` with CodeMirror's `foldService` facet.
+  - `fountainFoldTogglePlugin`: Renders clickable chevron widgets (`.cm-fountain-fold-toggle`) at `line.from` for section and scene headings. Controls are absolutely positioned in the margin and do not consume text width.
+  - `fountainFoldCodeExtension`: Configures `codeFolding` with custom badges displaying the collapsed line count.
+
+- **Structure Lines & Margin Channels (`structureLines.ts`)**:
+  - Implements a dedicated CodeMirror `layer` drawing vertical scope rails in the paper's 1.5-inch left margin.
+  - Three-channel margin layout:
+    - **Channel 1 (Outer Margin: -96px, -88px, -80px)**: Section, Sub-section, and Scene vertical rails. Offsets scale with `--zoom`.
+    - **Channel 2 (Mid Margin: -18px to -45px)**: Reserved for Scene Number labels (`[data-scene-number]`).
+    - **Channel 3 (0px)**: Standard screenplay text margin.
+  - When Structure Lines are enabled, `# ACT I` and `## SEQUENCE 1` hang into the margin (`.cm-structure-lines-active`).
+  - When Structure Lines are disabled, sections and scenes align evenly on the exact same left line (`margin-left: 0`).
+
+
+### Structure regression checks
+
+- `npm test -- src/editor/structureLines.test.ts src/editor/fountainFold.test.ts` covers classification propagation, unchanged-line-count replacements, section-depth changes, deterministic edit sequences and two-level fold boundaries.
+- `npm run test:editor-structure` starts an isolated Vite page and headless Edge using WebDriver. Requires Edge plus `msedgedriver` at `node_modules/.desktop-tools/bin/msedgedriver.exe` (or set `EDGE_DRIVER`). It uses the actual editor extensions and stylesheet, with real layout measurements at 75%, 100%, 150% and 200% zoom. Checks include text alignment, rail coordinates, live enable/disable, nested fold preservation, chevron interaction and placeholder expansion. Results and failure screenshots go to `node_modules/.structure-results/`.
+- The browser harness verifies Chromium layout; it does not replace native WebView2 or Linux WebKitGTK smoke testing.
+
+Scope rails are spaced 8px apart at 100% zoom. Act and sequence text begins 24px to the right of its matching rail. Fold controls sit to the left of scene numbers, using the actual label length to reserve space. Rails expose native hover tooltips: act/sequence names, or the scene number followed by its heading. Marker equality includes the label so heading edits refresh tooltip text even when geometry stays unchanged.

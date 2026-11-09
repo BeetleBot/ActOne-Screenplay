@@ -124,12 +124,26 @@ describe("short prose image references", () => {
       expect(resolveProseImages(bundle.scripts[0].content, bundle.settings)).toContain(url);
     }
   });
-  it("keeps removed images available for undo and project snapshots", () => {
+  it("excludes deleted images on save without mutating live undo assets", async () => {
     const settings = { proseImages: { image1: url, image2: url } };
-    const bundle = unpackActoneBundle(packActoneBundle([prose("![image2](image2)")], settings));
-    expect(getProseImages(bundle.settings).image1).toBe(url);
-    expect(resolveProseImages("![image1](image1)", bundle.settings)).toContain(url);
-    expect(nextProseImageName(getProseImages(bundle.settings))).toBe("image3");
+    const scripts = [prose("![image2](image2)")];
+    for (const bytes of [packActoneBundle(scripts, settings), await packActoneBundleAsync(scripts, settings)]) {
+      const entries = unzipSync(bytes.slice(4));
+      expect(entries["assets/prose/image1.png"]).toBeUndefined();
+      expect(entries["assets/prose/image2.png"]).toBeDefined();
+      expect(getProseImages(unpackActoneBundle(bytes).settings)).toEqual({ image2: url });
+    }
+    expect(settings.proseImages.image1).toBe(url);
+    expect(resolveProseImages("![image1](image1)", settings)).toContain(url);
+    const restored = unpackActoneBundle(packActoneBundle([prose("![image1](image1)")], settings));
+    expect(getProseImages(restored.settings)).toEqual({ image1: url });
+    expect(nextProseImageName(settings.proseImages)).toBe("image3");
+  });
+  it("retains images used by any prose document and drops all unused assets", () => {
+    const settings = { proseImages: { image1: url, image2: url } };
+    const scripts = [prose("No image here"), { ...prose("![Shared](image1)"), fileName: "files/Second.md" }];
+    expect(getProseImages(unpackActoneBundle(packActoneBundle(scripts, settings)).settings)).toEqual({ image1: url });
+    expect(getProseImages(unpackActoneBundle(packActoneBundle([prose("Deleted all")], settings)).settings)).toEqual({});
   });
   it("rejects missing named images when saving and exporting", () => {
     expect(() => packActoneBundle([prose("![image1](image1)")], {})).toThrow("Missing prose image");

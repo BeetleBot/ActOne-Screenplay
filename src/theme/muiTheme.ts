@@ -445,6 +445,91 @@ export function getSceneYellow(t: ThemeConfig): string {
   return t.isDark ? (t.id === 'catppuccin-mocha' ? '#f9e2af' : '#ffeb3b') : '#DBD600';
 }
 
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+  const r = parseInt(c.slice(0, 2), 16) / 255;
+  const g = parseInt(c.slice(2, 4), 16) / 255;
+  const b = parseInt(c.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
+      case g: h = ((b - r) / d + 2) * 60; break;
+      case b: h = ((r - g) / d + 4) * 60; break;
+    }
+  }
+  return { h, s, l };
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  h = ((h % 360) + 360) % 360;
+  s = Math.max(0, Math.min(1, s));
+  l = Math.max(0, Math.min(1, l));
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; }
+  else if (h < 120) { r = x; g = c; }
+  else if (h < 180) { g = c; b = x; }
+  else if (h < 240) { g = x; b = c; }
+  else if (h < 300) { r = x; b = c; }
+  else { r = c; b = x; }
+  const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+export function getThemeStructureLines(t: ThemeConfig): { section: string; subsection: string; scene: string } {
+  const c = t.colors;
+  const isDark = t.isDark;
+  const id = t.id;
+
+  // Curated theme-specific palettes for popular presets
+  if (id === 'catppuccin-latte') {
+    return {
+      section: '#8839ef', // Mauve
+      subsection: '#fe640b', // Peach
+      scene: 'color-mix(in srgb, #1e66f5 65%, transparent)', // Sapphire
+    };
+  }
+  if (id === 'catppuccin-mocha' || id === 'catppuccin-adaptive') {
+    return {
+      section: '#cba6f7', // Mauve
+      subsection: '#fab387', // Peach
+      scene: 'color-mix(in srgb, #89b4fa 65%, transparent)', // Sapphire
+    };
+  }
+
+  // Pure dynamic algorithmic generation for all custom and other themes:
+  // Uses harmonic color theory (triadic 135° and 240° rotation) calibrated for paper contrast
+  const accent = c.accent || '#3b82f6';
+  const hsl = hexToHsl(accent);
+  const isMonochrome = hsl.s < 0.12;
+
+  const baseHue = isMonochrome ? (isDark ? 195 : 220) : hsl.h;
+  const baseSat = isMonochrome ? 0.85 : Math.max(0.65, hsl.s);
+  const secLight = isDark ? 0.60 : 0.42;
+
+  const section = isMonochrome ? hslToHex(baseHue, baseSat, secLight) : accent;
+  const subsection = hslToHex((baseHue + 135) % 360, Math.max(0.75, baseSat), isDark ? 0.58 : 0.42);
+  const sceneRaw = hslToHex((baseHue + 240) % 360, Math.max(0.60, baseSat), isDark ? 0.62 : 0.44);
+  const scene = `color-mix(in srgb, ${sceneRaw} 65%, transparent)`;
+
+  return { section, subsection, scene };
+}
+
+export function getStructureSubsectionColor(accentHex: string, isLatte: boolean, isMocha: boolean, isDark: boolean): string {
+  if (isLatte) return '#fe640b';
+  if (isMocha) return '#fab387';
+  const lines = getThemeStructureLines({ id: 'custom', name: '', desc: '', category: 'custom', isDark, colors: { accent: accentHex } as any });
+  return lines.subsection;
+}
+
 export function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainColorsEnabled: boolean = false) {
   const c = t.colors;
   const timelineBackground = c.sidebar;
@@ -468,6 +553,7 @@ export function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainC
     red: isCatppuccinLatte ? '#d20f39' : isCatppuccinMocha ? '#f38ba8' : '#f44336',
     yellow: getSceneYellow(t),
   };
+  const structureLines = getThemeStructureLines(t);
   const sceneVars = Object.fromEntries(Object.entries(scenePalette).flatMap(([name, color]) => [[`--scene-color-${name}`, color], [`--scene-ink-${name}`, automaticInk(color)]]));
   return {
     '--app-scale': '100%',
@@ -509,6 +595,9 @@ export function getEditorVars(t: ThemeConfig, _appScale: number = 100, fountainC
     '--text-editor-shot': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 90%, ${c.editorText ?? c.text})` : (c.editorText ?? c.text),
     '--text-editor-meta': fountainColorsEnabled ? `color-mix(in srgb, ${c.accent} 45%, ${c.editorText ?? c.text})` : editorMuted,
     '--text-editor-section': fountainColorsEnabled ? c.accent : (c.editorText ?? c.text),
+    '--structure-line-section': structureLines.section,
+    '--structure-line-subsection': structureLines.subsection,
+    '--structure-line-scene': structureLines.scene,
     '--editor-highlight-bg': highlightColors.bg,
     '--editor-highlight-bg-strong': highlightColors.bgStrong,
     '--editor-highlight-text': highlightColors.text,

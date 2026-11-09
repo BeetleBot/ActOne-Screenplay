@@ -300,7 +300,7 @@ export function renderXrayPrintPage(page: XrayPrintPage, title: string, index: n
 }
 
 export async function rasterizeXrayPage(svg: string): Promise<string> {
-  // Data URLs are allowed by the desktop CSP; blob image URLs are not.
+  // Use a self-contained SVG data URL so report rendering needs no temporary file.
   const image = new Image();
   image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   await image.decode();

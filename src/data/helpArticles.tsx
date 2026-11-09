@@ -328,7 +328,13 @@ Transitions render right-aligned in PDF exports.`,
     category: "Fountain Syntax",
     tags: ["section", "#", "act", "sequence", "header"],
     relatedIds: ["synopsis", "outline-navigator", "structure-templates"],
-    content: `Organize your script with Fountain section headers. Use \`#\` for major blocks (e.g., \`# Act I\`), \`##\` for sub-sequences, and additional hashes for deeper nesting. Closing a section hides its complete subtree. Closing a subsection hides only its own contents, and its collapsed state is retained when the parent is reopened.`,
+    content: `Organize your script with Fountain section headers. Use \`#\` for major blocks (e.g., \`# Act I\`), \`##\` for sub-sequences, and additional hashes for deeper nesting.
+
+### Collapsing in the Editor
+Click the chevron icon beside any Section (\`# Act I\`), Sub-section (\`## Sequence 1\`), or Scene heading to collapse and expand its contents directly in the script editor. Collapsing an Act hides its sequences and scenes, collapsing a sequence hides its child scenes, and collapsing a scene hides its action and dialogue. When collapsed, an inline badge displays the hidden line count. Click the badge to expand again. Expanding an Act keeps any sequences you previously collapsed closed. Folding controls sit to the left of scene numbers so your scene headings stay aligned.
+
+### Structure Lines & Outdents
+Toggle **Show / Hide Structure Lines** in the Command Palette (<kbd>Ctrl+K</kbd> or <kbd>Ctrl+P</kbd>) to reveal colored vertical scope rails running down the left margin. Hover over a rail to see its act or sequence name, or its scene number and heading. The pointer changes and that rail becomes slightly wider while hovered. Click a rail to jump to the first line of its act, sequence, or scene and place the writing cursor there. Acts and sequences hang into the left margin while all scene headings, action, and dialogue remain strictly aligned to standard screenplay margins. When Structure Lines are hidden, all sections, sequences, and scenes align evenly on the same line as normal.`,
   },
   {
     id: "inline-formatting",
@@ -544,7 +550,7 @@ Separate column values using pipe (\`|\`) characters, and define the header sepa
 ### Visual tables
 Right-click in prose and choose **Insert Table** to choose the number of body rows and columns. Existing Markdown tables also appear as a grid with a shaded header, clear borders, and wrapping text.
 
-- Click a cell to edit it. Changes are saved as you type.
+- Click or double-click a cell to edit it. Double-click selects the cell text. Changes are saved as you type.
 - Press <kbd>Tab</kbd> or <kbd>Shift+Tab</kbd> to move between cells. Tab in the final cell adds a row.
 - Right-click a cell to insert or delete rows and columns, or align a column left, centre, or right. The header row and final column are protected.
 - Press <kbd>Escape</kbd> to return to the document. Undo and redo work with cell edits.
@@ -555,6 +561,8 @@ Right-click and choose **Insert Image…**, paste a picture, or drop one into th
 Choose **Keep original** for unchanged quality. **Optimize image** prepares a smaller copy and shows its size before you choose **Insert optimized**. Large pictures fit within 2400 pixels; transparency is preserved. Your original file is never changed. Once an optimized copy is inserted, undo and redo keep that optimized version; they do not restore the pre-optimization image.
 
 Images use short names such as \`image1\`, \`image2\`, and \`image3\` in your document. The picture data is kept separately, so editing the description never exposes a long block of image text. Existing embedded pictures are converted to these short references when opened in prose.
+
+Deleting a prose image removes its stored picture from the project on the next save, unless another prose document still uses it. Undo remains available during the current editing session; saving again after Undo includes the restored picture.
 
 Images fit the writing area. Use the controls below a picture to edit its description, replace it, or remove it. Images are included inside your saved ActOne project, so you can move or share the project without carrying the originals separately. Use the current version of ActOne to open projects containing prose images.
 

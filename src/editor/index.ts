@@ -11,3 +11,6 @@ export {
   LINE_CENTERED, LINE_SHOT,
   type PageBreakDisplaySettings
 } from './fountainSyntax';
+
+export { getFountainFoldRange, getSectionDepth, fountainFoldService } from './fountainFold';
+export { getStructureLinesExtension, structureLinesCompartment } from './structureLines';

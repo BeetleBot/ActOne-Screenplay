@@ -108,10 +108,17 @@ export function resolveProseImages(text: string, settings?: Record<string, unkno
 export function packProseImageRegistry(
   settings: Record<string, unknown>,
   entries: Record<string, Uint8Array>,
+  scripts: ScriptInfo[],
 ): Record<string, unknown> {
   if (!settings.proseImages) return settings;
+  const used = new Set(
+    scripts
+      .filter((script) => script.type === "markdown")
+      .flatMap((script) => Array.from(script.content.matchAll(proseImagePattern), (match) => match[2])),
+  );
   const stored: ProseImageRegistry = {};
   for (const [name, url] of Object.entries(getProseImages(settings))) {
+    if (!used.has(name)) continue;
     const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(url);
     if (!match) throw new Error(`Invalid prose image: ${name}`);
     const ext = match[1] === "jpeg" ? "jpg" : match[1];

@@ -97,6 +97,13 @@ export function renderCellPreview(text: string): HTMLElement {
   return span;
 }
 
+function focusTableCell(input: HTMLTextAreaElement | null | undefined): void {
+  if (!input) return;
+  // Inactive cell sources are display:none, so reveal before focusing.
+  input.style.display = "block";
+  input.focus();
+}
+
 const tableControllers = new WeakMap<HTMLElement, { widget: TableWidget; source: () => string }>();
 class TableWidget extends WidgetType {
   constructor(
@@ -145,7 +152,9 @@ class TableWidget extends WidgetType {
         requestAnimationFrame(() => {
           const widgets = view.dom.querySelectorAll<HTMLElement>(".cm-prose-table");
           const current = Array.from(widgets).find((w) => w.dataset.from === String(this.from));
-          current?.querySelector<HTMLTextAreaElement>(`[data-row="${focus[0]}"][data-col="${focus[1]}"]`)?.focus();
+          focusTableCell(
+            current?.querySelector<HTMLTextAreaElement>(`[data-row="${focus[0]}"][data-col="${focus[1]}"]`),
+          );
         });
     };
     tableControllers.set(wrap, { widget: this, source: () => serializeTable(rows, alignments) });
@@ -176,6 +185,7 @@ class TableWidget extends WidgetType {
         };
         input.onfocus = resize;
         input.onblur = (event) => {
+          input.style.removeProperty("display");
           if (input.value !== value) {
             const next = event.relatedTarget;
             const focus: [number, number] | undefined =
@@ -200,11 +210,11 @@ class TableWidget extends WidgetType {
             if (index >= rows.length * row.length) rows.push(row.map(() => ""));
             commit(rows, alignments, [Math.floor(index / row.length), index % row.length]);
             if (serializeTable(rows, alignments) === this.source)
-              wrap
-                .querySelector<HTMLTextAreaElement>(
+              focusTableCell(
+                wrap.querySelector<HTMLTextAreaElement>(
                   `[data-row="${Math.floor(index / row.length)}"][data-col="${index % row.length}"]`,
-                )
-                ?.focus();
+                ),
+              );
           } else if (event.key === "Escape") {
             event.preventDefault();
             input.blur();
@@ -306,7 +316,12 @@ class TableWidget extends WidgetType {
         };
         const preview = renderCellPreview(value);
         preview.className = "cm-prose-table-cell-preview";
-        preview.onclick = () => input.focus();
+        preview.onclick = () => focusTableCell(input);
+        cell.ondblclick = (event) => {
+          if ((event.target as HTMLElement).closest("a")) return;
+          focusTableCell(input);
+          input.select();
+        };
         cell.append(preview, input);
         tr.append(cell);
       });

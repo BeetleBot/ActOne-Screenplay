@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:editor-structure": "tsc --project tests/editor-structure/tsconfig.json && python tests/editor-structure/check.py",
     "test:pdf-layout": "cargo build --manifest-path src-tauri/Cargo.toml --locked --example pdf_layout_fixture && node tests/pdf-layout/check.mjs",
     "build:desktop-test": "tauri build --debug --no-bundle --config tests/desktop/tauri.e2e.conf.json && node tests/desktop/copy-build.mjs",
     "test:desktop": "python tests/desktop/workflow.py",

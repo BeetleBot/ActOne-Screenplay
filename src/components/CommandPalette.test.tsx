@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 
-const { editorViewRef, copySceneMock, lineNumberToggle, openFilePathMock, scrollToLineMock } = vi.hoisted(() => ({
+const { editorViewRef, copySceneMock, lineNumberToggle, structureLinesToggle, openFilePathMock, scrollToLineMock } = vi.hoisted(() => ({
   editorViewRef: { current: null as { state: import("@codemirror/state").EditorState } | null },
   lineNumberToggle: vi.fn(),
+  structureLinesToggle: vi.fn(),
   copySceneMock: vi.fn().mockResolvedValue(true),
   openFilePathMock: vi.fn(),
   scrollToLineMock: vi.fn(),
@@ -64,6 +65,8 @@ vi.mock("../context", () => ({
     setHideTagsEnabled: vi.fn(),
     lineNumbersEnabled: true,
     setLineNumbersEnabled: lineNumberToggle,
+    structureLinesEnabled: true,
+    setStructureLinesEnabled: structureLinesToggle,
     lineFocusEnabled: false,
     setLineFocusEnabled: vi.fn(),
   }),
@@ -266,5 +269,11 @@ describe("CommandPalette Component", () => {
     fireEvent.change(input, { target: { value: "mk." } });
 
     expect(screen.getByPlaceholderText(/Search markers/i)).toBeTruthy();
+  });
+  it("can hide structure lines from the command palette", () => {
+    render(<CommandPalette {...defaultProps} isOpen />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Hide Structure Lines" } });
+    fireEvent.click(screen.getByText("Hide Structure Lines"));
+    expect(structureLinesToggle).toHaveBeenCalledWith(false);
   });
 });

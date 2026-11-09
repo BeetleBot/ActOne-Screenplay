@@ -530,7 +530,7 @@ body {
 }
 
 .cm-fountain-syntax {
-  opacity: 0.35 !important;
+  opacity: 0.85;
 }
 
 .cm-fountain-syntax-hidden {
@@ -1357,3 +1357,106 @@ body:not(.dark-theme) .timeline-segment-number {
 
 /* Screenplay foreground is independent of interface labels. */
 .cm-editor .cm-content { color: var(--editor-text, var(--text-main)); }
+
+/* Structure Lines & Collapsible Sections */
+.cm-structure-lines-active .cm-fountain-section-1 {
+  margin-left: calc(-72px * var(--zoom, 1)) !important;
+  color: var(--structure-line-section, var(--text-editor-section)) !important;
+}
+
+.cm-structure-lines-active .cm-fountain-section-2 {
+  margin-left: calc(-64px * var(--zoom, 1)) !important;
+  color: var(--structure-line-subsection, var(--text-editor-section)) !important;
+}
+
+.cm-structure-layer {
+  pointer-events: none;
+}
+
+.cm-structure-line {
+  position: absolute;
+  pointer-events: auto;
+  border-radius: 9999px;
+  cursor: pointer;
+  transform-origin: center;
+  transition: opacity 0.2s ease, transform var(--transition-fast, 0.12s) ease;
+}
+
+.cm-structure-line:hover {
+  transform: scaleX(1.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-structure-line {
+    transition: none;
+  }
+}
+
+.cm-structure-line-section {
+  background-color: var(--structure-line-section, var(--button-color));
+}
+
+.cm-structure-line-subsection {
+  background-color: var(--structure-line-subsection, #a855f7);
+}
+
+.cm-structure-line-scene {
+  background-color: var(--structure-line-scene, rgba(148, 163, 184, 0.3));
+}
+
+.cm-fountain-fold-toggle {
+  position: absolute;
+  right: calc(100% + 4px * var(--zoom, 1));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(14px * var(--zoom, 1));
+  height: calc(14px * var(--zoom, 1));
+  margin-right: 0;
+  cursor: pointer;
+  border-radius: 3px;
+  color: var(--text-secondary, #888);
+  vertical-align: middle;
+  opacity: 0.6;
+  user-select: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.cm-fountain-section {
+  position: relative;
+}
+
+.cm-fountain-heading[data-scene-number] .cm-fountain-fold-toggle {
+  right: calc(100% + 2ch + var(--scene-number-width) + 4px * var(--zoom, 1));
+}
+
+.cm-fountain-fold-toggle:hover {
+  opacity: 1;
+  background-color: var(--selection-bg, rgba(255, 255, 255, 0.12));
+}
+
+.cm-fountain-fold-toggle .cm-fold-svg {
+  width: 10px;
+  height: 10px;
+}
+
+.cm-fountain-fold-placeholder {
+  background-color: var(--selection-bg, rgba(128, 128, 128, 0.2)) !important;
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3)) !important;
+  color: var(--text-secondary, #888) !important;
+  border-radius: 4px !important;
+  padding: 0 6px !important;
+  margin: 0 6px !important;
+  font-size: 0.78rem !important;
+  font-family: var(--font-ui, sans-serif) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  user-select: none !important;
+}
+
+.cm-fountain-fold-placeholder:hover {
+  background-color: var(--button-color, #2196f3) !important;
+  color: var(--button-text, #ffffff) !important;
+}

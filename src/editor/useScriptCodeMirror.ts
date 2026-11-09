@@ -21,6 +21,8 @@ import {
   LINE_DUAL_PARENTHETICAL
 } from "./fountainSyntax";
 import { autoContdField, updateAutoContdEffect } from "./autoContd";
+import { fountainFoldService, fountainFoldTogglePlugin, fountainFoldCodeExtension, foldKeymap } from "./fountainFold";
+import { getStructureLinesExtension, getStructureLinesInner, structureLinesCompartment } from "./structureLines";
 
 const smartQuotesExtension = EditorState.transactionFilter.of((tr) => {
   if (localStorage.getItem("actone-smart-quotes-enabled") !== "true") return tr;
@@ -184,7 +186,7 @@ function handleTab(view: EditorView): boolean {
 }
 
 export function useScriptCodeMirror(containerRef: React.RefObject<HTMLDivElement | null>) {
-  const { hideSyntaxEnabled, autoContdEnabled, activeRightPane } = useUI();
+  const { hideSyntaxEnabled, autoContdEnabled, activeRightPane, structureLinesEnabled } = useUI();
   const { scriptFileName, parsedDoc } = useFile();
 
   const scriptFileNameRef = useRef(scriptFileName);
@@ -228,6 +230,11 @@ export function useScriptCodeMirror(containerRef: React.RefObject<HTMLDivElement
     fountainHighlightPlugin,
     autoContdField,
     smartQuotesExtension,
+    fountainFoldService,
+    fountainFoldCodeExtension,
+    fountainFoldTogglePlugin,
+    keymap.of(foldKeymap),
+    getStructureLinesExtension(structureLinesEnabled),
   ], [fountainKeymap]);
 
   const handleInit = (view: EditorView) => {
@@ -267,6 +274,14 @@ export function useScriptCodeMirror(containerRef: React.RefObject<HTMLDivElement
       });
     }
   }, [hideSyntaxEnabled, viewRef]);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: structureLinesCompartment.reconfigure(getStructureLinesInner(structureLinesEnabled))
+      });
+    }
+  }, [structureLinesEnabled, viewRef]);
 
   useEffect(() => {
     if (viewRef.current) {

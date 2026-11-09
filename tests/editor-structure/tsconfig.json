@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["suite.ts"],
+  "exclude": [],
+  "references": []
+}

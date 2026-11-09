@@ -277,7 +277,19 @@ export const computeFountainDecorations = (
 
 
 
-    if (className) {
+    if (type === LINE_SECTION) {
+      const match = trimmed.match(/^#+/);
+      const depth = match ? match[0].length : 1;
+      const sectionClass = depth === 1 ? "cm-fountain-section cm-fountain-section-1" : "cm-fountain-section cm-fountain-section-2";
+      lineDecos.push({
+        from: line.from,
+        to: line.from,
+        dec: Decoration.line({
+          class: sectionClass,
+          attributes: { "data-section-depth": String(depth) }
+        })
+      });
+    } else if (className) {
       lineDecos.push({ from: line.from, to: line.from, dec: Decoration.line({ class: className }) });
     }
 
@@ -287,7 +299,7 @@ export const computeFountainDecorations = (
         const num = sceneNumMatch[1].trim();
         lineDecos.push({
           from: line.from, to: line.from, dec: Decoration.line({
-            attributes: { "data-scene-number": num }
+            attributes: { "data-scene-number": num, style: `--scene-number-width: ${num.length}ch` }
           })
         });
         const hashStart = line.text.indexOf("#" + sceneNumMatch[1] + "#");

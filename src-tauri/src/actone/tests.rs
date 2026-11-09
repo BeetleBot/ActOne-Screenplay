@@ -230,7 +230,8 @@ fn short_prose_references_roundtrip_with_registry_and_recovery_assets() {
     let bytes = pack(&[script.clone()], &settings).unwrap();
     let restored = unpack(&bytes, None).unwrap();
     assert_eq!(restored.scripts[0].content, script.content);
-    assert_eq!(restored.settings["proseImages"], settings["proseImages"]);
+    assert_eq!(restored.settings["proseImages"], json!({"image1":"data:image/png;base64,YQ=="}));
+    assert!(settings["proseImages"].get("image2").is_some());
     assert!(pack(&[script], &Map::new()).unwrap_err().contains("Missing prose image"));
 }
 #[test]
@@ -240,4 +241,19 @@ fn short_prose_registry_missing_asset_is_an_error() {
     writer.write_all(br#"{"proseImages":{"image1":"actone-image:assets/prose/image1.png"}}"#).unwrap();
     let bytes = writer.finish().unwrap().into_inner();
     assert!(unpack(&bytes, None).unwrap_err().contains("Missing prose image"));
+}
+
+#[test]
+fn save_omits_unused_prose_images_but_keeps_other_document_references() {
+    let script: ScriptInfo = serde_json::from_value(json!({"name":"Notes","fileName":"files/Notes.md","type":"markdown","content":"No images"})).unwrap();
+    let mut second = script.clone(); second.file_name = "files/Other.md".into(); second.content = "![image2](image2)".into();
+    let settings = json!({"proseImages":{"image1":"data:image/png;base64,YQ==","image2":"data:image/png;base64,Yg=="}}).as_object().unwrap().clone();
+    let bytes = pack(&[script.clone(), second], &settings).unwrap();
+    let mut archive = ZipArchive::new(Cursor::new(&bytes[4..])).unwrap();
+    assert!(archive.by_name("assets/prose/image1.png").is_err());
+    assert!(archive.by_name("assets/prose/image2.png").is_ok());
+    assert_eq!(unpack(&bytes, None).unwrap().settings["proseImages"], json!({"image2":"data:image/png;base64,Yg=="}));
+    let no_images = unpack(&pack(&[script], &settings).unwrap(), None).unwrap();
+    assert_eq!(no_images.settings["proseImages"], json!({}));
+    assert_eq!(settings["proseImages"].as_object().unwrap().len(), 2);
 }

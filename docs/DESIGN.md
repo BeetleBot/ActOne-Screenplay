@@ -162,3 +162,10 @@ Dashboard panels measure their content width with ResizeObserver and pass that w
 ### Prose images and tables
 
 Prose tables use a shaded semibold header, neutral one-pixel cell borders, the shared 8px radius, wrapping content and a theme-accent focus outline. Wide grids scroll inside their block. Cell sources appear on focus; inactive cells display safe inline emphasis and links. Image blocks preserve proportions within the writing width, with compact description, replace and remove controls. The import dialog previews the picture and offers original quality or an explicitly selected optimized copy with size comparison.
+
+
+### Screenplay structure in the editor
+
+Acts (`#`) and sequences (`##`) are the two screenplay structure levels. With Structure Lines enabled they outdent 72px and 64px respectively, scaled by editor zoom. Scene text retains its standard margin. Act and sequence rails are 3.5px thick; scene rails are 3px thick. Hover uses a pointer cursor and widens only the hovered rail by 50% around its centre, without changing its length or document layout. Clicking a rail focuses the editor, places the cursor at the start of its heading and scrolls that heading into view near the top. The brief transition is disabled for reduced motion. Scope rails use zoom-scaled offsets of -96px (act), -88px (sequence), and -80px (scene). Fold chevrons occupy the margin without consuming heading text width. Hiding Structure Lines removes rails and outdents while retaining folding controls.
+
+Scope rails are spaced 8px apart at 100% zoom. Act and sequence text begins 24px to the right of its matching rail. Fold controls sit to the left of scene numbers, using the actual label length to reserve space. Rails expose native hover tooltips: act/sequence names, or the scene number followed by its heading. Marker equality includes the label so heading edits refresh tooltip text even when geometry stays unchanged.

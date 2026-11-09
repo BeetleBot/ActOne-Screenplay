@@ -386,7 +386,13 @@ pub fn pack(scripts: &[ScriptInfo], settings: &Map<String, Value>) -> Result<Vec
         rest.shift_remove(k);
     }
     let mut entries = Entries::new();
+    let reference_pattern = regex::Regex::new(r"!\[[^\]\n]*\]\((image[1-9][0-9]*)\)").unwrap();
+    let used_images: std::collections::BTreeSet<String> = scripts.iter()
+        .filter(|script| script.kind == "markdown")
+        .flat_map(|script| reference_pattern.captures_iter(&script.content).map(|caps| caps[1].to_string()).collect::<Vec<_>>())
+        .collect();
     if let Some(Value::Object(images)) = rest.get_mut("proseImages") {
+        images.retain(|name, _| used_images.contains(name));
         for (name, value) in images.iter_mut() {
             if !valid_image_name(name) { return Err("Invalid prose image name".into()); }
             let url = value.as_str().ok_or("Invalid prose image data")?;

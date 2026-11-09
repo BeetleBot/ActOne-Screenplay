@@ -39,6 +39,25 @@ describe("visual prose tables", () => {
     expect(inputs[2].value).toBe("Alice");
     expect(inputs[3].style.textAlign).toBe("right");
   });
+  it("reveals a hidden cell source before click or double-click editing", () => {
+    mount();
+    const cell = view.dom.querySelectorAll("td")[0];
+    const input = cell.querySelector("textarea")!;
+    const preview = cell.querySelector<HTMLElement>(".cm-prose-table-cell-preview")!;
+    preview.click();
+    expect(input.style.display).toBe("block");
+    expect(document.activeElement).toBe(input);
+    input.blur();
+    expect(input.style.display).toBe("");
+    cell.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    expect(input.style.display).toBe("block");
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(input.value.length);
+    input.value = "Edited";
+    input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+    expect(view.state.doc.toString()).toContain("Edited");
+  });
   it("commits a cell and supports undo and redo", () => {
     mount();
     const cell = view.dom.querySelectorAll("textarea")[2];

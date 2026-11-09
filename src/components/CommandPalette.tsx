@@ -166,6 +166,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     hideSyntaxEnabled,
     setHideSyntaxEnabled,
     lineNumbersEnabled, setLineNumbersEnabled,
+    structureLinesEnabled,
+    setStructureLinesEnabled,
     lineFocusEnabled,
     setLineFocusEnabled,
     spellcheckEnabled,
@@ -409,6 +411,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(({
     { id: "view-zoom-out", name: "Zoom Out", category: "View", icon: <ZoomOutIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+-", action: () => { setZoomLevel(zoomLevel - 10); onClose(); } },
     { id: "view-zoom-reset", name: `Reset Editor Scale (${zoomLevel}%)`, category: "View", icon: <RestartAltIcon sx={{ fontSize: 16 }} />, shortcut: "Ctrl+0", action: () => { setZoomLevel(100); onClose(); } },
     ...(!isProse ? [
+      { id: "view-structure-lines", name: structureLinesEnabled ? "Hide Structure Lines" : "Show Structure Lines", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setStructureLinesEnabled(!structureLinesEnabled); onClose(); } },
       { id: "view-hide-syntax", name: hideSyntaxEnabled ? "Show Fountain Markup" : "Hide Fountain Markup", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, action: () => { setHideSyntaxEnabled(!hideSyntaxEnabled); onClose(); } },
       { id: "view-timeline", name: showTimeline ? "Hide Timeline View" : "Show Timeline View", category: "View", icon: <SettingsIcon sx={{ fontSize: 16 }} />, shortcut: "Alt+T", action: () => { setShowTimeline(!showTimeline); onClose(); } },
       { id: "view-xray", name: "Open X-Ray Analysis...", category: "View", icon: <BarChartIcon sx={{ fontSize: 16 }} />, action: () => { onOpenXrayModal?.(); onClose(); } },
