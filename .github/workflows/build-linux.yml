@@ -15,6 +15,11 @@ on:
           - both
           - appimage
           - flatpak
+      publish:
+        description: 'Publish packages to GitHub Releases and the Flatpak repository (disable for test builds)'
+        required: false
+        type: boolean
+        default: false
       version:
         description: 'Version override (e.g. 0.4.24). Leave empty to use package.json version.'
         required: false
@@ -140,6 +145,7 @@ jobs:
           retention-days: 30
 
       - name: Extract Release Notes from Changelog
+        if: github.event_name == 'push' || inputs.publish == true
         id: notes
         run: |
           VERSION="${{ needs.build-bundle.outputs.version }}"
@@ -169,6 +175,7 @@ jobs:
           ' "$VERSION"
 
       - name: Upload AppImage to GitHub Release
+        if: github.event_name == 'push' || inputs.publish == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -238,6 +245,7 @@ jobs:
           retention-days: 30
 
       - name: Extract Release Notes from Changelog
+        if: github.event_name == 'push' || inputs.publish == true
         id: notes
         run: |
           VERSION="${{ needs.build-bundle.outputs.version }}"
@@ -267,6 +275,7 @@ jobs:
           ' "$VERSION"
 
       - name: Upload Flatpak to GitHub Release
+        if: github.event_name == 'push' || inputs.publish == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -282,6 +291,7 @@ jobs:
           fi
 
   publish-flatpak-repository:
+    if: github.event_name == 'push' || inputs.publish == true
     name: Sign and publish Flatpak repository
     needs: [build-bundle, package-flatpak]
     runs-on: ubuntu-24.04
