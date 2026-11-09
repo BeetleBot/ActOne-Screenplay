@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.7.0] - 2026-11-09
+
+### Added / Improved
+
+- **Prose Image Import** – Import, paste, or drop PNG, JPEG, and WebP pictures into prose documents. Images travel inside the `.actone` bundle and use short references such as `image1`, keeping image data out of the writing text. Added image descriptions, replacement, removal, and portable Markdown exports with accompanying pictures.
+- **Optional Image Optimization** – Prose and Canvas imports offer **Keep original** or **Optimize image**, with a preview and file-size comparison. Optimized copies fit within 2400 pixels, preserve transparency, and leave source files untouched. Canvas pictures retain their position and size. Once accepted, undo and redo keep the optimized version.
+- **Visual Prose Tables** – Markdown tables now display as editable grids with shaded headers, clearer borders, wrapping cells, and theme-aware styling. Choose table dimensions when inserting; click or double-click cells to edit; use Tab and Shift+Tab to navigate; and add, remove, or align rows and columns from the cell menu. Tab from the final cell adds a row.
+- **Five Prose PDF Styles** – Added **Classic**, **Manuscript**, **Treatment**, **Modern**, and **Literary**, each with its own bundled font and layout. Classic uses Literata; Manuscript uses Courier Prime; Treatment uses Source Serif 4; Modern uses Inter; and Literary uses EB Garamond. Style changes appear in the PDF preview and saved output. Classic is the default and also determines prose page counts in the editor.
+- **Prose PDF Images and Layout** – Imported pictures appear in PDF previews and exports, retain their proportions, and stay within a single page. Improved heading, paragraph, list, and table spacing; extra blank lines in Markdown no longer create oversized export gaps. Presets include their own heading treatment, margins, leading, paragraph indents, and table spacing where applicable.
+- **Script Structure Lines and Folding** – Added themed rails for acts, sequences, and scenes, with thicker lines, heading tooltips, a pointer cursor, and subtle hover widening. Click a rail to scroll to its starting heading and place the writing cursor there. Collapse or expand acts, sequences, and scene bodies using margin controls. Acts and sequences outdent into the margin while screenplay text keeps its normal alignment. Structure lines can be shown or hidden from the Command Palette, with the preference remembered.
+- **Redesigned UrAI Chat** – Rebuilt the assistant pane with clearer messages, a compact composer, conversation history, streaming replies, Stop, and Retry. Conversations persist locally and carry forward when an unsaved draft is saved to a new path.
+- **UrAI Live Screenplay Context** – Approved lookups read the current editor text, including unsaved changes. Added printed scene-number lookup, scene-aware follow-up questions, clickable scene references, exact quoted-text search, and access to ActOne screenplay statistics. Replies identify when their source draft has changed.
+- **Whole-Screenplay Reading** – Explicit whole-screenplay requests show reading progress and save completed scene summaries locally. Stopped reads can reuse completed work, and later reads refresh changed scenes while retaining unchanged summaries. Added overview reuse and conversation context budgeting for longer chats.
+- **Workspace Motion and Loading** – Refined sidebar and right-pane transitions, dialogs, menus, controls, and UrAI message appearance, with reduced-motion support. Added an animated ActOne logo during window and document preparation, clearer loading failures, and retry support. Unused pane contents and background analysis are deferred to improve responsiveness.
+- **Faster PDF Preparation** – Shared native font caching and export-session preview caching reduce repeated preparation. Preview generation handles superseded requests, while bundled prose font faces keep output consistent without requiring those fonts to be installed separately.
+
+### Fixed
+
+- **Unused Prose Image Cleanup** – Saving now excludes pictures no longer referenced by any prose document in the project. Live image data remains available for session undo; saving again after restoring a picture includes it in the bundle. Pictures still used by another document are preserved.
+- **Prose Table Cell Focus** – Clicking, double-clicking, and keyboard navigation correctly reveal and focus the cell editor. Cell text reaches the document as it is typed, so saving captures the latest edit without requiring a click outside the table.
+- **Canvas Image Import in Packaged Apps** – Allowed temporary blob image sources used by Canvas resizing and cursor previews, fixing the `ImageBlobReduce: failed to create Image() from blob` error caused by the desktop image policy. Added checks covering image loading across Canvas, prose, previews, and X-Ray.
+- **Snapshot Recovery and Safe Deletion** – Missing or damaged snapshot indexes can be rebuilt from saved revisions, with damaged indexes backed up first. Rapid and concurrent snapshots retain distinct files and index entries. Failed deletions restore their entries, failed index writes preserve revision files, and retention protects manual and recovered snapshots.
+- **Document Switching and Save Consistency** – Hardened document preparation, live-editor flushing, and asynchronous parsing so late results do not overwrite another document or discard newer edits. Restoring a prose document also restores its image references correctly.
+- **Cross-Window Preferences and Chat History** – Preference updates are persisted before being broadcast, and concurrent windows cannot overwrite newer committed settings or UrAI history. Provider changes and revoked screenplay access prevent protected earlier context from being sent to a different destination.
+
+### Packaging / Development
+
+- **Native Desktop File Core** – Moved project bundle encoding, decoding, import conversion, file writes, and export text preparation into the Rust desktop service. Preserved legacy bundle compatibility, Canvas assets, per-document metadata, Unicode text, and live snapshot capture, with explicit errors for corrupt data and missing assets.
+- **Separate Linux Release and Test Workflows** – The main Linux workflow runs on version tags and continues building and publishing AppImage, GitHub release packages, and the signed Flatpak repository. A separate manual workflow builds the latest pushed commit on the selected branch and uploads downloadable AppImage and/or Flatpak artifacts for 30 days, without publishing a release or updating the public repository.
+- **Flatpak Runtime and Release Metadata** – Updated the Flatpak runtime to GNOME 50 and refreshed release metadata. Version synchronization now updates Flatpak AppStream releases alongside the application version.
+- **Expanded Automated Verification** – Added continuous integration for frontend and Rust checks, native/reference file-core parity tests, isolated preference tests, desktop create/edit/save/reopen workflows, PDF layout checks, real-browser structure layout checks, and image, table, folding, navigation, loading, onboarding, and snapshot regression coverage. Added valid, damaged, and multilingual project fixtures.
+- **Documentation, Privacy, and Artwork** – Updated writer help, developer guides, architecture and file-format documentation, and UrAI privacy information to describe current sharing and local-storage behaviour. Refreshed application/store screenshots and cards, removed obsolete artwork and screenshot-generation tooling, and retired the superseded UrAI pane and browser-side indexing hook.
+
 ## [0.6.2] - 2026-11-01
 
 ### Added / Improved

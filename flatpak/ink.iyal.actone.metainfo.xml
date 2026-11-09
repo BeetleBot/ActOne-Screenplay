@@ -55,10 +55,8 @@
     <mediatype>application/vnd.actone.bundle</mediatype>
     <mediatype>application/vnd.actone.theme</mediatype>
   </provides>
-        <releases>
-    <release version="0.6.3" date="2026-11-06" />
-    <release version="0.6.4" date="2026-11-06" />
-    <release version="0.6.3" date="2026-11-03" />
+  <releases>
+    <release version="0.7.0" date="2026-11-09" />
     <release version="0.6.2" date="2026-11-01">
       <description>
         <ul>

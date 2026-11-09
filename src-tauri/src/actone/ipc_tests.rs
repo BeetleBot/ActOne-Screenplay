@@ -22,7 +22,13 @@ fn invoke(command: &str, body: Value) -> Result<Value, Value> {
             cmd: command.into(),
             callback: tauri::ipc::CallbackFn(0),
             error: tauri::ipc::CallbackFn(1),
-            url: "http://tauri.localhost".parse().unwrap(),
+            // Tauri treats the app origin differently on Windows and Linux.
+            // Using the Windows origin on Linux makes local commands fail ACL checks.
+            url: if cfg!(any(windows, target_os = "android")) {
+                "http://tauri.localhost"
+            } else {
+                "tauri://localhost"
+            }.parse().unwrap(),
             body: tauri::ipc::InvokeBody::Json(body),
             headers: Default::default(),
             invoke_key: tauri::test::INVOKE_KEY.into(),
