@@ -4,26 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      format:
-        description: 'Build format'
-        required: true
-        type: choice
-        default: both
-        options:
-          - both
-          - appimage
-          - flatpak
-      publish:
-        description: 'Publish packages to GitHub Releases and the Flatpak repository (disable for test builds)'
-        required: false
-        type: boolean
-        default: false
-      version:
-        description: 'Version override (e.g. 0.4.24). Leave empty to use package.json version.'
-        required: false
-        type: string
 
 permissions:
   contents: write
@@ -69,13 +49,7 @@ jobs:
       - name: Determine version
         id: ver
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-          if [ -z "$VERSION" ] && [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
-            VERSION="${GITHUB_REF_NAME#v}"
-          fi
-          if [ -z "$VERSION" ]; then
-            VERSION=$(node -p "require('./package.json').version" 2>/dev/null || grep -oP '"version":\s*"\K[^"]+' package.json | head -1)
-          fi
+          VERSION="${GITHUB_REF_NAME#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Building binary for version: $VERSION"
 
@@ -91,7 +65,6 @@ jobs:
 
   package-appimage:
     name: Package AppImage
-    if: github.event_name != 'workflow_dispatch' || inputs.format == 'both' || inputs.format == 'appimage'
     needs: build-bundle
     runs-on: ubuntu-22.04
 
@@ -145,7 +118,6 @@ jobs:
           retention-days: 30
 
       - name: Extract Release Notes from Changelog
-        if: github.event_name == 'push' || inputs.publish == true
         id: notes
         run: |
           VERSION="${{ needs.build-bundle.outputs.version }}"
@@ -175,7 +147,6 @@ jobs:
           ' "$VERSION"
 
       - name: Upload AppImage to GitHub Release
-        if: github.event_name == 'push' || inputs.publish == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -192,7 +163,6 @@ jobs:
 
   package-flatpak:
     name: Package Flatpak
-    if: github.event_name != 'workflow_dispatch' || inputs.format == 'both' || inputs.format == 'flatpak'
     needs: build-bundle
     runs-on: ubuntu-latest
     container:
@@ -245,7 +215,6 @@ jobs:
           retention-days: 30
 
       - name: Extract Release Notes from Changelog
-        if: github.event_name == 'push' || inputs.publish == true
         id: notes
         run: |
           VERSION="${{ needs.build-bundle.outputs.version }}"
@@ -275,7 +244,6 @@ jobs:
           ' "$VERSION"
 
       - name: Upload Flatpak to GitHub Release
-        if: github.event_name == 'push' || inputs.publish == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -291,7 +259,6 @@ jobs:
           fi
 
   publish-flatpak-repository:
-    if: github.event_name == 'push' || inputs.publish == true
     name: Sign and publish Flatpak repository
     needs: [build-bundle, package-flatpak]
     runs-on: ubuntu-24.04

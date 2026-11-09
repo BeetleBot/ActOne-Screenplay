@@ -62,7 +62,12 @@ Run packaging regression checks with `npm test -- src/appimagePackaging.test.ts`
 
 ### Signed Flatpak repository on Cloudflare R2
 
-The final `publish-flatpak-repository` job in **`build-linux.yml`** waits for `package-flatpak`, downloads that run's `ActOne-Screenplay-Flatpak-x86_64` artifact, and publishes it to the `actone-flatpak` R2 bucket. The unified `build-linux.yml` is the only Linux build workflow: it builds the shared binary, packages and uploads both formats with changelog release notes, and signs and publishes the Flatpak repository. Version-tag pushes build both formats. Manual dispatch offers a `format` choice (`both`, the default; `appimage`; or `flatpak`) and a `publish` checkbox that defaults to false. With publishing disabled, builds upload downloadable workflow artifacts retained for 30 days, without creating or editing GitHub releases or publishing the Flatpak repository. Enable `publish` explicitly for a manual release; version-tag pushes retain automatic release publishing. The shared binary always builds once; only the selected packaging jobs run. Flatpak repository publishing depends on successful Flatpak packaging and is skipped for AppImage-only runs. The standalone AppImage and Flatpak workflows have been removed.
+Linux has two workflows sharing the same binary build and packaging steps:
+
+- **`build-linux.yml` — Build Linux (AppImage & Flatpak):** starts automatically on `v*` tag pushes. It derives the version from the tag, builds both formats, uploads packages to the GitHub release, and signs/publishes the Flatpak repository. Its final `publish-flatpak-repository` job downloads the successful Flatpak artifact and publishes to the `actone-flatpak` R2 bucket.
+- **`test-linux.yml` — Test Linux Build (Artifacts Only):** manual only. Select a branch and `format` (`both`, the default; `appimage`; or `flatpak`). It builds the latest pushed commit of that branch at dispatch time, with all checkout steps pinned to the same `github.sha`, and takes the version from that commit's `package.json`. Tag refs are skipped. The workflow has read-only repository permissions and contains no release-upload, signing, or repository-publication steps. Download AppImage/Flatpak artifacts from the workflow run for up to 30 days. No release, tag, or published Flatpak repository is changed.
+
+Each workflow compiles the shared binary once. Test builds run only the selected packaging jobs; release builds run both. The earlier format-specific standalone workflows remain removed. Changes to shared build/packaging steps should be kept in sync between these two workflows.
 
 Repository secrets:
 
@@ -90,7 +95,7 @@ Edit `flatpak/ink.iyal.actone.metainfo.xml` for the displayed publisher (`develo
 
 Screenshot PNGs are tracked in `flatpak/screenshots/v0.5.7/`. Their public URLs are under `https://flatpak.iyal.ink/screenshots/v0.5.7/`, with actual pixel dimensions declared in MetaInfo. Exactly one screenshot is marked `type="default"`. The signing script stages these assets, and `build-linux.yml` uploads them to R2 before publishing repository metadata. For replacement screenshots, prefer a new versioned path so cached images remain consistent with their captions.
 
-Listing-only corrections can be published under the existing app version by manually running `build-linux.yml` on `main` with that version and `publish` enabled. This rebuilds and replaces the GitHub release packages and refreshes the signed repository. It does not move the existing Git tag. Discover may cache listing data; refresh it with `flatpak update --user --appstream actone`, then restart Discover if needed. `python3 scripts/test-flatpak-repository.py` validates publisher/version alignment, screenshot URLs and image dimensions, and screenshot staging alongside its signing integration test.
+Use `test-linux.yml` for checking listing-only corrections before releasing. Publishing requires the tag-triggered `build-linux.yml` release process; the manual test workflow cannot replace GitHub release packages or update the signed repository. Discover may cache listing data; refresh it with `flatpak update --user --appstream actone`, then restart Discover if needed. `python3 scripts/test-flatpak-repository.py` validates publisher/version alignment, screenshot URLs and image dimensions, and screenshot staging alongside its signing integration test.
 
 ## Windows Build
 
