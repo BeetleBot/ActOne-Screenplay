@@ -8,6 +8,7 @@ import { alpha } from "@mui/material/styles";
 
 import { useEditor, useCursor } from "../../context";
 import { DownloadIcon, CheckIcon, ViewAgendaIcon, KeyboardArrowDownIcon } from "../Icons";
+import { useProsePagination } from "../../hooks/useDocumentPagination";
 import { useStoreUpdateCheck } from "../../hooks";
 import { useModalWindows } from "../../hooks/useModalWindows";
 
@@ -20,13 +21,14 @@ export const StatusBar = React.memo(() => {
   const { setActiveScript } = useFileActions();
   const saveStatus = useFileSaveStatus();
   const {
-    isZenMode, aiStatus, translationState, setTranslationState, cancelTranslation,
+    paperSize, isZenMode, aiStatus, translationState, setTranslationState, cancelTranslation,
     spellcheckEnabled, setSpellcheckEnabled, spellcheckLanguage, setSpellcheckLanguage,
     showTimeline, timelineFilter, setTimelineFilter,
     timelineShowSections, setTimelineShowSections,
     timelineShowSceneNumbers, setTimelineShowSceneNumbers,
     timelineShowSceneColors, setTimelineShowSceneColors,
   } = useUI();
+  const proseBreaks = useProsePagination(rawText, paperSize === "letter" ? "letter" : "a4", `${activeFileId}:${activeScriptIndex}`, isMarkdown && !isDocumentLoading, parsedDoc.settings);
   const { activeLineNumber } = useCursor();
   const { activeSprints } = useSprint();
   const { updateAvailable, installUpdate } = useStoreUpdateCheck();
@@ -195,16 +197,16 @@ export const StatusBar = React.memo(() => {
     const chars = text.length;
     const docLinesCount = text ? text.split("\n").length : 1;
 
-    const hasTitlePage = parsedDoc?.lines?.some(
+    const hasTitlePage = !isMarkdown && (parsedDoc?.lines?.some(
       l => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown
-    ) || false;
+    ) || false);
 
-    const breaks = parsedDoc?.pageBreaks || [];
+    const breaks = isMarkdown ? proseBreaks ?? [] : parsedDoc?.pageBreaks || [];
     const hasBreaks = breaks.length > 0;
 
     let pages: number;
     if (isMarkdown) {
-      pages = Math.max(1, Math.ceil(docLinesCount / 40));
+      pages = breaks.length + 1;
     } else if (hasBreaks) {
       if (hasTitlePage) {
         pages = Math.max(1, breaks.length);
@@ -220,19 +222,19 @@ export const StatusBar = React.memo(() => {
     return {
       words: words.toLocaleString(),
       chars: chars.toLocaleString(),
-      pages: pages.toLocaleString(),
+      pages: isMarkdown && proseBreaks === null ? "..." : pages.toLocaleString(),
       rawPages: pages,
       hasBreaks,
       hasTitlePage,
       breaks,
       sceneCount: sceneCount.toLocaleString()
     };
-  }, [rawText, parsedDoc, isMarkdown, isDocumentLoading]);
+  }, [rawText, parsedDoc, isMarkdown, isDocumentLoading, proseBreaks]);
 
   const currentPage = useMemo(() => {
     const currentLineNumber = Math.max(1, activeLineNumber + 1);
     if (isMarkdown) {
-      return Math.min(docStats.rawPages, Math.max(1, Math.ceil(currentLineNumber / 40)));
+      return Math.min(docStats.rawPages, docStats.breaks.filter(b => b <= currentLineNumber).length + 1);
     }
     if (docStats.hasBreaks) {
       if (docStats.hasTitlePage) {
@@ -262,8 +264,7 @@ export const StatusBar = React.memo(() => {
       return;
     }
     if (!editorView) return;
-    const lineIndex = isMarkdown ? (page - 1) * 40
-      : docStats.hasBreaks
+    const lineIndex = docStats.hasBreaks
         ? (docStats.hasTitlePage ? docStats.breaks[page - 1] - 1 : page === 1 ? 0 : docStats.breaks[page - 2] - 1)
         : (page - 1) * 54;
     const line = editorView.state.doc.line(Math.max(1, Math.min(editorView.state.doc.lines, lineIndex + 1)));
@@ -1005,7 +1006,7 @@ export const StatusBar = React.memo(() => {
                           '& input': { minWidth: 0, py: 0.75 } }} />
                       {(pageError || isMarkdown) && <Typography id={pageHintId} role={pageError ? "alert" : undefined}
                         sx={{ mt: 0.75, fontSize: 11, color: pageError ? "error.main" : "text.secondary" }}>
-                        {pageError ? `Enter a whole number from 1 to ${docStats.rawPages}` : "Estimated pages"}
+                        {pageError ? `Enter a whole number from 1 to ${docStats.rawPages}` : "Pages use the Classic PDF style. Page jumps go to the source block containing that page."}
                       </Typography>}
                     </Box>
                   </Popover>

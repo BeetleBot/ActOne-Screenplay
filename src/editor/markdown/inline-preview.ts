@@ -533,12 +533,7 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
         }
       }
 
-      // Tables are rendered by the separate `tables()` block-widget
-      // extension (./table-widget.ts) — the whole Table range is
-      // replaced with an interactive HTML `<table>`. Any inline
-      // decorations on TableHeader/TableRow/TableDelimiter would
-      // target ranges that are already hidden behind the replace
-      // widget, so they're intentionally absent from this builder.
+      // Tables and standalone imported images are rendered by prose-media.ts.
 
       if (node.name === 'HorizontalRule') {
         // CommonMark HR: a line of `***`, `---`, or `___` (3+, any

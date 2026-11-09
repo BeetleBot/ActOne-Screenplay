@@ -1,0 +1,16 @@
+{
+  "identifier": "ink.iyal.actone.e2e",
+  "build": { "devUrl": null },
+  "app": {
+    "windows": [
+      {
+        "label": "welcome",
+        "title": "ActOne Desktop Test",
+        "width": 1200,
+        "height": 800,
+        "decorations": false,
+        "resizable": true
+      }
+    ]
+  }
+}

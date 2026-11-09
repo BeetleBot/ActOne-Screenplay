@@ -48,3 +48,15 @@ mod native_store_tests {
         deleted.unwrap();
     }
 }
+
+
+    #[test]
+    fn test_credential_id_validation() {
+        assert!(entry("valid-id-123").is_ok());
+        assert!(entry("api-key-gemini").is_ok());
+        assert!(entry("").is_err(), "Empty ID should be rejected");
+        assert!(entry("invalid/slashes").is_err(), "Slashes should be rejected");
+        assert!(entry("invalid spaces in id").is_err(), "Spaces should be rejected");
+        let long_id = "a".repeat(101);
+        assert!(entry(&long_id).is_err(), "ID longer than 100 chars should be rejected");
+    }

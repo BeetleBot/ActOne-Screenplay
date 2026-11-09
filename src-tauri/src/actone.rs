@@ -106,6 +106,16 @@ pub fn unpack(bytes: &[u8], bundle_name: Option<&str>) -> Result<Bundle, String>
         .cloned()
         .unwrap_or_default();
     settings.shift_remove("assets");
+    if let Some(Value::Object(images)) = settings.get_mut("proseImages") {
+        for (name, value) in images.iter_mut() {
+            if !valid_image_name(name) { return Err("Invalid prose image name".into()); }
+            let url = value.as_str().ok_or("Invalid prose image reference")?;
+            let restored = restore_prose(&format!("![{name}]({url})"), &entries)?;
+            let captures = prose_pattern().captures(&restored).ok_or("Invalid prose image reference")?;
+            if !captures[2].starts_with("data:image/") { return Err("Missing prose image bytes".into()); }
+            *value = json!(&captures[2]);
+        }
+    }
     let chats = optional(
         &entries,
         "urai.json",
@@ -269,6 +279,7 @@ fn encode_component(s: &str) -> String {
         .collect()
 }
 fn pack_canvas(script: &ScriptInfo, entries: &mut Entries) -> Result<String, String> {
+    if script.kind == "markdown" { return pack_prose(&script.content, &script.file_name, entries); }
     if script.kind != "canvas" {
         return Ok(script.content.clone());
     }
@@ -321,6 +332,8 @@ fn pack_canvas(script: &ScriptInfo, entries: &mut Entries) -> Result<String, Str
     serde_json::to_string(&data).map_err(|e| e.to_string())
 }
 fn restore_canvas(content: &str, entries: &Entries) -> Result<String, String> {
+    let restored = restore_prose(content, entries)?;
+    let content = restored.as_str();
     let Ok(mut data) = serde_json::from_str::<Value>(content) else {
         return Ok(content.into());
     };
@@ -373,6 +386,18 @@ pub fn pack(scripts: &[ScriptInfo], settings: &Map<String, Value>) -> Result<Vec
         rest.shift_remove(k);
     }
     let mut entries = Entries::new();
+    if let Some(Value::Object(images)) = rest.get_mut("proseImages") {
+        for (name, value) in images.iter_mut() {
+            if !valid_image_name(name) { return Err("Invalid prose image name".into()); }
+            let url = value.as_str().ok_or("Invalid prose image data")?;
+            let captures = prose_pattern().captures(&format!("![{name}]({url})")).map(|c| c[2].to_string()).ok_or("Invalid prose image data")?;
+            let (prefix, encoded) = captures.split_once(',').ok_or("Invalid prose image data")?;
+            let ext = if prefix.contains("jpeg") { "jpg" } else if prefix.contains("webp") { "webp" } else { "png" };
+            let path = format!("assets/prose/{name}.{ext}");
+            entries.insert(path.clone(), STANDARD.decode(encoded).map_err(|e| format!("Invalid prose image: {e}"))?);
+            *value = json!(format!("actone-image:{path}"));
+        }
+    }
     let manifest: Vec<Value> = scripts.iter().map(|s| json!({"name":s.name,"file":s.file_name,"type":if s.kind.is_empty() {"fountain"} else {&s.kind}})).collect();
     let mut put = |key: &str, value: Value| -> Result<(), String> {
         entries.insert(
@@ -453,6 +478,14 @@ pub fn pack(scripts: &[ScriptInfo], settings: &Map<String, Value>) -> Result<Vec
                 script.file_name
             ));
         }
+        if script.kind == "markdown" {
+            let pattern = regex::Regex::new(r"!\[[^\]\n]*\]\((image[1-9][0-9]*)\)").unwrap();
+            for caps in pattern.captures_iter(&script.content) {
+                if settings.get("proseImages").and_then(|v| v.get(&caps[1])).is_none() {
+                    return Err(format!("Missing prose image: {}", &caps[1]));
+                }
+            }
+        }
         let content = pack_canvas(script, &mut entries)?;
         entries.insert(script.file_name.clone(), content.into_bytes());
     }
@@ -528,3 +561,44 @@ pub fn save(
 
 #[cfg(test)]
 mod tests;
+
+fn prose_pattern() -> regex::Regex {
+    regex::Regex::new(r"!\[([^\]\n]*)\]\((data:image/(?:png|jpeg|webp);base64,[A-Za-z0-9+/=]+|actone-image:assets/prose/[A-Za-z0-9%._/-]+)\)").unwrap()
+}
+pub(crate) fn pack_prose(content: &str, file_name: &str, entries: &mut BTreeMap<String, Vec<u8>>) -> Result<String, String> {
+    let mut error = None;
+    let mut index = 0;
+    let result = prose_pattern().replace_all(content, |caps: &regex::Captures| {
+        let url = &caps[2];
+        let Some((prefix, encoded)) = url.split_once(',') else { error = Some("Unresolved prose image".to_string()); return caps[0].to_string(); };
+        let ext = if prefix.contains("jpeg") { "jpg" } else if prefix.contains("webp") { "webp" } else { "png" };
+        match STANDARD.decode(encoded) {
+            Ok(bytes) => {
+                let path = format!("assets/prose/{}/{index}.{ext}", encode_component(file_name));
+                index += 1;
+                entries.insert(path.clone(), bytes);
+                format!("![{}](actone-image:{path})", &caps[1])
+            }
+            Err(e) => { error = Some(format!("Invalid prose image: {e}")); caps[0].to_string() }
+        }
+    }).into_owned();
+    if let Some(error) = error { Err(error) } else { Ok(result) }
+}
+fn restore_prose(content: &str, entries: &Entries) -> Result<String, String> {
+    let mut missing = None;
+    let result = prose_pattern().replace_all(content, |caps: &regex::Captures| {
+        let Some(path) = caps[2].strip_prefix("actone-image:") else { return caps[0].to_string(); };
+        match entries.get(path) {
+            Some(bytes) => {
+                let mime = if path.ends_with(".jpg") { "image/jpeg" } else if path.ends_with(".webp") { "image/webp" } else { "image/png" };
+                format!("![{}](data:{mime};base64,{})", &caps[1], STANDARD.encode(bytes))
+            }
+            None => { missing = Some(format!("Missing prose image: {path}")); caps[0].to_string() }
+        }
+    }).into_owned();
+    if let Some(error) = missing { Err(error) } else { Ok(result) }
+}
+
+fn valid_image_name(name: &str) -> bool {
+    name.strip_prefix("image").is_some_and(|suffix| !suffix.is_empty() && !suffix.starts_with('0') && suffix.bytes().all(|b| b.is_ascii_digit()))
+}

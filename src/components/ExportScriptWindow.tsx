@@ -1,3 +1,5 @@
+import { zipSync, strToU8 } from "fflate";
+import { exportProseMarkdown, resolveProseImages } from "../utils/proseAssets";
 import React, { useState } from "react";
 import { useFile } from "../context";
 import { invoke } from "@tauri-apps/api/core";
@@ -32,7 +34,7 @@ export interface ExportScriptWindowProps {
   onClose: () => void;
 }
 
-/* ── Option row with checkbox (Settings Window style) ── */
+/* â”€â”€ Option row with checkbox (Settings Window style) â”€â”€ */
 const OptionRow: React.FC<{
   label: string;
   checked: boolean;
@@ -65,7 +67,7 @@ const OptionRow: React.FC<{
 
 export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose, data }) => {
   const fileContext = useFile();
-  const { rawText, isBundle, activeScriptName, filePath, scripts, activeScriptIndex } = data?.file ?? fileContext;
+  const { rawText, isBundle, activeScriptName, filePath, scripts, activeScriptIndex, parsedDoc } = data?.file ?? fileContext;
 
   const activeScript = scripts?.[activeScriptIndex ?? 0];
   const isProse = isProseScript(activeScript, filePath);
@@ -96,6 +98,7 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
 
   const handleExportMarkdown = async () => {
     try {
+      const markdownText = resolveProseImages(rawText, parsedDoc?.settings);
       const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
       if (isTauri) {
         const documentDir = filePath ? filePath.replace(/[/\\][^/\\]+$/, "") : undefined;
@@ -103,7 +106,7 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
         const defaultName = activeScriptName.endsWith(".md") ? activeScriptName : `${activeScriptName}.md`;
 
         const result = await invoke<string | null>("export_markdown", {
-          content: rawText,
+          content: markdownText,
           defaultDirectory: defaultDir,
           defaultName,
         });
@@ -116,11 +119,14 @@ export const ExportScriptWindow: React.FC<ExportScriptWindowProps> = ({ onClose,
           ? filePath.split(/[/\\]/).pop()?.replace(/\.(actone|fountain|txt|md|markdown)$/i, "") || "Untitled"
           : "Untitled";
         const scriptSuffix = isBundle ? `_${activeScriptName}` : "";
-        const blob = new Blob([rawText], { type: "text/markdown;charset=utf-8" });
+        const { content: packed, entries } = exportProseMarkdown(rawText, parsedDoc?.settings);
+        const hasImages = Object.keys(entries).length > 0;
+        if (hasImages) entries["document.md"] = strToU8(packed);
+        const blob = hasImages ? new Blob([new Uint8Array(zipSync(entries))], { type: "application/zip" }) : new Blob([markdownText], { type: "text/markdown;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${bundleName}${scriptSuffix}.md`;
+        a.download = `${bundleName}${scriptSuffix}.${hasImages ? "zip" : "md"}`;
         a.click();
         URL.revokeObjectURL(url);
         onClose();

@@ -103,7 +103,8 @@ pub mod file_formats;
 // Reference implementations for parity tests; React owns live UI state.
 #[cfg(test)]
 pub mod project_state;
-mod app_prefs;
+#[doc(hidden)]
+pub mod app_prefs;
 mod font_cache;
 mod ollama;
 pub mod pdf;
@@ -744,14 +745,44 @@ fn export_markdown(content: String, default_directory: Option<String>, default_n
         file_path.set_extension("md");
     }
 
+    let mut images = std::collections::BTreeMap::new();
+    let packed = actone::pack_prose(&content, "images", &mut images)?;
+    let content = if images.is_empty() { content } else {
+        let folder = format!("prose-images-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_nanos());
+        let parent = file_path.parent().ok_or("Invalid export location")?;
+        let mut exported = packed;
+        for (index, (path, bytes)) in images.into_iter().enumerate() {
+            let extension = std::path::Path::new(&path).extension().and_then(|ext| ext.to_str()).ok_or("Invalid image type")?;
+            let filename = format!("image{}.{}", index + 1, extension);
+            let target = parent.join(&folder).join(&filename);
+            std::fs::create_dir_all(target.parent().ok_or("Invalid image location")?).map_err(|e| e.to_string())?;
+            std::fs::write(&target, bytes).map_err(|e| e.to_string())?;
+            exported = exported.replace(&format!("actone-image:{path}"), &format!("{folder}/{filename}"));
+        }
+        exported
+    };
     write_file_atomically(&file_path, &content)?;
     Ok(Some(file_path.to_string_lossy().to_string()))
+}
+
+/// Editor prose pagination always uses the Classic export layout.
+#[tauri::command]
+async fn get_prose_page_breaks(markdown_text: String, paper_size: Option<String>) -> Result<Vec<usize>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let exporter = pdf::prose::export::ProsePdfExporter {
+            prose_style: Some("classic".into()),
+            paper_size: if paper_size.as_deref() == Some("letter") { pdf::LETTER } else { pdf::A4 },
+            ..Default::default()
+        };
+        exporter.export_with_page_breaks(&markdown_text.replace("\r\n", "\n"), &mut std::io::sink()).map_err(|e| e.to_string())
+    }).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 fn export_prose_pdf(
     markdown_text: String,
+    prose_style: Option<String>,
     paper_size: Option<String>,
     font_family: Option<String>,
     watermark_header_enabled: Option<bool>,
@@ -790,6 +821,7 @@ fn export_prose_pdf(
     };
 
     let exporter = pdf::prose::export::ProsePdfExporter {
+        prose_style,
         paper_size: paper,
         export_font,
         watermark_header_enabled: watermark_header_enabled.unwrap_or(false),
@@ -822,6 +854,7 @@ fn export_prose_pdf(
 #[allow(clippy::too_many_arguments)]
 fn generate_prose_pdf_bytes(
     markdown_text: String,
+    prose_style: Option<String>,
     paper_size: Option<String>,
     font_family: Option<String>,
     watermark_header_enabled: Option<bool>,
@@ -853,6 +886,7 @@ fn generate_prose_pdf_bytes(
     };
 
     let exporter = pdf::prose::export::ProsePdfExporter {
+        prose_style,
         paper_size: paper,
         export_font,
         watermark_header_enabled: watermark_header_enabled.unwrap_or(false),
@@ -1102,6 +1136,7 @@ pub fn run() {
             };
             app.manage(ThemeConfig(Mutex::new(theme_state)));
 
+            app.manage(app_prefs::PrefsStorage(app_prefs::prefs_file_path(handle)));
             let prefs = app_prefs::load_prefs(handle);
             if let Some(icon_pref) = prefs.get("actone-app-icon") {
                 let use_dark = icon_pref == "dark";
@@ -1127,6 +1162,7 @@ pub fn run() {
             xray_pdf::export_xray_pdf,
             export_pdf,
             export_prose_pdf,
+            get_prose_page_breaks,
             generate_prose_pdf_bytes,
             export_markdown,
             export_fountain,

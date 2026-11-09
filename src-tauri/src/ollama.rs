@@ -48,3 +48,41 @@ pub async fn ollama_list_models(url: String) -> Result<Vec<String>, String> {
         .collect();
     Ok(models)
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deserialize_ollama_tags() {
+        let json = r#"{
+            "models": [
+                {"name": "llama3:latest"},
+                {"name": "mistral:7b"},
+                {"name": "gemma2:latest"}
+            ]
+        }"#;
+
+        let parsed: OllamaTagsResponse = serde_json::from_str(json).unwrap();
+        let models: Vec<String> = parsed
+            .models
+            .unwrap_or_default()
+            .into_iter()
+            .map(|m| m.name.trim_end_matches(":latest").to_string())
+            .collect();
+
+        assert_eq!(models, vec!["llama3", "mistral:7b", "gemma2"]);
+    }
+
+    #[test]
+    fn test_deserialize_empty_or_null_models() {
+        let json = r#"{"models": null}"#;
+        let parsed: OllamaTagsResponse = serde_json::from_str(json).unwrap();
+        assert!(parsed.models.is_none());
+
+        let empty_json = r#"{"models": []}"#;
+        let parsed_empty: OllamaTagsResponse = serde_json::from_str(empty_json).unwrap();
+        assert_eq!(parsed_empty.models.unwrap().len(), 0);
+    }
+}

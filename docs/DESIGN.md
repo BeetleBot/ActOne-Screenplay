@@ -158,3 +158,7 @@ Timeline pills and playhead use neutral gray independently of the interface acce
 ### X-Ray resizing
 
 Dashboard panels measure their content width with ResizeObserver and pass that width to chart geometry, keeping SVG labels and row heights stable as plots resize. Paired panels stack below the medium breakpoint; summary tiles use two columns on small windows. Dashboard scroll children do not flex-shrink, so short windows scroll rather than compress the charts. PDF atlas rendering retains its explicit chart dimensions.
+
+### Prose images and tables
+
+Prose tables use a shaded semibold header, neutral one-pixel cell borders, the shared 8px radius, wrapping content and a theme-accent focus outline. Wide grids scroll inside their block. Cell sources appear on focus; inactive cells display safe inline emphasis and links. Image blocks preserve proportions within the writing width, with compact description, replace and remove controls. The import dialog previews the picture and offers original quality or an explicitly selected optimized copy with size comparison.

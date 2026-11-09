@@ -571,7 +571,10 @@ pub fn get_krilla_font(
     let is_italic = face_info.style == cosmic_text::fontdb::Style::Italic
         || face_info.style == cosmic_text::fontdb::Style::Oblique;
 
-    let is_neutral_run = !text.is_empty()
+    // Glyph IDs belong to the shaped face. Never substitute an Indic face
+    // for punctuation shaped in a bundled prose family.
+    let is_prose_face = face_info.families.iter().any(|(name, _)| matches!(name.as_str(), "Literata" | "Source Serif 4" | "Source Sans 3" | "EB Garamond" | "Inter"));
+    let is_neutral_run = !is_prose_face && !text.is_empty()
         && text.chars().all(|c| {
             let val = c as u32;
             !c.is_ascii_alphabetic() && !((0x0900..=0x0D7F).contains(&val))
@@ -819,6 +822,9 @@ pub fn get_krilla_font(
                             krilla::text::Font::new(bytes.into(), face_info.index)
                         })
                     }
+                }
+                cosmic_text::fontdb::Source::Binary(data) => {
+                    krilla::text::Font::new(data.as_ref().as_ref().to_vec().into(), face_info.index)
                 }
                 _ => None,
             };

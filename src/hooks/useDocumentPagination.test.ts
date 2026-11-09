@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { useDocumentPagination, type DocumentPaginationOptions } from "./useDocumentPagination";
+import { useDocumentPagination, useProsePagination, type DocumentPaginationOptions } from "./useDocumentPagination";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 beforeEach(() => {
@@ -58,5 +58,29 @@ it("does not apply a late result to the next document", async () => {
   expect(initial.onResult).toHaveBeenCalledWith([0]);
   expect(initial.onResult).not.toHaveBeenCalledWith([99]);
   expect(invoke).toHaveBeenCalledTimes(2);
+  hook.unmount();
+});
+
+it("uses Classic native prose pagination and drops stale results", async () => {
+  let resolve!: (breaks: number[]) => void;
+  vi.mocked(invoke).mockReturnValueOnce(new Promise<number[]>(done => { resolve = done; }));
+  const hook = renderHook(({ text }) => useProsePagination(text, "a4", "notes", true), { initialProps: { text: "first" } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+  expect(invoke).toHaveBeenCalledWith("get_prose_page_breaks", { markdownText: "first", paperSize: "a4" });
+  hook.rerender({ text: "second" });
+  await act(async () => resolve([99]));
+  expect(hook.result.current).toBeNull();
+  vi.mocked(invoke).mockResolvedValue([12, 30]);
+  await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+  expect(hook.result.current).toEqual([12, 30]);
+  hook.unmount();
+});
+
+it("resolves short image names for Classic prose pagination", async () => {
+  vi.mocked(invoke).mockResolvedValue([]);
+  const images = { proseImages: { image1: "data:image/png;base64,AAAA" } };
+  const hook = renderHook(() => useProsePagination("![image1](image1)", "letter", "notes", true, images));
+  await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+  expect(invoke).toHaveBeenCalledWith("get_prose_page_breaks", { markdownText: "![image1](data:image/png;base64,AAAA)", paperSize: "letter" });
   hook.unmount();
 });

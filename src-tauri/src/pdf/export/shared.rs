@@ -19,6 +19,25 @@ const FONTS: [&[u8]; 8] = [
     include_bytes!("fonts/CourierPrimeSans-BoldItalic.ttf"),
 ];
 
+const PROSE_FONTS: [&[u8]; 16] = [
+    include_bytes!("../../../../public/fonts/prose/literata-Regular.ttf"),
+    include_bytes!("../../../../public/fonts/prose/literata-Bold.ttf"),
+    include_bytes!("../../../../public/fonts/prose/literata-Italic.ttf"),
+    include_bytes!("../../../../public/fonts/prose/literata-BoldItalic.ttf"),
+    include_bytes!("../../../../public/fonts/prose/sourceserif4-Regular.ttf"),
+    include_bytes!("../../../../public/fonts/prose/sourceserif4-Bold.ttf"),
+    include_bytes!("../../../../public/fonts/prose/sourceserif4-Italic.ttf"),
+    include_bytes!("../../../../public/fonts/prose/sourceserif4-BoldItalic.ttf"),
+    include_bytes!("../../../../public/fonts/prose/inter-Regular.ttf"),
+    include_bytes!("../../../../public/fonts/prose/inter-Bold.ttf"),
+    include_bytes!("../../../../public/fonts/prose/inter-Italic.ttf"),
+    include_bytes!("../../../../public/fonts/prose/inter-BoldItalic.ttf"),
+    include_bytes!("../../../../public/fonts/prose/ebgaramond-Regular.ttf"),
+    include_bytes!("../../../../public/fonts/prose/ebgaramond-Bold.ttf"),
+    include_bytes!("../../../../public/fonts/prose/ebgaramond-Italic.ttf"),
+    include_bytes!("../../../../public/fonts/prose/ebgaramond-BoldItalic.ttf"),
+];
+
 const NOTO_FONTS: [&[u8]; 33] = [
     // 0-15: Existing fonts (kept for backward compatibility)
     include_bytes!("fonts/MuktaMalar-Regular.ttf"), // 0 - Tamil
@@ -103,6 +122,9 @@ pub fn build_font_system() -> FontSystem {
             db.load_font_data(data.to_vec());
         }
         for data in NOTO_FONTS {
+            db.load_font_data(data.to_vec());
+        }
+        for data in PROSE_FONTS {
             db.load_font_data(data.to_vec());
         }
         db.load_system_fonts();

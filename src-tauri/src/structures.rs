@@ -115,3 +115,55 @@ fn parse_structures(content: &str) -> Vec<Structure> {
 
     structures
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_custom_structure() {
+        let sample = r#"
+# Detective Mystery
+= Standard 4-part whodunit structure.
+
+# The Crime
+= A body is discovered in the locked study.
+
+# The Clues
+= Multiple suspects are interrogated.
+= Contradictory alibis emerge.
+
+# The Revelation
+= The detective gathers everyone in the library.
+"#;
+        let structs = parse_structures(sample);
+        assert_eq!(structs.len(), 1);
+        let s = &structs[0];
+        assert_eq!(s.name, "Detective Mystery");
+        assert_eq!(s.description, "Standard 4-part whodunit structure.");
+        assert_eq!(s.beats.len(), 3);
+        assert_eq!(s.beats[0].label, "The Crime");
+        assert_eq!(s.beats[0].description, "A body is discovered in the locked study.");
+        assert_eq!(s.beats[1].label, "The Clues");
+        assert_eq!(s.beats[1].description, "Multiple suspects are interrogated. Contradictory alibis emerge.");
+    }
+
+    #[test]
+    fn test_get_structures_loads_builtin_templates() {
+        let all = get_structures();
+        assert!(all.len() >= 8, "Expected at least 8 built-in structures, got {}", all.len());
+        let names: Vec<&str> = all.iter().map(|s| s.name.as_str()).collect();
+        assert!(names.contains(&"Three-Act Structure") || names.iter().any(|n| n.contains("Three-Act")));
+        assert!(names.iter().any(|n| n.contains("Save the Cat") || n.contains("Save The Cat")));
+    }
+
+    #[test]
+    fn test_get_structure_template_match() {
+        let save_cat = get_structure_template("Save the Cat".to_string());
+        assert!(!save_cat.is_empty(), "Save the Cat template must not be empty");
+
+        let unknown = get_structure_template("Unknown Nonexistent Structure".to_string());
+        assert!(unknown.is_empty(), "Unknown template must return empty string");
+    }
+}

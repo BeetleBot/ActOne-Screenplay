@@ -194,3 +194,50 @@ fn canvas_base64_accepts_browser_trailing_bits_but_rejects_broken_data() {
     let script: ScriptInfo = serde_json::from_value(json!({"name":"Canvas","fileName":"files/Canvas.excalidraw","type":"canvas","content":json!({"type":"excalidraw","files":{"a":{"dataURL":"data:image/png;base64,%%%"}}}).to_string()})).unwrap();
     assert!(pack(&[script], &Map::new()).is_err());
 }
+
+#[test]
+fn prose_images_are_archived_and_restored_without_external_files() {
+    let content = "Before\n\n![Reference](data:image/png;base64,YQ==)\n\nAfter";
+    let script: ScriptInfo = serde_json::from_value(json!({"name":"Notes","fileName":"files/Notes.md","type":"markdown","content":content})).unwrap();
+    let bytes = pack(&[script], &Map::new()).unwrap();
+    let mut archive = ZipArchive::new(Cursor::new(&bytes[4..])).unwrap();
+    let mut markdown = String::new();
+    archive.by_name("files/Notes.md").unwrap().read_to_string(&mut markdown).unwrap();
+    assert!(markdown.contains("actone-image:assets/prose/files%2FNotes.md/0.png"));
+    assert!(!markdown.contains("base64"));
+    let bundle = unpack(&bytes, None).unwrap();
+    assert_eq!(bundle.scripts[0].content, content);
+}
+#[test]
+fn missing_prose_image_fails_without_silent_loss() {
+    assert!(restore_prose("![x](actone-image:assets/prose/missing.png)", &Entries::new()).unwrap_err().contains("Missing prose image"));
+}
+#[test]
+fn prose_image_types_and_invalid_data() {
+    for mime in ["png", "jpeg", "webp"] {
+        let content = format!("![x](data:image/{mime};base64,YQ==)");
+        let mut entries = Entries::new();
+        let packed = pack_prose(&content, "files/Notes.md", &mut entries).unwrap();
+        assert_eq!(restore_prose(&packed, &entries).unwrap(), content);
+    }
+    assert!(pack_prose("![x](data:image/png;base64,=)", "notes", &mut Entries::new()).is_err());
+}
+
+#[test]
+fn short_prose_references_roundtrip_with_registry_and_recovery_assets() {
+    let script: ScriptInfo = serde_json::from_value(json!({"name":"Notes","fileName":"files/Notes.md","type":"markdown","content":"![image1](image1)"})).unwrap();
+    let settings = json!({"proseImages":{"image1":"data:image/png;base64,YQ==","image2":"data:image/jpeg;base64,Yg=="}}).as_object().unwrap().clone();
+    let bytes = pack(&[script.clone()], &settings).unwrap();
+    let restored = unpack(&bytes, None).unwrap();
+    assert_eq!(restored.scripts[0].content, script.content);
+    assert_eq!(restored.settings["proseImages"], settings["proseImages"]);
+    assert!(pack(&[script], &Map::new()).unwrap_err().contains("Missing prose image"));
+}
+#[test]
+fn short_prose_registry_missing_asset_is_an_error() {
+    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    writer.start_file("settings.json", SimpleFileOptions::default()).unwrap();
+    writer.write_all(br#"{"proseImages":{"image1":"actone-image:assets/prose/image1.png"}}"#).unwrap();
+    let bytes = writer.finish().unwrap().into_inner();
+    assert!(unpack(&bytes, None).unwrap_err().contains("Missing prose image"));
+}

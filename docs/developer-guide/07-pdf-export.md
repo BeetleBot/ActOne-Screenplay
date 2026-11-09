@@ -21,7 +21,7 @@ Screenplay AST (src-tauri/src/pdf/screenplay.rs)
   │
   ▼
 PdfExporter (src-tauri/src/pdf/export/pdf.rs)
-  ├─ build_font_system() → FontSystem with 44 embedded fonts + system fonts
+  ├─ build_font_system() → FontSystem with bundled fonts + system fonts
   ├─ generate_pdf() → page-by-page rendering
   │   ├─ Orphan/widow protection
   │   ├─ Sentence-boundary splitting
@@ -171,3 +171,27 @@ Export startup uses the shared WindowLoading component, displaying the transpare
 Existing project paths retain their exact extension case; POSIX paths are compared case-sensitively, while drive-letter and backslash UNC paths use Windows comparisons. Only suggested new filenames are normalized.
 
 In Flatpak, opening a project or choosing Save As calls `prepare_project_path` before any bundle upgrade or write. It checks sibling-file creation; if blocked, a portal directory picker requests access. Existing projects must match the selected file's device and inode. New destinations cannot overwrite an existing file in a different granted folder. Cancellation stops the operation. The granted path is retained for subsequent saves and sibling snapshots. No blanket filesystem permissions are added. Test this flow on native Linux outside Documents, including cancellation, a wrong folder, save, reopen and snapshots; Windows unit tests cannot verify portal grants.
+
+## Prose export styles
+
+`src/constants/proseExportStyles.ts` defines the five prose export choices; `src-tauri/src/pdf/prose/styles.rs` owns their rendering metrics. Keep IDs synchronized. Classic (Literata) is the UI/exporter default; Manuscript uses Courier Prime, Treatment uses Source Serif 4, Modern uses Inter, and Literary uses EB Garamond. Styles set the body size, side margins, line leading, heading sizes, and main-heading alignment. Measurement and rendering share those metrics, including residual blocks that cross pages.
+
+`export_prose_pdf` and `generate_prose_pdf_bytes` accept optional `proseStyle` and use the same exporter. A selected preset supplies its own font rather than inheriting the screenplay editor font. Invalid IDs fall back to Classic metrics. Paper size, script fallbacks, and watermarks remain independent.
+
+`get_prose_page_breaks` runs the Classic exporter on a blocking worker and returns one-based source block lines for pages after the first. StatusBar requests this after a debounce; document/text/paper changes invalidate earlier results. Counts match the generated Classic PDF, including wrapping and Markdown blocks, rather than estimating pages from source lines. Page navigation is at block granularity: a paragraph, table, or list spanning multiple pages repeats its source line. Footnotes are appended as endnotes and map to the end of the document. While calculation is pending the prose total shows an ellipsis.
+
+Static regular/bold/italic/bold-italic fonts reside in `public/fonts/prose/`, with each upstream OFL license. `shared.rs` embeds them into the native font catalog; `fonts.css` registers browser faces. `scripts/bundle-prose-fonts.py` regenerates static instances from Google Fonts using fonttools, fixing optical size to 12 where available. Courier Prime continues using the existing bundle. The PDF subsets embed actual shaped faces so preview and recipients do not need local fonts installed.
+
+Validation: `cargo test --manifest-path src-tauri/Cargo.toml --locked --test prose_styles` checks embedded family names, actual page counts, layout differences, and byte parity between regular export and pagination generation. Set `ACTONE_PROSE_STYLE_SAMPLES` to an output directory to retain sample PDFs for visual inspection.
+
+### Prose images
+
+Standalone Markdown image paragraphs containing imported `data:image/png;base64,...`, `data:image/jpeg;base64,...`, or `data:image/webp;base64,...` references become image blocks. The editor's image import/bundle codecs restore these data URLs before export; PDF rendering does not fetch URLs or read arbitrary image paths. Mixed inline image references retain alt text. Image decode errors fail the export rather than silently omitting a picture.
+
+Images preserve aspect ratio and use `min(content_width / pixel_width, printable_height / pixel_height, 0.75)` as their point scale (96 px/in, no upscaling). They are centered, fit within each preset's side margins, and move intact to the next page when necessary. JPEG orientation is applied before sizing. The decoder bounds encoded input length, dimensions, and allocation. The same measurement and rendering path handles preview, saved PDF, and Classic pagination. Table header shading and cell padding also vary by preset. Modern uses Inter with 32 pt bold H1; all presets have individual heading sizes.
+
+### Style spacing
+
+Preset metrics independently control paragraph gaps, object gaps, and heading space before/after. Heading margins collapse against the previous block's trailing gap. Source blank-line counts are ignored. Manuscript follows the traditional 12 pt Courier double-spaced model with zero added paragraph gaps and half-inch first-line indents on continuing narrative paragraphs; tables use compact leading. Literary uses smaller first-line indents with no added paragraph gap. Classic, Treatment, and Modern use balanced spaced paragraphs. Image/table/code containers retain clear separation. Text coordinates represent line-box tops, including table cells and markers. `extra_source_blank_lines_do_not_change_pdf_spacing` compares exported bytes for different source whitespace counts across all five presets.
+
+Formatting references: William Shunn's manuscript guide (https://www.shunn.net/format/pdf/ManuscriptFormat_Classic_WilliamShunn.pdf), Scrivener compile formats (https://www.literatureandlatte.com/blog/how-to-customize-compile-formats-in-scrivener-for-ipad-and-iphone), and Reedsy's manuscript guide (https://reedsy.com/studio/resources/book-manuscript-format/). Image/table spacing is an ActOne design choice; manuscript guidance primarily concerns narrative text.

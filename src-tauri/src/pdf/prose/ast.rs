@@ -13,6 +13,7 @@ use crate::pdf::rich_string::{Element, RichString};
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProseDoc {
     pub blocks: Vec<Block>,
+    pub source_lines: Vec<usize>,
 }
 
 /// A block-level element in a Markdown document.
@@ -37,6 +38,10 @@ pub enum Block {
         alignments: Vec<Align>,
         header: Vec<RichString>,
         rows: Vec<Vec<RichString>>,
+    },
+    Image {
+        url: String,
+        alt: String,
     },
     HorizontalRule,
     RawHtml(String),
@@ -86,8 +91,12 @@ pub fn parse(src: &str) -> ProseDoc {
         .into_offset_iter()
         .collect();
     let mut index = 0;
-    let blocks = parse_blocks(src, &events, &mut index);
-    ProseDoc { blocks }
+    let mut source_lines = Vec::new();
+    let blocks = parse_blocks(&cleaned, &events, &mut index, &mut source_lines);
+    ProseDoc {
+        blocks,
+        source_lines,
+    }
 }
 
 /// Parses a sequence of blocks until an `Event::End` or the end of input.
@@ -95,17 +104,57 @@ fn parse_blocks<'a>(
     src: &str,
     events: &[(Event<'a>, std::ops::Range<usize>)],
     index: &mut usize,
+    source_lines: &mut Vec<usize>,
 ) -> Vec<Block> {
     let mut blocks = Vec::new();
     while *index < events.len() {
+        let block_count = blocks.len();
+        let source_line = src[..events[*index].1.start]
+            .bytes()
+            .filter(|b| *b == b'\n')
+            .count()
+            + 1;
         match &events[*index].0 {
             Event::End(_) => break,
             Event::Start(tag) => match tag {
                 Tag::Paragraph => {
                     *index += 1;
-                    let rs = parse_inline(src, events, index, TagEnd::Paragraph);
-                    if !rs.elements.is_empty() {
-                        blocks.push(Block::Paragraph(rs));
+                    // Imported images occupy a paragraph of their own. Keep inline
+                    // images in mixed text as descriptions, as before.
+                    let image = if let Some((Event::Start(Tag::Image { dest_url, .. }), _)) =
+                        events.get(*index)
+                    {
+                        let url = dest_url.to_string();
+                        let mut end = *index + 1;
+                        let mut alt = String::new();
+                        while end < events.len()
+                            && !matches!(events[end].0, Event::End(TagEnd::Image))
+                        {
+                            if let Event::Text(text) = &events[end].0 {
+                                alt.push_str(text);
+                            }
+                            end += 1;
+                        }
+                        if matches!(
+                            events.get(end + 1).map(|e| &e.0),
+                            Some(Event::End(TagEnd::Paragraph))
+                        ) && url.starts_with("data:image/")
+                        {
+                            Some((url, alt, end + 2))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
+                    if let Some((url, alt, end)) = image {
+                        *index = end;
+                        blocks.push(Block::Image { url, alt });
+                    } else {
+                        let rs = parse_inline(src, events, index, TagEnd::Paragraph);
+                        if !rs.elements.is_empty() {
+                            blocks.push(Block::Paragraph(rs));
+                        }
                     }
                 }
                 Tag::Heading { level, .. } => {
@@ -121,7 +170,7 @@ fn parse_blocks<'a>(
                 }
                 Tag::BlockQuote(_) => {
                     *index += 1;
-                    let inner = parse_blocks(src, events, index);
+                    let inner = parse_blocks(src, events, index, &mut Vec::new());
                     if *index < events.len() {
                         *index += 1;
                     }
@@ -151,7 +200,7 @@ fn parse_blocks<'a>(
                                     }
                                     *index += 1;
                                 }
-                                let item_blocks = parse_blocks(src, events, index);
+                                let item_blocks = parse_blocks(src, events, index, &mut Vec::new());
                                 if *index < events.len() {
                                     *index += 1;
                                 }
@@ -269,7 +318,7 @@ fn parse_blocks<'a>(
                 Tag::FootnoteDefinition(label) => {
                     let label = label.to_string();
                     *index += 1;
-                    let inner = parse_blocks(src, events, index);
+                    let inner = parse_blocks(src, events, index, &mut Vec::new());
                     if *index < events.len() {
                         *index += 1;
                     }
@@ -305,6 +354,9 @@ fn parse_blocks<'a>(
                 *index += 1;
             }
             _ => *index += 1,
+        }
+        if blocks.len() > block_count {
+            source_lines.push(source_line);
         }
     }
     blocks
@@ -706,5 +758,23 @@ mod tests {
     fn empty_document() {
         let doc = parse("");
         assert!(doc.blocks.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod imported_image_tests {
+    use super::*;
+    #[test]
+    fn keeps_standalone_embedded_images_as_blocks() {
+        let doc = parse("Before\n\n![Description](data:image/png;base64,YQ==)\n\nAfter");
+        assert!(matches!(&doc.blocks[1], Block::Image { alt, .. } if alt == "Description"));
+        assert_eq!(doc.blocks.len(), 3);
+    }
+    #[test]
+    fn mixed_inline_images_remain_text() {
+        assert!(matches!(
+            &parse("Text ![x](data:image/png;base64,YQ==) here").blocks[0],
+            Block::Paragraph(_)
+        ));
     }
 }

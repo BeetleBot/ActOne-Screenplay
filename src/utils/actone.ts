@@ -2,6 +2,8 @@ import { zip, zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { logger } from "./logger";
 import { packCanvasAssets, restoreCanvasAssets } from "./canvasAssets";
 
+import { packProseAssets, restoreProseAssets, packProseImageRegistry, restoreProseImageRegistry, validateProseImageReferences } from "./proseAssets";
+
 const ACTONE_MAGIC = new Uint8Array([0x41, 0x43, 0x54, 0x31]); // "ACT1"
 const MAGIC_LENGTH = 4;
 
@@ -77,7 +79,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
     scripts = manifest.map((entry) => {
       const newFile = entry.file.startsWith("files/") ? entry.file : `files/${entry.file}`;
       if (entry.file !== newFile) oldToNewPath[entry.file] = newFile;
-      const content = restoreCanvasAssets(unzipped[entry.file] ? strFromU8(unzipped[entry.file]) : (unzipped[newFile] ? strFromU8(unzipped[newFile]) : ""), unzipped);
+      const content = restoreProseAssets(restoreCanvasAssets(unzipped[entry.file] ? strFromU8(unzipped[entry.file]) : (unzipped[newFile] ? strFromU8(unzipped[newFile]) : ""), unzipped), unzipped);
       return { name: entry.name, fileName: newFile, type: entry.type || "fountain", content, savedContent: content };
     });
     if (scripts.length === 0) {
@@ -173,7 +175,7 @@ export function unpackActoneBundle(bytes: Uint8Array, bundleName?: string): Acto
 
   const isLegacy = Object.keys(oldToNewPath).length > 0 || !unzipped["format.json"];
 
-  return { scripts, settings, promptChats: promptChatsData as ActoneBundle["promptChats"], isLegacy };
+  return { scripts, settings: restoreProseImageRegistry(settings, unzipped), promptChats: promptChatsData as ActoneBundle["promptChats"], isLegacy };
 
 }
 
@@ -210,11 +212,12 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
   const entries: Record<string, Uint8Array> = {
     "format.json": strToU8(JSON.stringify({ version: 4 })),
     "project.json": strToU8(JSON.stringify(manifest, null, 2)),
-    "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
+    "settings.json": strToU8("{}"),
     "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
     "urai.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
   };
 
+  entries["settings.json"] = strToU8(JSON.stringify(packProseImageRegistry(restSettings, entries), null, 2));
   if (scripts.length > 1) {
     entries["characters.json"] = strToU8(JSON.stringify(resolvePerScript("genders", scripts), null, 2));
     entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));
@@ -231,7 +234,8 @@ export function packActoneBundle(scripts: ScriptInfo[], settings: Record<string,
   }
 
   for (const script of scripts) {
-    entries[script.fileName] = strToU8(packCanvasAssets(script, entries));
+    if (script.type === "markdown") validateProseImageReferences(script.content, settings);
+    entries[script.fileName] = strToU8(packCanvasAssets({ ...script, content: packProseAssets(script, entries) }, entries));
   }
 
   const zipped = zipSync(entries);
@@ -275,11 +279,12 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
     const entries: Record<string, Uint8Array> = {
       "format.json": strToU8(JSON.stringify({ version: 4 })),
       "project.json": strToU8(JSON.stringify(manifest, null, 2)),
-      "settings.json": strToU8(JSON.stringify(restSettings || {}, null, 2)),
+      "settings.json": strToU8("{}"),
       "sprint_data.json": strToU8(JSON.stringify(sprintData || [], null, 2)),
       "urai.json": strToU8(JSON.stringify(promptChats || { conversations: [], activeConversationId: null }, null, 2)),
     };
 
+    entries["settings.json"] = strToU8(JSON.stringify(packProseImageRegistry(restSettings, entries), null, 2));
     if (scripts.length > 1) {
       entries["characters.json"] = strToU8(JSON.stringify(resolvePerScript("genders", scripts), null, 2));
       entries["todos.json"] = strToU8(JSON.stringify(resolvePerScript("todos", scripts), null, 2));
@@ -296,7 +301,8 @@ export function packActoneBundleAsync(scripts: ScriptInfo[], settings: Record<st
     }
 
     for (const script of scripts) {
-      entries[script.fileName] = strToU8(packCanvasAssets(script, entries));
+      if (script.type === "markdown") validateProseImageReferences(script.content, settings);
+      entries[script.fileName] = strToU8(packCanvasAssets({ ...script, content: packProseAssets(script, entries) }, entries));
     }
 
     zip(entries, (error, zipped) => {

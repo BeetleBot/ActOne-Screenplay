@@ -1441,4 +1441,55 @@ This is action.
             panic!("test_bee_detective_export failed with error: {:?}", e);
         }
     }
+
+    #[test]
+    // Extracted geometry and painting assertions run in tests/pdf-layout/check.mjs.
+    fn test_dual_dialogue_export_smoke() {
+        let dual_dialogue = r#"
+.SCENE 1
+
+BOB
+I speak on the left side of the screen.
+
+ALICE ^
+And I speak simultaneously on the right!
+"#;
+        let screenplay = crate::pdf::parse(dual_dialogue);
+        let exporter = PdfExporter {
+            title_page: false,
+            ..Default::default()
+        };
+        let mut out = Vec::new();
+        let res = exporter.export(&screenplay, &mut out);
+        assert!(res.is_ok(), "Dual dialogue must export cleanly: {:?}", res.err());
+        let breaks = exporter.get_page_breaks(&screenplay).unwrap();
+        assert_eq!(breaks.len(), 0, "Short dual dialogue must fit within a single page");
+
+        let out_str = String::from_utf8_lossy(&out);
+        assert!(out.starts_with(b"%PDF-"), "Must have PDF magic bytes");
+        assert!(out_str.contains("/Type /Page"), "PDF must contain /Type /Page object");
+        assert!(out_str.contains("/MediaBox"), "PDF must define standard page MediaBox");
+    }
+
+    #[test]
+    fn test_watermark_center_text_export_smoke() {
+        let text = ".SCENE 1\n\nACTION LINE.\n";
+        let screenplay = crate::pdf::parse(text);
+        let exporter = PdfExporter {
+            title_page: false,
+            watermark_center_enabled: true,
+            watermark_center_text: "CONFIDENTIAL REVIEW".to_string(),
+            watermark_center_opacity: 0.35,
+            ..Default::default()
+        };
+        let mut out = Vec::new();
+        let res = exporter.export(&screenplay, &mut out);
+        assert!(res.is_ok(), "Watermarked export must succeed: {:?}", res.err());
+        assert!(out.len() > 1000, "PDF with watermark must generate substantive body");
+        let out_str = String::from_utf8_lossy(&out);
+        assert!(out.starts_with(b"%PDF-"), "Watermark PDF must have valid PDF header");
+        assert!(out_str.contains("/Type /Page"), "Watermarked document must contain page object");
+    }
+
 }
+

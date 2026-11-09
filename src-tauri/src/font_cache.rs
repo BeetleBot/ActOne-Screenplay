@@ -96,3 +96,53 @@ impl FontCache {
         result
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_scripts_indic_and_latin() {
+        let tamil_text = "வணக்கம் உலகம்";
+        let detected = detect_scripts(tamil_text);
+        assert_eq!(detected, vec!["tamil"]);
+
+        let hindi_text = "नमस्ते दुनिया";
+        let detected = detect_scripts(hindi_text);
+        assert_eq!(detected, vec!["devanagari"]);
+
+        let mixed_text = "வணக்கம் and नमस्ते";
+        let detected = detect_scripts(mixed_text);
+        assert!(detected.contains(&"tamil".to_string()));
+        assert!(detected.contains(&"devanagari".to_string()));
+
+        let english_only = "Hello World INT. SCENE - DAY";
+        let detected = detect_scripts(english_only);
+        assert!(detected.is_empty(), "Latin text should not trigger Indic script detectors");
+    }
+
+    #[test]
+    fn test_bundled_fonts_for_script() {
+        assert_eq!(bundled_fonts_for_script("tamil"), vec!["Mukta Malar"]);
+        assert_eq!(bundled_fonts_for_script("devanagari"), vec!["Mukta"]);
+        assert_eq!(bundled_fonts_for_script("telugu"), vec!["Hind Guntur"]);
+        assert_eq!(bundled_fonts_for_script("unknown"), Vec::<String>::new());
+    }
+
+    #[test]
+    fn test_font_cache_caching_and_choose_other() {
+        let mut cache = FontCache {
+            all_system_fonts: vec!["Courier New".to_string(), "Courier Prime".to_string(), "Arial".to_string()],
+            script_fonts: HashMap::new(),
+        };
+
+        let tamil_fonts = cache.fonts_for_script("tamil");
+        assert!(tamil_fonts.contains(&"Mukta Malar".to_string()));
+        assert!(tamil_fonts.contains(&CHOOSE_OTHER.to_string()));
+
+        // Second call should come from cache
+        let cached_tamil = cache.fonts_for_script("tamil");
+        assert_eq!(cached_tamil, tamil_fonts);
+    }
+}

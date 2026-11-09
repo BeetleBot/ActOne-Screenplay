@@ -8,6 +8,7 @@ import { LineType } from "../../parser";
 
 let mockRawText = "INT. CAFE - DAY\nJOHN\nHello!";
 let mockPageBreaks = [0];
+vi.mock("../../hooks/useDocumentPagination", () => ({ useProsePagination: () => mockPageBreaks }));
 let mockTitlePage = false;
 let mockEditorView: { state: EditorState; dispatch: ReturnType<typeof vi.fn>; focus: ReturnType<typeof vi.fn> } | null = null;
 const mockSetTimelineFilter = vi.fn();
@@ -209,7 +210,7 @@ describe("page counter navigation", () => {
     { prose: false, title: true, breaks: [5, 55, 109], page: "1", line: 5 },
     { prose: false, title: true, breaks: [5, 55, 109], page: "3", line: 109 },
     { prose: false, title: false, breaks: [], page: "2", line: 55 },
-    { prose: true, title: false, breaks: [], page: "3", line: 81 },
+    { prose: true, title: false, breaks: [37, 92], page: "3", line: 92 },
   ])("jumps page $page to line $line with prose=$prose title=$title", ({ prose, title, breaks, page, line }) => {
     mockIsMarkdown = prose;
     mockTitlePage = title;

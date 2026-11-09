@@ -19,6 +19,8 @@ In the project document list, choose **Add → Canvas**, or choose **New Canvas 
 
 Use the editor toolbar to select, draw, add text and images, and connect ideas with arrows. Select an item to change its colors, line appearance, and other styles. Drag selection handles to resize or rotate items. Undo and redo work inside Canvas.
 
+After adding a PNG, JPEG, or WebP picture, choose **Keep original** to preserve its quality or **Optimize image** to preview a smaller copy and compare file sizes. Choose **Use optimized** to apply it. Optimization fits within 2400 pixels, preserves transparency, and leaves your source file untouched. Its position and size on the board stay the same. Optimization is final for the project copy: undo and redo keep the optimized picture. If no smaller copy can be made, the original is retained. Other image formats keep their normal import behaviour.
+
 Save your project normally, or press Ctrl/Command+S. Canvas documents and their pictures are stored inside your project, so they travel together. When autosave is enabled, Canvas edits are saved with the project.
 
 Use **Save as image**, or press Ctrl/Command+P while Canvas is active, to export a picture of your board. Canvas documents and their pictures are saved with your project.
@@ -539,11 +541,24 @@ Separate column values using pipe (\`|\`) characters, and define the header sepa
 - **Center Align**: \`:---:\`
 - **Right Align**: \`---:\`
 
-### Live Interactive Table Widget
-When table rendering is active, ActOne renders the Markdown table as a live, interactive UI table:
-- **Direct Cell Editing**: Click any cell to type and edit content directly.
-- **<kbd>Tab</kbd> Navigation**: Press <kbd>Tab</kbd> to jump seamlessly to the next cell; press <kbd>Shift+Tab</kbd> to jump to the previous cell.
-- **Auto-Append Row**: Pressing <kbd>Tab</kbd> on the last cell in the table automatically appends a new blank row.`,
+### Visual tables
+Right-click in prose and choose **Insert Table** to choose the number of body rows and columns. Existing Markdown tables also appear as a grid with a shaded header, clear borders, and wrapping text.
+
+- Click a cell to edit it. Changes are saved as you type.
+- Press <kbd>Tab</kbd> or <kbd>Shift+Tab</kbd> to move between cells. Tab in the final cell adds a row.
+- Right-click a cell to insert or delete rows and columns, or align a column left, centre, or right. The header row and final column are protected.
+- Press <kbd>Escape</kbd> to return to the document. Undo and redo work with cell edits.
+
+### Images in prose
+Right-click and choose **Insert Image…**, paste a picture, or drop one into the document. PNG, JPEG, and WebP are supported, up to 40 MB and 40 million pixels per image.
+
+Choose **Keep original** for unchanged quality. **Optimize image** prepares a smaller copy and shows its size before you choose **Insert optimized**. Large pictures fit within 2400 pixels; transparency is preserved. Your original file is never changed. Once an optimized copy is inserted, undo and redo keep that optimized version; they do not restore the pre-optimization image.
+
+Images use short names such as \`image1\`, \`image2\`, and \`image3\` in your document. The picture data is kept separately, so editing the description never exposes a long block of image text. Existing embedded pictures are converted to these short references when opened in prose.
+
+Images fit the writing area. Use the controls below a picture to edit its description, replace it, or remove it. Images are included inside your saved ActOne project, so you can move or share the project without carrying the originals separately. Use the current version of ActOne to open projects containing prose images.
+
+PDF exports include imported pictures. Markdown exports place pictures in a folder beside the document; browser downloads include the document and pictures together in a ZIP. Keep those files together when sharing.`,
   },
   {
     id: "markdown-codeblocks",
@@ -899,8 +914,8 @@ Markdown syntax characters remain clearly visible and styled with subtle contras
 - **Code**: \`\`inline code\`\`
 - **Links**: \`[Link Text](https://example.com)\`
 
-### Images Not Supported
-Image embeds (\`![alt](url)\`) are not supported in ActOne Screenplay — there is no image insertion in the prose editor, and image markdown is not rendered in the editor or exported PDF.
+### Images in PDF Export
+Imported PNG, JPEG, and WebP images are embedded in prose PDFs in all five export styles. Images keep their proportions, are centered within the chosen style's margins, and shrink to fit the printable page. Small images retain their size. When an image needs more space, it moves to the next page. The PDF preview includes images, and the Classic page counter includes the space they occupy. Images should be on their own paragraph; image references within running text retain their descriptions.
 
 ### Stepped Blockquote Left Rail
 - Typing \`>\`, \`>>\`, or \`>>>\` generates a solid stepped colored indicator bar on the left.
@@ -1291,6 +1306,18 @@ After a successful desktop export, choose **Open file** to open the exported doc
 - **Script Fonts** — Language-specific font selection for international scripts.
 - **Element Formatting** — Custom bold/italic/underline toggles per element.
 - **Watermarks** — Add header, footer, or center text/image watermarks with custom opacity.
+
+### Prose PDF styles
+For prose documents, choose **Export Style** in the Export PDF window:
+- **Classic — Literata:** Balanced spacing and centered main headings. This is the default.
+- **Manuscript — Courier Prime:** Double-spaced body text with plain headings for draft review.
+- **Treatment — Source Serif 4:** Left-aligned headings and roomy tables.
+- **Modern — Inter:** A wider text area, compact paragraphs, and a large, bold main heading.
+- **Literary — EB Garamond:** A narrower text area with relaxed spacing and a traditional book appearance.
+
+Each style includes its own font, heading sizes, and spacing. Each style balances paragraph, heading, image, and table spacing for its purpose. Extra blank lines in the editor do not add extra space. Manuscript uses double-spaced body text, indented continuing paragraphs, and no extra paragraph gaps; tables stay compact. Literary also uses paragraph indents. Images always stay on a single page. Fonts travel with the app and are embedded in the PDF. Selecting a style updates the preview to match the saved PDF. Paper size and watermarks remain available.
+
+The prose page counter uses **Classic**, regardless of the style selected for export. Other styles can produce different page counts; check the export preview. Page jumps go to the source block containing the chosen page. A long paragraph, list, or table that spans several pages can lead multiple page numbers to the same source block.
 
 Paper Size (Letter or A4) is inherited from Settings. PDF includes proper page numbering, dialogue indentation, dual dialogue columns, and smart page breaks with orphan and widow protection.`,
   },

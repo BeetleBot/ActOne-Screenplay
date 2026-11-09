@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { resolveProseImages } from "../utils/proseAssets";
+import React, { useState, useEffect, useMemo } from "react";
 import { useFile, useUI } from "../context";
 import { invoke } from "@tauri-apps/api/core";
 import { alpha } from "@mui/material/styles";
@@ -33,6 +34,7 @@ import {
   AccordionDetails,
 } from "@mui/material";
 
+import { PROSE_EXPORT_STYLES, DEFAULT_PROSE_EXPORT_STYLE } from "../constants/proseExportStyles";
 import { isProseScript } from "../utils/scriptMode";
 import type { ExportWindowData } from "../utils/exportWindow";
 
@@ -151,6 +153,8 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
   const [exportSceneColors, setExportSceneColors] = useState(false);
   const [scenePageBreaks, setScenePageBreaks] = useState(false);
   const [selectedPaperSize, setSelectedPaperSize] = useState<"letter" | "a4">(paperSize as "letter" | "a4");
+  const [proseStyle, setProseStyle] = useState(DEFAULT_PROSE_EXPORT_STYLE);
+  const activeProseStyle = PROSE_EXPORT_STYLES.find((style) => style.id === proseStyle)!;
   const [selectedFont, setSelectedFont] = useState<string>(fontFamily);
   
   const savedWatermarks = parsedDoc?.settings?.watermarkSettings;
@@ -262,6 +266,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
     fountainText: rawText,
     paperSize: selectedPaperSize,
     fontFamily: selectedFont,
+    ...(isProse ? { proseStyle } : {}),
     elementFormats: JSON.stringify(elementFormats),
     mirrorSceneNumbers: sceneNumberMode,
     exportSections,
@@ -285,7 +290,11 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
     watermarkCenterGrayscale,
     scriptFonts: JSON.stringify(scriptFonts),
   };
-  const previewArguments = JSON.stringify(isProse ? { ...pdfArguments, markdownText: rawText } : pdfArguments);
+  const resolvedProse = useMemo(() => {
+    try { return { text: isProse ? resolveProseImages(rawText, parsedDoc?.settings) : rawText, error: "" }; }
+    catch (error) { return { text: "", error: String(error) }; }
+  }, [rawText, isProse, parsedDoc?.settings]);
+  const previewArguments = JSON.stringify(isProse ? { ...pdfArguments, markdownText: resolvedProse.text } : pdfArguments);
 
   const handleExportPDF = async () => {
     try {
@@ -319,9 +328,10 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
           : undefined;
         const defaultDir = documentDir || getLastExportDir();
 
+        if (resolvedProse.error) throw new Error(resolvedProse.error);
         const result = await invoke<string | null>("export_prose_pdf", {
           ...pdfArguments,
-          markdownText: rawText,
+          markdownText: resolvedProse.text,
           defaultDirectory: defaultDir,
         });
         if (result) {
@@ -426,7 +436,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
               </Box>
             </Box>
             <Chip
-              label={`${selectedPaperSize === "letter" ? "Letter" : "A4"} · ${selectedFont === "courier-prime" ? "Courier Prime" : "Prime Sans"}`}
+              label={`${selectedPaperSize === "letter" ? "Letter" : "A4"} · ${isProse ? activeProseStyle.font : selectedFont === "courier-prime" ? "Courier Prime" : "Prime Sans"}`}
               size="small"
               sx={{
                 height: 22,
@@ -471,8 +481,18 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
                 </Box>
               ) : (
                 <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 1.5 }}>
-                  Standard page margins and header formatting will be rendered.
+                  Choose a style to update the font, spacing, headings, and margins. The preview shows your final PDF.
                 </Typography>
+              )}
+
+              {isProse && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography id="prose-style-label" sx={{ fontSize: 12, fontWeight: 600, mb: 0.75 }}>Export Style</Typography>
+                  <Select fullWidth size="small" value={proseStyle} onChange={(e) => setProseStyle(e.target.value)} labelId="prose-style-label" sx={{ fontSize: 12.5 }}>
+                    {PROSE_EXPORT_STYLES.map((style) => <MenuItem key={style.id} value={style.id}>{style.name} - {style.font}</MenuItem>)}
+                  </Select>
+                  <Typography sx={{ mt: 0.75, fontSize: 12, color: "text.secondary" }}>{activeProseStyle.description}</Typography>
+                </Box>
               )}
 
               <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5, mb: 0.5 }}>
@@ -495,7 +515,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
                   <Typography sx={{ fontSize: 12, fontWeight: 600, color: "text.primary", mb: 0.75 }}>
                     {isProse ? "Document Font" : "Font"}
                   </Typography>
-                  <Select
+                  {isProse ? <Typography sx={{ fontSize: 12.5, py: 1 }}>{activeProseStyle.font}</Typography> : <Select
                     size="small"
                     fullWidth
                     value={selectedFont}
@@ -504,7 +524,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
                   >
                     <MenuItem value="courier-prime" sx={{ fontSize: 12.5 }}>Courier Prime</MenuItem>
                     <MenuItem value="courier-prime-sans" sx={{ fontSize: 12.5 }}>Courier Prime Sans</MenuItem>
-                  </Select>
+                  </Select>}
                 </Box>
               </Box>
 
@@ -800,7 +820,7 @@ export const ExportPdfWindow: React.FC<ExportPdfWindowProps> = ({ onClose, data 
           </Box>
 
           {/* Action Bar at Bottom of Left Panel */}
-          {exportError && <Alert severity="error" sx={{ mx: 2, mb: 1, fontSize: 12 }}>{exportError}</Alert>}
+          {(exportError || resolvedProse.error) && <Alert severity="error" sx={{ mx: 2, mb: 1, fontSize: 12 }}>{exportError || resolvedProse.error}</Alert>}
           <Box
             sx={{
               p: 1.75,

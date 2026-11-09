@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { resolveProseImages } from "../utils/proseAssets";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 
@@ -42,4 +43,25 @@ export function useDocumentPagination(options: DocumentPaginationOptions) {
 
 export function equalPageBreaks(previous: number[] | undefined, next: number[]): boolean {
   return previous !== undefined && previous.length === next.length && previous.every((line, index) => line === next[index]);
+}
+
+/** Prose page counts come from the same Classic renderer used for export. */
+export function useProsePagination(text: string, paperSize: "letter" | "a4", documentKey: string, enabled: boolean, imageSettings?: Record<string, unknown>): number[] | null {
+  const registry = imageSettings?.proseImages;
+  const key = useMemo(() => ({ documentKey, text, paperSize, registry }), [documentKey, text, paperSize, registry]);
+  const [result, setResult] = useState<{ key: typeof key; breaks: number[] } | null>(null);
+  useEffect(() => {
+    if (!enabled || typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const breaks = await invoke<number[]>("get_prose_page_breaks", { markdownText: resolveProseImages(text, imageSettings), paperSize });
+        if (!cancelled && Array.isArray(breaks)) setResult({ key, breaks });
+      } catch (error) {
+        if (!cancelled) logger.error("file", "Prose page calculation failed", error);
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [key, text, paperSize, enabled, registry]);
+  return enabled && result?.key === key ? result.breaks : null;
 }

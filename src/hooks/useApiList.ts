@@ -4,7 +4,7 @@ import type { ApiEntry } from "../constants";
 import { notifyConfigChange } from "./usePromptConfig";
 import { decryptApiList, encryptApiList } from "../utils/cryptoStorage";
 
-let cachedRaw: string | null = null;
+let cachedRaw: string | null | undefined = undefined;
 let cachedApiList: ApiEntry[] = [];
 
 function getApiList(): ApiEntry[] {
@@ -87,7 +87,8 @@ function notifyApiListChangeOnly() {
 }
 
 export function notifyApiListChange() {
-  cachedRaw = null;
+  cachedRaw = undefined;
+  cachedApiList = [];
   listeners.forEach((cb) => cb());
   try {
     window.dispatchEvent(new Event("prompt-config-changed"));

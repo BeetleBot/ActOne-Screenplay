@@ -112,7 +112,10 @@
   margin-left: 0 !important;
   padding-left: 0 !important;
   color: var(--prose-editor-fg, var(--text-main, #1a1a1a));
-  background-color: var(--prose-editor-blockquote-bg, color-mix(in srgb, var(--prose-editor-accent-soft, var(--accent-color, #10b981)) 10%, transparent)) !important;
+  background-color: var(
+    --prose-editor-blockquote-bg,
+    color-mix(in srgb, var(--prose-editor-accent-soft, var(--accent-color, #10b981)) 10%, transparent)
+  ) !important;
   background-repeat: no-repeat !important;
   background-position: left top !important;
 }
@@ -648,7 +651,9 @@
   font: inherit;
   font-size: 0.875rem;
   outline: none;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .cm-prose-search-input:focus {
@@ -691,7 +696,10 @@
   border-radius: var(--prose-editor-radius, 6px);
   color: var(--prose-editor-fg-muted, #888);
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .cm-prose-search-btn:hover {
@@ -756,4 +764,111 @@
   100% {
     background: transparent;
   }
+}
+
+/* Portable prose images and visual Markdown tables. */
+.cm-prose-image {
+  margin: 0;
+  padding: 12px 0;
+  max-width: 100%;
+}
+.cm-prose-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+  border-radius: var(--radius-sm, 6px);
+}
+.cm-prose-image figcaption {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px;
+}
+.cm-prose-image button {
+  font: inherit;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.cm-prose-image button:focus-visible {
+  outline: 2px solid var(--accent-color);
+}
+.cm-prose-table table {
+  width: 100%;
+  min-width: 360px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+.cm-prose-table th,
+.cm-prose-table td {
+  padding: 8px 10px;
+  border: 0;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+}
+.cm-prose-table th:last-child,
+.cm-prose-table td:last-child {
+  border-right: 0;
+}
+.cm-prose-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.cm-prose-table th {
+  background: color-mix(in srgb, var(--editor-text, var(--text-main)) 7%, transparent);
+}
+.cm-prose-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--editor-text, var(--text-main)) 2%, transparent);
+}
+.cm-prose-table textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  overflow: hidden;
+  min-height: 28px;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--editor-text, var(--text-main));
+  font: inherit;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  caret-color: var(--editor-cursor, currentColor);
+}
+.cm-prose-table th textarea {
+  font-weight: 600;
+}
+.cm-prose-table td:focus-within,
+.cm-prose-table th:focus-within {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+}
+
+.cm-prose-table {
+  max-width: 100%;
+}
+.cm-prose-table-cell-preview {
+  display: block;
+  min-height: 28px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  cursor: text;
+}
+.cm-prose-table td:not(:focus-within) textarea,
+.cm-prose-table th:not(:focus-within) textarea {
+  display: none;
+}
+.cm-prose-table td:focus-within .cm-prose-table-cell-preview,
+.cm-prose-table th:focus-within .cm-prose-table-cell-preview {
+  display: none;
 }

@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 
-const isTauri =
+const isTauri = () =>
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 let cachedOs: string | null = null;
 
 async function getOs(): Promise<string> {
   if (cachedOs) return cachedOs;
-  if (!isTauri) {
+  if (!isTauri()) {
     cachedOs = "browser";
     return cachedOs;
   }
@@ -41,7 +41,7 @@ export function useStoreUpdateCheck() {
   const isLinux = os === "linux";
 
   const checkForUpdates = useCallback(async () => {
-    if (!isTauri || isLinux) return;
+    if (!isTauri() || isLinux) return;
     setState((prev) => ({ ...prev, checking: true, error: null }));
     try {
       const { invoke } = await import("@tauri-apps/api/core");
@@ -65,7 +65,7 @@ export function useStoreUpdateCheck() {
 
   const installUpdate = useCallback(async () => {
     if (isLinux) return;
-    if (!isTauri) {
+    if (!isTauri()) {
       window.open("https://apps.microsoft.com/detail/9PJMKR0937KK", "_blank");
       return;
     }

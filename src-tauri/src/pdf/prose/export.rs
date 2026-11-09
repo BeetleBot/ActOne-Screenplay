@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 use std::io::Write;
 
+use base64::Engine;
 use cosmic_text::FontSystem;
 use krilla::{
     Document,
@@ -32,16 +33,6 @@ use crate::pdf::{
 
 use super::ast::{Align, Block, ListItem, parse};
 
-/// Margin on each side of prose content, in points (1 inch).
-const PROSE_MARGIN: f32 = 72.0;
-/// Base body font size.
-const BODY_SIZE: f32 = 11.0;
-/// Extra spacing added after each rendered line.
-const LINE_GAP: f32 = 4.0;
-/// Spacing after a paragraph.
-const PARA_GAP: f32 = 6.0;
-/// Spacing after other blocks.
-const BLOCK_GAP: f32 = 10.0;
 /// Indent per list nesting level.
 const LIST_INDENT: f32 = 18.0;
 /// Blockquote indent.
@@ -58,9 +49,6 @@ const CODE_PAD_V: f32 = 8.0;
 const TABLE_SIZE: f32 = 10.0;
 /// Table cell horizontal padding.
 const TABLE_PAD_H: f32 = 6.0;
-/// Table cell vertical padding.
-const TABLE_PAD_V: f32 = 4.0;
-
 /// Residual render state for blocks split across pages.
 enum Residual {
     None,
@@ -98,6 +86,7 @@ enum DrawOutcome {
 }
 
 pub struct ProsePdfExporter {
+    pub prose_style: Option<String>,
     pub paper_size: PaperSize,
     pub export_font: String,
     pub watermark_header_enabled: bool,
@@ -118,6 +107,7 @@ pub struct ProsePdfExporter {
 impl Default for ProsePdfExporter {
     fn default() -> Self {
         Self {
+            prose_style: Some("classic".to_string()),
             paper_size: PaperSize::default(),
             export_font: String::new(),
             watermark_header_enabled: false,
@@ -138,7 +128,103 @@ impl Default for ProsePdfExporter {
 }
 
 impl ProsePdfExporter {
+    fn style(&self) -> super::styles::ProseStyle {
+        super::styles::prose_style(self.prose_style.as_deref().unwrap_or("classic"))
+    }
+
+    fn heading_metrics(&self, level: u8) -> (f32, f32, f32) {
+        let style = self.style();
+        let index = level.clamp(1, 6) as usize - 1;
+        (
+            style.heading_sizes[index],
+            style.heading_before[index],
+            style.heading_after[index],
+        )
+    }
+
+    fn trailing_gap(&self, block: &Block) -> f32 {
+        match block {
+            Block::Paragraph(_) => self.style().paragraph_gap(),
+            Block::Heading { level, .. } => self.heading_metrics(*level).2,
+            Block::RawHtml(_) | Block::FootnoteDefinition { .. } => 0.0,
+            _ => self.style().block_gap(),
+        }
+    }
+
+    fn line_gap(&self, size: f32) -> f32 {
+        if self.style().manuscript && (size - TABLE_SIZE).abs() < 0.01 {
+            2.0
+        } else {
+            self.style().line_gap
+        }
+    }
+
+    fn text_width(
+        &self,
+        ctx: &mut DrawContext<'_, '_>,
+        rs: &RichString,
+        width: f32,
+        size: f32,
+    ) -> f32 {
+        let shaped = shape_rich_string(
+            ctx.font_system,
+            rs,
+            width,
+            size,
+            ctx.layout_info.export_font,
+            ctx.layout_info.script_fonts,
+        );
+        shaped
+            .lines
+            .iter()
+            .map(|line| line.width)
+            .fold(0.0_f32, f32::max)
+    }
+
+    fn measure_rich(
+        &self,
+        ctx: &mut DrawContext<'_, '_>,
+        rs: &RichString,
+        width: f32,
+        size: f32,
+    ) -> std::io::Result<f32> {
+        measure_rich(ctx, rs, width, size, self.line_gap(size))
+    }
+
+    fn write_rich_block(
+        &self,
+        ctx: &mut DrawContext<'_, '_>,
+        rs: &RichString,
+        x: f32,
+        width: f32,
+        size: f32,
+        residual: &mut Option<usize>,
+        annotations: &mut Vec<krilla::annotation::Annotation>,
+    ) -> std::io::Result<bool> {
+        write_rich_block(
+            ctx,
+            rs,
+            x,
+            width,
+            size,
+            residual,
+            annotations,
+            self.line_gap(size),
+        )
+    }
+
     pub fn export(&self, markdown_text: &str, writer: &mut dyn Write) -> std::io::Result<()> {
+        self.export_with_page_breaks(markdown_text, writer)
+            .map(|_| ())
+    }
+
+    /// One-based source block lines for each page after the first. A block split
+    /// across pages can repeat its source line; page counts still match the PDF.
+    pub fn export_with_page_breaks(
+        &self,
+        markdown_text: &str,
+        writer: &mut dyn Write,
+    ) -> std::io::Result<Vec<usize>> {
         let mut document = Document::new();
         let mut font_system = build_font_system();
         let courier = load_courier_fonts()?;
@@ -150,8 +236,10 @@ impl ProsePdfExporter {
             symbols,
         };
 
-        let effective_font = if self.export_font.is_empty() || self.export_font == "Courier Prime" {
-            "Times New Roman".to_string()
+        let effective_font = if let Some(style) = self.prose_style.as_deref() {
+            super::styles::prose_style(style).font.to_string()
+        } else if self.export_font.is_empty() || self.export_font == "Courier Prime" {
+            self.style().font.to_string()
         } else {
             self.export_font.clone()
         };
@@ -165,13 +253,15 @@ impl ProsePdfExporter {
             script_fonts: &self.script_fonts,
         };
 
-        self.generate_pdf(&mut document, &layout_info, markdown_text, &mut font_system)?;
+        let breaks =
+            self.generate_pdf(&mut document, &layout_info, markdown_text, &mut font_system)?;
 
         let pdf = document.finish().map_err(|e| {
             eprintln!("document.finish() failed with error: {:?}", e);
             std::io::Error::other("failed to create pdf")
         })?;
-        writer.write_all(&pdf)
+        writer.write_all(&pdf)?;
+        Ok(breaks)
     }
 
     fn to_watermark_settings(&self) -> WatermarkSettings {
@@ -197,17 +287,19 @@ impl ProsePdfExporter {
         layout_info: &LayoutInfo,
         markdown_text: &str,
         font_system: &mut FontSystem,
-    ) -> std::io::Result<()> {
+    ) -> std::io::Result<Vec<usize>> {
         let doc = parse(markdown_text);
 
         // Footnotes are rendered at the end of the document.
         let mut blocks: Vec<Block> = Vec::new();
         let mut footnotes: Vec<&Block> = Vec::new();
-        for block in &doc.blocks {
+        let mut source_lines = Vec::new();
+        for (index, block) in doc.blocks.iter().enumerate() {
             if let Block::FootnoteDefinition { .. } = block {
                 footnotes.push(block);
             } else {
                 blocks.push(block.clone());
+                source_lines.push(doc.source_lines[index]);
             }
         }
         if !footnotes.is_empty() {
@@ -231,9 +323,12 @@ impl ProsePdfExporter {
             }
         }
 
+        source_lines.resize(blocks.len(), markdown_text.lines().count().max(1));
+        let mut page_breaks = Vec::new();
+
         let top = layout_info.size.top_margin();
         let max_y = layout_info.size.y - layout_info.size.bottom_margin();
-        let content_width = layout_info.size.x - 2.0 * PROSE_MARGIN;
+        let content_width = layout_info.size.x - 2.0 * self.style().margin;
 
         let watermark_settings = self.to_watermark_settings();
         let center_image = load_center_image(&watermark_settings);
@@ -246,6 +341,9 @@ impl ProsePdfExporter {
         let mut first_page = true;
 
         while first_page || block_idx < total || !matches!(resid, Residual::None) {
+            if !first_page {
+                page_breaks.push(source_lines.get(block_idx).copied().unwrap_or(1));
+            }
             first_page = false;
             let mut page = document.start_page_with(
                 PageSettings::from_wh(layout_info.size.x, layout_info.size.y)
@@ -293,12 +391,12 @@ impl ProsePdfExporter {
                         ref mut line,
                     } => {
                         let mut res = Some(*line);
-                        let more = write_rich_block(
+                        let more = self.write_rich_block(
                             &mut ctx,
                             rs,
-                            PROSE_MARGIN,
+                            self.style().margin,
                             content_width,
-                            BODY_SIZE,
+                            self.style().body_size,
                             &mut res,
                             &mut page_annots,
                         )?;
@@ -306,7 +404,7 @@ impl ProsePdfExporter {
                             *line = res.unwrap();
                             page_full = true;
                         } else {
-                            *ctx.y_position += PARA_GAP;
+                            *ctx.y_position += self.style().paragraph_gap();
                             resid = Residual::None;
                             block_idx += 1;
                         }
@@ -321,7 +419,7 @@ impl ProsePdfExporter {
                         if more {
                             page_full = true;
                         } else {
-                            *ctx.y_position += BLOCK_GAP;
+                            *ctx.y_position += self.style().block_gap();
                             resid = Residual::None;
                             block_idx += 1;
                         }
@@ -349,7 +447,7 @@ impl ProsePdfExporter {
                         if *row < rows.len() {
                             page_full = true;
                         } else {
-                            *ctx.y_position += BLOCK_GAP;
+                            *ctx.y_position += self.style().block_gap();
                             resid = Residual::None;
                             block_idx += 1;
                         }
@@ -374,7 +472,8 @@ impl ProsePdfExporter {
                         if more_remain && *item_idx < items.len() {
                             page_full = true;
                         } else {
-                            *ctx.y_position += BLOCK_GAP;
+                            *ctx.y_position +=
+                                self.style().block_gap() - self.style().paragraph_gap();
                             resid = Residual::None;
                             block_idx += 1;
                         }
@@ -412,7 +511,7 @@ impl ProsePdfExporter {
             page_idx += 1;
         }
 
-        Ok(())
+        Ok(page_breaks)
     }
 
     /// Draws a block. The block itself is unsplittable; paragraphs, code
@@ -428,16 +527,21 @@ impl ProsePdfExporter {
         annotations: &mut Vec<krilla::annotation::Annotation>,
     ) -> std::io::Result<DrawOutcome> {
         let block = &blocks[block_idx];
-        let x = PROSE_MARGIN + x_offset;
+        let x = self.style().margin + x_offset;
         let is_top = *ctx.y_position <= ctx.layout_info.size.top_margin() + 0.1;
         match block {
             Block::Heading { level, content } => {
-                let (size, before, after) = heading_metrics(*level);
+                let (size, requested_before, after) = self.heading_metrics(*level);
+                let before = if is_top || block_idx == 0 {
+                    0.0
+                } else {
+                    (requested_before - self.trailing_gap(&blocks[block_idx - 1])).max(0.0)
+                };
                 let mut rs = content.clone();
                 for el in &mut rs.elements {
                     el.set_bold();
                 }
-                let height = measure_rich(ctx, &rs, content_width, size)?;
+                let height = self.measure_rich(ctx, &rs, content_width, size)?;
                 // Heading orphan rule: Look ahead to the next block so the heading is never alone at bottom
                 let lookahead = if block_idx + 1 < blocks.len() {
                     let next = &blocks[block_idx + 1];
@@ -450,15 +554,15 @@ impl ProsePdfExporter {
                     return Ok(DrawOutcome::PageFull);
                 }
                 *ctx.y_position += before;
-                let plain = rs.to_plain_string();
-                let text_w = measure_text_width(ctx.font_system, &plain, size);
-                let heading_x = if *level == 1 && text_w < content_width {
-                    x + (content_width - text_w) / 2.0
-                } else {
-                    x
-                };
+                let text_w = self.text_width(ctx, &rs, content_width, size);
+                let heading_x =
+                    if *level == 1 && self.style().center_title && text_w < content_width {
+                        x + (content_width - text_w) / 2.0
+                    } else {
+                        x
+                    };
                 let mut res = None;
-                write_rich_block(
+                self.write_rich_block(
                     ctx,
                     &rs,
                     heading_x,
@@ -470,23 +574,71 @@ impl ProsePdfExporter {
                 *ctx.y_position += after;
                 Ok(DrawOutcome::Done)
             }
+            Block::Image { url, .. } => {
+                let image = load_prose_image(url)?;
+                let (width, height) = prose_image_size(
+                    &image,
+                    content_width,
+                    self.page_printable_height() - self.style().block_gap(),
+                );
+                if !is_top && *ctx.y_position + height > ctx.max_y {
+                    return Ok(DrawOutcome::PageFull);
+                }
+                ctx.surface
+                    .push_transform(&krilla::geom::Transform::from_translate(
+                        x + (content_width - width) / 2.0,
+                        *ctx.y_position,
+                    ));
+                ctx.surface.draw_image(
+                    image,
+                    krilla::geom::Size::from_wh(width, height)
+                        .ok_or_else(|| std::io::Error::other("Invalid image size"))?,
+                );
+                ctx.surface.pop();
+                *ctx.y_position += height + self.style().block_gap();
+                Ok(DrawOutcome::Done)
+            }
             Block::Paragraph(rs) => {
-                let height = measure_rich(ctx, rs, content_width, BODY_SIZE)?;
+                // Monospaced whitespace provides a first-line-only indent without narrowing later lines.
+                // Keep chapter/section openings and non-narrative containers flush.
+                let mut paragraph = RichString::new();
+                if self.style().manuscript
+                    && x_offset.abs() < 0.01
+                    && block_idx > 0
+                    && matches!(blocks[block_idx - 1], Block::Paragraph(_))
+                {
+                    let mut indent: RichString = " ".repeat(self.style().indent_spaces).into();
+                    for element in &mut indent.elements {
+                        element.set_mono();
+                    }
+                    paragraph.append(indent);
+                }
+                paragraph.append(rs.clone());
+                let rs = &paragraph;
+                let height = self.measure_rich(ctx, rs, content_width, self.style().body_size)?;
                 if *ctx.y_position + height <= ctx.max_y {
                     let mut res = None;
-                    write_rich_block(ctx, rs, x, content_width, BODY_SIZE, &mut res, annotations)?;
-                    *ctx.y_position += PARA_GAP;
+                    self.write_rich_block(
+                        ctx,
+                        rs,
+                        x,
+                        content_width,
+                        self.style().body_size,
+                        &mut res,
+                        annotations,
+                    )?;
+                    *ctx.y_position += self.style().paragraph_gap();
                     Ok(DrawOutcome::Done)
                 } else if !is_top && height <= self.page_printable_height() {
                     Ok(DrawOutcome::PageFull)
                 } else {
                     let mut res = None;
-                    let more = write_rich_block(
+                    let more = self.write_rich_block(
                         ctx,
                         rs,
                         x,
                         content_width,
-                        BODY_SIZE,
+                        self.style().body_size,
                         &mut res,
                         annotations,
                     )?;
@@ -497,7 +649,7 @@ impl ProsePdfExporter {
                         };
                         Ok(DrawOutcome::PageFull)
                     } else {
-                        *ctx.y_position += PARA_GAP;
+                        *ctx.y_position += self.style().paragraph_gap();
                         Ok(DrawOutcome::Done)
                     }
                 }
@@ -526,7 +678,7 @@ impl ProsePdfExporter {
                     };
                     Ok(DrawOutcome::PageFull)
                 } else {
-                    *ctx.y_position += BLOCK_GAP;
+                    *ctx.y_position += self.style().block_gap() - self.style().paragraph_gap();
                     Ok(DrawOutcome::Done)
                 }
             }
@@ -551,14 +703,15 @@ impl ProsePdfExporter {
                     x_offset + QUOTE_INDENT,
                     annotations,
                 )?;
+                *ctx.y_position += self.style().block_gap() - self.style().paragraph_gap();
                 let y1 = *ctx.y_position;
-                // In cosmic-text shaping, glyph baseline sits at y0; cap height reaches ~8pt above y0 (y0 - BODY_SIZE * 0.72)
-                // and descenders reach ~2.5pt below the last line's baseline.
-                let bar_top = y0 - BODY_SIZE * 0.72;
-                let bar_bottom = (y1 - PARA_GAP + 1.5).max(bar_top + BODY_SIZE * 0.8);
+                // Exclude the shared trailing blank line from the quote marker.
+                let bar_top = y0;
+                let bar_bottom = (y1 - self.style().block_gap() + 1.5)
+                    .max(bar_top + self.style().body_size * 0.8);
                 self.fill_rect(
                     ctx,
-                    PROSE_MARGIN + x_offset + 1.0,
+                    self.style().margin + x_offset + 1.0,
                     bar_top,
                     1.5,
                     bar_bottom - bar_top,
@@ -571,7 +724,7 @@ impl ProsePdfExporter {
                 let height = lines as f32 * CODE_LINE_H + 2.0 * CODE_PAD_V;
                 if *ctx.y_position + height <= ctx.max_y {
                     self.draw_code_block(ctx, text, content_width, lines)?;
-                    *ctx.y_position += BLOCK_GAP;
+                    *ctx.y_position += self.style().block_gap();
                     Ok(DrawOutcome::Done)
                 } else if !is_top && height <= self.page_printable_height() {
                     Ok(DrawOutcome::PageFull)
@@ -584,7 +737,7 @@ impl ProsePdfExporter {
                         };
                         Ok(DrawOutcome::PageFull)
                     } else {
-                        *ctx.y_position += BLOCK_GAP;
+                        *ctx.y_position += self.style().block_gap();
                         Ok(DrawOutcome::Done)
                     }
                 }
@@ -598,7 +751,7 @@ impl ProsePdfExporter {
                 let height = self.measure_table(ctx, header, rows, col_w)?;
                 if *ctx.y_position + height <= ctx.max_y {
                     self.draw_table(ctx, alignments, header, rows, col_w, annotations)?;
-                    *ctx.y_position += BLOCK_GAP;
+                    *ctx.y_position += self.style().block_gap();
                     Ok(DrawOutcome::Done)
                 } else if !is_top && height <= self.page_printable_height() {
                     Ok(DrawOutcome::PageFull)
@@ -624,17 +777,17 @@ impl ProsePdfExporter {
                         };
                         Ok(DrawOutcome::PageFull)
                     } else {
-                        *ctx.y_position += BLOCK_GAP;
+                        *ctx.y_position += self.style().block_gap();
                         Ok(DrawOutcome::Done)
                     }
                 }
             }
             Block::HorizontalRule => {
-                if !is_top && *ctx.y_position + 16.0 > ctx.max_y {
+                if !is_top && *ctx.y_position + 0.7 > ctx.max_y {
                     return Ok(DrawOutcome::PageFull);
                 }
                 self.draw_hr(ctx, x, content_width)?;
-                *ctx.y_position += 16.0;
+                *ctx.y_position += 0.7 + self.style().block_gap();
                 Ok(DrawOutcome::Done)
             }
             Block::RawHtml(_) => Ok(DrawOutcome::Done),
@@ -663,23 +816,40 @@ impl ProsePdfExporter {
     ) -> std::io::Result<f32> {
         match block {
             Block::Heading { level, content } => {
-                let (size, before, after) = heading_metrics(*level);
+                let (size, before, after) = self.heading_metrics(*level);
                 let mut rs = content.clone();
                 for el in &mut rs.elements {
                     el.set_bold();
                 }
-                Ok(measure_rich(ctx, &rs, content_width, size)? + before + after)
+                Ok(self.measure_rich(ctx, &rs, content_width, size)? + before + after)
             }
-            Block::Paragraph(rs) => Ok(measure_rich(ctx, rs, content_width, BODY_SIZE)? + PARA_GAP),
-            Block::List { items, .. } => {
-                Ok(self.measure_list(ctx, items, content_width, 0)? + BLOCK_GAP)
+            Block::Image { url, .. } => {
+                let image = load_prose_image(url)?;
+                Ok(prose_image_size(
+                    &image,
+                    content_width,
+                    self.page_printable_height() - self.style().block_gap(),
+                )
+                .1 + self.style().block_gap())
             }
-            Block::Blockquote(inner) => {
-                Ok(self.measure_blocks(ctx, inner, content_width - QUOTE_INDENT)? + 4.0)
+            Block::Paragraph(rs) => {
+                Ok(
+                    self.measure_rich(ctx, rs, content_width, self.style().body_size)?
+                        + self.style().paragraph_gap(),
+                )
             }
+            Block::List { items, .. } => Ok(self.measure_list(ctx, items, content_width, 0)?
+                + self.style().block_gap()
+                - self.style().paragraph_gap()),
+            Block::Blockquote(inner) => Ok(self.measure_blocks(
+                ctx,
+                inner,
+                content_width - QUOTE_INDENT,
+            )? + self.style().block_gap()
+                - self.style().paragraph_gap()),
             Block::CodeBlock { text, .. } => {
                 let lines = text.lines().count().max(1);
-                Ok(lines as f32 * CODE_LINE_H + 2.0 * CODE_PAD_V + BLOCK_GAP)
+                Ok(lines as f32 * CODE_LINE_H + 2.0 * CODE_PAD_V + self.style().block_gap())
             }
             Block::Table {
                 alignments,
@@ -687,9 +857,9 @@ impl ProsePdfExporter {
                 rows,
             } => {
                 let col_w = content_width / alignments.len().max(1) as f32;
-                Ok(self.measure_table(ctx, header, rows, col_w)? + BLOCK_GAP)
+                Ok(self.measure_table(ctx, header, rows, col_w)? + self.style().block_gap())
             }
-            Block::HorizontalRule => Ok(16.0),
+            Block::HorizontalRule => Ok(0.7 + self.style().block_gap()),
             Block::RawHtml(_) => Ok(0.0),
             Block::FootnoteDefinition { .. } => Ok(0.0),
         }
@@ -727,7 +897,7 @@ impl ProsePdfExporter {
     ) -> std::io::Result<f32> {
         let mut total = 0.0;
         if item.blocks.is_empty() {
-            total += BODY_SIZE + 4.0;
+            total += self.style().body_size + 4.0;
         } else {
             for block in &item.blocks {
                 total += match block {
@@ -789,7 +959,7 @@ impl ProsePdfExporter {
         x_offset: f32,
         annotations: &mut Vec<krilla::annotation::Annotation>,
     ) -> std::io::Result<(bool, usize)> {
-        let marker_x = PROSE_MARGIN + x_offset;
+        let marker_x = self.style().margin + x_offset;
         let mut number = start + start_item as u64;
         let mut drawn = 0;
         let is_top = *ctx.y_position <= ctx.layout_info.size.top_margin() + 0.1;
@@ -808,7 +978,7 @@ impl ProsePdfExporter {
 
             if let Some(checked) = item.checked {
                 let side = 8.5;
-                let mid_y = marker_y - BODY_SIZE * 0.30;
+                let mid_y = marker_y - self.style().body_size * 0.30;
                 let y_top = mid_y - side / 2.0;
                 let y_bot = mid_y + side / 2.0;
                 let x0 = marker_x + 1.0;
@@ -849,19 +1019,19 @@ impl ProsePdfExporter {
                     font_cache: ctx.font_cache,
                 };
                 let mut res = None;
-                write_rich_block(
+                self.write_rich_block(
                     &mut marker_ctx,
                     &marker_rs,
                     marker_x,
                     LIST_INDENT,
-                    BODY_SIZE,
+                    self.style().body_size,
                     &mut res,
                     annotations,
                 )?;
             }
 
             if item.blocks.is_empty() {
-                *ctx.y_position += BODY_SIZE + 4.0;
+                *ctx.y_position += self.style().body_size + 4.0;
             } else {
                 for block in &item.blocks {
                     if let Block::List {
@@ -923,12 +1093,12 @@ impl ProsePdfExporter {
         let mut max_h = 0.0;
         let text_w = col_w - 2.0 * TABLE_PAD_H;
         for cell in cells {
-            let h = measure_rich(ctx, cell, text_w, TABLE_SIZE)?;
+            let h = self.measure_rich(ctx, cell, text_w, TABLE_SIZE)?;
             if h > max_h {
                 max_h = h;
             }
         }
-        Ok(max_h + 2.0 * TABLE_PAD_V)
+        Ok(max_h + 2.0 * self.style().table_padding)
     }
 
     fn draw_table(
@@ -1009,10 +1179,17 @@ impl ProsePdfExporter {
         let num_cols = cells.len();
         let total_w = col_w * num_cols as f32;
         let row_h = self.table_row_height(ctx, cells, col_w)?;
-        let start_x = PROSE_MARGIN;
+        let start_x = self.style().margin;
 
         if is_header {
-            self.fill_rect(ctx, start_x, row_y, total_w, row_h, 245)?;
+            self.fill_rect(
+                ctx,
+                start_x,
+                row_y,
+                total_w,
+                row_h,
+                self.style().table_header_gray,
+            )?;
         }
 
         let text_w = col_w - 2.0 * TABLE_PAD_H;
@@ -1024,9 +1201,8 @@ impl ProsePdfExporter {
                     el.set_bold();
                 }
             }
-            let h = measure_rich(ctx, &styled_cell, text_w, TABLE_SIZE)?;
-            let plain = styled_cell.to_plain_string();
-            let text_width = measure_text_width(ctx.font_system, &plain, TABLE_SIZE);
+            let h = self.measure_rich(ctx, &styled_cell, text_w, TABLE_SIZE)?;
+            let text_width = self.text_width(ctx, &styled_cell, text_w, TABLE_SIZE);
             let align = alignments.get(i).copied().unwrap_or(Align::Left);
             let shift = match align {
                 Align::Center => ((text_w - text_width).max(0.0) / 2.0).min(text_w),
@@ -1034,9 +1210,8 @@ impl ProsePdfExporter {
                 Align::Left | Align::None => 0.0,
             };
             let mut y = row_y
-                + TABLE_PAD_V
-                + TABLE_SIZE * 0.85
-                + (row_h - 2.0 * TABLE_PAD_V - h).max(0.0) / 2.0;
+                + self.style().table_padding
+                + (row_h - 2.0 * self.style().table_padding - h).max(0.0) / 2.0;
             let mut inner_ctx = DrawContext {
                 layout_info: ctx.layout_info,
                 surface: ctx.surface,
@@ -1047,7 +1222,7 @@ impl ProsePdfExporter {
                 font_cache: ctx.font_cache,
             };
             let mut res = None;
-            write_rich_block(
+            self.write_rich_block(
                 &mut inner_ctx,
                 &styled_cell,
                 x + TABLE_PAD_H + shift,
@@ -1088,7 +1263,7 @@ impl ProsePdfExporter {
     }
 
     fn draw_hr(&self, ctx: &mut DrawContext<'_, '_>, x: f32, width: f32) -> std::io::Result<()> {
-        let y = *ctx.y_position + 8.0;
+        let y = *ctx.y_position;
         if let Some(rect) = Rect::from_xywh(x, y, width, 0.7) {
             let mut pb = PathBuilder::new();
             pb.push_rect(rect);
@@ -1110,8 +1285,16 @@ impl ProsePdfExporter {
     ) -> std::io::Result<()> {
         let height = lines as f32 * CODE_LINE_H + 2.0 * CODE_PAD_V;
         let y = *ctx.y_position;
-        self.fill_rect(ctx, PROSE_MARGIN, y, content_width, height, 246)?;
-        self.stroke_rect(ctx, PROSE_MARGIN, y, content_width, height, 215, 0.75)?;
+        self.fill_rect(ctx, self.style().margin, y, content_width, height, 246)?;
+        self.stroke_rect(
+            ctx,
+            self.style().margin,
+            y,
+            content_width,
+            height,
+            215,
+            0.75,
+        )?;
         *ctx.y_position = y + CODE_PAD_V + CODE_SIZE * 0.85;
         self.draw_code_lines(ctx, text, content_width, 0)?;
         *ctx.y_position = y + height;
@@ -1128,7 +1311,7 @@ impl ProsePdfExporter {
     ) -> std::io::Result<(bool, usize)> {
         let lines: Vec<&str> = text.lines().collect();
         let mut drawn = 0;
-        let text_x = PROSE_MARGIN + CODE_PAD_H;
+        let text_x = self.style().margin + CODE_PAD_H;
         let text_width = content_width - 2.0 * CODE_PAD_H;
         for line in lines.iter().skip(start_line) {
             if *ctx.y_position + CODE_LINE_H > ctx.max_y && drawn > 0 {
@@ -1238,23 +1421,13 @@ impl ProsePdfExporter {
     }
 }
 
-fn heading_metrics(level: u8) -> (f32, f32, f32) {
-    match level {
-        1 => (18.0, 16.0, 8.0),
-        2 => (14.0, 14.0, 6.0),
-        3 => (12.0, 12.0, 4.0),
-        4 => (11.0, 10.0, 3.0),
-        5 => (10.0, 8.0, 2.0),
-        _ => (9.5, 6.0, 2.0),
-    }
-}
-
 /// Measures the rendered height of a rich string at the given width.
 fn measure_rich(
     ctx: &mut DrawContext<'_, '_>,
     rs: &RichString,
     width: f32,
     font_size: f32,
+    line_gap: f32,
 ) -> std::io::Result<f32> {
     let shaped = shape_rich_string(
         ctx.font_system,
@@ -1266,7 +1439,7 @@ fn measure_rich(
     );
     let mut total = 0.0;
     for line in &shaped.lines {
-        total += line_height_for_line(line, ctx.font_system, font_size) + LINE_GAP;
+        total += line_height_for_line(line, ctx.font_system, font_size) + line_gap;
     }
     Ok(total)
 }
@@ -1309,6 +1482,7 @@ fn write_rich_block(
     font_size: f32,
     residual: &mut Option<usize>,
     annotations: &mut Vec<krilla::annotation::Annotation>,
+    line_gap: f32,
 ) -> std::io::Result<bool> {
     let shaped = shape_rich_string(
         ctx.font_system,
@@ -1325,12 +1499,13 @@ fn write_rich_block(
     }
     let mut drawn = 0;
     for line in shaped.lines.iter().skip(start) {
-        let lh = line_height_for_line(line, ctx.font_system, font_size) + LINE_GAP;
+        let lh = line_height_for_line(line, ctx.font_system, font_size) + line_gap;
         if *ctx.y_position + lh > ctx.max_y && drawn > 0 {
             break;
         }
-        draw_shaped_line(ctx, line, x, *ctx.y_position, font_size);
-        collect_line_annotations(line, x, *ctx.y_position, font_size, annotations);
+        let baseline = *ctx.y_position + font_size * 0.85;
+        draw_shaped_line(ctx, line, x, baseline, font_size);
+        collect_line_annotations(line, x, baseline, font_size, annotations);
         *ctx.y_position += lh;
         drawn += 1;
     }
@@ -1404,5 +1579,106 @@ mod tests {
         assert!(bytes.starts_with(b"%PDF"));
         let pdf_str = String::from_utf8_lossy(&bytes);
         assert!(pdf_str.contains("/URI (https://openai.com)") || pdf_str.contains("openai.com"));
+    }
+}
+
+fn load_prose_image(url: &str) -> std::io::Result<krilla::image::Image> {
+    let (prefix, encoded) = url
+        .split_once(',')
+        .ok_or_else(|| std::io::Error::other("Invalid prose image"))?;
+    if !matches!(
+        prefix,
+        "data:image/png;base64" | "data:image/jpeg;base64" | "data:image/webp;base64"
+    ) {
+        return Err(std::io::Error::other(
+            "Choose a PNG, JPEG or WebP image for PDF export",
+        ));
+    }
+    if encoded.len() > 56 * 1024 * 1024 {
+        return Err(std::io::Error::other("Prose image exceeds size limit"));
+    }
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .map_err(std::io::Error::other)?;
+    let mut reader = image::ImageReader::new(std::io::Cursor::new(&bytes)).with_guessed_format()?;
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(20000);
+    limits.max_image_height = Some(20000);
+    limits.max_alloc = Some(160 * 1024 * 1024);
+    reader.limits(limits);
+    use image::ImageDecoder;
+    let mut decoder = reader.into_decoder().map_err(std::io::Error::other)?;
+    let orientation = decoder.orientation().map_err(std::io::Error::other)?;
+    let mut decoded = image::DynamicImage::from_decoder(decoder).map_err(std::io::Error::other)?;
+    decoded.apply_orientation(orientation);
+    let mut png = std::io::Cursor::new(Vec::new());
+    decoded
+        .write_to(&mut png, image::ImageFormat::Png)
+        .map_err(std::io::Error::other)?;
+    krilla::image::Image::from_png(png.into_inner().into(), false)
+        .map_err(|e| std::io::Error::other(format!("Could not load prose image: {:?}", e)))
+}
+fn prose_image_size(image: &krilla::image::Image, width: f32, height: f32) -> (f32, f32) {
+    let (w, h) = image.size();
+    let scale = (width / w as f32).min(height / h as f32).min(0.75);
+    (w as f32 * scale, h as f32 * scale)
+}
+
+#[cfg(test)]
+mod imported_image_tests {
+    use super::*;
+    #[test]
+    fn loads_embedded_image_and_preserves_aspect_ratio() {
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::new_rgba8(80, 40)
+            .write_to(&mut bytes, image::ImageFormat::Png)
+            .unwrap();
+        let url = format!(
+            "data:image/png;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(bytes.into_inner())
+        );
+        let image = load_prose_image(&url).unwrap();
+        assert_eq!(prose_image_size(&image, 30.0, 100.0), (30.0, 15.0));
+        let mut pdf = Vec::new();
+        ProsePdfExporter::default()
+            .export(&format!("Before\n\n![Picture]({url})\n\nAfter"), &mut pdf)
+            .unwrap();
+        assert!(pdf.starts_with(b"%PDF"));
+        assert!(pdf.windows(6).any(|bytes| bytes == b"/Image"));
+        assert!(load_prose_image("data:image/png;base64,YQ==").is_err());
+    }
+}
+
+#[cfg(test)]
+mod image_layout_tests {
+    use super::*;
+
+    #[test]
+    fn fitted_images_preserve_proportions_without_upscaling() {
+        use image::ImageEncoder;
+        for (w, h) in [(1200, 400), (400, 1600), (100, 50)] {
+            let mut bytes = Vec::new();
+            image::codecs::png::PngEncoder::new(&mut bytes)
+                .write_image(
+                    &vec![100; (w * h * 3) as usize],
+                    w,
+                    h,
+                    image::ExtendedColorType::Rgb8,
+                )
+                .unwrap();
+            let image = krilla::image::Image::from_png(bytes.into(), false).unwrap();
+            for style in ["classic", "manuscript", "treatment", "modern", "literary"] {
+                let preset = super::super::styles::prose_style(style);
+                for paper in [crate::pdf::A4, crate::pdf::LETTER] {
+                    let width = paper.x - 2.0 * preset.margin;
+                    let height =
+                        paper.y - paper.top_margin() - paper.bottom_margin() - preset.block_gap();
+                    let (actual_w, actual_h) = prose_image_size(&image, width, height);
+                    assert!(actual_w <= width + 0.01 && actual_h <= height + 0.01);
+                    assert!((actual_w / actual_h - w as f32 / h as f32).abs() < 0.001);
+                    assert!(actual_w <= w as f32 * 0.75 + 0.01);
+                }
+            }
+        }
     }
 }

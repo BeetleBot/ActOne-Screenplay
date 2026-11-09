@@ -48,7 +48,7 @@ vi.mock("@tauri-apps/plugin-opener", () => ({
 }));
 
 vi.mock("./PdfExportPreview", () => ({
-  PdfExportPreview: () => <div data-testid="pdf-preview" />,
+  PdfExportPreview: ({ argumentsJson }: { argumentsJson: string }) => <div data-testid="pdf-preview" data-args={argumentsJson} />,
 }));
 
 vi.mock("./TitleBar", () => ({
@@ -79,6 +79,51 @@ describe("ExportPdfWindow Component", () => {
     expect(screen.getByText("Watermarks & Security")).toBeInTheDocument();
     expect(screen.getByTestId("pdf-preview")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "PDF export settings" })).toHaveStyle({ overflowY: "auto", minHeight: 0 });
+  });
+
+  it("offers all five prose styles and shares the selected style with preview and export", async () => {
+    mockFileState.scripts = [{ name: "Notes", type: "markdown", path: "Notes.md" }];
+    mockFileState.filePath = "/home/writer/Notes.md";
+    render(<ExportPdfWindow onClose={vi.fn()} />);
+    const selector = screen.getByRole("combobox", { name: "Export Style" });
+    expect(selector).toHaveTextContent("Classic");
+    for (const style of ["Manuscript", "Treatment", "Modern", "Literary", "Classic"]) {
+      fireEvent.mouseDown(selector);
+      fireEvent.click(screen.getByRole("option", { name: new RegExp(style) }));
+      const args = JSON.parse(screen.getByTestId("pdf-preview").getAttribute("data-args")!);
+      expect(args.proseStyle).toBe(style.toLowerCase());
+    }
+    fireEvent.mouseDown(selector);
+    fireEvent.click(screen.getByRole("option", { name: /Literary/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Export to PDF" }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("export_prose_pdf", expect.objectContaining({ proseStyle: "literary", markdownText: mockFileState.rawText })));
+  });
+
+  it("resolves short image names identically for prose preview and saved PDF", async () => {
+    mockFileState.scripts = [{ name: "Notes", type: "markdown", path: "Notes.md" }];
+    mockFileState.filePath = "/home/writer/Notes.md";
+    const originalText = mockFileState.rawText;
+    const dataUrl = "data:image/png;base64,AAAA";
+    const settings = mockFileState.parsedDoc.settings as typeof mockFileState.parsedDoc.settings & { proseImages?: Record<string, string> };
+    settings.proseImages = { image1: dataUrl };
+    mockFileState.rawText = "![image1](image1)";
+    try {
+      render(<ExportPdfWindow onClose={vi.fn()} />);
+      const preview = JSON.parse(screen.getByTestId("pdf-preview").getAttribute("data-args")!);
+      expect(preview.markdownText).toBe(`![image1](${dataUrl})`);
+      expect(preview.proseStyle).toBe("classic");
+      fireEvent.click(screen.getByRole("button", { name: "Export to PDF" }));
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith("export_prose_pdf", expect.objectContaining({ markdownText: preview.markdownText, proseStyle: "classic" })));
+      expect(mockFileState.rawText).toBe("![image1](image1)");
+    } finally {
+      mockFileState.rawText = originalText;
+      delete settings.proseImages;
+    }
+  });
+
+  it("keeps prose styles out of screenplay export", () => {
+    render(<ExportPdfWindow onClose={vi.fn()} />);
+    expect(screen.queryByRole("combobox", { name: "Export Style" })).not.toBeInTheDocument();
   });
 
   it("offers actions after a successful PDF export", async () => {
