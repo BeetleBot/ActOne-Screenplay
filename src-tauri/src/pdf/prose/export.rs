@@ -1580,6 +1580,50 @@ mod tests {
         let pdf_str = String::from_utf8_lossy(&bytes);
         assert!(pdf_str.contains("/URI (https://openai.com)") || pdf_str.contains("openai.com"));
     }
+
+    #[test]
+    fn test_nested_list_export_does_not_halt() {
+        let md = r#"# CHARACTER PROFILES & ARCS — INTERSTELLAR
+
+## 1. Joseph "Coop" Cooper
+- **Role:** Protagonist / Pilot / Father
+- **Archetype:** The Reluctant Pioneer / Everyman Genius
+- **Core Want:** To return home and raise his children on Earth.
+- **Core Need:** To accept that saving his children means leaving them behind and securing humanity's future across generations.
+- **Key Relationships:**
+  - **Murph:** The emotional anchor of the entire story. Their bond is the gravitational force that transcends the 5th dimension.
+  - **Tom:** The loyal son left behind to steward the land, who grows resentful as decades pass.
+  - **Dr. Amelia Brand:** Intellectual counterpoint—pragmatic logic vs. intuitive conviction.
+  - **TARS:** Honest companion; Cooper adjusts TARS' humor setting to 75% for grounded camaraderie.
+
+---
+
+## 2. Murphy "Murph" Cooper
+- **Role:** Deuteragonist / Physicist / Savior of Humanity
+- **Arc Progression:**
+  - **Young Murph (Age 10):** Curious, defiant, intuitive. Convinced her room contains a ghost trying to warn her. Devastated by her father's departure.
+  - **Adult Murph (Age 35–40):** Brilliant, driven, deeply wounded. Working at NASA under Professor Brand. Solves the
+"#;
+        let doc = super::super::ast::parse(md);
+        // PDF text is font-encoded/compressed, so raw bytes cannot be
+        // searched for source words. Assert parsed content before rendering.
+        assert_eq!(doc.blocks.len(), 6);
+        let Block::List { items, .. } = &doc.blocks[2] else {
+            panic!("list")
+        };
+        let Block::Paragraph(role) = &items[0].blocks[0] else {
+            panic!("paragraph")
+        };
+        assert_eq!(role.to_plain_string(), "Role: Protagonist / Pilot / Father");
+        let Block::Heading { content, .. } = &doc.blocks[4] else {
+            panic!("heading")
+        };
+        assert_eq!(content.to_plain_string(), "2. Murphy \"Murph\" Cooper");
+        let exporter = ProsePdfExporter::default();
+        let mut buf = std::io::Cursor::new(Vec::new());
+        exporter.export_with_page_breaks(md, &mut buf).unwrap();
+        assert!(buf.get_ref().starts_with(b"%PDF-"));
+    }
 }
 
 fn load_prose_image(url: &str) -> std::io::Result<krilla::image::Image> {

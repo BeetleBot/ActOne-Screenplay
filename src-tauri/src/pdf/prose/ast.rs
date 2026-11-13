@@ -114,6 +114,29 @@ fn parse_blocks<'a>(
             .filter(|b| *b == b'\n')
             .count()
             + 1;
+        // Tight lists omit Paragraph events. Parse their complete inline run,
+        // including style end tags, without consuming the enclosing item boundary.
+        if matches!(
+            &events[*index].0,
+            Event::Text(_)
+                | Event::Code(_)
+                | Event::InlineHtml(_)
+                | Event::FootnoteReference(_)
+                | Event::Start(
+                    Tag::Emphasis
+                        | Tag::Strong
+                        | Tag::Strikethrough
+                        | Tag::Link { .. }
+                        | Tag::Image { .. }
+                )
+        ) {
+            let rs = parse_inline(src, events, index, TagEnd::Item);
+            if !rs.elements.is_empty() {
+                blocks.push(Block::Paragraph(rs));
+                source_lines.push(source_line);
+            }
+            continue;
+        }
         match &events[*index].0 {
             Event::End(_) => break,
             Event::Start(tag) => match tag {
@@ -333,26 +356,6 @@ fn parse_blocks<'a>(
                 blocks.push(Block::HorizontalRule);
                 *index += 1;
             }
-            Event::Text(text) => {
-                let mut rs = RichString::new();
-                push_styled(&mut rs, text, Style::default(), None);
-                if !rs.elements.is_empty() {
-                    blocks.push(Block::Paragraph(rs));
-                }
-                *index += 1;
-            }
-            Event::Code(text) => {
-                let mut rs = RichString::new();
-                let style = Style {
-                    mono: true,
-                    ..Style::default()
-                };
-                push_styled(&mut rs, text, style, None);
-                if !rs.elements.is_empty() {
-                    blocks.push(Block::Paragraph(rs));
-                }
-                *index += 1;
-            }
             _ => *index += 1,
         }
         if blocks.len() > block_count {
@@ -398,6 +401,27 @@ fn parse_inline<'a>(
 
     while *index < events.len() {
         let (event, range) = &events[*index];
+        // An implicit paragraph ends before nested blocks or its item's end.
+        // Leave those events for parse_blocks and the list owner to consume.
+        if stop == TagEnd::Item
+            && matches!(
+                event,
+                Event::End(TagEnd::Item)
+                    | Event::Rule
+                    | Event::Start(
+                        Tag::Paragraph
+                            | Tag::Heading { .. }
+                            | Tag::BlockQuote(_)
+                            | Tag::List(_)
+                            | Tag::CodeBlock(_)
+                            | Tag::HtmlBlock
+                            | Tag::Table(_)
+                            | Tag::FootnoteDefinition(_)
+                    )
+            )
+        {
+            break;
+        }
         match event {
             Event::End(end) if *end == stop => {
                 *index += 1;
@@ -674,6 +698,76 @@ mod tests {
         };
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].checked, None);
+    }
+
+    #[test]
+    fn tight_list_preserves_styles_nested_items_and_following_sections() {
+        let doc = parse(
+            "# Profiles\n\n- **Role:** Pilot / Father\n- **Relationships:**\n  - **Murph:** தமிழ் 🎬\n  - *Tom:* Loyal son\n\n---\n\n## Murphy\n\n- **Role:** Physicist\n",
+        );
+        assert_eq!(doc.blocks.len(), 5);
+        assert_eq!(doc.source_lines, vec![1, 3, 8, 10, 12]);
+        let Block::List { items, .. } = &doc.blocks[1] else {
+            panic!("list")
+        };
+        assert_eq!(items.len(), 2);
+        let Block::Paragraph(role) = &items[0].blocks[0] else {
+            panic!("paragraph")
+        };
+        assert_eq!(role.to_plain_string(), "Role: Pilot / Father");
+        assert!(role.elements[0].is_bold());
+        assert!(!role.elements.last().unwrap().is_bold());
+        let Block::List { items: nested, .. } = &items[1].blocks[1] else {
+            panic!("nested list")
+        };
+        assert_eq!(nested.len(), 2);
+        let Block::Paragraph(murph) = &nested[0].blocks[0] else {
+            panic!("paragraph")
+        };
+        assert_eq!(murph.to_plain_string(), "Murph: தமிழ் 🎬");
+        assert!(matches!(doc.blocks[2], Block::HorizontalRule));
+        let Block::Heading { content, .. } = &doc.blocks[3] else {
+            panic!("heading")
+        };
+        assert_eq!(content.to_plain_string(), "Murphy");
+        let Block::List { items, .. } = &doc.blocks[4] else {
+            panic!("list")
+        };
+        let Block::Paragraph(role) = &items[0].blocks[0] else {
+            panic!("paragraph")
+        };
+        assert_eq!(role.to_plain_string(), "Role: Physicist");
+    }
+
+    #[test]
+    fn tight_task_and_ordered_lists_preserve_complete_inline_runs() {
+        let doc = parse(
+            "- [x] **Done:** use `code` and [link](https://example.com)\n- [ ] plain *emphasis* tail\n\n1. **First:** value\n2. second\n",
+        );
+        let Block::List { items, .. } = &doc.blocks[0] else {
+            panic!("list")
+        };
+        assert_eq!(items[0].checked, Some(true));
+        assert_eq!(items[1].checked, Some(false));
+        let Block::Paragraph(text) = &items[0].blocks[0] else {
+            panic!("paragraph")
+        };
+        assert_eq!(text.to_plain_string(), "Done: use code and link");
+        assert!(text.elements.iter().any(|e| e.is_mono()));
+        assert!(text.elements.iter().any(|e| e.link_url.is_some()));
+        let Block::Paragraph(text) = &items[1].blocks[0] else {
+            panic!("paragraph")
+        };
+        assert_eq!(text.to_plain_string(), "plain emphasis tail");
+        let Block::List { ordered, items, .. } = &doc.blocks[1] else {
+            panic!("list")
+        };
+        assert!(*ordered);
+        assert_eq!(items.len(), 2);
+        let Block::Paragraph(text) = &items[0].blocks[0] else {
+            panic!("paragraph")
+        };
+        assert_eq!(text.to_plain_string(), "First: value");
     }
 
     #[test]
