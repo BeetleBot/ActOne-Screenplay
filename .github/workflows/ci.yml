@@ -113,6 +113,8 @@ jobs:
         run: python tests/desktop/install_edge_driver.py
       - name: Build isolated desktop test app
         run: npm run build:desktop-test
+      - name: Inspect screenplay PDF pagination (both platforms)
+        run: npm run test:pdf-layout
       - name: Native lifecycle (Linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a npm run test:desktop

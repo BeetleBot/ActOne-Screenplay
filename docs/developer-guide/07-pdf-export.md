@@ -112,29 +112,32 @@ Bold/italic/underline is parsed from Fountain markup (`*italic*`, `**bold**`, `_
 
 ### Orphan/Widow Protection
 
-- A scene heading must never be the last line on a page
-- Must leave at least **2 lines** of the subsequent block on the same page as a heading
-- Dialogue blocks must keep character cue with at least one line of text
-- Action paragraphs must leave at least 2 lines on the current page and 2 on the next
+`PdfExporter::generate_pdf` is shared by exported bytes, export preview and native page-break calculation. The editor now requests this engine through `useDocumentPagination` after parsing, using the current document identity and editor layout settings. The TypeScript source-line paginator remains a fallback while native layout is pending or unavailable. Export-only settings can differ from the editor preset.
+
+- `required_group_height` measures a chain of scene headings, shots and enabled sections plus the next block's smallest legal fragment. It includes the 12 pt inter-element gaps, skips disabled outline elements, and uses the same uppercase text, element styles, fonts and actual dialogue column widths as drawing.
+- Action, lyrics, centered text and exported synopses keep three-line-or-shorter paragraphs intact. Longer paragraphs split with at least two rendered lines on each side. A complete one-line paragraph is valid. Sentence-ending lines are preferred when choosing a split.
+- Dialogue is planned across the entire speech, including multiple source lines and parentheticals. A split requires two spoken rendered lines on both sides; parentheticals do not count toward this minimum and cannot be the final line of a fragment. Short complete speeches stay with their cue and opening parentheticals.
+- Closing transitions reserve their full height plus the inter-element gap in the preceding block's drawable area, including multi-page action and dialogue. This prevents the final fragment from pushing the transition alone to the next page. The reservation can leave additional whitespace on intermediate pages.
+- `===` and the scene-per-page setting explicitly override normal grouping. A trailing heading with no following content has nothing to attach to.
+- Pagination must advance its element iterator or continuation cursor on each page. Physically impossible unsplittable content returns an `InvalidData` error instead of looping over empty pages.
 
 ### Dialogue Continuation
 
-When dialogue splits across pages:
-1. `(MORE)` is appended to the fragment on the current page
-2. Character name + `(cont'd)` is printed at the top of the next page
+`DialogueLayout` measures the cue, all remaining shaped lines and `(MORE)` before drawing anything. A split reserves the entire marker inside the body margins. The next page repeats the uppercase cue with `(CONT'D)` while retaining existing extensions, such as `(V.O.)`. Source element/line cursors resume exactly once; a cue deferred without any printed speech does not change automatic character-continuation state.
 
-### Sentence Splitting
-
-When paragraphs must split mid-element, the engine prefers sentence boundaries (`.`, `?`, `!`). Falls back to word-level splitting for very long sentences.
+Legal rendered sentence endings include `.`, `?`, `!`, Indic danda and common CJK equivalents, optionally followed by closing quotes or brackets. If no legal sentence-ending fragment fits, a speech retries on a fresh page. Oversized sentences (including the space consumed by a required heading) can fall back to a rendered line boundary while preserving the two-line minimum. This is a layout heuristic, not linguistic sentence parsing.
 
 ### Dual Dialogue
 
-Side-by-side dialogue is rendered in two columns:
-1. Save vertical baseline (Y position)
-2. Render left column, measure height
-3. Reset to baseline
-4. Render right column, measure height
-5. Advance to `max(height_left, height_right)`
+Measure both speakers at their actual left/right column widths. A pair that fits a fresh page stays intact; longer pairs use each column's protected dialogue plan. Capture which columns were continuing before drawing either one, evaluate both writers even when the other overflows, and resume only unfinished columns. Advance Y to the larger end position. A finished speaker must not restart on a later page.
+
+The shaper converts cosmic-text's per-hard-line glyph ranges into global RichString byte ranges before selecting PDF text or styling. Hard newlines must not repeat the first source line or apply the wrong rich-text spans. Direct UTF-8 and mixed-style regression tests cover this mapping.
+
+### Pagination regression checks
+
+- `cargo test --manifest-path src-tauri/Cargo.toml --locked`: includes the reproduced Letter/A4 orphan-heading case, oversized-element termination, sentence/parenthetical rules, and exhaustive fragment invariants over variable line heights and available space.
+- `npm run test:pdf-layout`: builds real PDFs and inspects PDF.js text coordinates. Targeted cases and a Letter/A4 × Courier Prime/Courier Prime Sans × eight page-boundary offsets matrix assert heading attachment, two-line splits, parenthetical attachment, continuation markers within margins, transitions below preceding content, independent dual-column continuation, and exact text preservation without omissions or duplication. The test runs in backend CI and in the Linux/Windows desktop CI jobs.
+- `cargo run --manifest-path src-tauri/Cargo.toml --locked --example bee_export -- INPUT.fountain OUTPUT.pdf`: reproducible Letter/Courier Prime screenplay export with title page for manual review.
 
 ## Other Export Formats
 

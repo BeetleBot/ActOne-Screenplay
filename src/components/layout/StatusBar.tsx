@@ -214,7 +214,7 @@ export const StatusBar = React.memo(() => {
         pages = breaks.length + 1;
       }
     } else {
-      pages = Math.max(1, Math.ceil(docLinesCount / 54));
+      pages = Array.isArray(parsedDoc?.pageBreaks) ? 1 : Math.max(1, Math.ceil(docLinesCount / 54));
     }
 
     const sceneCount = parsedDoc?.lines ? parsedDoc.lines.filter(l => l.type === LineType.heading).length : 0;

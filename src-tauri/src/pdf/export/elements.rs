@@ -96,6 +96,8 @@ pub struct ShapedRun {
 }
 
 pub struct ShapedLine {
+    /// Zero-based hard source line; soft wrapping does not advance this index.
+    pub source_line: usize,
     pub runs: Vec<ShapedRun>,
     pub width: f32,
     pub underline_ranges: Vec<(f32, f32)>,
@@ -355,8 +357,23 @@ pub(crate) fn shape_rich_string(
     }
     buffer.set_rich_text(spans, default_attrs, Shaping::Advanced);
 
+    // cosmic-text glyph ranges are relative to each hard source line, whereas
+    // RichString attributes and PDF text ranges refer to the complete string.
+    let mut offset = 0;
+    let source_line_offsets: Vec<usize> = plain
+        .split_inclusive('\n')
+        .map(|line| {
+            let start = offset;
+            offset += line.len();
+            start
+        })
+        .collect();
     let mut lines = Vec::new();
     for run in buffer.layout_runs() {
+        let source_offset = source_line_offsets
+            .get(run.line_i)
+            .copied()
+            .unwrap_or(plain.len());
         let line_width = run.glyphs.iter().fold(0.0_f32, |acc, g| acc.max(g.x + g.w));
 
         let mut runs_in_line = Vec::new();
@@ -370,8 +387,8 @@ pub(crate) fn shape_rich_string(
         let mut link_x_ranges: Vec<(f32, f32, String)> = Vec::new();
 
         for glyph in run.glyphs.iter() {
-            let mut start = glyph.start;
-            let mut end = glyph.end;
+            let mut start = source_offset + glyph.start;
+            let mut end = source_offset + glyph.end;
             while start > 0 && !plain.is_char_boundary(start) {
                 start -= 1;
             }
@@ -523,6 +540,7 @@ pub(crate) fn shape_rich_string(
         }
 
         lines.push(ShapedLine {
+            source_line: run.line_i,
             runs: runs_in_line,
             width: line_width,
             underline_ranges: merged,
@@ -540,6 +558,7 @@ pub(crate) fn shape_rich_string(
             .map(|f| f.id)
             .unwrap_or(cosmic_text::fontdb::ID::dummy());
         lines.push(ShapedLine {
+            source_line: 0,
             runs: vec![ShapedRun {
                 font_id,
                 glyphs: vec![],
@@ -573,8 +592,14 @@ pub fn get_krilla_font(
 
     // Glyph IDs belong to the shaped face. Never substitute an Indic face
     // for punctuation shaped in a bundled prose family.
-    let is_prose_face = face_info.families.iter().any(|(name, _)| matches!(name.as_str(), "Literata" | "Source Serif 4" | "Source Sans 3" | "EB Garamond" | "Inter"));
-    let is_neutral_run = !is_prose_face && !text.is_empty()
+    let is_prose_face = face_info.families.iter().any(|(name, _)| {
+        matches!(
+            name.as_str(),
+            "Literata" | "Source Serif 4" | "Source Sans 3" | "EB Garamond" | "Inter"
+        )
+    });
+    let is_neutral_run = !is_prose_face
+        && !text.is_empty()
         && text.chars().all(|c| {
             let val = c as u32;
             !c.is_ascii_alphabetic() && !((0x0900..=0x0D7F).contains(&val))
@@ -993,12 +1018,13 @@ pub fn split_rich_string_into_sentences(rs: &RichString) -> Vec<RichString> {
 }
 
 fn line_ends_with_sentence_punctuation(line: &ShapedLine) -> bool {
-    if let Some(last_run) = line.runs.last()
-        && let Some(last_char) = last_run.text.trim_end().chars().last()
-    {
-        return last_char == '.' || last_char == '?' || last_char == '!' || last_char == '…';
-    }
-    false
+    let text: String = line.runs.iter().map(|run| run.text.as_str()).collect();
+    let text = text
+        .trim_end()
+        .trim_end_matches(['"', '\'', '\u{201d}', '\u{2019}', ')', ']']);
+    text.ends_with([
+        '.', '?', '!', '\u{0964}', '\u{0965}', '\u{3002}', '\u{ff1f}', '\u{ff01}',
+    ])
 }
 
 pub fn measure_full_element_height(
@@ -1023,56 +1049,32 @@ pub fn measure_full_element_height(
             layout_info.export_font,
             layout_info.script_fonts,
         ),
-        Element::Dialogue(d) => {
-            let mut name = d.character.clone();
-            if let Some(ext) = &d.extension {
-                name.append(" (".into());
-                name.append(ext.clone());
-                name.append(")".into());
-            }
-            let name_height = measure_element_height(
-                font_system,
-                &name,
-                &layout_info.margins.dialogue.character,
-                layout_info.size,
-                layout_info.export_font,
-                layout_info.script_fonts,
-            );
-            let mut elements_height = 0.0;
-            for first_el in &d.elements {
-                elements_height += match first_el {
-                    DialogueElement::Parenthetical(s) => measure_element_height(
-                        font_system,
-                        s,
-                        &layout_info.margins.dialogue.parenthetical,
-                        layout_info.size,
-                        layout_info.export_font,
-                        layout_info.script_fonts,
-                    ),
-                    DialogueElement::Line(s) => measure_element_height(
-                        font_system,
-                        s,
-                        &layout_info.margins.dialogue.line,
-                        layout_info.size,
-                        layout_info.export_font,
-                        layout_info.script_fonts,
-                    ),
-                };
-            }
-            name_height + elements_height
-        }
+        Element::Dialogue(d) => dialogue_layout(
+            d,
+            None,
+            &layout_info.margins.dialogue,
+            font_system,
+            layout_info,
+        )
+        .full_height(),
         Element::DualDialogue(d0, d1) => {
-            let h0 = measure_full_element_height(
-                &Element::Dialogue(d0.clone()),
+            let left = dialogue_layout(
+                d0,
+                None,
+                &layout_info.margins.dual_dialogue.left,
                 font_system,
                 layout_info,
-            );
-            let h1 = measure_full_element_height(
-                &Element::Dialogue(d1.clone()),
+            )
+            .full_height();
+            let right = dialogue_layout(
+                d1,
+                None,
+                &layout_info.margins.dual_dialogue.right,
                 font_system,
                 layout_info,
-            );
-            h0.max(h1)
+            )
+            .full_height();
+            left.max(right)
         }
         Element::Lyrics(s) => measure_element_height(
             font_system,
@@ -1126,172 +1128,236 @@ pub fn measure_full_element_height(
     }
 }
 
-pub fn min_required_height_for_lookahead(
+pub fn min_required_height_with_space(
     el: &Element,
-    font_system: &mut cosmic_text::FontSystem,
+    font_system: &mut FontSystem,
     layout_info: &LayoutInfo,
+    page_height: f32,
 ) -> f32 {
-    match el {
-        Element::Heading { slug, .. } => measure_element_height(
-            font_system,
-            slug,
-            &layout_info.margins.heading,
-            layout_info.size,
-            layout_info.export_font,
-            layout_info.script_fonts,
-        ),
-        Element::Action(s) => {
-            let max_width = layout_info.margins.action.content_width(layout_info.size);
-            let shaped = shape_rich_string(
-                font_system,
-                s,
-                max_width,
-                FONT_SIZE,
-                layout_info.export_font,
-                layout_info.script_fonts,
-            );
-            let mut total_h = 0.0;
-            for line in shaped.lines.iter().take(2) {
-                total_h += line_height_for_line(line, font_system, FONT_SIZE);
-            }
-            total_h
+    let margin = match el {
+        Element::Action(_) | Element::Shot(_) | Element::Section { .. } => {
+            &layout_info.margins.action
         }
+        Element::Lyrics(_) => &layout_info.margins.lyrics,
+        Element::CenteredText(_) => &layout_info.margins.centered,
+        Element::Synopsis(_) => &layout_info.margins.synopsis,
         Element::Dialogue(d) => {
-            let mut name = d.character.clone();
-            if let Some(ext) = &d.extension {
-                name.append(" (".into());
-                name.append(ext.clone());
-                name.append(")".into());
-            }
-            let name_height = measure_element_height(
+            return dialogue_layout(
+                d,
+                None,
+                &layout_info.margins.dialogue,
                 font_system,
-                &name,
-                &layout_info.margins.dialogue.character,
-                layout_info.size,
-                layout_info.export_font,
-                layout_info.script_fonts,
-            );
-            let first_el_height = if let Some(first_el) = d.elements.first() {
-                match first_el {
-                    DialogueElement::Parenthetical(s) => measure_element_height(
-                        font_system,
-                        s,
-                        &layout_info.margins.dialogue.parenthetical,
-                        layout_info.size,
-                        layout_info.export_font,
-                        layout_info.script_fonts,
-                    ),
-                    DialogueElement::Line(s) => {
-                        let shaped = shape_rich_string(
-                            font_system,
-                            s,
-                            layout_info
-                                .margins
-                                .dialogue
-                                .line
-                                .content_width(layout_info.size),
-                            FONT_SIZE,
-                            layout_info.export_font,
-                            layout_info.script_fonts,
-                        );
-                        shaped
-                            .lines
-                            .first()
-                            .map(|l| line_height_for_line(l, font_system, FONT_SIZE))
-                            .unwrap_or(FONT_SIZE)
-                    }
-                }
-            } else {
-                0.0
-            };
-            name_height + first_el_height
+                layout_info,
+            )
+            .minimum_height(page_height);
         }
         Element::DualDialogue(d0, d1) => {
-            let h0 = min_required_height_for_lookahead(
-                &Element::Dialogue(d0.clone()),
+            let left = dialogue_layout(
+                d0,
+                None,
+                &layout_info.margins.dual_dialogue.left,
                 font_system,
                 layout_info,
             );
-            let h1 = min_required_height_for_lookahead(
-                &Element::Dialogue(d1.clone()),
+            let right = dialogue_layout(
+                d1,
+                None,
+                &layout_info.margins.dual_dialogue.right,
                 font_system,
                 layout_info,
             );
-            h0.max(h1)
+            let height = left.full_height().max(right.full_height());
+            return if height <= page_height {
+                height
+            } else {
+                left.minimum_height(page_height)
+                    .max(right.minimum_height(page_height))
+            };
         }
-        Element::Lyrics(s) => {
-            let max_width = layout_info.margins.lyrics.content_width(layout_info.size);
-            let shaped = shape_rich_string(
-                font_system,
-                s,
-                max_width,
-                FONT_SIZE,
-                layout_info.export_font,
-                layout_info.script_fonts,
-            );
-            let mut total_h = 0.0;
-            for line in shaped.lines.iter().take(2) {
-                total_h += line_height_for_line(line, font_system, FONT_SIZE);
+        _ => return measure_full_element_height(el, font_system, layout_info),
+    };
+    let content = match el {
+        Element::Action(s)
+        | Element::Lyrics(s)
+        | Element::CenteredText(s)
+        | Element::Synopsis(s) => s,
+        _ => return measure_full_element_height(el, font_system, layout_info),
+    };
+    let shaped = shape_rich_string(
+        font_system,
+        content,
+        margin.content_width(layout_info.size),
+        FONT_SIZE,
+        layout_info.export_font,
+        layout_info.script_fonts,
+    );
+    // The writer cannot split a paragraph of three lines or fewer.
+    let minimum_lines = if shaped.lines.len() <= 3 {
+        shaped.lines.len()
+    } else {
+        2
+    };
+    shaped
+        .lines
+        .iter()
+        .take(minimum_lines)
+        .map(|line| line_height_for_line(line, font_system, FONT_SIZE))
+        .sum()
+}
+
+struct DialogueLayoutLine {
+    element_index: usize,
+    line_index: usize,
+    shaped: ShapedLine,
+    height: f32,
+    spoken: bool,
+}
+
+struct DialogueLayout {
+    name: RichString,
+    name_height: f32,
+    more_height: f32,
+    lines: Vec<DialogueLayoutLine>,
+}
+
+impl DialogueLayout {
+    fn full_height(&self) -> f32 {
+        self.name_height + self.lines.iter().map(|line| line.height).sum::<f32>()
+    }
+
+    // Returns legal fragment endings across the whole speech, not each source line.
+    // Parentheticals cannot end a fragment; both pages need two spoken lines.
+    fn split_points(&self, sentences_only: bool) -> Vec<(usize, f32)> {
+        let total_spoken = self.lines.iter().filter(|line| line.spoken).count();
+        let mut spoken = 0;
+        let mut height = self.name_height + self.more_height;
+        let mut points = Vec::new();
+        for (index, line) in self.lines.iter().enumerate() {
+            height += line.height;
+            spoken += usize::from(line.spoken);
+            if line.spoken
+                && spoken >= 2
+                && total_spoken - spoken >= 2
+                && (!sentences_only || line_ends_with_sentence_punctuation(&line.shaped))
+            {
+                points.push((index + 1, height));
             }
-            total_h
         }
-        Element::Transition(s) => measure_element_height(
+        points
+    }
+
+    fn minimum_height(&self, page_height: f32) -> f32 {
+        let full = self.full_height();
+        let sentence = self
+            .split_points(true)
+            .into_iter()
+            .map(|(_, height)| height)
+            .find(|height| *height <= page_height);
+        if let Some(height) = sentence {
+            full.min(height)
+        } else if full <= page_height {
+            full
+        } else {
+            self.split_points(false)
+                .first()
+                .map(|(_, height)| *height)
+                .unwrap_or(full)
+        }
+    }
+
+    fn lines_that_fit(&self, available: f32, fresh_page: bool) -> usize {
+        if self.full_height() <= available {
+            return self.lines.len();
+        }
+        let sentence = self
+            .split_points(true)
+            .into_iter()
+            .rev()
+            .find(|(_, height)| *height <= available);
+        if let Some((count, _)) = sentence {
+            return count;
+        }
+        // Retry on a fresh page before breaking an oversized sentence at a line boundary.
+        if fresh_page {
+            return self
+                .split_points(false)
+                .into_iter()
+                .rev()
+                .find(|(_, height)| *height <= available)
+                .map(|(count, _)| count)
+                .unwrap_or(0);
+        }
+        0
+    }
+}
+
+fn dialogue_layout(
+    dialogue: &Dialogue,
+    residual: Option<(usize, usize)>,
+    margins: &DialogueMargins,
+    font_system: &mut FontSystem,
+    layout: &LayoutInfo,
+) -> DialogueLayout {
+    let mut name = dialogue.character.clone();
+    name.make_uppercase();
+    if let Some(ext) = &dialogue.extension {
+        name.append(" (".into());
+        name.append(ext.clone());
+        name.append(")".into());
+    }
+    if residual.is_some() && !name.to_plain_string().to_uppercase().contains("CONT'D") {
+        name.append(" (CONT'D)".into());
+    }
+    let name_height = measure_element_height(
+        font_system,
+        &name,
+        &margins.character,
+        layout.size,
+        layout.export_font,
+        layout.script_fonts,
+    );
+    let more_height = measure_element_height(
+        font_system,
+        &"(MORE)".into(),
+        &margins.character,
+        layout.size,
+        layout.export_font,
+        layout.script_fonts,
+    );
+    let (start_element, start_line) = residual.unwrap_or((0, 0));
+    let mut lines = Vec::new();
+    for (element_index, element) in dialogue.elements.iter().enumerate().skip(start_element) {
+        let (content, margin, spoken) = match element {
+            DialogueElement::Parenthetical(s) => (s, &margins.parenthetical, false),
+            DialogueElement::Line(s) => (s, &margins.line, true),
+        };
+        let shaped = shape_rich_string(
             font_system,
-            s,
-            &layout_info.margins.transition,
-            layout_info.size,
-            layout_info.export_font,
-            layout_info.script_fonts,
-        ),
-        Element::CenteredText(s) => {
-            let max_width = layout_info.margins.centered.content_width(layout_info.size);
-            let shaped = shape_rich_string(
-                font_system,
-                s,
-                max_width,
-                FONT_SIZE,
-                layout_info.export_font,
-                layout_info.script_fonts,
-            );
-            let mut total_h = 0.0;
-            for line in shaped.lines.iter().take(2) {
-                total_h += line_height_for_line(line, font_system, FONT_SIZE);
+            content,
+            margin.content_width(layout.size),
+            FONT_SIZE,
+            layout.export_font,
+            layout.script_fonts,
+        );
+        for (line_index, shaped) in shaped.lines.into_iter().enumerate() {
+            if element_index == start_element && line_index < start_line {
+                continue;
             }
-            total_h
+            let height = line_height_for_line(&shaped, font_system, FONT_SIZE);
+            lines.push(DialogueLayoutLine {
+                element_index,
+                line_index,
+                shaped,
+                height,
+                spoken,
+            });
         }
-        Element::Synopsis(s) => {
-            let max_width = layout_info.margins.synopsis.content_width(layout_info.size);
-            let shaped = shape_rich_string(
-                font_system,
-                s,
-                max_width,
-                FONT_SIZE,
-                layout_info.export_font,
-                layout_info.script_fonts,
-            );
-            let mut total_h = 0.0;
-            for line in shaped.lines.iter().take(2) {
-                total_h += line_height_for_line(line, font_system, FONT_SIZE);
-            }
-            total_h
-        }
-        Element::Section { text, .. } => measure_element_height(
-            font_system,
-            text,
-            &layout_info.margins.action,
-            layout_info.size,
-            layout_info.export_font,
-            layout_info.script_fonts,
-        ),
-        Element::Shot(s) => measure_element_height(
-            font_system,
-            s,
-            &layout_info.margins.action,
-            layout_info.size,
-            layout_info.export_font,
-            layout_info.script_fonts,
-        ),
-        Element::PageBreak => 0.0,
+    }
+    DialogueLayout {
+        name,
+        name_height,
+        more_height,
+        lines,
     }
 }
 
@@ -1497,327 +1563,338 @@ pub fn measure_element_height_sized(
     total_height
 }
 
-fn write_more_indicator(
-    ctx: &mut DrawContext<'_, '_>,
-    dialogue_margins: &DialogueMargins,
-) -> std::io::Result<()> {
-    let saved_max = ctx.max_y;
-    let shaped = shape_rich_string(
-        ctx.font_system,
-        &"(MORE)".into(),
-        dialogue_margins
-            .character
-            .content_width(ctx.layout_info.size),
-        FONT_SIZE,
-        ctx.layout_info.export_font,
-        ctx.layout_info.script_fonts,
-    );
-    let first_lh = shaped
-        .lines
-        .first()
-        .map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE))
-        .unwrap_or(FONT_SIZE);
-    ctx.max_y = saved_max + first_lh;
-    let mut temp_res = None;
-    write_element(
-        ctx,
-        &"(MORE)".into(),
-        &dialogue_margins.character,
-        Alignment::LeftToRight,
-        false,
-        &mut temp_res,
-    )?;
-    ctx.max_y = saved_max;
-    Ok(())
-}
-
 pub fn write_dialogue(
     ctx: &mut DrawContext<'_, '_>,
     dialogue: &Dialogue,
     residual_dialogue: &mut Option<(usize, usize)>,
     dialogue_margins: &DialogueMargins,
+    follows_heading: bool,
 ) -> std::io::Result<bool> {
-    let (start_element, mut start_line) = residual_dialogue.unwrap_or((0, 0));
-    let mut character_name = dialogue.character.clone();
-    character_name.make_uppercase();
-    if residual_dialogue.is_some() {
-        character_name.append(" (CONT'D)".into());
-    } else if let Some(ext) = &dialogue.extension {
-        character_name.append(" (".into());
-        character_name.append(ext.clone());
-        character_name.append(")".into());
-    }
-
-    let name_height = measure_element_height(
+    let layout = dialogue_layout(
+        dialogue,
+        *residual_dialogue,
+        dialogue_margins,
         ctx.font_system,
-        &character_name,
-        &dialogue_margins.character,
-        ctx.layout_info.size,
-        ctx.layout_info.export_font,
-        ctx.layout_info.script_fonts,
+        ctx.layout_info,
     );
-
-    if name_height >= ctx.max_y - ctx.layout_info.size.top_margin() {
+    let fresh_page = *ctx.y_position <= ctx.layout_info.size.top_margin();
+    let count = layout.lines_that_fit(
+        ctx.max_y - *ctx.y_position,
+        fresh_page
+            || follows_heading
+            || layout.full_height() > ctx.max_y - ctx.layout_info.size.top_margin(),
+    );
+    if count == 0 && !layout.lines.is_empty() {
+        if fresh_page {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Dialogue cannot fit on a page while keeping its cue, parentheticals and two spoken lines together.",
+            ));
+        }
+        return Ok(true);
+    }
+    if layout.name_height > ctx.max_y - *ctx.y_position {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "Character name cannot be longer than a whole page.",
         ));
     }
-
-    if start_element == 0 && start_line == 0 {
-        let mut total_block_height = name_height;
-        for el in &dialogue.elements {
-            total_block_height += match el {
-                DialogueElement::Parenthetical(s) => measure_element_height(
-                    ctx.font_system,
-                    s,
-                    &dialogue_margins.parenthetical,
-                    ctx.layout_info.size,
-                    ctx.layout_info.export_font,
-                    ctx.layout_info.script_fonts,
-                ),
-                DialogueElement::Line(s) => measure_element_height(
-                    ctx.font_system,
-                    s,
-                    &dialogue_margins.line,
-                    ctx.layout_info.size,
-                    ctx.layout_info.export_font,
-                    ctx.layout_info.script_fonts,
-                ),
-            };
-        }
-
-        let fits_entirely = *ctx.y_position + total_block_height <= ctx.max_y;
-
-        if !fits_entirely {
-            let (min_el_height, first_lh) = if let Some(first_el) = dialogue.elements.first() {
-                match first_el {
-                    DialogueElement::Parenthetical(s) => {
-                        let h = measure_element_height(
-                            ctx.font_system,
-                            s,
-                            &dialogue_margins.parenthetical,
-                            ctx.layout_info.size,
-                            ctx.layout_info.export_font,
-                            ctx.layout_info.script_fonts,
-                        );
-                        let shaped = shape_rich_string(
-                            ctx.font_system,
-                            s,
-                            dialogue_margins
-                                .parenthetical
-                                .content_width(ctx.layout_info.size),
-                            FONT_SIZE,
-                            ctx.layout_info.export_font,
-                            ctx.layout_info.script_fonts,
-                        );
-                        let first_lh = shaped
-                            .lines
-                            .first()
-                            .map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE))
-                            .unwrap_or(FONT_SIZE);
-                        (h, first_lh)
-                    }
-                    DialogueElement::Line(s) => {
-                        let first_line_height = measure_element_height(
-                            ctx.font_system,
-                            s,
-                            &dialogue_margins.line,
-                            ctx.layout_info.size,
-                            ctx.layout_info.export_font,
-                            ctx.layout_info.script_fonts,
-                        );
-                        let shaped = shape_rich_string(
-                            ctx.font_system,
-                            s,
-                            dialogue_margins.line.content_width(ctx.layout_info.size),
-                            FONT_SIZE,
-                            ctx.layout_info.export_font,
-                            ctx.layout_info.script_fonts,
-                        );
-                        let first_lh = shaped
-                            .lines
-                            .first()
-                            .map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE))
-                            .unwrap_or(FONT_SIZE);
-                        let min_h = if first_line_height <= 3.0 * first_lh {
-                            first_line_height
-                        } else {
-                            2.0 * first_lh
-                        };
-                        (min_h, first_lh)
-                    }
-                }
-            } else {
-                (0.0, FONT_SIZE)
-            };
-
-            if *ctx.y_position + name_height + min_el_height + first_lh > ctx.max_y {
-                return Ok(true);
-            }
-        }
-
-        let mut temp_res = None;
-        write_element(
-            ctx,
-            &character_name,
-            &dialogue_margins.character,
-            Alignment::LeftToRight,
-            false,
-            &mut temp_res,
-        )?;
-    } else {
-        let mut total_block_height = name_height;
-        for (idx, el) in dialogue.elements.iter().enumerate().skip(start_element) {
-            let (s, margin) = match el {
-                DialogueElement::Parenthetical(s) => (s, &dialogue_margins.parenthetical),
-                DialogueElement::Line(s) => (s, &dialogue_margins.line),
-            };
-            let el_height = measure_element_height(
-                ctx.font_system,
-                s,
-                margin,
-                ctx.layout_info.size,
-                ctx.layout_info.export_font,
-                ctx.layout_info.script_fonts,
-            );
-            if idx == start_element && start_line > 0 {
-                let shaped = shape_rich_string(
-                    ctx.font_system,
-                    s,
-                    margin.content_width(ctx.layout_info.size),
-                    FONT_SIZE,
-                    ctx.layout_info.export_font,
-                    ctx.layout_info.script_fonts,
-                );
-                let mut remaining_lines_height = 0.0;
-                for line in shaped.lines.iter().skip(start_line) {
-                    remaining_lines_height +=
-                        line_height_for_line(line, ctx.font_system, FONT_SIZE);
-                }
-                total_block_height += remaining_lines_height;
-            } else {
-                total_block_height += el_height;
-            }
-        }
-
-        let fits_entirely = *ctx.y_position + total_block_height <= ctx.max_y;
-
-        if !fits_entirely {
-            let (min_el_height, first_lh) =
-                if let Some(curr_el) = dialogue.elements.get(start_element) {
-                    match curr_el {
-                        DialogueElement::Parenthetical(s) => {
-                            let h = measure_element_height(
-                                ctx.font_system,
-                                s,
-                                &dialogue_margins.parenthetical,
-                                ctx.layout_info.size,
-                                ctx.layout_info.export_font,
-                                ctx.layout_info.script_fonts,
-                            );
-                            let shaped = shape_rich_string(
-                                ctx.font_system,
-                                s,
-                                dialogue_margins
-                                    .parenthetical
-                                    .content_width(ctx.layout_info.size),
-                                FONT_SIZE,
-                                ctx.layout_info.export_font,
-                                ctx.layout_info.script_fonts,
-                            );
-                            let first_lh = shaped
-                                .lines
-                                .first()
-                                .map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE))
-                                .unwrap_or(FONT_SIZE);
-                            (h, first_lh)
-                        }
-                        DialogueElement::Line(s) => {
-                            let shaped = shape_rich_string(
-                                ctx.font_system,
-                                s,
-                                dialogue_margins.line.content_width(ctx.layout_info.size),
-                                FONT_SIZE,
-                                ctx.layout_info.export_font,
-                                ctx.layout_info.script_fonts,
-                            );
-                            let mut remaining_lines_height = 0.0;
-                            for line in shaped.lines.iter().skip(start_line) {
-                                remaining_lines_height +=
-                                    line_height_for_line(line, ctx.font_system, FONT_SIZE);
-                            }
-                            let remaining_count = shaped.lines.len().saturating_sub(start_line);
-                            let first_lh = shaped
-                                .lines
-                                .first()
-                                .map(|l| line_height_for_line(l, ctx.font_system, FONT_SIZE))
-                                .unwrap_or(FONT_SIZE);
-                            let min_h = if remaining_count <= 3 {
-                                remaining_lines_height
-                            } else {
-                                2.0 * first_lh
-                            };
-                            (min_h, first_lh)
-                        }
-                    }
-                } else {
-                    (0.0, FONT_SIZE)
-                };
-
-            if *ctx.y_position + name_height + min_el_height + first_lh > ctx.max_y {
-                return Ok(true);
-            }
-        }
-
-        let mut temp_res = None;
-        write_element(
-            ctx,
-            &character_name,
-            &dialogue_margins.character,
-            Alignment::LeftToRight,
-            false,
-            &mut temp_res,
-        )?;
-    }
-
-    let mut dialogue_index = start_element;
-    while dialogue_index < dialogue.elements.len() {
-        if *ctx.y_position >= ctx.max_y {
-            *residual_dialogue = Some((dialogue_index, start_line));
-            write_more_indicator(ctx, dialogue_margins)?;
-            return Ok(true);
-        }
-
-        let (content, margin) = match &dialogue.elements[dialogue_index] {
-            DialogueElement::Parenthetical(s) => (s, &dialogue_margins.parenthetical),
-            DialogueElement::Line(s) => (s, &dialogue_margins.line),
+    let mut residual = None;
+    write_element(
+        ctx,
+        &layout.name,
+        &dialogue_margins.character,
+        Alignment::LeftToRight,
+        false,
+        &mut residual,
+    )?;
+    for line in layout.lines.iter().take(count) {
+        let margin = if line.spoken {
+            &dialogue_margins.line
+        } else {
+            &dialogue_margins.parenthetical
         };
-
-        let mut residual_line = Some(start_line);
-        let overflowed = write_element(
-            ctx,
-            content,
-            margin,
-            Alignment::LeftToRight,
-            true,
-            &mut residual_line,
-        )?;
-
-        if overflowed {
-            if let Some(rem_line) = residual_line {
-                *residual_dialogue = Some((dialogue_index, rem_line));
-            } else {
-                *residual_dialogue = Some((dialogue_index, start_line));
-            }
-            write_more_indicator(ctx, dialogue_margins)?;
-            return Ok(true);
+        draw_shaped_line(ctx, &line.shaped, margin.left, *ctx.y_position, FONT_SIZE);
+        if ctx.is_revised {
+            ctx.surface.draw_text(
+                Point::from_xy(ctx.layout_info.size.x - 36.0, *ctx.y_position),
+                ctx.layout_info.fonts.courier.bold.clone(),
+                FONT_SIZE,
+                "*",
+                false,
+                krilla::text::TextDirection::LeftToRight,
+            );
         }
+        *ctx.y_position += line.height;
+    }
+    if count < layout.lines.len() {
+        let next = &layout.lines[count];
+        *residual_dialogue = Some((next.element_index, next.line_index));
+        // Space for the entire marker was reserved before choosing the split.
+        write_element(
+            ctx,
+            &"(MORE)".into(),
+            &dialogue_margins.character,
+            Alignment::LeftToRight,
+            false,
+            &mut residual,
+        )?;
+        Ok(true)
+    } else {
+        *residual_dialogue = None;
+        Ok(false)
+    }
+}
 
-        dialogue_index += 1;
-        start_line = 0;
+#[cfg(test)]
+mod pagination_tests {
+    use super::*;
+
+    fn speech(rows: &[(&str, bool)]) -> DialogueLayout {
+        let mut fonts = super::super::shared::build_font_system();
+        let lines = rows
+            .iter()
+            .enumerate()
+            .map(|(index, (text, spoken))| {
+                let mut shaped = shape_rich_string(
+                    &mut fonts,
+                    &(*text).into(),
+                    432.0,
+                    FONT_SIZE,
+                    "courier_prime",
+                    &HashMap::new(),
+                );
+                DialogueLayoutLine {
+                    element_index: index,
+                    line_index: 0,
+                    shaped: shaped.lines.remove(0),
+                    height: 12.0,
+                    spoken: *spoken,
+                }
+            })
+            .collect();
+        DialogueLayout {
+            name: "BOB".into(),
+            name_height: 12.0,
+            more_height: 12.0,
+            lines,
+        }
     }
 
-    *residual_dialogue = None;
-    Ok(false)
+    #[test]
+    fn speech_split_counts_spoken_lines_across_source_elements() {
+        let layout = speech(&[
+            ("One.", true),
+            ("Two.", true),
+            ("Three.", true),
+            ("Four.", true),
+            ("Five.", true),
+        ]);
+        assert_eq!(layout.lines_that_fit(72.0, false), 5); // Full speech needs no MORE.
+        assert_eq!(layout.lines_that_fit(60.0, false), 3); // Three + MORE, two continue.
+        assert_eq!(layout.lines_that_fit(48.0, false), 2);
+        assert_eq!(layout.lines_that_fit(36.0, false), 0); // A cue + one line is not a split.
+    }
+
+    #[test]
+    fn parentheticals_never_end_a_fragment_or_count_as_spoken_lines() {
+        let layout = speech(&[
+            ("One.", true),
+            ("Two.", true),
+            ("(quietly)", false),
+            ("Three.", true),
+            ("Four.", true),
+        ]);
+        assert_eq!(layout.lines_that_fit(60.0, false), 2);
+        assert_eq!(
+            layout
+                .split_points(false)
+                .iter()
+                .map(|(count, _)| *count)
+                .collect::<Vec<_>>(),
+            [2]
+        );
+    }
+
+    #[test]
+    fn sentence_boundaries_win_over_later_mid_sentence_lines() {
+        let layout = speech(&[
+            ("One", true),
+            ("Two.", true),
+            ("Three", true),
+            ("Four", true),
+            ("Five.", true),
+        ]);
+        assert_eq!(layout.lines_that_fit(60.0, false), 2);
+        let short = speech(&[("One", true), ("Two", true), ("Three", true)]);
+        assert_eq!(short.lines_that_fit(36.0, false), 0);
+        assert_eq!(short.lines_that_fit(48.0, true), 3);
+    }
+
+    #[test]
+    fn oversized_sentence_fallback_still_leaves_two_lines_each_side() {
+        let layout = speech(&[
+            ("One", true),
+            ("Two", true),
+            ("Three", true),
+            ("Four", true),
+            ("Five", true),
+        ]);
+        assert_eq!(layout.lines_that_fit(60.0, false), 0);
+        assert_eq!(layout.lines_that_fit(60.0, true), 3);
+        assert_eq!(layout.minimum_height(60.0), 48.0);
+    }
+
+    #[test]
+    fn sentence_endings_allow_closing_quotes_and_indic_punctuation() {
+        for text in ["Done.\"", "Done!\u{201d}", "Done\u{0964}", "Done\u{3002}"] {
+            let layout = speech(&[(text, true)]);
+            assert!(
+                line_ends_with_sentence_punctuation(&layout.lines[0].shaped),
+                "{text}"
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod pagination_properties {
+    use super::*;
+
+    #[test]
+    fn every_selected_fragment_obeys_bounds_and_spoken_line_invariants() {
+        for seed in 0..100_usize {
+            let mut layout = DialogueLayout {
+                name: "BOB".into(),
+                name_height: 12.0 + (seed % 3) as f32 * 12.0,
+                more_height: 12.0,
+                lines: Vec::new(),
+            };
+            for index in 0..(4 + seed % 47) {
+                let spoken = (index * 17 + seed) % 5 != 0;
+                layout.lines.push(DialogueLayoutLine {
+                    element_index: index,
+                    line_index: 0,
+                    height: 12.0 + (index % 3) as f32 * 1.25,
+                    spoken,
+                    shaped: ShapedLine {
+                        source_line: 0,
+                        runs: vec![ShapedRun {
+                            font_id: cosmic_text::fontdb::ID::dummy(),
+                            glyphs: vec![],
+                            text: if index % 3 == 0 { "End." } else { "word" }.into(),
+                            x_offset: 0.0,
+                            paragraph_family: "Courier Prime".into(),
+                            is_italic: false,
+                        }],
+                        width: 40.0,
+                        underline_ranges: vec![],
+                        strike_ranges: vec![],
+                        highlight_ranges: vec![],
+                        link_ranges: vec![],
+                    },
+                });
+            }
+            for available in (0..720).step_by(3) {
+                for allow_fallback in [false, true] {
+                    let count = layout.lines_that_fit(available as f32, allow_fallback);
+                    assert!(count <= layout.lines.len());
+                    if count == 0 {
+                        continue;
+                    }
+                    let partial = count < layout.lines.len();
+                    let height = layout.name_height
+                        + layout
+                            .lines
+                            .iter()
+                            .take(count)
+                            .map(|line| line.height)
+                            .sum::<f32>()
+                        + if partial { layout.more_height } else { 0.0 };
+                    assert!(
+                        height <= available as f32,
+                        "seed={seed}, available={available}, count={count}"
+                    );
+                    if partial {
+                        assert!(
+                            layout.lines[count - 1].spoken,
+                            "must not end on a parenthetical"
+                        );
+                        assert!(
+                            layout.lines[..count]
+                                .iter()
+                                .filter(|line| line.spoken)
+                                .count()
+                                >= 2
+                        );
+                        assert!(
+                            layout.lines[count..]
+                                .iter()
+                                .filter(|line| line.spoken)
+                                .count()
+                                >= 2
+                        );
+                        if !allow_fallback {
+                            assert!(line_ends_with_sentence_punctuation(
+                                &layout.lines[count - 1].shaped
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod multiline_shaping_tests {
+    use super::*;
+
+    #[test]
+    fn hard_source_lines_keep_distinct_text_and_global_style_ranges() {
+        let mut fonts = super::super::shared::build_font_system();
+        let content: RichString = "First row.\n**Second row.**\n*Third row.*".into();
+        let shaped = shape_rich_string(
+            &mut fonts,
+            &content,
+            432.0,
+            FONT_SIZE,
+            "courier_prime",
+            &HashMap::new(),
+        );
+        let texts: Vec<String> = shaped
+            .lines
+            .iter()
+            .map(|line| line.runs.iter().map(|run| run.text.as_str()).collect())
+            .collect();
+        assert_eq!(texts, ["First row.", "Second row.", "Third row."]);
+        assert!(!shaped.lines[0].runs.iter().any(|run| run.is_italic));
+        assert!(shaped.lines[2].runs.iter().all(|run| run.is_italic));
+    }
+
+    #[test]
+    fn wrapped_lines_after_a_hard_newline_preserve_utf8_text_once() {
+        let mut fonts = super::super::shared::build_font_system();
+        let source = "Alpha starts here.\nCaf\u{00e9} continues with many words that wrap across several lines.\nOmega ends here.";
+        let shaped = shape_rich_string(
+            &mut fonts,
+            &source.into(),
+            100.0,
+            FONT_SIZE,
+            "courier_prime",
+            &HashMap::new(),
+        );
+        let actual: String = shaped
+            .lines
+            .iter()
+            .flat_map(|line| line.runs.iter())
+            .map(|run| run.text.as_str())
+            .collect();
+        let compact = |text: &str| {
+            text.chars()
+                .filter(|c| !c.is_whitespace())
+                .collect::<String>()
+        };
+        assert_eq!(compact(&actual), compact(source));
+    }
 }

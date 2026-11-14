@@ -304,7 +304,11 @@ Transitions render right-aligned in PDF exports.`,
     category: "Fountain Syntax",
     tags: ["page break", "===", "new page"],
     relatedIds: ["export-pdf"],
-    content: `Force a page break in PDF exports by typing exactly \`===\` on a line by itself. The editor shows a visual page break indicator. The pagination engine also handles smart orphan/widow protection — headings that would appear alone at a page bottom are pushed to the next page, and dialogue blocks are kept together.`,
+    content: `Force a page break in PDF exports by typing exactly \`===\` on a line by itself. The editor shows a visual page break indicator. Explicit page breaks take priority over automatic page layout.
+
+Screenplay PDF exports keep scene headings, shots, and included section headings with the text that follows. Character names and parentheticals stay with their spoken dialogue. Action and dialogue splits leave at least two text lines on each page; a complete one-line paragraph or speech can still fit normally. Split dialogue uses (MORE) and repeats the character name with (CONT'D) on the next page. Complete sentence endings are preferred; an oversized speech can split at a line boundary to keep export moving.
+
+Dual dialogue stays together when it fits on a fresh page. Blocks longer than a page continue in their own columns. Closing transitions stay with preceding content, and some pages may end early to preserve these groups. The desktop editor's page count and page jumps use these screenplay page-break rules too. Check the export preview when changing fonts, paper size, or export-only options.`,
   },
   {
     id: "dual-dialogue",
@@ -312,7 +316,7 @@ Transitions render right-aligned in PDF exports.`,
     category: "Fountain Syntax",
     tags: ["dual dialogue", "^", "simultaneous", "side by side"],
     relatedIds: ["dialogue", "character-names"],
-    content: `Create side-by-side dialogue by appending \`^\` (carat) to the second character's name: \`BOB ^\`. Both characters' dialogue renders in parallel columns in PDF exports.`,
+    content: `Create side-by-side dialogue by appending \`^\` (carat) to the second character's name: \`BOB ^\`. Both characters' dialogue renders in parallel columns in PDF exports. The pair moves to the next page together when it fits there. Longer pairs continue across pages with character names and continuation markers.`,
   },
   {
     id: "synopsis",
@@ -1118,7 +1122,7 @@ Parked text is saved automatically with your project.`,
 
 **Left group (Metrics):**
 - **Words** — Total word count of the active document.
-- **Page** — "Page: currentPage of totalPages", updated continuously as you move your cursor. Click the counter to open a page-number box, type a page number, and press <kbd>Enter</kbd> to jump there. Press <kbd>Escape</kbd> to dismiss it. Prose pages follow the estimated page count shown in the status bar.
+- **Page** — "Page: currentPage of totalPages", updated continuously as you move your cursor. Click the counter to open a page-number box, type a page number, and press <kbd>Enter</kbd> to jump there. Press <kbd>Escape</kbd> to dismiss it. In the desktop app, screenplay pages use the same page-break rules as PDF export and update shortly after typing. Estimates remain available while the page count is updating or if it cannot be calculated. Export-only choices, such as including outline notes or starting each scene on a new page, can change the final page count; check the export preview. Prose page counts use the Classic export style.
 - When text is selected, the count of selected words appears.
 
 **Center group (Document Selector):**

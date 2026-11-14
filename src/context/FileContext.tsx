@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { parseScreenplay, FountainDocument, LineType } from "../parser";
 import { parseScreenplayAsync } from "../utils/asyncParser";
 
@@ -16,6 +16,7 @@ import { setScriptReportContext } from "../utils/errorReport";
 import { useCustomModal } from "./CustomModalContext";
 import { STORAGE_KEYS, MAX_RECENT_FILES } from "../constants";
 import { FileSubscriptions } from "./FileSubscriptions";
+import { useDocumentPagination } from "../hooks/useDocumentPagination";
 import { acknowledgeSavedFile } from "../utils/savedFile";
 import { rememberActiveDocument, rememberedDocumentIndex } from "../utils/editorPosition";
 import { sameFilePath } from "../utils/filePath";
@@ -122,7 +123,7 @@ const getUniqueName = (base: string, existing: ScriptInfo[]): string => {
 };
 
 export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { paperSize } = useUI();
+  const { paperSize, fontFamily, autoContdEnabled } = useUI();
   const { confirm, prompt } = useCustomModal();
 
   const showPdfNotice = useCallback(() => {
@@ -2161,13 +2162,32 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { content: cleanText };
   }, [activeFileId, files]);
 
+  // Overlay layout on the parsed document instead of writing it into parser state:
+  // a later worker parse must not replace native pagination for the same revision.
+  const nativeBreaks = useDocumentPagination({
+    fileId: activeFileId,
+    scriptIndex: activeScriptIndex,
+    scriptFileName,
+    text: rawText,
+    enabled: !!activeFile && (!activeFile.scripts || currentScripts.length > 0)
+      && !isNonScreenplay(currentScripts[activeScriptIndex], filePath)
+      && !pendingLinesRef.current.has(parsedDoc.lines) && parsedDoc.screenplayText === rawText,
+    paperSize,
+    fontFamily,
+    autoContd: autoContdEnabled,
+    elementFormats: JSON.stringify(parsedDoc.settings?.elementFormats ?? {}),
+    scriptFonts: JSON.stringify(parsedDoc.settings?.scriptFonts ?? {}),
+  });
+  const paginatedDoc = useMemo(() => nativeBreaks === null ? parsedDoc : { ...parsedDoc, pageBreaks: nativeBreaks },
+    [parsedDoc, nativeBreaks]);
+
   const value: FileContextProps = {
         files,
         activeFileId,
         filePath,
         isSaving,
         rawText,
-        parsedDoc,
+        parsedDoc: paginatedDoc,
         prepareDocument,
         isDocumentLoading: !documentLoadError && pendingLinesRef.current.has(parsedDoc.lines),
         documentLoadError: pendingLinesRef.current.has(parsedDoc.lines) ? documentLoadError : null,

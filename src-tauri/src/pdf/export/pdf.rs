@@ -19,9 +19,7 @@ use crate::pdf::{
     screenplay::{Element, Span},
 };
 
-use super::elements::{
-    Alignment, DrawContext, measure_element_height, write_dialogue, write_element,
-};
+use super::elements::{Alignment, DrawContext, write_dialogue, write_element};
 use super::layout::{
     AllFonts, CourierFonts, IndicFonts, LINE_HEIGHT, LayoutInfo, Margin, PaperSize, SymbolFonts,
     get_margins,
@@ -329,6 +327,160 @@ impl PdfExporter {
         }
     }
 
+    /// Use the same text styles for preflight and drawing; font changes affect wrapping.
+    fn formatted_element(&self, element: &Element) -> Element {
+        use crate::pdf::screenplay::{Dialogue, DialogueElement};
+        let format_dialogue = |d: &mut Dialogue| {
+            self.apply_format(&mut d.character, &self.element_formats.character);
+            if let Some(ext) = &mut d.extension {
+                self.apply_format(ext, &self.element_formats.character);
+            }
+            for el in &mut d.elements {
+                match el {
+                    DialogueElement::Parenthetical(s) => {
+                        self.apply_format(s, &self.element_formats.parenthetical)
+                    }
+                    DialogueElement::Line(s) => {
+                        self.apply_format(s, &self.element_formats.dialogue)
+                    }
+                }
+            }
+        };
+        let mut element = element.clone();
+        match &mut element {
+            Element::Heading { slug, .. } => {
+                slug.make_uppercase();
+                self.apply_format(slug, &self.element_formats.scene_heading);
+            }
+            Element::Shot(s) => {
+                s.make_uppercase();
+                self.apply_format(s, &self.element_formats.shot);
+            }
+            Element::Transition(s) => {
+                s.make_uppercase();
+                self.apply_format(s, &self.element_formats.transition);
+            }
+            Element::Action(s) => self.apply_format(s, &self.element_formats.action),
+            Element::Lyrics(s) => self.apply_format(s, &self.element_formats.lyrics),
+            Element::CenteredText(s) => self.apply_format(s, &self.element_formats.centered_text),
+            Element::Dialogue(d) => format_dialogue(d),
+            Element::DualDialogue(left, right) => {
+                format_dialogue(left);
+                format_dialogue(right);
+            }
+            Element::Synopsis(s) => {
+                for span in &mut s.elements {
+                    span.set_italic();
+                }
+            }
+            Element::Section { text, depth } => {
+                text.make_uppercase();
+                for span in &mut text.elements {
+                    span.set_bold();
+                    if *depth == 1 {
+                        span.set_underline();
+                    }
+                }
+            }
+            Element::PageBreak => {}
+        }
+        element
+    }
+
+    fn keeps_with_next(element: &Element) -> bool {
+        matches!(
+            element,
+            Element::Heading { .. } | Element::Shot(_) | Element::Section { .. }
+        )
+    }
+
+    /// Include every heading in a chain, actual inter-element gaps, and the next
+    /// block's smallest legal fragment. Explicit page breaks remain authoritative.
+    fn required_group_height<'a>(
+        &self,
+        elements: impl Iterator<Item = &'a Span<Element>>,
+        font_system: &mut FontSystem,
+        layout: &LayoutInfo,
+        last_speaking_character: &str,
+    ) -> f32 {
+        let mut height = 0.0;
+        let mut elements = elements
+            .filter(|span| !self.is_element_skipped(&span.inner))
+            .peekable();
+        while let Some(span) = elements.next() {
+            let mut element = self.formatted_element(&span.inner);
+            if let Element::Dialogue(d) = &mut element {
+                let name = d.character.to_plain_string().trim().to_uppercase();
+                let extension = d
+                    .extension
+                    .as_ref()
+                    .map(|e| e.to_plain_string())
+                    .unwrap_or_default();
+                if self.auto_contd
+                    && name == last_speaking_character
+                    && !name.contains("CONT'D")
+                    && !extension.to_uppercase().contains("CONT'D")
+                {
+                    d.extension = Some(if extension.is_empty() {
+                        "CONT'D".into()
+                    } else {
+                        format!("{}) (CONT'D", extension).into()
+                    });
+                    if let Some(ext) = &mut d.extension {
+                        self.apply_format(ext, &self.element_formats.character);
+                    }
+                }
+            }
+            if matches!(element, Element::PageBreak) {
+                break;
+            }
+            let minimum = super::elements::min_required_height_with_space(
+                &element,
+                font_system,
+                layout,
+                layout.size.printable_height() - height,
+            );
+            if Self::keeps_with_next(&element) || minimum == 0.0 {
+                height +=
+                    super::elements::measure_full_element_height(&element, font_system, layout);
+                if elements
+                    .peek()
+                    .is_some_and(|next| !matches!(next.inner, Element::PageBreak))
+                {
+                    height += LINE_HEIGHT;
+                }
+            } else {
+                let reserve = elements
+                    .peek()
+                    .filter(|next| matches!(next.inner, Element::Transition(_)))
+                    .map(|next| {
+                        LINE_HEIGHT
+                            + super::elements::measure_full_element_height(
+                                &self.formatted_element(&next.inner),
+                                font_system,
+                                layout,
+                            )
+                    })
+                    .unwrap_or(0.0);
+                let full =
+                    super::elements::measure_full_element_height(&element, font_system, layout)
+                        + reserve;
+                height += if reserve > 0.0 && height + full <= layout.size.printable_height() {
+                    full
+                } else {
+                    super::elements::min_required_height_with_space(
+                        &element,
+                        font_system,
+                        layout,
+                        layout.size.printable_height() - height - reserve,
+                    ) + reserve
+                };
+                break;
+            }
+        }
+        height
+    }
+
     fn is_element_skipped(&self, element: &Element) -> bool {
         matches!(
             (element, self.synopses, self.sections),
@@ -351,7 +503,7 @@ impl PdfExporter {
 
         let mut residual_dialogue_idx = None;
         let mut residual_dual_dialogue_idx = (None, None);
-        let mut residual_element_idx = None;
+        let mut residual_element_idx: Option<usize> = None;
         let mut last_speaking_character = String::new();
 
         let mut outline = Outline::new();
@@ -411,6 +563,12 @@ impl PdfExporter {
         };
 
         while element_iter.peek().is_some() {
+            let page_start_state = (
+                element_iter.len(),
+                residual_element_idx,
+                residual_dialogue_idx,
+                residual_dual_dialogue_idx,
+            );
             let mut page = document.start_page_with(
                 PageSettings::from_wh(layout_info.size.x, layout_info.size.y)
                     .ok_or_else(|| std::io::Error::other("invalid page dimensions"))?,
@@ -419,18 +577,49 @@ impl PdfExporter {
             let mut y_pos = top;
 
             if content_page_idx > 0
-                && let Some(Span { start_line, .. }) = element_iter.peek()
+                && let Some(span) = element_iter.peek()
             {
-                let mut break_line = *start_line;
+                let start_line = span.start_line;
+                let mut break_line = start_line;
                 if let Some(res_idx) = residual_element_idx {
-                    break_line = start_line + res_idx;
-                } else if let Some((el_idx, res_idx)) = residual_dialogue_idx {
-                    break_line = start_line + 1 + el_idx + res_idx;
-                } else if let Some((el_idx, res_idx)) = residual_dual_dialogue_idx.0 {
-                    break_line = start_line + 1 + el_idx + res_idx;
-                } else if let Some((el_idx, res_idx)) = residual_dual_dialogue_idx.1 {
-                    break_line = start_line + 1 + el_idx + res_idx;
+                    let element = self.formatted_element(&span.inner);
+                    let content_and_margin = match &element {
+                        Element::Action(s) => Some((s, &layout_info.margins.action)),
+                        Element::Lyrics(s) => Some((s, &layout_info.margins.lyrics)),
+                        Element::CenteredText(s) => Some((s, &layout_info.margins.centered)),
+                        Element::Synopsis(s) => Some((s, &layout_info.margins.synopsis)),
+                        _ => None,
+                    };
+                    if let Some((content, margin)) = content_and_margin {
+                        let shaped = super::elements::shape_rich_string(
+                            font_system,
+                            content,
+                            margin.content_width(layout_info.size),
+                            super::layout::FONT_SIZE,
+                            layout_info.export_font,
+                            layout_info.script_fonts,
+                        );
+                        break_line += shaped
+                            .lines
+                            .get(res_idx)
+                            .map(|line| line.source_line)
+                            .unwrap_or(0);
+                    }
+                } else if let Some((el_idx, _)) = residual_dialogue_idx {
+                    // Each dialogue element comes from one physical source line;
+                    // a soft-wrapped continuation stays on that same source line.
+                    break_line = start_line + 1 + el_idx;
+                } else if let Some((el_idx, _)) = residual_dual_dialogue_idx.0 {
+                    break_line = start_line + 1 + el_idx;
+                } else if let Some((el_idx, _)) = residual_dual_dialogue_idx.1
+                    && let Element::DualDialogue(_, right) = &span.inner
+                {
+                    // The second cue follows the first speech and intervening blank
+                    // lines, so it cannot be anchored relative to the first cue.
+                    let right_cue = span.end_line.saturating_sub(right.elements.len());
+                    break_line = right_cue + 1 + el_idx;
                 }
+                let break_line = break_line.clamp(span.start_line, span.end_line);
                 page_breaks.push(break_line);
             }
             content_page_idx += 1;
@@ -474,6 +663,7 @@ impl PdfExporter {
                 center_image.as_ref(),
             );
 
+            let mut follows_heading = false;
             while let Some(Span {
                 start_line: _,
                 end_line: _,
@@ -489,6 +679,24 @@ impl PdfExporter {
                     break;
                 }
 
+                if Self::keeps_with_next(element) {
+                    let required = self.required_group_height(
+                        element_iter.clone(),
+                        font_system,
+                        layout_info,
+                        &last_speaking_character,
+                    );
+                    if required > layout_info.size.printable_height() {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Heading and following content cannot fit together on a page.",
+                        ));
+                    }
+                    if required > max_y - y_pos {
+                        break;
+                    }
+                }
+
                 let mut peek_next_iter = element_iter.clone();
                 peek_next_iter.next();
                 let mut next_non_skipped = None;
@@ -501,22 +709,27 @@ impl PdfExporter {
                     }
                 }
 
-                if let Some(Element::Transition(trans_rich_str)) = next_non_skipped {
-                    let current_height = super::elements::measure_full_element_height(
-                        element,
+                let mut transition_reserve = 0.0;
+                if let Some(Element::Transition(_)) = next_non_skipped {
+                    transition_reserve = LINE_HEIGHT
+                        + super::elements::measure_full_element_height(
+                            &self.formatted_element(next_non_skipped.unwrap()),
+                            font_system,
+                            layout_info,
+                        );
+                    let pair_height = super::elements::measure_full_element_height(
+                        &self.formatted_element(element),
                         font_system,
                         layout_info,
-                    );
-                    let trans_height = super::elements::measure_element_height(
-                        font_system,
-                        trans_rich_str,
-                        &layout_info.margins.transition,
-                        layout_info.size,
-                        layout_info.export_font,
-                        layout_info.script_fonts,
-                    );
-                    let remaining = max_y - y_pos;
-                    if y_pos > top && remaining < current_height + trans_height {
+                    ) + transition_reserve;
+                    if y_pos > top
+                        && !follows_heading
+                        && residual_element_idx.is_none()
+                        && residual_dialogue_idx.is_none()
+                        && residual_dual_dialogue_idx == (None, None)
+                        && pair_height <= layout_info.size.printable_height()
+                        && max_y - y_pos < pair_height
+                    {
                         break;
                     }
                 }
@@ -536,7 +749,7 @@ impl PdfExporter {
                     layout_info,
                     surface: &mut surface,
                     y_position: &mut y_pos,
-                    max_y,
+                    max_y: max_y - transition_reserve,
                     is_revised,
                     font_system,
                     font_cache: &mut font_cache,
@@ -549,40 +762,6 @@ impl PdfExporter {
                         color,
                     } => {
                         if self.scene_page_breaks && *ctx.y_position > top {
-                            break;
-                        }
-
-                        let heading_height = measure_element_height(
-                            ctx.font_system,
-                            slug,
-                            &layout_info.margins.heading,
-                            layout_info.size,
-                            layout_info.export_font,
-                            layout_info.script_fonts,
-                        );
-                        let mut peek_next_iter = element_iter.clone();
-                        peek_next_iter.next();
-                        let mut next_element = None;
-                        while let Some(span) = peek_next_iter.peek() {
-                            if self.is_element_skipped(&span.inner) {
-                                peek_next_iter.next();
-                            } else {
-                                next_element = Some(&span.inner);
-                                break;
-                            }
-                        }
-                        let min_next_height = if let Some(el) = next_element {
-                            super::elements::min_required_height_for_lookahead(
-                                el,
-                                ctx.font_system,
-                                layout_info,
-                            )
-                        } else {
-                            0.0
-                        };
-
-                        let remaining = max_y - *ctx.y_position;
-                        if remaining < heading_height + min_next_height {
                             break;
                         }
 
@@ -710,9 +889,6 @@ impl PdfExporter {
                                     dialogue_styled.extension = Some("CONT'D".into());
                                 }
                             }
-                            if !char_name.is_empty() {
-                                last_speaking_character = char_name;
-                            }
                         }
                         self.apply_format(
                             &mut dialogue_styled.character,
@@ -731,12 +907,18 @@ impl PdfExporter {
                                 }
                             }
                         }
+                        let dialogue_start_y = *ctx.y_position;
                         let premature_exit = write_dialogue(
                             &mut ctx,
                             &dialogue_styled,
                             &mut residual_dialogue_idx,
                             &layout_info.margins.dialogue,
+                            follows_heading,
                         )?;
+                        if *ctx.y_position > dialogue_start_y {
+                            last_speaking_character =
+                                dialogue.character.to_plain_string().trim().to_uppercase();
+                        }
                         if residual_dialogue_idx.is_some() || premature_exit {
                             break;
                         }
@@ -787,49 +969,44 @@ impl PdfExporter {
                         if residual_dual_dialogue_idx.0.is_none()
                             && residual_dual_dialogue_idx.1.is_none()
                         {
-                            let h0 = super::elements::min_required_height_for_lookahead(
-                                &Element::Dialogue(dialogue0.clone()),
+                            let min_dual_height = super::elements::min_required_height_with_space(
+                                &Element::DualDialogue(d0_styled.clone(), d1_styled.clone()),
                                 ctx.font_system,
                                 layout_info,
+                                if follows_heading {
+                                    ctx.max_y - *ctx.y_position
+                                } else {
+                                    ctx.max_y - top
+                                },
                             );
-                            let h1 = super::elements::min_required_height_for_lookahead(
-                                &Element::Dialogue(dialogue1.clone()),
-                                ctx.font_system,
-                                layout_info,
-                            );
-                            let min_dual_height = h0.max(h1);
-                            let remaining = max_y - *ctx.y_position;
+                            let remaining = ctx.max_y - *ctx.y_position;
                             if remaining < min_dual_height {
                                 break;
                             }
                         }
 
-                        if (residual_dual_dialogue_idx.0.is_none()
-                            && residual_dual_dialogue_idx.1.is_none())
-                            || residual_dual_dialogue_idx.0.is_some()
-                        {
-                            premature_exit = premature_exit
-                                || write_dialogue(
-                                    &mut ctx,
-                                    &d0_styled,
-                                    &mut residual_dual_dialogue_idx.0,
-                                    &layout_info.margins.dual_dialogue.left,
-                                )?;
+                        let continuing = residual_dual_dialogue_idx != (None, None);
+                        let draw_left = !continuing || residual_dual_dialogue_idx.0.is_some();
+                        let draw_right = !continuing || residual_dual_dialogue_idx.1.is_some();
+                        if draw_left {
+                            premature_exit |= write_dialogue(
+                                &mut ctx,
+                                &d0_styled,
+                                &mut residual_dual_dialogue_idx.0,
+                                &layout_info.margins.dual_dialogue.left,
+                                follows_heading,
+                            )?;
                         }
                         let left_end_y = *ctx.y_position;
-
-                        if (residual_dual_dialogue_idx.1.is_none()
-                            && residual_dual_dialogue_idx.0.is_none())
-                            || residual_dual_dialogue_idx.1.is_some()
-                        {
-                            *ctx.y_position = saved_y;
-                            premature_exit = premature_exit
-                                || write_dialogue(
-                                    &mut ctx,
-                                    &d1_styled,
-                                    &mut residual_dual_dialogue_idx.1,
-                                    &layout_info.margins.dual_dialogue.right,
-                                )?;
+                        *ctx.y_position = saved_y;
+                        if draw_right {
+                            premature_exit |= write_dialogue(
+                                &mut ctx,
+                                &d1_styled,
+                                &mut residual_dual_dialogue_idx.1,
+                                &layout_info.margins.dual_dialogue.right,
+                                follows_heading,
+                            )?;
                         }
                         *ctx.y_position = (*ctx.y_position).max(left_end_y);
 
@@ -888,40 +1065,6 @@ impl PdfExporter {
                         }
                     }
                     Element::Shot(s) => {
-                        let shot_height = measure_element_height(
-                            ctx.font_system,
-                            s,
-                            &layout_info.margins.action,
-                            layout_info.size,
-                            layout_info.export_font,
-                            layout_info.script_fonts,
-                        );
-                        let mut peek_next_iter = element_iter.clone();
-                        peek_next_iter.next();
-                        let mut next_element = None;
-                        while let Some(span) = peek_next_iter.peek() {
-                            if self.is_element_skipped(&span.inner) {
-                                peek_next_iter.next();
-                            } else {
-                                next_element = Some(&span.inner);
-                                break;
-                            }
-                        }
-                        let min_next_height = if let Some(el) = next_element {
-                            super::elements::min_required_height_for_lookahead(
-                                el,
-                                ctx.font_system,
-                                layout_info,
-                            )
-                        } else {
-                            0.0
-                        };
-
-                        let remaining = max_y - *ctx.y_position;
-                        if remaining < shot_height + min_next_height {
-                            break;
-                        }
-
                         let mut s_styled = s.clone();
                         s_styled.make_uppercase();
                         self.apply_format(&mut s_styled, &self.element_formats.shot);
@@ -964,40 +1107,6 @@ impl PdfExporter {
                     }
                     Element::Section { text, depth } => {
                         if self.sections {
-                            let section_height = measure_element_height(
-                                ctx.font_system,
-                                text,
-                                &layout_info.margins.action,
-                                layout_info.size,
-                                layout_info.export_font,
-                                layout_info.script_fonts,
-                            );
-                            let mut peek_next_iter = element_iter.clone();
-                            peek_next_iter.next();
-                            let mut next_element = None;
-                            while let Some(span) = peek_next_iter.peek() {
-                                if self.is_element_skipped(&span.inner) {
-                                    peek_next_iter.next();
-                                } else {
-                                    next_element = Some(&span.inner);
-                                    break;
-                                }
-                            }
-                            let min_next_height = if let Some(el) = next_element {
-                                super::elements::min_required_height_for_lookahead(
-                                    el,
-                                    ctx.font_system,
-                                    layout_info,
-                                )
-                            } else {
-                                0.0
-                            };
-
-                            let remaining = max_y - *ctx.y_position;
-                            if remaining < section_height + min_next_height {
-                                break;
-                            }
-
                             let mut s_styled = text.clone();
                             s_styled.make_uppercase();
                             for element in &mut s_styled.elements {
@@ -1031,6 +1140,7 @@ impl PdfExporter {
                     }
                 }
 
+                follows_heading = Self::keeps_with_next(element);
                 y_pos += LINE_HEIGHT;
 
                 if residual_dialogue_idx.is_some()
@@ -1046,6 +1156,19 @@ impl PdfExporter {
 
             surface.finish();
             page.finish();
+            if page_start_state
+                == (
+                    element_iter.len(),
+                    residual_element_idx,
+                    residual_dialogue_idx,
+                    residual_dual_dialogue_idx,
+                )
+            {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Screenplay element cannot fit on a page with the selected font and margins.",
+                ));
+            }
             page_idx += 1;
         }
 
@@ -1215,6 +1338,72 @@ fn draw_watermarks(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wrapped_page_breaks_reference_real_source_lines() {
+        let exporter = PdfExporter {
+            paper_size: super::super::layout::LETTER,
+            title_page: false,
+            ..Default::default()
+        };
+        let action = format!("!{}", "action words ".repeat(2000));
+        let dialogue = format!("BOB\n{}", "spoken words ".repeat(2000));
+        let right_dialogue = format!(
+            "BOB\nLeft speech.\n\nALICE ^\n{}",
+            "right speech ".repeat(2000)
+        );
+        for (source, expected_line) in [(action, 1), (dialogue, 2), (right_dialogue, 5)] {
+            let screenplay = crate::pdf::parse(&source);
+            let breaks = exporter.get_page_breaks(&screenplay).unwrap();
+            assert!(breaks.len() > 1, "fixture must span several pages");
+            assert!(
+                breaks.iter().all(|line| *line == expected_line),
+                "expected source line {expected_line}, got {breaks:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn orphan_heading_moves_with_three_line_action_in_actual_export_pagination() {
+        for (paper, count) in [
+            (super::super::layout::LETTER, 25),
+            (super::super::layout::A4, 27),
+        ] {
+            let source = format!(
+                "{}INT. ROOM - DAY\n\nOne action line.\nTwo action lines.\nThree action lines.\n",
+                "Filler paragraph.\n\n".repeat(count)
+            );
+            let screenplay = crate::pdf::parse(&source);
+            let heading_line = screenplay
+                .elements
+                .iter()
+                .find(|span| matches!(span.inner, Element::Heading { .. }))
+                .unwrap()
+                .start_line;
+            let exporter = PdfExporter {
+                paper_size: paper,
+                title_page: false,
+                ..Default::default()
+            };
+            assert_eq!(
+                exporter.get_page_breaks(&screenplay).unwrap(),
+                [heading_line]
+            );
+        }
+    }
+
+    #[test]
+    fn oversized_unsplittable_heading_returns_error_instead_of_empty_page_loop() {
+        let screenplay = crate::pdf::parse(&format!(
+            ".{}\n\nAction.\n",
+            "OVERLONG HEADING ".repeat(1000)
+        ));
+        let exporter = PdfExporter {
+            title_page: false,
+            ..Default::default()
+        };
+        assert!(exporter.get_page_breaks(&screenplay).is_err());
+    }
 
     #[test]
     fn test_logo_png_decode() {
@@ -1426,9 +1615,9 @@ This is action.
     }
 
     #[test]
-    #[ignore = "requires BeeDetective.fountain test file"]
     fn test_bee_detective_export() {
-        let path = "/home/nkr/Projects/ACTOneFamily/ActOneCode/Test-Files/BeeDetective.fountain";
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../Test-Files/BeeDetective.fountain");
         let content = std::fs::read_to_string(path).expect("Read BeeDetective.fountain failed");
         let screenplay = crate::pdf::parse(&content);
         let exporter = PdfExporter {
@@ -1461,14 +1650,28 @@ And I speak simultaneously on the right!
         };
         let mut out = Vec::new();
         let res = exporter.export(&screenplay, &mut out);
-        assert!(res.is_ok(), "Dual dialogue must export cleanly: {:?}", res.err());
+        assert!(
+            res.is_ok(),
+            "Dual dialogue must export cleanly: {:?}",
+            res.err()
+        );
         let breaks = exporter.get_page_breaks(&screenplay).unwrap();
-        assert_eq!(breaks.len(), 0, "Short dual dialogue must fit within a single page");
+        assert_eq!(
+            breaks.len(),
+            0,
+            "Short dual dialogue must fit within a single page"
+        );
 
         let out_str = String::from_utf8_lossy(&out);
         assert!(out.starts_with(b"%PDF-"), "Must have PDF magic bytes");
-        assert!(out_str.contains("/Type /Page"), "PDF must contain /Type /Page object");
-        assert!(out_str.contains("/MediaBox"), "PDF must define standard page MediaBox");
+        assert!(
+            out_str.contains("/Type /Page"),
+            "PDF must contain /Type /Page object"
+        );
+        assert!(
+            out_str.contains("/MediaBox"),
+            "PDF must define standard page MediaBox"
+        );
     }
 
     #[test]
@@ -1484,12 +1687,23 @@ And I speak simultaneously on the right!
         };
         let mut out = Vec::new();
         let res = exporter.export(&screenplay, &mut out);
-        assert!(res.is_ok(), "Watermarked export must succeed: {:?}", res.err());
-        assert!(out.len() > 1000, "PDF with watermark must generate substantive body");
+        assert!(
+            res.is_ok(),
+            "Watermarked export must succeed: {:?}",
+            res.err()
+        );
+        assert!(
+            out.len() > 1000,
+            "PDF with watermark must generate substantive body"
+        );
         let out_str = String::from_utf8_lossy(&out);
-        assert!(out.starts_with(b"%PDF-"), "Watermark PDF must have valid PDF header");
-        assert!(out_str.contains("/Type /Page"), "Watermarked document must contain page object");
+        assert!(
+            out.starts_with(b"%PDF-"),
+            "Watermark PDF must have valid PDF header"
+        );
+        assert!(
+            out_str.contains("/Type /Page"),
+            "Watermarked document must contain page object"
+        );
     }
-
 }
-

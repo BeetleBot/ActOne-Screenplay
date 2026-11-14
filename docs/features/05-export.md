@@ -35,9 +35,13 @@ Professional-grade screenplay PDF generation using ActOne's custom krilla + cosm
 - Proper dialogue indentation
 - Dual dialogue side-by-side columns
 - Scene number placement
-- Orphan/widow protection
-- Sentence-boundary splitting for multi-page paragraphs
-- (MORE) and (CONT'D) dialogue continuation
+- Scene headings, shots and included sections stay with following content, including required element spacing.
+- Character cues and parentheticals remain attached to spoken dialogue; action/dialogue splits leave at least two rendered text lines on both pages.
+- Dialogue continuation reserves (MORE) inside the page margins and repeats the cue with (CONT'D), retaining existing extensions.
+- Sentence-ending rendered lines are preferred; oversized speeches have a line-boundary fallback to ensure progress.
+- Dual dialogue that fits a fresh page moves intact; oversized pairs continue independently in their actual columns without repeating a completed column.
+- Closing transitions stay with the preceding content, including the final fragment of a multi-page block.
+- Explicit Fountain page breaks and scene-per-page export remain authoritative. Impossible oversized elements return an export error rather than hanging.
 
 ## Final Draft Export (.fdx)
 

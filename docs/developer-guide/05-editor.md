@@ -26,8 +26,12 @@ project navigation available, and respects reduced-motion preferences.
 There are no document-switch caches for parsed results, native page breaks, or
 CodeMirror states. Each visit builds a fresh editor; cursor and scroll positions
 still restore through `editorPosition`, while undo history resets on switching.
-The editor uses the Fountain parser's lightweight page estimates; `FileContext` does not request native PDF layout when opening, switching, or editing documents. Exact pagination belongs to PDF preview/export. Canvas views remount and validate drawing data;
+After a screenplay is parsed, `FileContext` connects `useDocumentPagination` to the native `get_page_breaks` command. Page counts and page jumps use the export engine's orphan/widow, dialogue, dual-dialogue and transition rules. Parser page estimates remain the immediate fallback while layout is pending, when native layout fails, and in browser-only sessions. Canvas views remount and validate drawing data;
 the save bridge serializes only after a drawing/settings change.
+
+Pagination debounces changes by 200 ms and serializes native work, coalescing queued revisions to the newest one. Identity includes project, script index/filename, source text, paper, font, element formats, script fonts and automatic character continuations. Results are accepted only for that revision; switching to prose/canvas, editing, disabling or unmounting invalidates pending results. A native empty break list means one page, and repeated source-line breaks remain intact for paragraphs spanning multiple PDF pages. `FileContext` overlays current native breaks on its public parsed document and pagination subscription; it does not write layout into parser state, so later parser/settings updates cannot overwrite valid native results.
+
+Editor pagination uses the editor's paper/font, saved element formatting, title page enabled, and sections/synopses excluded. Export-window-only choices (including scene-per-page, alternate font selections, or included outline elements) can produce different page counts. Source navigation is at source-line granularity, not positions within a wrapped paragraph. Shaped rows retain their hard source-line index; repeated page breaks in one wrapped source line remain repeated anchors. Dialogue continuations do not add soft-wrap offsets, and right-column dual dialogue anchors to the second cue rather than the first. The editor does not become a PDF page view.
 
 The desktop `get_page_breaks` command is asynchronous and runs PDF/font layout
 on `tauri::async_runtime::spawn_blocking`, keeping that CPU work off the desktop

@@ -209,7 +209,7 @@ describe("page counter navigation", () => {
     { prose: false, title: false, breaks: [55, 109], page: "3", line: 109 },
     { prose: false, title: true, breaks: [5, 55, 109], page: "1", line: 5 },
     { prose: false, title: true, breaks: [5, 55, 109], page: "3", line: 109 },
-    { prose: false, title: false, breaks: [], page: "2", line: 55 },
+    { prose: false, title: false, breaks: [], page: "1", line: 1 },
     { prose: true, title: false, breaks: [37, 92], page: "3", line: 92 },
   ])("jumps page $page to line $line with prose=$prose title=$title", ({ prose, title, breaks, page, line }) => {
     mockIsMarkdown = prose;
@@ -224,6 +224,17 @@ describe("page counter navigation", () => {
       selection: { anchor: mockEditorView!.state.doc.line(line).from }, effects: expect.anything(),
     });
     expect(mockEditorView!.focus).toHaveBeenCalled();
+  });
+
+  it("treats an empty native break list as one page even with many source lines", () => {
+    mockPageBreaks = [];
+    render(<StatusBar />);
+    fireEvent.click(screen.getByRole("button", { name: /Jump to page/ }));
+    const input = screen.getByRole("textbox", { name: "Page number" });
+    fireEvent.change(input, { target: { value: "2" } });
+    fireEvent.submit(input.closest("form")!);
+    expect(screen.getByText("Enter a whole number from 1 to 1")).toBeInTheDocument();
+    expect(mockEditorView!.dispatch).not.toHaveBeenCalled();
   });
 
   it.each(["0", "4", "-1", "1.5", "", "text", "1e1"])("rejects invalid page %s", page => {
