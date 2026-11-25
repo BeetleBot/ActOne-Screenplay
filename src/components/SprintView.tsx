@@ -15,8 +15,8 @@ import {
   Tab,
   alpha
 } from "@mui/material";
-import { useSprint, useFile, useEditor, type SprintSession } from "../context";
-import { countWords } from "../utils";
+import { useSprint, useWorkspaceMetadata, useDocumentText, useParsedScreenplay, useEditor, type SprintSession } from "../context";
+import { getTextStatistics } from "../document/textStatistics";
 import { confirmDialog } from "../utils/dialog";
 import { 
   PlayArrowIcon, 
@@ -39,7 +39,9 @@ export const SprintView = React.memo(() => {
     clearHistory 
   } = useSprint();
 
-  const { rawText, parsedDoc, filePath, activeFileId } = useFile();
+  const rawText = useDocumentText();
+  const parsedDoc = useParsedScreenplay();
+  const { filePath, activeFileId } = useWorkspaceMetadata();
   const { updateSettings } = useEditor();
   const [activeTab, setActiveTab] = useState(0);
 
@@ -91,7 +93,7 @@ export const SprintView = React.memo(() => {
     }
   };
 
-  const currentTotalWords = useMemo(() => countWords(rawText), [rawText]);
+  const currentTotalWords = useMemo(() => getTextStatistics(rawText).words, [rawText]);
   const sprintWords = currentSprint ? Math.max(0, currentTotalWords - currentSprint.startWordCount) : 0;
 
   useEffect(() => {

@@ -96,4 +96,30 @@ describe("useFontManager", () => {
 
     delete (window as any).__TAURI_INTERNALS__;
   });
+
+  it("shares concurrent inventory requests without caching an explicit later refresh", async () => {
+    const internals = window as unknown as Record<string, unknown>;
+    internals.__TAURI_INTERNALS__ = {};
+    let resolve!: (fonts: string[]) => void;
+    vi.mocked(tauriCore.invoke).mockReturnValueOnce(new Promise<string[]>(done => { resolve = done; }));
+    const first = renderHook(() => useFontManager());
+    const second = renderHook(() => useFontManager());
+    try {
+      await act(async () => {
+        const a = first.result.current.refreshFonts();
+        const b = second.result.current.refreshFonts();
+        await Promise.resolve();
+        expect(tauriCore.invoke).toHaveBeenCalledTimes(1);
+        resolve(["Shared Font"]);
+        await Promise.all([a, b]);
+      });
+      expect(first.result.current.fonts).toContain("Shared Font");
+      expect(second.result.current.fonts).toContain("Shared Font");
+      vi.mocked(tauriCore.invoke).mockResolvedValueOnce(["New Font"]);
+      await act(async () => { await first.result.current.refreshFonts(); });
+      expect(tauriCore.invoke).toHaveBeenCalledTimes(2);
+    } finally {
+      first.unmount(); second.unmount(); delete internals.__TAURI_INTERNALS__;
+    }
+  });
 });

@@ -1,8 +1,10 @@
+import { getLineFacts } from "../../document/lineFacts";
 import { EditorView } from "@codemirror/view";
 import React, { useMemo, useState, useEffect } from "react";
 import { useWorkspaceMetadata, useParsedScreenplay, useDocumentText, usePageBreaks, useFileSaveStatus, useFileActions, useUI, useSprint } from "../../context";
 import { LineType, parseSceneHeading } from "../../parser";
 import { countWords } from "../../utils/text";
+import { getTextStatistics } from "../../document/textStatistics";
 import { Box, Typography, Menu, MenuItem, ListItemText, InputBase, Divider, Popover } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
@@ -187,19 +189,16 @@ export const StatusBar = React.memo(() => {
     return { words, chars };
   }, [editorView, editorView?.state.selection.main.from, editorView?.state.selection.main.to, rawText]);
 
+  const textStats = useMemo(() => getTextStatistics(rawText || ""), [rawText]);
+
   const docStats = useMemo(() => {
     if (isDocumentLoading) return {
       words: "…", chars: "…", pages: "…", rawPages: 1, hasBreaks: false,
       hasTitlePage: false, breaks: [] as number[], sceneCount: "…",
     };
-    const text = rawText || "";
-    const words = countWords(text);
-    const chars = text.length;
-    const docLinesCount = text ? text.split("\n").length : 1;
+    const { words, characters: chars, lines: docLinesCount } = textStats;
 
-    const hasTitlePage = !isMarkdown && (parsedDoc?.lines?.some(
-      l => l.type >= LineType.titlePageTitle && l.type <= LineType.titlePageUnknown
-    ) || false);
+    const hasTitlePage = !isMarkdown && (parsedDoc?.lines ? getLineFacts(parsedDoc.lines).hasTitlePage : false);
 
     const breaks = isMarkdown ? proseBreaks ?? [] : parsedDoc?.pageBreaks || [];
     const hasBreaks = breaks.length > 0;
@@ -217,7 +216,7 @@ export const StatusBar = React.memo(() => {
       pages = Array.isArray(parsedDoc?.pageBreaks) ? 1 : Math.max(1, Math.ceil(docLinesCount / 54));
     }
 
-    const sceneCount = parsedDoc?.lines ? parsedDoc.lines.filter(l => l.type === LineType.heading).length : 0;
+    const sceneCount = parsedDoc?.lines ? getLineFacts(parsedDoc.lines).headings.length : 0;
 
     return {
       words: words.toLocaleString(),
@@ -229,7 +228,7 @@ export const StatusBar = React.memo(() => {
       breaks,
       sceneCount: sceneCount.toLocaleString()
     };
-  }, [rawText, parsedDoc, isMarkdown, isDocumentLoading, proseBreaks]);
+  }, [textStats, parsedDoc, isMarkdown, isDocumentLoading, proseBreaks]);
 
   const currentPage = useMemo(() => {
     const currentLineNumber = Math.max(1, activeLineNumber + 1);
@@ -285,14 +284,13 @@ export const StatusBar = React.memo(() => {
     const s = remaining % 60;
     const timeStr = `${m}:${s.toString().padStart(2, "0")}`;
 
-    const text = rawText || "";
-    const currentWords = countWords(text);
+    const currentWords = textStats.words;
     const diffWords = Math.max(0, currentWords - currentSprint.startWordCount);
     const elapsedMins = Math.max(0.1, elapsed / 60);
     const wpm = Math.round(diffWords / elapsedMins);
 
     return { timeStr, total: currentSprint.durationMinutes, wpm };
-  }, [currentSprint, rawText, tick]);
+  }, [currentSprint, textStats, tick]);
 
   const handleScriptClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (isBundle && scripts.length > 0) {

@@ -1,3 +1,4 @@
+import { createXrayWindowData } from "../document/documentWindowBridge";
 import { FountainDocument, LineType } from "../parser/FountainParser";
 import { buildScreenplayIndex } from "../utils/sceneIndexer";
 import { getPerScriptSettingObject, updatePerScriptSetting } from "../utils/perScriptSettings";
@@ -626,11 +627,7 @@ export function executeToolCall(
 
         if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
           import("@tauri-apps/api/event").then(({ emit }) => {
-            emit("modal:xray:init", {
-              parsedDoc: context.doc,
-              scriptFileName: sf,
-              settings: updatedSettings,
-            }).catch(() => void 0);
+            emit("modal:xray:init", createXrayWindowData(context.doc, sf, updatedSettings)).catch(() => void 0);
           }).catch(() => void 0);
         }
 

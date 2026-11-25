@@ -10,7 +10,8 @@ try {
   const executable = resolve(
     "src-tauri/target/debug/examples/pdf_layout_fixture" + (process.platform === "win32" ? ".exe" : ""),
   );
-  execFileSync(executable, [directory], { timeout: 30000 });
+  // The fixture now renders 352 cases; allow the full matrix on slower hosts.
+  execFileSync(executable, [directory], { timeout: 180000 });
   for (const [name, width, height] of [
     ["letter", 612, 792],
     ["a4", 595.28, 841.89],

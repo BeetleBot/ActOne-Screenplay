@@ -1,0 +1,80 @@
+{
+  "measuredAt": "2026-11-14T17:22:44.825Z",
+  "runtime": "v24.16.0",
+  "platform": "win32",
+  "workload": "warm repeated pure calculations; not UI latency, CPU, or memory",
+  "results": [
+    {
+      "scenes": 10,
+      "characters": 7619,
+      "operation": "words",
+      "consumers": 20,
+      "medianMs": 0.0013000000003557943,
+      "p95Ms": 0.006499999999959982
+    },
+    {
+      "scenes": 10,
+      "characters": 7619,
+      "operation": "index",
+      "consumers": 20,
+      "medianMs": 0.001900000000205182,
+      "p95Ms": 0.009900000000016007
+    },
+    {
+      "scenes": 10,
+      "characters": 7619,
+      "operation": "xray",
+      "consumers": 20,
+      "medianMs": 0.0032999999998537533,
+      "p95Ms": 0.003699999999753345
+    },
+    {
+      "scenes": 150,
+      "characters": 114489,
+      "operation": "words",
+      "consumers": 20,
+      "medianMs": 0.0008000000002539309,
+      "p95Ms": 0.007999999999810825
+    },
+    {
+      "scenes": 150,
+      "characters": 114489,
+      "operation": "index",
+      "consumers": 20,
+      "medianMs": 0.0013999999996485712,
+      "p95Ms": 0.01139999999986685
+    },
+    {
+      "scenes": 150,
+      "characters": 114489,
+      "operation": "xray",
+      "consumers": 20,
+      "medianMs": 0.002199999999902502,
+      "p95Ms": 0.02529999999978827
+    },
+    {
+      "scenes": 600,
+      "characters": 458289,
+      "operation": "words",
+      "consumers": 20,
+      "medianMs": 0.000600000000304135,
+      "p95Ms": 0.0008000000002539309
+    },
+    {
+      "scenes": 600,
+      "characters": 458289,
+      "operation": "index",
+      "consumers": 20,
+      "medianMs": 0.0010000000002037268,
+      "p95Ms": 0.0011999999996987754
+    },
+    {
+      "scenes": 600,
+      "characters": 458289,
+      "operation": "xray",
+      "consumers": 20,
+      "medianMs": 0.0016999999998006388,
+      "p95Ms": 0.010099999999965803
+    }
+  ]
+}

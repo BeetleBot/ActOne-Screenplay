@@ -222,6 +222,12 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const updateAll = () => {
+      const parsedTexts = new Map<string, FountainDocument>();
+      const parseOnce = (text: string) => {
+        let doc = parsedTexts.get(text);
+        if (!doc) { doc = parseScreenplay(text, paperSize); parsedTexts.set(text, doc); }
+        return doc;
+      };
       // Invalidate outstanding switch parses made with the previous paper size.
       for (const key of Object.keys(fileUpdateSeqRef.current)) fileUpdateSeqRef.current[key]++;
       setFiles(prev => prev.map(f => {
@@ -229,7 +235,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isProse = isNonScreenplay(activeScr, f.filePath);
         const doc = isProse
           ? createProseDocument(f.rawText, f.parsedDoc.settings)
-          : parseScreenplay(f.rawText, paperSize);
+          : parseOnce(f.rawText);
         const mergedSettings = { ...(f.parsedDoc.settings || {}), ...(doc.settings || {}) };
         const pageBreaks = doc.pageBreaks;
         return { ...f, parsedDoc: { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : pageBreaks } };
@@ -240,7 +246,7 @@ export const FileProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isProse = isNonScreenplay(activeScr, currentActive?.filePath);
         const doc = isProse
           ? createProseDocument(rawText, prevDoc.settings)
-          : parseScreenplay(rawText, paperSize);
+          : parseOnce(rawText);
         const mergedSettings = { ...(prevDoc.settings || {}), ...(doc.settings || {}) };
         const pageBreaks = doc.pageBreaks;
         return { ...doc, settings: mergedSettings, pageBreaks: isProse ? undefined : pageBreaks };

@@ -1,3 +1,4 @@
+import { createDocumentCalculation } from "../document/documentDataStore";
 import { FountainDocument, LineType } from "../parser/FountainParser";
 
 export interface SceneIndexEntry {
@@ -19,7 +20,7 @@ export interface ScreenplayIndex {
   scenes: SceneIndexEntry[];
 }
 
-export function buildScreenplayIndex(doc: FountainDocument): ScreenplayIndex {
+export function calculateScreenplayIndex(doc: FountainDocument): ScreenplayIndex {
   const lines = doc.lines || [];
   const scenes: SceneIndexEntry[] = [];
   const allCharacters = new Set<string>();
@@ -92,4 +93,10 @@ export function formatIndexForPrompt(index: ScreenplayIndex): string {
   }).join("\n");
 
   return header + sceneList;
+}
+
+const readbuildScreenplayIndex = createDocumentCalculation<FountainDocument["lines"], ScreenplayIndex>("buildScreenplayIndex", lines => calculateScreenplayIndex({ lines } as FountainDocument));
+
+export function buildScreenplayIndex(doc: FountainDocument): ScreenplayIndex {
+  return readbuildScreenplayIndex(doc.lines);
 }

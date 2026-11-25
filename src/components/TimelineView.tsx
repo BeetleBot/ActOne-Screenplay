@@ -1,3 +1,4 @@
+import { getLineFacts } from "../document/lineFacts";
 import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useFile, useEditor, useUI, useCursor } from "../context";
 import { LineType, parseSceneHeading } from "../parser";
@@ -69,9 +70,7 @@ export const TimelineView: React.FC = () => {
   // 1. Build Section Segments (depth 1, e.g. "# Act I")
   const sectionSegments = useMemo(() => {
     if (!parsedDoc?.lines) return [];
-    const secLines = parsedDoc.lines
-      .map((line, index) => ({ line, index }))
-      .filter(({ line }) => line.type === LineType.section && line.sectionDepth === 1);
+    const secLines = getLineFacts(parsedDoc.lines).sections;
 
     const segments = [];
     if (secLines.length === 0) {
@@ -115,9 +114,7 @@ export const TimelineView: React.FC = () => {
   // 2. Build Sub-section Segments (depth 2, e.g. "## Sequence A")
   const subsectionSegments = useMemo(() => {
     if (!parsedDoc?.lines) return [];
-    const boundaries = parsedDoc.lines
-      .map((line, index) => ({ line, index }))
-      .filter(({ line }) => line.type === LineType.section && (line.sectionDepth === 1 || line.sectionDepth === 2));
+    const boundaries = getLineFacts(parsedDoc.lines).sectionBoundaries;
 
     const segments = [];
     if (boundaries.length === 0) {
@@ -167,9 +164,7 @@ export const TimelineView: React.FC = () => {
   // 3. Build Scene Segments (aligned from line 0 to totalDocLines)
   const sceneSegments = useMemo(() => {
     if (!parsedDoc?.lines) return [];
-    const sceneLines = parsedDoc.lines
-      .map((line, index) => ({ line, index }))
-      .filter(({ line }) => line.type === LineType.heading);
+    const sceneLines = getLineFacts(parsedDoc.lines).headings;
 
     const segments = [];
     if (sceneLines.length === 0) {

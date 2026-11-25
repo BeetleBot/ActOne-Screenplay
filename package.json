@@ -26,7 +26,9 @@
     "lint:tsc": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
+    "benchmark:document-data": "node scripts/benchmark-document-data.mjs",
+    "benchmark:desktop": "python tests/desktop/benchmark.py"
   },
   "dependencies": {
     "@assistant-ui/react": "0.15.32",

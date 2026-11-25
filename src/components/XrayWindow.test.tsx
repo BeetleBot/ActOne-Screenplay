@@ -3,6 +3,9 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseScreenplay } from "../parser";
 import { XrayContent } from "./XrayWindow";
+import { analyzeXray } from "../utils/xray";
+const events = vi.hoisted(() => ({ emit: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@tauri-apps/api/event", () => events);
 const exportPdf = vi.fn();
 vi.mock("../utils/xrayReport", () => ({ exportXrayPdf: (...args: unknown[]) => exportPdf(...args) }));
 const data = {
@@ -61,6 +64,29 @@ it("keeps analysis content scrollable without compressing chart panels", () => {
   expect(screen.getByRole("tabpanel", { name: "Overview" })).toHaveStyle({ overflow: "auto", minHeight: 0 });
   const chart = screen.getByRole("group", { name: /Scene rhythm:/ });
   expect(chart).toHaveAttribute("viewBox", "0 0 280 125");
+});
+
+it("returns requested default analysis for other consumers without changing the displayed report", async () => {
+  const internals = window as unknown as Record<string, unknown>;
+  internals.__TAURI_INTERNALS__ = {};
+  try {
+    render(<XrayContent data={{ ...data, snapshotId: 123 }} />);
+    await waitFor(() => expect(events.emit).toHaveBeenCalledWith("modal:xray:analysis-result", {
+      snapshotId: 123, report: analyzeXray(data.parsedDoc),
+    }));
+    expect(screen.getByText("A New Story")).toBeInTheDocument();
+  } finally { delete internals.__TAURI_INTERNALS__; }
+});
+
+it("uses an existing report without publishing it back in a loop", async () => {
+  const internals = window as unknown as Record<string, unknown>;
+  internals.__TAURI_INTERNALS__ = {};
+  try {
+    render(<XrayContent data={{ ...data, snapshotId: 124, report: analyzeXray(data.parsedDoc) }} />);
+    await act(async () => { await Promise.resolve(); });
+    expect(events.emit).not.toHaveBeenCalled();
+    expect(screen.getByText("A New Story")).toBeInTheDocument();
+  } finally { delete internals.__TAURI_INTERNALS__; }
 });
 
 it("recalculates chart geometry on resize while keeping label sizes stable", () => {

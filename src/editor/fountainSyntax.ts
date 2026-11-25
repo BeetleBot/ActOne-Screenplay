@@ -533,7 +533,7 @@ export const fountainHighlightField = StateField.define<{
 
     const needsRebuild =
       tr.docChanged ||
-      doc !== value.doc ||
+      doc?.lines !== value.doc?.lines ||
       displaySettings !== value.displaySettings ||
       hideSyntaxChanged ||
       rightPaneChanged;
@@ -557,8 +557,8 @@ export const fountainHighlightField = StateField.define<{
       };
     }
 
-    if (selectionMoved) {
-      return { ...value, prevActiveLineNum: currentLineNum };
+    if (selectionMoved || doc !== value.doc) {
+      return { ...value, doc, prevActiveLineNum: currentLineNum };
     }
 
     return value;
@@ -589,8 +589,8 @@ export const fountainHighlightPlugin = ViewPlugin.fromClass(
       for (const tr of update.transactions) {
         for (const effect of tr.effects) {
           if (effect.is(updateParsedDocEffect)) {
+            changed ||= this.doc?.lines !== effect.value.lines;
             this.doc = effect.value;
-            changed = true;
           }
           if (effect.is(updatePageBreakDisplayEffect)) {
             this.displaySettings = effect.value;

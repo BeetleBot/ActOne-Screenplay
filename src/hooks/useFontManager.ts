@@ -1,3 +1,4 @@
+import { createSharedRequests } from "../document/documentDataStore";
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -34,6 +35,8 @@ export const FALLBACK_FONTS = [
   "Consolas",
 ];
 
+const sharedFontRequest = createSharedRequests("font-inventory");
+
 const FONT_CACHE_KEY = "actone-system-fonts-cache";
 
 export function useFontManager(initialFont = "Courier Prime"): UseFontManagerReturn {
@@ -59,7 +62,7 @@ export function useFontManager(initialFont = "Courier Prime"): UseFontManagerRet
     try {
       let loadedFonts: string[] = [];
       if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-        loadedFonts = await invoke<string[]>("get_system_fonts");
+        loadedFonts = await sharedFontRequest("system-fonts", () => invoke<string[]>("get_system_fonts"));
       } else {
         loadedFonts = fonts;
       }

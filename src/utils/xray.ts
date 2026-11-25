@@ -1,3 +1,4 @@
+import { createDocumentCalculation } from "../document/documentDataStore";
 import { LineType, stripFormatting, type FountainDocument } from "../parser";
 
 export interface XrayScene {
@@ -95,7 +96,9 @@ const normalizeSpeaker = (text: string) =>
     .toUpperCase();
 
 /** A text-based reading estimate, never a prediction of performed screen time. */
-export function analyzeXray(doc: FountainDocument, dialogueWpm = 150, actionWpm = 200): XrayReport {
+type XrayTextAnalysis = Omit<XrayReport, "seconds" | "connections">;
+
+function collectXrayText(doc: FountainDocument): XrayTextAnalysis {
   const scenes: XrayScene[] = [];
   const characters = new Map<string, XrayCharacter>();
   const findings: XrayFinding[] = [];
@@ -199,6 +202,21 @@ export function analyzeXray(doc: FountainDocument, dialogueWpm = 150, actionWpm 
     }
   });
   finishSpeech();
+  return {
+    scenes,
+    findings,
+    words,
+    dialogueWords,
+    actionWords,
+    preSceneWords,
+    characters: [...characters.values()].sort((a, b) => b.words - a.words || a.name.localeCompare(b.name)),
+  };
+}
+
+function applyReadingRates(base: XrayTextAnalysis, dialogueWpm: number, actionWpm: number): XrayReport {
+  const { words, dialogueWords, actionWords, preSceneWords } = base;
+  const scenes = base.scenes.map((scene) => ({ ...scene }));
+  const findings = [...base.findings];
   const safeDialogueWpm = Number.isFinite(dialogueWpm) && dialogueWpm > 0 ? dialogueWpm : 150;
   const safeActionWpm = Number.isFinite(actionWpm) && actionWpm > 0 ? actionWpm : 200;
   let offset = 0;
@@ -236,7 +254,7 @@ export function analyzeXray(doc: FountainDocument, dialogueWpm = 150, actionWpm 
   }
   return {
     scenes,
-    characters: [...characters.values()].sort((a, b) => b.words - a.words || a.name.localeCompare(b.name)),
+    characters: base.characters,
     findings,
     connections: [...pairs.values()].sort((a, b) => b.scenes.length - a.scenes.length),
     words,
@@ -245,4 +263,30 @@ export function analyzeXray(doc: FountainDocument, dialogueWpm = 150, actionWpm 
     seconds: Math.round(60 * (dialogueWords / safeDialogueWpm + actionWords / safeActionWpm)),
     preSceneWords,
   };
+}
+
+export function calculateXray(doc: FountainDocument, dialogueWpm = 150, actionWpm = 200): XrayReport {
+  return applyReadingRates(collectXrayText(doc), dialogueWpm, actionWpm);
+}
+
+const readXrayText = createDocumentCalculation<FountainDocument["lines"], XrayTextAnalysis>("xray-text", (lines) =>
+  collectXrayText({ lines } as FountainDocument),
+);
+
+const readXray = createDocumentCalculation<FountainDocument["lines"], XrayReport>("xray", (lines, options) => {
+  const [dialogueWpm, actionWpm] = options.split(":").map(Number);
+  return applyReadingRates(readXrayText(lines), dialogueWpm, actionWpm);
+});
+
+export function analyzeXray(doc: FountainDocument, dialogueWpm = 150, actionWpm = 200): XrayReport {
+  return readXray(doc.lines, `${dialogueWpm}:${actionWpm}`);
+}
+
+/** Window transport may reuse existing analysis without moving work onto the editor thread. */
+export function peekXrayReport(doc: FountainDocument): XrayReport | undefined {
+  return readXray.peek(doc.lines, "150:200");
+}
+
+export function primeXrayReport(doc: FountainDocument, report: XrayReport): void {
+  readXray.prime(doc.lines, report, "150:200");
 }

@@ -166,3 +166,33 @@ it("does not call native layout in the browser", async () => {
   expect(hook.result.current).toBeNull();
   hook.unmount();
 });
+
+it("shares concurrent layout requests but keeps each subscriber's lifecycle", async () => {
+  let resolve!: (breaks: number[]) => void;
+  vi.mocked(invoke).mockReturnValueOnce(new Promise<number[]>(done => { resolve = done; }));
+  const firstOptions = options();
+  const secondOptions = options();
+  const first = renderHook(() => useDocumentPagination(firstOptions));
+  const second = renderHook(() => useDocumentPagination(secondOptions));
+  await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+  expect(invoke).toHaveBeenCalledTimes(1);
+  first.unmount();
+  await act(async () => resolve([0, 50]));
+  expect(firstOptions.onResult).not.toHaveBeenCalled();
+  expect(secondOptions.onResult).toHaveBeenCalledWith([0, 50]);
+  expect(second.result.current).toEqual([0, 50]);
+  second.unmount();
+});
+
+it("does not merge requests for different documents or export settings", async () => {
+  const resolvers: ((breaks: number[]) => void)[] = [];
+  vi.mocked(invoke).mockImplementation(() => new Promise(resolve => resolvers.push(resolve)));
+  const firstOptions = options();
+  const first = renderHook(() => useDocumentPagination(firstOptions));
+  const second = renderHook(() => useDocumentPagination({ ...firstOptions, fileId: "other" }));
+  const third = renderHook(() => useDocumentPagination({ ...firstOptions, autoContd: true }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+  expect(invoke).toHaveBeenCalledTimes(3);
+  first.unmount(); second.unmount(); third.unmount();
+  await act(async () => { resolvers.forEach(resolve => resolve([])); });
+});

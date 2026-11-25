@@ -1,3 +1,4 @@
+import { acceptXrayWindowReport, createXrayWindowData } from "./document/documentWindowBridge";
 
 import { lazy, Suspense, useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@mui/material";
@@ -491,11 +492,7 @@ function AppInner() {
         });
 
         const u7 = await listen("modal:xray:ready", () => {
-          emit("modal:xray:init", {
-            parsedDoc: parsedDocRef.current,
-            scriptFileName: scriptFileNameRef.current,
-            settings: parsedDocRef.current?.settings || {},
-          }).catch(() => { });
+          emit("modal:xray:init", createXrayWindowData(parsedDocRef.current, scriptFileNameRef.current)).catch(() => { });
         });
 
         const u8 = await listen<{ characterName: string; profile: { gender?: string; [key: string]: unknown } }>("modal:xray:save-profile", (event) => {
@@ -520,11 +517,10 @@ function AppInner() {
               ...updatePerScriptSetting(prev, "genders", sf, updatedGenders),
             };
 
-            emit("modal:xray:init", {
-              parsedDoc: parsedDocRef.current ? { ...parsedDocRef.current, settings: updatedSettings } : null,
-              scriptFileName: sf,
-              settings: updatedSettings,
-            }).catch(() => { });
+            emit("modal:xray:init", createXrayWindowData(
+              parsedDocRef.current ? { ...parsedDocRef.current, settings: updatedSettings } : null,
+              sf, updatedSettings,
+            )).catch(() => { });
 
             return updatedSettings;
           });
@@ -546,7 +542,11 @@ function AppInner() {
           }
         });
 
-        unlisteners = [u1, u2, u7, u8, u9].filter(Boolean) as (() => void)[];
+        const u10 = await listen<unknown>("modal:xray:analysis-result", event => {
+          acceptXrayWindowReport(parsedDocRef.current, event.payload);
+        });
+
+        unlisteners = [u1, u2, u7, u8, u9, u10].filter(Boolean) as (() => void)[];
       } catch (e) {
         logger.error("app", "Failed to set up modal event listeners:", e);
       }
@@ -565,9 +565,7 @@ function AppInner() {
         const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
         const target = await WebviewWindow.getByLabel("xray");
         if (!target || !(await target.isVisible()) || cancelled) return;
-        await target.emit("modal:xray:init", {
-          parsedDoc, scriptFileName, settings: parsedDoc?.settings || {},
-        });
+        await target.emit("modal:xray:init", createXrayWindowData(parsedDoc, scriptFileName));
       } catch { /* The statistics window may have closed during the check. */ }
     })();
     return () => { cancelled = true; };

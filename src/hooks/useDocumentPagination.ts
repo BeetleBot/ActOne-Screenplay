@@ -1,7 +1,10 @@
+import { createSharedRequests } from "../document/documentDataStore";
 import { resolveProseImages } from "../utils/proseAssets";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
+
+const sharedLayoutRequest = createSharedRequests("native-layout");
 
 export interface DocumentPaginationOptions {
   fileId: string;
@@ -41,11 +44,12 @@ export function useDocumentPagination(options: DocumentPaginationOptions): numbe
       }
       inFlightRef.current = true;
       try {
-        const breaks = await invoke<number[] | null>("get_page_breaks", {
+        const requestKey = JSON.stringify(["screenplay", fileId, scriptIndex, scriptFileName, text, paperSize, fontFamily, elementFormats, scriptFonts, autoContd]);
+        const breaks = await sharedLayoutRequest(requestKey, () => invoke<number[] | null>("get_page_breaks", {
           fountainText: text, paperSize, fontFamily, elementFormats, scriptFonts,
           mirrorSceneNumbers: "off", exportSections: false, exportSynopses: false,
           exportTitlePage: true, autoContd, revisedLines: [],
-        });
+        }));
         const valid = Array.isArray(breaks) && breaks.every((line, index) =>
           Number.isSafeInteger(line) && line >= 0 && (index === 0 || line >= breaks[index - 1]));
         if (!cancelled && keyRef.current === key && valid) {
@@ -86,7 +90,9 @@ export function useProsePagination(text: string, paperSize: "letter" | "a4", doc
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const breaks = await invoke<number[]>("get_prose_page_breaks", { markdownText: resolveProseImages(text, imageSettings), paperSize });
+        const markdownText = resolveProseImages(text, imageSettings);
+        const requestKey = JSON.stringify(["prose", documentKey, markdownText, paperSize]);
+        const breaks = await sharedLayoutRequest(requestKey, () => invoke<number[]>("get_prose_page_breaks", { markdownText, paperSize }));
         if (!cancelled && Array.isArray(breaks)) setResult({ key, breaks });
       } catch (error) {
         if (!cancelled) logger.error("file", "Prose page calculation failed", error);

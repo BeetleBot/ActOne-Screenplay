@@ -1,0 +1,115 @@
+{
+  "measuredAt": "2026-11-14T17:44:46.847Z",
+  "runtime": "v24.16.0",
+  "scope": "Same-process calculator reference comparison, not native UI responsiveness or prose layout",
+  "results": [
+    {
+      "fixture": "BeeDetective",
+      "characters": 66976,
+      "operation": "words",
+      "mode": "reference",
+      "consumers": 20,
+      "medianMs": 10.120800000000145,
+      "p95Ms": 13.55119999999988
+    },
+    {
+      "fixture": "BeeDetective",
+      "characters": 66976,
+      "operation": "words",
+      "mode": "shared",
+      "consumers": 20,
+      "medianMs": 0.019400000000132422,
+      "p95Ms": 0.03719999999975698
+    },
+    {
+      "fixture": "BeeDetective",
+      "characters": 66976,
+      "operation": "index",
+      "mode": "reference",
+      "consumers": 20,
+      "medianMs": 2.082300000000032,
+      "p95Ms": 3.0978000000000065
+    },
+    {
+      "fixture": "BeeDetective",
+      "characters": 66976,
+      "operation": "index",
+      "mode": "shared",
+      "consumers": 20,
+      "medianMs": 0.018399999999928696,
+      "p95Ms": 0.04790000000002692
+    },
+    {
+      "fixture": "BeeDetective",
+      "characters": 66976,
+      "operation": "xray",
+      "mode": "reference",
+      "consumers": 20,
+      "medianMs": 46.57800000000043,
+      "p95Ms": 49.06740000000036
+    },
+    {
+      "fixture": "BeeDetective",
+      "characters": 66976,
+      "operation": "xray",
+      "mode": "shared",
+      "consumers": 20,
+      "medianMs": 0.01929999999993015,
+      "p95Ms": 0.044100000000071304
+    },
+    {
+      "fixture": "prose",
+      "characters": 56000,
+      "operation": "words",
+      "mode": "reference",
+      "consumers": 20,
+      "medianMs": 7.292100000000119,
+      "p95Ms": 7.978099999999813
+    },
+    {
+      "fixture": "prose",
+      "characters": 56000,
+      "operation": "words",
+      "mode": "shared",
+      "consumers": 20,
+      "medianMs": 0.015499999999974534,
+      "p95Ms": 0.044499999999970896
+    },
+    {
+      "fixture": "prose",
+      "characters": 56000,
+      "operation": "index",
+      "mode": "reference",
+      "consumers": 20,
+      "medianMs": 2.2884000000003653,
+      "p95Ms": 2.32529999999997
+    },
+    {
+      "fixture": "prose",
+      "characters": 56000,
+      "operation": "index",
+      "mode": "shared",
+      "consumers": 20,
+      "medianMs": 0.016200000000026193,
+      "p95Ms": 0.035499999999956344
+    },
+    {
+      "fixture": "prose",
+      "characters": 56000,
+      "operation": "xray",
+      "mode": "reference",
+      "consumers": 20,
+      "medianMs": 41.96090000000004,
+      "p95Ms": 43.801400000000285
+    },
+    {
+      "fixture": "prose",
+      "characters": 56000,
+      "operation": "xray",
+      "mode": "shared",
+      "consumers": 20,
+      "medianMs": 0.018199999999524152,
+      "p95Ms": 0.04330000000027212
+    }
+  ]
+}

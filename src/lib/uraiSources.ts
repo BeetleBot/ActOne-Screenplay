@@ -1,3 +1,4 @@
+import { createDocumentCalculation } from "../document/documentDataStore";
 import { LineType, stripFormatting, type FountainDocument } from "../parser/FountainParser";
 import { buildScreenplayIndex } from "../utils/sceneIndexer";
 
@@ -20,7 +21,7 @@ export function sceneRef({ id, label, heading, startLine, endLine }: UrAISceneRe
   return { id, label, heading, startLine, endLine };
 }
 
-export function screenplaySources(doc: FountainDocument): UrAISource[] {
+export function calculateScreenplaySources(doc: FountainDocument): UrAISource[] {
   return buildScreenplayIndex(doc).scenes.map((scene) => {
     const lines = doc.lines.slice(scene.startLine - 1, scene.endLine);
     const dialogue: UrAISource["dialogue"] = [];
@@ -119,4 +120,10 @@ export function resolveSceneFocus(
   } catch (error) {
     return { ids: [], error: (error as Error).message };
   }
+}
+
+const readscreenplaySources = createDocumentCalculation<FountainDocument["lines"], UrAISource[]>("screenplaySources", lines => calculateScreenplaySources({ lines } as FountainDocument));
+
+export function screenplaySources(doc: FountainDocument): UrAISource[] {
+  return readscreenplaySources(doc.lines);
 }

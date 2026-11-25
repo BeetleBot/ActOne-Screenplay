@@ -28,7 +28,7 @@ import { initThemeEngine, onThemeChanged, getInitialThemeId, getInitialCustomThe
 import { useTourListener } from "../hooks/useTourListener";
 import { CrossWindowTourCard } from "./CrossWindowTourCard";
 import { getPerScriptSettingObject } from "../utils/perScriptSettings";
-import { analyzeXray } from "../utils/xray";
+import { analyzeXray, type XrayReport } from "../utils/xray";
 import { XrayDashboard } from "./XrayDashboard";
 const SWATCH_COLORS = [
   "#2196f3",
@@ -53,6 +53,8 @@ interface CharacterProfile {
   [key: string]: unknown;
 }
 export interface XrayData {
+  snapshotId?: number;
+  report?: XrayReport | null;
   parsedDoc: FountainDocument | null;
   scriptFileName: string;
   settings: Record<string, unknown>;
@@ -72,9 +74,19 @@ export function XrayContent({ data, onClose, timedOut }: XrayContentProps) {
   const [exported, setExported] = useState(false);
   const [error, setError] = useState("");
   const report = useMemo(
-    () => (data?.parsedDoc ? analyzeXray(data.parsedDoc, dialogueWpm, actionWpm) : null),
-    [data?.parsedDoc, dialogueWpm, actionWpm],
+    () => (data?.parsedDoc ? (dialogueWpm === 150 && actionWpm === 200 && data.report
+      ? data.report : analyzeXray(data.parsedDoc, dialogueWpm, actionWpm)) : null),
+    [data?.parsedDoc, data?.report, dialogueWpm, actionWpm],
   );
+  useEffect(() => {
+    if (!isTauri() || !report || data?.report || !data?.snapshotId || dialogueWpm !== 150 || actionWpm !== 200) return;
+    let cancelled = false;
+    void import("@tauri-apps/api/event").then(({ emit }) => {
+      if (!cancelled) return emit("modal:xray:analysis-result", { snapshotId: data.snapshotId, report });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [report, data?.report, data?.snapshotId, dialogueWpm, actionWpm]);
+
   const profiles = useMemo(
     () =>
       getPerScriptSettingObject<Record<string, CharacterProfile>>(
